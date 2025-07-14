@@ -1,0 +1,4 @@
+pydantic
+lark
+pyyaml
+rich

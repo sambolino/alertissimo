@@ -1,0 +1,4 @@
+[project]
+name = "alertissimo"
+version = "0.1.0"
+dependencies = ["pydantic", "lark", "pyyaml", "rich"]
