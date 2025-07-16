@@ -35,21 +35,21 @@ smbbh_ir = WorkflowIR(
             source=Source(broker="alerce"),
             params={"survey": "ztf"}
         ),
-        EnrichmentStep(
-            type="multiwavelength_crossmatch",
-            source=Source(broker="lasair"),
-            params={"catalogs": ["Pan-STARRS", "WISE", "XMM", "GALEX"]}
-        ),
-        EnrichmentStep(
-            type="xray_crossmatch",
-            source=Source(broker="antares"),
-            params={"catalog": "eROSITA"}
-        ),
-        EnrichmentStep(
-            type="realtime_variability_monitoring",
-            source=Source(broker="lasair"),
-            params={"kafka": True}
-        )
+#        EnrichmentStep(
+#            type="multiwavelength_crossmatch",
+#            source=Source(broker="lasair"),
+#            params={"catalogs": ["Pan-STARRS", "WISE", "XMM", "GALEX"]}
+#        ),
+#        EnrichmentStep(
+#            type="xray_crossmatch",
+#            source=Source(broker="antares"),
+#            params={"catalog": "eROSITA"}
+#        ),
+#        EnrichmentStep(
+#            type="realtime_variability_monitoring",
+#            source=Source(broker="lasair"),
+#            params={"kafka": True}
+#        )
     ],
 
     classify=[
