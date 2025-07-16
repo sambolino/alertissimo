@@ -4,6 +4,8 @@ from alertissimo.core.schema import (
     ConfirmationRule,
     FilterCondition,
     EnrichmentStep,
+    LightcurveStep,
+    CrossmatchStep,
     Classifier,
     ScoringRule,
     ActStep,
@@ -30,26 +32,27 @@ smbbh_ir = WorkflowIR(
     ],
 
     enrich=[
-        EnrichmentStep(
+        LightcurveStep(
             type="historical_lightcurve",
             source=Source(broker="alerce"),
             params={"survey": "ztf"}
         ),
-#        EnrichmentStep(
-#            type="multiwavelength_crossmatch",
-#            source=Source(broker="lasair"),
-#            params={"catalogs": ["Pan-STARRS", "WISE", "XMM", "GALEX"]}
-#        ),
-#        EnrichmentStep(
-#            type="xray_crossmatch",
-#            source=Source(broker="antares"),
-#            params={"catalog": "eROSITA"}
-#        ),
-#        EnrichmentStep(
-#            type="realtime_variability_monitoring",
-#            source=Source(broker="lasair"),
-#            params={"kafka": True}
-#        )
+        CrossmatchStep(
+            type="crossmatch",
+            source=Source(broker="lasair"),
+            #params={"catalogs": ["Pan-STARRS", "WISE", "XMM", "GALEX"]}
+        ),
+        CrossmatchStep(
+            type="crossmatch",
+            #type="xray_match",
+            source=Source(broker="antares"),
+            #params={"catalog": "eROSITA"}
+        ),
+        EnrichmentStep(
+            type="realtime_monitoring",
+            source=Source(broker="lasair"),
+            params={"kafka": True}
+        )
     ],
 
     classify=[

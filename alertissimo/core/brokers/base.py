@@ -41,3 +41,6 @@ class Broker:
 
     def get_lightcurve(self, object_id: str) -> Optional[dict]:
         raise NotImplementedError
+
+    def get_crossmatch(self, object_id: str, data: Optional[str]) -> Optional[dict]:
+        raise NotImplementedError

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
+from typing import Literal
 
 
 class Source(BaseModel):
@@ -35,9 +36,15 @@ class ActStep(BaseModel):
 
 class EnrichmentStep(BaseModel):
     type: str                           # e.g. "historical_lc", "crossmatch"
-    source: Optional[Source] = None     # Broker providing enrichment
+    source: Source                      # Broker providing enrichment
     params: Optional[dict] = {}         # e.g. {"radius": 5, "bands": ["g", "r"]}
 
+class LightcurveStep(EnrichmentStep):
+    type: Literal["historical_lightcurve"]
+
+class CrossmatchStep(EnrichmentStep):
+    type: Literal["crossmatch"]
+    catalogs: Optional[List[str]] = []  # list of crossmatch catalogs to look for 
 
 class ConfirmationRule(BaseModel):
     object_id: str                      # Alert or target object ID

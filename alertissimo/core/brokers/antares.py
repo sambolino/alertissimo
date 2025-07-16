@@ -24,3 +24,24 @@ class AntaresBroker(Broker):
             logger.warning(f"ANTARES error for {object_id}: {e}")
             return None
 
+    def get_crossmatch(self, object_id, data):
+        return self.extract_xray_matches(data)
+
+    def extract_xray_matches(self, locus) -> list[dict]:
+        """Extract crossmatches from ANTARES locus object for X-ray catalogs like eROSITA."""
+        matches = []
+
+        if not hasattr(locus, "catalog_objects") or not locus.catalog_objects:
+            logger.info("ANTARES locus has no catalog_objects.")
+            return []
+
+        logger.info(f"ANTARES catalogs found: {list(locus.catalog_objects.keys())}")
+
+        for catalog_name, objects in locus.catalog_objects.items():
+            logger.debug(f"Catalog {catalog_name} has {len(objects)} objects")
+            if catalog_name.lower() == "erosita":
+                matches.extend(objects)
+
+        logger.info(f"Found {len(matches)} eROSITA matches from ANTARES.")
+        return matches
+
