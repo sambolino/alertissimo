@@ -15,7 +15,13 @@ class ALeRCEBroker(Broker):
         )
 
     def get_lightcurve(self, object_id: str):
+        endpoint = f"objects/{object_id}/lightcurve"
+        return self.request(endpoint)
+"""
+    def get_lightcurve(self, object_id: str):
         return self.request(
-            endpoint="lightcurves/",
+            endpoint = f"objects/{object_id}/lightcurve"
+            #endpoint="lightcurves/",
             params={"oid": object_id}
         )
+"""
