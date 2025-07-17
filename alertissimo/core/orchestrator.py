@@ -1,5 +1,7 @@
-# alertissimo/core/orchestrator.py
 import logging
+from dataclasses import dataclass
+from typing import Any
+
 from alertissimo.core.schema import *
 from alertissimo.core.brokers import get_broker
 
@@ -7,55 +9,66 @@ logger = logging.getLogger("orchestrator")
 logging.basicConfig(level=logging.INFO)
 
 
-def run_ir(ir: WorkflowIR):
+@dataclass
+class IRResult:
+    object_snapshots: dict[str, Any]
+    lightcurves: dict[str, Any]
+    crossmatch_results: dict[str, Any]
+    kafka_results: dict[str, bool]
+
+
+def run_ir(ir: WorkflowIR) -> IRResult:
     logger.info(f"Running workflow: {ir.name}")
 
-    # 1. Confirm alert
-    if ir.confirm:
-        oid = ir.confirm.object_id
-        broker_object_snapshots = {}
-        agreement = 0
+    oid = ir.confirm.object_id if ir.confirm else None
+    broker_object_snapshots = {}
+    lightcurves = {}
+    crossmatch_results = {}
+    kafka_results = {}
 
+    # Step 1: Confirm alert
+    if ir.confirm:
+        agreement = 0
         for src in ir.confirm.sources:
             broker = get_broker(src.broker)
+            name = broker.name.lower()
             data = broker.get_object_data(oid)
             if data:
                 agreement += 1
-                broker_object_snapshots[src.broker] = data
-
+                broker_object_snapshots[name] = data
         if agreement < ir.confirm.required_agreement:
             logger.warning(f"Alert confirmation failed: {agreement}/{len(ir.confirm.sources)}")
-            return
+            return IRResult({}, {}, {}, {})
         logger.info(f"Alert confirmed by {agreement} brokers.")
-        #logger.info(broker_object_snapshots)
 
-    # 2. Retrieve light curves (optional enrich)
+    # Step 2: Enrichment
     for enrich_step in ir.enrich or []:
         broker = get_broker(enrich_step.source.broker)
-        
-        if type(enrich_step) is LightcurveStep:
+        name = broker.name.lower()
+
+        if isinstance(enrich_step, LightcurveStep):
             data = broker.get_lightcurve(oid)
-            logger.info(f"Retrieved lightcurve from {enrich_step}: {bool(data)}")
-        
-        elif type(enrich_step)is CrossmatchStep:
-            data = broker.get_crossmatch(oid, broker_object_snapshots[broker.name.lower()])
-            logger.info(f"Retrieved crossmatch record from {enrich_step}: {bool(data)}")
-        
-#        elif enrich_step.type == "xray_match":
-#            if hasattr(broker, "extract_xray_matches"):
-#                result = broker.extract_xray_matches(broker_object_snapshots[broker.name.lower()])
-#                logger.info(f"Retrieved X-ray crossmatch from {broker.name}: {bool(result)}")
-#            else:
-#                logger.warning(f"{broker.name} does not support X-ray crossmatch.")
+            lightcurves[name] = data
+            logger.info(f"Retrieved lightcurve from {name}: {bool(data)}")
+
+        elif isinstance(enrich_step, CrossmatchStep):
+            object_data = broker_object_snapshots.get(name)
+            data = broker.get_crossmatch(oid, object_data)
+            crossmatch_results[name] = data
+            logger.info(f"Retrieved crossmatch from {name}: {bool(data)}")
 
         elif enrich_step.type == "realtime_monitoring":
-            logger.info(f"Checking Kafka AGN stream monitoring for {broker.name}")
             if hasattr(broker, "is_kafka_monitored"):
                 result = broker.is_kafka_monitored(oid)
-                logger.info(f"{broker.name} Kafka monitoring result: {result}")
+                kafka_results[name] = result
+                logger.info(f"{name} Kafka monitoring result: {result}")
             else:
-                logger.warning(f"{broker.name} does not support Kafka monitoring.")
+                logger.warning(f"{name} does not support Kafka monitoring.")
 
-
-    logger.info("Pipeline logic continues here...")
+    return IRResult(
+        object_snapshots=broker_object_snapshots,
+        lightcurves=lightcurves,
+        crossmatch_results=crossmatch_results,
+        kafka_results=kafka_results,
+    )
 
