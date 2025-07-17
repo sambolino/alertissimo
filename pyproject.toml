@@ -17,5 +17,4 @@ dependencies = [
     "matplotlib>=3.10.3",
     "pandas>=2.3.1",
     "altair>=5.5.0",
-    "fink-client>=9.1"
 ]
