@@ -10,3 +10,4 @@ streamlit
 matplotlib
 pandas
 altair
+fink-client
