@@ -45,3 +45,6 @@ class LasairBroker(Broker):
     def is_kafka_monitored(self, object_id: str) -> bool:
         # In real setup, we'd listen for updates here
         return True
+    
+    def is_available(self) -> bool:
+        return bool(self.token)

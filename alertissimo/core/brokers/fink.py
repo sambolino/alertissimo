@@ -9,3 +9,5 @@ class FinkBroker(Broker):
         # Stub: no real Fink public API yet
         return {"objectId": object_id, "stub": True}
 
+    def is_available(self) -> bool:
+        return Path.home().joinpath(".fink-client", "token.yaml").exists()

@@ -45,3 +45,5 @@ class AntaresBroker(Broker):
         logger.info(f"Found {len(matches)} eROSITA matches from ANTARES.")
         return matches
 
+    def is_available(self) -> bool:
+        return HAS_ANTARES

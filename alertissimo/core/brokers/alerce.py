@@ -25,3 +25,6 @@ class ALeRCEBroker(Broker):
             params={"oid": object_id}
         )
 """
+    def is_available(self) -> bool:
+        # alerce is publicly available without credentials
+        return True 

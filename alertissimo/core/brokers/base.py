@@ -2,10 +2,11 @@
 import requests
 import logging
 from typing import Optional, Dict
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger("broker")
 
-class Broker:
+class Broker(ABC):
     def __init__(self, name: str, base_url: str, token: Optional[str] = None):
         self.name = name
         self.base_url = base_url.rstrip("/")
@@ -36,6 +37,7 @@ class Broker:
             logger.warning(f"{self.name} error at {url}: {e}")
             return None
 
+    @abstractmethod
     def get_object_data(self, object_id: str) -> Optional[dict]:
         raise NotImplementedError
 
@@ -44,3 +46,22 @@ class Broker:
 
     def get_crossmatch(self, object_id: str, data: Optional[str]) -> Optional[dict]:
         raise NotImplementedError
+
+    def is_available(self) -> bool:
+        """Return True if credentials/configs required for this broker exist."""
+        return self.token is not None
+
+    def ping(self) -> bool:
+        """Generic ping method that uses broker's get_object_data with a dummy object ID."""
+        # not yet used, test what's a safe dummy ID
+        test_object_id = "ZTFfake"  # or a broker-safe dummy ID
+        try:
+            response = self.get_object_data(test_object_id)
+            return response is not None
+        except NotImplementedError:
+            logger.warning(f"{self.name} does not implement get_object_data.")
+            return False
+        except Exception as e:
+            logger.warning(f"{self.name} ping failed: {e}")
+            return False
+
