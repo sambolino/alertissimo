@@ -18,7 +18,7 @@ class Broker(ABC):
         params: Optional[Dict[str, str]] = None,
         headers: Optional[Dict[str, str]] = None,
         include_token: bool = False,
-        format: Optional[str] = "json"
+        format: Optional[str] = None
     ) -> Optional[dict]:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         query_params = params.copy() if params else {}
