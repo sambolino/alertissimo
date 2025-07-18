@@ -1,0 +1,63 @@
+# alertissimo/core/brokers/registry/lasair.yaml
+broker: lasair
+  api: lasair-rest
+  type: rest
+  url: https://lasair-ztf.lsst.ac.uk/api
+  auth:
+    type: token
+  description: >
+    Interface to the Lasair REST API. Supports cone search, SQL-style querying, 
+    object retrieval, and Sherlock crossmatch enrichment for ZTF transients.
+
+  methods:
+    cone_search:
+      capability: conesearch
+      endpoint: /cone/
+      method: GET
+      arguments:
+        ra: required
+        dec: required
+        radius: required
+        requestType: optional
+        format: optional
+
+    run_query:
+      capability: sql_query
+      endpoint: /query/
+      method: GET
+      arguments:
+        selected: required
+        tables: required
+        conditions: required
+        limit: optional
+        offset: optional
+        format: optional
+
+    get_object:
+      capability: object_query
+      endpoint: /object/
+      method: GET
+      arguments:
+        objectId: required
+        lasair_added: optional
+        format: optional
+
+    get_sherlock_object:
+      capability: crossmatch, classify 
+      endpoint: /sherlock/object/
+      method: GET
+      arguments:
+        objectId: required
+        lite: optional
+        format: optional
+
+    get_sherlock_position:
+      capability: conesearch_crossmatch, conesearch_classify
+      endpoint: /sherlock/position
+      method: GET
+      arguments:
+        ra: required
+        dec: required
+        lite: optional
+        format: optional
+

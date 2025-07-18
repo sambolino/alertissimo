@@ -1,0 +1,166 @@
+# alertissimo/core/brokers/registry/fink.yaml
+broker: fink
+  api: fink-rest
+  type: rest
+  url: https://api.fink-portal.org/api/v1
+  auth:
+    type: none
+  description: >
+    Interface to the Fink REST API, allowing retrieval of ZTF alerts, image cutouts,
+    solar system object data, anomaly detections, statistics, skymaps, and more.
+    Provides various querying methods for both astronomical and solar system event data.
+
+  methods:
+    get_conesearch:
+      capability: conesearch
+      endpoint: /conesearch
+      method: GET
+      arguments:
+        ra: required
+        dec: required
+        radius: required
+        n: optional
+        startdate: optional
+        stopdate: optional
+        window: optional
+        columns: optional
+        output-format: optional
+
+    get_object:
+      capability: object_query
+      endpoint: /objects
+      method: GET
+      arguments:
+        objectId: required
+        withupperlim: optional
+        withcutouts: optional
+        cutout-kind: optional
+        columns: optional
+        output-format: optional
+
+    get_cutouts:
+      capability: cutout_query
+      endpoint: /cutouts
+      method: GET
+      arguments:
+        objectId: required
+        kind: optional
+        output-format: optional
+        candid: optional
+        stretch: optional
+        colormap: optional
+        pmin: optional
+        pmax: optional
+        convolution_kernel: optional
+
+    get_latests:
+      capability: latest_alerts
+      endpoint: /latests
+      method: GET
+      arguments:
+        class: optional
+        trend: optional
+        n: optional
+        startdate: optional
+        stopdate: optional
+        color: optional
+        columns: optional
+        output-format: optional
+
+    get_classes:
+      capability: classification_metadata
+      endpoint: /classes
+      method: GET
+      arguments: {}
+
+    get_sso:
+      capability: solar_system_query
+      endpoint: /sso
+      method: GET
+      arguments:
+        n_or_d: required
+        withEphem: optional
+        withResiduals: optional
+        withCutouts: optional
+        cutout-kind: optional
+        columns: optional
+        output-format: optional
+
+    get_ssocand:
+      capability: solar_system_candidates
+      endpoint: /ssocand
+      method: GET
+      arguments:
+        kind: optional
+        ssoCandId: optional
+        start_date: optional
+        stop_date: optional
+        maxnumber: optional
+        output-format: optional
+
+    get_resolver:
+      capability: name_resolver
+      endpoint: /resolver
+      method: GET
+      arguments:
+        resolver: optional
+        name: optional
+        reverse: optional
+        nmax: optional
+        output-format: optional
+
+    get_tracklet:
+      capability: satellite_debris
+      endpoint: /tracklet
+      method: GET
+      arguments:
+        date: optional
+        id: optional
+        columns: optional
+        output-format: optional
+
+    get_skymap_alerts:
+      capability: skymap_query
+      endpoint: /skymap
+      method: POST
+      arguments:
+        credible_level: optional
+        file: required
+        event_name: required
+        n_day_before: optional
+        n_day_after: optional
+        output-format: optional
+
+    get_statistics:
+      capability: broker_statistics
+      endpoint: /statistics
+      method: GET
+      arguments:
+        date: optional
+        schema: optional
+        columns: optional
+        output-format: optional
+
+    get_anomalies:
+      capability: anomaly_query
+      endpoint: /anomaly
+      method: GET
+      arguments:
+        n: optional
+        start_date: optional
+        stop_date: optional
+        columns: optional
+        output-format: optional
+
+    get_ssoft:
+      capability: solar_system_metadata
+      endpoint: /ssoft
+      method: GET
+      arguments:
+        sso_name: optional
+        sso_number: optional
+        schema: optional
+        flavor: optional
+        version: optional
+        output-format: optional
+

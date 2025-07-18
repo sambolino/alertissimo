@@ -1,0 +1,40 @@
+# alertissimo/core/brokers/registry/antares.yaml
+broker: antares
+  api: antares-client
+  type: python
+  url: https://github.com/astronomy-commons/antares-client
+  description: >
+    Interface to the ANTARES client library. Offers Pythonic access to search, streaming, and 
+    object information from the ANTARES alert database and Kafka streams.
+
+  methods:
+    get_conesearch:
+      capability: conesearch
+      endpoint: antares_client.search.cone_search
+      arguments:
+        center: required  # astropy.coordiantes.SkyCoord
+        radius: required  # astropy.coordiantes.Angle
+
+    get_object_by_id:
+      capability: object_query
+      endpoint: antares_client.search.get_by_id
+      arguments:
+        locus_id: required
+
+    get_object_by_ztf_id:
+      capability: object_query
+      endpoint: antares_client.search.get_by_ztf_object_id
+      arguments:
+        ztf_object_id: required
+
+    search_elasticsearch:
+      capability: elastic_search
+      endpoint: antares_client.search.search
+      arguments:
+        query: required  # EleasticSearch dict
+
+    streaming_client:
+      capability: kafka_stream
+      endpoint: antares_client.StreamingClient
+      arguments: {}  # uses configuration during instantiation
+

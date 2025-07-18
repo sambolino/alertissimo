@@ -1,0 +1,103 @@
+# alertissimo/core/brokers/registry/alerce.yaml
+broker: alerce
+  api: alerce-rest
+  type: rest
+  url: https://api.alerce.online/ztf/v1
+  auth:
+    type: none
+  description: >
+    Interface to the ALeRCE REST API, providing access to ZTF lightcurves, features, 
+    classifications, and object metadata. Enables querying objects, conesearch, and 
+    classifier details.
+
+  methods:
+    get_object:
+      capability: object_query
+      endpoint: /objects/{objectId}
+      method: GET
+      arguments:
+        objectId: required
+        X-Fields: optional
+
+    get_lightcurve:
+      capability: lightcurve
+      endpoint: /objects/{objectId}/lightcurve
+      method: GET
+      arguments:
+        objectId: required
+
+    get_lightcurve_detections:
+      capability: lightcurve_detections
+      endpoint: /objects/{objectId}/lightcurve/detections
+      method: GET
+      arguments:
+        objectId: required
+
+    get_lightcurve_non_detections:
+      capability: lightcurve_non_detections
+      endpoint: /objects/{objectId}/lightcurve/non_detections
+      method: GET
+      arguments:
+        objectId: required
+
+    get_features:
+      capability: features
+      endpoint: /objects/{objectId}/features
+      method: GET
+      arguments:
+        objectId: required
+        fid: optional
+        version: optional
+        X-Fields: optional
+
+    get_feature_name:
+      capability: feature_by_name
+      endpoint: /objects/{objectId}/featuresi/{name}
+      method: GET
+      arguments:
+        objectId: required
+        name: required
+        fid: optional
+        version: optional
+        X-Fields: optional
+
+    get_classifiers:
+      capability: classifiers
+      endpoint: /classifiers/
+      method: GET
+      arguments:
+        X-Fields: optional
+
+    get_classifier_classes:
+      capability: classifier_classes
+      endpoint: /classifiers/{classifier_name}/{classifier_version}/classes
+      method: GET
+      arguments:
+        classifier_name: required
+        classifier_version: required
+        X-Fields: optional
+
+    get_objects:
+      capability: multi_object_query
+      endpoint: /objects
+      method: GET
+      arguments:
+        oid: optional
+        classifier: optional
+        classifier_version: optional
+        class: optional
+        ranking: optional
+        ndet: optional
+        probability: optional
+        firstmjd: optional
+        lastmjd: optional
+        ra: optional
+        dec: optional
+        radius: optional
+        page: optional
+        page_size: optional
+        count: optional
+        order_by: optional
+        order_mode: optional
+        X-Fields: optional
+
