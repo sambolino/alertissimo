@@ -1,64 +1,150 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Union
-from typing import Literal
+from enum import Enum
+from typing import List, Optional, Union, Literal
+from pydantic import BaseModel, Field, model_validator
 
+
+# ---- Capability Definitions ----
+
+class Capability(str, Enum):
+    conesearch = "conesearch"
+    query_object = "query_object"
+    lightcurve = "lightcurve"
+    crossmatch = "crossmatch"
+    cutout = "cutout"
+    classify = "classify"
+    sql_query = "sql_query"
+    query_objects = "query_objects"
+    kafka_stream = "kafka_stream"
+
+
+# ---- Capability Requirement Logic ----
+
+class CapabilityRequirement(BaseModel):
+    capability: Optional[Capability] = None
+    any_of: Optional[List[Capability]] = None
+    all_of: Optional[List[Capability]] = None
+    
+    @model_validator(mode="after")
+    def validate_structure(self) -> "CapabilityRequirement":
+        count = sum(
+            1 for v in [self.capability, self.any_of, self.all_of] if v
+        )
+        if count != 1:
+            raise ValueError(
+                "Exactly one of 'capability', 'any_of' or 'all_of' must be specified."
+            )
+        return self
+
+    def matches(self, available_caps: List[str]) -> bool:
+        caps = set(available_caps)
+        if self.capability:
+            return self.capability in caps
+        if self.any_of:
+            return any(cap in caps for cap in self.any_of)
+        if self.all_of:
+            return all(cap in caps for cap in self.all_of)
+        return False
+
+
+# ---- Core Schemas ----
 
 class Source(BaseModel):
-    broker: str                         # e.g. "alerce", "fink"
-    stream: Optional[str] = None        # e.g. "ztf", "alerts"
-    config: Optional[dict] = {}         # Additional broker-specific config
+    broker: str
+    stream: Optional[str] = None
+    config: Optional[dict] = Field(default_factory=dict)
 
 
 class FilterCondition(BaseModel):
-    attribute: str                      # e.g. "rmag", "ztf.score"
-    op: str                             # e.g. "<", "==", "in"
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(any_of=[
+            Capability.query_objects,
+            Capability.sql_query,
+            Capability.conesearch
+        ]),
+        description="Requires any kind of parametrized search"
+    )
+    attribute: str
+    op: str
     value: Union[str, float, int]
-    source: Optional[Source] = None     # Optional broker context
+    source: Optional[Source] = None
 
 
 class Classifier(BaseModel):
-    method: str                         # e.g. "xgb", "parsnip", "custom"
-    model: str                          # Path or model name
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.classify),
+        description="Requires classification capability"
+    )
+    method: str
+    model: str
     source: Optional[Source] = None
 
 
 class ScoringRule(BaseModel):
-    name: str                           # e.g. "priority"
-    formula: str                        # Custom formula using pipeline variables
+    name: str
+    formula: str
 
 
 class ActStep(BaseModel):
-    export: Optional[str] = None        # e.g. "csv", "yaml", "lasair"
-    path: Optional[str] = None          # Local path or remote endpoint
-    notify: Optional[str] = None        # e.g. "slack", "email"
-    source: Optional[Source] = None     # Optional for broker-linked actions
+    required: Optional[CapabilityRequirement] = None
+    export: Optional[str] = None
+    path: Optional[str] = None
+    notify: Optional[str] = None
+    source: Optional[Source] = None
 
 
 class EnrichmentStep(BaseModel):
-    type: str                           # e.g. "historical_lc", "crossmatch"
-    source: Source                      # Broker providing enrichment
-    params: Optional[dict] = {}         # e.g. {"radius": 5, "bands": ["g", "r"]}
+    type: str
+    source: Source
+    params: Optional[dict] = Field(default_factory=dict)
+    required: CapabilityRequirement
+
 
 class LightcurveStep(EnrichmentStep):
     type: Literal["historical_lightcurve"]
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.lightcurve)
+    )
+
 
 class CrossmatchStep(EnrichmentStep):
     type: Literal["crossmatch"]
-    catalogs: Optional[List[str]] = []  # list of crossmatch catalogs to look for 
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.crossmatch)
+    )
+    catalogs: Optional[List[str]] = Field(default_factory=list)
 
-class ConfirmationRule(BaseModel):
-    object_id: str                      # Alert or target object ID
-    required_agreement: int = 2         # Minimum brokers that must agree
-    sources: List[Source]               # Brokers to query for confirmation
+
+class CutoutStep(EnrichmentStep):
+    type: Literal["cutout"]
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.cutout)
+    )
+
+class KafkaStep(EnrichmentStep):
+    type: Literal["realtime_monitoring"]
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.kafka_stream)
+    )
+
+class FindObject(BaseModel):
+    required: CapabilityRequirement = Field(
+        default=CapabilityRequirement(capability=Capability.query_object),
+        description="Requires object query capability"
+    )
+    object_id: str
+    sources: List[Source]
+
+class ConfirmationRule(FindObject):
+    required_agreement: int = 2
 
 
 class WorkflowIR(BaseModel):
     name: str
-    schedule: Optional[str] = None      # For cron/timed executions
+    schedule: Optional[str] = None
     confirm: Optional[ConfirmationRule] = None
-    filter: Optional[List[FilterCondition]] = []
-    enrich: Optional[List[EnrichmentStep]] = []
-    classify: Optional[List[Classifier]] = []
-    score: Optional[List[ScoringRule]] = []
-    act: Optional[List[ActStep]] = []
-
+    findobject: Optional[FindObject] = None
+    filter: Optional[List[FilterCondition]] = Field(default_factory=list)
+    enrich: Optional[List[EnrichmentStep]] = Field(default_factory=list)
+    classify: Optional[List[Classifier]] = Field(default_factory=list)
+    score: Optional[List[ScoringRule]] = Field(default_factory=list)
+    act: Optional[List[ActStep]] = Field(default_factory=list)
