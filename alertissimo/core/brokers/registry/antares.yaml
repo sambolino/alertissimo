@@ -12,8 +12,9 @@ broker: antares
       capability: conesearch
       endpoint: antares_client.search.cone_search
       arguments:
-        center: required  # astropy.coordiantes.SkyCoord
-        radius: required  # astropy.coordiantes.Angle
+        ra: required  # convert to astropy
+        dec: required   
+        radius: required
 
     get_object_by_id:
       capability: object_query
@@ -28,10 +29,10 @@ broker: antares
         ztf_object_id: required
 
     search_elasticsearch:
-      capability: elastic_search
+      capability: sql_query
       endpoint: antares_client.search.search
       arguments:
-        query: required  # EleasticSearch dict
+        query: required  # convert to EleasticSearch dict
 
     streaming_client:
       capability: kafka_stream

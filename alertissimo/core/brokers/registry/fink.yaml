@@ -27,7 +27,7 @@ broker: fink
         output-format: optional
 
     get_object:
-      capability: object_query
+      capability: object_query, objects_query
       endpoint: /objects
       method: GET
       arguments:
@@ -39,7 +39,7 @@ broker: fink
         output-format: optional
 
     get_cutouts:
-      capability: cutout_query
+      capability: cutout
       endpoint: /cutouts
       method: GET
       arguments:

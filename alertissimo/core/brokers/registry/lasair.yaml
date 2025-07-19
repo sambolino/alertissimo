@@ -42,6 +42,14 @@ broker: lasair
         lasair_added: optional
         format: optional
 
+    get_lightcurves:
+      capability: lightcurve
+      endpoint: /lightcurves/
+      method: GET
+      arguments:
+        objectId: required
+        format: optional
+
     get_sherlock_object:
       capability: crossmatch, classify 
       endpoint: /sherlock/object/
@@ -52,7 +60,7 @@ broker: lasair
         format: optional
 
     get_sherlock_position:
-      capability: conesearch_crossmatch, conesearch_classify
+      capability: crossmatch, classify
       endpoint: /sherlock/position
       method: GET
       arguments:

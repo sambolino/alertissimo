@@ -78,7 +78,7 @@ broker: alerce
         X-Fields: optional
 
     get_objects:
-      capability: multi_object_query
+      capability: objects_query
       endpoint: /objects
       method: GET
       arguments:
