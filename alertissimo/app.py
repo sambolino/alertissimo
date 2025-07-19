@@ -17,7 +17,8 @@ if st.button("Run Pipeline"):
 
     st.subheader("Confirmed Objects")
     for broker, snapshot in results.object_snapshots.items():
-        st.json({broker: str(snapshot)[:200] + "..."})  # Preview stringified
+        #st.json({broker: str(snapshot)[:200] + "..."})  # Preview stringified
+        st.json({broker: str(snapshot)})  # Preview stringified
 
     st.subheader("Light Curves")
     for broker, lc in results.lightcurves.items():
