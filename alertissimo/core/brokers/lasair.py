@@ -1,8 +1,7 @@
 # alertissimo/core/brokers/lasair.py
 from .base import Broker
 from alertissimo.config import LASAIR_TOKEN
-from typing import Optional
-from typing import List, Union
+from typing import Optional, List, Iterator, Any, Union
 
 class LasairBroker(Broker):
     def __init__(self):
@@ -19,6 +18,48 @@ class LasairBroker(Broker):
     
     def is_available(self) -> bool:
         return bool(self.token)
+
+    def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
+        return self.cone_search(ra, dec, radius, **kwargs)
+
+    def object_query(self, object_id: str, **kwargs) -> Any:
+        return self.get_object(object_id, **kwargs)
+
+    def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+        if object_ids is None:
+            raise ValueError("Lasair multi object query requires object_ids not be None.")
+        objects = []
+        for oid in object_ids:
+            objects.append(self.get_object(oid, **kwargs))
+        return objects
+
+    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+        # TODO break query into pieces
+        # return run_query
+        raise NotImplementedError
+
+    def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
+        # TODO have it for up to ten object ids
+        return self.get_sherlock_object(object_id)
+
+    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+        # TODO
+        raise NotImplementedError
+
+    def lightcurve(self, object_id: str, **kwargs) -> Any:
+        return self.get_lightcurves(object_id, **kwargs)
+
+    def classifications(self, object_id: str, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def view_url(self, object_id: str) -> str:
+        # TODO
+        raise NotImplementedError
 
     def cone_search(
         self,
@@ -107,8 +148,28 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="object/", params=params, include_token=True)
 
-    def get_crossmatch(self, object_id: str, data: Optional):
-        return self.get_sherlock_object(object_id)
+    def get_lightcurves(
+        self,
+        objectId: Union[str, List[str]],
+        format: str = "json"
+    ):
+        """
+        Retrieve machine-readable data for a specific object.
+
+        Parameters:
+        - objectId (str): Target object identifier
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Object lightcurve points. 
+        magpsf represents difference mag, use this code to convert to apparent mag
+        https://lasair.readthedocs.io/en/develop/core_functions/lasair/static/mag.py
+        """
+        params = {
+            "objectId": objectId,
+            "format": format
+        }
+        return self.request(endpoint="lightcurves/", params=params, include_token=True)
 
     def get_sherlock_object(
         self,

@@ -1,6 +1,6 @@
 # alertissimo/core/brokers/fink.py
 from .base import Broker
-from typing import Union, List
+from typing import Union, List, Optional, Iterator, Any
 
 class FinkBroker(Broker):
     def __init__(self):
@@ -9,13 +9,51 @@ class FinkBroker(Broker):
             base_url="https://api.fink-portal.org/api/v1"
         )
 
+# cutouts,latests,anomaly,stats,classes etc 
+
+
     def is_available(self) -> bool:
         # Fink REST api is publicly available without credentials
         return True
 
+    def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
+        return self.get_conesearch(ra, dec, radius, **kwargs)
+
+    def object_query(self, object_id: str, **kwargs) -> Any:
+        return self.get_object(object_id, **kwargs)
+
+    def objects_query(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
+        return self.get_object(object_id=object_ids, **kwargs)
+
+    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+        raise NotImplementedError
+
+    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+        raise NotImplementedError
+
+    def lightcurve(self, object_id: str, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def classifications(self, object_id: str, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def view_url(self, object_id: str) -> str:
+        # TODO
+        raise NotImplementedError
+
     def get_object(
         self,
-        object_id: str,
+        object_id: Union[str, List[str]],
         withupperlim: bool = False,
         withcutouts: bool = False,
         cutout_kind: str = None,

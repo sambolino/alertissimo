@@ -1,6 +1,6 @@
 # alertissimo/core/brokers/alerce.py
 from .base import Broker
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Iterator, Any
 
 class ALeRCEBroker(Broker):
     def __init__(self):
@@ -12,6 +12,42 @@ class ALeRCEBroker(Broker):
     def is_available(self) -> bool:
         # alerce REST api is publicly available without credentials
         return True 
+
+    def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
+        return self.get_objects(ra=ra, dec=dec, radius=radius, **kwargs)
+
+    def object_query(self, object_id: str, **kwargs) -> Any:
+        return self.get_object(object_id)
+
+    def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+        return self.get_objects(object_ids, **kwargs)
+
+    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+        # maybe break it into pieces and run via get_objects
+        raise NotImplementedError
+
+    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+        raise NotImplementedError
+
+    def lightcurve(self, object_id: str, **kwargs) -> Any:
+        # TODO add args for detections and nondetections
+        return self.get_lightcurve(object_id, *kwargs)
+
+    def classifications(self, object_id: str, **kwargs) -> Any:
+        # TODO via get_objects
+        raise NotImplementedError
+
+    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
+        # TODO via get_objects?
+        raise NotImplementedError
+
+    def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
+        # TODO via get_objects?
+        raise NotImplementedError
+
+    def view_url(self, object_id: str) -> str:
+        # TODO 
+        raise NotImplementedError
 
     def get_object(self, object_id: str, x_fields: str = None):
         
@@ -77,7 +113,7 @@ class ALeRCEBroker(Broker):
             headers["X-Fields"] = x_fields
 
         return self.request(
-            endpoint=f"objects/{object_id}/featuresi/{name}",
+            endpoint=f"objects/{object_id}/features/{name}",
             params = params,
             headers = headers
         )
