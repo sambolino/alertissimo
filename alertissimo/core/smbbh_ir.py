@@ -6,6 +6,7 @@ from alertissimo.core.schema import (
     EnrichmentStep,
     LightcurveStep,
     CrossmatchStep,
+    KafkaStep,
     Classifier,
     ScoringRule,
     ActStep,
@@ -48,7 +49,7 @@ smbbh_ir = WorkflowIR(
             source=Source(broker="antares"),
             #params={"catalog": "eROSITA"}
         ),
-        EnrichmentStep(
+        KafkaStep(
             type="realtime_monitoring",
             source=Source(broker="lasair"),
             params={"kafka": True}

@@ -32,7 +32,7 @@ def run_ir(ir: WorkflowIR) -> IRResult:
         for src in ir.confirm.sources:
             broker = get_broker(src.broker)
             name = broker.name.lower()
-            data = broker.get_object_data(oid)
+            data = broker.object_query(oid)
             if data:
                 agreement += 1
                 broker_object_snapshots[name] = data
@@ -53,7 +53,7 @@ def run_ir(ir: WorkflowIR) -> IRResult:
 
         elif isinstance(enrich_step, CrossmatchStep):
             object_data = broker_object_snapshots.get(name)
-            data = broker.get_crossmatch(oid, object_data)
+            data = broker.crossmatch(oid)
             crossmatch_results[name] = data
             logger.info(f"Retrieved crossmatch from {name}: {bool(data)}")
 

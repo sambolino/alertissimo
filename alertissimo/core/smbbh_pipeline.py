@@ -45,7 +45,7 @@ def run_pipeline(ir: WorkflowIR):
                 logger.warning(f"Unsupported broker '{src.broker}' in confirmation sources.")
                 continue
 
-            data = broker.get_object_data(oid)
+            data = broker.object_query(oid)
             if data:
                 agreement += 1
                 logger.info(f"Confirmed by {broker_name.capitalize()}.")
@@ -64,7 +64,7 @@ def run_pipeline(ir: WorkflowIR):
         logger.info("Retrieved ZTF light curve from ALeRCE.")
 
     # 3. Lasair retrieves multiwavelength & historical context (stub for now)
-    lasair_data = BROKERS["lasair"].get_object_data(oid)
+    lasair_data = BROKERS["lasair"].object_query(oid)
     if lasair_data:
         logger.info("Stub: Lasair multiwavelength crossmatch complete.")
 
