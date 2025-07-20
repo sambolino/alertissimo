@@ -6,7 +6,8 @@ confluent-kafka==1.7.0
 #  --global-option=build_ext \
 #  --global-option="--include-dirs=/usr/include" \
 #  --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
-antares-client==1.8.0
+#antares-client==1.8.0
+antares-client
 lark==1.2.2
 marshmallow==3.21.1
 marshmallow-jsonapi==0.24.0
