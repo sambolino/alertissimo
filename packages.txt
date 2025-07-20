@@ -1,1 +1,3 @@
 librdkafka-dev
+libssl-dev
+cmake

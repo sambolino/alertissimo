@@ -1,3 +1,4 @@
 [environment]
 C_INCLUDE_PATH = "/usr/include"
 LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu"
+OPENSSL_ROOT_DIR = "/usr"

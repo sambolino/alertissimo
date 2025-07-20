@@ -1,3 +1,6 @@
+--only-binary :all:
+--no-binary cmake
+
 confluent-kafka \
   --global-option=build_ext \
   --global-option="--include-dirs=/usr/include" \
@@ -15,3 +18,4 @@ matplotlib==3.10.3
 pandas==2.3.1
 altair==5.5.0
 astropy==7.1.0
+cmake==3.28.3
