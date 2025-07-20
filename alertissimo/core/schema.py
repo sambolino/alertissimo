@@ -93,21 +93,22 @@ class ActStep(BaseModel):
 
 
 class EnrichmentStep(BaseModel):
-    type: str
+    #type: str
     source: Source
     params: Optional[dict] = Field(default_factory=dict)
-    required: CapabilityRequirement
+    #required: CapabilityRequirement | None = None
 
 
 class LightcurveStep(EnrichmentStep):
-    type: Literal["historical_lightcurve"]
+    #type: Literal["lightcurve"] #here we can control later detections, nondetections etc
+    # commented out because it would require explicitly stating lightcurve type=lightcurve in dsl
     required: CapabilityRequirement = Field(
         default=CapabilityRequirement(capability=Capability.lightcurve)
     )
 
 
 class CrossmatchStep(EnrichmentStep):
-    type: Literal["crossmatch"]
+    #type: Literal["crossmatch"]
     required: CapabilityRequirement = Field(
         default=CapabilityRequirement(capability=Capability.crossmatch)
     )
@@ -115,7 +116,7 @@ class CrossmatchStep(EnrichmentStep):
 
 
 class CutoutStep(EnrichmentStep):
-    type: Literal["cutout"]
+    #type: Literal["cutout"]
     required: CapabilityRequirement = Field(
         default=CapabilityRequirement(capability=Capability.cutout)
     )
