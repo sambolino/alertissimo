@@ -36,7 +36,8 @@ def run_ir(ir: WorkflowIR) -> IRResult:
     score_results = {}
     act_results = {}
 
-    oid = ir.confirm.object_id if ir.confirm else None
+    oid = ir.confirm.object_id if ir.confirm else ir.findobject.object_id if ir.findobject else None
+    
 
     # === 1. Confirm alert ===
     if ir.confirm:
