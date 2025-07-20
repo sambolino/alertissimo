@@ -7,13 +7,13 @@ from pydantic import BaseModel, Field, model_validator
 
 class Capability(str, Enum):
     conesearch = "conesearch"
-    query_object = "query_object"
+    object_query = "object_query"
     lightcurve = "lightcurve"
     crossmatch = "crossmatch"
     cutout = "cutout"
     classify = "classify"
     sql_query = "sql_query"
-    query_objects = "query_objects"
+    objects_query = "objects_query"
     kafka_stream = "kafka_stream"
 
 
@@ -57,7 +57,7 @@ class Source(BaseModel):
 class FilterCondition(BaseModel):
     required: CapabilityRequirement = Field(
         default=CapabilityRequirement(any_of=[
-            Capability.query_objects,
+            Capability.objects_query,
             Capability.sql_query,
             Capability.conesearch
         ]),
@@ -128,7 +128,7 @@ class KafkaStep(EnrichmentStep):
 
 class FindObject(BaseModel):
     required: CapabilityRequirement = Field(
-        default=CapabilityRequirement(capability=Capability.query_object),
+        default=CapabilityRequirement(capability=Capability.object_query),
         description="Requires object query capability"
     )
     object_id: str
