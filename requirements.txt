@@ -1,12 +1,12 @@
-#--only-binary :all:
+--only-binary :all:
 #--no-binary cmake
 #--no-binary confluent-kafka
 #--no-binary antares-client
 #confluent-kafka==1.7.0
-confluent-kafka \
+confluent-kafka #\
 #  --global-option=build_ext \
-  --global-option="--include-dirs=/usr/include" \
-  --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
+#  --global-option="--include-dirs=/usr/include" \
+#  --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
 antares-client==1.8.0
 lark==1.2.2
 marshmallow==3.21.1
