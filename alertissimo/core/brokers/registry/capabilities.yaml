@@ -1,0 +1,45 @@
+antares:
+  capabilities:
+    - conesearch
+    - object_query
+    - sql_query
+    - kafka_stream
+
+alerce:
+  capabilities:
+    - object_query
+    - objects_query
+    - lightcurve
+ #   - lightcurve_detections
+ #   - lightcurve_non_detections
+ #   - features
+ #   - feature_by_name
+ #   - classifiers
+ #   - classifier_classes
+
+lasair:
+  capabilities:
+    - conesearch
+    - sql_query
+    - object_query
+    - lightcurve
+    - crossmatch
+    - classify
+    - kafka_stream
+
+fink:
+  capabilities:
+    - conesearch
+    - object_query
+    - objects_query
+    - cutout
+#    - latest_alerts
+#    - classification_metadata
+#    - solar_system_query
+#    - solar_system_candidates
+#    - name_resolver
+#    - satellite_debris
+#    - skymap_query
+#    - broker_statistics
+#    - anomaly_query
+#    - solar_system_metadata
