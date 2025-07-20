@@ -3,11 +3,12 @@
 #--no-binary confluent-kafka
 #--no-binary antares-client
 #confluent-kafka==1.7.0
-confluent-kafka #\
+#confluent-kafka #\
 #  --global-option=build_ext \
 #  --global-option="--include-dirs=/usr/include" \
 #  --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
-confluent-kafka==1.7.0 ; python_version < "3.12" \
+#confluent-kafka==1.7.0 ; python_version < "3.12" \
+confluent-kafka \
   --config-settings="--global-option=build_ext" \
   --config-settings="--global-option=--include-dirs=/usr/include" \
   --config-settings="--global-option=--library-dirs=/usr/lib/x86_64-linux-gnu"
