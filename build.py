@@ -1,5 +1,5 @@
 # Custom build script to handle confluent-kafka
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.install import install
 import subprocess
 
@@ -19,6 +19,7 @@ class CustomInstall(install):
 setup(
     name="alertissimo",
     version="0.1.0",
+    packages=find_packages(include=['alertissimo', 'alertissimo.*']),
     cmdclass={"install": CustomInstall},
     install_requires=[
         "antares-client==1.8.0",
@@ -36,4 +37,9 @@ setup(
         "astropy==7.1.0",
         "cmake==3.28.3"
     ],
+    entry_points={
+        'console_scripts': [
+            'alertissimo = alertissimo.app_dsl:main',
+        ],
+    },
 )
