@@ -2,7 +2,7 @@
 --no-binary cmake
 confluent-kafka==1.7.0
 #confluent-kafka \
-#  --global-option=build_ext \
+  --global-option=build_ext \
   --global-option="--include-dirs=/usr/include" \
   --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
 antares-client==1.8.0
