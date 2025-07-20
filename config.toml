@@ -1,8 +1,9 @@
-[install]
-timeout = 1800  # 30-minute timeout
-[server]
-maxUploadSize = 500  # Increase if needed
 [environment]
 C_INCLUDE_PATH = "/usr/include"
 LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu"
 OPENSSL_ROOT_DIR = "/usr"
+CFLAGS = "-I/usr/include"
+LDFLAGS = "-L/usr/lib/x86_64-linux-gnu"
+
+[install]
+timeout = 1800  # 30 minutes timeout
