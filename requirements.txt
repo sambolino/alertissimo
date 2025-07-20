@@ -7,6 +7,10 @@ confluent-kafka #\
 #  --global-option=build_ext \
 #  --global-option="--include-dirs=/usr/include" \
 #  --global-option="--library-dirs=/usr/lib/x86_64-linux-gnu"
+confluent-kafka==1.7.0 ; python_version < "3.12" \
+  --config-settings="--global-option=build_ext" \
+  --config-settings="--global-option=--include-dirs=/usr/include" \
+  --config-settings="--global-option=--library-dirs=/usr/lib/x86_64-linux-gnu"
 antares-client==1.8.0
 lark==1.2.2
 marshmallow==3.21.1
@@ -16,7 +20,7 @@ pydantic_core==2.33.2
 python-dotenv==1.1.1
 rich==14.0.0
 streamlit==1.47.0
-#matplotlib==3.10.3
+matplotlib==3.10.3
 pandas==2.3.1
 altair==5.5.0
 astropy==7.1.0
