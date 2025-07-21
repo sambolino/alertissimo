@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ValidationError, TypeAdapter
 import shlex
 from alertissimo.core.schema import (
@@ -32,7 +32,18 @@ DSL_MAPPING = {
     "monitor": KafkaStep,
 }
 
-BROKER_FIELDS = {"source", "sources"}  # any fields expecting Source(s)
+# Define field aliases for more flexible DSL
+FIELD_ALIASES = {
+    "source": "sources",
+    "src": "sources",
+    "broker": "sources",
+    "brokers": "sources",
+    "origin": "sources",
+    # Add other aliases as needed
+}
+
+# Fields that expect Source(s)
+BROKER_FIELDS = {"sources"}
 
 class DSLParseError(Exception):
     pass
@@ -55,6 +66,9 @@ def parse_dsl_line(line: str) -> BaseModel:
             raise DSLParseError(f"Malformed argument: {part}")
 
         key, value = part.split('=', 1)
+        
+        # Normalize field names using aliases
+        normalized_key = FIELD_ALIASES.get(key, key)
 
         # Handle lists that are split across tokens
         if value.startswith('[') and not value.endswith(']'):
@@ -70,23 +84,24 @@ def parse_dsl_line(line: str) -> BaseModel:
         if value.startswith('[') and value.endswith(']'):
             items = [v.strip() for v in value[1:-1].split(',') if v.strip()]
 
-            if key in BROKER_FIELDS:
+            if normalized_key in BROKER_FIELDS:
                 # Handle 'all' in lists
                 if 'all' in items:
                     # Replace 'all' with all broker names
                     items = ALL_BROKERS
-                args[key] = [Source(broker=item) for item in items]
+                args[normalized_key] = [Source(broker=item) for item in items]
             else:
-                args[key] = items
+                args[normalized_key] = items
         else:
-            if key in BROKER_FIELDS:
+            if normalized_key in BROKER_FIELDS:
                 # Handle 'all' for single source
                 if value.lower() == 'all':
-                    args[key] = [Source(broker=broker) for broker in ALL_BROKERS]
+                    args[normalized_key] = [Source(broker=broker) for broker in ALL_BROKERS]
                 else:
-                    args[key] = Source(broker=value)
+                    # For broker fields, convert to list for consistency
+                    args[normalized_key] = [Source(broker=value)]
             else:
-                args[key] = value.strip('"')
+                args[normalized_key] = value.strip('"')
         i += 1
 
     try:
@@ -104,40 +119,35 @@ def parse_dsl_script(script: str) -> List[BaseModel]:
         steps.append(step)
     return steps
 
-# Validation Layer: checks capability requirements against YAML broker registry
-
-def validate_capabilities(step: BaseModel, broker_registry: Dict[str, List[CapabilityRequirement]]) -> List[str]:
+# Validation Layer: checks capability requirements against broker registry
+def validate_capabilities(step: BaseModel) -> List[str]:
     errors = []
     required: CapabilityRequirement | None = getattr(step, "required", None)
-    source = getattr(step, "source", None) or getattr(step, "sources", None)
+    sources = getattr(step, "sources", None)
 
     if not required:
         return errors
 
-    sources = source if isinstance(source, list) else [source]
+    if not sources:
+        errors.append("Missing sources definition.")
+        return errors
 
-    # Determine which brokers to validate against
-    if sources and sources[0] and getattr(sources[0], 'broker', None) == 'all':
-        brokers_to_check = ALL_BROKERS
-    else:
-        brokers_to_check = [src.broker for src in sources if src]
+    # Flatten all sources into a list
+    sources_list = sources if isinstance(sources, list) else [sources]
 
-
-    for broker_name in brokers_to_check:
-        if not broker_name:
-            errors.append("Missing source definition.")
+    for src in sources_list:
+        if not src:
+            errors.append("Invalid source definition.")
             continue
-        
-        broker_caps = broker_registry.get(broker_name)
+
+        broker_name = src.broker
+        broker_caps = BROKER_REGISTRY.get(broker_name)
         if not broker_caps:
             errors.append(f"Unknown broker: {broker_name}")
             continue
 
-        # Flatten all capabilities for that broker
-        all_caps = [cap for cap in broker_caps]
-
-        # Convert them to strings to compare with CapabilityRequirement.matches
-        cap_names = [cap.value if isinstance(cap, Capability) else cap for cap in all_caps]
+        # Get capability names for this broker
+        cap_names = [cap.value for cap in broker_caps]
 
         if not required.matches(cap_names):
             errors.append(f"{broker_name} lacks required capability: {required}")
