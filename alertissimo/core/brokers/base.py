@@ -56,6 +56,19 @@ class Broker(ABC):
             logger.warning(f"{self.name} ping failed: {e}")
             return False
 
+#    @abstractmethod
+    def normalize_object(self, raw_obj: dict, **kwargs) -> dict:
+        """
+        Returns a standardized object dict:
+        {
+            "object_id": str,
+            "summary": dict[str, Any],
+            "lightcurve": Optional[dict or list],
+            "cutouts": Optional[dict or list],
+            ...
+        }
+        """
+
     @abstractmethod
     def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
         """Search for objects within a sky region."""

@@ -10,6 +10,90 @@ class FinkBroker(Broker):
         )
 
 # cutouts,latests,anomaly,stats,classes etc 
+    def normalize_object(
+        self,
+        raw_data: list,  # Changed from dict to list
+        include_summary: bool = False,
+        include_lightcurve: bool = False,
+        include_cutouts: bool = False,
+        include_raw: bool = False,
+    ) -> dict:
+        if not raw_data:
+            return {}
+        
+        result = {}
+        # Get object_id from first observation
+        #object_id = raw_data[0].get("i:objectId")
+        #result = {"object_id": object_id}
+
+        # Lightcurve - extract from all observations
+        if include_lightcurve:
+            lightcurve = []
+            for obs in raw_data:
+                point = {
+                    "jd": obs.get("i:jd"),
+                    "mag": obs.get("i:magpsf"),
+                    "sigmag": obs.get("i:sigmapsf"),
+                    "fid": obs.get("i:fid"),
+                    "ra": obs.get("i:ra"),
+                    "dec": obs.get("i:dec"),
+                    "candid": obs.get("i:candid"),
+                    "isdiffpos": obs.get("i:isdiffpos"),
+                    "magdiff": obs.get("i:magdiff"),
+                    "diffmaglim": obs.get("i:diffmaglim"),
+                }
+                lightcurve.append(point)
+            
+            # Sort by Julian Date
+            lightcurve.sort(key=lambda x: x["jd"] if x["jd"] else 0)
+            result["lightcurve"] = lightcurve
+
+        # Cutouts - from most recent observation
+        if include_cutouts:
+            latest_obs = max(raw_data, key=lambda x: x.get("i:jd", 0))
+            cutouts = {}
+            for kind in ["Science", "Template", "Difference"]:
+                cutout_key = f"i:cutout{kind}"
+                if cutout_key in latest_obs:
+                    cutouts[kind.lower()] = latest_obs[cutout_key]
+            result["cutouts"] = cutouts
+
+        # Summary - aggregate information
+        if include_summary:
+            # Get coordinates from latest observation
+            latest_obs = max(raw_data, key=lambda x: x.get("i:jd", 0))
+            
+            # Get unique filters
+            filters = list(set(obs.get("i:fid") for obs in raw_data if obs.get("i:fid")))
+            
+            # Get classification info (from derived fields)
+            classification_info = raw_data[0]  # Usually consistent across observations
+            
+            summary = {
+                "ra": latest_obs.get("i:ra"),
+                "dec": latest_obs.get("i:dec"),
+                "n_points": len(raw_data),
+                "filters": filters,
+                "classification": classification_info.get("v:classification"),
+                "constellation": classification_info.get("v:constellation"),
+                "cdsxmatch": classification_info.get("d:cdsxmatch"),
+                "tns_classification": classification_info.get("d:tns"),
+                "anomaly_score": classification_info.get("d:anomaly_score"),
+                "snn_sn_vs_all": classification_info.get("d:snn_sn_vs_all"),
+                "snn_snia_vs_nonia": classification_info.get("d:snn_snia_vs_nonia"),
+                "first_detection": min(obs.get("i:jd", float('inf')) for obs in raw_data),
+                "last_detection": max(obs.get("i:jd", 0) for obs in raw_data),
+                "time_span_days": classification_info.get("v:lapse"),
+                "rate": classification_info.get("v:rate"),
+                "sigma_rate": classification_info.get("v:sigma(rate)"),
+            }
+            result["summary"] = summary
+
+        # Raw data
+        if include_raw:
+            result["raw"] = raw_data
+
+        return result
 
 
     def is_available(self) -> bool:
@@ -20,7 +104,8 @@ class FinkBroker(Broker):
         return self.get_conesearch(ra, dec, radius, **kwargs)
 
     def object_query(self, object_id: str, **kwargs) -> Any:
-        return self.get_object(object_id, **kwargs)
+        raw_data = self.get_object(object_id, **kwargs)
+        return self.normalize_object(raw_data, include_summary=True)
 
     def objects_query(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
         return self.get_object(object_id=object_ids, **kwargs)
