@@ -1,8 +1,6 @@
 from typing import Any, Dict, List
 from pydantic import BaseModel, ValidationError, TypeAdapter
 import shlex
-import yaml
-from pathlib import Path
 from alertissimo.core.schema import (
     Capability,
     CapabilityRequirement,
@@ -18,6 +16,7 @@ from alertissimo.core.schema import (
     KafkaStep,
     Source
 )
+from alertissimo.core.brokers.registry.load import BROKER_REGISTRY, ALL_BROKERS
 
 # DSL Verb Mapping
 DSL_MAPPING = {
@@ -70,16 +69,24 @@ def parse_dsl_line(line: str) -> BaseModel:
 
         if value.startswith('[') and value.endswith(']'):
             items = [v.strip() for v in value[1:-1].split(',') if v.strip()]
+
             if key in BROKER_FIELDS:
+                # Handle 'all' in lists
+                if 'all' in items:
+                    # Replace 'all' with all broker names
+                    items = ALL_BROKERS
                 args[key] = [Source(broker=item) for item in items]
             else:
                 args[key] = items
         else:
             if key in BROKER_FIELDS:
-                args[key] = Source(broker=value)
+                # Handle 'all' for single source
+                if value.lower() == 'all':
+                    args[key] = [Source(broker=broker) for broker in ALL_BROKERS]
+                else:
+                    args[key] = Source(broker=value)
             else:
                 args[key] = value.strip('"')
-
         i += 1
 
     try:
@@ -98,76 +105,7 @@ def parse_dsl_script(script: str) -> List[BaseModel]:
     return steps
 
 # Validation Layer: checks capability requirements against YAML broker registry
-"""
-def load_broker_registry_from_yaml() -> Dict[str, CapabilityRequirement]:
-    registry_path = Path(__file__).parent.parent / "core" / "brokers" / "registry" / "capabilities.yaml"
-    with open(registry_path, "r") as f:
-        raw_data = yaml.safe_load(f)
-        adapter = TypeAdapter(Dict[str, CapabilityRequirement])
-        return adapter.validate_python(raw_data)
-"""
 
-def load_broker_registry_from_yaml() -> Dict[str, List[Capability]]:
-    registry_path = Path(__file__).parent.parent / "core" / "brokers" / "registry" / "capabilities.yaml"
-    with open(registry_path, "r") as f:
-        raw_data = yaml.safe_load(f)
-        adapter = TypeAdapter(Dict[str, List[Capability]])
-        return adapter.validate_python({
-            broker: caps["capabilities"]
-            for broker, caps in raw_data.items()
-        })
-"""
-#def validate_capabilities(step: BaseModel, broker_registry: Dict[str, Dict[str, Any]]) -> List[str]:
-def validate_capabilities(step: BaseModel, broker_registry: Dict[str, List[Capability]]) -> List[str]:
-    errors = []
-    required = getattr(step, "required", None)
-    source = getattr(step, "source", None) or getattr(step, "sources", None)
-
-    if not required:
-        return errors
-
-    capability_sets = required.capability_sets
-    sources = source if isinstance(source, list) else [source]
-
-    for src in sources:
-        if not src:
-            errors.append("Missing source definition.")
-            continue
-        broker_caps = broker_registry.get(src.broker)
-        if not broker_caps:
-            errors.append(f"Unknown broker: {src.broker}")
-            continue
-        cap_list = broker_caps.capabilities
-        if not any(set(req_set).issubset(cap_list) for req_set in capability_sets):
-            errors.append(f"{src.broker} lacks required capabilities: {capability_sets}")
-
-    return errors
-def validate_capabilities(step: BaseModel, broker_registry: Dict[str, List[Capability]]) -> List[str]:
-    errors = []
-    required = getattr(step, "required", None)
-    source = getattr(step, "source", None) or getattr(step, "sources", None)
-    
-    if not required:
-        return errors
-    
-    capability_sets = required.capability_sets
-    sources = source if isinstance(source, list) else [source]
-    
-    for src in sources:
-        if not src:
-            errors.append("Missing source definition.")
-            continue
-
-        cap_list = broker_registry.get(src.broker)
-        if not cap_list:
-            errors.append(f"Unknown broker: {src.broker}")
-            continue
-
-        if not any(set(req_set).issubset(cap_list) for req_set in capability_sets):
-            errors.append(f"{src.broker} lacks required capabilities: {capability_sets}")
-
-    return errors
-"""
 def validate_capabilities(step: BaseModel, broker_registry: Dict[str, List[CapabilityRequirement]]) -> List[str]:
     errors = []
     required: CapabilityRequirement | None = getattr(step, "required", None)
@@ -178,12 +116,18 @@ def validate_capabilities(step: BaseModel, broker_registry: Dict[str, List[Capab
 
     sources = source if isinstance(source, list) else [source]
 
-    for src in sources:
-        if not src:
+    # Determine which brokers to validate against
+    if sources and sources[0] and getattr(sources[0], 'broker', None) == 'all':
+        brokers_to_check = ALL_BROKERS
+    else:
+        brokers_to_check = [src.broker for src in sources if src]
+
+
+    for broker_name in brokers_to_check:
+        if not broker_name:
             errors.append("Missing source definition.")
             continue
-
-        broker_name = src.broker
+        
         broker_caps = broker_registry.get(broker_name)
         if not broker_caps:
             errors.append(f"Unknown broker: {broker_name}")
