@@ -9,7 +9,21 @@ class FinkBroker(Broker):
             base_url="https://api.fink-portal.org/api/v1"
         )
 
-# cutouts,latests,anomaly,stats,classes etc 
+    @staticmethod
+    def _fink_key(key: str) -> str:
+
+        # we add fink_ prefix to value-added attributes
+        # Fink Prefix meaning (i:, d:, ...)
+        # i: original data from ZTF (schema)
+        # d: added values from Fink Science modules (schema)
+        # v: added values from Fink generated at the query runtime (schema)
+        # b: cutout data (schema)
+
+        if key.startswith(("v:", "d:")):
+            return f"fink_{key[2:]}"
+        else: 
+            return key[2:]
+
     def normalize_object(
         self,
         raw_data: list,  # Changed from dict to list
@@ -69,23 +83,25 @@ class FinkBroker(Broker):
             # Get classification info (from derived fields)
             classification_info = raw_data[0]  # Usually consistent across observations
             
+            ### think of something smarter here, this is halfway to hardcoding
+
             summary = {
-                "ra": latest_obs.get("i:ra"),
-                "dec": latest_obs.get("i:dec"),
+                self._fink_key("i:ra"): latest_obs.get("i:ra"),
+                self._fink_key("i:dec"): latest_obs.get("i:dec"),
                 "n_points": len(raw_data),
                 "filters": filters,
-                "classification": classification_info.get("v:classification"),
-                "constellation": classification_info.get("v:constellation"),
-                "cdsxmatch": classification_info.get("d:cdsxmatch"),
-                "tns_classification": classification_info.get("d:tns"),
-                "anomaly_score": classification_info.get("d:anomaly_score"),
-                "snn_sn_vs_all": classification_info.get("d:snn_sn_vs_all"),
-                "snn_snia_vs_nonia": classification_info.get("d:snn_snia_vs_nonia"),
+                self._fink_key("v:classification"): classification_info.get("v:classification"),
+                self._fink_key("v:constellation"): classification_info.get("v:constellation"),
+                self._fink_key("d:cdsxmatch"): classification_info.get("d:cdsxmatch"),
+                self._fink_key("d:tns_classification"): classification_info.get("d:tns"),
+                self._fink_key("d:anomaly_score"): classification_info.get("d:anomaly_score"),
+                self._fink_key("d:snn_sn_vs_all"): classification_info.get("d:snn_sn_vs_all"),
+                self._fink_key("d:snn_snia_vs_nonia"): classification_info.get("d:snn_snia_vs_nonia"),
                 "first_detection": min(obs.get("i:jd", float('inf')) for obs in raw_data),
                 "last_detection": max(obs.get("i:jd", 0) for obs in raw_data),
-                "time_span_days": classification_info.get("v:lapse"),
-                "rate": classification_info.get("v:rate"),
-                "sigma_rate": classification_info.get("v:sigma(rate)"),
+                self._fink_key("v:time_span_days"): classification_info.get("v:lapse"),
+                self._fink_key("v:rate"): classification_info.get("v:rate"),
+                self._fink_key("v:sigma_rate"): classification_info.get("v:sigma(rate)"),
             }
             result["summary"] = summary
 
@@ -94,7 +110,6 @@ class FinkBroker(Broker):
             result["raw"] = raw_data
 
         return result
-
 
     def is_available(self) -> bool:
         # Fink REST api is publicly available without credentials

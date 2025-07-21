@@ -11,6 +11,69 @@ class LasairBroker(Broker):
             token=LASAIR_TOKEN
         )
 
+    def normalize_object(
+            self, 
+            raw_data: dict,
+            include_summary: bool = False,
+            include_lightcurve: bool = False,
+            include_forced:bool = False,
+            include_raw:bool = False,
+    ) -> dict:
+        if not raw_data:
+            return {}
+        #object_id = data.get("objectId")
+
+        # Regular photometry: "candidates"
+        result = {}
+
+        if include_summary:
+            result["summary"] = raw_data.get("candidates")[0]
+
+        if include_lightcurve:
+            regular = []
+            for c in data.get("candidates", []):
+                if "candid" in c:
+                    regular.append({
+                        "candid": c.get("candid"),
+                        "jd": c.get("jd"),
+                        "fid": c.get("fid"),
+                        "ra": c.get("ra"),
+                        "dec": c.get("dec"),
+                        "mag": c.get("magpsf"),
+                        "magerr": c.get("sigmapsf"),
+                        "magzpsci": c.get("magzpsci"),
+                        "isdiffpos": c.get("isdiffpos"),
+                        "drb": c.get("drb"),
+                        "extra": {
+                            "magnr": c.get("magnr"),
+                            "sigmagnr": c.get("sigmagnr"),
+                            "nid": c.get("nid"),
+                            "ssdistnr": c.get("ssdistnr"),
+                            "ssnamenr": c.get("ssnamenr"),
+                        }
+                    })
+            result["lightcurve"] = regular
+
+        # Forced photometry: "forcedphot"
+
+        if include_forced:
+            forced = []
+            for f in data.get("forcedphot", []):
+                flux = f.get("forcediffimflux")
+            fluxerr = f.get("forcediffimfluxunc")
+            if flux is not None:
+                forced.append({
+                    "jd": f.get("jd"),
+                    "fid": f.get("fid"),
+                    "ra": f.get("ranr"),
+                    "dec": f.get("decnr"),
+                    "flux": flux,
+                    "fluxerr": fluxerr,
+                    "magzpsci": f.get("magzpsci"),
+                })
+            result["forced"] = forced
+
+        return result
 
     def is_kafka_monitored(self, object_id: str) -> bool:
         # In real setup, we'd listen for updates here
@@ -23,7 +86,8 @@ class LasairBroker(Broker):
         return self.cone_search(ra, dec, radius, **kwargs)
 
     def object_query(self, object_id: str, **kwargs) -> Any:
-        return self.get_object(object_id, **kwargs)
+        raw_data = self.get_object(object_id, **kwargs)
+        return self.normalize_object(raw_data, include_summary = True) 
 
     def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
         if object_ids is None:

@@ -9,6 +9,27 @@ class ALeRCEBroker(Broker):
             base_url="https://api.alerce.online/ztf/v1"
         )
 
+    def normalize_object(
+        self,
+        raw_data: list,  
+        include_summary: bool = False,
+        include_raw: bool = False,
+    ) -> dict:
+        if not raw_data:
+            return {}
+        
+        result = {}
+
+        # Summary - aggregate information
+        if include_summary:
+            result["summary"] = raw_data
+
+        # Raw data
+        if include_raw:
+            result["raw"] = raw_data
+
+        return result
+
     def is_available(self) -> bool:
         # alerce REST api is publicly available without credentials
         return True 
@@ -17,7 +38,8 @@ class ALeRCEBroker(Broker):
         return self.get_objects(ra=ra, dec=dec, radius=radius, **kwargs)
 
     def object_query(self, object_id: str, **kwargs) -> Any:
-        return self.get_object(object_id)
+        raw_data = self.get_object(object_id)
+        return self.normalize_object(raw_data, include_summary=True)
 
     def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
         return self.get_objects(object_ids, **kwargs)
