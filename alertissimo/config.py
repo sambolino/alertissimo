@@ -7,7 +7,7 @@ load_dotenv()
 
 # Access tokens and credentials
 LASAIR_TOKEN = st.secrets["LASAIR_TOKEN"]
-FINK_USER = st.secrets("FINK_USER")
-FINK_PASS = st.secrets("FINK_PASS")
+FINK_USERNAME = st.secrets("FINK_USERNAME")
+FINK_GROUP_ID = st.secrets("FINK_GROUP_ID")
 
 DEFAULT_TIMEOUT = 30  # seconds
