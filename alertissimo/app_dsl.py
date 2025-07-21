@@ -3,9 +3,51 @@ from dotenv import load_dotenv
 from alertissimo.core.orchestrator import run_ir
 from alertissimo.plot.lightcurve_altair import plot_lightcurve
 from alertissimo.core.schema import WorkflowIR
-from alertissimo.dsl.dsl_parser_validator import parse_dsl_script, validate_capabilities, DSLParseError, load_broker_registry_from_yaml
+from alertissimo.dsl.dsl_parser_validator import parse_dsl_script, validate_capabilities, DSLParseError
+from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
+import pandas as pd
+from typing import Any
 
-load_dotenv()
+def display_broker_object(obj: Any, broker_name: str):
+    st.subheader(f"{broker_name.upper()} Object")
+
+    if isinstance(obj, list):
+        if not obj:
+            st.info("No objects returned.")
+            return
+        for i, entry in enumerate(obj):
+            with st.expander(f"Result {i + 1}", expanded=i == 0):
+                display_broker_object(entry, broker_name)
+        return
+
+    if not isinstance(obj, dict):
+        st.warning("Unsupported object type")
+        st.json(obj)
+        return
+
+    # Optional highlights
+    with st.container():
+        object_id = obj.get("objectId") or obj.get("i:objectId")
+        if object_id:
+            st.markdown(f"🔭 **Object ID**: `{object_id}`")
+
+        ra, dec = obj.get("i:ra"), obj.get("i:dec")
+        if ra and dec:
+            st.markdown(f"📍 **RA / Dec**: `{ra}`, `{dec}`")
+
+        if "firstmjd" in obj and "lastmjd" in obj:
+            st.markdown(f"🕒 **First / Last MJD**: `{obj['firstmjd']}` → `{obj['lastmjd']}`")
+
+    # Flat summary
+    flat = {k: v for k, v in obj.items() if isinstance(v, (str, int, float, bool, type(None)))}
+    if flat:
+        st.markdown("### Summary")
+        st.dataframe(pd.DataFrame(flat.items(), columns=["Key", "Value"]), use_container_width=True)
+
+    # Full nested view
+    st.markdown("### Full Object (Nested)")
+    st.json(obj, expanded=False)
+
 
 st.title("Alertissimo Visualizer (DSL Demo)")
 st.markdown("Paste DSL script, validate it, and run as an orchestrated IR.")
@@ -23,8 +65,7 @@ if st.button("🔍 Validate and Run"):
         #broker_yaml_dir = Path("alertissimo/core/brokers/registry")
         #broker_names = [p.stem for p in broker_yaml_dir.glob("*.yaml")]
 
-        broker_registry = load_broker_registry_from_yaml()
-        #broker_registry = load_broker_registry(["fink", "alerce", "lasair", "antares"])
+        broker_registry = BROKER_REGISTRY
         
         all_errors = []
         for step in steps:
@@ -61,6 +102,7 @@ if st.button("🔍 Validate and Run"):
 
             st.subheader("Object dictionaries")
             for broker, snapshot in results.find_results.items():
+                display_broker_object(snapshot, broker)
                 st.json({broker: str(snapshot)})
 
             st.subheader("Light Curves")
@@ -85,4 +127,3 @@ if st.button("🔍 Validate and Run"):
         st.error(f"DSL Parse Error: {e}")
     except Exception as e:
         st.exception(e)
-
