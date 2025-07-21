@@ -6,7 +6,23 @@ from alertissimo.core.schema import WorkflowIR
 from alertissimo.dsl.dsl_parser_validator import parse_dsl_script, validate_capabilities, DSLParseError
 from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
 import pandas as pd
-from typing import Any
+from typing import Any, Dict
+
+def find_summary(obj: Any) -> Dict[str, Any]:
+    """Recursively search for the 'summary' dictionary in nested structures"""
+    if isinstance(obj, dict):
+        if 'summary' in obj:
+            return obj['summary']
+        for value in obj.values():
+            result = find_summary(value)
+            if result is not None:
+                return result
+    elif isinstance(obj, list):
+        for item in obj:
+            result = find_summary(item)
+            if result is not None:
+                return result
+    return None
 
 def display_broker_object(obj: Any, broker_name: str):
     st.subheader(f"{broker_name.upper()} Object")
@@ -38,11 +54,26 @@ def display_broker_object(obj: Any, broker_name: str):
         if "firstmjd" in obj and "lastmjd" in obj:
             st.markdown(f"🕒 **First / Last MJD**: `{obj['firstmjd']}` → `{obj['lastmjd']}`")
 
-    # Flat summary
-    flat = {k: v for k, v in obj.items() if isinstance(v, (str, int, float, bool, type(None)))}
-    if flat:
-        st.markdown("### Summary")
-        st.dataframe(pd.DataFrame(flat.items(), columns=["Key", "Value"]), use_container_width=True)
+    """Display the summary dictionary in a DataFrame if found"""
+    summary = find_summary(obj)
+
+    if summary is None:
+        st.warning("No 'summary' section found in the data")
+        return
+
+    # Flatten the summary dictionary to simple types
+    flat = {k: v for k, v in summary.items()
+            if isinstance(v, (str, int, float, bool, type(None)))}
+
+    if not flat:
+        st.warning("Summary found but contains no displayable data")
+        return
+
+    st.markdown("### Summary")
+    st.dataframe(
+        pd.DataFrame(flat.items(), columns=["Key", "Value"]),
+        use_container_width=True
+    )
 
     # Full nested view
     st.markdown("### Full Object (Nested)")
