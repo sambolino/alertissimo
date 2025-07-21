@@ -16,6 +16,28 @@ class AntaresBroker(Broker):
     def __init__(self):
         super().__init__(name="ANTARES", base_url="https://antares.noirlab.edu")
 
+    def normalize_object(
+        self,
+        raw_data: list,
+        include_summary: bool = False,
+        include_raw: bool = False,
+    ) -> dict:
+        if not raw_data:
+            return {}
+
+        result = {}
+
+        # Summary - aggregate information
+        if include_summary:
+            result["summary"] = raw_data
+
+        # Raw data
+        if include_raw:
+            result["raw"] = raw_data
+
+        return result
+
+
     def is_available(self) -> bool:
         return HAS_ANTARES
 
@@ -25,7 +47,8 @@ class AntaresBroker(Broker):
         return antares_client.search.cone_search(center=skycoord, radius=angle)
 
     def object_query(self, object_id: str, **kwargs) -> Any:
-        return antares_client.search.get_by_ztf_object_id(object_id)
+        raw_data = antares_client.search.get_by_ztf_object_id(object_id).properties
+        return self.normalize_object(raw_data, include_summary = True)
 
     def objects_query(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
         objects = []

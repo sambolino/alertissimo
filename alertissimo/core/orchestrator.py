@@ -63,7 +63,7 @@ def run_ir(ir: WorkflowIR) -> IRResult:
             name = broker.name.lower()
 
             # Prepare query arguments, excluding 'sources'
-            query_args = ir.findobject.dict(exclude={"sources", "required"})
+            query_args = ir.findobject.dict(exclude={"sources", "source", "required"})
 
             object_id = query_args.pop("object_id", None)
             if not object_id:
@@ -94,26 +94,27 @@ def run_ir(ir: WorkflowIR) -> IRResult:
 
     # === 5. Enrich ===
     for enrich_step in ir.enrich or []:
-        broker = get_broker(enrich_step.source.broker)
-        name = broker.name.lower()
+        for source in enrich_step.sources:
+            broker = get_broker(source.broker)
+            name = broker.name.lower()
 
-        if isinstance(enrich_step, LightcurveStep):
-            data = broker.get_lightcurve(oid)
-            lightcurves[name] = data
-            logger.info(f"Retrieved lightcurve from {name}: {bool(data)}")
+            if isinstance(enrich_step, LightcurveStep):
+                data = broker.lightcurve(oid)
+                lightcurves[name] = data
+                logger.info(f"Retrieved lightcurve from {name}: {bool(data)}")
 
-        elif isinstance(enrich_step, CrossmatchStep):
-            data = broker.crossmatch(oid)
-            crossmatch_results[name] = data
-            logger.info(f"Retrieved crossmatch from {name}: {bool(data)}")
+            elif isinstance(enrich_step, CrossmatchStep):
+                data = broker.crossmatch(oid)
+                crossmatch_results[name] = data
+                logger.info(f"Retrieved crossmatch from {name}: {bool(data)}")
 
-        elif enrich_step.type == "realtime_monitoring":
-            if hasattr(broker, "is_kafka_monitored"):
-                result = broker.is_kafka_monitored(oid)
-                kafka_results[name] = result
-                logger.info(f"{name} Kafka monitoring result: {result}")
-            else:
-                logger.warning(f"{name} does not support Kafka monitoring.")
+            elif enrich_step.type == "realtime_monitoring":
+                if hasattr(broker, "is_kafka_monitored"):
+                    result = broker.is_kafka_monitored(oid)
+                    kafka_results[name] = result
+                    logger.info(f"{name} Kafka monitoring result: {result}")
+                else:
+                    logger.warning(f"{name} does not support Kafka monitoring.")
 
     # === 6. Scoring ===
     for rule in ir.score or []:

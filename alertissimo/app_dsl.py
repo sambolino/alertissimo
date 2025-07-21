@@ -4,7 +4,7 @@ from alertissimo.core.orchestrator import run_ir
 from alertissimo.plot.lightcurve_altair import plot_lightcurve
 from alertissimo.core.schema import WorkflowIR
 from alertissimo.dsl.dsl_parser_validator import parse_dsl_script, validate_capabilities, DSLParseError
-from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
+#from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
 import pandas as pd
 from typing import Any, Dict
 
@@ -96,11 +96,11 @@ if st.button("🔍 Validate and Run"):
         #broker_yaml_dir = Path("alertissimo/core/brokers/registry")
         #broker_names = [p.stem for p in broker_yaml_dir.glob("*.yaml")]
 
-        broker_registry = BROKER_REGISTRY
+        #broker_registry = BROKER_REGISTRY
         
         all_errors = []
         for step in steps:
-            step_errors = validate_capabilities(step, broker_registry)
+            step_errors = validate_capabilities(step)
             if step_errors:
                 all_errors.extend(step_errors)
 

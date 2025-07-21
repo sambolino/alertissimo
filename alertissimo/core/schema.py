@@ -94,7 +94,7 @@ class ActStep(BaseModel):
 
 class EnrichmentStep(BaseModel):
     #type: str
-    source: Source
+    sources: List[Source]
     params: Optional[dict] = Field(default_factory=dict)
     #required: CapabilityRequirement | None = None
 
