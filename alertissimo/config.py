@@ -6,7 +6,8 @@ import os
 load_dotenv()
 
 # Access tokens and credentials
-LASAIR_TOKEN = st.secrets["LASAIR_TOKEN"]
+LASAIR_ZTF_TOKEN = st.secrets["LASAIR_ZTF_TOKEN"]
+LASAIR_LSST_TOKEN = st.secrets["LASAIR_LSST_TOKEN"]
 FINK_USERNAME = st.secrets["FINK_USERNAME"]
 FINK_GROUP_ID = st.secrets["FINK_GROUP_ID"]
 

@@ -1,6 +1,6 @@
 # alertissimo/core/brokers/lasair.py
 from .base import Broker
-from alertissimo.config import LASAIR_TOKEN
+from alertissimo.config import LASAIR_ZTF_TOKEN
 from typing import Optional, List, Iterator, Any, Union
 
 class LasairBroker(Broker):
@@ -8,7 +8,7 @@ class LasairBroker(Broker):
         super().__init__(
             name="Lasair",
             base_url="https://lasair-ztf.lsst.ac.uk/api",
-            token=LASAIR_TOKEN
+            token=LASAIR_ZTF_TOKEN
         )
 
     def normalize_object(
