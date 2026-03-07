@@ -111,6 +111,8 @@ if st.button("🔍 Validate and Run"):
         else:
             st.success("✅ Capability validation passed")
 
+            st.subheader("Parsed DSL Steps")
+
             # Wrap in WorkflowIR
             ir = WorkflowIR(
                 name="From DSL",
