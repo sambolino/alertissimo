@@ -1,6 +1,6 @@
 start: script
 
-script: statement*
+script: (statement NEWLINE*)+
 
 statement: simple_command NEWLINE*
 
