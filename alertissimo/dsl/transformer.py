@@ -1,4 +1,8 @@
+# alertissimo/dsl/transformer.py
 from lark import Transformer
+from typing import List
+from difflib import get_close_matches
+
 from alertissimo.core.schema import (
     FindObject,
     Classifier,
@@ -9,12 +13,11 @@ from alertissimo.core.schema import (
     ConfirmationRule,
     ScoringRule,
     ActStep,
-    Source
+    Source,
 )
-
 from alertissimo.core.brokers.registry.load import ALL_BROKERS
 
-
+# Map DSL verbs to Pydantic models
 DSL_MAPPING = {
     "find": FindObject,
     "classify": Classifier,
@@ -27,23 +30,47 @@ DSL_MAPPING = {
     "act": ActStep,
 }
 
+# Field aliases for user-friendly DSL
 FIELD_ALIASES = {
     "source": "sources",
     "src": "sources",
     "broker": "sources",
+    "brokers": "sources",
 }
+
+class DSLParseError(Exception):
+    """Exception raised for DSL parsing errors with line numbers and suggestions"""
+    def __init__(self, message: str, line: int = None, token: str = None, candidates: List[str] = None):
+        self.message = message
+        self.line = line
+        self.token = token
+        self.candidates = candidates or []
+        super().__init__(self.__str__())
+
+    def __str__(self):
+        msg = self.message
+        if self.line:
+            msg = f"Line {self.line}: {msg}"
+        if self.token and self.candidates:
+            suggestion = get_close_matches(self.token, self.candidates, n=1)
+            if suggestion:
+                msg += f"\nDid you mean '{suggestion[0]}'?"
+        return msg
 
 
 class DSLTransformer(Transformer):
+    """Transforms Lark parse Tree into a flat list of Pydantic models"""
+
+    # -----------------------------
+    # Primitive conversions
+    # -----------------------------
 
     def STRING(self, s):
         return s[1:-1]
 
     def NUMBER(self, n):
         n = str(n)
-        if "." in n:
-            return float(n)
-        return int(n)
+        return float(n) if "." in n else int(n)
 
     def true(self, _):
         return True
@@ -54,8 +81,45 @@ class DSLTransformer(Transformer):
     def IDENTIFIER(self, v):
         return str(v)
 
+    def KEY(self, k):
+        return str(k)
+
+    def VERB(self, v):
+        return str(v)
+
     def list(self, items):
         return list(items)
+
+    # -----------------------------
+    # Utility: recursive flatten
+    # -----------------------------
+
+    def _flatten(self, items):
+        """
+        Rekurzivno flattenovanje koje radi sa svim nivoima ugnježdenja.
+        Ovo je ključna funkcija koja rešava tvoj problem.
+        """
+        flat = []
+        for x in items:
+            if isinstance(x, (list, tuple)):
+                flat.extend(self._flatten(x))
+            elif x is not None:  # Ignoriši None vrednosti
+                flat.append(x)
+        return flat
+
+    '''
+    def _flatten(self, items):
+        flat = []
+        for x in items:
+            if isinstance(x, list):
+                flat.extend(self._flatten(x))
+            else:
+                flat.append(x)
+        return flat
+    '''
+    # -----------------------------
+    # Parameters
+    # -----------------------------
 
     def parameter(self, items):
         key = str(items[0])
@@ -65,39 +129,21 @@ class DSLTransformer(Transformer):
 
         if key == "sources":
 
-            # value is list
             if isinstance(value, list):
-
                 if "all" in value:
-                    return (key, [Source(broker=b) for b in ALL_BROKERS])
+                    return key, [Source(broker=b) for b in ALL_BROKERS]
+                return key, [Source(broker=v) for v in value]
 
-                return (key, [Source(broker=v) for v in value])
-
-            # value is single
             if value == "all":
-                return (key, [Source(broker=b) for b in ALL_BROKERS])
+                return key, [Source(broker=b) for b in ALL_BROKERS]
 
-            return (key, [Source(broker=value)])
+            return key, [Source(broker=value)]
 
-        return (key, value)
+        return key, value
 
-    def start(self, items):
-        return items
-
-    def script(self, items):
-        flat = []
-        for item in items:
-            if isinstance(item, list):
-                flat.extend(item)
-            else:
-                flat.append(item)
-        return flat
-
-    def statement(self, items):
-        item = items[0]
-        if isinstance(item, list):
-            return item[0]
-        return item
+    # -----------------------------
+    # Commands
+    # -----------------------------
 
     def simple_command(self, items):
 
@@ -107,12 +153,46 @@ class DSLTransformer(Transformer):
         model_cls = DSL_MAPPING.get(verb)
 
         if not model_cls:
-            raise ValueError(f"Unknown DSL verb: {verb}")
+            raise DSLParseError(
+                f"Unknown DSL verb: {verb}",
+                token=verb,
+                candidates=list(DSL_MAPPING.keys())
+            )
 
-        return model_cls(**params)
+        try:
+            return model_cls(**params)
+        except Exception as e:
+            raise DSLParseError(f"Failed to create model for '{verb}': {e}")
 
-    def VERB(self, v):
-        return str(v)
+    # -----------------------------
+    # Grammar structure
+    # -----------------------------
 
-    def KEY(self, k):
-        return str(k)
+    def statement(self, items):
+        return self._flatten(items)
+
+    def script(self, items):
+        return self._flatten(items)
+
+    def start(self, items):
+        return self._flatten(items)
+    
+    '''
+    #keep this for debugging if needed
+    #transfermer takes one line at a time, thats why we later get list of lists
+    #that should be fine and final flattening should be done in parse_dsl_script
+    
+    def start(self, items):
+        print(f"🔥 start ulaz: {len(items)} items")
+        for i, item in enumerate(items):
+            print(f"  [{i}] {type(item).__name__}")
+            if isinstance(item, list):
+                print(f"    list dužina: {len(item)}")
+
+        result = self._flatten(items)
+        print(f"✅ start izlaz: {len(result)} items")
+        for i, item in enumerate(result):
+            print(f"  [{i}] {type(item).__name__}")
+
+        return result
+    '''
