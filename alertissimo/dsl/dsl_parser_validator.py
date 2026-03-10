@@ -1,78 +1,114 @@
 # alertissimo/dsl/dsl_parser_validator.py
+
+from lark import Lark, UnexpectedInput
+from pathlib import Path
 from typing import List
-from pydantic import BaseModel
-from .parser import parse
-from .transformer import DSLTransformer, DSLParseError
+
+from alertissimo.core.schema import ExecutableModel, IRResult, ExecutionContext
 from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
-from lark import UnexpectedInput
+from alertissimo.dsl.transformer import DSLTransformer
+from alertissimo.dsl.definitions import DSLParseError, get_all_verbs
+
+# Load grammar
+GRAMMAR_PATH = Path(__file__).parent / "grammar.lark"
+with open(GRAMMAR_PATH) as f:
+    GRAMMAR = f.read()
+
+# Create parser with transformer
+_transformer = DSLTransformer()
+_parser = Lark(GRAMMAR, parser='lalr', transformer=_transformer)
 
 
-def parse_dsl_script(script: str) -> List[BaseModel]:
+def parse_dsl_script(script: str) -> List[ExecutableModel]:
     """
-    Parse a DSL script into a flat list of Pydantic step models.
-    Raises DSLParseError with line numbers and suggestions.
+    Parse DSL script into a flat list of step models.
+    
+    Args:
+        script: DSL script string
+        
+    Returns:
+        List of ExecutableModel instances
+        
+    Raises:
+        DSLParseError: On parsing errors with line numbers and suggestions
     """
-    steps: List[BaseModel] = []
-    transformer = DSLTransformer()
-
+    if not script or not script.strip():
+        return []
+    
+    steps = []
+    
     for i, line in enumerate(script.strip().splitlines(), start=1):
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line.startswith('#'):
             continue
+        
         try:
-            tree = parse(line)
-            result = transformer.transform(tree)
-            steps.append(result)
-
-            # Flatten list-of-lists from the transformer
+            result = _parser.parse(line)
+            
+            # Flatten if needed (parser returns list for multi-step lines)
             if isinstance(result, list):
                 steps.extend(result)
-            else:
+            elif result is not None:
                 steps.append(result)
-
+                
         except UnexpectedInput as e:
-            # Lark parse error
+            # Lark syntax error
             raise DSLParseError(
-                message=f"Syntax error at column {e.column}",
+                message=f"Syntax error: {e}",
                 line=i,
                 token=line.split()[0] if line.split() else None,
-                candidates=list(transformer.DSL_MAPPING.keys())
+                candidates=get_all_verbs()
             )
         except DSLParseError as e:
-            # Already a DSLTransformer error, add line number
-            raise DSLParseError(message=str(e), line=i)
+            # Already formatted error, just add line number
+            e.line = i
+            raise e
         except Exception as e:
-            # Generic error
-            raise DSLParseError(f"Line {i}: {e}")
-
+            # Unexpected error
+            raise DSLParseError(
+                message=f"Unexpected error: {e}",
+                line=i
+            )
+    
     return steps
 
 
-def validate_capabilities(step: BaseModel) -> List[str]:
+def validate_capabilities(step: ExecutableModel) -> List[str]:
     """
-    Check that the given DSL step has all required capabilities in the broker registry.
+    Validate that all sources in a step support the required capability.
+    
+    Args:
+        step: Step model to validate
+        
+    Returns:
+        List of validation error messages (empty if valid)
     """
-    errors: List[str] = []
-
-    required = getattr(step, "required", None)
-    sources = getattr(step, "sources", None)
-
+    errors = []
+    
+    # Get required capability from step (if it has one)
+    required = getattr(step, 'required_capability', None)
     if not required:
         return errors
-
+    
+    # Get sources
+    sources = getattr(step, 'sources', [])
     if not sources:
-        errors.append("Missing sources definition.")
         return errors
-
-    for src in sources:
-        broker_name = src.broker
-        broker_caps = BROKER_REGISTRY.get(broker_name)
+    
+    for source in sources:
+        broker_name = source.broker
+        broker_caps = BROKER_REGISTRY.get(broker_name, [])
+        
         if not broker_caps:
             errors.append(f"Unknown broker: {broker_name}")
             continue
-
+        
+        # Check if capability exists in broker's capabilities
         cap_names = [cap.value for cap in broker_caps]
-        if not required.matches(cap_names):
-            errors.append(f"{broker_name} lacks required capability: {required}")
-
+        if required not in cap_names:
+            errors.append(
+                f"{broker_name} does not support '{required}'. "
+                f"Supports: {', '.join(cap_names)}"
+            )
+    
     return errors

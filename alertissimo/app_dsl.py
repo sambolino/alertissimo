@@ -4,7 +4,6 @@ from alertissimo.core.orchestrator import run_ir
 from alertissimo.plot.lightcurve_altair import plot_lightcurve
 from alertissimo.core.schema import WorkflowIR
 from alertissimo.dsl.dsl_parser_validator import parse_dsl_script, validate_capabilities, DSLParseError
-#from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
 import pandas as pd
 from typing import Any, Dict
 
@@ -89,15 +88,23 @@ if st.button("🔍 Validate and Run"):
     try:
         st.info("Parsing DSL script...")
         steps = parse_dsl_script(dsl_input)
+
+        # debug of steps
+        #st.write("=== DEBUG ===")
+        #st.write(f"steps type: {type(steps)}")
+        #st.write(f"steps length: {len(steps)}")
+        #for i, step in enumerate(steps):
+        #    st.write(f"steps[{i}] type: {type(step)}")
+        #    if isinstance(step, list):
+        #        st.write(f"  → list with {len(step)} items")
+        #        for j, sub in enumerate(step):
+        #            st.write(f"    steps[{i}][{j}] type: {type(sub)}")
+        
+
         st.success("✅ DSL parsed successfully")
 
         st.info("Validating broker capabilities...")
 
-        #broker_yaml_dir = Path("alertissimo/core/brokers/registry")
-        #broker_names = [p.stem for p in broker_yaml_dir.glob("*.yaml")]
-
-        #broker_registry = BROKER_REGISTRY
-        
         all_errors = []
         for step in steps:
             step_errors = validate_capabilities(step)
@@ -115,14 +122,8 @@ if st.button("🔍 Validate and Run"):
 
             # Wrap in WorkflowIR
             ir = WorkflowIR(
-                name="From DSL",
-                filter=[s for s in steps if s.__class__.__name__ == "FilterCondition"],
-                classify=[s for s in steps if s.__class__.__name__ == "Classifier"],
-                enrich=[s for s in steps if "Step" in s.__class__.__name__],
-                act=[s for s in steps if s.__class__.__name__ == "ActStep"],
-                findobject=next((s for s in steps if s.__class__.__name__ == "FindObject"), None),
-                confirm=next((s for s in steps if s.__class__.__name__ == "ConfirmationRule"), None),
-                score=[s for s in steps if s.__class__.__name__ == "ScoringRule"],
+                name="DSL Workflow",
+                steps=steps
             )
 
             st.info("Running orchestrator...")
