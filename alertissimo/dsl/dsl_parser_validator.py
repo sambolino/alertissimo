@@ -3,14 +3,35 @@
 from lark import Lark, UnexpectedInput
 from pathlib import Path
 from typing import List
+import logging
 
 from alertissimo.core.schema import ExecutableModel, IRResult, ExecutionContext
 from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
 from alertissimo.dsl.transformer import DSLTransformer
 from alertissimo.dsl.definitions import DSLParseError, get_all_verbs
+from alertissimo.dsl.grammar_tools import generate_grammar, validate_grammar
+
+logger = logging.getLogger(__name__)
+
+# Paths
+GRAMMAR_PATH = Path(__file__).parent / "grammar.lark"
+
+# Auto-generate grammar if in development
+def ensure_grammar():
+    """Generate grammar if missing or outdated"""
+    if not GRAMMAR_PATH.exists():
+        logger.info("Grammar file missing - generating...")
+        generate_grammar(str(GRAMMAR_PATH))
+    elif not validate_grammar(str(GRAMMAR_PATH)):
+        logger.warning("Grammar out of date - regenerating...")
+        generate_grammar(str(GRAMMAR_PATH))
+    else:
+        logger.debug("Grammar is up to date")
+
+# Generate on import
+ensure_grammar()
 
 # Load grammar
-GRAMMAR_PATH = Path(__file__).parent / "grammar.lark"
 with open(GRAMMAR_PATH) as f:
     GRAMMAR = f.read()
 
