@@ -10,39 +10,6 @@ from pydantic import BaseModel, Field, model_validator
 
 
 # ============================================================================
-# CAPABILITY DEFINITIONS (1:1 with YAML)
-# ============================================================================
-
-class Capability(str, Enum):
-    """Raw broker capabilities - exactly what's in YAML"""
-    # Search capabilities
-    CONESEARCH = "conesearch"
-    OBJECT_QUERY = "object_query"
-    OBJECTS_QUERY = "objects_query"
-    SQL_QUERY = "sql_query"
-    
-    # Enrichment capabilities
-    LIGHTCURVE = "lightcurve"
-    CROSSMATCH = "crossmatch"
-    CUTOUT = "cutout"
-    
-    # Analysis capabilities
-    CLASSIFY = "classify"
-    
-    # Streaming capabilities
-    KAFKA_STREAM = "kafka_stream"
-
-
-class CapabilityRequirement(BaseModel):
-    """Exactly one capability per concrete model"""
-    capability: Capability
-    
-    def matches(self, available_caps: List[str]) -> bool:
-        """Check if this specific capability is available"""
-        return self.capability.value in set(available_caps)
-
-
-# ============================================================================
 # IRResult and ExecutionContext
 # ============================================================================
 
@@ -116,6 +83,24 @@ class ExecutableModel(BaseModel, ABC):
         Models know exactly which parts of IRResult to update.
         """
         pass
+
+    @classmethod
+    def get_required_capability(cls) -> Optional[str]:
+        """
+        Derive required capability from class name.
+        Returns None if step doesn't require any capability.
+        """
+        class_name = cls.__name__
+
+        # Remove 'Step' suffix if present
+        if class_name.endswith('Step'):
+            base_name = class_name[:-4]
+        else:
+            base_name = class_name
+
+        # Convert CamelCase to lowercase
+        # e.g., "ConeSearch" → "conesearch"
+        return base_name.lower()
 
 # ============================================================================
 # SOURCE - Meaning source of data, as broker, stream etc
@@ -246,18 +231,18 @@ class ActStep(ExecutableModel, ABC):
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         pass
 
+    @classmethod
+    def get_required_capability(cls) -> Optional[str]:
+        """Actions don't require broker capabilities"""
+        return None
 
 # ============================================================================
 # CONCRETE FILTER IMPLEMENTATIONS
-# Each checks exactly ONE capability
 # ============================================================================
 
 class FindObjectStep(FilterStep):
     """Find single object by ID"""
     object_id: str
-    
-    # Each concrete model has exactly ONE capability requirement
-    capability: Capability = Capability.OBJECT_QUERY
     
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         for src in self.sources:
@@ -277,8 +262,6 @@ class FindObjectsStep(FilterStep):
     """Find multiple objects by criteria"""
     criteria: Dict[str, Any]  # e.g., {"mag_lt": 18, "ra": 123.4, "dec": -45.6}
     
-    capability: Capability = Capability.OBJECTS_QUERY
-    
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         for src in self.sources:
             broker = context.get_broker(src.broker)
@@ -295,8 +278,6 @@ class ConeSearchStep(FilterStep):
     dec: float
     radius: float
     mag_limit: Optional[float] = None
-    
-    capability: Capability = Capability.CONESEARCH
     
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         for src in self.sources:
@@ -315,8 +296,6 @@ class ConeSearchStep(FilterStep):
 class SqlQueryStep(FilterStep):
     """SQL-style query"""
     query: str
-    
-    capability: Capability = Capability.SQL_QUERY
     
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         for src in self.sources:
@@ -337,8 +316,6 @@ class LightcurveStep(EnrichStep):
     include_detections: bool = True
     include_non_detections: bool = False
     
-    capability: Capability = Capability.LIGHTCURVE
-    
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         oid = self.object_id or context.object_id
         if not oid:
@@ -358,8 +335,6 @@ class CrossmatchStep(EnrichStep):
     with_catalog: str = "gaia"
     radius: float = 1.5
     
-    capability: Capability = Capability.CROSSMATCH
-    
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         oid = self.object_id or context.object_id
         if not oid:
@@ -377,8 +352,6 @@ class CutoutStep(EnrichStep):
     """Get image cutout"""
     format: str = "png"
     size: Optional[int] = None  # size in pixels
-    
-    capability: Capability = Capability.CUTOUT
     
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         oid = self.object_id or context.object_id
@@ -402,8 +375,6 @@ class CutoutStep(EnrichStep):
 class ClassifyStep(AnalyzeStep):
     """Classify object"""
     method: Optional[str] = None
-    
-    capability: Capability = Capability.CLASSIFY
     
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         oid = self.object_id or context.object_id
@@ -433,8 +404,6 @@ class KafkaStep(MonitorStep):
     topic: Optional[str] = None
     filter: Optional[str] = None
     
-    capability: Capability = Capability.KAFKA_STREAM
-    
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         for src in self.sources:
             broker = context.get_broker(src.broker)
@@ -446,7 +415,6 @@ class KafkaStep(MonitorStep):
                 status = False
             
             result.kafka_results[name] = status
-
 
 
 # ============================================================================
@@ -667,9 +635,6 @@ class ConfirmationStep(ExecutableModel):
     sources: List[Source]
     required_agreement: int = 2
     
-    # This uses object_query capability
-    capability: Capability = Capability.OBJECT_QUERY
-
     def execute(self, context: ExecutionContext, result: IRResult) -> None:
         agreement = 0
 
@@ -687,6 +652,12 @@ class ConfirmationStep(ExecutableModel):
 
         if not context.object_id:
             context.object_id = self.object_id
+
+    # For special cases where class name doesn't match capability,
+    # we can add a property or class variable
+    @property
+    def required_capability(self) -> str:
+        return "findobject"  # Override because class name is "FindObjectStep"
 
 
 # ============================================================================

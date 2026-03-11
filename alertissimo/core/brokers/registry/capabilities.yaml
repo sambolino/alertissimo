@@ -1,14 +1,18 @@
 antares:
   capabilities:
+    - confirmation
     - conesearch
-    - object_query
-    - sql_query
-    - kafka_stream
+    - findobject
+#    - findobjects
+    - sqlquery
+    - kafka
+    - crossmatch
 
 alerce:
   capabilities:
-    - object_query
-    - objects_query
+    - confirmation
+    - findobject
+    - findoobjects
     - lightcurve
  #   - lightcurve_detections
  #   - lightcurve_non_detections
@@ -19,19 +23,22 @@ alerce:
 
 lasair:
   capabilities:
+    - confirmation
     - conesearch
-    - sql_query
-    - object_query
+    - sqlquery
+    - findobject
+    - findobjects
     - lightcurve
     - crossmatch
     - classify
-    - kafka_stream
+    - kafka
 
 fink:
   capabilities:
+    - confirmation
     - conesearch
-    - object_query
-    - objects_query
+    - findobject
+    - findobjects
     - cutout
 #    - latest_alerts
 #    - classification_metadata

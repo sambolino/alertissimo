@@ -2,7 +2,7 @@
 
 from lark import Lark, UnexpectedInput
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import logging
 
 from alertissimo.core.schema import ExecutableModel, IRResult, ExecutionContext
@@ -93,23 +93,17 @@ def parse_dsl_script(script: str) -> List[ExecutableModel]:
     
     return steps
 
-
 def validate_capabilities(step: ExecutableModel) -> List[str]:
     """
     Validate that all sources in a step support the required capability.
-    
-    Args:
-        step: Step model to validate
-        
-    Returns:
-        List of validation error messages (empty if valid)
+    Returns list of error messages (empty if valid).
     """
     errors = []
     
-    # Get required capability from step (if it has one)
-    required = getattr(step, 'required_capability', None)
+    # Get required capability
+    required = step.get_required_capability()
     if not required:
-        return errors
+        return errors  # No capability requirement
     
     # Get sources
     sources = getattr(step, 'sources', [])
@@ -124,12 +118,10 @@ def validate_capabilities(step: ExecutableModel) -> List[str]:
             errors.append(f"Unknown broker: {broker_name}")
             continue
         
-        # Check if capability exists in broker's capabilities
-        cap_names = [cap.value for cap in broker_caps]
-        if required not in cap_names:
+        if required not in broker_caps:
             errors.append(
-                f"{broker_name} does not support '{required}'. "
-                f"Supports: {', '.join(cap_names)}"
+                f"{broker_name} does not support '{required}' "
+                f"(required by {step.__class__.__name__})"
             )
     
     return errors
