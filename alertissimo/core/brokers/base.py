@@ -68,53 +68,54 @@ class Broker(ABC):
             ...
         }
         """
-
-    @abstractmethod
-    def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
-        """Search for objects within a sky region."""
         pass
 
-    @abstractmethod
-    def object_query(self, object_id: str, **kwargs) -> Any:
+    def findobject(self, object_id: str, **kwargs) -> Any:
         """Query object by ID."""
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+    def findobjects(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
         """Query objects by list of ID's. and/or other arguments"""
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+    def conesearch(self, ra: float, dec: float, radius: Optional[float], **kwargs) -> Any:
+        """Search for objects within a sky region."""
+        raise NotImplementedError
+
+    def sqlquery(self, query: str, **kwargs) -> Iterator[Any]:
         """Query broker with raw ElasticSearch dictionary."""
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+    def kafka(self, **kwargs) -> Iterator[Any]:
         """Open a live stream of alerts (if available)."""
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def lightcurve(self, object_id: str, **kwargs) -> Any:
         """Retrieve light curve for a specific object."""
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def classifications(self, object_id: str, **kwargs) -> Any:
+    def classify(self, object_id: str, **kwargs) -> Any:
         """Get classification probabilities or labels for a given object."""
-        pass
+        raise NotImplementedError
 
+    def cutout(self, object_id: str, **kwargs) -> Any:
+        """Get cutout image of a given object."""
+        raise NotImplementedError
+
+    ''' this is subcall of lightcurve
     @abstractmethod
     def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
         """Request forced photometry at specified coordinates and time."""
         pass
+    '''
 
-    @abstractmethod
     def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
         """Perform a crossmatch of an object against a known catalog."""
-        pass
+        raise NotImplementedError
 
+    '''
     @abstractmethod
     def view_url(self, object_id: str) -> str:
         """Return a browser-viewable URL for the object (if applicable)."""
         pass
+    '''

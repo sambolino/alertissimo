@@ -116,42 +116,24 @@ class FinkBroker(Broker):
         return True
 
     def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
-        return self.get_conesearch(ra, dec, radius, **kwargs)
+        return self._conesearch(ra, dec, radius, **kwargs)
 
-    def object_query(self, object_id: str, **kwargs) -> Any:
-        raw_data = self.get_object(object_id, **kwargs)
+    def findobject(self, object_id: str, **kwargs) -> Any:
+        raw_data = self._objects(object_id, **kwargs)
         return self.normalize_object(raw_data, include_summary=True)
 
-    def objects_query(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
-        return self.get_object(object_id=object_ids, **kwargs)
+    def findobjects(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
+        return self._objects(object_id=object_ids, **kwargs)
 
-    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
-        raise NotImplementedError
-
-    def kafka_stream(self, **kwargs) -> Iterator[Any]:
-        raise NotImplementedError
-
-    def lightcurve(self, object_id: str, **kwargs) -> Any:
+    def classify(self, object_id: str, **kwargs) -> Any:
         # TODO
-        raise NotImplementedError
+        pass
 
-    def classifications(self, object_id: str, **kwargs) -> Any:
+    def resolve(self, **kwargs) -> Any:
         # TODO
-        raise NotImplementedError
+        pass
 
-    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
-        # TODO
-        raise NotImplementedError
-
-    def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
-        # TODO
-        raise NotImplementedError
-
-    def view_url(self, object_id: str) -> str:
-        # TODO
-        raise NotImplementedError
-
-    def get_object(
+    def _objects(
         self,
         object_id: Union[str, List[str]],
         withupperlim: bool = False,
@@ -193,7 +175,7 @@ class FinkBroker(Broker):
 
         return self.request("objects", params=params)
 
-    def get_cutouts(
+    def _cutouts(
         self,
         object_id: str,
         kind: str = "Science",
@@ -240,7 +222,7 @@ class FinkBroker(Broker):
 
         return self.request("cutouts", params=params)
 
-    def get_latest_alerts(
+    def _latest_alerts(
         self,
         fink_class: str,
         trend: str = None,
@@ -284,7 +266,7 @@ class FinkBroker(Broker):
 
         return self.request("latests", params=params)
 
-    def get_class_labels(self):
+    def _class_labels(self):
         """
         Retrieve all Fink-derived class names and their origin.
 
@@ -293,7 +275,7 @@ class FinkBroker(Broker):
         """
         return self.request("classes")
 
-    def get_schema(self):
+    def _schema(self):
         """
         Get the data schema
 
@@ -303,7 +285,7 @@ class FinkBroker(Broker):
         return self.request("classes")
 
     
-    def get_conesearch(
+    def _conesearch(
         self,
         ra: float,
         dec: float,
@@ -350,7 +332,7 @@ class FinkBroker(Broker):
 
         return self.request("conesearch", params=params)
 
-    def get_sso_data(
+    def _sso_data(
         self,
         n_or_d: Union[str, List[str]],
         withEphem: bool = False,
@@ -399,7 +381,7 @@ class FinkBroker(Broker):
 
         return self.request("sso", params=params)
 
-    def get_ssocand(
+    def _ssocand(
         self,
         kind: str,
         ssoCandId: str = None,
@@ -441,7 +423,7 @@ class FinkBroker(Broker):
 
         return self.request("ssocand", params=params)
 
-    def get_resolver(
+    def _resolver(
         self,
         resolver: str,
         name: str,
@@ -471,7 +453,7 @@ class FinkBroker(Broker):
         }
         return self.request("resolver", params=params)
 
-    def get_tracklet(
+    def _tracklet(
         self,
         date: str,
         tracklet_id: str = None,
@@ -504,7 +486,7 @@ class FinkBroker(Broker):
 
         return self.request("tracklet", params=params)
 
-    def post_skymap(
+    def _skymap(
         self,
         credible_level: float,
         file: str = None,
@@ -566,7 +548,7 @@ class FinkBroker(Broker):
         return None 
         #return self.request("skymap", params=params)
 
-    def get_statistics(
+    def _statistics(
         self,
         date: str = "",
         schema: bool = False,
@@ -597,7 +579,7 @@ class FinkBroker(Broker):
             
         return self.request("statistics", params=params)
 
-    def get_anomaly(
+    def _anomaly(
         self,
         n: int = 10,
         start_date: str = "2019-11-01",
@@ -635,7 +617,7 @@ class FinkBroker(Broker):
 
         return self.request("anomaly", params=params)
 
-    def get_ssoft(
+    def _ssoft(
         self,
         sso_name: str = None,
         sso_number: str = None,

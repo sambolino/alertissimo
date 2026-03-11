@@ -37,41 +37,26 @@ class ALeRCEBroker(Broker):
     def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
         return self.get_objects(ra=ra, dec=dec, radius=radius, **kwargs)
 
-    def object_query(self, object_id: str, **kwargs) -> Any:
-        raw_data = self.get_object(object_id)
+    def findobject(self, object_id: str, **kwargs) -> Any:
+        raw_data = self._object(object_id)
         return self.normalize_object(raw_data, include_summary=True)
 
-    def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
-        return self.get_objects(object_ids, **kwargs)
-
-    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
-        # maybe break it into pieces and run via get_objects
-        raise NotImplementedError
-
-    def kafka_stream(self, **kwargs) -> Iterator[Any]:
-        raise NotImplementedError
+    def findobjects(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+        return self._objects(object_ids, **kwargs)
 
     def lightcurve(self, object_id: str, **kwargs) -> Any:
         # TODO add args for detections and nondetections
-        return self.get_lightcurve(object_id, *kwargs)
+        return self._lightcurve(object_id, *kwargs)
 
-    def classifications(self, object_id: str, **kwargs) -> Any:
+    def classify(self, object_id: str, **kwargs) -> Any:
         # TODO via get_objects
-        raise NotImplementedError
-
-    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
-        # TODO via get_objects?
         raise NotImplementedError
 
     def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
         # TODO via get_objects?
         raise NotImplementedError
 
-    def view_url(self, object_id: str) -> str:
-        # TODO 
-        raise NotImplementedError
-
-    def get_object(self, object_id: str, x_fields: str = None):
+    def _object(self, object_id: str, x_fields: str = None):
         
         headers = {}
         if x_fields:
@@ -82,7 +67,7 @@ class ALeRCEBroker(Broker):
             headers = headers
         )
 
-    def get_classifiers(self, x_fields: str = None):
+    def _classifiers(self, x_fields: str = None):
         
         headers = {}
         if x_fields:
@@ -93,7 +78,7 @@ class ALeRCEBroker(Broker):
             headers = headers
         )
 
-    def get_classifier_classes(self, classifier_name: str, classifier_version:str, x_fields: str = None):
+    def _classifier_classes(self, classifier_name: str, classifier_version:str, x_fields: str = None):
         
         headers = {}
         if x_fields:
@@ -104,7 +89,7 @@ class ALeRCEBroker(Broker):
             headers = headers
         )
 
-    def get_features(self, object_id: str, fid: int = None, version: str = None, x_fields: str = None):
+    def _features(self, object_id: str, fid: int = None, version: str = None, x_fields: str = None):
         
         params = {}
         headers = {}
@@ -122,7 +107,7 @@ class ALeRCEBroker(Broker):
             headers = headers
         )
 
-    def get_feature_name(self, object_id: str, name: str, fid: int = None, version: str = None, x_fields: str = None):
+    def _feature_name(self, object_id: str, name: str, fid: int = None, version: str = None, x_fields: str = None):
         
         params = {}
         headers = {}
@@ -140,19 +125,19 @@ class ALeRCEBroker(Broker):
             headers = headers
         )
 
-    def get_lightcurve(self, object_id: str):
+    def _lightcurve(self, object_id: str):
         endpoint = f"objects/{object_id}/lightcurve"
         return self.request(endpoint)
 
-    def get_lightcurve_detections(self, object_id: str):
+    def _lightcurve_detections(self, object_id: str):
         endpoint = f"objects/{object_id}/lightcurve/detections"
         return self.request(endpoint)
 
-    def get_lightcurve_non_detections(self, object_id: str):
+    def _lightcurve_non_detections(self, object_id: str):
         endpoint = f"objects/{object_id}/lightcurve/non_detections"
         return self.request(endpoint)
 
-    def get_objects(
+    def _objects(
         self,
         oid: Union[str, List[str]] = None,
         classifier: str = None,

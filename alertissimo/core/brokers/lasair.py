@@ -83,49 +83,41 @@ class LasairBroker(Broker):
         return bool(self.token)
 
     def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
-        return self.cone_search(ra, dec, radius, **kwargs)
+        return self._cone(ra, dec, radius, **kwargs)
 
-    def object_query(self, object_id: str, **kwargs) -> Any:
-        raw_data = self.get_object(object_id, **kwargs)
+    def findobject(self, object_id: str, **kwargs) -> Any:
+        raw_data = self._objects(object_id, **kwargs)
         return self.normalize_object(raw_data, include_summary = True) 
 
-    def objects_query(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+    def findobjects(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
         if object_ids is None:
             raise ValueError("Lasair multi object query requires object_ids not be None.")
         objects = []
         for oid in object_ids:
-            objects.append(self.get_object(oid, **kwargs))
+            objects.append(self._objects(oid, **kwargs))
         return objects
 
-    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+    def sqlquery(self, query: str, **kwargs) -> Iterator[Any]:
         # TODO break query into pieces
         # return run_query
         raise NotImplementedError
 
     def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
         # TODO have it for up to ten object ids
-        return self.get_sherlock_object(object_id)
+        return self._sherlock_object(object_id)
 
     def kafka_stream(self, **kwargs) -> Iterator[Any]:
         # TODO
         raise NotImplementedError
 
     def lightcurve(self, object_id: str, **kwargs) -> Any:
-        return self.get_lightcurves(object_id, **kwargs)
+        return self._lightcurves(object_id, **kwargs)
 
     def classifications(self, object_id: str, **kwargs) -> Any:
         # TODO
         raise NotImplementedError
 
-    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
-        # TODO
-        raise NotImplementedError
-
-    def view_url(self, object_id: str) -> str:
-        # TODO
-        raise NotImplementedError
-
-    def cone_search(
+    def _cone(
         self,
         ra: float,
         dec: float,
@@ -155,7 +147,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="cone/", params=params, include_token=True)
 
-    def run_query(
+    def _query(
         self,
         selected: str,
         tables: str,
@@ -188,7 +180,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="query/", params=params, include_token=True)
 
-    def get_object(
+    def _objects(
         self,
         objectId: str,
         lasair_added: bool = True,
@@ -212,7 +204,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="object/", params=params, include_token=True)
 
-    def get_lightcurves(
+    def _lightcurves(
         self,
         objectId: Union[str, List[str]],
         format: str = "json"
@@ -235,7 +227,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="lightcurves/", params=params, include_token=True)
 
-    def get_sherlock_object(
+    def _sherlock_object(
         self,
         objectId: Union[str, List[str]],
         lite: bool = True,
@@ -263,7 +255,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="sherlock/object/", params=params, include_token=True)
 
-    def get_sherlock_position(
+    def _sherlock_position(
         self,
         ra: float,
         dec: float,
@@ -290,7 +282,7 @@ class LasairBroker(Broker):
         }
         return self.request(endpoint="sherlock/position", params=params, include_token=True)
     
-    def extract_multiband_crossmatches(sherlock_data: dict) -> dict:
+    def _extract_multiband_crossmatches(sherlock_data: dict) -> dict:
         result = {"IR": [], "X": [], "UV": []}
         for cm in sherlock_data.get("crossmatches", []):
             cat = cm.get("catalogue", "").lower()

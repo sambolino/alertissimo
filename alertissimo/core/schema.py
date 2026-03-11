@@ -250,7 +250,7 @@ class FindObjectStep(FilterStep):
             name = broker.name.lower()
 
             # This model ONLY uses object_query
-            data = broker.object_query(self.object_id)
+            data = broker.findobject(self.object_id)
             result.find_results[name] = data
 
         # Set object_id in context if not set
@@ -267,7 +267,7 @@ class FindObjectsStep(FilterStep):
             broker = context.get_broker(src.broker)
             name = broker.name.lower()
             
-            data = broker.objects_query(self.criteria)
+            data = broker.findobjects(self.criteria)
             # For multiple objects, we might want to store differently
             result.find_results[f"{name}_multiple"] = data
 
@@ -284,7 +284,7 @@ class ConeSearchStep(FilterStep):
             broker = context.get_broker(src.broker)
             name = broker.name.lower()
             
-            data = broker.cone_search(
+            data = broker.conesearch(
                 ra=self.ra, 
                 dec=self.dec, 
                 radius=self.radius,
@@ -302,7 +302,7 @@ class SqlQueryStep(FilterStep):
             broker = context.get_broker(src.broker)
             name = broker.name.lower()
             
-            data = broker.sql_query(self.query)
+            data = broker.sqlquery(self.query)
             result.filter_results.setdefault(name, []).append(data)
 
 
@@ -642,7 +642,7 @@ class ConfirmationStep(ExecutableModel):
             broker = context.get_broker(src.broker)
             name = broker.name.lower()
 
-            data = broker.object_query(self.object_id)
+            data = broker.findobject(self.object_id)
             if data:
                 agreement += 1
                 result.object_snapshots[name] = data

@@ -46,21 +46,20 @@ class AntaresBroker(Broker):
         angle = Angle(radius, unit="deg")
         return antares_client.search.cone_search(center=skycoord, radius=angle)
 
-    def object_query(self, object_id: str, **kwargs) -> Any:
+    def findobject(self, object_id: str, **kwargs) -> Any:
         raw_data = antares_client.search.get_by_ztf_object_id(object_id).properties
         return self.normalize_object(raw_data, include_summary = True)
 
-    def objects_query(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
+    def findobjects(self, object_ids: List[str], **kwargs) -> Iterator[Any]:
         objects = []
         for oid in object_ids:
             objects.append(antares_client.search.get_by_ztf_object_id(oid))
 
-    def sql_query(self, query: str, **kwargs) -> Iterator[Any]:
+    def sqlquery(self, query: str, **kwargs) -> Iterator[Any]:
         # TODO convert sql to elastic dict and call antares_client.search.search
         raise NotImplementedError
 
-
-    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+    def kafka(self, **kwargs) -> Iterator[Any]:
         # TODO call antares_client.StreamingClient
         raise NotImplementedError
 
@@ -68,22 +67,14 @@ class AntaresBroker(Broker):
         # TODO
         raise NotImplementedError
 
-    def classifications(self, object_id: str, **kwargs) -> Any:
+    def classify(self, object_id: str, **kwargs) -> Any:
         # TODO
         raise NotImplementedError
 
-    def forced_photometry(self, ra: float, dec: float, jd: float, **kwargs) -> Any:
-        # TODO?
-        raise NotImplementedError
-
     def crossmatch(self, object_id, catalog: Optional[str] = None):
-        return self.extract_xray_matches(self.object_query(object_id))
+        return self._extract_xray_matches(self.object_query(object_id))
 
-    def view_url(self, object_id: str) -> str:
-        # TODO?
-        raise NotImplementedError
-
-    def extract_xray_matches(self, locus) -> list[dict]:
+    def _extract_xray_matches(self, locus) -> list[dict]:
         """Extract crossmatches from ANTARES locus object for X-ray catalogs like eROSITA."""
         matches = []
 
