@@ -1,3 +1,8 @@
+import sys
+import antares_client
+print(f"Python path: {sys.path}")
+print(f"antares_client location: {antares_client.__file__}")
+print(f"antares_client version: {getattr(antares_client, '__version__', 'unknown')}")
 import streamlit as st
 from dotenv import load_dotenv
 from alertissimo.core.orchestrator import run_ir
