@@ -34,8 +34,9 @@ setup(
         "matplotlib==3.10.3",
         "pandas==2.2.3",
         "altair==5.5.0",
-        "astropy>=7.0.0",
-        "cmake==3.28.3"
+        "astropy>=6.1.4",
+        "cmake==3.28.3",
+        "numpy>=2.0.0,<2.1.0",  # Allow NumPy 2.0.x but not 2.1+
     ],
     entry_points={
         'console_scripts': [
