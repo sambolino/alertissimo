@@ -1,8 +1,30 @@
 import sys
+import subprocess
+
+# Check if setuptools is installed
+try:
+    import setuptools
+    print(f"setuptools version: {setuptools.__version__}")
+    print(f"setuptools location: {setuptools.__file__}")
+except ImportError as e:
+    print(f"setuptools not found: {e}")
+    # Try to install it
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "setuptools"])
+    import setuptools
+    print("setuptools installed successfully")
+
+# Now try importing pkg_resources
+try:
+    import pkg_resources
+    print("pkg_resources imported successfully")
+    print(f"pkg_resources location: {pkg_resources.__file__}")
+except ImportError as e:
+    print(f"pkg_resources not found: {e}")
+
+# Finally try antares_client
 import antares_client
-print(f"Python path: {sys.path}")
-print(f"antares_client location: {antares_client.__file__}")
-print(f"antares_client version: {getattr(antares_client, '__version__', 'unknown')}")
+print("antares_client imported successfully")
+
 import streamlit as st
 from dotenv import load_dotenv
 from alertissimo.core.orchestrator import run_ir
