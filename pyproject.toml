@@ -1,6 +1,3 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-[project.scripts]
-dsl-generate-grammar = "alertissimo.dsl.grammar_tools:main"
-dsl-validate-grammar = "alertissimo.dsl.grammar_tools:main"

@@ -40,6 +40,8 @@ setup(
     entry_points={
         'console_scripts': [
             'alertissimo = alertissimo.app_dsl:main',
+            'dsl-generate-grammar = alertissimo.dsl.grammar_tools:main',
+            'dsl-validate-grammar = alertissimo.dsl.grammar_tools:main',
         ],
     },
 )
