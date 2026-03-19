@@ -37,6 +37,7 @@ setup(
         "astropy>=6.1.4",
         "cmake==3.28.3",
         "numpy>=2.0.0,<2.1.0",  # Allow NumPy 2.0.x but not 2.1+
+        "setuptools>=65.0.0",
     ],
     entry_points={
         'console_scripts': [
