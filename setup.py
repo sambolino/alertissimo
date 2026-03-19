@@ -34,7 +34,7 @@ setup(
         "matplotlib==3.10.3",
         "pandas==2.3.1",
         "altair==5.5.0",
-        "astropy==7.1.0",
+        "astropy>=7.0.0",
         "cmake==3.28.3"
     ],
     entry_points={
