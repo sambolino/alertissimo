@@ -22,6 +22,7 @@ setup(
     packages=find_packages(include=['alertissimo', 'alertissimo.*']),
     cmdclass={"install": CustomInstall},
     install_requires=[
+        "setuptools>=69.5.1",
         "antares-client==1.8.0",
         "lark==1.2.2",
         "marshmallow==3.21.1",
@@ -37,7 +38,6 @@ setup(
         "astropy>=6.1.4",
         "cmake==3.28.3",
         "numpy>=2.0.0,<2.1.0",  # Allow NumPy 2.0.x but not 2.1+
-        "setuptools>=65.0.0",
     ],
     entry_points={
         'console_scripts': [
