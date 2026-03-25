@@ -1,0 +1,570 @@
+# feature_catalog.yaml
+version: "1.0"
+description: "Unified transient feature space"
+
+levels:
+  L0: "Alert Packet - raw single detection"
+  L1: "Object Aggregates - per-object statistics"
+  L2: "ML Classification - probabilistic classifiers"
+  L3: "Specialized Phenomena - SSO, GW, satellites"
+  L4: "Cross-Match - external catalogs"
+  L5: "Light Curve Features - derived time-series"
+  L6: "Data Products - images"
+  L7: "Survey Aggregates - statistics"
+  L8: "External Services - name resolution, ephemeris, etc."
+
+features:
+  # ==================== L0: Alert Packet ====================
+  - id: "position.ra"
+    level: L0
+    type: float
+    unit: deg
+    description: "Right ascension J2000"
+    
+  - id: "position.dec"
+    level: L0
+    type: float
+    unit: deg
+    description: "Declination J2000"
+
+  - id: "position.cone_distance"
+    level: L0
+    type: float
+    unit: deg
+    description: "Angular distance from search center"
+    
+  - id: "photometry.psf_mag"
+    level: L0
+    type: float
+    unit: mag
+    description: "PSF-fit magnitude"
+    
+  - id: "photometry.psf_mag_error"
+    level: L0
+    type: float
+    unit: mag
+    description: "PSF-fit magnitude error"
+    
+  - id: "photometry.mjd"
+    level: L0
+    type: float
+    unit: days
+    description: "Julian Date"
+    
+  - id: "photometry.filter"
+    level: L0
+    type: string
+    enum: [g, r, i]
+    description: "Filter band"
+    
+  - id: "photometry.aperture_mag"
+    level: L0
+    type: float
+    unit: mag
+    description: "Aperture magnitude (14 pixel diameter)"
+    
+  - id: "photometry.diff_mag_limit"
+    level: L0
+    type: float
+    unit: mag
+    description: "5-sigma magnitude limit"
+    
+  - id: "quality.real_bogus"
+    level: L0
+    type: float
+    range: [0, 1]
+    description: "Deep learning real/bogus score"
+    
+  - id: "quality.star_galaxy"
+    level: L0
+    type: float
+    range: [0, 1]
+    description: "SExtractor star/galaxy score"
+    
+  - id: "quality.fwhm"
+    level: L0
+    type: float
+    unit: pixels
+    description: "Full width half max"
+    
+  - id: "quality.elongation"
+    level: L0
+    type: float
+    description: "Ratio aimage/bimage"
+    
+  - id: "quality.chisq_psf"
+    level: L0
+    type: float
+    description: "Reduced chi-square for PSF-fit"
+    
+  - id: "context.object_id"
+    level: L0
+    type: string
+    description: "ZTF object identifier"
+    
+  - id: "context.candid"
+    level: L0
+    type: long
+    description: "Candidate ID"
+    
+  - id: "context.field"
+    level: L0
+    type: integer
+    description: "ZTF field ID"
+    
+  - id: "context.program_id"
+    level: L0
+    type: integer
+    description: "Program ID"
+    
+  - id: "detection.is_positive"
+    level: L0
+    type: boolean
+    description: "True if positive subtraction"
+    
+  - id: "detection.upper_limit"
+    level: L0
+    type: boolean
+    default: false
+    description: "True if this is an upper limit"
+    
+  - id: "history.detection_count"
+    level: L0
+    type: integer
+    description: "Number of historical detections"
+    
+  - id: "history.first_mjd"
+    level: L0
+    type: float
+    description: "Earliest detection MJD in history"
+    
+  - id: "history.last_mjd"
+    level: L0
+    type: float
+    description: "Latest detection MJD in history"
+    
+  # ==================== L1: Object Aggregates ====================
+  - id: "object.first_detection"
+    level: L1
+    type: string
+    description: "Human-readable first detection datetime"
+    
+  - id: "object.last_detection"
+    level: L1
+    type: string
+    description: "Human-readable last detection datetime"
+    
+  - id: "object.timespan_days"
+    level: L1
+    type: float
+    unit: days
+    description: "Days between first and last detection"
+    
+  - id: "object.constellation"
+    level: L1
+    type: string
+    description: "Constellation name"
+    
+  - id: "photometry.magnitude_rate"
+    level: L1
+    type: float
+    unit: mag/day
+    description: "Brightness change rate"
+    
+  - id: "photometry.magnitude_rate_error"
+    level: L1
+    type: float
+    unit: mag/day
+    description: "Rate error"
+    
+  - id: "color.g_minus_r"
+    level: L1
+    type: float
+    unit: mag
+    description: "g-r color"
+    
+  - id: "color.g_minus_r_error"
+    level: L1
+    type: float
+    unit: mag
+    description: "g-r color error"
+    
+  - id: "color.g_minus_r_rate"
+    level: L1
+    type: float
+    unit: mag/day
+    description: "g-r color change rate"
+    
+  - id: "color.g_minus_r_rate_error"
+    level: L1
+    type: float
+    unit: mag/day
+    description: "g-r color rate error"
+    
+  # ==================== L2: ML Classification ====================
+  - id: "classification.fink_class"
+    level: L2
+    type: string
+    description: "Fink inferred classification"
+    
+  - id: "classification.snia_prob"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "SN Ia probability (Random Forest)"
+    
+  - id: "classification.sn_prob"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "Supernova probability (SuperNNova)"
+    
+  - id: "classification.snia_vs_cc_prob"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "SN Ia vs core-collapse probability"
+    
+  - id: "classification.kilonova_prob"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "Kilonova probability"
+    
+  - id: "classification.microlensing_prob"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "Microlensing probability"
+    
+  - id: "classification.slsn_score"
+    level: L2
+    type: float
+    range: [0, 1]
+    description: "Superluminous supernova score"
+    
+  - id: "classification.anomaly_score"
+    level: L2
+    type: float
+    description: "Anomaly score (lower = more anomalous)"
+    
+  - id: "classification.blazar_m0"
+    level: L2
+    type: float
+    description: "Blazar state feature - low state robustness"
+    
+  - id: "classification.blazar_m1"
+    level: L2
+    type: float
+    description: "Blazar state feature - low state robustness"
+    
+  - id: "classification.blazar_m2"
+    level: L2
+    type: float
+    description: "Blazar state feature - low state duration"
+    
+  - id: "classification.is_transient"
+    level: L2
+    type: boolean
+    description: "True if considered pure static transient"
+    
+  # ==================== L3: Specialized Phenomena ====================
+  - id: "solar_system.roid"
+    level: L3
+    type: integer
+    enum: [0, 1, 2, 3]
+    description: "0=not SSO, 1=first appearance, 2=candidate, 3=MPC confirmed"
+    
+  - id: "solar_system.mpc_name"
+    level: L3
+    type: string
+    description: "MPC name if within 30 arcsec"
+    
+  - id: "solar_system.mpc_distance"
+    level: L3
+    type: float
+    unit: arcsec
+    description: "Distance to nearest known SSO"
+    
+  - id: "solar_system.mpc_magnitude"
+    level: L3
+    type: float
+    unit: mag
+    description: "Magnitude of nearest known SSO"
+
+  - id: "solar_system.iau_name"
+    level: L3
+    type: string
+    description: "IAU name of the Solar System object"
+
+  - id: "solar_system.iau_number"
+    level: L3
+    type: integer
+    description: "IAU number of the Solar System object"
+    
+  - id: "satellite.tracklet_id"
+    level: L3
+    type: string
+    description: "Tracklet ID for fast moving objects"
+    
+  # ==================== L4: Cross-Match ====================
+    
+  - id: "tns.name"
+    level: L3
+    type: string
+    description: "TNS label if exists"
+    
+  - id: "gaia.variability_flag"
+    level: L3
+    type: integer
+    description: "1=variable, 0=non-variable"
+    
+  - id: "gaia.variability_class"
+    level: L3
+    type: string
+    description: "Gaia DR3 variability class"
+
+  - id: "crossmatch.simbad_type"
+    level: L4
+    type: string
+    description: "SIMBAD object type"
+    
+  - id: "crossmatch.gaia_dr3_id"
+    level: L4
+    type: string
+    description: "Gaia DR3 source ID"
+    
+  - id: "crossmatch.gaia_parallax"
+    level: L4
+    type: float
+    unit: mas
+    description: "Gaia parallax"
+    
+  - id: "crossmatch.gaia_parallax_error"
+    level: L4
+    type: float
+    unit: mas
+    description: "Gaia parallax error"
+    
+  - id: "crossmatch.gcvs_type"
+    level: L4
+    type: string
+    description: "GCVS object type"
+    
+  - id: "crossmatch.vsx_type"
+    level: L4
+    type: string
+    description: "VSX object type"
+    
+  - id: "crossmatch.spicy_id"
+    level: L4
+    type: string
+    description: "SPICY source ID"
+    
+  - id: "crossmatch.spicy_class"
+    level: L4
+    type: string
+    description: "SPICY class name"
+    
+  - id: "crossmatch.blazar_3hsp"
+    level: L4
+    type: string
+    description: "3HSP catalog counterpart"
+    
+  - id: "crossmatch.blazar_4lac"
+    level: L4
+    type: string
+    description: "4LAC DR3 catalog counterpart"
+    
+  - id: "crossmatch.mangrove_2mass"
+    level: L4
+    type: string
+    description: "2MASS source designation"
+    
+  - id: "crossmatch.mangrove_hyperleda"
+    level: L4
+    type: string
+    description: "HyperLEDA source designation"
+    
+  - id: "crossmatch.mangrove_distance"
+    level: L4
+    type: string
+    description: "Angular distance to Mangrove source"
+    
+  - id: "crossmatch.mangrove_luminosity_distance"
+    level: L4
+    type: string
+    description: "Luminosity distance to Mangrove source"
+    
+  - id: "crossmatch.ps1_object_id"
+    level: L4
+    type: long
+    description: "PS1 object ID of closest source"
+    
+  - id: "crossmatch.ps1_distance"
+    level: L4
+    type: float
+    unit: arcsec
+    description: "Distance to closest PS1 source"
+    
+  - id: "crossmatch.ps1_g_mag"
+    level: L4
+    type: float
+    unit: mag
+    description: "PS1 g-band magnitude"
+    
+  - id: "crossmatch.ps1_r_mag"
+    level: L4
+    type: float
+    unit: mag
+    description: "PS1 r-band magnitude"
+    
+  - id: "crossmatch.ps1_i_mag"
+    level: L4
+    type: float
+    unit: mag
+    description: "PS1 i-band magnitude"
+    
+  - id: "crossmatch.ps1_star_galaxy_score"
+    level: L4
+    type: float
+    description: "PS1 star/galaxy score"
+    
+  # ==================== L5: Light Curve Features ====================
+  - id: "light_curve.g_features"
+    level: L5
+    type: string
+    description: "Serialized light curve features for g-band"
+    
+  - id: "light_curve.r_features"
+    level: L5
+    type: string
+    description: "Serialized light curve features for r-band"
+    
+  - id: "light_curve.first_detection_5sigma_mjd"
+    level: L5
+    type: float
+    description: "First 5-sigma detection MJD"
+    
+  - id: "light_curve.delta_time_first_detection"
+    level: L5
+    type: float
+    unit: days
+    description: "Delta between 5-sigma and 3-sigma first detection"
+    
+  - id: "light_curve.magnitude_rate"
+    level: L5
+    type: float
+    unit: mag/day
+    description: "Magnitude rate from science module"
+    
+  - id: "light_curve.magnitude_rate_error"
+    level: L5
+    type: float
+    unit: mag/day
+    description: "Magnitude rate error"
+    
+  - id: "light_curve.rate_lower_percentile"
+    level: L5
+    type: float
+    description: "5% percentile of rate sampling"
+    
+  - id: "light_curve.rate_upper_percentile"
+    level: L5
+    type: float
+    description: "95% percentile of rate sampling"
+    
+  - id: "light_curve.delta_time_rate"
+    level: L5
+    type: float
+    unit: days
+    description: "Delta time used for magnitude rate"
+    
+  - id: "light_curve.from_upper_limit"
+    level: L5
+    type: boolean
+    description: "Rate computed using upper limit"
+    
+  # ==================== L6: Data Products ====================
+  - id: "cutouts.science"
+    level: L6
+    type: array
+    description: "Science image 2D array"
+    
+  - id: "cutouts.template"
+    level: L6
+    type: array
+    description: "Template image 2D array"
+    
+  - id: "cutouts.difference"
+    level: L6
+    type: array
+    description: "Difference image 2D array"
+    
+  # ==================== L7: Survey Aggregates ====================
+  - id: "survey.class_distribution"
+    level: L7
+    type: object
+    description: "Counts per classification"
+    
+  - id: "survey.filter_counts"
+    level: L7
+    type: object
+    description: "Alert counts per filter"
+    
+  - id: "survey.exposure_count"
+    level: L7
+    type: integer
+    description: "Number of exposures"
+    
+  - id: "survey.field_count"
+    level: L7
+    type: integer
+    description: "Number of fields"
+    
+  - id: "survey.raw_alerts"
+    level: L7
+    type: integer
+    description: "Total raw alerts"
+    
+  - id: "survey.science_alerts"
+    level: L7
+    type: integer
+    description: "Science-quality alerts"
+    
+  # ==================== L8: Survey Aggregates ====================
+
+  - id: "resolver.catalog"
+    level: L8
+    type: string
+    description: "Resolver source (simbad, tns, ssodnet)"
+    
+  - id: "resolver.external_id"
+    level: L8
+    type: integer
+    description: "Object ID in external catalog"
+    
+  - id: "resolver.type_code"
+    level: L8
+    type: string
+    description: "Object type code from external catalog"
+    
+  - id: "resolver.position_string"
+    level: L8
+    type: string
+    description: "J2000 position as string"
+    
+  - id: "resolver.external_name"
+    level: L8
+    type: string
+    description: "Object name in external catalog"
+    
+  - id: "resolver.redshift"
+    level: L8
+    type: float
+    description: "Redshift if available"
+    
+  - id: "resolver.reference_count"
+    level: L8
+    type: integer
+    description: "Number of references"

@@ -1,0 +1,1128 @@
+# brokers/fink/ztf/mappings.yaml
+broker: fink
+origin: ztf
+
+mappings:
+  # ==================== L0: Alert Packet ====================
+  position.ra:
+    field: "i:ra"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - resolver
+      
+  position.dec:
+    field: "i:dec"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - resolver
+      
+  position.image_x:
+    field: "i:xpos"
+    availability:
+      - objects
+      - sso
+      - anomaly
+      - latests
+      
+  position.image_y:
+    field: "i:ypos"
+    availability:
+      - objects
+      - sso
+      - anomaly
+      - latests
+      
+  position.distance_to_edge:
+    field: "i:mindtoedge"
+    availability:
+      - objects
+      - anomaly
+      
+  position.cone_distance:
+    field: "v:separation_degree"
+    availability:
+      - conesearch
+      
+  photometry.psf_mag:
+    field: "i:magpsf"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - anomaly
+      
+  photometry.psf_mag_error:
+    field: "i:sigmapsf"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  photometry.mjd:
+    field: "i:jd"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - anomaly
+      
+  photometry.filter:
+    field: "i:fid"
+    transform: {1: "g", 2: "r", 3: "i"}
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - anomaly
+      
+  photometry.diff_mag_limit:
+    field: "i:diffmaglim"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  photometry.zero_point:
+    field: "i:magzpsci"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  photometry.zero_point_rms:
+    field: "i:magzpscirms"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.zero_point_uncertainty:
+    field: "i:magzpsciunc"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.exposure_time:
+    field: "i:exptime"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.aperture_mag:
+    field: "i:magap"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.aperture_mag_big:
+    field: "i:magapbig"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.aperture_mag_error:
+    field: "i:sigmagap"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.aperture_mag_big_error:
+    field: "i:sigmagapbig"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.mag_ap_minus_psf:
+    field: "i:magdiff"
+    availability:
+      - objects
+      - anomaly
+      
+  photometry.mag_from_limit:
+    field: "i:magfromlim"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.real_bogus:
+    field: "i:drb"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  quality.rf_real_bogus:
+    field: "i:rb"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  quality.psf_chisq:
+    field: "i:chipsf"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  quality.star_galaxy:
+    field: "i:classtar"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  quality.fwhm:
+    field: "i:fwhm"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.elongation:
+    field: "i:elong"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.aimage:
+    field: "i:aimage"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.bimage:
+    field: "i:bimage"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.aimage_ratio:
+    field: "i:aimagerat"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.bimage_ratio:
+    field: "i:bimagerat"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.chinr:
+    field: "i:chinr"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.sharpnr:
+    field: "i:sharpnr"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.drb_version:
+    field: "i:drbversion"
+    availability:
+      - objects
+      - anomaly
+      
+  quality.rb_version:
+    field: "i:rbversion"
+    availability:
+      - objects
+      - anomaly
+      
+  context.object_id:
+    field: "i:objectId"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+      - anomaly
+      
+  context.candid:
+    field: "i:candid"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  context.field:
+    field: "i:field"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  context.night_id:
+    field: "i:nid"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  context.program_id:
+    field: "i:programid"
+    availability:
+      - objects
+      - anomaly
+      
+  context.publisher:
+    field: "i:publisher"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  context.broker_version:
+    field: "i:fink_broker_version"
+    availability:
+      - objects
+      - anomaly
+      
+  context.science_version:
+    field: "i:fink_science_version"
+    availability:
+      - objects
+      - anomaly
+      
+  context.schema_version:
+    field: "i:schemavsn"
+    availability:
+      - objects
+      - anomaly
+      
+  context.pid:
+    field: "i:pid"
+    availability:
+      - objects
+      - anomaly
+      
+  context.rfid:
+    field: "i:rfid"
+    availability:
+      - objects
+      - anomaly
+      
+  context.diffim_filename:
+    field: "i:pdiffimfilename"
+    availability:
+      - objects
+      - anomaly
+      
+  context.too_flag:
+    field: "i:tooflag"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  detection.is_positive:
+    field: "i:isdiffpos"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  detection.upper_limit:
+    field: "d:tag"
+    availability:
+      - objects
+      
+  detection.nbad_pixels:
+    field: "i:nbad"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.nneg_pixels:
+    field: "i:nneg"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.pixel_sum_ratio:
+    field: "i:sumrat"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.scorr:
+    field: "i:scorr"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.ssnrms:
+    field: "i:ssnrms"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.dsnrms:
+    field: "i:dsnrms"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.dsdiff:
+    field: "i:dsdiff"
+    availability:
+      - objects
+      - anomaly
+      
+  detection.seeratio:
+    field: "i:seeratio"
+    availability:
+      - objects
+      - anomaly
+      
+  history.detection_count:
+    field: "i:ndethist"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  history.first_mjd:
+    field: "i:jdstarthist"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  history.last_mjd:
+    field: "i:jdendhist"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  reference.nearest_distance:
+    field: "i:distnr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  reference.nearest_magnitude:
+    field: "i:magnr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  reference.nearest_magnitude_error:
+    field: "i:sigmagnr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  reference.nearest_ra:
+    field: "i:ranr"
+    availability:
+      - objects
+      - anomaly
+      
+  reference.nearest_dec:
+    field: "i:decnr"
+    availability:
+      - objects
+      - anomaly
+      
+  reference.first_mjd:
+    field: "i:jdstartref"
+    availability:
+      - objects
+      - anomaly
+      
+  reference.last_mjd:
+    field: "i:jdendref"
+    availability:
+      - objects
+      - anomaly
+      
+  reference.nframes:
+    field: "i:nframesref"
+    availability:
+      - objects
+      - anomaly
+      
+  reference.ncovhist:
+    field: "i:ncovhist"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.color_coefficient:
+    field: "i:clrcoeff"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.color_coefficient_uncertainty:
+    field: "i:clrcounc"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.color_median:
+    field: "i:clrmed"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.color_rms:
+    field: "i:clrrms"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.nmatches:
+    field: "i:nmatches"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.zp_covariance:
+    field: "i:zpclrcov"
+    availability:
+      - objects
+      - anomaly
+      
+  calibration.zp_median:
+    field: "i:zpmed"
+    availability:
+      - objects
+      - anomaly
+      
+  # ==================== L1: Object Aggregates ====================
+  object.first_detection:
+    field: "v:firstdate"
+    availability:
+      - objects
+      - latests
+      - sso
+      - anomaly
+      
+  object.last_detection:
+    field: "v:lastdate"
+    availability:
+      - objects
+      - latests
+      - sso
+      - anomaly
+      
+  object.timespan_days:
+    field: "v:lapse"
+    availability:
+      - objects
+      - latests
+      - sso
+      - anomaly
+      
+  object.constellation:
+    field: "v:constellation"
+    availability:
+      - objects
+      - latests
+      - sso
+      - anomaly
+      
+  photometry.magnitude_rate:
+    field: "v:rate"
+    availability:
+      - objects
+      - latests
+      
+  photometry.magnitude_rate_error:
+    field: "v:sigma(rate)"
+    availability:
+      - objects
+      
+  color.g_minus_r:
+    field: "v:g-r"
+    availability:
+      - objects
+      - latests
+      
+  color.g_minus_r_error:
+    field: "v:sigma(g-r)"
+    availability:
+      - objects
+      
+  color.g_minus_r_rate:
+    field: "v:rate(g-r)"
+    availability:
+      - objects
+      
+  color.g_minus_r_rate_error:
+    field: "v:sigma(rate(g-r))"
+    availability:
+      - objects
+      
+  # ==================== L2: ML Classification ====================
+  classification.fink_class:
+    field: "v:classification"
+    availability:
+      - objects
+      - latests
+      - sso
+      - anomaly
+      
+  classification.snia_prob:
+    field: "d:rf_snia_vs_nonia"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.sn_prob:
+    field: "d:snn_sn_vs_all"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.snia_vs_cc_prob:
+    field: "d:snn_snia_vs_nonia"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.kilonova_prob:
+    field: "d:rf_kn_vs_nonkn"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.microlensing_prob:
+    field: "d:mulens"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.slsn_score:
+    field: "d:slsn_score"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.anomaly_score:
+    field: "d:anomaly_score"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  classification.blazar_m0:
+    field: "d:blazar_stats_m0"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.blazar_m1:
+    field: "d:blazar_stats_m1"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.blazar_m2:
+    field: "d:blazar_stats_m2"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  classification.is_transient:
+    field: "d:is_transient"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  # ==================== L3: Specialized Phenomena ====================
+  solar_system.roid:
+    field: "d:roid"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  solar_system.mpc_name:
+    field: "i:ssnamenr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  solar_system.mpc_distance:
+    field: "i:ssdistnr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  solar_system.mpc_magnitude:
+    field: "i:ssmagnr"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  solar_system.iau_name:
+    field: "sso_name"
+    availability:
+      - sso
+      
+  solar_system.iau_number:
+    field: "sso_number"
+    availability:
+      - sso
+      
+  tns.name:
+    field: "d:tns"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  satellite.tracklet_id:
+    field: "d:tracklet"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  gaia.variability_flag:
+    field: "d:gaiaVarFlag"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  gaia.variability_class:
+    field: "d:gaiaClass"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  gaia.distance:
+    field: "i:neargaia"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  gaia.distance_bright:
+    field: "i:neargaiabright"
+    availability:
+      - objects
+      - anomaly
+      
+  gaia.magnitude:
+    field: "i:maggaia"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  gaia.magnitude_bright:
+    field: "i:maggaiabright"
+    availability:
+      - objects
+      - anomaly
+      
+  # ==================== L4: Cross-Match ====================
+  crossmatch.simbad_type:
+    field: "d:cdsxmatch"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.gaia_dr3_id:
+    field: "d:DR3Name"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.gaia_parallax:
+    field: "d:Plx"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.gaia_parallax_error:
+    field: "d:e_Plx"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.gcvs_type:
+    field: "d:gcvs"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.vsx_type:
+    field: "d:vsx"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.spicy_id:
+    field: "d:spicy_id"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.spicy_class:
+    field: "d:spicy_class"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.blazar_3hsp:
+    field: "d:x3hsp"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.blazar_4lac:
+    field: "d:x4lac"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.mangrove_2mass:
+    field: "d:mangrove_2MASS_name"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.mangrove_hyperleda:
+    field: "d:mangrove_HyperLEDA_name"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.mangrove_distance:
+    field: "d:mangrove_ang_dist"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.mangrove_luminosity_distance:
+    field: "d:mangrove_lum_dist"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.ps1_object_id:
+    field: "i:objectidps1"
+    availability:
+      - objects
+      - anomaly
+      
+  crossmatch.ps1_distance:
+    field: "i:distpsnr1"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  crossmatch.ps1_g_mag:
+    field: "i:sgmag1"
+    availability:
+      - objects
+      - anomaly
+      
+  crossmatch.ps1_r_mag:
+    field: "i:srmag1"
+    availability:
+      - objects
+      - anomaly
+      
+  crossmatch.ps1_i_mag:
+    field: "i:simag1"
+    availability:
+      - objects
+      - anomaly
+      
+  crossmatch.ps1_star_galaxy_score:
+    field: "i:sgscore1"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  ps1.nmatches:
+    field: "i:nmtchps"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  # ==================== L5: Light Curve Features ====================
+  light_curve.g_features:
+    field: "d:lc_features_g"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.r_features:
+    field: "d:lc_features_r"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.first_detection_5sigma_mjd:
+    field: "d:jd_first_real_det"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.delta_time_first_detection:
+    field: "d:jdstarthist_dt"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.magnitude_rate:
+    field: "d:mag_rate"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.magnitude_rate_error:
+    field: "d:sigma_rate"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.rate_lower_percentile:
+    field: "d:lower_rate"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.rate_upper_percentile:
+    field: "d:upper_rate"
+    availability:
+      - objects
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.delta_time_rate:
+    field: "d:delta_time"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.from_upper_limit:
+    field: "d:from_upper"
+    availability:
+      - sso
+      - latests
+      - anomaly
+      
+  light_curve.detection_count:
+    field: "d:nalerthist"
+    availability:
+      - objects
+      - conesearch
+      - sso
+      - latests
+      - anomaly
+      
+  # ==================== L6: Data Products ====================
+  cutouts.science:
+    field: "b:cutoutScience_stampData"
+    availability:
+      - cutouts
+      
+  cutouts.template:
+    field: "b:cutoutTemplate_stampData"
+    availability:
+      - cutouts
+      
+  cutouts.difference:
+    field: "b:cutoutDifference_stampData"
+    availability:
+      - cutouts
+      
+  # ==================== L7: Survey Aggregates ====================
+  survey.date:
+    field: "key:key"
+    availability:
+      - statistics
+      
+  survey.exposures:
+    field: "basic:exposures"
+    availability:
+      - statistics
+      
+  survey.fields:
+    field: "basic:fields"
+    availability:
+      - statistics
+      
+  survey.raw_alerts:
+    field: "basic:raw"
+    availability:
+      - statistics
+      
+  survey.science_alerts:
+    field: "basic:sci"
+    availability:
+      - statistics
+      
+  survey.alerts_by_filter:
+    field: "basic:n_g,basic:n_r"
+    availability:
+      - statistics
+      
+  survey.class_counts:
+    field: "class:*"
+    availability:
+      - statistics
+      
+  survey.key:
+    field: "key:key"
+    availability:
+      - statistics
+      
+  survey.timestamp:
+    field: "key:time"
+    availability:
+      - statistics
+      
+  # ==================== L8: External Services ====================
+  resolver.catalog:
+    field: "name"
+    availability:
+      - resolver
+      
+  resolver.external_id:
+    field: "oid"
+    availability:
+      - resolver
+      
+  resolver.type_code:
+    field: "otype"
+    availability:
+      - resolver
+      
+  resolver.position_string:
+    field: "jpos"
+    availability:
+      - resolver
+      
+  resolver.external_name:
+    field: "oname"
+    availability:
+      - resolver
+      
+  resolver.redshift:
+    field: "z"
+    availability:
+      - resolver
+      
+  resolver.reference_count:
+    field: "nrefs"
+    availability:
+      - resolver
