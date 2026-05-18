@@ -1,0 +1,295 @@
+# alertissimo/core/brokers/lasair.py
+from .base import Broker
+from alertissimo.config import LASAIR_ZTF_TOKEN
+from typing import Optional, List, Iterator, Any, Union
+
+class LasairBroker(Broker):
+    def __init__(self):
+        super().__init__(
+            name="Lasair",
+            base_url="https://lasair-ztf.lsst.ac.uk/api",
+            token=LASAIR_ZTF_TOKEN
+        )
+
+    def normalize_object(
+            self, 
+            raw_data: dict,
+            include_summary: bool = False,
+            include_lightcurve: bool = False,
+            include_forced:bool = False,
+            include_raw:bool = False,
+    ) -> dict:
+        if not raw_data:
+            return {}
+        #object_id = data.get("objectId")
+
+        # Regular photometry: "candidates"
+        result = {}
+
+        if include_summary:
+            result["summary"] = raw_data.get("candidates")[0]
+
+        if include_lightcurve:
+            regular = []
+            for c in data.get("candidates", []):
+                if "candid" in c:
+                    regular.append({
+                        "candid": c.get("candid"),
+                        "jd": c.get("jd"),
+                        "fid": c.get("fid"),
+                        "ra": c.get("ra"),
+                        "dec": c.get("dec"),
+                        "mag": c.get("magpsf"),
+                        "magerr": c.get("sigmapsf"),
+                        "magzpsci": c.get("magzpsci"),
+                        "isdiffpos": c.get("isdiffpos"),
+                        "drb": c.get("drb"),
+                        "extra": {
+                            "magnr": c.get("magnr"),
+                            "sigmagnr": c.get("sigmagnr"),
+                            "nid": c.get("nid"),
+                            "ssdistnr": c.get("ssdistnr"),
+                            "ssnamenr": c.get("ssnamenr"),
+                        }
+                    })
+            result["lightcurve"] = regular
+
+        # Forced photometry: "forcedphot"
+
+        if include_forced:
+            forced = []
+            for f in data.get("forcedphot", []):
+                flux = f.get("forcediffimflux")
+            fluxerr = f.get("forcediffimfluxunc")
+            if flux is not None:
+                forced.append({
+                    "jd": f.get("jd"),
+                    "fid": f.get("fid"),
+                    "ra": f.get("ranr"),
+                    "dec": f.get("decnr"),
+                    "flux": flux,
+                    "fluxerr": fluxerr,
+                    "magzpsci": f.get("magzpsci"),
+                })
+            result["forced"] = forced
+
+        return result
+
+    def is_kafka_monitored(self, object_id: str) -> bool:
+        # In real setup, we'd listen for updates here
+        return True
+    
+    def is_available(self) -> bool:
+        return bool(self.token)
+
+    def conesearch(self, ra: float, dec: float, radius: float, **kwargs) -> Any:
+        return self._cone(ra, dec, radius, **kwargs)
+
+    def findobject(self, object_id: str, **kwargs) -> Any:
+        raw_data = self._objects(object_id, **kwargs)
+        return self.normalize_object(raw_data, include_summary = True) 
+
+    def findobjects(self, object_ids: Optional[List[str]], **kwargs) -> Iterator[Any]:
+        if object_ids is None:
+            raise ValueError("Lasair multi object query requires object_ids not be None.")
+        objects = []
+        for oid in object_ids:
+            objects.append(self._objects(oid, **kwargs))
+        return objects
+
+    def sqlquery(self, query: str, **kwargs) -> Iterator[Any]:
+        # TODO break query into pieces
+        # return run_query
+        raise NotImplementedError
+
+    def crossmatch(self, object_id: str, catalog: Optional[str] = None, **kwargs) -> Any:
+        # TODO have it for up to ten object ids
+        return self._sherlock_object(object_id)
+
+    def kafka_stream(self, **kwargs) -> Iterator[Any]:
+        # TODO
+        raise NotImplementedError
+
+    def lightcurve(self, object_id: str, **kwargs) -> Any:
+        return self._lightcurves(object_id, **kwargs)
+
+    def classifications(self, object_id: str, **kwargs) -> Any:
+        # TODO
+        raise NotImplementedError
+
+    def _cone(
+        self,
+        ra: float,
+        dec: float,
+        radius: float,
+        request_type: str = "all",
+        format: str = "json"
+    ):
+        """
+        Perform a cone search on Lasair objects.
+
+        Parameters:
+        - ra (float): Right Ascension in decimal degrees
+        - dec (float): Declination in decimal degrees
+        - radius (float): Search radius in arcseconds (max 1000)
+        - request_type (str): 'nearest', 'all', or 'count'
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - List of objects within search cone or count
+        """
+        params = {
+            "ra": ra,
+            "dec": dec,
+            "radius": radius,
+            "requestType": request_type,
+            "format": format
+        }
+        return self.request(endpoint="cone/", params=params, include_token=True)
+
+    def _query(
+        self,
+        selected: str,
+        tables: str,
+        conditions: str,
+        limit: int = 1000,
+        offset: int = 0,
+        format: str = "json"
+    ):
+        """
+        Execute a SQL query on the Lasair database.
+
+        Parameters:
+        - selected (str): Attributes to return (comma-separated)
+        - tables (str): Tables to join (comma-separated)
+        - conditions (str): WHERE clause criteria
+        - limit (int): Max records to return (default: 1000)
+        - offset (int): Record offset (default: 0)
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Query results in requested format
+        """
+        params = {
+            "selected": selected,
+            "tables": tables,
+            "conditions": conditions,
+            "limit": limit,
+            "offset": offset,
+            "format": format
+        }
+        return self.request(endpoint="query/", params=params, include_token=True)
+
+    def _objects(
+        self,
+        objectId: str,
+        lasair_added: bool = True,
+        format: str = "json"
+    ):
+        """
+        Retrieve machine-readable data for a specific object.
+
+        Parameters:
+        - objectId (str): Target object identifier
+        - lasair_added (bool): Include Lasair-added data (default: True)
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Object data including lightcurve and metadata
+        """
+        params = {
+            "objectId": objectId,
+            "lasair_added": str(lasair_added).lower(),
+            "format": format
+        }
+        return self.request(endpoint="object/", params=params, include_token=True)
+
+    def _lightcurves(
+        self,
+        objectId: Union[str, List[str]],
+        format: str = "json"
+    ):
+        """
+        Retrieve machine-readable data for a specific object.
+
+        Parameters:
+        - objectId (str): Target object identifier
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Object lightcurve points. 
+        magpsf represents difference mag, use this code to convert to apparent mag
+        https://lasair.readthedocs.io/en/develop/core_functions/lasair/static/mag.py
+        """
+        params = {
+            "objectId": objectId,
+            "format": format
+        }
+        return self.request(endpoint="lightcurves/", params=params, include_token=True)
+
+    def _sherlock_object(
+        self,
+        objectId: Union[str, List[str]],
+        lite: bool = True,
+        format: str = "json"
+    ):
+        """
+        Retrieve Sherlock information for named objects.
+
+        Parameters:
+        - objectId (str|list): Single object ID or list of IDs (max 10)
+        - lite (bool): Return simplified information (default: True)
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Sherlock classifications and crossmatches
+        """
+        # Convert list to comma-separated string
+        if isinstance(objectId, list):
+            objectId = ",".join(objectIds)
+            
+        params = {
+            "objectId": objectId,
+            "lite": str(lite).lower(),
+            "format": format
+        }
+        return self.request(endpoint="sherlock/object/", params=params, include_token=True)
+
+    def _sherlock_position(
+        self,
+        ra: float,
+        dec: float,
+        lite: bool = True,
+        format: str = "json"
+    ):
+        """
+        Retrieve Sherlock information for a sky position.
+
+        Parameters:
+        - ra (float): Right Ascension in decimal degrees
+        - dec (float): Declination in decimal degrees
+        - lite (bool): Return simplified information (default: True)
+        - format (str): Output format: 'json'[default], 'csv'
+
+        Returns:
+        - Sherlock classifications for the position
+        """
+        params = {
+            "ra": ra,
+            "dec": dec,
+            "lite": str(lite).lower(),
+            "format": format
+        }
+        return self.request(endpoint="sherlock/position", params=params, include_token=True)
+    
+    def _extract_multiband_crossmatches(sherlock_data: dict) -> dict:
+        result = {"IR": [], "X": [], "UV": []}
+        for cm in sherlock_data.get("crossmatches", []):
+            cat = cm.get("catalogue", "").lower()
+            if "wise" in cat or "2mass" in cat:
+                result["IR"].append(cm)
+            elif "xmm" in cat or "rosat" in cat or "chandra" in cat or "erosita" in cat:
+                result["X"].append(cm)
+            elif "galex" in cat:
+                result["UV"].append(cm)
+        return result

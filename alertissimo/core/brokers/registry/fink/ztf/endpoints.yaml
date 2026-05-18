@@ -1,0 +1,851 @@
+# brokers/fink/ztf/endpoints.yaml
+broker: fink
+origin: ztf
+baseurl: https://api.ztf.fink-portal.org
+
+
+endpoints:
+
+  objects:
+    path: "/api/v1/objects"
+    method: GET
+    description: "Retrieve object data from the Fink/ZTF database based on their name"
+    params:
+      objectId:
+        required: true
+        type: string
+        description: "single ZTF Object ID, or a comma-separated list of object names, e.g. 'ZTF19acmdpyr,ZTF21aaxtctv'"
+      withupperlim:
+        required: false
+        type: boolean
+        description: "If True, retrieve also upper limit measurements, and bad quality measurements. Use the column `d:tag` in your results: valid, upperlim, badquality."
+      withcutouts:
+        required: false
+        type: boolean
+        description: "If True, retrieve also cutout data as 2D array. See also `cutout-kind`."
+      cutout-kind:
+        required: false
+        type: string
+        enum: ["Science", "Template", "Difference"]
+        description: "`Science`, `Template`, or `Difference`. If not specified, returned all three."
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_alerts
+    provides:
+      # Position
+      - position.ra
+      - position.dec
+      - position.image_x
+      - position.image_y
+      - position.distance_to_edge
+      
+      # Photometry
+      - photometry.psf_mag
+      - photometry.psf_mag_error
+      - photometry.mjd
+      - photometry.filter
+      - photometry.diff_mag_limit
+      - photometry.zero_point
+      - photometry.zero_point_rms
+      - photometry.zero_point_uncertainty
+      - photometry.exposure_time
+      - photometry.aperture_mag
+      - photometry.aperture_mag_big
+      - photometry.aperture_mag_error
+      - photometry.aperture_mag_big_error
+      - photometry.mag_ap_minus_psf
+      - photometry.mag_from_limit
+      
+      # Quality
+      - quality.real_bogus
+      - quality.rf_real_bogus
+      - quality.psf_chisq
+      - quality.star_galaxy
+      - quality.fwhm
+      - quality.elongation
+      - quality.aimage
+      - quality.bimage
+      - quality.aimage_ratio
+      - quality.bimage_ratio
+      - quality.chinr
+      - quality.sharpnr
+      - quality.drb_version
+      - quality.rb_version
+      
+      # Context
+      - context.object_id
+      - context.candid
+      - context.field
+      - context.night_id
+      - context.program_id
+      - context.publisher
+      - context.broker_version
+      - context.science_version
+      - context.schema_version
+      - context.pid
+      - context.rfid
+      - context.diffim_filename
+      - context.too_flag
+      
+      # Detection
+      - detection.is_positive
+      - detection.upper_limit
+      - detection.nbad_pixels
+      - detection.nneg_pixels
+      - detection.pixel_sum_ratio
+      - detection.scorr
+      - detection.ssnrms
+      - detection.dsnrms
+      - detection.dsdiff
+      - detection.seeratio
+      
+      # History
+      - history.detection_count
+      - history.first_mjd
+      - history.last_mjd
+      
+      # Reference
+      - reference.nearest_distance
+      - reference.nearest_magnitude
+      - reference.nearest_magnitude_error
+      - reference.nearest_ra
+      - reference.nearest_dec
+      - reference.first_mjd
+      - reference.last_mjd
+      - reference.nframes
+      - reference.ncovhist
+      
+      # Calibration
+      - calibration.color_coefficient
+      - calibration.color_coefficient_uncertainty
+      - calibration.color_median
+      - calibration.color_rms
+      - calibration.nmatches
+      - calibration.zp_covariance
+      - calibration.zp_median
+      
+      # Object Aggregates (L1)
+      - object.first_detection
+      - object.last_detection
+      - object.timespan_days
+      - object.constellation
+      - photometry.magnitude_rate
+      - photometry.magnitude_rate_error
+      - color.g_minus_r
+      - color.g_minus_r_error
+      - color.g_minus_r_rate
+      - color.g_minus_r_rate_error
+      
+      # Classification (L2)
+      - classification.fink_class
+      - classification.snia_prob
+      - classification.sn_prob
+      - classification.snia_vs_cc_prob
+      - classification.kilonova_prob
+      - classification.microlensing_prob
+      - classification.slsn_score
+      - classification.blazar_m0
+      - classification.blazar_m1
+      - classification.blazar_m2
+      
+      # Specialized (L3)
+      - solar_system.roid
+      - solar_system.mpc_name
+      - solar_system.mpc_distance
+      - solar_system.mpc_magnitude
+      - tns.name
+      - satellite.tracklet_id
+      - gaia.distance
+      - gaia.distance_bright
+      - gaia.magnitude
+      - gaia.magnitude_bright
+      
+      # Cross-Match (L4)
+      - crossmatch.simbad_type
+      - crossmatch.mangrove_2mass
+      - crossmatch.mangrove_hyperleda
+      - crossmatch.mangrove_distance
+      - crossmatch.mangrove_luminosity_distance
+      - crossmatch.ps1_object_id
+      - crossmatch.ps1_distance
+      - crossmatch.ps1_g_mag
+      - crossmatch.ps1_r_mag
+      - crossmatch.ps1_i_mag
+      - crossmatch.ps1_star_galaxy_score
+      - ps1.nmatches
+      
+      # Light Curve (L5)
+      - light_curve.r_features
+      - light_curve.magnitude_rate
+      - light_curve.magnitude_rate_error
+      - light_curve.rate_lower_percentile
+      - light_curve.rate_upper_percentile
+      - light_curve.detection_count
+      
+      # Cutouts (L6) - only if withcutouts=true
+      - cutouts.science
+      - cutouts.template
+      - cutouts.difference
+      
+
+  conesearch:
+    path: "/api/v1/conesearch"
+    method: GET
+    description: "Retrieve object data from the Fink/ZTF database based on their coordinates"
+    params:
+      ra:
+        required: true
+        type: number
+        description: "Right Ascension, in decimal degree."
+      dec:
+        required: true
+        type: number
+        description: "Declination, in decimal degree."
+      radius:
+        required: true
+        type: number
+        description: "Conesearch radius in arcsec. Maximum is 18,000 arcseconds (5 degrees)."
+      n:
+        required: false
+        type: integer
+        default: 1000
+        description: "Maximal number of alerts to return."
+      startdate:
+        required: false
+        type: string
+        default: "2019-11-01 00:00:00"
+        description: "Starting date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates."
+      stopdate:
+        required: false
+        type: string
+        default: "now"
+        description: "Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates."
+      window:
+        required: false
+        type: number
+        description: "Time window in days, may be used instead of stopdate."
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_alerts
+    provides:
+      - position.ra
+      - position.dec
+      - position.cone_distance
+      - photometry.psf_mag
+      - photometry.psf_mag_error
+      - photometry.mjd
+      - photometry.filter
+      - quality.real_bogus
+      - context.object_id
+      - context.candid
+      - history.detection_count
+      - history.first_mjd
+      - crossmatch.simbad_type
+      - light_curve.detection_count
+
+
+  latests:
+    path: "/api/v1/latests"
+    method: GET
+    description: "Retrieve object data from the Fink/ZTF database based on their Fink derived class"
+    params:
+      class:
+        required: true
+        type: string
+        description: "Fink derived label. See https://api.ztf.fink-portal.org/api/v1/classes for available tags."
+      trend:
+        required: false
+        type: string
+        enum: ["rising", "fading", "low_state", "new_low_state"]
+        description: "Desired trend among: rising, fading. For `class=(CTA) Blazar`, two specific trends are available: low_state, new_low_state."
+      n:
+        required: false
+        type: integer
+        default: 100
+        description: "Last N alerts to transfer between stopping date and starting date."
+      startdate:
+        required: false
+        type: string
+        default: "2019-11-01 00:00:00"
+        description: "Starting date in UTC (iso, jd, or MJD)."
+      stopdate:
+        required: false
+        type: string
+        default: "now"
+        description: "Stopping date in UTC (iso, jd, or MJD)."
+      color:
+        required: false
+        type: boolean
+        default: false
+        description: "If True, extract color information for the transient."
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_alerts
+    provides:
+      - position.ra
+      - position.dec
+      - position.image_x
+      - position.image_y
+      - photometry.psf_mag
+      - photometry.psf_mag_error
+      - photometry.mjd
+      - photometry.filter
+      - photometry.diff_mag_limit
+      - photometry.zero_point
+      - quality.real_bogus
+      - quality.rf_real_bogus
+      - quality.psf_chisq
+      - quality.star_galaxy
+      - context.object_id
+      - context.candid
+      - context.field
+      - context.night_id
+      - context.publisher
+      - context.too_flag
+      - detection.is_positive
+      - history.detection_count
+      - history.first_mjd
+      - history.last_mjd
+      - object.first_detection
+      - object.last_detection
+      - object.timespan_days
+      - object.constellation
+      - photometry.magnitude_rate
+      - color.g_minus_r
+      - classification.fink_class
+      - classification.snia_prob
+      - classification.sn_prob
+      - classification.snia_vs_cc_prob
+      - classification.kilonova_prob
+      - classification.microlensing_prob
+      - classification.slsn_score
+      - classification.anomaly_score
+      - classification.blazar_m0
+      - classification.blazar_m1
+      - classification.blazar_m2
+      - classification.is_transient
+      - solar_system.roid
+      - solar_system.mpc_name
+      - solar_system.mpc_distance
+      - solar_system.mpc_magnitude
+      - tns.name
+      - satellite.tracklet_id
+      - gaia.variability_flag
+      - gaia.variability_class
+      - gaia.distance
+      - gaia.magnitude
+      - crossmatch.simbad_type
+      - crossmatch.gaia_dr3_id
+      - crossmatch.gaia_parallax
+      - crossmatch.gaia_parallax_error
+      - crossmatch.gcvs_type
+      - crossmatch.vsx_type
+      - crossmatch.spicy_id
+      - crossmatch.spicy_class
+      - crossmatch.blazar_3hsp
+      - crossmatch.blazar_4lac
+      - crossmatch.mangrove_2mass
+      - crossmatch.mangrove_hyperleda
+      - crossmatch.mangrove_distance
+      - crossmatch.mangrove_luminosity_distance
+      - crossmatch.ps1_distance
+      - crossmatch.ps1_star_galaxy_score
+      - ps1.nmatches
+      - light_curve.g_features
+      - light_curve.r_features
+      - light_curve.first_detection_5sigma_mjd
+      - light_curve.delta_time_first_detection
+      - light_curve.magnitude_rate
+      - light_curve.magnitude_rate_error
+      - light_curve.rate_lower_percentile
+      - light_curve.rate_upper_percentile
+      - light_curve.delta_time_rate
+      - light_curve.from_upper_limit
+      - light_curve.detection_count
+      
+
+  anomaly:
+    path: "/api/v1/anomaly"
+    method: GET
+    description: "Retrieve alerts tagged as anomaly from the Fink/ZTF database"
+    params:
+      n:
+        required: false
+        type: integer
+        default: 10
+        description: "Last N alerts to transfer between stop and start date (going from most recent to older alerts)."
+      start_date:
+        required: false
+        type: string
+        default: "2019-11-01"
+        description: "[Optional] Start date in UTC YYYY-MM-DD."
+      stop_date:
+        required: false
+        type: string
+        default: "now"
+        description: "[Optional] Stop date in UTC YYYY-MM-DD."
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_alerts
+    provides:
+      # Position
+      - position.ra
+      - position.dec
+      - position.image_x
+      - position.image_y
+      - position.distance_to_edge
+      
+      # Photometry
+      - photometry.psf_mag
+      - photometry.psf_mag_error
+      - photometry.mjd
+      - photometry.filter
+      - photometry.diff_mag_limit
+      - photometry.zero_point
+      - photometry.zero_point_rms
+      - photometry.zero_point_uncertainty
+      - photometry.exposure_time
+      - photometry.aperture_mag
+      - photometry.aperture_mag_big
+      - photometry.aperture_mag_error
+      - photometry.aperture_mag_big_error
+      - photometry.mag_ap_minus_psf
+      - photometry.mag_from_limit
+      
+      # Quality
+      - quality.real_bogus
+      - quality.rf_real_bogus
+      - quality.psf_chisq
+      - quality.star_galaxy
+      - quality.fwhm
+      - quality.elongation
+      - quality.aimage
+      - quality.bimage
+      - quality.aimage_ratio
+      - quality.bimage_ratio
+      - quality.chinr
+      - quality.sharpnr
+      - quality.drb_version
+      - quality.rb_version
+      
+      # Context
+      - context.object_id
+      - context.candid
+      - context.field
+      - context.night_id
+      - context.program_id
+      - context.publisher
+      - context.broker_version
+      - context.science_version
+      - context.schema_version
+      - context.pid
+      - context.rfid
+      - context.diffim_filename
+      - context.too_flag
+      
+      # Detection
+      - detection.is_positive
+      - detection.nbad_pixels
+      - detection.nneg_pixels
+      - detection.pixel_sum_ratio
+      - detection.scorr
+      - detection.ssnrms
+      - detection.dsnrms
+      - detection.dsdiff
+      - detection.seeratio
+      
+      # History
+      - history.detection_count
+      - history.first_mjd
+      - history.last_mjd
+      
+      # Reference
+      - reference.nearest_distance
+      - reference.nearest_magnitude
+      - reference.nearest_magnitude_error
+      - reference.nearest_ra
+      - reference.nearest_dec
+      - reference.first_mjd
+      - reference.last_mjd
+      - reference.nframes
+      - reference.ncovhist
+      
+      # Calibration
+      - calibration.color_coefficient
+      - calibration.color_coefficient_uncertainty
+      - calibration.color_median
+      - calibration.color_rms
+      - calibration.nmatches
+      - calibration.zp_covariance
+      - calibration.zp_median
+      
+      # Object Aggregates (L1)
+      - object.first_detection
+      - object.last_detection
+      - object.timespan_days
+      - object.constellation
+      
+      # Classification (L2)
+      - classification.fink_class
+      - classification.snia_prob
+      - classification.sn_prob
+      - classification.snia_vs_cc_prob
+      - classification.kilonova_prob
+      - classification.microlensing_prob
+      - classification.slsn_score
+      - classification.anomaly_score
+      - classification.blazar_m0
+      - classification.blazar_m1
+      - classification.blazar_m2
+      - classification.is_transient
+      
+      # Specialized (L3)
+      - solar_system.roid
+      - solar_system.mpc_name
+      - solar_system.mpc_distance
+      - solar_system.mpc_magnitude
+      - tns.name
+      - satellite.tracklet_id
+      - gaia.variability_flag
+      - gaia.variability_class
+      - gaia.distance
+      - gaia.distance_bright
+      - gaia.magnitude
+      - gaia.magnitude_bright
+      
+      # Cross-Match (L4)
+      - crossmatch.simbad_type
+      - crossmatch.gaia_dr3_id
+      - crossmatch.gaia_parallax
+      - crossmatch.gaia_parallax_error
+      - crossmatch.gcvs_type
+      - crossmatch.vsx_type
+      - crossmatch.spicy_id
+      - crossmatch.spicy_class
+      - crossmatch.blazar_3hsp
+      - crossmatch.blazar_4lac
+      - crossmatch.mangrove_2mass
+      - crossmatch.mangrove_hyperleda
+      - crossmatch.mangrove_distance
+      - crossmatch.mangrove_luminosity_distance
+      - crossmatch.ps1_object_id
+      - crossmatch.ps1_distance
+      - crossmatch.ps1_g_mag
+      - crossmatch.ps1_r_mag
+      - crossmatch.ps1_i_mag
+      - crossmatch.ps1_star_galaxy_score
+      - ps1.nmatches
+      
+      # Light Curve (L5)
+      - light_curve.g_features
+      - light_curve.r_features
+      - light_curve.first_detection_5sigma_mjd
+      - light_curve.delta_time_first_detection
+      - light_curve.magnitude_rate
+      - light_curve.magnitude_rate_error
+      - light_curve.rate_lower_percentile
+      - light_curve.rate_upper_percentile
+      - light_curve.delta_time_rate
+      - light_curve.from_upper_limit
+      - light_curve.detection_count
+
+
+  cutouts:
+    path: "/api/v1/cutouts"
+    method: GET
+    description: "Retrieve cutout data from the Fink/ZTF datalake"
+    params:
+      objectId:
+        required: true
+        type: string
+        description: "ZTF Object ID"
+      kind:
+        required: false
+        type: string
+        enum: ["Science", "Template", "Difference", "All"]
+        default: "Science"
+        description: "Science, Template, or Difference. For output-format=array, you can also specify `kind: All` to get the 3 cutouts."
+      output-format:
+        required: false
+        type: string
+        enum: ["PNG", "FITS", "array"]
+        default: "PNG"
+        description: "PNG[default], FITS, array"
+      candid:
+        required: false
+        type: string
+        description: "Candidate ID (long integer) of the alert belonging to the object with `objectId`. If not filled, the cutouts of the latest alert is returned"
+      stretch:
+        required: false
+        type: string
+        enum: ["sigmoid", "linear", "sqrt", "power", "log"]
+        default: "sigmoid"
+        description: "Stretch function to be applied."
+      colormap:
+        required: false
+        type: string
+        default: "grayscale"
+        description: "Valid matplotlib colormap name (see matplotlib.cm). Default is grayscale."
+      pmin:
+        required: false
+        type: number
+        default: 0.5
+        description: "The percentile value used to determine the pixel value of minimum cut level. Default is 0.5. No effect for sigmoid."
+      pmax:
+        required: false
+        type: number
+        default: 99.5
+        description: "The percentile value used to determine the pixel value of maximum cut level. Default is 99.5. No effect for sigmoid."
+      convolution_kernel:
+        required: false
+        type: string
+        enum: ["gauss", "box"]
+        description: "Convolve the image with a kernel (gauss or box). If not specified, no kernel is applied."
+    output_type: single_object
+    provides:
+      - cutouts.science
+      - cutouts.template
+      - cutouts.difference
+    notes: |
+      - output-format=PNG or FITS returns URL to image
+      - output-format=array returns 2D array as shown
+
+  sso:
+    path: "/api/v1/sso"
+    method: GET
+    description: "Retrieve Solar System data from the Fink/ZTF database based on their ID"
+    params:
+      n_or_d:
+        required: true
+        type: string
+        description: "IAU number of the object, or designation of the object IF the number does not exist yet. Example for numbers: 8467 (asteroid) or 10P (comet). Example for designations: 2010JO69 (asteroid) or C/2020V2 (comet). You can also give a list of object names (comma-separated)."
+      withEphem:
+        required: false
+        type: boolean
+        description: "Attach ephemerides provided by the Miriade service (https://ssp.imcce.fr/webservices/miriade/api/ephemcc/), as extra columns in the results."
+      withResiduals:
+        required: false
+        type: boolean
+        description: "Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object query (`n_or_d` cannot be a list)."
+      withCutouts:
+        required: false
+        type: boolean
+        description: "If True, retrieve also cutout data as 2D array. See also `cutout-kind`."
+      cutout-kind:
+        required: false
+        type: string
+        enum: ["Science", "Template", "Difference"]
+        description: "`Science`, `Template`, or `Difference`."
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_alerts
+    provides:
+      - position.ra
+      - position.dec
+      - position.image_x
+      - position.image_y
+      - photometry.psf_mag
+      - photometry.psf_mag_error
+      - photometry.mjd
+      - photometry.filter
+      - photometry.diff_mag_limit
+      - photometry.zero_point
+      - quality.real_bogus
+      - quality.rf_real_bogus
+      - quality.psf_chisq
+      - quality.star_galaxy
+      - context.object_id
+      - context.candid
+      - context.field
+      - context.night_id
+      - context.publisher
+      - context.too_flag
+      - detection.is_positive
+      - history.detection_count
+      - history.first_mjd
+      - history.last_mjd
+      - object.first_detection
+      - object.last_detection
+      - object.timespan_days
+      - object.constellation
+      - classification.fink_class
+      - classification.snia_prob
+      - classification.sn_prob
+      - classification.snia_vs_cc_prob
+      - classification.kilonova_prob
+      - classification.microlensing_prob
+      - classification.slsn_score
+      - classification.anomaly_score
+      - classification.blazar_m0
+      - classification.blazar_m1
+      - classification.blazar_m2
+      - classification.is_transient
+      - solar_system.roid
+      - solar_system.mpc_name
+      - solar_system.mpc_distance
+      - solar_system.mpc_magnitude
+      - solar_system.iau_name
+      - solar_system.iau_number
+      - tns.name
+      - satellite.tracklet_id
+      - gaia.variability_flag
+      - gaia.variability_class
+      - gaia.distance
+      - gaia.magnitude
+      - crossmatch.simbad_type
+      - crossmatch.gaia_dr3_id
+      - crossmatch.gaia_parallax
+      - crossmatch.gaia_parallax_error
+      - crossmatch.gcvs_type
+      - crossmatch.vsx_type
+      - crossmatch.spicy_id
+      - crossmatch.spicy_class
+      - crossmatch.blazar_3hsp
+      - crossmatch.blazar_4lac
+      - crossmatch.mangrove_2mass
+      - crossmatch.mangrove_hyperleda
+      - crossmatch.mangrove_distance
+      - crossmatch.mangrove_luminosity_distance
+      - crossmatch.ps1_distance
+      - crossmatch.ps1_star_galaxy_score
+      - ps1.nmatches
+      - light_curve.g_features
+      - light_curve.r_features
+      - light_curve.first_detection_5sigma_mjd
+      - light_curve.delta_time_first_detection
+      - light_curve.magnitude_rate
+      - light_curve.magnitude_rate_error
+      - light_curve.rate_lower_percentile
+      - light_curve.rate_upper_percentile
+      - light_curve.delta_time_rate
+      - light_curve.from_upper_limit
+      - light_curve.detection_count
+      
+      # Cutouts - if withCutouts=true
+      - cutouts.science
+      - cutouts.template
+      - cutouts.difference
+
+  statistics:
+    path: "/api/v1/statistics"
+    method: GET
+    description: "Get statistics about Fink and the ZTF alert stream"
+    params:
+      date:
+        required: true
+        type: string
+        description: "Observing date. This can be either a given night (YYYYMMDD), month (YYYYMM), year (YYYY), or everything (empty string)."
+      schema:
+        required: false
+        type: boolean
+        description: "If True, return just the schema of statistics table instead of actual data"
+      columns:
+        required: false
+        type: string
+        description: "Comma-separated data columns to transfer, e.g. 'basic:sci,basic:date'. If not specified, transfer all columns."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: single_object
+    provides:
+      - survey.date
+      - survey.exposures
+      - survey.fields
+      - survey.raw_alerts
+      - survey.science_alerts
+      - survey.alerts_by_filter
+      - survey.class_counts
+      - survey.key
+      - survey.timestamp
+    notes: |
+      - class_counts is a dynamic map containing all class:* fields
+      - Class fields include SIMBAD types, Fink classes, and special categories
+
+  resolver:
+    path: "/api/v1/resolver"
+    method: GET
+    description: "Explore existing names for a given object"
+    params:
+      resolver:
+        required: true
+        type: string
+        enum: ["simbad", "ssodnet", "tns"]
+        description: "Resolver among: `simbad`, `ssodnet`, `tns`"
+      name:
+        required: true
+        type: string
+        description: "Object name to resolve."
+      reverse:
+        required: false
+        type: boolean
+        default: false
+        description: "If True, resolve ZTF* name instead. Default is False."
+      nmax:
+        required: false
+        type: integer
+        default: 10
+        description: "Maximum number of match to return. Default is 10."
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+        description: "Output format"
+    output_type: array_of_objects
+    provides:
+      - resolver.catalog
+      - resolver.external_id
+      - resolver.type_code
+      - resolver.position_string
+      - position.ra
+      - position.dec
+      - resolver.external_name
+      - resolver.redshift
+      - resolver.reference_count
+    notes: |
+      - Returns array of matches from external catalog
+      - position.ra and position.dec are extracted from jradeg/jdedeg
+      - Different resolvers return different fields (some may be null)

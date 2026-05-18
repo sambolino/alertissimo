@@ -1,4 +1,2 @@
-pydantic
-lark
-pyyaml
-rich
+-e .
+setuptools==69.5.1

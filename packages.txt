@@ -1,0 +1,7 @@
+build-essential
+librdkafka-dev
+libssl-dev
+libffi-dev
+python3-setuptools
+python3-dev
+cmake
