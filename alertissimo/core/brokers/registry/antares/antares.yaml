@@ -1,0 +1,418 @@
+broker: antares
+description: "Unified Orchestration Manifest for ZTF, LSST, Solar System, and Multi-Messenger streams."
+
+---
+# brokers/antares/ztf/mappings.yaml
+broker: antares
+origin: ztf
+
+mappings:
+  ### ==================== L0: Portfolio Aggregates ====================
+
+  portfolio.id:
+    field: "locus_id"
+    availability:
+      - search
+      - locus
+
+  portfolio.ztf_id:
+    field: "properties.ztf_object_id"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  portfolio.detection_count:
+    field: "properties.num_alerts"
+    availability:
+      - search
+      - locus
+
+  portfolio.magnitude_count:
+    field: "properties.num_mag_values"
+    availability:
+      - search
+      - locus
+
+  portfolio.brightest_mag:
+    field: "properties.brightest_alert_magnitude"
+    availability:
+      - search
+      - locus
+
+  ### ==================== L1: Single Detection Parameters ====================
+
+  position.ra:
+    field: "properties.ra"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  position.dec:
+    field: "properties.dec"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.psf_mag:
+    field: "properties.ztf_magpsf"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.psf_mag_error:
+    field: "properties.ztf_sigmapsf"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.mjd:
+    field: "mjd"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.filter:
+    field: "properties.ant_passband"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.diff_mag_limit:
+    field: "properties.ztf_diffmaglim"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.mag_ap_minus_psf:
+    field: "properties.ztf_magdiff"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  quality.real_bogus:
+    field: "properties.ztf_drb"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  quality.rf_score:
+    field: "properties.ztf_rb"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  quality.fwhm:
+    field: "properties.ztf_fwhm"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  quality.psf_chisq:
+    field: "properties.ztf_chipsf"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  detection.is_positive:
+    field: "properties.ztf_isdiffpos"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  detection.nbad_pixels:
+    field: "properties.ztf_nbad"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  ### ==================== L1: Reference Context ====================
+
+  reference.nearest_distance:
+    field: "properties.ztf_distnr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  reference.nearest_magnitude:
+    field: "properties.ztf_magnr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  ### ==================== L4/L5: Analytics & ML ====================
+
+  lightcurve.features:
+    field: "properties.lc_feature_extractor"
+    availability:
+      - locus
+
+  classification.anomaly_score:
+    field: "properties.anomaly_score"
+    availability:
+      - search
+      - locus
+
+  classification.antares_tags:
+    field: "tags"
+    availability:
+      - search
+      - locus
+
+  ### ==================== L6: Contextual Enrichment ====================
+
+  crossmatch.catalogs:
+    field: "catalog_objects"
+    availability:
+      - locus
+
+  cutouts.stamps:
+    field: "get_thumbnails()"
+    availability:
+      - locus
+      - alert
+
+  host.separation_normalized:
+    field: "properties.dist/DLR"
+    availability:
+      - locus
+
+  host.color_distance:
+    field: "properties.4DCD"
+    availability:
+      - locus
+
+  host.color_iz:
+    field: "properties.i-z"
+    availability:
+      - locus
+
+---
+# brokers/antares/lsst/mappings.yaml
+broker: antares
+origin: lsst
+
+mappings:
+  ### ==================== L1: Rubin Direct Detections ====================
+
+  photometry.flux:
+    field: "properties.survey.lsst.psFlux"
+    availability:
+      - streaming
+      - locus
+
+  photometry.flux_error:
+    field: "properties.survey.lsst.psFluxErr"
+    availability:
+      - streaming
+      - locus
+
+  time.tai:
+    field: "properties.survey.lsst.midPointTai"
+    availability:
+      - streaming
+      - locus
+
+  position.ra:
+    field: "properties.ra"
+    availability:
+      - streaming
+      - locus
+
+  position.dec:
+    field: "properties.dec"
+    availability:
+      - streaming
+      - locus
+
+  ### ==================== L5: Rubin-Scale ML Scores ====================
+
+  classification.sn_ia_prob:
+    field: "properties.class_sn_ia_prob"
+    availability:
+      - locus
+
+  classification.tde_prob:
+    field: "properties.class_tde_prob"
+    availability:
+      - locus
+
+  classification.kilonova_prob:
+    field: "properties.class_kn_prob"
+    availability:
+      - locus
+
+  ### ==================== L0: Object Metadata ====================
+
+  object.lsst_id:
+    field: "properties.survey.lsst.dia_object_id"
+    availability:
+      - locus
+
+  object.visit_id:
+    field: "properties.survey.lsst.ccdVisitId"
+    availability:
+      - streaming
+
+---
+# brokers/antares/solar_system/mappings.yaml
+broker: antares
+origin: solar_system
+
+mappings:
+  ### ==================== L2: Solar System Specifics ====================
+
+  solar_system.id:
+    field: "properties.ztf_ssnamenr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  solar_system.name:
+    field: "solar_system_name"
+    availability:
+      - locus
+
+  solar_system.orbit_uncertainty:
+    field: "properties.u_param"
+    availability:
+      - locus
+
+  solar_system.earth_moid:
+    field: "properties.MOIDEarth"
+    availability:
+      - locus
+
+  solar_system.residual_ra:
+    field: "properties.ephOffsetRa"
+    availability:
+      - streaming
+      - locus
+
+  ### ==================== L1: Dynamic Measurements ====================
+
+  quality.elongation:
+    field: "properties.ztf_elong"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  photometry.mpc_magnitude:
+    field: "properties.ssmagnr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  separation.mpc_distance:
+    field: "properties.ztf_ssdistnr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+---
+# brokers/antares/multi_messenger/mappings.yaml
+broker: antares
+origin: multi_messenger
+
+mappings:
+  ### ==================== L8: External Notices ====================
+
+  notice.id:
+    field: "gracedb_id"
+    availability:
+      - notice
+
+  notice.type:
+    field: "notice_type"
+    availability:
+      - notice
+
+  notice.skymap:
+    field: "skymap_base64"
+    availability:
+      - notice
+
+  notice.time:
+    field: "event_datetime"
+    availability:
+      - notice
+
+  ### ==================== L6: Multi-Messenger Enrichment ====================
+
+  enrichment.coincident_alerts:
+    field: "get_coincident_loci()"
+    availability:
+      - notice
+
+---
+# brokers/antares/enrichment/mappings.yaml
+broker: antares
+origin: multiwavelength_context
+
+mappings:
+  ### ==================== L6: Multiwavelength Context ====================
+
+  crossmatch.gaia.id:
+    field: "properties.gaia_dr3_source_id"
+    availability:
+      - locus
+
+  crossmatch.gaia.parallax:
+    field: "properties.gaia_dr3_parallax"
+    availability:
+      - locus
+
+  crossmatch.gaia.proper_motion_ra:
+    field: "properties.gaia_dr3_pmra"
+    availability:
+      - locus
+
+  crossmatch.gaia.photometry:
+    field: "properties.gaia_dr3_phot_g_mean_mag"
+    availability:
+      - locus
+
+  crossmatch.wise.w1:
+    field: "properties.wise_w1_mag"
+    availability:
+      - locus
+
+  crossmatch.wise.w2:
+    field: "properties.wise_w2_mag"
+    availability:
+      - locus
+
+  crossmatch.wise.color:
+    field: "properties.wise_w1_w2_color"
+    availability:
+      - locus
+
+  crossmatch.ps1.g_mag:
+    field: "properties.ps1_g_mag"
+    availability:
+      - locus
+
+  crossmatch.chandra.flux:
+    field: "properties.xray_flux"
+    availability:
+      - locus
