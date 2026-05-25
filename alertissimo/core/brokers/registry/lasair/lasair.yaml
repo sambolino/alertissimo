@@ -1,0 +1,182 @@
+# brokers/lasair/ztf/mappings.yaml
+broker: lasair
+origin: ztf
+
+mappings:
+### ==================== L0: Portfolio Aggregates ====================
+  portfolio.id:
+    field: "objectId"
+    availability:
+      - objects
+      - streaming
+  portfolio.detection_count:
+    field: "objectData.ncand"
+    availability:
+      - objects
+  portfolio.first_mjd:
+    field: "mjdmin"
+    availability:
+      - objects
+  portfolio.last_mjd:
+    field: "mjdmax"
+    availability:
+      - objects
+  position.ra:
+    field: "objectData.ramean"
+    availability:
+      - objects
+  position.dec:
+    field: "objectData.decmean"
+    availability:
+      - objects
+
+### ==================== L1: Single Detection Parameters ====================
+  position.ra:
+    field: "ra"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  position.dec:
+    field: "dec"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  photometry.psf_mag:
+    field: "magpsf"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  photometry.psf_mag_error:
+    field: "sigmapsf"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  photometry.mjd:
+    field: "mjd"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  photometry.filter:
+    field: "fid"
+    transform:
+      1: "g"
+      2: "r"
+      3: "i"
+    availability:
+      - detections
+      - candidates
+      - streaming
+  detection.is_positive:
+    field: "isdiffpos"
+    transform:
+      "t": true
+      "f": false
+    availability:
+      - detections
+      - candidates
+
+### ==================== L4: Light Curve Features (Nested) ====================
+  lightcurve.flux_jump:
+    field: "objectData.jump1"
+    description: "Sigma significance of largest flux deviation"
+    availability:
+      - objects
+  lightcurve.flux_jump_secondary:
+    field: "objectData.jump2"
+    availability:
+      - objects
+  lightcurve.ebv:
+    field: "objectData.ebv"
+    description: "Interstellar dust reddening (SFD)"
+    availability:
+      - objects
+  lightcurve.fit_model:
+    field: "objectData.fit_model_type"
+    availability:
+      - objects
+  lightcurve.rise_rate:
+    field: "objectData.rise_rate"
+    availability:
+      - objects
+  lightcurve.fall_rate:
+    field: "objectData.fall_rate"
+    availability:
+      - objects
+  lightcurve.fitted_temperature:
+    field: "objectData.fitted_temperature"
+    availability:
+      - objects
+  lightcurve.chi2:
+    field: "objectData.chi2_fit"
+    availability:
+      - objects
+
+### ==================== L5: Machine Learning (NEEDLE Flat) ====================
+  classification.needle.sn_prob:
+    field: "classjson.SN"
+    transform: "float"
+    availability:
+      - objects
+      - streaming
+    filter:
+      topic: "NEEDLE"
+  classification.needle.slsn_i_prob:
+    field: 'classjson["SLSN-I"]'
+    transform: "float"
+    availability:
+      - objects
+      - streaming
+    filter:
+      topic: "NEEDLE"
+  classification.needle.tde_prob:
+    field: "classjson.TDE"
+    transform: "float"
+    availability:
+      - objects
+      - streaming
+    filter:
+      topic: "NEEDLE"
+  classification.needle.agn_prob:
+    field: "classjson.AGN"
+    transform: "float"
+    availability:
+      - objects
+      - streaming
+    filter:
+      topic: "NEEDLE"
+
+### ==================== L6: Contextual Enrichment ====================
+  classification.sherlock.class:
+    field: "sherlock.classification"
+    description: "Contextual label (SN, NT, AGN, VS, CV, BS, ORPHAN)"
+    availability:
+      - objects
+      - streaming
+  crossmatch.tns.id:
+    field: "tns.tns_name"
+    availability:
+      - objects
+
+# brokers/lasair/lsst/mappings.yaml
+broker: lasair
+origin: lsst
+
+mappings:
+### ==================== L1: Rubin/LSST Detections ====================
+  photometry.filter:
+    field: "filterName"
+    availability:
+      - detections
+      - diaSources
+      - streaming
+  photometry.mjd:
+    field: "mjd"
+    availability:
+      - detections
+      - diaSources
+      - streaming
