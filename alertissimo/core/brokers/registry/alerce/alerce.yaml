@@ -57,13 +57,43 @@ mappings:
     availability:
       - detections
 
-  # ==================== L1: Sorting Hat Flags (Nested) ====================
+  # ==================== L1: Reference Context & Quality ====================
+  quality.real_bogus:
+    field: "drb"
+    availability:
+      - detections
+  quality.rf_score:
+    field: "rb"
+    availability:
+      - detections
+  reference.nearest_distance:
+    field: "distnr"
+    availability:
+      - detections
+  reference.nearest_magnitude:
+    field: "magnr"
+    availability:
+      - detections
+
+  # ==================== L1/L2: Sorting Hat Flags (Nested) ====================
   classification.is_transient:
     field: "extra_fields.is_transient"
     availability:
       - objects
+  classification.is_variable:
+    field: "extra_fields.is_variable"
+    availability:
+      - objects
+  classification.in_galaxy:
+    field: "extra_fields.in_galaxy"
+    availability:
+      - objects
   classification.nuclear_transient:
     field: "extra_fields.nuclear_transient"
+    availability:
+      - objects
+  classification.near_bright_star:
+    field: "extra_fields.near_bright_star"
     availability:
       - objects
   classification.known_asteroid:
@@ -81,7 +111,7 @@ mappings:
     availability:
       - stamps
 
-  # ==================== L4: Light Curve Features (Isolated Features Endpoint) ====================
+  # ==================== L4: Light Curve Features (Isolated) ====================
   lightcurve.period:
     field: "Period_fit"
     availability:
@@ -92,14 +122,6 @@ mappings:
       - features
   lightcurve.spm_tau_rise:
     field: "SPM_tau_rise"
-    availability:
-      - features
-  lightcurve.spm_tau_fall:
-    field: "SPM_tau_fall"
-    availability:
-      - features
-  lightcurve.stetson_k:
-    field: "StetsonK"
     availability:
       - features
   lightcurve.feature_vector:
@@ -127,7 +149,7 @@ mappings:
     filter:
       classifier_name: "anomaly_detector_ae"
 
----
+--------------------------------------------------------------------------------
 
 ### brokers/alerce/lsst/mappings.yaml
 broker: alerce
@@ -163,11 +185,19 @@ mappings:
     availability:
       - detections
 
-  # ==================== L5: Rubin-Scale ML (ATAT / Anomaly) ====================
+  # ==================== L5: Rubin ML (ATAT / Anomaly / Rubin Stamp) ====================
   classification.atat.class:
     field: "class_name"
     availability:
       - probabilities
+    filter:
+      classifier_name: "lc_classifier_lsst"
+  classification.alerce_stamp.probability:
+    field: "probability"
+    availability:
+      - probabilities
+    filter:
+      classifier_name: "stamp_classifier_rubin_beta"
   classification.anomaly_score:
     field: "score"
     availability:
@@ -175,7 +205,7 @@ mappings:
     filter:
       classifier_name: "anomaly_detector_ae"
 
----
+--------------------------------------------------------------------------------
 
 ### brokers/alerce/solar_system/mappings.yaml
 broker: alerce
@@ -190,6 +220,10 @@ mappings:
     field: "designation"
     availability:
       - objects
+  solar_system.residual_total:
+    field: "ephOffset"
+    availability:
+      - detections
   solar_system.residual_ra:
     field: "ephOffsetRa"
     availability:
@@ -212,8 +246,16 @@ mappings:
     field: "i"
     availability:
       - objects
+  solar_system.orbit.period:
+    field: "period"
+    availability:
+      - objects
+  solar_system.absolute_magnitude:
+    field: "h"
+    availability:
+      - objects
 
----
+--------------------------------------------------------------------------------
 
 ### brokers/alerce/forced_photometry/mappings.yaml
 broker: alerce
@@ -233,7 +275,7 @@ mappings:
     availability:
       - forced_photometry
 
----
+--------------------------------------------------------------------------------
 
 ### brokers/alerce/enrichment/mappings.yaml
 broker: alerce

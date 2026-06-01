@@ -1,0 +1,139 @@
+### brokers/alerce/endpoints.yaml
+broker: alerce
+baseurl: https://api.alerce.online
+endpoints:
+  # ==================== Object Level Queries ====================
+  objects:
+    path: "/objects"
+    method: GET
+    description: "Retrieve object-level aggregates and metadata for ZTF or LSST objects."
+    params:
+      survey:
+        required: true
+        type: string
+        enum: ["ztf", "lsst"]
+        description: "Source survey (ZTF or Rubin LSST)"
+      classifier:
+        required: false
+        type: string
+        description: "Filter by classifier name (e.g., lc_classifier)"
+      class_name:
+        required: false
+        type: string
+        description: "Filter by astrophysical class (e.g., SNIa, AGN)"
+      probability:
+        required: false
+        type: number
+        description: "Minimum probability threshold"
+      ndet:
+        required: false
+        type: integer
+        description: "Minimum number of detections"
+    output_type: array_of_objects
+    provides:
+      - portfolio.id
+      - portfolio.detection_count
+      - portfolio.first_mjd
+      - portfolio.last_mjd
+      - classification.is_transient
+      - classification.nuclear_transient
+      - classification.known_asteroid
+
+  object:
+    path: "/objects/{oid}"
+    method: GET
+    description: "Get a full single object profile including contextual enrichment data (L6)."
+    params:
+      oid:
+        required: true
+        type: string
+        description: "The unique ALeRCE ID (aid) or ZTF ID (oid)"
+    output_type: single_object
+    provides:
+      - crossmatch.gaia.distance
+      - crossmatch.gaia.parallax
+      - crossmatch.wise.w1
+      - crossmatch.wise.distance
+      - crossmatch.ps1.distance
+      - crossmatch.ps1.star_galaxy_score
+
+  # ==================== Photometry & Sensor Data ====================
+  detections:
+    path: "/objects/{oid}/detections"
+    method: GET
+    description: "Retrieve all high-SNR detections (L1) for a specific object."
+    params:
+      oid:
+        required: true
+        type: string
+      survey:
+        required: true
+        type: string
+    output_type: array_of_detections
+    provides:
+      - position.ra
+      - position.dec
+      - photometry.psf_mag
+      - photometry.flux
+      - photometry.mjd
+      - photometry.filter
+      - detection.is_positive
+
+  forced_photometry:
+    path: "/objects/{oid}/forced_photometry"
+    method: GET
+    description: "Retrieve sub-threshold measurements (forced photometry) for light curve history."
+    params:
+      oid:
+        required: true
+        type: string
+    output_type: array_of_detections
+    provides:
+      - photometry.science_flux
+      - photometry.template_flux
+      - photometry.mjd
+
+  # ==================== Analytics & ML ====================
+  probabilities:
+    path: "/objects/{oid}/probabilities"
+    method: GET
+    description: "Retrieve classification probabilities (L5) from various ML engines (CNN, BHRF, ATAT, Anomaly)."
+    params:
+      oid:
+        required: true
+        type: string
+    output_type: array_of_probabilities
+    provides:
+      - classification.alerce_stamp.class
+      - classification.alerce_stamp.probability
+      - classification.atat.class
+      - classification.anomaly_score
+
+  features:
+    path: "/objects/{oid}/features"
+    method: GET
+    description: "Retrieve 100+ statistical features (L4) calculated by the feature extractor pipeline."
+    params:
+      oid:
+        required: true
+        type: string
+    output_type: array_of_features
+    provides:
+      - lightcurve.period
+      - lightcurve.bazin_gamma
+      - lightcurve.spm_tau_rise
+      - lightcurve.feature_vector
+
+  # ==================== Media & Stamps ====================
+  stamps:
+    path: "/objects/{oid}/stamps"
+    method: GET
+    description: "Retrieve binary cutout images (L3) for science and template frames."
+    params:
+      oid:
+        required: true
+        type: string
+    output_type: media_binary
+    provides:
+      - cutouts.science
+      - cutouts.template
