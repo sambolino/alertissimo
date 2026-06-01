@@ -1,0 +1,128 @@
+### brokers/fink/lsst/endpoints.yaml
+broker: fink
+origin: lsst
+baseurl: https://api.lsst.fink-portal.org
+
+endpoints:
+  objects:
+    path: "/api/v1/objects"
+    method: GET
+    description: "Retrieve Rubin/LSST object data based on diaObjectId"
+    params:
+      diaObjectId:
+        required: true
+        type: string
+        description: "Single LSST diaObjectId or comma-separated list"
+      withcutouts:
+        required: false
+        type: boolean
+        description: "Include cutout data as 2D arrays"
+      output-format:
+        required: false
+        type: string
+        enum: ["json", "csv", "parquet", "votable"]
+        default: "json"
+    output_type: array_of_alerts
+    provides:
+      - context.object_id
+      - history.detection_count
+      - position.ra
+      - position.dec
+      - photometry.mjd
+      - photometry.filter
+      - classification.fink_class
+      - classification.cats_score
+      - classification.snia_rf_prob
+
+  conesearch:
+    path: "/api/v1/conesearch"
+    method: GET
+    description: "Spatial query for the Rubin/LSST stream"
+    params:
+      ra:
+        required: true
+        type: number
+      dec:
+        required: true
+        type: number
+      radius:
+        required: true
+        type: number
+        description: "Radius in arcseconds (max 18,000)"
+    output_type: array_of_alerts
+    provides:
+      - position.ra
+      - position.dec
+      - position.cone_distance
+      - photometry.mjd
+      - photometry.filter
+      - context.object_id
+      - crossmatch.simbad_type
+
+  latests:
+    path: "/api/v1/latests"
+    method: GET
+    description: "Retrieve the latest Rubin alerts by Fink classification tag"
+    params:
+      class:
+        required: true
+        type: string
+        description: "Fink class tag (e.g., SN Ia, TDE). See /api/v1/tags for LSST labels"
+      n:
+        required: false
+        type: integer
+        default: 100
+    output_type: array_of_alerts
+    provides:
+      - context.object_id
+      - position.ra
+      - position.dec
+      - photometry.mjd
+      - photometry.filter
+      - classification.fink_class
+      - classification.cats_score
+      - classification.snia_snn_prob
+
+  sso:
+    path: "/api/v1/sso"
+    method: GET
+    description: "Retrieve Solar System data with optional Miriade ephemerides"
+    params:
+      n_or_d:
+        required: true
+        type: string
+        description: "IAU name, number, or provisional designation"
+      withEphem:
+        required: false
+        type: boolean
+        description: "Attach Miriade ephemerides (distance, phase, etc.)"
+    output_type: array_of_alerts
+    provides:
+      - solar_system.ss_object_id
+      - solar_system.roid
+      - position.ra
+      - position.dec
+      - photometry.mjd
+      - resolver.external_name
+      - ephemeris.distance_earth
+      - ephemeris.distance_sun
+      - ephemeris.phase_angle
+      - ephemeris.visual_mag
+
+  cutouts:
+    path: "/api/v1/cutouts"
+    method: GET
+    description: "Retrieve Rubin image stamps"
+    params:
+      diaObjectId:
+        required: true
+        type: string
+      kind:
+        required: false
+        type: string
+        enum: ["Science", "Template", "Difference"]
+    output_type: single_object
+    provides:
+      - cutouts.science
+      - cutouts.template
+      - cutouts.difference

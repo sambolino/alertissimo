@@ -1,0 +1,172 @@
+### brokers/fink/lsst/mappings.yaml
+broker: fink
+origin: lsst
+
+mappings:
+  # ==================== L0: Portfolio (Object-Level) ====================
+  context.object_id:
+    field: "r:diaObjectId"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+
+  history.detection_count:
+    field: "r:nDiaSources"
+    availability:
+      - objects
+      - latests
+
+  # ==================== L1: Detection (Real-Time) ====================
+  position.ra:
+    field: "r:ra"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+  
+  position.dec:
+    field: "r:dec"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+
+  photometry.mjd:
+    field: "r:midpointMjdTai"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+
+  photometry.filter:
+    field: "r:band"
+    availability:
+      - objects
+      - conesearch
+      - latests
+      - sso
+
+  photometry.flux:
+    field: "r:psfFlux"
+    availability:
+      - objects
+      - latests
+
+  photometry.flux_error:
+    field: "r:psfFluxErr"
+    availability:
+      - objects
+      - latests
+
+  quality.snr:
+    field: "r:snr"
+    availability:
+      - objects
+      - latests
+
+  # ==================== L2: Solar System (Moving Objects) ====================
+  solar_system.ss_object_id:
+    field: "r:ssObjectId"
+    availability:
+      - sso
+
+  solar_system.roid:
+    field: "f:roid"
+    availability:
+      - objects
+      - latests
+      - sso
+
+  # ==================== L3: Media (Binary Data) ====================
+  cutouts.science:
+    field: "b:cutoutScience_stampData"
+    availability:
+      - cutouts
+
+  cutouts.template:
+    field: "b:cutoutTemplate_stampData"
+    availability:
+      - cutouts
+
+  cutouts.difference:
+    field: "b:cutoutDifference_stampData"
+    availability:
+      - cutouts
+
+  # ==================== L5: Machine Learning (ELAsTiCC) ====================
+  classification.fink_class:
+    field: "v:classification"
+    availability:
+      - objects
+      - latests
+      - sso
+
+  classification.cats_score:
+    field: "f:cats_pure_score"
+    availability:
+      - objects
+      - latests
+
+  classification.snia_rf_prob:
+    field: "f:rf_snia_vs_all"
+    availability:
+      - objects
+      - latests
+
+  classification.snia_snn_prob:
+    field: "f:snn_snia_vs_all"
+    availability:
+      - objects
+      - latests
+
+  classification.slsn_rf_prob:
+    field: "f:rf_slsn_vs_all"
+    availability:
+      - objects
+      - latests
+
+  # ==================== L6: Enrichment (Cross-Match) ====================
+  crossmatch.simbad_type:
+    field: "f:xm.cdsxmatch"
+    availability:
+      - objects
+      - conesearch
+
+  crossmatch.gaia_dr3_id:
+    field: "f:xm.DR3Name"
+    availability:
+      - objects
+
+  # ==================== L8: External Services (Miriade Ephem) ====================
+  resolver.external_name:
+    field: "target"
+    availability:
+      - sso
+
+  ephemeris.distance_earth:
+    field: "delta"
+    unit: "AU"
+    availability:
+      - sso
+
+  ephemeris.distance_sun:
+    field: "r"
+    unit: "AU"
+    availability:
+      - sso
+
+  ephemeris.phase_angle:
+    field: "phase"
+    unit: "deg"
+    availability:
+      - sso
+
+  ephemeris.visual_mag:
+    field: "mv"
+    availability:
+      - sso
