@@ -1,7 +1,3 @@
-broker: antares
-description: "Unified Orchestration Manifest for ZTF, LSST, Solar System, and Multi-Messenger streams."
-
----
 # brokers/antares/ztf/mappings.yaml
 broker: antares
 origin: ztf
@@ -36,6 +32,25 @@ mappings:
 
   portfolio.brightest_mag:
     field: "properties.brightest_alert_magnitude"
+    availability:
+      - search
+      - locus
+
+  portfolio.brightest_mjd:
+    field: "properties.brightest_alert_observation_time"
+    availability:
+      - search
+      - locus
+
+  portfolio.last_mjd:
+    field: "properties.newest_alert_observation_time"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  portfolio.first_mjd:
+    field: "properties.oldest_alert_observation_time"
     availability:
       - search
       - locus
@@ -151,6 +166,13 @@ mappings:
 
   reference.nearest_magnitude:
     field: "properties.ztf_magnr"
+    availability:
+      - streaming
+      - search
+      - locus
+
+  separation.mpc_distance:
+    field: "properties.ztf_ssdistnr"
     availability:
       - streaming
       - search
@@ -323,7 +345,7 @@ mappings:
       - locus
 
   separation.mpc_distance:
-    field: "properties.ztf_ssdistnr"
+    field: "properties.ssdistnr"
     availability:
       - streaming
       - search
