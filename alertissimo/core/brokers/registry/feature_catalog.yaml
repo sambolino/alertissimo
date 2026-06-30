@@ -1,200 +1,516 @@
 # feature_catalog.yaml
-version: "1.2"
+version: "0.9"
 description: "Unified transient feature space"
 
 # ============================================================================
 # SEMANTICS RECIPE
 # ============================================================================
-# This file defines a level-aware semantic model for astronomical transient data.
-# It separates semantic meaning from structural composition while allowing both
-# to be expressed within a unified, declarative notation.
+# This file defines a level-aware semantic model for heterogeneous astronomical
+# transient data. It separates semantic meaning, structural composition,
+# provenance qualification, and runtime cardinality.
 #
 # The specification serves as:
-#   - a canonical vocabulary of features
-#   - a reusable semantic layer for broker mappings
+#   - a canonical vocabulary of astronomical features
+#   - a reusable semantic layer for broker, survey, and catalog mappings
 #   - a validation target for normalized data
 #   - a foundation for higher-level DSL constructs
 #
+# This is an ordered YAML-like domain-specific notation, not ordinary YAML.
+# Repeated directives such as level, $ref, and $refs are meaningful and their
+# order must be preserved by the parser. A standard YAML parser that overwrites
+# duplicate keys is therefore not sufficient.
+#
 # ---------------------------------------------------------------------------
-# CORE CONCEPTS
+# CORE ELEMENTS
 # ---------------------------------------------------------------------------
 #
-# 1. Containers vs Fields
+# 1. Semantic containers
 #
 #   <container>
-#       Non-resolvable semantic grouping.
-#       Cannot appear directly in data.
-#       Used to organize related concepts.
+#       Instantiable, path-bearing semantic grouping.
+#       Its name is preserved when composed into another structure.
+#
+#       Example:
+#
+#           <detection>:
+#             $ref: <photometry>(L1)
+#
+#       produces paths such as:
+#
+#           detection.photometry.g.psf.flux
+#
+#
+# 2. Fields
 #
 #   [field]
-#       Resolvable element.
-#       Represents a concrete data path.
-#       May be a leaf or have nested children.
-#
-#
-# 2. Parameterized Containers
-#
-#   <{parameter}>
-#       Defines a namespace that must be instantiated at runtime.
-#       Used when structure depends on external sources.
+#       Resolvable value-bearing semantic element.
+#       A field may be a leaf or may contain nested fields.
 #
 #       Examples:
-#           {catalog}    -> sdss, ps1, gaia
-#           {annotator}  -> fink, tns
-#           {filter}     -> g, r, i, z
+#
+#           [ra]
+#           [object_id]
+#           [flux]
+#
+#
+# 3. Parameterized and dynamic elements
+#
+#   <{parameter}>
+#       Runtime-resolved, path-bearing semantic container. Used when the
+#       substituted value forms a namespace with fields or subcontainers below
+#       it.
 #
 #       Example:
-#           <crossmatch>
-#             <{catalog}>
-#               ...
 #
+#           <photometry>:
+#             <{filter}>:
+#               <psf>:
+#                 [flux]
 #
-# 3. Dynamic Fields
+#       produces:
+#
+#           photometry.g.psf.flux
+#           photometry.r.psf.flux
+#
+#       Parameterized containers remain available wherever runtime semantic
+#       grouping is useful. Producer/channel qualification may make some older
+#       parameterizations unnecessary in canonical structures, but does not
+#       remove the general language feature.
 #
 #   [{field}]
-#       Indicates that field names are not fixed.
-#       Allows broker- or catalog-specific extensions while preserving
-#       a stable semantic core.
+#       Dynamic resolvable extension field or terminal runtime field. Used for
+#       producer-, broker-, catalog-, or method-specific values not yet
+#       represented in the stable semantic vocabulary. It may also represent a
+#       parameter that terminates the path rather than carrying descendants.
+#
+#       Dynamic fields are escape hatches and should not replace a stable
+#       reusable concept when one can be identified.
 #
 #
-# 4. References ($ref)
+# 4. Internal field projections and traits
 #
-#   $ref: <container>
-#       Imports all fields from another container.
+#   <_name>
+#       Non-instantiable field projection or reusable trait. An underscored
+#       element never appears as a semantic path component.
 #
-#   $ref: <container>(Ln)
-#       Imports fields constrained to a specific level.
+#       It has two supported uses:
 #
-#   References are flattened into the target scope (no nesting is introduced).
+#       a) Field-only projection of an existing semantic container
 #
+#           <forced_photometry>:
+#             $ref: <_photometry>
 #
-# 5. Inheritance
+#          imports the contents of <photometry> without introducing the
+#          photometry path component. It therefore produces:
 #
-#   inherits: <container>
+#             forced_photometry.g.psf.flux
 #
-#       Declares structural inheritance between containers.
-#       All referenced fields are merged into the child container.
+#          not:
 #
-#       Unlike $ref, inheritance expresses "is-a" relationships and is used
-#       for composing domain-specific structures.
+#             forced_photometry.photometry.g.psf.flux
 #
-#       Example:
+#       b) Explicitly declared reusable field trait
+#
+#           <_classification_fields>:
+#             [class]
+#             [probability]
+#
+#           <classification>:
+#             $ref: <_classification_fields>
+#
+#          produces:
+#
+#             classification.class
+#             classification.probability
+#
+#          The internal trait name is never propagated into the path.
+#
+#       Structural specialization is expressed through field-only projection:
+#
 #           <sso_detection>:
-#             inherits: <detection>
+#             $ref: <_detection>
 #             $ref: <solar_system>
 #
+#       This removes the need for a separate inheritance mechanism while still
+#       producing a specialized, flattened semantic structure.
 #
-# 6. Levels
 #
-#   Levels define the semantic context in which a field applies.
+# ---------------------------------------------------------------------------
+# REFERENCES AND CARDINALITY
+# ---------------------------------------------------------------------------
 #
-#       L0  - Portfolio-level aggregates
-#       L1  - Single detection parameters
-#       L2  - Solar System specifics
-#       L3  - Binary/image data
-#       L4  - Time-series features
-#       L5  - Machine learning outputs
-#       L6  - Data enrichment (crossmatch, catalogs)
+# 5. Single references
+#
+#   $ref: <container>
+#       Composes one instance of an instantiable semantic container into the
+#       current structure. The referenced container name remains in the path.
+#
+#   $ref: <container>(Ln)
+#       Composes only fields valid at the selected semantic level.
+#
+#   $ref: <_container>
+#       Imports only the referenced contents. The underscored source is not
+#       instantiable and does not add a path component.
+#
+#
+# 6. Repeated references
+#
+#   $refs: <container>
+#       Declares that the current structure may collect zero or more instances
+#       of the referenced semantic entity.
+#
+#       Example:
+#
+#           <portfolio>:
+#             $refs: <summary>
+#             $refs: <detection>
+#             $refs: <crossmatch>
+#             $refs: <lightcurve>
+#             $refs: <classification>
+#
+#       $refs defines structural cardinality. It does not pluralize the
+#       semantic noun and does not expose runtime array indexes in semantic
+#       paths.
+#
+#
+# 7. Intrinsically multi-valued fields
+#
+#   type: array
+#       Used when a single field value is intrinsically a list or array.
+#       This is distinct from repeated semantic entities declared with $refs.
+#
+#       Examples:
+#
+#           identity.external_names
+#           cutouts.science
+#           lightcurve.points
+#
+#
+# ---------------------------------------------------------------------------
+# LEVELS
+# ---------------------------------------------------------------------------
+#
+# 8. Semantic levels
+#
+#   Levels describe the conceptual context in which fields normally apply:
+#
+#       L0  - Object/portfolio summaries, identities, and aggregate properties
+#       L1  - Single-detection measurements and metadata
+#       L2  - Phenomenon-specific information, e.g. Solar System or GW
+#       L3  - Binary and image data
+#       L4  - Light curves and derived time-series products
+#       L5  - Quality scores, classification, and machine-learning outputs
+#       L6  - Enrichment, crossmatch, and external catalog information
 #       L7  - Survey-level aggregates
-#       L8  - External services
+#       L8  - External services such as resolvers and ephemerides
 #
-#   Rules:
-#       - Levels can be defined at container level and inherited by fields
-#       - Levels can be redefined within subtrees
-#       - Fields may override inherited levels
-#       - The same semantic concept may exist at multiple levels
+#   Levels are descriptive metadata used for documentation, validation, sanity
+#   checks, and future tooling. They are not semantic path components.
 #
-#   This enables reuse of concepts (e.g. position) across detection and
-#   object-level representations without duplication.
+#   Level declarations are scoped and ordered:
+#
+#       - a level declared on a container applies to its descendants
+#       - a later level declaration at the same scope applies to the fields and
+#         subcontainers that follow it until another level declaration appears
+#       - an individual field may override the inherited level
+#       - one semantic container may therefore carry fields from several levels
+#
+#   Example:
+#
+#       <{filter}>:
+#         level: L1, L6
+#         [flux]
+#         <psf>:
+#           [flux]
+#         level: L0
+#         [magnitude_rate]
+#
+#   The same semantic concept may be reused in different structures by selecting
+#   the appropriate level:
+#
+#       <detection>:
+#         $ref: <photometry>(L1)
+#
+#       <summary>:
+#         $ref: <photometry>(L0)
 #
 #
 # ---------------------------------------------------------------------------
 # STRUCTURAL COMPOSITION
 # ---------------------------------------------------------------------------
 #
-# Semantic containers are composed into higher-level data structures.
+# 9. Portfolio and first-level records
 #
-# Example:
+#   <portfolio> is the unified object-centric root. It does not need a separate
+#   portfolio.object branch. Object-level identity and aggregate properties are
+#   carried by <summary> records.
 #
-#   <detection>
-#       Atomic observational unit
+#   Typical first-level records are:
 #
-#   <sso_detection>
-#       Specialized detection for Solar System objects
+#       summary
+#       detection
+#       sso_detection
+#       gw_detection
+#       neutrino_detection
+#       crossmatch
+#       lightcurve
+#       classification
 #
-#   <portfolio>
-#       Object-centric aggregation of detections and enrichments
+#   Example paths:
 #
-# These structures define how semantic elements are organized in data,
-# while semantics themselves remain reusable and context-independent.
+#       portfolio.summary.identity.object_id
+#       portfolio.detection.identity.source_id
+#       portfolio.lightcurve.r.points
+#
+#
+# 10. Structural context carries meaning
+#
+#   Do not repeat information already expressed by the enclosing hierarchy.
+#
+#   Example:
+#
+#       detection.forced_photometry.g.psf.flux
+#
+#   means forced photometry on the science/detection side, while:
+#
+#       detection.reference.forced_photometry.g.psf.flux
+#
+#   means forced photometry on the reference/template image.
+#
+#   Therefore fields such as science_flux and template_flux are unnecessary.
+#   The semantic vocabulary remains reusable and the parent structure supplies
+#   the role.
+#
+#   The same rule applies generally: attach a reusable semantic container to the
+#   entity it describes rather than encoding the parent context in field names.
+#
+#
+# 11. Classification subject
+#
+#   <classification> is reusable. The enclosing structure identifies what is
+#   being classified:
+#
+#       portfolio.classification...                 portfolio object
+#       portfolio.crossmatch....classification...  matched catalog object
+#       portfolio.detection....classification...   detection, when applicable
+#
+#
+# ---------------------------------------------------------------------------
+# PRODUCER AND DELIVERY QUALIFIERS
+# ---------------------------------------------------------------------------
+#
+# 12. Qualifier grammar
+#
+#   First-level semantic records may be qualified as:
+#
+#       <record>@<producer>:<channel>
+#
+#   @producer
+#       Identifies who created the addressed record or datum. A producer may be
+#       a survey, catalog, broker science module, classifier, or internal module.
+#
+#   :channel
+#       Identifies the broker, archive, API, service, or other route through
+#       which Alertissimo received the record. It is delivery/audit information,
+#       not a claim of scientific authorship.
+#
+#   Examples:
+#
+#       portfolio.summary@lsst.identity.object_id
+#       portfolio.detection@lsst:lasair.photometry.g.psf.flux
+#       portfolio.lightcurve@ztf:fink.r.points
+#       portfolio.crossmatch@gaia:fink.identity.object_id
+#       portfolio.classification@fink.class
+#
+#   The distinction is:
+#
+#       detection@lsst:lasair
+#           produced by LSST and delivered through Lasair
+#
+#       classification@fink
+#           produced by Fink; delivery channel omitted
+#
+#
+# 13. First-level-only qualification
+#
+#   @producer and :channel may appear only on the first semantic record composed
+#   directly into its structural parent, normally immediately below portfolio.
+#   The qualifier is inherited by all nested fields of that record.
+#
+#   Valid:
+#
+#       portfolio.summary@lsst.photometry.g.psf.mean
+#       portfolio.detection@lsst:lasair.position.ra
+#       portfolio.lightcurve@alertissimo.r.points
+#       portfolio.crossmatch@gaia:fink.astrometric_solution.parallax
+#
+#   Invalid:
+#
+#       portfolio.summary.photometry@lsst.g.psf.mean
+#       portfolio.detection.photometry.g@lsst.psf.flux
+#       portfolio.lightcurve.r.points@ztf
+#
+#   Nested data requiring finer lineage records that lineage in <provenance> or
+#   in the nested record itself; it does not introduce another @ or : qualifier.
+#
+#   For example, a composite light curve produced by Alertissimo is addressed as:
+#
+#       portfolio.lightcurve@alertissimo.r.points
+#
+#   Individual points may retain their own provenance fields internally.
+#
+#
+# 14. Optional channel
+#
+#   :channel is optional. If omitted, the delivery route is direct, unspecified,
+#   irrelevant to the semantic operation, or identical to the producer and not
+#   required for audit.
+#
+#   The qualifier describes the addressed record as a whole. More detailed
+#   lineage, method, version, schema, or processing metadata belongs in
+#   <provenance>, not in the main semantic path.
+#
+#
+# ---------------------------------------------------------------------------
+# IDENTITY, SUMMARY, AND PROVENANCE
+# ---------------------------------------------------------------------------
+#
+# 15. Identity
+#
+#   <identity> defines reusable identifiers.
+#
+#   L1 identity applies to an observational event or detection:
+#
+#       portfolio.detection@lsst:lasair.identity.source_id
+#
+#   L0 identity applies to an astronomical object and is carried through
+#   <summary>:
+#
+#       portfolio.summary@lsst.identity.object_id
+#
+#   Survey, broker, and catalog names are not encoded as ordinary children of
+#   identity. The first-level qualifier provides that context.
+#
+#
+# 16. Summary
+#
+#   <summary> contains object-level scalar and aggregate projections, including
+#   object identity, temporal coverage, photometric aggregates, colors, and
+#   counts. Different producers may supply different summary records:
+#
+#       portfolio.summary@lsst.identity.object_id
+#       portfolio.summary@lsst.photometry.g.psf.mean
+#       portfolio.summary@fink.detection_count
+#       portfolio.summary@alertissimo.detection_count
+#
+#
+# 17. Provenance
+#
+#   <provenance> stores detailed audit information that should not normally be
+#   encoded in the semantic path, for example:
+#
+#       publisher
+#       broker
+#       schema_version
+#       science_version
+#       processed_mjd
+#       withdrawn_mjd
+#       processing identifiers and filenames
+#
+#   The compact @producer:channel qualifier supports selection and readability;
+#   provenance fields support reproducibility and detailed lineage.
 #
 #
 # ---------------------------------------------------------------------------
 # DATA PATH FORMATION
 # ---------------------------------------------------------------------------
 #
-# Concrete data paths are formed by resolving:
-#   - container hierarchy
-#   - parameter substitution
-#   - field names
+# 18. Concrete paths
 #
-# Examples:
+#   Concrete paths are formed from:
 #
-#   position.ra
-#   photometry.g.psf_mag
-#   classification.fink.class
-#   crossmatch.sdss.position.ra
-#   lightcurve.r.points[].mjd
+#       - structural hierarchy
+#       - first-level producer/channel qualification
+#       - instantiable semantic containers
+#       - parameter substitution
+#       - resolvable fields
+#
+#   Examples:
+#
+#       portfolio.summary@lsst.identity.object_id
+#       portfolio.summary@lsst.photometry.g.psf.mean
+#       portfolio.detection@lsst:lasair.position.ra
+#       portfolio.detection@lsst:lasair.photometry.g.aperture.flux
+#       portfolio.detection@lsst:lasair.reference.nearest_source.separation.total
+#       portfolio.detection@lsst:lasair.reference.forced_photometry.g.psf.flux
+#       portfolio.lightcurve@ztf:fink.r.points
+#       portfolio.crossmatch@gaia:fink.identity.object_id
+#       portfolio.classification@fink.class
 #
 #
 # ---------------------------------------------------------------------------
 # DESIGN PRINCIPLES
 # ---------------------------------------------------------------------------
 #
-# 1. Separation of Concerns
-#    Semantics are defined independently of data structures.
+# 19. Semantic nouns remain singular
 #
-# 2. Reusability
-#    Core concepts (position, photometry, time) are defined once and reused.
+#   Use detection, crossmatch, lightcurve, classification, and summary.
+#   Cardinality is expressed by $refs and middleware, not by plural container
+#   names or semantic array indexes.
 #
-# 3. Level-Awareness
-#    The same concept can exist at different abstraction levels.
 #
-# 4. Controlled Extensibility
-#    Dynamic fields allow flexibility without breaking the semantic model.
+# 20. Meaning before implementation
 #
-# 5. Structural Minimalism
-#    Complex structures (portfolio, lightcurve, crossmatch) are composed
-#    rather than hardcoded into the semantic layer.
+#   Semantic containers describe what data mean. Middleware decides runtime
+#   arrays, indexes, grouping, deduplication, and storage representation.
 #
-# 6. Flattened Composition
-#    References and inheritance do not introduce additional nesting.
+#
+# 21. Reuse without path pollution
+#
+#   Use ordinary containers when their semantic name belongs in the path.
+#   Use underscored projections or traits when only their fields should be
+#   reused. Avoid duplicating semantic fields merely to express a new context.
+#
+#
+# 22. Attach diagnostics to what they describe
+#
+#   Examples:
+#
+#       photometry.*     measurement values and measurement-fit diagnostics
+#       image_metrics.*  pixels, morphology, subtraction geometry, trails,
+#                        dipoles, and image flags
+#       quality.*        higher-level trust, reliability, and usability scores
+#       calibration.*    parameters used to calibrate photometry
+#       reference.*      reference-stack and reference-source context
+#       separation.*     reusable relative geometry within its parent relation
 #
 #
 # ---------------------------------------------------------------------------
 # SCOPE
 # ---------------------------------------------------------------------------
 #
-# This specification does NOT define:
-#   - broker-specific mappings (handled in mappings.yaml)
-#   - query or transformation logic (DSL layer)
+# This specification does not define:
+#   - broker-specific field mappings
+#   - query syntax or transformation logic
 #   - execution semantics
+#   - runtime storage representation
+#   - selector and reducer operators
 #
-# It defines the semantic space and its valid compositions.
+# It defines the semantic vocabulary, structural composition rules, level
+# metadata, cardinality, and producer/delivery qualification grammar.
 #
 # ============================================================================
 
 levels:
   L0: "Portfolio Aggregates - object identifiers and statistics"
-  L1: "Single Detection Parameters - numerical "
-  L2: "Solar System Specifics"
+  L1: "Single Detection Parameters - numerical"
+  L2: "Specific Phenomena - solar system, gravitational waves"?
   L3: "Binary Data - cutout images etc"
   L4: "Light Curve Features - derived time-series"
   L5: "Machine learning - quality scores, metrics, classification"
   L6: "Data enrich - internal (broker) matching, external catalogs, crossmatch"
   L7: "Survey Aggregates - statistics"
   L8: "External services - name resolution, ephemeris, etc."
-
 
 <position>:
   level: L1
@@ -208,18 +524,29 @@ levels:
     description: "Right ascension error"
   [dec_error]:
     description: "Declination error"
+  [ra_dec_covariance]:
+    description: "Covariance between right ascension and declination"
+    unit: deg2
   [cone_distance]:
     description: "Angular distance from search center"
-    unit: deg
   [image_x]:
     description: "X position in image"
     unit: pixels
   [image_y]:
     description: "Y position in image"
     unit: pixels
+  [image_x_error]:
+    description: "X-position uncertainty"
+    unit: pixels
+  [image_y_error]:
+    description: "Y-position uncertainty"
+    unit: pixels
   [distance_to_edge]:
     description: "Distance to nearest image edge"
     unit: pixels
+  level: L6
+  [constellation]:
+    description: "Constellation name"
 
 <time>:
   level: L1
@@ -242,47 +569,67 @@ levels:
     description: "Earliest detection MJD"
   [last_mjd]:
     description: "Latest detection MJD"
+  [timespan_days]:
+    description: "Days between first and last detection"
+    unit: days
 
-<photometry>:
+<identity>:
   level: L1
-  unit: mag
-  description: "Photometric measurements"
-  [{filter}]:
-    description: "Bandpass filter"
-    type: string
-    [psf_mag]:
-      description: "PSF-fit magnitude"
-    [psf_mag_error]:
-      description: "PSF-fit magnitude error"
-    [aperture_mag]:
-      description: "Aperture magnitude (14 pixel diameter)"
-    [aperture_mag_big]:
-      description: "Aperture magnitude (18 pixel diameter)"
-    [aperture_mag_error]:
-      description: "Aperture magnitude error"
-    [aperture_mag_big_error]:
-      description: "Aperture magnitude error (18 pixel)"
-    [mag_ap_minus_psf]:
-      description: "Aperture mag minus PSF mag"
-    [mag_from_limit]:
-      description: "diffmaglim - magap"
-    [diff_mag_limit]:
-      description: "5-sigma magnitude limit"
-    [zero_point]:
-      description: "Magnitude zero point"
-    [zero_point_rms]:
-      description: "Zero point RMS"
-    [zero_point_uncertainty]:
-      description: "Zero point uncertainty"
-    [upper_limit]:
-      description: "True if non-detection"
-      type: boolean
-  [magnitude_rate]:
-    description: "Brightness change rate"
-    unit: mag/day
-  [magnitude_rate_error]:
-    description: "Rate error"
-    unit: mag/day
+  description: "Identifier(s) of a single observational event in its originating system"
+  [source_id]:
+    description: "Native detection/source identifier, e.g. ZTF candid, LSST diaSourceId"
+  [alert_id]:
+    description: "Native alert packet identifier, if different from source_id"
+  [visit_id]:
+  [exposure_id]:
+  [detector_id]:
+    description: "Detector or sensor identifier"
+  [ccd_id]:
+    description: "CCD identifier, where specifically applicable"
+  [field_id]:
+    description: "field ID"
+  [night_id]:
+    description: "Night ID"
+  level: L0
+  description: "Identifier(s) of an object"
+  [object_id]:
+    description: "Native object identifier"
+  [{field}]:
+    description: "Other specific object identifiers"
+
+<provenance>:
+  level: L1
+  description: "Contextual identifiers and metadata"
+  [program_id]:
+    description: "Program ID"
+    type: integer
+  [publisher]:
+    description: "Alert origin"
+  [broker]:
+    description: "Broker"
+  [broker_version]:
+    description: "Broker version"
+  [science_version]:
+    description: "Science module version"
+  [schema_version]:
+    description: "Alert schema version"
+  [pid]:
+    description: "Processing ID"
+    type: long
+  [rfid]:
+    description: "Reference image processing ID"
+    type: long
+  [diffim_filename]:
+    description: "Difference image filename"
+  [processed_mjd]:
+    description: "Time at which the record was processed"
+    unit: mjd
+  [withdrawn_mjd]:
+    description: "Time at which the record was withdrawn or invalidated"
+    unit: mjd
+  [too_flag]:
+    description: "Target of Opportunity flag"
+    type: boolean
 
 <separation>:
   level: L1
@@ -306,32 +653,206 @@ levels:
     description: "Spectroscopic or photometric"
     enum: [spec, photo]
 
+<photometry>:
+  description: "Photometric measurements"
+  <{filter}>:
+    level: L1, L6
+    description: "Bandpass filter"
+    [mag]:
+      description: "Generic calibrated magnitude"
+      unit: mag
+    [mag_error]:
+      description: "Generic calibrated magnitude uncertainty"
+      unit: mag
+    [flux]:
+      description: "Generic calibrated flux"
+    [flux_error]:
+      description: "Generic calibrated flux uncertainty"
+    [mag_minus_psf]:
+      description: "Standard-aperture magnitude minus PSF-fit magnitude"
+      unit: mag
+    <aperture>:
+      description: "Photometry measured by integrating flux within an aperture"
+      [flux]:
+        description: "Aperture flux"
+      [flux_error]:
+        description: "Aperture flux uncertainty"
+      [mag]:
+        description: "Aperture magnitude measured with the standard aperture (14-pixel diameter)"
+        unit: mag
+      [mag_error]:
+        description: "Standard-aperture magnitude uncertainty"
+        unit: mag
+      <large>:
+        description: "Photometry measured with the larger aperture (18-pixel diameter)"
+        [mag]:
+          description: "Large-aperture magnitude"
+          unit: mag
+        [mag_error]:
+          description: "Large-aperture magnitude uncertainty"
+          unit: mag
+      <flags>:
+        description: "Flags affecting the aperture-flux measurement"
+        [failed]:
+          description: "True if the aperture-flux measurement failed"
+          type: boolean
+        [aperture_truncated]:
+          description: "True if the aperture was truncated by the available image region"
+          type: boolean
+    <limit>:
+      description: "Photometric detection-limit information"
+      [mag]:
+        description: "Detection limiting magnitude, commonly defined at five sigma"
+        unit: mag
+      [mag_minus_aperture]:
+        description: "Limiting magnitude minus the measured aperture magnitude"
+        unit: mag
+      [upper_limit]:
+        description: "True if the photometric value represents an upper limit or non-detection"
+        type: boolean
+    <psf>:
+      description: "Photometry obtained by fitting the point-spread function"
+      [flux]:
+        description: "PSF-fit flux"
+      [flux_error]:
+        description: "PSF-fit flux uncertainty"
+      [mag]:
+        description: "PSF-fit magnitude"
+        unit: mag
+      [mag_error]:
+        description: "PSF-fit magnitude uncertainty"
+        unit: mag
+      [fit_chi2]:
+        description: "Chi-square statistic of the PSF fit"
+      [fit_log_likelihood]:
+        description: "Log-likelihood of the PSF fit"
+      [fit_ndata]:
+        description: "Number of data values used in the PSF fit"
+        type: integer
+      [snr]:
+        description: "Signal-to-noise ratio of the PSF-flux measurement"
+      <flags>:
+        description: "Flags affecting the PSF-flux measurement"
+        [failed]:
+          description: "True if the PSF-flux measurement failed"
+          type: boolean
+        [edge]:
+          description: "True if the PSF-flux measurement was affected by an image edge"
+          type: boolean
+        [no_good_pixels]:
+          description: "True if no usable pixels were available for the PSF-flux measurement"
+          type: boolean
+      level: L0
+      [scatter_chi2]:
+        description: "Chi-square statistic for the scatter of PSF flux around its weighted mean"
+      [flux_error_mean]:
+        description: "Mean of the individual PSF-flux uncertainties"
+        unit: nJy
+      [linear_intercept]:
+        description: "Y-intercept of a linear model fitted to PSF flux as a function of time"
+        unit: nJy
+      [linear_slope]:
+        description: "Slope of a linear model fitted to PSF flux as a function of time"
+        unit: nJy/day
+      [mad]:
+        description: "Median absolute deviation of PSF flux without the scale factor for comparison to sigma"
+        unit: nJy
+      [maximum]:
+        description: "Maximum PSF flux"
+        unit: nJy
+      [maximum_slope]:
+        description: "Maximum ratio of a time-ordered PSF-flux difference to the elapsed time"
+        unit: nJy/day
+      [mean]:
+        description: "Weighted mean PSF flux"
+        unit: nJy
+      [mean_error]:
+        description: "Standard error of the weighted mean PSF flux"
+        unit: nJy
+      [minimum]:
+        description: "Minimum PSF flux"
+        unit: nJy
+      [measurement_count]:
+        description: "Number of PSF-flux measurements used to compute the aggregate statistics"
+        type: integer
+      [percentile_05]:
+        description: "5th percentile of PSF flux"
+        unit: nJy
+      [percentile_25]:
+        description: "25th percentile of PSF flux"
+        unit: nJy
+      [percentile_50]:
+        description: "Median PSF flux"
+        unit: nJy
+      [percentile_75]:
+        description: "75th percentile of PSF flux"
+        unit: nJy
+      [percentile_95]:
+        description: "95th percentile of PSF flux"
+        unit: nJy
+      [sigma]:
+        description: "Standard deviation of the PSF-flux distribution"
+        unit: nJy
+      [skew]:
+        description: "Skewness of the PSF-flux distribution"
+      [stetson_j]:
+        description: "Stetson J statistic of the PSF-flux measurements"
+    level: L0
+    [magnitude_rate]:
+      description: "Rate of change of brightness"
+      unit: mag/day
+    [magnitude_rate_error]:
+      description: "Uncertainty of the brightness-change rate"
+      unit: mag/day
+    [{field}]:
+      description: "Other filter-specific photometric field"
+
+<forced_photometry>:
+  $ref: <_photometry>
+
 <quality>:
   level: L1, L5
-  description: "Quality metrics for detections"
+  description: "Higher-level trust, reliability, and usability metrics"
   [real_bogus]:
     description: "Deep learning real/bogus score"
     type: float
     range: [0, 1]
     [version]:
-      description: "Random Forest real/bogus model version"
+      description: "Deep learning real/bogus model version"
   [rf_real_bogus]:
     description: "Random Forest real/bogus score"
     type: float
     range: [0, 1]
     [version]:
-      description: "Deep learning real/bogus model version"
-  [star_galaxy]:
-    description: "SExtractor star/galaxy score"
+      description: "Random Forest real/bogus model version"
+  [reliability]:
+    description: "Reliability score, with higher values representing greater reliability"
     type: float
     range: [0, 1]
+
+<image_metrics>:
+  level: L1
+  description: "Detection-specific flags and metrics"
+  [is_positive]:
+    description: "True if positive subtraction"
+    type: boolean
+  [bbox_size]:
+    description: "Bounding-box size"
+    unit: pixels
+  [extendedness]:
+    description: "Source extendedness metric"
+  [fit_chi]:
+    description: "Source-profile fit chi diagnostic"
+  [sharpness]:
+    description: "Source-profile sharpness diagnostic"
+  [centroid_flag]:
+    description: "Centroid measurement failure flag"
+    type: boolean
   [fwhm]:
     description: "Full width half max"
     unit: pixels
   [elongation]:
     description: "Ratio aimage/bimage"
-  [psf_chisq]:
-    description: "Reduced chi-square for PSF-fit"
   [aimage]:
     description: "Windowed profile RMS major axis"
     unit: pixels
@@ -342,77 +863,105 @@ levels:
     description: "aimage / fwhm"
   [bimage_ratio]:
     description: "bimage / fwhm"
-  [chinr]:
-    description: "DAOPhot chi of nearest reference source"
-  [sharpnr]:
-    description: "DAOPhot sharp of nearest reference source"
-  [reliability]:
-    description: "Reliability score (higher = more reliable)"
-    type: integer
+  <shape>:
+    [ixx]:
+    [iyy]:
+    [ixy]:
+    [psf_ixx]:
+    [psf_iyy]:
+    [psf_ixy]:
+    [flag]:
+      type: boolean
+    [flag_no_pixels]:
+      type: boolean
+    [flag_not_contained]:
+      type: boolean
+    [flag_parent_source]:
+      type: boolean
+  <pixel_flags>:
+    [any]:
+      type: boolean
+    [bad]:
+      type: boolean
+    [cosmic_ray]:
+      type: boolean
+    [cosmic_ray_center]:
+      type: boolean
+    [edge]:
+      type: boolean
+    [injected]:
+      type: boolean
+    [injected_center]:
+      type: boolean
+    [injected_template]:
+      type: boolean
+    [injected_template_center]:
+      type: boolean
+    [interpolated]:
+      type: boolean
+    [interpolated_center]:
+      type: boolean
+    [no_data]:
+      type: boolean
+    [no_data_center]:
+      type: boolean
+    [off_image]:
+      type: boolean
+    [saturated]:
+      type: boolean
+    [saturated_center]:
+      type: boolean
+    [streak]:
+      type: boolean
+    [streak_center]:
+      type: boolean
+    [suspect]:
+      type: boolean
+    [suspect_center]:
+      type: boolean
+  <dipole>:
+    [is_dipole]:
+      type: boolean
+    [fit_attempted]:
+      type: boolean
+    [angle]:
+      unit: deg
+    [chi2]:
+    [flux_difference]:
+    [flux_difference_error]:
+    [length]:
+      unit: pixels
+    [mean_flux]:
+    [mean_flux_error]:
+    [ndata]:
+      type: integer
+  <trail>:
+    [is_glint]:
+      type: boolean
+    [angle]:
+      unit: deg
+    [angle_error]:
+      unit: deg
+    [chi2]:
+    [length]:
+      unit: pixels
+    [length_error]:
+      unit: pixels
+    [flux]:
+    [flux_error]:
+    [ndata]:
+      type: integer
+    [ra]:
+      unit: deg
+    [ra_error]:
+      unit: deg
+    [dec]:
+      unit: deg
+    [dec_error]:
+      unit: deg
+    [flag_edge]:
+      type: boolean
 
-<provenance>:
-  level: L1
-  description: "Contextual identifiers and metadata"
-  [source_id]:
-    description: "Unique per single detection / alert, diasourceid/candid etc"
-    type: long
-  [field_id]:
-    description: "field ID"
-    type: integer
-  [night_id]:
-    description: "Night ID"
-    type: integer
-  [program_id]:
-    description: "Program ID"
-    type: integer
-  [publisher]:
-    description: "Alert origin"
-  [broker_version]:
-    description: "Broker version"
-  [science_version]:
-    description: "Science module version"
-  [schema_version]:
-    description: "Alert schema version"
-  [pid]:
-    description: "Processing ID"
-    type: long
-  [rfid]:
-    description: "Reference image processing ID"
-    type: long
-  [diffim_filename]:
-    description: "Difference image filename"
-  [too_flag]:
-    description: "Target of Opportunity flag"
-    type: boolean
-  [constellation]:
-    level: L0, L1, L6
-    description: "Constellation name"
-  level: L0
-  description: "Object-level aggregates"
-  [id]:
-    description: "Object identifier"
-  [timespan_days]:
-    description: "Days between first and last detection"
-    unit: days
-  [detection_count]:
-    description: "Total number of detections for this object"
-    type: integer
-  [detection_count]:
-    description: "Number of historical detections"
-    type: integer
-  [ncovhist]:
-    description: "Number of times position fell on any field"
-
-
-<image_metrics>:
-  level: L1
-  description: "Detection-specific flags and metrics"
-  [is_positive]:
-    description: "True if positive subtraction"
-    type: boolean
-  [upper_limit]:
-    description: "True if this is an upper limit"
-    type: boolean
   [nbad_pixels]:
     description: "Number of bad pixels in stamp"
     type: integer
@@ -432,50 +981,41 @@ levels:
   [seeratio]:
     description: "difffwhm / fwhm"
 
-<reference>:
-  level: L1
-  description: "Reference image information"
-  [nearest_distance]:
-    description: "Distance to nearest reference source"
-    unit: pixels
-  [nearest_magnitude]:
-    description: "Magnitude of nearest reference source"
-    unit: mag
-  [nearest_magnitude_error]:
-    description: "Magnitude error of nearest reference source"
-    unit: mag
-  [nearest_ra]:
-    description: "RA of nearest reference source"
-    unit: deg
-  [nearest_dec]:
-    description: "Dec of nearest reference source"
-    unit: deg
-    type: integer
-  [nframes]:
-    description: "Number of frames in reference image"
-    type: integer
-
 <calibration>:
   level: L1
   description: "Photometric calibration information"
-  [color_coefficient]:
-    description: "Color coefficient from photometric calibration"
-  [color_coefficient_uncertainty]:
-    description: "Color coefficient uncertainty"
-  [color_median]:
-    description: "Median color of PS1 calibrators"
-    unit: mag
-  [color_rms]:
-    description: "RMS color of PS1 calibrators"
+
+  # Global calibration metadata (not filter-specific)
+  [zp_median]:
+    description: "Median zero point across all filters"
     unit: mag
   [nmatches]:
-    description: "Number of PS1 calibrators used"
+    description: "Number of PS1 calibrators used in the solution"
     type: integer
-  [zp_covariance]:
-    description: "Covariance of zero point and color coefficient"
-  [zp_median]:
-    description: "Median zero point"
+  [color_median]:
+    description: "Median colour of calibrator stars"
     unit: mag
+  [color_rms]:
+    description: "RMS colour of calibrator stars"
+    unit: mag
+
+  # Filter-specific calibration parameters
+  <{filter}>:
+    [zero_point]:
+      description: "Zero point for this filter"
+      unit: mag
+    [zero_point_uncertainty]:
+      description: "Zero point uncertainty for this filter"
+      unit: mag
+    [zero_point_rms]:
+      description: "RMS scatter of zero point fit for this filter"
+      unit: mag
+    [zero_point_covariance]:
+      description: "Covariance between zero point and colour coefficient for this filter"
+    [color_coefficient]:
+      description: "Colour coefficient for this filter"
+    [color_coefficient_uncertainty]:
+      description: "Uncertainty of colour coefficient for this filter"
 
 <color>:
   level: L0, L1, L6
@@ -495,24 +1035,58 @@ levels:
       description: "mag diff change rate error"
       unit: mag/day
 
+<_classification_fields>:
+  [class]:
+    description: "Class label"
+  [description]:
+    description: "Human-readable explanation or description"
+  [score]:
+    description: "Generic score or confidence where available"
+  [probability]:
+    description: "Probability score where available"
+    type: float
+    range: [0, 1]
+  [reliability]:
+    description: "Reliability/confidence indicator"
+  [version]:
+    description: "Classifier/catalog/module version"
+  [{field}]:
+    description: "Classification-specific fields (e.g., blazar_stats, anomaly_score)"
+
 <classification>:
-  level: L5
-  description: "ML classification outputs"
-  <{annotator}>:
-    [class]:
-      description: "Classification label"
-      [description]:
-        description: "Long textual description of the classification"
-      [probability]:
-        description: "Probability score"
-        type: float
-        range: [0, 1]
-    [{field}]:
-      description: "Classification-specific fields (e.g., blazar_stats, anomaly_score)"
+  level: L5, L6
+  description: "Classification, annotation, or taxonomic interpretation"
+  $ref: <_classification_fields>
+  [star_galaxy]:
+    description: "SExtractor star/galaxy classification score"
+    type: float
+    range: [0, 1]
+
+<astrometric_solution>:
+  level: L6
+  description: "Astrometric solution of a catalog object"
+  [parallax]:
+    unit: mas
+  [parallax_error]:
+    unit: mas
+  [proper_motion_ra]:
+    unit: mas/yr
+  [proper_motion_dec]:
+    unit: mas/yr
+  [proper_motion_ra_error]:
+    unit: mas/yr
+  [proper_motion_dec_error]:
+    unit: mas/yr
+  [epoch]:
+    description: "Reference epoch of astrometric solution"
+  [ruwe]:
+    description: "Gaia RUWE or equivalent astrometric quality metric"
+  [{field}]:
+    description: "Catalog-specific astrometric solution fields"
 
 <solar_system>:
   level: L2
-  description: "Solar System object information"
+  description: "Solar System object - specific information"
   [roid]:
     description: "SSO score (0=not, 1=possible, 2=candidate, 3=confirmed)"
     type: integer
@@ -530,6 +1104,12 @@ levels:
   [iau_number]:
     description: "IAU number of the Solar System object"
     type: integer
+
+<gravitational_wave>:
+  level: L2
+  description: "Gravitational wave - specific information"
+  [{field}]:
+    description: "GW fields TBD"
 
 <satellite>:
   level: L2
@@ -550,18 +1130,65 @@ levels:
     description: "Difference image 2D array"
     type: array
 
+<summary>:
+  level: L0
+  description: "Object-level aggregate summaries"
+  $ref: <time>(L0)
+  $ref: <identity>(L0)
+  $ref: <position>(L0)
+  $ref: <photometry>(L0)
+  $ref: <forced_photometry>(L0)
+  $ref: <color>(L0)
+  [detection_count]:
+    description: "Total number of detections for this object"
+    type: integer
+  [coverage_count]:
+    description: "Number of times position fell on a relevant field or detector"
+    type: integer
+  [{field}]:
+    description: "Origin- or mediator-specific aggregate field"
+
+<reference>:
+  level: L1
+  description: "Reference image information"
+
+  # Properties of the reference stack itself
+  [nframes]:
+    description: "Number of frames (epochal images) used to generate the reference image"
+    type: integer
+  $ref: <time>(L0) # first_mjd and last_mjd of the exposures used in reference stack
+  $ref: <forced_photometry>(L1) # forced measurement at the detection/object position on the reference image
+
+  # The nearest source in the reference PSF catalog
+  <nearest_source>:
+    $ref: <identity> # id of the source
+    $ref: <provenance> # description of the catalog
+    $ref: <position>(L1)
+    $ref: <separation>
+    $ref: <photometry>(L1) # magnitude of the source
+    $ref: <image_metrics> # e.g. DAOPhot chi and sharpness of the nearest source
+    $ref: <astrometric_solution>
+
 <crossmatch>:
   level: L6
-  description: "External catalog cross-matches"
-  <{catalog}>:
-    $ref: <position>
-    $ref: <separation>
-    $ref: <redshift>
-    $ref: <photometry>
-    $ref: <classification>
-    $ref: <provenance>
-    [{field}]:
-      description: "Catalog-specific additional fields"
+  description: "External catalog cross-match record"
+  $ref: <identity>
+  $ref: <position>
+  $ref: <separation>
+  $ref: <redshift>
+  $ref: <photometry>
+  $ref: <classification>
+  $ref: <provenance>
+  $ref: <astrometric_solution>
+  [{field}]:
+    description: "Catalog-specific additional fields"
+
+<_lightcurve_point>:
+  $ref: <time>(L1)
+  $ref: <photometry>(L1)
+  $ref: <quality>(L1)
+  $ref: <identity>(L1)
+  $ref: <provenance>
 
 <lightcurve>:
   level: L4
@@ -571,11 +1198,7 @@ levels:
     <points>:
       type: array
       items:
-        $ref: <time>[mjd]
-        $ref: <photometry>
-        $ref: <detection>
-        $ref: <quality>
-    level: L6
+        $ref: <_lightcurve_point>
     [magnitude_rate]:
       unit: mag/day
     [magnitude_rate_error]:
@@ -588,7 +1211,7 @@ levels:
       type: boolean
     [feature_vector]:
       description: "Serialized feature vector (e.g. lc_features_g)"
-    
+
 <survey>:
   level: L7
   description: "Survey-level statistics"
@@ -634,44 +1257,36 @@ levels:
     type: integer
   $ref: <position>
   
+
 <detection>:
   description: "Single detection structure (atomic observation)"
   $ref: <position>(L1)
   $ref: <time>(L1)
   $ref: <photometry>(L1)
+  $ref: <forced_photometry>(L1)
   $ref: <quality>(L1)
-  $ref: <provenance>(L1)
+  $ref: <identity>(L1)
+  $ref: <provenance>
   $ref: <separation> 
   $ref: <redshift> 
+  $ref: <image_metrics>
   $ref: <reference> 
   $ref: <calibration> 
   $ref: <color>
 
 <sso_detection>:
   description: "Single detection structure for Solar System objects"
-    inherits: <detection>
+    $ref: <_detection>
     $ref: <solar_system>
 
 <portfolio>:
-  description: "Object-centric aggregated view"
 
-  # Object-level projections
-  $ref: <position>(L0)
-  $ref: <time>(L0)
-  $ref: <provenance>(L0)
-  $ref: <color>(L0)
+  $refs: <summary>@{producer}:{channel}
+  $refs: <detection>@{producer}:{channel}
+  $refs: <sso_detection>@{producer}:{channel}
+  $refs: <gw_detection>@{producer}:{channel}
+  $refs: <neutrino_detection>@{producer}:{channel}
+  $refs: <crossmatch>@{producer}:{channel}
+  $refs: <lightcurve>@{producer}:{channel}
+  $refs: <classification>@{producer}:{channel}
 
-  <detections>:
-    type: array
-    items:
-      $ref: <detection> | <sso_detection>
-
-  <crossmatches>:
-    type: array
-    items:
-      $ref: <crossmatch>
-
-  <lightcurves>:
-    type: array
-    items:
-      $ref: <lightcurve>
