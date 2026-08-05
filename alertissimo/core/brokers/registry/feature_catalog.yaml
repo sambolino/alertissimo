@@ -1,24 +1,24 @@
-# feature_catalog.yaml
-version: "0.9"
-description: "Unified transient feature space"
-
 # ============================================================================
 # SEMANTICS RECIPE
 # ============================================================================
 # This file defines a level-aware semantic model for heterogeneous astronomical
-# transient data. It separates semantic meaning, structural composition,
-# provenance qualification, and runtime cardinality.
+# transient data. The aim is to provide a common language in which detections,
+# summaries, classifications, light curves, crossmatches, provenance, and
+# record-to-record links can be described without adopting the native vocabulary
+# of any one broker, survey, catalog, or transport format.
 #
-# The specification serves as:
-#   - a canonical vocabulary of astronomical features
-#   - a reusable semantic layer for broker, survey, and catalog mappings
-#   - a validation target for normalized data
-#   - a foundation for higher-level DSL constructs
+# The model is intentionally readable. A semantic path should be useful to a
+# human scientist, to a mapping file, and to code that must normalize data from
+# heterogeneous streams. The same notation is also intended to support higher
+# level DSL expressions, but the semantic catalog is not itself the query
+# language. It defines the vocabulary and structural rules on which such a
+# language can rely.
 #
 # This is an ordered YAML-like domain-specific notation, not ordinary YAML.
-# Repeated directives such as level, $ref, and $refs are meaningful and their
-# order must be preserved by the parser. A standard YAML parser that overwrites
-# duplicate keys is therefore not sufficient.
+# Repeated directives such as level, $ref, and $refs are meaningful. Their
+# order and scope must be preserved by the parser. A standard YAML parser that
+# overwrites duplicate keys is therefore not sufficient.
+#
 #
 # ---------------------------------------------------------------------------
 # CORE ELEMENTS
@@ -27,33 +27,41 @@ description: "Unified transient feature space"
 # 1. Semantic containers
 #
 #   <container>
-#       Instantiable, path-bearing semantic grouping.
-#       Its name is preserved when composed into another structure.
+#       Instantiable, path-bearing semantic grouping. Its name is preserved
+#       when composed into another structure.
 #
 #       Example:
 #
 #           <detection>:
 #             $ref: <photometry>(L1)
 #
-#       produces paths such as:
+#       allows paths such as:
 #
 #           detection.photometry.g.psf.flux
+#
+#       The container name is part of the meaning. It should not be introduced
+#       merely to mirror a storage layout or a broker payload section.
 #
 #
 # 2. Fields
 #
 #   [field]
-#       Resolvable value-bearing semantic element.
-#       A field may be a leaf or may contain nested fields.
+#       Resolvable value-bearing semantic element. A field may be a leaf or may
+#       contain nested fields.
 #
 #       Examples:
 #
 #           [ra]
 #           [object_id]
 #           [flux]
+#           [probability]
+#
+#       A field name should describe the value, not its accidental source name.
+#       Source names that cannot yet be normalized may be carried by dynamic
+#       fields or by mapping metadata.
 #
 #
-# 3. Parameterized and dynamic elements
+# 3. Parameterized containers and dynamic fields
 #
 #   <{parameter}>
 #       Runtime-resolved, path-bearing semantic container. Used when the
@@ -67,90 +75,105 @@ description: "Unified transient feature space"
 #               <psf>:
 #                 [flux]
 #
-#       produces:
+#       allows:
 #
 #           photometry.g.psf.flux
 #           photometry.r.psf.flux
 #
-#       Parameterized containers remain available wherever runtime semantic
-#       grouping is useful. Producer/channel qualification may make some older
-#       parameterizations unnecessary in canonical structures, but does not
-#       remove the general language feature.
+#       Parameterized containers are appropriate for filters, named
+#       classification outputs, color pairs, or other runtime values that behave
+#       as semantic namespaces.
 #
 #   [{field}]
 #       Dynamic resolvable extension field or terminal runtime field. Used for
 #       producer-, broker-, catalog-, or method-specific values not yet
-#       represented in the stable semantic vocabulary. It may also represent a
-#       parameter that terminates the path rather than carrying descendants.
+#       represented in the stable vocabulary. It may also represent a parameter
+#       that terminates the path rather than carrying descendants.
 #
-#       Dynamic fields are escape hatches and should not replace a stable
-#       reusable concept when one can be identified.
+#       Dynamic fields are escape hatches. They should not replace a stable
+#       reusable concept once that concept is clear.
 #
 #
-# 4. Internal field projections and traits
+# 4. Internal projections and reusable traits
 #
 #   <_name>
 #       Non-instantiable field projection or reusable trait. An underscored
 #       element never appears as a semantic path component.
 #
-#       It has two supported uses:
-#
-#       a) Field-only projection of an existing semantic container
+#       A projection can import the contents of a semantic container without
+#       importing the container name itself:
 #
 #           <forced_photometry>:
 #             $ref: <_photometry>
 #
-#          imports the contents of <photometry> without introducing the
-#          photometry path component. It therefore produces:
+#       allows:
 #
-#             forced_photometry.g.psf.flux
+#           forced_photometry.g.psf.flux
 #
-#          not:
+#       not:
 #
-#             forced_photometry.photometry.g.psf.flux
+#           forced_photometry.photometry.g.psf.flux
 #
-#       b) Explicitly declared reusable field trait
+#       A trait can also be declared explicitly:
 #
-#           <_classification_fields>:
+#           <_classification_core>:
 #             [class]
 #             [probability]
 #
 #           <classification>:
-#             $ref: <_classification_fields>
+#             <best>:
+#               $ref: <_classification_core>
 #
-#          produces:
+#       allows:
 #
-#             classification.class
-#             classification.probability
+#           classification.best.class
+#           classification.best.probability
 #
-#          The internal trait name is never propagated into the path.
-#
-#       Structural specialization is expressed through field-only projection:
-#
-#           <sso_detection>:
-#             $ref: <_detection>
-#             $ref: <solar_system>
-#
-#       This removes the need for a separate inheritance mechanism while still
-#       producing a specialized, flattened semantic structure.
+#       The underscored trait name is never propagated into the path.
 #
 #
 # ---------------------------------------------------------------------------
-# REFERENCES AND CARDINALITY
+# REFERENCES, CARDINALITY, AND OPTIONALITY
 # ---------------------------------------------------------------------------
 #
 # 5. Single references
 #
 #   $ref: <container>
-#       Composes one instance of an instantiable semantic container into the
-#       current structure. The referenced container name remains in the path.
+#       Allows one instance of an instantiable semantic container to appear in
+#       the current structure. The referenced container name remains in the
+#       path.
 #
 #   $ref: <container>(Ln)
-#       Composes only fields valid at the selected semantic level.
+#       Allows fields of the referenced container that are valid at the selected
+#       level. Level selection is recursive and field-based. Ancestor containers
+#       needed to reach selected fields are retained as path scaffolding; sibling
+#       fields whose levels do not match are not selected.
+#
+#       Example:
+#
+#           <summary>:
+#             $ref: <photometry>(L0)
+#
+#       may allow both:
+#
+#           summary.photometry.g.magnitude_rate
+#           summary.photometry.g.psf.mean
+#
+#       while not implying L1 detection measurements such as:
+#
+#           summary.photometry.g.psf.fit_chi2
 #
 #   $ref: <_container>
 #       Imports only the referenced contents. The underscored source is not
 #       instantiable and does not add a path component.
+#
+#   Important:
+#       A reference is permissive, not mandatory. It declares that the enclosing
+#       structure may carry semantically compatible fields from the referenced
+#       concept. It does not require every record instance to contain all fields
+#       made available by the reference, and it does not require a normalizer to
+#       materialize absent fields. Presence, absence, reduction, and storage are
+#       runtime matters.
 #
 #
 # 6. Repeated references
@@ -165,23 +188,31 @@ description: "Unified transient feature space"
 #             $refs: <summary>
 #             $refs: <detection>
 #             $refs: <crossmatch>
-#             $refs: <lightcurve>
-#             $refs: <classification>
 #
-#       $refs defines structural cardinality. It does not pluralize the
-#       semantic noun and does not expose runtime array indexes in semantic
-#       paths.
+#       $refs defines semantic cardinality. It does not pluralize the semantic
+#       noun and does not expose runtime array indexes in semantic paths.
+#
+#       Repeated instances may have the same semantic path:
+#
+#           portfolio.detection@lsst:fink
+#           portfolio.detection@lsst:fink
+#           portfolio.detection@lsst:fink
+#
+#       The path identifies the kind of record and its semantic qualification,
+#       not necessarily one concrete instance. Implementations may use internal
+#       record identifiers, array positions, database keys, or object anchors to
+#       connect concrete instances. Such identifiers are storage details and are
+#       not part of the public semantic path grammar.
 #
 #
 # 7. Intrinsically multi-valued fields
 #
 #   type: array
-#       Used when a single field value is intrinsically a list or array.
-#       This is distinct from repeated semantic entities declared with $refs.
+#       Used when a single field value is intrinsically a list or array. This is
+#       distinct from repeated semantic entities declared with $refs.
 #
 #       Examples:
 #
-#           identity.external_names
 #           cutouts.science
 #           lightcurve.points
 #
@@ -196,11 +227,11 @@ description: "Unified transient feature space"
 #
 #       L0  - Object/portfolio summaries, identities, and aggregate properties
 #       L1  - Single-detection measurements and metadata
-#       L2  - Phenomenon-specific information, e.g. Solar System or GW
+#       L2  - Phenomenon-specific information, e.g. Solar System or GW content
 #       L3  - Binary and image data
 #       L4  - Light curves and derived time-series products
 #       L5  - Quality scores, classification, and machine-learning outputs
-#       L6  - Enrichment, crossmatch, and external catalog information
+#       L6  - Enrichment, linkage, crossmatch, and external catalog information
 #       L7  - Survey-level aggregates
 #       L8  - External services such as resolvers and ephemerides
 #
@@ -209,65 +240,71 @@ description: "Unified transient feature space"
 #
 #   Level declarations are scoped and ordered:
 #
-#       - a level declared on a container applies to its descendants
-#       - a later level declaration at the same scope applies to the fields and
-#         subcontainers that follow it until another level declaration appears
+#       - a level declared on a container applies to descendants that follow it
+#       - a later level declaration at the same scope applies to following
+#         fields and subcontainers until another level declaration appears
 #       - an individual field may override the inherited level
 #       - one semantic container may therefore carry fields from several levels
 #
-#   Example:
+#   A field may be valid at more than one level:
 #
-#       <{filter}>:
-#         level: L1, L6
-#         [flux]
-#         <psf>:
-#           [flux]
-#         level: L0
-#         [magnitude_rate]
+#       [magnitude_rate]:
+#         level: L0, L4
 #
-#   The same semantic concept may be reused in different structures by selecting
-#   the appropriate level:
-#
-#       <detection>:
-#         $ref: <photometry>(L1)
-#
-#       <summary>:
-#         $ref: <photometry>(L0)
+#   Such a field may appear in an object summary and in a light-curve product.
+#   The path context determines the role.
 #
 #
 # ---------------------------------------------------------------------------
-# STRUCTURAL COMPOSITION
+# PORTFOLIO RECORDS AND STRUCTURAL CONTEXT
 # ---------------------------------------------------------------------------
 #
-# 9. Portfolio and first-level records
+# 9. Portfolio root
 #
-#   <portfolio> is the unified object-centric root. It does not need a separate
-#   portfolio.object branch. Object-level identity and aggregate properties are
-#   carried by <summary> records.
+#   <portfolio> is the object-centric root. It collects first-level semantic
+#   records rather than forcing all information into a single object tree.
+#   Object-level identity and aggregate projections belong in <summary>.
 #
-#   Typical first-level records are:
+#   Current first-level record types are:
 #
 #       summary
 #       detection
-#       sso_detection
-#       gw_detection
-#       neutrino_detection
 #       crossmatch
 #       lightcurve
 #       classification
 #
-#   Example paths:
-#
-#       portfolio.summary.identity.object_id
-#       portfolio.detection.identity.source_id
-#       portfolio.lightcurve.r.points
+#   The model deliberately keeps these nouns singular. Cardinality is expressed
+#   by $refs and runtime representation, not by plural path names.
 #
 #
-# 10. Structural context carries meaning
+# 10. Generic detection
+#
+#   <detection> is the generic atomic observational, alert, or event record.
+#   Optical alerts, radio detections, Solar System detections, GW notices, and
+#   neutrino events should not require separate first-level portfolio branches
+#   merely because their producers or messengers differ.
+#
+#   The producer/channel qualifier may strongly suggest the expected profile:
+#
+#       portfolio.detection@lsst:fink
+#       portfolio.detection@lvk:gcn
+#       portfolio.detection@icecube:gcn
+#
+#   but the formal semantic content is expressed by the branches present inside
+#   the detection:
+#
+#       detection.photometry...
+#       detection.gravitational_wave...
+#       detection.neutrino...
+#       detection.solar_system...
+#
+#   A reference from <detection> to a phenomenon-specific container allows that
+#   content; it does not imply that every detection carries it.
+#
+#
+# 11. Structural context carries meaning
 #
 #   Do not repeat information already expressed by the enclosing hierarchy.
-#
-#   Example:
 #
 #       detection.forced_photometry.g.psf.flux
 #
@@ -277,29 +314,39 @@ description: "Unified transient feature space"
 #
 #   means forced photometry on the reference/template image.
 #
-#   Therefore fields such as science_flux and template_flux are unnecessary.
-#   The semantic vocabulary remains reusable and the parent structure supplies
-#   the role.
-#
-#   The same rule applies generally: attach a reusable semantic container to the
-#   entity it describes rather than encoding the parent context in field names.
+#   Fields such as science_flux and template_flux are therefore unnecessary in
+#   the semantic vocabulary. The reusable container supplies the measurement
+#   concept; the parent structure supplies the role.
 #
 #
-# 11. Classification subject
+# 12. Classification structure
 #
 #   <classification> is reusable. The enclosing structure identifies what is
 #   being classified:
 #
 #       portfolio.classification...                 portfolio object
-#       portfolio.crossmatch....classification...  matched catalog object
-#       portfolio.detection....classification...   detection, when applicable
+#       portfolio.crossmatch....classification...   matched catalog object
+#       portfolio.detection....classification...    detection, where applicable
+#
+#   A classification record may carry a selected result and a set of named
+#   assessment outputs:
+#
+#       classification.best.class
+#       classification.best.probability
+#       classification.assessment.snia_vs_nonia.probability
+#       classification.assessment.fink_class.class
+#
+#   The assessment name is a broker/model output namespace. It is not required
+#   to be a clean astrophysical class label. Method names, source-field names,
+#   contrasts, and descriptions may be carried inside the assessment fields
+#   rather than forced into a taxonomy before normalization.
 #
 #
 # ---------------------------------------------------------------------------
 # PRODUCER AND DELIVERY QUALIFIERS
 # ---------------------------------------------------------------------------
 #
-# 12. Qualifier grammar
+# 13. Qualifier grammar
 #
 #   First-level semantic records may be qualified as:
 #
@@ -307,11 +354,12 @@ description: "Unified transient feature space"
 #
 #   @producer
 #       Identifies who created the addressed record or datum. A producer may be
-#       a survey, catalog, broker science module, classifier, or internal module.
+#       a survey, catalog, broker science module, classifier, instrument,
+#       workflow, or internal Alertissimo module.
 #
 #   :channel
-#       Identifies the broker, archive, API, service, or other route through
-#       which Alertissimo received the record. It is delivery/audit information,
+#       Identifies the broker, archive, API, service, cache, or other route
+#       through which the record was received. It is delivery/audit information,
 #       not a claim of scientific authorship.
 #
 #   Examples:
@@ -320,105 +368,145 @@ description: "Unified transient feature space"
 #       portfolio.detection@lsst:lasair.photometry.g.psf.flux
 #       portfolio.lightcurve@ztf:fink.r.points
 #       portfolio.crossmatch@gaia:fink.identity.object_id
-#       portfolio.classification@fink.class
+#       portfolio.classification@fink.best.class
 #
-#   The distinction is:
+#   The producer is the producer of the addressed value, not necessarily the
+#   producer of the original alert packet. A single broker payload may therefore
+#   split into several semantic records:
 #
-#       detection@lsst:lasair
-#           produced by LSST and delivered through Lasair
+#       detection@lsst:fink          LSST detection delivered through Fink
+#       classification@fink          Fink classification product
+#       crossmatch@gaia:fink         Gaia catalog match exposed by Fink
 #
-#       classification@fink
-#           produced by Fink; delivery channel omitted
+#   If Fink classification is delivered through another system, for example
+#   AMPEL, the path may be:
+#
+#       classification@fink:ampel
+#
+#   If AMPEL computes its own classification, the producer changes:
+#
+#       classification@ampel
 #
 #
-# 13. First-level-only qualification
+# 14. Qualifier scope
 #
-#   @producer and :channel may appear only on the first semantic record composed
-#   directly into its structural parent, normally immediately below portfolio.
-#   The qualifier is inherited by all nested fields of that record.
+#   In ordinary composition, @producer and :channel appear on first-level records
+#   composed directly into their structural parent, normally <portfolio>. The
+#   qualifier is inherited by nested fields of that record.
 #
 #   Valid:
 #
-#       portfolio.summary@lsst.photometry.g.psf.mean
 #       portfolio.detection@lsst:lasair.position.ra
 #       portfolio.lightcurve@alertissimo.r.points
 #       portfolio.crossmatch@gaia:fink.astrometric_solution.parallax
 #
-#   Invalid:
+#   Invalid as ordinary field qualification:
 #
-#       portfolio.summary.photometry@lsst.g.psf.mean
 #       portfolio.detection.photometry.g@lsst.psf.flux
 #       portfolio.lightcurve.r.points@ztf
 #
-#   Nested data requiring finer lineage records that lineage in <provenance> or
-#   in the nested record itself; it does not introduce another @ or : qualifier.
+#   Relation targets are the exception. A relation may point to another semantic
+#   record by using the target record type with its qualifier:
 #
-#   For example, a composite light curve produced by Alertissimo is addressed as:
+#       portfolio.detection@subaru.relation.detection@lsst:fink
 #
-#       portfolio.lightcurve@alertissimo.r.points
+#   This is a reference to an existing detection record in the same portfolio,
+#   not a nested copy of that detection and not a second first-level record.
 #
-#   Individual points may retain their own provenance fields internally.
 #
-#
-# 14. Optional channel
+# 15. Optional channel
 #
 #   :channel is optional. If omitted, the delivery route is direct, unspecified,
 #   irrelevant to the semantic operation, or identical to the producer and not
 #   required for audit.
 #
-#   The qualifier describes the addressed record as a whole. More detailed
-#   lineage, method, version, schema, or processing metadata belongs in
-#   <provenance>, not in the main semantic path.
+#   More detailed method, version, schema, timing, or payload information belongs
+#   in <provenance>, not in the main semantic path.
 #
 #
 # ---------------------------------------------------------------------------
-# IDENTITY, SUMMARY, AND PROVENANCE
+# PROVENANCE
 # ---------------------------------------------------------------------------
 #
-# 15. Identity
+# 16. Provenance as immediate context
 #
-#   <identity> defines reusable identifiers.
+#   <provenance> describes the immediately enclosing record or assertion. This
+#   rule is important because provenance can appear at several depths:
 #
-#   L1 identity applies to an observational event or detection:
+#       detection.provenance
+#           provenance of the detection record
 #
-#       portfolio.detection@lsst:lasair.identity.source_id
+#       detection.relation.provenance
+#           provenance of the relation assertion
 #
-#   L0 identity applies to an astronomical object and is carried through
-#   <summary>:
+#       detection.relation.detection.provenance
+#           provenance of the related detection after dereferencing the target
 #
-#       portfolio.summary@lsst.identity.object_id
+#   The canonical provenance roles are producer and channel. These mirror the
+#   @producer:channel qualifier but may carry additional typed metadata:
 #
-#   Survey, broker, and catalog names are not encoded as ordinary children of
-#   identity. The first-level qualifier provides that context.
+#       provenance.producer.type
+#       provenance.producer.name
+#       provenance.producer.version
+#       provenance.channel.type
+#       provenance.channel.name
 #
-#
-# 16. Summary
-#
-#   <summary> contains object-level scalar and aggregate projections, including
-#   object identity, temporal coverage, photometric aggregates, colors, and
-#   counts. Different producers may supply different summary records:
-#
-#       portfolio.summary@lsst.identity.object_id
-#       portfolio.summary@lsst.photometry.g.psf.mean
-#       portfolio.summary@fink.detection_count
-#       portfolio.summary@alertissimo.detection_count
+#   Synonyms such as broker, publisher, origin, survey, mediator, and delivery
+#   may be useful in DSL/NLP parsing, but the semantic model should normalize
+#   them to producer or channel rather than adding parallel canonical branches.
 #
 #
-# 17. Provenance
+# ---------------------------------------------------------------------------
+# RELATION
+# ---------------------------------------------------------------------------
 #
-#   <provenance> stores detailed audit information that should not normally be
-#   encoded in the semantic path, for example:
+# 17. Relation as local audit/linkage
 #
-#       publisher
-#       broker
-#       schema_version
-#       science_version
-#       processed_mjd
-#       withdrawn_mjd
-#       processing identifiers and filenames
+#   <relation> describes a local audit or linkage assertion made about the
+#   enclosing record. It is not a first-level scientific product and should not
+#   become a general graph ontology. Its main purpose is to express statements
+#   such as confirmation, association, duplication, conflict, derivation, or
+#   follow-up linkage without polluting the primary record vocabulary.
 #
-#   The compact @producer:channel qualifier supports selection and readability;
-#   provenance fields support reproducibility and detailed lineage.
+#   A relation may point to one or more detections already present in the same
+#   portfolio:
+#
+#       detection@lsst:fink.relation.detection@lsst:lasair
+#       detection@subaru.relation.detection@lsst:fink
+#       detection@lsst:lasair.relation.detection@lvk:gcn
+#
+#   Relation targets are semantic references. They identify the target record
+#   kind and qualifier; they do not guarantee that the visible path alone
+#   uniquely identifies a concrete instance. If several Subaru detections are
+#   present, middleware resolves the concrete target using internal record
+#   anchors, identity fields, array positions, database keys, or other
+#   semantically-unaware mechanisms. These implementation identifiers must not
+#   leak into the public semantic path unless a specific export format chooses
+#   to expose them separately.
+#
+#   The relation's own fields describe the assertion:
+#
+#       relation.type
+#       relation.score
+#       relation.basis
+#       relation.provenance
+#
+#   For example:
+#
+#       portfolio.detection@lsst:fink.relation.type = confirmation
+#       portfolio.detection@lsst:fink.relation.detection@lsst:lasair
+#
+#       portfolio.detection@subaru.relation.type = followup_of
+#       portfolio.detection@subaru.relation.detection@lsst:fink
+#
+#       portfolio.detection@lsst:lasair.relation.type = association
+#       portfolio.detection@lsst:lasair.relation.detection@lvk:gcn
+#
+#   Spatial, temporal, photometric, or localization quantities used to justify
+#   the relation should remain in their proper semantic containers when they are
+#   actual measured values. The relation records the assertion and its score or
+#   basis; it does not absorb all evidence fields into a generic association
+#   object.
 #
 #
 # ---------------------------------------------------------------------------
@@ -445,59 +533,42 @@ description: "Unified transient feature space"
 #       portfolio.detection@lsst:lasair.reference.forced_photometry.g.psf.flux
 #       portfolio.lightcurve@ztf:fink.r.points
 #       portfolio.crossmatch@gaia:fink.identity.object_id
-#       portfolio.classification@fink.class
+#       portfolio.classification@fink.assessment.snia_vs_nonia.probability
+#       portfolio.detection@subaru.relation.detection@lsst:fink
 #
 #
 # ---------------------------------------------------------------------------
-# DESIGN PRINCIPLES
+# IMPLEMENTATION NOTES
 # ---------------------------------------------------------------------------
 #
-# 19. Semantic nouns remain singular
+# 19. Parser requirements
 #
-#   Use detection, crossmatch, lightcurve, classification, and summary.
-#   Cardinality is expressed by $refs and middleware, not by plural container
-#   names or semantic array indexes.
+#   A parser or Codex-generated implementation should:
 #
-#
-# 20. Meaning before implementation
-#
-#   Semantic containers describe what data mean. Middleware decides runtime
-#   arrays, indexes, grouping, deduplication, and storage representation.
-#
-#
-# 21. Reuse without path pollution
-#
-#   Use ordinary containers when their semantic name belongs in the path.
-#   Use underscored projections or traits when only their fields should be
-#   reused. Avoid duplicating semantic fields merely to express a new context.
+#       - preserve declaration order
+#       - preserve repeated level, $ref, and $refs directives
+#       - treat levels as scoped metadata, not YAML keys to be overwritten
+#       - apply level selection recursively down to fields
+#       - keep singular semantic nouns in public paths
+#       - avoid runtime array indexes in semantic paths
+#       - treat dynamic fields as last-resort extension points
+#       - resolve relation targets through implementation data structures, not
+#         through visible semantic-path contortions
 #
 #
-# 22. Attach diagnostics to what they describe
+# 20. Scope
 #
-#   Examples:
+#   This specification does not define:
 #
-#       photometry.*     measurement values and measurement-fit diagnostics
-#       image_metrics.*  pixels, morphology, subtraction geometry, trails,
-#                        dipoles, and image flags
-#       quality.*        higher-level trust, reliability, and usability scores
-#       calibration.*    parameters used to calibrate photometry
-#       reference.*      reference-stack and reference-source context
-#       separation.*     reusable relative geometry within its parent relation
+#       - broker-specific field mappings
+#       - query syntax or transformation logic
+#       - execution semantics
+#       - runtime storage representation
+#       - selector, reducer, or freshness operators
+#       - internal record identifiers
 #
-#
-# ---------------------------------------------------------------------------
-# SCOPE
-# ---------------------------------------------------------------------------
-#
-# This specification does not define:
-#   - broker-specific field mappings
-#   - query syntax or transformation logic
-#   - execution semantics
-#   - runtime storage representation
-#   - selector and reducer operators
-#
-# It defines the semantic vocabulary, structural composition rules, level
-# metadata, cardinality, and producer/delivery qualification grammar.
+#   It defines the semantic vocabulary, structural composition rules, level
+#   metadata, cardinality, provenance qualification, and local relation grammar.
 #
 # ============================================================================
 
@@ -513,7 +584,7 @@ levels:
   L8: "External services - name resolution, ephemeris, etc."
 
 <position>:
-  level: L1
+  level: L0, L1
   unit: deg
   description: "Equatorial coordinates J2000"
   [ra]:
@@ -527,8 +598,7 @@ levels:
   [ra_dec_covariance]:
     description: "Covariance between right ascension and declination"
     unit: deg2
-  [cone_distance]:
-    description: "Angular distance from search center"
+  level: L1
   [image_x]:
     description: "X position in image"
     unit: pixels
@@ -544,16 +614,19 @@ levels:
   [distance_to_edge]:
     description: "Distance to nearest image edge"
     unit: pixels
-  level: L6
+  level: L1, L6
+  [cone_distance]:
+    description: "Angular distance from search center"
+  level: L0, L6
   [constellation]:
     description: "Constellation name"
 
 <time>:
-  level: L1
+  level: L1, L6
   unit: mjd
   description: "Time measurements (MJD)"
   [mjd]:
-    description: "Modified Julian Date of observation"
+    description: "Modified Julian Date associated with the enclosing record"
   [exposure]:
     description: "Exposure duration"
     unit: sec
@@ -597,39 +670,39 @@ levels:
   [{field}]:
     description: "Other specific object identifiers"
 
-<provenance>:
-  level: L1
-  description: "Contextual identifiers and metadata"
-  [program_id]:
-    description: "Program ID"
-    type: integer
-  [publisher]:
-    description: "Alert origin"
-  [broker]:
-    description: "Broker"
-  [broker_version]:
-    description: "Broker version"
+<_provenance_core>:
+  [type]:
+    description: "Type of provenance agent, e.g. survey, broker, archive, service, pipeline, model, instrument"
+  [name]:
+    description: "Name of the provenance agent"
+  [id]:
+    description: "Identifier of the provenance agent"
+  [version]:
+    description: "Version of the provenance agent"
+  [schema_version]:
+    description: "Schema version associated with the provenance agent"
   [science_version]:
     description: "Science module version"
-  [schema_version]:
-    description: "Alert schema version"
-  [pid]:
-    description: "Processing ID"
-    type: long
-  [rfid]:
-    description: "Reference image processing ID"
-    type: long
-  [diffim_filename]:
-    description: "Difference image filename"
-  [processed_mjd]:
-    description: "Time at which the record was processed"
-    unit: mjd
-  [withdrawn_mjd]:
-    description: "Time at which the record was withdrawn or invalidated"
-    unit: mjd
-  [too_flag]:
-    description: "Target of Opportunity flag"
-    type: boolean
+  [method]:
+    description: "Method, rule, or procedure used by the provenance agent"
+  [{field}]:
+    description: "Agent-specific additional field"
+
+<provenance>:
+  description: "Contextual provenance of the enclosing record or assertion"
+
+  <producer>:
+    description: "Agent that produced the enclosing record or assertion"
+    $ref: <_provenance_core>
+  
+  <channel>:
+    description: "Agent that delivered, exposed, or mediated the enclosing record or assertion"
+    $ref: <_provenance_core>
+  
+  $ref: <time>(L6)
+  
+  [{field}]:
+    description: "Provenance-specific additional field"
 
 <separation>:
   level: L1
@@ -797,7 +870,7 @@ levels:
         description: "Skewness of the PSF-flux distribution"
       [stetson_j]:
         description: "Stetson J statistic of the PSF-flux measurements"
-    level: L0
+    level: L0, L4
     [magnitude_rate]:
       description: "Rate of change of brightness"
       unit: mag/day
@@ -1035,32 +1108,42 @@ levels:
       description: "mag diff change rate error"
       unit: mag/day
 
-<_classification_fields>:
+<_classification_core>:
   [class]:
-    description: "Class label"
-  [description]:
-    description: "Human-readable explanation or description"
+    description: "Class label, where applicable"
+  [value]:
+    description: "Generic classification value, where applicable"
   [score]:
-    description: "Generic score or confidence where available"
+    description: "Classification score, where applicable"
+    type: float
   [probability]:
-    description: "Probability score where available"
+    description: "Classification probability, where applicable"
     type: float
     range: [0, 1]
-  [reliability]:
-    description: "Reliability/confidence indicator"
-  [version]:
-    description: "Classifier/catalog/module version"
+  [method]:
+    description: "Method, model, rule, or source field behind this classification result"
+  [target]:
+    description: "Class, contrast, or concept this classification result refers to, where known"
+  [description]:
+    description: "Human-readable explanation or description"
   [{field}]:
-    description: "Classification-specific fields (e.g., blazar_stats, anomaly_score)"
+    description: "Classification-specific additional field"
 
 <classification>:
   level: L5, L6
   description: "Classification, annotation, or taxonomic interpretation"
-  $ref: <_classification_fields>
-  [star_galaxy]:
-    description: "SExtractor star/galaxy classification score"
-    type: float
-    range: [0, 1]
+
+  <best>:
+    description: "Selected or preferred classification result"
+    $ref: <_classification_core>
+
+  <assessment>:
+    description: "Named classification output, score, probability, label, or broker-provided classification field"
+    <{output}>:
+      $ref: <_classification_core>
+
+  $ref: <provenance>
+
 
 <astrometric_solution>:
   level: L6
@@ -1199,10 +1282,7 @@ levels:
       type: array
       items:
         $ref: <_lightcurve_point>
-    [magnitude_rate]:
-      unit: mag/day
-    [magnitude_rate_error]:
-      unit: mag/day
+    $ref: <photometry>(L4)    
     [rate_lower_percentile]:
     [rate_upper_percentile]:
     [delta_time_rate]:
@@ -1257,35 +1337,62 @@ levels:
     type: integer
   $ref: <position>
   
+<relation>:
+  level: L6
+  description: "Audit or linkage metadata relating the enclosing record to another detection record"
+  [type]:
+    description: "Canonical relation type"
+    enum: [confirmation, association, followup_of, duplicate_of, conflict_with, derived_from, canonical_for]
+  [score]:
+    description: "Confidence, agreement, or relevance score for the relation"
+    type: float
+    range: [0, 1]
+  $refs: <detection>@{producer}:{channel}
+  $ref: <provenance>
+  [{field}]:
+    description: "Relation-specific additional field"
 
 <detection>:
-  description: "Single detection structure (atomic observation)"
+  description: "Single detection, observation, alert, or event record"
+  [type]:
+    description: "Type of detection depending on content"
+    enum: TODO
+
+  # Generic record structure
   $ref: <position>(L1)
   $ref: <time>(L1)
+  $ref: <identity>(L1)
+  $ref: <quality>(L1)
+  $ref: <provenance>
+
+  # Optical / imaging detection content
   $ref: <photometry>(L1)
   $ref: <forced_photometry>(L1)
-  $ref: <quality>(L1)
-  $ref: <identity>(L1)
-  $ref: <provenance>
-  $ref: <separation> 
-  $ref: <redshift> 
   $ref: <image_metrics>
-  $ref: <reference> 
-  $ref: <calibration> 
+  $ref: <reference>
+  $ref: <calibration>
   $ref: <color>
 
-<sso_detection>:
-  description: "Single detection structure for Solar System objects"
-    $ref: <_detection>
-    $ref: <solar_system>
+  # General physical / contextual content
+  $ref: <separation>
+  $ref: <redshift>
+
+  # Phenomenon-specific content
+  $ref: <solar_system>
+  $ref: <gravitational_wave>
+  $ref: <neutrino>
+  $ref: <satellite>
+
+  # Relation/audit layer
+  $refs: --edge--
+
+  [{field}]:
+    description: "Detection-specific additional field"
+
 
 <portfolio>:
-
   $refs: <summary>@{producer}:{channel}
   $refs: <detection>@{producer}:{channel}
-  $refs: <sso_detection>@{producer}:{channel}
-  $refs: <gw_detection>@{producer}:{channel}
-  $refs: <neutrino_detection>@{producer}:{channel}
   $refs: <crossmatch>@{producer}:{channel}
   $refs: <lightcurve>@{producer}:{channel}
   $refs: <classification>@{producer}:{channel}
