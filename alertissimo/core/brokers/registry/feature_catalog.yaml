@@ -132,6 +132,41 @@
 #       The underscored trait name is never propagated into the path.
 #
 #
+# 4b. Edge carriers
+#
+#   --edge--
+#       Abstract or concrete connection carrier between semantic records. Edges
+#       are not dot-path containers and do not appear as children of the noun
+#       data tree. They belong to the connection plane.
+#
+#       Examples:
+#
+#           detection@vidojevica --followup_of--> detection@lsst:fink
+#           detection@lsst:fink --association-- detection@lvk:gcn
+#
+#       The arrow, or lack of arrow, is part of the edge name. Direction is
+#       therefore explicit in the carrier symbol itself:
+#
+#           --followup_of-->     directional
+#           --association--      nondirectional
+#
+#       Edge carriers may have their own fields such as score, basis,
+#       time_delta, request_id, or provenance. These fields describe the
+#       connection assertion itself, not the subject record and not the target
+#       record.
+#
+#   $is: --edge--
+#       Declares that a concrete edge carrier is a kind of the abstract edge
+#       carrier. This is edge-plane inheritance, not noun-plane composition.
+#       It does not create dot-path segments and does not propagate fields into
+#       the subject or target records.
+#
+#   $edges:
+#       Declares the allowed edge participation of the enclosing record. If the
+#       declared edge is abstract, any concrete edge whose $is chain resolves to
+#       that abstract edge is allowed.
+#
+#
 # ---------------------------------------------------------------------------
 # REFERENCES, CARDINALITY, AND OPTIONALITY
 # ---------------------------------------------------------------------------
@@ -296,10 +331,16 @@
 #       detection.photometry...
 #       detection.gravitational_wave...
 #       detection.neutrino...
+#       detection.radio...
 #       detection.solar_system...
 #
 #   A reference from <detection> to a phenomenon-specific container allows that
 #   content; it does not imply that every detection carries it.
+#
+#   The optional detection.type field is a controlled high-level hint used for
+#   filtering and validation. It does not replace the structural branches: a
+#   record with detection.type = radio should still express radio-specific
+#   content under detection.radio where such data are available.
 #
 #
 # 11. Structural context carries meaning
@@ -405,13 +446,15 @@
 #       portfolio.detection.photometry.g@lsst.psf.flux
 #       portfolio.lightcurve.r.points@ztf
 #
-#   Relation targets are the exception. A relation may point to another semantic
-#   record by using the target record type with its qualifier:
+#   Edge participants are the exception. A connection may point to another
+#   semantic record by using the record type with its qualifier:
 #
-#       portfolio.detection@subaru.relation.detection@lsst:fink
+#       portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
+#       portfolio.detection@lsst:fink --association-- portfolio.detection@lvk:gcn
 #
-#   This is a reference to an existing detection record in the same portfolio,
-#   not a nested copy of that detection and not a second first-level record.
+#   This is a reference to an existing record in the same portfolio, not a nested
+#   copy of that record and not a second first-level record. Edge expressions are
+#   connection-plane expressions, not ordinary dot-path field qualification.
 #
 #
 # 15. Optional channel
@@ -436,11 +479,11 @@
 #       detection.provenance
 #           provenance of the detection record
 #
-#       detection.relation.provenance
-#           provenance of the relation assertion
+#       edge.provenance
+#           provenance of a connection assertion
 #
-#       detection.relation.detection.provenance
-#           provenance of the related detection after dereferencing the target
+#       target_record.provenance
+#           provenance of a related record after resolving an edge target
 #
 #   The canonical provenance roles are producer and channel. These mirror the
 #   @producer:channel qualifier but may carry additional typed metadata:
@@ -457,56 +500,58 @@
 #
 #
 # ---------------------------------------------------------------------------
-# RELATION
+# EDGE PLANE
 # ---------------------------------------------------------------------------
 #
-# 17. Relation as local audit/linkage
+# 17. Edges as connection carriers
 #
-#   <relation> describes a local audit or linkage assertion made about the
-#   enclosing record. It is not a first-level scientific product and should not
-#   become a general graph ontology. Its main purpose is to express statements
-#   such as confirmation, association, duplication, conflict, derivation, or
-#   follow-up linkage without polluting the primary record vocabulary.
+#   Dot paths describe contained data. Edges describe connections between
+#   semantic records. The edge plane is separate from the noun/data plane:
 #
-#   A relation may point to one or more detections already present in the same
-#   portfolio:
+#       portfolio.detection@lsst:fink.photometry.g.psf.flux
+#           contained data field
 #
-#       detection@lsst:fink.relation.detection@lsst:lasair
-#       detection@subaru.relation.detection@lsst:fink
-#       detection@lsst:lasair.relation.detection@lvk:gcn
+#       portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
+#           directed connection between records
 #
-#   Relation targets are semantic references. They identify the target record
-#   kind and qualifier; they do not guarantee that the visible path alone
-#   uniquely identifies a concrete instance. If several Subaru detections are
-#   present, middleware resolves the concrete target using internal record
-#   anchors, identity fields, array positions, database keys, or other
-#   semantically-unaware mechanisms. These implementation identifiers must not
-#   leak into the public semantic path unless a specific export format chooses
-#   to expose them separately.
+#       portfolio.detection@lsst:fink --association-- portfolio.detection@lvk:gcn
+#           nondirectional connection between records
 #
-#   The relation's own fields describe the assertion:
+#   Edge carrier symbols are meaningful. A symbol with an arrow is directional;
+#   a symbol without an arrow is nondirectional. No additional direction field is
+#   needed in the edge definition.
 #
-#       relation.type
-#       relation.score
-#       relation.basis
-#       relation.provenance
+#   The abstract edge carrier is:
 #
-#   For example:
+#       --edge--
 #
-#       portfolio.detection@lsst:fink.relation.type = confirmation
-#       portfolio.detection@lsst:fink.relation.detection@lsst:lasair
+#   Concrete edge carriers declare:
 #
-#       portfolio.detection@subaru.relation.type = followup_of
-#       portfolio.detection@subaru.relation.detection@lsst:fink
+#       $is: --edge--
 #
-#       portfolio.detection@lsst:lasair.relation.type = association
-#       portfolio.detection@lsst:lasair.relation.detection@lvk:gcn
+#   This means that the concrete edge inherits the abstract edge's edge-scoped
+#   fields, constraints, and metadata. It is not equivalent to $ref in the noun
+#   model. Inherited edge fields belong to the edge instance itself and must not
+#   be exposed as dot-path children of either participating record.
 #
-#   Spatial, temporal, photometric, or localization quantities used to justify
-#   the relation should remain in their proper semantic containers when they are
-#   actual measured values. The relation records the assertion and its score or
-#   basis; it does not absorb all evidence fields into a generic association
-#   object.
+#   A record declares possible edge participation with $edges:
+#
+#       <detection>:
+#         $edges:
+#           --edge-- <detection>@{producer}:{channel}
+#
+#   If the named edge carrier is abstract, any concrete edge whose $is chain
+#   resolves to that carrier is allowed. Thus a detection can participate in
+#   --association--, --confirmation--, --followup_of-->, --revision_of-->, or
+#   another registered edge type derived from --edge--, while the target
+#   constraint still says that the other participant is a detection record.
+#
+#   Edge instances may carry scores, basis text, timing windows, provenance, and
+#   edge-type-specific fields. Spatial, temporal, photometric, localization, or
+#   radio quantities used as evidence should remain in their proper semantic
+#   containers when they are measured data. The edge records the connection
+#   assertion and its supporting metadata; it does not absorb all evidence into a
+#   generic relation object.
 #
 #
 # ---------------------------------------------------------------------------
@@ -534,7 +579,10 @@
 #       portfolio.lightcurve@ztf:fink.r.points
 #       portfolio.crossmatch@gaia:fink.identity.object_id
 #       portfolio.classification@fink.assessment.snia_vs_nonia.probability
-#       portfolio.detection@subaru.relation.detection@lsst:fink
+#
+#   Connection-plane example:
+#
+#       portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
 #
 #
 # ---------------------------------------------------------------------------
@@ -552,7 +600,7 @@
 #       - keep singular semantic nouns in public paths
 #       - avoid runtime array indexes in semantic paths
 #       - treat dynamic fields as last-resort extension points
-#       - resolve relation targets through implementation data structures, not
+#       - resolve edge participants through implementation data structures, not
 #         through visible semantic-path contortions
 #
 #
@@ -568,14 +616,14 @@
 #       - internal record identifiers
 #
 #   It defines the semantic vocabulary, structural composition rules, level
-#   metadata, cardinality, provenance qualification, and local relation grammar.
+#   metadata, cardinality, provenance qualification, and edge grammar.
 #
 # ============================================================================
 
 levels:
   L0: "Portfolio Aggregates - object identifiers and statistics"
   L1: "Single Detection Parameters - numerical"
-  L2: "Specific Phenomena - solar system, gravitational waves"?
+  L2: "Specific Phenomena - solar system, gravitational waves, neutrinos, radio, satellites"
   L3: "Binary Data - cutout images etc"
   L4: "Light Curve Features - derived time-series"
   L5: "Machine learning - quality scores, metrics, classification"
@@ -1190,9 +1238,50 @@ levels:
 
 <gravitational_wave>:
   level: L2
-  description: "Gravitational wave - specific information"
+  description: "Gravitational-wave-specific information"
   [{field}]:
     description: "GW fields TBD"
+
+<neutrino>:
+  level: L2
+  description: "Neutrino-specific observation or event content"
+  [{field}]:
+    description: "Neutrino-specific additional field"
+
+<radio>:
+  level: L2
+  description: "Radio-specific observation or detection content"
+  [frequency]:
+    description: "Central observing frequency"
+    unit: Hz
+  [bandwidth]:
+    description: "Observing bandwidth"
+    unit: Hz
+  [flux_density]:
+    description: "Radio flux density"
+    unit: Jy
+  [flux_density_error]:
+    description: "Uncertainty of radio flux density"
+    unit: Jy
+  [beam_major]:
+    description: "Major axis of the effective or synthesized beam"
+    unit: arcsec
+  [beam_minor]:
+    description: "Minor axis of the effective or synthesized beam"
+    unit: arcsec
+  [beam_position_angle]:
+    description: "Beam position angle"
+    unit: deg
+  [polarization]:
+    description: "Polarization product or Stokes parameter"
+  [dispersion_measure]:
+    description: "Dispersion measure, where applicable"
+    unit: pc cm-3
+  [rotation_measure]:
+    description: "Rotation measure, where applicable"
+    unit: rad m-2
+  [{field}]:
+    description: "Radio-specific additional field"
 
 <satellite>:
   level: L2
@@ -1337,26 +1426,105 @@ levels:
     type: integer
   $ref: <position>
   
-<relation>:
+--edge--:
+  abstract: true
   level: L6
-  description: "Audit or linkage metadata relating the enclosing record to another detection record"
-  [type]:
-    description: "Canonical relation type"
-    enum: [confirmation, association, followup_of, duplicate_of, conflict_with, derived_from, canonical_for]
+  description: "Abstract connection between semantic records"
   [score]:
-    description: "Confidence, agreement, or relevance score for the relation"
+    description: "Confidence, agreement, or relevance score for the edge"
     type: float
     range: [0, 1]
-  $refs: <detection>@{producer}:{channel}
+  [basis]:
+    description: "Criterion or explanation used to establish the edge"
+  [time_delta]:
+    description: "Time difference between related records, where applicable"
+    unit: days
+  [time_window]:
+    description: "Temporal coincidence or search window used to establish the edge"
   $ref: <provenance>
   [{field}]:
-    description: "Relation-specific additional field"
+    description: "Edge-specific additional field"
+
+--association--:
+  $is: --edge--
+  description: "The participating records are scientifically associated"
+  [spatial_probability]:
+    description: "Probability or score from spatial overlap"
+    type: float
+    range: [0, 1]
+  [temporal_probability]:
+    description: "Probability or score from temporal coincidence"
+    type: float
+    range: [0, 1]
+  [joint_probability]:
+    description: "Combined association probability"
+    type: float
+    range: [0, 1]
+  [chance_coincidence_probability]:
+    description: "Estimated probability of a chance association"
+    type: float
+    range: [0, 1]
+
+--confirmation--:
+  $is: --edge--
+  description: "The participating records confirm the same underlying event, source, detection, or assertion"
+  [agreement]:
+    description: "Description or score of the agreement between participating records"
+
+--duplicate--:
+  $is: --edge--
+  description: "The participating records are considered duplicate representations of the same underlying record or event"
+
+--conflict--:
+  $is: --edge--
+  description: "The participating records contain a meaningful conflict"
+  [conflict_field]:
+    description: "Field, concept, or assertion in conflict"
+  [conflict_description]:
+    description: "Human-readable description of the conflict"
+
+--followup_of-->:
+  $is: --edge--
+  description: "The subject record was obtained as follow-up of the target record"
+  [request_id]:
+    description: "Identifier of the follow-up request"
+  [observer]:
+    description: "Observer, team, facility, or program responsible for the follow-up"
+  [telescope_mode]:
+    description: "Telescope or observing mode used for the follow-up"
+  [requested_filter]:
+    description: "Requested photometric filter or observing band"
+  [program_id]:
+    description: "Observing program identifier"
+
+--derived_from-->:
+  $is: --edge--
+  description: "The subject record was derived from the target record"
+  [method]:
+    description: "Method, rule, or procedure used to derive the subject record"
+
+--canonical_for-->:
+  $is: --edge--
+  description: "The subject record is the preferred or canonical representation for the target record or group"
+  [selection_rule]:
+    description: "Rule or criterion used to choose the canonical record"
+
+--revision_of-->:
+  $is: --edge--
+  description: "The subject record is a revision, update, correction, or retraction of the target record"
+  [status]:
+    description: "Revision status"
+    enum: [preliminary, initial, update, correction, retraction, final]
+  [sequence]:
+    description: "Revision sequence number"
+  [superseded_fields]:
+    description: "Fields changed or superseded by this revision"
 
 <detection>:
   description: "Single detection, observation, alert, or event record"
   [type]:
-    description: "Type of detection depending on content"
-    enum: TODO
+    description: "Canonical high-level detection or messenger type"
+    enum: [optical, infrared, ultraviolet, xray, gamma_ray, radio, solar_system, gravitational_wave, neutrino, satellite, multimessenger, other]
 
   # Generic record structure
   $ref: <position>(L1)
@@ -1381,10 +1549,12 @@ levels:
   $ref: <solar_system>
   $ref: <gravitational_wave>
   $ref: <neutrino>
+  $ref: <radio>
   $ref: <satellite>
 
-  # Relation/audit layer
-  $refs: --edge--
+  # Connection layer
+  $edges:
+    --edge-- <detection>@{producer}:{channel}
 
   [{field}]:
     description: "Detection-specific additional field"
