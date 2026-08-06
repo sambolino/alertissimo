@@ -262,8 +262,9 @@
 #
 #       L0  - Object/portfolio summaries, identities, and aggregate properties
 #       L1  - Single-detection measurements and metadata
-#       L2  - Phenomenon-specific information, e.g. Solar System or GW content
-#       L3  - Binary and image data
+#       L2  - Phenomenon-specific information, e.g. Solar System, GW, neutrino,
+#             radio, X-ray, or gamma-ray content
+#       L3  - Binary, image, spectrum, and data-product content
 #       L4  - Light curves and derived time-series products
 #       L5  - Quality scores, classification, and machine-learning outputs
 #       L6  - Enrichment, linkage, crossmatch, and external catalog information
@@ -306,6 +307,8 @@
 #       detection
 #       crossmatch
 #       lightcurve
+#       spectrum
+#       data_product
 #       classification
 #
 #   The model deliberately keeps these nouns singular. Cardinality is expressed
@@ -315,9 +318,10 @@
 # 10. Generic detection
 #
 #   <detection> is the generic atomic observational, alert, or event record.
-#   Optical alerts, radio detections, Solar System detections, GW notices, and
-#   neutrino events should not require separate first-level portfolio branches
-#   merely because their producers or messengers differ.
+#   Optical alerts, radio detections, X-ray and gamma-ray notices, Solar System
+#   detections, GW notices, and neutrino events should not require separate
+#   first-level portfolio branches merely because their producers or messengers
+#   differ.
 #
 #   The producer/channel qualifier may strongly suggest the expected profile:
 #
@@ -329,9 +333,12 @@
 #   the detection:
 #
 #       detection.photometry...
+#       detection.localization...
 #       detection.gravitational_wave...
 #       detection.neutrino...
 #       detection.radio...
+#       detection.xray...
+#       detection.gamma_ray...
 #       detection.solar_system...
 #
 #   A reference from <detection> to a phenomenon-specific container allows that
@@ -341,6 +348,45 @@
 #   filtering and validation. It does not replace the structural branches: a
 #   record with detection.type = radio should still express radio-specific
 #   content under detection.radio where such data are available.
+#
+#
+#
+# 10b. Position, localization, pointing, spectra, and data products
+#
+#   position and localization are siblings, not parent and child. A record may
+#   have a best-fit point position, a broad probability region, both, or only a
+#   sky map. Do not put position inside localization; this would create paths
+#   such as localization.position.ra and obscure the distinction between a point
+#   estimate and an uncertainty/probability region.
+#
+#       detection@icecube:gcn.position.ra
+#       detection@icecube:gcn.localization.radius_90
+#       detection@lvk:gcn.localization.skymap
+#
+#   pointing describes the telescope, spacecraft, or detector orientation. It is
+#   not the same as the source position or event localization.
+#
+#       detection@swift:gcn.pointing.ra
+#       detection@swift:gcn.pointing.roll
+#
+#   spectra and data products are first-level payload-bearing records when the
+#   payload is not an atomic detection/report. A reduced one-dimensional
+#   wavelength-flux product should be modeled as spectrum; a raw exposure,
+#   calibrated image, cutout, table, cube, sky map file, or other format-bearing
+#   artifact should be modeled as data_product. FITS, VOTable, HDF5, and similar
+#   values are formats, not semantic record classes.
+#
+#       portfolio.spectrum@gemini:archive.data_product.uri
+#       portfolio.data_product@gemini:archive.format
+#       portfolio.spectrum@gemini:archive --followup_of--> portfolio.detection@lsst:fink
+#       portfolio.data_product@gemini:archive --followup_of--> portfolio.detection@lsst:fink
+#       portfolio.spectrum@gemini:archive --derived_from--> portfolio.data_product@gemini:archive
+#
+#   Use the most semantic record available. If an archive result is an atomic
+#   observation/report, use detection. If it is a time series, use lightcurve.
+#   If it is a wavelength-series product, use spectrum. If it is primarily a
+#   file, image, table, cube, or archive artifact, use data_product. If it is a
+#   reduced external catalog/enrichment row, use crossmatch.
 #
 #
 # 11. Structural context carries meaning
@@ -491,8 +537,13 @@
 #       provenance.producer.type
 #       provenance.producer.name
 #       provenance.producer.version
+#       provenance.producer.detector_status.status
 #       provenance.channel.type
 #       provenance.channel.name
+#
+#   Detector status belongs to the producer side when it describes the reporting
+#   instrument or detector at the time of the enclosing record. It should not be
+#   confused with the channel that delivered the record.
 #
 #   Synonyms such as broker, publisher, origin, survey, mediator, and delivery
 #   may be useful in DSL/NLP parsing, but the semantic model should normalize
@@ -553,6 +604,10 @@
 #   assertion and its supporting metadata; it does not absorb all evidence into a
 #   generic relation object.
 #
+#   Revisions are modeled as edge-plane connections for now. Use --revision_of-->
+#   to link an update, correction, or retraction to the record it supersedes,
+#   rather than introducing a separate revision container in the noun/data plane.
+#
 #
 # ---------------------------------------------------------------------------
 # DATA PATH FORMATION
@@ -573,10 +628,15 @@
 #       portfolio.summary@lsst.identity.object_id
 #       portfolio.summary@lsst.photometry.g.psf.mean
 #       portfolio.detection@lsst:lasair.position.ra
+#       portfolio.detection@lvk:gcn.localization.skymap
+#       portfolio.detection@fermi_gbm:gcn.gamma_ray.duration_t90
+#       portfolio.detection@swift_xrt:gcn.xray.flux
 #       portfolio.detection@lsst:lasair.photometry.g.aperture.flux
 #       portfolio.detection@lsst:lasair.reference.nearest_source.separation.total
 #       portfolio.detection@lsst:lasair.reference.forced_photometry.g.psf.flux
 #       portfolio.lightcurve@ztf:fink.r.points
+#       portfolio.spectrum@gemini:archive.feature.si_ii_6355.velocity
+#       portfolio.data_product@gemini:archive.uri
 #       portfolio.crossmatch@gaia:fink.identity.object_id
 #       portfolio.classification@fink.assessment.snia_vs_nonia.probability
 #
@@ -600,6 +660,14 @@
 #       - keep singular semantic nouns in public paths
 #       - avoid runtime array indexes in semantic paths
 #       - treat dynamic fields as last-resort extension points
+#       - track dynamic [{field}] usage and promote repeated concepts into the
+#         stable vocabulary through a controlled process
+#       - normalize source aliases to canonical enum values where a controlled
+#         vocabulary exists, while warning on unknown extension values
+#       - reject or warn against accidental interpretation by ordinary YAML
+#         loaders that would overwrite repeated keys
+#       - expose an effective-level view for each resolved field
+#       - provide an explain-path command showing how a semantic path was formed
 #       - resolve edge participants through implementation data structures, not
 #         through visible semantic-path contortions
 #
@@ -623,8 +691,8 @@
 levels:
   L0: "Portfolio Aggregates - object identifiers and statistics"
   L1: "Single Detection Parameters - numerical"
-  L2: "Specific Phenomena - solar system, gravitational waves, neutrinos, radio, satellites"
-  L3: "Binary Data - cutout images etc"
+  L2: "Specific Phenomena - solar system, gravitational waves, neutrinos, radio, X-ray, gamma-ray, satellites"
+  L3: "Binary, image, spectrum, and data-product content"
   L4: "Light Curve Features - derived time-series"
   L5: "Machine learning - quality scores, metrics, classification"
   L6: "Data enrich - internal (broker) matching, external catalogs, crossmatch"
@@ -669,8 +737,67 @@ levels:
   [constellation]:
     description: "Constellation name"
 
+<localization>:
+  level: L1, L2, L6
+  description: "Spatial probability, uncertainty, or counterpart-search region associated with a record"
+  [type]:
+    description: "Localization representation"
+    enum: [point, error_circle, ellipse, region, skymap, polygon, other]
+  [radius]:
+    description: "Angular localization radius, where a circular approximation is used"
+    unit: deg
+  [radius_50]:
+    description: "Radius of the 50 percent credible region, where applicable"
+    unit: deg
+  [radius_90]:
+    description: "Radius of the 90 percent credible region, where applicable"
+    unit: deg
+  [area_50]:
+    description: "Area of the 50 percent credible region"
+    unit: deg2
+  [area_90]:
+    description: "Area of the 90 percent credible region"
+    unit: deg2
+  [credible_level]:
+    description: "Credible or containment probability associated with the represented region"
+    type: float
+    range: [0, 1]
+  [systematic_included]:
+    description: "Whether systematic uncertainty is included"
+    type: boolean
+  [skymap]:
+    description: "Reference, URI, identifier, or serialized pointer for a sky-probability map"
+  [{field}]:
+    description: "Localization-specific additional field"
+
+<pointing>:
+  level: L2, L6
+  description: "Instrument, spacecraft, or telescope pointing information"
+  [ra]:
+    description: "Pointing right ascension"
+    unit: deg
+  [dec]:
+    description: "Pointing declination"
+    unit: deg
+  [roll]:
+    description: "Roll angle"
+    unit: deg
+  [position_angle]:
+    description: "Position angle"
+    unit: deg
+  [attitude_quaternion]:
+    description: "Attitude quaternion"
+    type: array
+  [rotation_rate]:
+    description: "Rotation-rate vector"
+    type: array
+    unit: rad/s
+  $ref: <time>(L2, L6)
+  [{field}]:
+    description: "Pointing-specific additional field"
+
 <time>:
-  level: L1, L6
+  level: L1, L2, L5, L6
   unit: mjd
   description: "Time measurements (MJD)"
   [mjd]:
@@ -720,7 +847,8 @@ levels:
 
 <_provenance_core>:
   [type]:
-    description: "Type of provenance agent, e.g. survey, broker, archive, service, pipeline, model, instrument"
+    description: "Canonical provenance-agent type"
+    enum: [survey, catalog, broker, archive, service, facility, instrument, detector, pipeline, model, program, human, other]
   [name]:
     description: "Name of the provenance agent"
   [id]:
@@ -736,18 +864,32 @@ levels:
   [{field}]:
     description: "Agent-specific additional field"
 
+<detector_status>:
+  level: L2, L6
+  description: "Detector or instrument status at the time of the enclosing record"
+  [status]:
+    description: "Detector status"
+    enum: [on, off, triggered, unknown]
+  [mode]:
+    description: "Detector, observing, or acquisition mode, where applicable"
+  [configuration]:
+    description: "Detector or instrument configuration, where applicable"
+  [{field}]:
+    description: "Detector-status-specific additional field"
+
 <provenance>:
   description: "Contextual provenance of the enclosing record or assertion"
 
   <producer>:
     description: "Agent that produced the enclosing record or assertion"
     $ref: <_provenance_core>
+    $ref: <detector_status>
   
   <channel>:
     description: "Agent that delivered, exposed, or mediated the enclosing record or assertion"
     $ref: <_provenance_core>
   
-  $ref: <time>(L6)
+  $ref: <time>(L5, L6)
   
   [{field}]:
     description: "Provenance-specific additional field"
@@ -1239,12 +1381,49 @@ levels:
 <gravitational_wave>:
   level: L2
   description: "Gravitational-wave-specific information"
+  [superevent_id]:
+    description: "Gravitational-wave superevent identifier, where applicable"
+  [event_id]:
+    description: "Instrument- or pipeline-specific gravitational-wave event identifier"
+  [pipeline]:
+    description: "Search or analysis pipeline that produced the gravitational-wave record"
+  [search]:
+    description: "Search category or observing run context, where reported"
+  [group]:
+    description: "Analysis group or source-family grouping, where reported"
+  [instruments]:
+    description: "Participating interferometers or detectors"
+    type: array
+  [skymap_version]:
+    description: "Version or label of the associated sky-localization product"
+  [notice_type]:
+    description: "Native notice or alert type, where reported"
   [{field}]:
-    description: "GW fields TBD"
+    description: "Gravitational-wave-specific additional field"
 
 <neutrino>:
   level: L2
   description: "Neutrino-specific observation or event content"
+  [event_id]:
+    description: "Instrument- or pipeline-specific neutrino event identifier"
+  [stream]:
+    description: "Neutrino alert stream, selection, or event class"
+  [energy]:
+    description: "Reported neutrino energy or energy proxy"
+  [energy_error]:
+    description: "Uncertainty of reported neutrino energy or energy proxy"
+  [signalness]:
+    description: "Probability-like score that the event is astrophysical rather than atmospheric/background, where reported"
+    type: float
+    range: [0, 1]
+  [trackness]:
+    description: "Track/cascade or topology score, where reported"
+    type: float
+    range: [0, 1]
+  [multiplet]:
+    description: "Identifier or description of a neutrino multiplet, where applicable"
+  [run_id]:
+    description: "Native run identifier"
   [{field}]:
     description: "Neutrino-specific additional field"
 
@@ -1288,6 +1467,204 @@ levels:
   description: "Satellite and debris information"
   [tracklet_id]:
     description: "Tracklet ID for fast moving objects"
+
+<_high_energy_core>:
+  [energy_min]:
+    unit: keV
+  [energy_max]:
+    unit: keV
+
+  [flux]:
+  [flux_error]:
+  [flux_unit]:
+    enum: [ph/cm2/s, erg/cm2/s]
+
+  [limiting_flux]:
+  [limiting_flux_sigma]:
+
+  [flux_density]:
+  [flux_density_error]:
+  [flux_density_unit]:
+
+  [fluence]:
+  [fluence_error]:
+
+  [count_rate]:
+  [background_count_rate]:
+  [signal_to_noise]:
+  [false_alarm_rate]:
+
+  <hardness_ratio>:
+    [value]:
+    [error]:
+    [soft_energy_min]:
+      unit: keV
+    [soft_energy_max]:
+      unit: keV
+    [hard_energy_min]:
+      unit: keV
+    [hard_energy_max]:
+      unit: keV
+
+  <spectral_fit>:
+    [best_fit_model]:
+      enum: [power_law, cutoff_power_law, band]
+    [amplitude]:
+    [amplitude_error]:
+    [pivot_energy]:
+      unit: keV
+    [alpha]:
+    [alpha_error]:
+    [beta]:
+    [beta_error]:
+    [epeak]:
+      unit: keV
+    [epeak_error]:
+      unit: keV
+
+<gamma_ray>:
+  level: L2
+  $ref: <_high_energy_core>
+
+  [duration_t90]:
+    unit: sec
+  [duration_t90_error]:
+  [duration_t50]:
+    unit: sec
+  [duration_t50_error]:
+  [trigger_id]:
+
+<xray>:
+  level: L2
+  $ref: <_high_energy_core>
+
+  [exposure]:
+    unit: sec
+  [upper_limit]:
+  [pileup_fraction]:
+
+
+<_data_product_core>:
+  [type]:
+    description: "Semantic data-product type"
+    enum: [exposure, image, difference_image, stack, spectrum, cube, table, cutout, skymap, sequence, other]
+  [format]:
+    description: "Storage, serialization, or transport format"
+    enum: [fits, hdf5, parquet, csv, votable, ascii, image, json, other]
+  [uri]:
+    description: "URI, URL, path, or archive pointer for the data product"
+  [archive_id]:
+    description: "Archive-side identifier for the data product"
+  [mime_type]:
+    description: "MIME type or media type, where available"
+  [role]:
+    description: "Processing role or reduction state of the product"
+    enum: [raw, calibrated, reduced, derived, preview, auxiliary, other]
+  [checksum]:
+    description: "Checksum or integrity hash"
+  [size]:
+    description: "File or payload size, where available"
+  [instrument_mode]:
+    description: "Instrument setup, observing mode, filter, grism, grating, slit, readout mode, or configuration"
+  [filter]:
+    description: "Photometric filter or bandpass, where applicable"
+  [wavelength_min]:
+    description: "Lower wavelength bound covered by the product, where applicable"
+    unit: Angstrom
+  [wavelength_max]:
+    description: "Upper wavelength bound covered by the product, where applicable"
+    unit: Angstrom
+  [{field}]:
+    description: "Data-product-specific additional field"
+
+<data_product>:
+  level: L3, L6
+  description: "Instrumental, archive, or file-level data product associated with the portfolio"
+  $ref: <_data_product_core>
+  $ref: <identity>(L1)
+  $ref: <time>(L1, L6)
+  $ref: <pointing>
+  $ref: <provenance>
+  $edges:
+    --edge-- <detection>@{producer}:{channel}
+    --edge-- <spectrum>@{producer}:{channel}
+
+<spectrum>:
+  level: L3, L6
+  description: "Science-ready spectroscopic or wavelength-series product associated with a transient, source, or event"
+  $ref: <identity>(L1, L6)
+  $ref: <time>(L1, L6)
+  $ref: <position>(L1, L6)
+  $ref: <redshift>
+  $ref: <quality>(L5)
+  $ref: <provenance>
+  [wavelength_min]:
+    description: "Minimum wavelength covered by the spectrum"
+    unit: Angstrom
+  [wavelength_max]:
+    description: "Maximum wavelength covered by the spectrum"
+    unit: Angstrom
+  [resolution]:
+    description: "Spectral resolution, where reported"
+  [resolving_power]:
+    description: "Resolving power R = lambda / delta-lambda"
+  [signal_to_noise]:
+    description: "Signal-to-noise estimate for the spectrum"
+  [exposure_count]:
+    description: "Number of spectral exposures combined"
+    type: integer
+  [exposure_total]:
+    description: "Total spectral exposure time"
+    unit: sec
+  [instrument_mode]:
+    description: "Spectroscopic instrument mode, setup, grism, grating, slit, fiber, or configuration"
+  <data_product>:
+    level: L3
+    description: "Spectrum data product, external file, or array payload"
+    $ref: <_data_product_core>
+    [wavelength]:
+      description: "Wavelength array"
+      type: array
+      unit: Angstrom
+    [flux_density]:
+      description: "Spectral flux-density array"
+      type: array
+    [flux_density_error]:
+      description: "Uncertainty array for spectral flux density"
+      type: array
+    [inverse_variance]:
+      description: "Inverse-variance array"
+      type: array
+    [mask]:
+      description: "Spectral mask or quality array"
+      type: array
+  <feature>:
+    level: L2
+    description: "Spectral line, band, continuum break, or other identified spectral feature"
+    <{feature}>:
+      [type]:
+        description: "Type of spectral feature"
+        enum: [emission_line, absorption_line, continuum_break, band, unidentified]
+      [identification]:
+        description: "Line or feature identification, e.g. H_alpha, Si_II_6355, Ca_II_HK"
+      [rest_wavelength]:
+        unit: Angstrom
+      [observed_wavelength]:
+        unit: Angstrom
+      [flux]:
+      [equivalent_width]:
+        unit: Angstrom
+      [fwhm]:
+        unit: km/s
+      [velocity]:
+        unit: km/s
+      [significance]:
+  $edges:
+    --edge-- <detection>@{producer}:{channel}
+    --edge-- <crossmatch>@{producer}:{channel}
+    --edge-- <data_product>@{producer}:{channel}
+  [{field}]:
+    description: "Spectrum-specific additional field"
 
 <cutouts>:
   level: L3
@@ -1528,9 +1905,11 @@ levels:
 
   # Generic record structure
   $ref: <position>(L1)
+  $ref: <localization>
   $ref: <time>(L1)
   $ref: <identity>(L1)
   $ref: <quality>(L1)
+  $ref: <pointing>
   $ref: <provenance>
 
   # Optical / imaging detection content
@@ -1550,6 +1929,8 @@ levels:
   $ref: <gravitational_wave>
   $ref: <neutrino>
   $ref: <radio>
+  $ref: <xray>
+  $ref: <gamma_ray>
   $ref: <satellite>
 
   # Connection layer
@@ -1565,5 +1946,7 @@ levels:
   $refs: <detection>@{producer}:{channel}
   $refs: <crossmatch>@{producer}:{channel}
   $refs: <lightcurve>@{producer}:{channel}
+  $refs: <spectrum>@{producer}:{channel}
+  $refs: <data_product>@{producer}:{channel}
   $refs: <classification>@{producer}:{channel}
 
