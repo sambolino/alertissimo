@@ -1,0 +1,19 @@
+[
+  {
+    "d:cdsxmatch": "Unknown",
+    "d:classification": "SN candidate",
+    "d:nalerthist": 14,
+    "i:candid": 1642249732315015000,
+    "i:dec": 2.8973184,
+    "i:distnr": 2.359998,
+    "i:drb": 1,
+    "i:fid": 1,
+    "i:jd": 2459396.7497338,
+    "i:jdstarthist": 2459376.6917245,
+    "i:magpsf": 16.234324,
+    "i:objectId": "ZTF21abfmbix",
+    "i:ra": 193.8217409,
+    "i:sigmapsf": 0.028584031,
+    "v:separation_degree": 0.0000076394
+  }
+]

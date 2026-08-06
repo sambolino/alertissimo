@@ -4,25 +4,25 @@ origin: ztf
 
 mappings:
   # ==================== L0: Alert Packet ====================
-  position.ra:
+  detection@ztf:fink.position.ra:
     field: "i:ra"
     availability:
       - objects
       - conesearch
       - latests
       - sso
-      - resolver
+      - anomaly
       
-  position.dec:
+  detection@ztf:fink.position.dec:
     field: "i:dec"
     availability:
       - objects
       - conesearch
       - latests
       - sso
-      - resolver
+      - anomaly
       
-  position.image_x:
+  detection@ztf:fink.position.image_x:
     field: "i:xpos"
     availability:
       - objects
@@ -30,7 +30,7 @@ mappings:
       - anomaly
       - latests
       
-  position.image_y:
+  detection@ztf:fink.position.image_y:
     field: "i:ypos"
     availability:
       - objects
@@ -38,18 +38,18 @@ mappings:
       - anomaly
       - latests
       
-  position.distance_to_edge:
+  detection@ztf:fink.position.distance_to_edge:
     field: "i:mindtoedge"
     availability:
       - objects
       - anomaly
       
-  position.cone_distance:
+  detection@ztf:fink.position.cone_distance:
     field: "v:separation_degree"
     availability:
       - conesearch
       
-  photometry.psf_mag:
+  detection@ztf:fink.photometry.{filter}.psf.mag:
     field: "i:magpsf"
     availability:
       - objects
@@ -58,7 +58,7 @@ mappings:
       - sso
       - anomaly
       
-  photometry.psf_mag_error:
+  detection@ztf:fink.photometry.{filter}.psf.mag_error:
     field: "i:sigmapsf"
     availability:
       - objects
@@ -67,7 +67,7 @@ mappings:
       - latests
       - anomaly
       
-  photometry.mjd:
+  detection@ztf:fink.time.mjd:
     field: "i:jd"
     availability:
       - objects
@@ -76,7 +76,7 @@ mappings:
       - sso
       - anomaly
       
-  photometry.filter:
+  detection@ztf:fink.photometry.{filter}:
     field: "i:fid"
     transform: {1: "g", 2: "r", 3: "i"}
     availability:
@@ -86,15 +86,18 @@ mappings:
       - sso
       - anomaly
       
-  photometry.diff_mag_limit:
+  detection@ztf:fink.photometry.{filter}.limit.mag:
     field: "i:diffmaglim"
     availability:
       - objects
       - sso
       - latests
       - anomaly
+
+  # i:magfromlim has no equivalent semantic field.  It is not the catalog's
+  # limit.mag_minus_aperture, so it remains intentionally unmapped.
       
-  photometry.zero_point:
+  detection@ztf:fink.calibration.{filter}.zero_point:
     field: "i:magzpsci"
     availability:
       - objects
@@ -102,61 +105,55 @@ mappings:
       - latests
       - anomaly
       
-  photometry.zero_point_rms:
+  detection@ztf:fink.calibration.{filter}.zero_point_rms:
     field: "i:magzpscirms"
     availability:
       - objects
       - anomaly
       
-  photometry.zero_point_uncertainty:
+  detection@ztf:fink.calibration.{filter}.zero_point_uncertainty:
     field: "i:magzpsciunc"
     availability:
       - objects
       - anomaly
       
-  photometry.exposure_time:
+  detection@ztf:fink.time.exposure:
     field: "i:exptime"
     availability:
       - objects
       - anomaly
       
-  photometry.aperture_mag:
+  detection@ztf:fink.photometry.{filter}.aperture.mag:
     field: "i:magap"
     availability:
       - objects
       - anomaly
       
-  photometry.aperture_mag_big:
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag:
     field: "i:magapbig"
     availability:
       - objects
       - anomaly
       
-  photometry.aperture_mag_error:
+  detection@ztf:fink.photometry.{filter}.aperture.mag_error:
     field: "i:sigmagap"
     availability:
       - objects
       - anomaly
       
-  photometry.aperture_mag_big_error:
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag_error:
     field: "i:sigmagapbig"
     availability:
       - objects
       - anomaly
       
-  photometry.mag_ap_minus_psf:
+  detection@ztf:fink.photometry.{filter}.mag_minus_psf:
     field: "i:magdiff"
     availability:
       - objects
       - anomaly
       
-  photometry.mag_from_limit:
-    field: "i:magfromlim"
-    availability:
-      - objects
-      - anomaly
-      
-  quality.real_bogus:
+  detection@ztf:fink.quality.real_bogus:
     field: "i:drb"
     availability:
       - objects
@@ -165,7 +162,7 @@ mappings:
       - latests
       - anomaly
       
-  quality.rf_real_bogus:
+  detection@ztf:fink.quality.rf_real_bogus:
     field: "i:rb"
     availability:
       - objects
@@ -173,7 +170,7 @@ mappings:
       - latests
       - anomaly
       
-  quality.psf_chisq:
+  detection@ztf:fink.photometry.{filter}.psf.fit_chi2:
     field: "i:chipsf"
     availability:
       - objects
@@ -181,7 +178,7 @@ mappings:
       - latests
       - anomaly
       
-  quality.star_galaxy:
+  classification@fink.assessment.star_galaxy.score:
     field: "i:classtar"
     availability:
       - objects
@@ -189,67 +186,67 @@ mappings:
       - latests
       - anomaly
       
-  quality.fwhm:
+  detection@ztf:fink.image_metrics.fwhm:
     field: "i:fwhm"
     availability:
       - objects
       - anomaly
       
-  quality.elongation:
+  detection@ztf:fink.image_metrics.elongation:
     field: "i:elong"
     availability:
       - objects
       - anomaly
       
-  quality.aimage:
+  detection@ztf:fink.image_metrics.aimage:
     field: "i:aimage"
     availability:
       - objects
       - anomaly
       
-  quality.bimage:
+  detection@ztf:fink.image_metrics.bimage:
     field: "i:bimage"
     availability:
       - objects
       - anomaly
       
-  quality.aimage_ratio:
+  detection@ztf:fink.image_metrics.aimage_ratio:
     field: "i:aimagerat"
     availability:
       - objects
       - anomaly
       
-  quality.bimage_ratio:
+  detection@ztf:fink.image_metrics.bimage_ratio:
     field: "i:bimagerat"
     availability:
       - objects
       - anomaly
       
-  quality.chinr:
+  detection@ztf:fink.reference.nearest_source.image_metrics.fit_chi:
     field: "i:chinr"
     availability:
       - objects
       - anomaly
       
-  quality.sharpnr:
+  detection@ztf:fink.reference.nearest_source.image_metrics.sharpness:
     field: "i:sharpnr"
     availability:
       - objects
       - anomaly
       
-  quality.drb_version:
+  detection@ztf:fink.quality.real_bogus.version:
     field: "i:drbversion"
     availability:
       - objects
       - anomaly
       
-  quality.rb_version:
+  detection@ztf:fink.quality.rf_real_bogus.version:
     field: "i:rbversion"
     availability:
       - objects
       - anomaly
       
-  context.object_id:
+  summary@ztf:fink.identity.object_id:
     field: "i:objectId"
     availability:
       - objects
@@ -258,7 +255,7 @@ mappings:
       - sso
       - anomaly
       
-  context.candid:
+  detection@ztf:fink.identity.alert_id:
     field: "i:candid"
     availability:
       - objects
@@ -267,7 +264,7 @@ mappings:
       - latests
       - anomaly
       
-  context.field:
+  detection@ztf:fink.identity.field_id:
     field: "i:field"
     availability:
       - objects
@@ -275,7 +272,7 @@ mappings:
       - latests
       - anomaly
       
-  context.night_id:
+  detection@ztf:fink.identity.night_id:
     field: "i:nid"
     availability:
       - objects
@@ -283,13 +280,17 @@ mappings:
       - latests
       - anomaly
       
-  context.program_id:
+  detection@ztf:fink.provenance.producer.program_id:
     field: "i:programid"
     availability:
       - objects
       - anomaly
+
+  detection@ztf:fink.provenance.producer.program_pi:
+    field: "i:programpi"
+    availability: [objects, anomaly]
       
-  context.publisher:
+  detection@ztf:fink.provenance.channel.name:
     field: "i:publisher"
     availability:
       - objects
@@ -297,51 +298,55 @@ mappings:
       - latests
       - anomaly
       
-  context.broker_version:
+  detection@ztf:fink.provenance.channel.version:
     field: "i:fink_broker_version"
     availability:
       - objects
       - anomaly
       
-  context.science_version:
+  detection@ztf:fink.provenance.producer.science_version:
     field: "i:fink_science_version"
     availability:
       - objects
       - anomaly
       
-  context.schema_version:
+  detection@ztf:fink.provenance.producer.schema_version:
     field: "i:schemavsn"
     availability:
       - objects
       - anomaly
       
-  context.pid:
+  detection@ztf:fink.provenance.producer.fink_pid:
     field: "i:pid"
     availability:
       - objects
       - anomaly
       
-  context.rfid:
+  detection@ztf:fink.provenance.producer.fink_rfid:
     field: "i:rfid"
     availability:
       - objects
       - anomaly
       
-  context.diffim_filename:
+  detection@ztf:fink.provenance.producer.diffim_filename:
     field: "i:pdiffimfilename"
     availability:
       - objects
       - anomaly
       
-  context.too_flag:
+  detection@ztf:fink.provenance.producer.too_flag:
     field: "i:tooflag"
     availability:
       - objects
       - sso
       - latests
       - anomaly
+
+  detection@ztf:fink.provenance.producer.rcid:
+    field: "i:rcid"
+    availability: [objects, sso, latests, anomaly]
       
-  detection.is_positive:
+  detection@ztf:fink.image_metrics.is_positive:
     field: "i:isdiffpos"
     availability:
       - objects
@@ -349,60 +354,68 @@ mappings:
       - latests
       - anomaly
       
-  detection.upper_limit:
+  detection@ztf:fink.photometry.{filter}.limit.upper_limit:
     field: "d:tag"
     availability:
       - objects
       
-  detection.nbad_pixels:
+  detection@ztf:fink.image_metrics.nbad_pixels:
     field: "i:nbad"
     availability:
       - objects
       - anomaly
       
-  detection.nneg_pixels:
+  detection@ztf:fink.image_metrics.nneg_pixels:
     field: "i:nneg"
     availability:
       - objects
       - anomaly
       
-  detection.pixel_sum_ratio:
+  detection@ztf:fink.image_metrics.pixel_sum_ratio:
     field: "i:sumrat"
     availability:
       - objects
       - anomaly
       
-  detection.scorr:
+  detection@ztf:fink.image_metrics.scorr:
     field: "i:scorr"
     availability:
       - objects
       - anomaly
       
-  detection.ssnrms:
+  detection@ztf:fink.image_metrics.ssnrms:
     field: "i:ssnrms"
     availability:
       - objects
       - anomaly
       
-  detection.dsnrms:
+  detection@ztf:fink.image_metrics.dsnrms:
     field: "i:dsnrms"
     availability:
       - objects
       - anomaly
       
-  detection.dsdiff:
+  detection@ztf:fink.image_metrics.dsdiff:
     field: "i:dsdiff"
     availability:
       - objects
       - anomaly
       
-  detection.seeratio:
+  detection@ztf:fink.image_metrics.seeratio:
     field: "i:seeratio"
     availability:
       - objects
       - anomaly
+
+  detection@ztf:fink.fink_sky:
+    field: "i:sky"
+    availability: [objects, anomaly]
+
+  detection@ztf:fink.fink_table_id:
+    field: "i:tblid"
+    availability: [objects, anomaly]
       
-  history.detection_count:
+  summary@ztf:fink.detection_count:
     field: "i:ndethist"
     availability:
       - objects
@@ -411,7 +424,7 @@ mappings:
       - latests
       - anomaly
       
-  history.first_mjd:
+  summary@ztf:fink.time.first_mjd:
     field: "i:jdstarthist"
     availability:
       - objects
@@ -420,7 +433,7 @@ mappings:
       - latests
       - anomaly
       
-  history.last_mjd:
+  summary@ztf:fink.time.last_mjd:
     field: "i:jdendhist"
     availability:
       - objects
@@ -428,15 +441,16 @@ mappings:
       - latests
       - anomaly
       
-  reference.nearest_distance:
+  detection@ztf:fink.reference.nearest_source.separation.total:
     field: "i:distnr"
     availability:
       - objects
       - sso
       - latests
       - anomaly
+      - conesearch
       
-  reference.nearest_magnitude:
+  detection@ztf:fink.reference.nearest_source.photometry.{filter}.mag:
     field: "i:magnr"
     availability:
       - objects
@@ -444,7 +458,7 @@ mappings:
       - latests
       - anomaly
       
-  reference.nearest_magnitude_error:
+  detection@ztf:fink.reference.nearest_source.photometry.{filter}.mag_error:
     field: "i:sigmagnr"
     availability:
       - objects
@@ -452,86 +466,86 @@ mappings:
       - latests
       - anomaly
       
-  reference.nearest_ra:
+  detection@ztf:fink.reference.nearest_source.position.ra:
     field: "i:ranr"
     availability:
       - objects
       - anomaly
       
-  reference.nearest_dec:
+  detection@ztf:fink.reference.nearest_source.position.dec:
     field: "i:decnr"
     availability:
       - objects
       - anomaly
       
-  reference.first_mjd:
+  detection@ztf:fink.reference.time.first_mjd:
     field: "i:jdstartref"
     availability:
       - objects
       - anomaly
       
-  reference.last_mjd:
+  detection@ztf:fink.reference.time.last_mjd:
     field: "i:jdendref"
     availability:
       - objects
       - anomaly
       
-  reference.nframes:
+  detection@ztf:fink.reference.nframes:
     field: "i:nframesref"
     availability:
       - objects
       - anomaly
       
-  reference.ncovhist:
+  summary@ztf:fink.coverage_count:
     field: "i:ncovhist"
     availability:
       - objects
       - anomaly
-      
-  calibration.color_coefficient:
+
+  detection@ztf:fink.calibration.{filter}.color_coefficient:
     field: "i:clrcoeff"
     availability:
       - objects
       - anomaly
       
-  calibration.color_coefficient_uncertainty:
+  detection@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
     field: "i:clrcounc"
     availability:
       - objects
       - anomaly
       
-  calibration.color_median:
+  detection@ztf:fink.calibration.nmatches:
+    field: "i:nmatches"
+    availability:
+      - objects
+      - anomaly
+
+  detection@ztf:fink.calibration.color_median:
     field: "i:clrmed"
     availability:
       - objects
       - anomaly
-      
-  calibration.color_rms:
+
+  detection@ztf:fink.calibration.color_rms:
     field: "i:clrrms"
     availability:
       - objects
       - anomaly
       
-  calibration.nmatches:
-    field: "i:nmatches"
-    availability:
-      - objects
-      - anomaly
-      
-  calibration.zp_covariance:
+  detection@ztf:fink.calibration.{filter}.zero_point_covariance:
     field: "i:zpclrcov"
     availability:
       - objects
       - anomaly
       
-  calibration.zp_median:
+  detection@ztf:fink.calibration.zp_median:
     field: "i:zpmed"
     availability:
       - objects
       - anomaly
       
   # ==================== L1: Object Aggregates ====================
-  object.first_detection:
+  summary@ztf:fink.time.first_detection:
     field: "v:firstdate"
     availability:
       - objects
@@ -539,7 +553,7 @@ mappings:
       - sso
       - anomaly
       
-  object.last_detection:
+  summary@ztf:fink.time.last_detection:
     field: "v:lastdate"
     availability:
       - objects
@@ -547,7 +561,7 @@ mappings:
       - sso
       - anomaly
       
-  object.timespan_days:
+  summary@ztf:fink.time.timespan_days:
     field: "v:lapse"
     availability:
       - objects
@@ -555,7 +569,7 @@ mappings:
       - sso
       - anomaly
       
-  object.constellation:
+  summary@ztf:fink.position.constellation:
     field: "v:constellation"
     availability:
       - objects
@@ -563,48 +577,57 @@ mappings:
       - sso
       - anomaly
       
-  photometry.magnitude_rate:
+  detection@ztf:fink.photometry.{filter}.magnitude_rate:
     field: "v:rate"
     availability:
       - objects
       - latests
       
-  photometry.magnitude_rate_error:
+  detection@ztf:fink.photometry.{filter}.magnitude_rate_error:
     field: "v:sigma(rate)"
     availability:
       - objects
+      - latests
       
-  color.g_minus_r:
+  detection@ztf:fink.color.{filter1-filter2}.diff:
     field: "v:g-r"
     availability:
       - objects
       - latests
       
-  color.g_minus_r_error:
+  detection@ztf:fink.color.{filter1-filter2}.error:
     field: "v:sigma(g-r)"
     availability:
       - objects
+      - latests
       
-  color.g_minus_r_rate:
+  detection@ztf:fink.color.{filter1-filter2}.rate:
     field: "v:rate(g-r)"
     availability:
       - objects
+      - latests
       
-  color.g_minus_r_rate_error:
+  detection@ztf:fink.color.{filter1-filter2}.rate_error:
     field: "v:sigma(rate(g-r))"
     availability:
       - objects
+      - latests
       
   # ==================== L2: ML Classification ====================
-  classification.fink_class:
+  classification@fink.best.class:
     field: "v:classification"
     availability:
       - objects
       - latests
       - sso
       - anomaly
+
+  classification@fink.assessment.fink_derived.class:
+    field: "d:classification"
+    availability:
+      - conesearch
       
-  classification.snia_prob:
+  classification@fink.assessment.rf_snia_vs_nonia.probability:
     field: "d:rf_snia_vs_nonia"
     availability:
       - objects
@@ -612,7 +635,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.sn_prob:
+  classification@fink.assessment.sn_vs_all.probability:
     field: "d:snn_sn_vs_all"
     availability:
       - objects
@@ -620,7 +643,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.snia_vs_cc_prob:
+  classification@fink.assessment.snn_snia_vs_nonia.probability:
     field: "d:snn_snia_vs_nonia"
     availability:
       - objects
@@ -628,7 +651,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.kilonova_prob:
+  classification@fink.assessment.kn_vs_nonkn.probability:
     field: "d:rf_kn_vs_nonkn"
     availability:
       - objects
@@ -636,7 +659,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.microlensing_prob:
+  classification@fink.assessment.microlensing.score:
     field: "d:mulens"
     availability:
       - objects
@@ -644,7 +667,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.slsn_score:
+  classification@fink.assessment.slsn.score:
     field: "d:slsn_score"
     availability:
       - objects
@@ -652,14 +675,14 @@ mappings:
       - latests
       - anomaly
       
-  classification.anomaly_score:
+  classification@fink.assessment.anomaly.score:
     field: "d:anomaly_score"
     availability:
       - sso
       - latests
       - anomaly
       
-  classification.blazar_m0:
+  classification@fink.assessment.blazar_m0.value:
     field: "d:blazar_stats_m0"
     availability:
       - objects
@@ -667,7 +690,7 @@ mappings:
       - latests
       - anomaly
       
-  classification.blazar_m1:
+  classification@fink.assessment.blazar_m1.value:
     field: "d:blazar_stats_m1"
     availability:
       - objects
@@ -675,15 +698,31 @@ mappings:
       - latests
       - anomaly
       
-  classification.blazar_m2:
+  classification@fink.assessment.blazar_m2.value:
     field: "d:blazar_stats_m2"
     availability:
       - objects
       - sso
       - latests
       - anomaly
+
+  classification@fink.assessment.blazar_instantness_high.score:
+    field: "d:blazar_stats_instantness_high"
+    availability: [objects, sso, latests, anomaly]
+
+  classification@fink.assessment.blazar_instantness_low.score:
+    field: "d:blazar_stats_instantness_low"
+    availability: [objects, sso, latests, anomaly]
+
+  classification@fink.assessment.blazar_robustness_high.score:
+    field: "d:blazar_stats_robustness_high"
+    availability: [objects, sso, latests, anomaly]
+
+  classification@fink.assessment.blazar_robustness_low.score:
+    field: "d:blazar_stats_robustness_low"
+    availability: [objects, sso, latests, anomaly]
       
-  classification.is_transient:
+  classification@fink.assessment.transient.value:
     field: "d:is_transient"
     availability:
       - sso
@@ -691,7 +730,7 @@ mappings:
       - anomaly
       
   # ==================== L3: Specialized Phenomena ====================
-  solar_system.roid:
+  detection@ztf:fink.solar_system.roid:
     field: "d:roid"
     availability:
       - objects
@@ -699,7 +738,7 @@ mappings:
       - latests
       - anomaly
       
-  solar_system.mpc_name:
+  detection@ztf:fink.solar_system.mpc_name:
     field: "i:ssnamenr"
     availability:
       - objects
@@ -707,7 +746,7 @@ mappings:
       - latests
       - anomaly
       
-  solar_system.mpc_distance:
+  detection@ztf:fink.solar_system.mpc_distance:
     field: "i:ssdistnr"
     availability:
       - objects
@@ -715,7 +754,7 @@ mappings:
       - latests
       - anomaly
       
-  solar_system.mpc_magnitude:
+  detection@ztf:fink.solar_system.mpc_magnitude:
     field: "i:ssmagnr"
     availability:
       - objects
@@ -723,17 +762,17 @@ mappings:
       - latests
       - anomaly
       
-  solar_system.iau_name:
+  detection@ztf:fink.solar_system.iau_name:
     field: "sso_name"
     availability:
       - sso
       
-  solar_system.iau_number:
+  detection@ztf:fink.solar_system.iau_number:
     field: "sso_number"
     availability:
       - sso
       
-  tns.name:
+  crossmatch@tns:fink.identity.object_id:
     field: "d:tns"
     availability:
       - objects
@@ -741,7 +780,7 @@ mappings:
       - latests
       - anomaly
       
-  satellite.tracklet_id:
+  detection@ztf:fink.satellite.tracklet_id:
     field: "d:tracklet"
     availability:
       - objects
@@ -749,21 +788,21 @@ mappings:
       - latests
       - anomaly
       
-  gaia.variability_flag:
+  crossmatch@gaia:fink.classification.assessment.variability.flag:
     field: "d:gaiaVarFlag"
     availability:
       - sso
       - latests
       - anomaly
       
-  gaia.variability_class:
+  crossmatch@gaia:fink.classification.assessment.variability.class:
     field: "d:gaiaClass"
     availability:
       - sso
       - latests
       - anomaly
       
-  gaia.distance:
+  crossmatch@gaia:fink.separation.total:
     field: "i:neargaia"
     availability:
       - objects
@@ -771,13 +810,13 @@ mappings:
       - latests
       - anomaly
       
-  gaia.distance_bright:
+  crossmatch@gaia_bright:fink.separation.total:
     field: "i:neargaiabright"
     availability:
       - objects
       - anomaly
       
-  gaia.magnitude:
+  crossmatch@gaia:fink.photometry.gaia_g.mag:
     field: "i:maggaia"
     availability:
       - objects
@@ -785,14 +824,14 @@ mappings:
       - latests
       - anomaly
       
-  gaia.magnitude_bright:
+  crossmatch@gaia_bright:fink.photometry.gaia_g.mag:
     field: "i:maggaiabright"
     availability:
       - objects
       - anomaly
       
   # ==================== L4: Cross-Match ====================
-  crossmatch.simbad_type:
+  crossmatch@simbad:fink.classification.best.class:
     field: "d:cdsxmatch"
     availability:
       - objects
@@ -801,70 +840,70 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.gaia_dr3_id:
+  crossmatch@gaia:fink.identity.object_id:
     field: "d:DR3Name"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.gaia_parallax:
+  crossmatch@gaia:fink.astrometric_solution.parallax:
     field: "d:Plx"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.gaia_parallax_error:
+  crossmatch@gaia:fink.astrometric_solution.parallax_error:
     field: "d:e_Plx"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.gcvs_type:
+  crossmatch@gcvs:fink.classification.best.class:
     field: "d:gcvs"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.vsx_type:
+  crossmatch@vsx:fink.classification.best.class:
     field: "d:vsx"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.spicy_id:
+  crossmatch@spicy:fink.identity.object_id:
     field: "d:spicy_id"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.spicy_class:
+  crossmatch@spicy:fink.classification.best.class:
     field: "d:spicy_class"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.blazar_3hsp:
+  crossmatch@3hsp:fink.identity.object_id:
     field: "d:x3hsp"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.blazar_4lac:
+  crossmatch@4lac:fink.identity.object_id:
     field: "d:x4lac"
     availability:
       - sso
       - latests
       - anomaly
       
-  crossmatch.mangrove_2mass:
+  crossmatch@mangrove:fink.identity.object_id:
     field: "d:mangrove_2MASS_name"
     availability:
       - objects
@@ -872,7 +911,7 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.mangrove_hyperleda:
+  crossmatch@mangrove:fink.hyperleda_id:
     field: "d:mangrove_HyperLEDA_name"
     availability:
       - objects
@@ -880,7 +919,7 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.mangrove_distance:
+  crossmatch@mangrove:fink.separation.total:
     field: "d:mangrove_ang_dist"
     availability:
       - objects
@@ -888,7 +927,7 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.mangrove_luminosity_distance:
+  crossmatch@mangrove:fink.luminosity_distance:
     field: "d:mangrove_lum_dist"
     availability:
       - objects
@@ -896,13 +935,13 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.ps1_object_id:
+  crossmatch@panstarrs:fink.identity.object_id:
     field: "i:objectidps1"
     availability:
       - objects
       - anomaly
       
-  crossmatch.ps1_distance:
+  crossmatch@panstarrs:fink.separation.total:
     field: "i:distpsnr1"
     availability:
       - objects
@@ -910,25 +949,31 @@ mappings:
       - latests
       - anomaly
       
-  crossmatch.ps1_g_mag:
+  crossmatch@panstarrs:fink.photometry.g.mag:
     field: "i:sgmag1"
     availability:
       - objects
       - anomaly
       
-  crossmatch.ps1_r_mag:
+  crossmatch@panstarrs:fink.photometry.r.mag:
     field: "i:srmag1"
     availability:
       - objects
       - anomaly
       
-  crossmatch.ps1_i_mag:
+  crossmatch@panstarrs:fink.photometry.i.mag:
     field: "i:simag1"
     availability:
       - objects
       - anomaly
+
+  crossmatch@panstarrs:fink.photometry.z.mag:
+    field: "i:szmag1"
+    availability:
+      - objects
+      - anomaly
       
-  crossmatch.ps1_star_galaxy_score:
+  crossmatch@panstarrs:fink.classification.assessment.star_galaxy.score:
     field: "i:sgscore1"
     availability:
       - objects
@@ -936,23 +981,67 @@ mappings:
       - latests
       - anomaly
       
-  ps1.nmatches:
+  crossmatch@panstarrs:fink.match_count:
     field: "i:nmtchps"
     availability:
       - objects
       - sso
       - latests
       - anomaly
+
+  crossmatch@panstarrs_2:fink.identity.object_id:
+    field: "i:objectidps2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.separation.total:
+    field: "i:distpsnr2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.photometry.g.mag:
+    field: "i:sgmag2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.photometry.r.mag:
+    field: "i:srmag2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.photometry.i.mag:
+    field: "i:simag2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.photometry.z.mag:
+    field: "i:szmag2"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_2:fink.classification.assessment.star_galaxy.score:
+    field: "i:sgscore2"
+    availability: [objects, anomaly]
+
+  crossmatch@panstarrs_3:fink.identity.object_id:
+    field: "i:objectidps3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.separation.total:
+    field: "i:distpsnr3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.photometry.g.mag:
+    field: "i:sgmag3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.photometry.r.mag:
+    field: "i:srmag3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.photometry.i.mag:
+    field: "i:simag3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.photometry.z.mag:
+    field: "i:szmag3"
+    availability: [objects, anomaly]
+  crossmatch@panstarrs_3:fink.classification.assessment.star_galaxy.score:
+    field: "i:sgscore3"
+    availability: [objects, anomaly]
       
   # ==================== L5: Light Curve Features ====================
-  light_curve.g_features:
+  lightcurve@ztf:fink.g.feature_vector:
     field: "d:lc_features_g"
     availability:
       - sso
       - latests
       - anomaly
       
-  light_curve.r_features:
+  lightcurve@ztf:fink.r.feature_vector:
     field: "d:lc_features_r"
     availability:
       - objects
@@ -960,21 +1049,21 @@ mappings:
       - latests
       - anomaly
       
-  light_curve.first_detection_5sigma_mjd:
+  summary@ztf:fink.fink_first_detection_5sigma_mjd:
     field: "d:jd_first_real_det"
     availability:
       - sso
       - latests
       - anomaly
       
-  light_curve.delta_time_first_detection:
+  summary@ztf:fink.fink_delta_time_first_detection:
     field: "d:jdstarthist_dt"
     availability:
       - sso
       - latests
       - anomaly
       
-  light_curve.magnitude_rate:
+  summary@ztf:fink.fink_magnitude_rate:
     field: "d:mag_rate"
     availability:
       - objects
@@ -982,7 +1071,7 @@ mappings:
       - latests
       - anomaly
       
-  light_curve.magnitude_rate_error:
+  summary@ztf:fink.fink_magnitude_rate_error:
     field: "d:sigma_rate"
     availability:
       - objects
@@ -990,7 +1079,7 @@ mappings:
       - latests
       - anomaly
       
-  light_curve.rate_lower_percentile:
+  summary@ztf:fink.fink_rate_lower_percentile:
     field: "d:lower_rate"
     availability:
       - objects
@@ -998,7 +1087,7 @@ mappings:
       - latests
       - anomaly
       
-  light_curve.rate_upper_percentile:
+  summary@ztf:fink.fink_rate_upper_percentile:
     field: "d:upper_rate"
     availability:
       - objects
@@ -1006,21 +1095,21 @@ mappings:
       - latests
       - anomaly
       
-  light_curve.delta_time_rate:
+  summary@ztf:fink.fink_delta_time_rate:
     field: "d:delta_time"
     availability:
       - sso
       - latests
       - anomaly
       
-  light_curve.from_upper_limit:
+  summary@ztf:fink.fink_from_upper_limit:
     field: "d:from_upper"
     availability:
       - sso
       - latests
       - anomaly
       
-  light_curve.detection_count:
+  summary@ztf:fink.fink_lightcurve_detection_count:
     field: "d:nalerthist"
     availability:
       - objects
@@ -1046,64 +1135,65 @@ mappings:
       - cutouts
       
   # ==================== L7: Survey Aggregates ====================
-  survey.date:
-    field: "key:key"
-    availability:
-      - statistics
-      
-  survey.exposures:
+  survey@ztf:fink.exposure_count:
     field: "basic:exposures"
     availability:
       - statistics
       
-  survey.fields:
+  survey@ztf:fink.field_count:
     field: "basic:fields"
     availability:
       - statistics
       
-  survey.raw_alerts:
+  survey@ztf:fink.raw_alerts:
     field: "basic:raw"
     availability:
       - statistics
       
-  survey.science_alerts:
+  survey@ztf:fink.science_alerts:
     field: "basic:sci"
     availability:
       - statistics
       
-  survey.alerts_by_filter:
+  survey@ztf:fink.filter_counts:
     field: "basic:n_g,basic:n_r"
     availability:
       - statistics
       
-  survey.class_counts:
+  survey@ztf:fink.class_distribution:
     field: "class:*"
     availability:
       - statistics
-      
-  survey.key:
-    field: "key:key"
-    availability:
-      - statistics
-      
-  survey.timestamp:
-    field: "key:time"
-    availability:
-      - statistics
+
+  # key:key and key:time are transport/statistics record metadata.  The
+  # feature catalog defines no survey date/key/timestamp fields, so they are
+  # intentionally not exposed as semantic mappings.
       
   # ==================== L8: External Services ====================
   resolver.catalog:
     field: "name"
     availability:
       - resolver
+
+  resolver.position.ra:
+    field: "d:ra"
+    availability:
+      - resolver
+
+  resolver.position.dec:
+    field: "d:declination"
+    availability:
+      - resolver
       
   resolver.external_id:
     field: "oid"
+    fallback_field: "d:internalname"
     availability:
       - resolver
       
   resolver.type_code:
     field: "otype"
+    fallback_field: "d:type"
     availability:
       - resolver
       
@@ -1114,11 +1204,13 @@ mappings:
       
   resolver.external_name:
     field: "oname"
+    fallback_field: "d:fullname"
     availability:
       - resolver
       
   resolver.redshift:
     field: "z"
+    fallback_field: "d:redshift"
     availability:
       - resolver
       
@@ -1126,3 +1218,6 @@ mappings:
     field: "nrefs"
     availability:
       - resolver
+
+  # The TNS resolver's d:discoverydate has no resolver-time field in the
+  # feature catalog and is intentionally left unmapped.

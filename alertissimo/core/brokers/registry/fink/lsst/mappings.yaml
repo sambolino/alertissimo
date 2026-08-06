@@ -4,7 +4,7 @@ origin: lsst
 
 mappings:
   # ==================== L0: Portfolio (Object-Level) ====================
-  context.object_id:
+  summary@lsst:fink.identity.object_id:
     field: "r:diaObjectId"
     availability:
       - objects
@@ -12,55 +12,63 @@ mappings:
       - latests
       - sso
 
-  history.detection_count:
+  summary@lsst:fink.detection_count:
     field: "r:nDiaSources"
     availability:
       - objects
       - latests
 
-  history.first_mjd:
+  summary@lsst:fink.time.first_mjd:
     field: "r:firstDiaSourceMjdTai"
     availability:
       - objects
 
-  history.last_mjd:
+  summary@lsst:fink.time.last_mjd:
     field: "r:lastDiaSourceMjdTai"
     availability:
       - objects
 
-  history.first_mjd_fink:
+  summary@lsst:fink.fink_first_mjd:
     field: "f:firstDiaSourceMjdTaiFink"
     availability:
       - objects
 
   # ==================== L1: Detection (Real-Time) ====================
-  position.ra:
+  detection@lsst:fink.position.ra:
     field: "r:ra"
     availability:
-      - objects
       - conesearch
       - latests
       - sso
   
-  position.dec:
+  detection@lsst:fink.position.dec:
     field: "r:dec"
     availability:
-      - objects
       - conesearch
       - latests
       - sso
 
-  position.ra_error:
+  summary@lsst:fink.position.ra:
+    field: "r:ra"
+    availability:
+      - objects
+
+  summary@lsst:fink.position.dec:
+    field: "r:dec"
+    availability:
+      - objects
+
+  summary@lsst:fink.position.ra_error:
     field: "r:raErr"
     availability:
       - objects
 
-  position.dec_error:
+  summary@lsst:fink.position.dec_error:
     field: "r:decErr"
     availability:
       - objects
 
-  position.ra_dec_covariance:
+  summary@lsst:fink.position.ra_dec_covariance:
     field: "r:ra_dec_Cov"
     availability:
       - objects
@@ -68,259 +76,259 @@ mappings:
   # ==================== L0: Per-band object aggregates ====================
   # `psfFlux*` and `fpFlux*` are Fink's per-band summary statistics.  They
   # are object-level values, unlike the L1 alert fields below.
-  summary.photometry.g.psf.flux_error_mean:
+  summary@lsst:fink.photometry.g.psf.flux_error_mean:
     field: "r:g_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.g.psf.maximum:
+  summary@lsst:fink.photometry.g.psf.maximum:
     field: "r:g_psfFluxMax"
     availability: [objects]
-  summary.photometry.g.psf.maximum_slope:
+  summary@lsst:fink.photometry.g.psf.maximum_slope:
     field: "r:g_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.g.psf.mean:
+  summary@lsst:fink.photometry.g.psf.mean:
     field: "r:g_psfFluxMean"
     availability: [objects]
-  summary.photometry.g.psf.mean_error:
+  summary@lsst:fink.photometry.g.psf.mean_error:
     field: "r:g_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.g.psf.minimum:
+  summary@lsst:fink.photometry.g.psf.minimum:
     field: "r:g_psfFluxMin"
     availability: [objects]
-  summary.photometry.g.psf.measurement_count:
+  summary@lsst:fink.photometry.g.psf.measurement_count:
     field: "r:g_psfFluxNdata"
     availability: [objects]
-  summary.photometry.g.psf.sigma:
+  summary@lsst:fink.photometry.g.psf.sigma:
     field: "r:g_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.g.psf.mean:
+  summary@lsst:fink.forced_photometry.g.psf.mean:
     field: "r:g_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.g.psf.mean_error:
+  summary@lsst:fink.forced_photometry.g.psf.mean_error:
     field: "r:g_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.g_science_flux_mean:
+  summary@lsst:fink.fink_g_science_flux_mean:
     field: "r:g_scienceFluxMean"
     availability: [objects]
-  summary.fink.g_science_flux_mean_error:
+  summary@lsst:fink.fink_g_science_flux_mean_error:
     field: "r:g_scienceFluxMeanErr"
     availability: [objects]
 
-  summary.photometry.r.psf.flux_error_mean:
+  summary@lsst:fink.photometry.r.psf.flux_error_mean:
     field: "r:r_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.r.psf.maximum:
+  summary@lsst:fink.photometry.r.psf.maximum:
     field: "r:r_psfFluxMax"
     availability: [objects]
-  summary.photometry.r.psf.maximum_slope:
+  summary@lsst:fink.photometry.r.psf.maximum_slope:
     field: "r:r_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.r.psf.mean:
+  summary@lsst:fink.photometry.r.psf.mean:
     field: "r:r_psfFluxMean"
     availability: [objects]
-  summary.photometry.r.psf.mean_error:
+  summary@lsst:fink.photometry.r.psf.mean_error:
     field: "r:r_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.r.psf.minimum:
+  summary@lsst:fink.photometry.r.psf.minimum:
     field: "r:r_psfFluxMin"
     availability: [objects]
-  summary.photometry.r.psf.measurement_count:
+  summary@lsst:fink.photometry.r.psf.measurement_count:
     field: "r:r_psfFluxNdata"
     availability: [objects]
-  summary.photometry.r.psf.sigma:
+  summary@lsst:fink.photometry.r.psf.sigma:
     field: "r:r_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.r.psf.mean:
+  summary@lsst:fink.forced_photometry.r.psf.mean:
     field: "r:r_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.r.psf.mean_error:
+  summary@lsst:fink.forced_photometry.r.psf.mean_error:
     field: "r:r_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.r_science_flux_mean:
+  summary@lsst:fink.fink_r_science_flux_mean:
     field: "r:r_scienceFluxMean"
     availability: [objects]
-  summary.fink.r_science_flux_mean_error:
+  summary@lsst:fink.fink_r_science_flux_mean_error:
     field: "r:r_scienceFluxMeanErr"
     availability: [objects]
 
-  summary.photometry.i.psf.flux_error_mean:
+  summary@lsst:fink.photometry.i.psf.flux_error_mean:
     field: "r:i_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.i.psf.maximum:
+  summary@lsst:fink.photometry.i.psf.maximum:
     field: "r:i_psfFluxMax"
     availability: [objects]
-  summary.photometry.i.psf.maximum_slope:
+  summary@lsst:fink.photometry.i.psf.maximum_slope:
     field: "r:i_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.i.psf.mean:
+  summary@lsst:fink.photometry.i.psf.mean:
     field: "r:i_psfFluxMean"
     availability: [objects]
-  summary.photometry.i.psf.mean_error:
+  summary@lsst:fink.photometry.i.psf.mean_error:
     field: "r:i_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.i.psf.minimum:
+  summary@lsst:fink.photometry.i.psf.minimum:
     field: "r:i_psfFluxMin"
     availability: [objects]
-  summary.photometry.i.psf.measurement_count:
+  summary@lsst:fink.photometry.i.psf.measurement_count:
     field: "r:i_psfFluxNdata"
     availability: [objects]
-  summary.photometry.i.psf.sigma:
+  summary@lsst:fink.photometry.i.psf.sigma:
     field: "r:i_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.i.psf.mean:
+  summary@lsst:fink.forced_photometry.i.psf.mean:
     field: "r:i_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.i.psf.mean_error:
+  summary@lsst:fink.forced_photometry.i.psf.mean_error:
     field: "r:i_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.i_science_flux_mean:
+  summary@lsst:fink.fink_i_science_flux_mean:
     field: "r:i_scienceFluxMean"
     availability: [objects]
-  summary.fink.i_science_flux_mean_error:
+  summary@lsst:fink.fink_i_science_flux_mean_error:
     field: "r:i_scienceFluxMeanErr"
     availability: [objects]
 
-  summary.photometry.u.psf.flux_error_mean:
+  summary@lsst:fink.photometry.u.psf.flux_error_mean:
     field: "r:u_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.u.psf.maximum:
+  summary@lsst:fink.photometry.u.psf.maximum:
     field: "r:u_psfFluxMax"
     availability: [objects]
-  summary.photometry.u.psf.maximum_slope:
+  summary@lsst:fink.photometry.u.psf.maximum_slope:
     field: "r:u_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.u.psf.mean:
+  summary@lsst:fink.photometry.u.psf.mean:
     field: "r:u_psfFluxMean"
     availability: [objects]
-  summary.photometry.u.psf.mean_error:
+  summary@lsst:fink.photometry.u.psf.mean_error:
     field: "r:u_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.u.psf.minimum:
+  summary@lsst:fink.photometry.u.psf.minimum:
     field: "r:u_psfFluxMin"
     availability: [objects]
-  summary.photometry.u.psf.measurement_count:
+  summary@lsst:fink.photometry.u.psf.measurement_count:
     field: "r:u_psfFluxNdata"
     availability: [objects]
-  summary.photometry.u.psf.sigma:
+  summary@lsst:fink.photometry.u.psf.sigma:
     field: "r:u_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.u.psf.mean:
+  summary@lsst:fink.forced_photometry.u.psf.mean:
     field: "r:u_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.u.psf.mean_error:
+  summary@lsst:fink.forced_photometry.u.psf.mean_error:
     field: "r:u_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.u_science_flux_mean:
+  summary@lsst:fink.fink_u_science_flux_mean:
     field: "r:u_scienceFluxMean"
     availability: [objects]
-  summary.fink.u_science_flux_mean_error:
+  summary@lsst:fink.fink_u_science_flux_mean_error:
     field: "r:u_scienceFluxMeanErr"
     availability: [objects]
 
-  summary.photometry.z.psf.flux_error_mean:
+  summary@lsst:fink.photometry.z.psf.flux_error_mean:
     field: "r:z_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.z.psf.maximum:
+  summary@lsst:fink.photometry.z.psf.maximum:
     field: "r:z_psfFluxMax"
     availability: [objects]
-  summary.photometry.z.psf.maximum_slope:
+  summary@lsst:fink.photometry.z.psf.maximum_slope:
     field: "r:z_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.z.psf.mean:
+  summary@lsst:fink.photometry.z.psf.mean:
     field: "r:z_psfFluxMean"
     availability: [objects]
-  summary.photometry.z.psf.mean_error:
+  summary@lsst:fink.photometry.z.psf.mean_error:
     field: "r:z_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.z.psf.minimum:
+  summary@lsst:fink.photometry.z.psf.minimum:
     field: "r:z_psfFluxMin"
     availability: [objects]
-  summary.photometry.z.psf.measurement_count:
+  summary@lsst:fink.photometry.z.psf.measurement_count:
     field: "r:z_psfFluxNdata"
     availability: [objects]
-  summary.photometry.z.psf.sigma:
+  summary@lsst:fink.photometry.z.psf.sigma:
     field: "r:z_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.z.psf.mean:
+  summary@lsst:fink.forced_photometry.z.psf.mean:
     field: "r:z_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.z.psf.mean_error:
+  summary@lsst:fink.forced_photometry.z.psf.mean_error:
     field: "r:z_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.z_science_flux_mean:
+  summary@lsst:fink.fink_z_science_flux_mean:
     field: "r:z_scienceFluxMean"
     availability: [objects]
-  summary.fink.z_science_flux_mean_error:
+  summary@lsst:fink.fink_z_science_flux_mean_error:
     field: "r:z_scienceFluxMeanErr"
     availability: [objects]
 
-  summary.photometry.y.psf.flux_error_mean:
+  summary@lsst:fink.photometry.y.psf.flux_error_mean:
     field: "r:y_psfFluxErrMean"
     availability: [objects]
-  summary.photometry.y.psf.maximum:
+  summary@lsst:fink.photometry.y.psf.maximum:
     field: "r:y_psfFluxMax"
     availability: [objects]
-  summary.photometry.y.psf.maximum_slope:
+  summary@lsst:fink.photometry.y.psf.maximum_slope:
     field: "r:y_psfFluxMaxSlope"
     availability: [objects]
-  summary.photometry.y.psf.mean:
+  summary@lsst:fink.photometry.y.psf.mean:
     field: "r:y_psfFluxMean"
     availability: [objects]
-  summary.photometry.y.psf.mean_error:
+  summary@lsst:fink.photometry.y.psf.mean_error:
     field: "r:y_psfFluxMeanErr"
     availability: [objects]
-  summary.photometry.y.psf.minimum:
+  summary@lsst:fink.photometry.y.psf.minimum:
     field: "r:y_psfFluxMin"
     availability: [objects]
-  summary.photometry.y.psf.measurement_count:
+  summary@lsst:fink.photometry.y.psf.measurement_count:
     field: "r:y_psfFluxNdata"
     availability: [objects]
-  summary.photometry.y.psf.sigma:
+  summary@lsst:fink.photometry.y.psf.sigma:
     field: "r:y_psfFluxSigma"
     availability: [objects]
-  summary.forced_photometry.y.psf.mean:
+  summary@lsst:fink.forced_photometry.y.psf.mean:
     field: "r:y_fpFluxMean"
     availability: [objects]
-  summary.forced_photometry.y.psf.mean_error:
+  summary@lsst:fink.forced_photometry.y.psf.mean_error:
     field: "r:y_fpFluxMeanErr"
     availability: [objects]
-  summary.fink.y_science_flux_mean:
+  summary@lsst:fink.fink_y_science_flux_mean:
     field: "r:y_scienceFluxMean"
     availability: [objects]
-  summary.fink.y_science_flux_mean_error:
+  summary@lsst:fink.fink_y_science_flux_mean_error:
     field: "r:y_scienceFluxMeanErr"
     availability: [objects]
 
   # Broker-specific object metadata for which the semantic recipe intentionally
   # leaves dynamic summary fields available.
-  summary.fink.is_cataloged:
+  summary@lsst:fink.fink_is_cataloged:
     field: "f:is_cataloged"
     availability: [objects]
-  summary.fink.is_first:
+  summary@lsst:fink.fink_is_first:
     field: "f:is_first"
     availability: [objects]
-  summary.fink.is_sso:
+  summary@lsst:fink.fink_is_sso:
     field: "f:is_sso"
     availability: [objects]
-  summary.fink.main_label_classifier:
+  summary@lsst:fink.fink_main_label_classifier:
     field: "f:main_label_classifier"
     availability: [objects]
-  summary.fink.main_label_crossmatch:
+  summary@lsst:fink.fink_main_label_crossmatch:
     field: "f:main_label_crossmatch"
     availability: [objects]
-  summary.fink.observation_reason:
+  summary@lsst:fink.fink_observation_reason:
     field: "r:observation_reason"
     availability: [objects]
-  summary.fink.target_name:
+  summary@lsst:fink.fink_target_name:
     field: "r:target_name"
     availability: [objects]
-  summary.fink.salt:
+  summary@lsst:fink.fink_salt:
     field: "r:salt"
     availability: [objects]
-  summary.fink.validity_start_mjd:
+  summary@lsst:fink.fink_validity_start_mjd:
     field: "r:validityStartMjdTai"
     availability: [objects]
 
-  photometry.mjd:
+  detection@lsst:fink.time.mjd:
     field: "r:midpointMjdTai"
     availability:
       - objects
@@ -328,7 +336,7 @@ mappings:
       - latests
       - sso
 
-  photometry.filter:
+  detection@lsst:fink.photometry.{filter}:
     field: "r:band"
     availability:
       - objects
@@ -336,31 +344,31 @@ mappings:
       - latests
       - sso
 
-  photometry.flux:
+  detection@lsst:fink.photometry.{filter}.psf.flux:
     field: "r:psfFlux"
     availability:
       - objects
       - latests
 
-  photometry.flux_error:
+  detection@lsst:fink.photometry.{filter}.psf.flux_error:
     field: "r:psfFluxErr"
     availability:
       - objects
       - latests
 
-  quality.snr:
+  detection@lsst:fink.photometry.{filter}.psf.snr:
     field: "r:snr"
     availability:
       - objects
       - latests
 
   # ==================== L2: Solar System (Moving Objects) ====================
-  solar_system.ss_object_id:
+  detection@lsst:fink.solar_system.ss_object_id:
     field: "r:ssObjectId"
     availability:
       - sso
 
-  solar_system.roid:
+  detection@lsst:fink.solar_system.roid:
     field: "f:roid"
     availability:
       - objects
@@ -384,74 +392,49 @@ mappings:
       - cutouts
 
   # ==================== L5: Machine Learning (ELAsTiCC) ====================
-  classification.fink_class:
+  classification@fink.best.class:
     field: "v:classification"
     availability:
       - objects
       - latests
       - sso
 
-  classification.cats_score:
+  classification@fink.assessment.cats_pure.score:
     field: "f:cats_pure_score"
     availability:
       - objects
       - latests
 
-  classification.snia_rf_prob:
+  classification@fink.assessment.rf_snia_vs_all.probability:
     field: "f:rf_snia_vs_all"
     availability:
       - objects
       - latests
 
-  classification.snia_snn_prob:
+  classification@fink.assessment.snn_snia_vs_all.probability:
     field: "f:snn_snia_vs_all"
     availability:
       - objects
       - latests
 
-  classification.slsn_rf_prob:
+  classification@fink.assessment.rf_slsn_vs_all.probability:
     field: "f:rf_slsn_vs_all"
     availability:
       - objects
       - latests
 
   # ==================== L6: Enrichment (Cross-Match) ====================
-  crossmatch.simbad_type:
+  crossmatch@simbad:fink.classification.best.class:
     field: "f:xm.cdsxmatch"
     availability:
       - objects
       - conesearch
 
-  crossmatch.gaia_dr3_id:
+  crossmatch@gaia:fink.identity.object_id:
     field: "f:xm.DR3Name"
     availability:
       - objects
 
-  # ==================== L8: External Services (Miriade Ephem) ====================
-  resolver.external_name:
-    field: "target"
-    availability:
-      - sso
-
-  ephemeris.distance_earth:
-    field: "delta"
-    unit: "AU"
-    availability:
-      - sso
-
-  ephemeris.distance_sun:
-    field: "r"
-    unit: "AU"
-    availability:
-      - sso
-
-  ephemeris.phase_angle:
-    field: "phase"
-    unit: "deg"
-    availability:
-      - sso
-
-  ephemeris.visual_mag:
-    field: "mv"
-    availability:
-      - sso
+  # Miriade ephemeris values (target, delta, r, phase, mv) deliberately have
+  # no mapping here: feature_catalog.yaml has no ephemeris semantic container.
+  # Add that container before exposing these source-specific fields.

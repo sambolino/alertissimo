@@ -1,0 +1,47 @@
+[
+  {
+    "d:declination": "-12.274569",
+    "d:discoverydate": "2024-11-21 06:48:54.999",
+    "d:fullname": "SN 2024abtt",
+    "d:internalname": "ATLAS24qmz",
+    "d:ra": "46.476417",
+    "d:redshift": "0.035",
+    "d:type": "SN Ia"
+  },
+  {
+    "d:declination": "-12.274569",
+    "d:discoverydate": "2024-11-21 06:48:54.999",
+    "d:fullname": "SN 2024abtt",
+    "d:internalname": "Gaia24dpd",
+    "d:ra": "46.476417",
+    "d:redshift": "0.035",
+    "d:type": "SN Ia"
+  },
+  {
+    "d:declination": "-12.274569",
+    "d:discoverydate": "2024-11-21 06:48:54.999",
+    "d:fullname": "SN 2024abtt",
+    "d:internalname": "GOTO24izo",
+    "d:ra": "46.476417",
+    "d:redshift": "0.035",
+    "d:type": "SN Ia"
+  },
+  {
+    "d:declination": "-12.274569",
+    "d:discoverydate": "2024-11-21 06:48:54.999",
+    "d:fullname": "SN 2024abtt",
+    "d:internalname": "PS24mop",
+    "d:ra": "46.476417",
+    "d:redshift": "0.035",
+    "d:type": "SN Ia"
+  },
+  {
+    "d:declination": "-12.274569",
+    "d:discoverydate": "2024-11-21 06:48:54.999",
+    "d:fullname": "SN 2024abtt",
+    "d:internalname": "ZTF24abtglxk",
+    "d:ra": "46.476417",
+    "d:redshift": "0.035",
+    "d:type": "SN Ia"
+  }
+]
