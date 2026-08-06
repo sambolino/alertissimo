@@ -22,17 +22,20 @@ endpoints:
         type: string
         enum: ["json", "csv", "parquet", "votable"]
         default: "json"
-    output_type: array_of_alerts
+    output_type: array_of_objects
     provides:
       - context.object_id
       - history.detection_count
       - position.ra
       - position.dec
-      - photometry.mjd
-      - photometry.filter
-      - classification.fink_class
-      - classification.cats_score
-      - classification.snia_rf_prob
+      - position.ra_error
+      - position.dec_error
+      - position.ra_dec_covariance
+      - history.first_mjd
+      - history.last_mjd
+      - summary.photometry.*
+      - summary.forced_photometry.*
+      - summary.fink.*
 
   conesearch:
     path: "/api/v1/conesearch"
@@ -59,29 +62,30 @@ endpoints:
       - context.object_id
       - crossmatch.simbad_type
 
-  latests:
-    path: "/api/v1/latests"
-    method: GET
-    description: "Retrieve the latest Rubin alerts by Fink classification tag"
-    params:
-      class:
-        required: true
-        type: string
-        description: "Fink class tag (e.g., SN Ia, TDE). See /api/v1/tags for LSST labels"
-      n:
-        required: false
-        type: integer
-        default: 100
-    output_type: array_of_alerts
-    provides:
-      - context.object_id
-      - position.ra
-      - position.dec
-      - photometry.mjd
-      - photometry.filter
-      - classification.fink_class
-      - classification.cats_score
-      - classification.snia_snn_prob
+# Ne vidim da postoji ovaj endpoint
+#  latests:
+#    path: "/api/v1/latests"
+#    method: GET
+#    description: "Retrieve the latest Rubin alerts by Fink classification tag"
+#    params:
+#      class:
+#        required: true
+#        type: string
+#        description: "Fink class tag (e.g., SN Ia, TDE). See /api/v1/tags for LSST labels"
+#      n:
+#        required: false
+#        type: integer
+#        default: 100
+#    output_type: array_of_alerts
+#    provides:
+#      - context.object_id
+#      - position.ra
+#      - position.dec
+#      - photometry.mjd
+#      - photometry.filter
+#      - classification.fink_class
+#      - classification.cats_score
+#      - classification.snia_snn_prob
 
   sso:
     path: "/api/v1/sso"
@@ -109,20 +113,21 @@ endpoints:
       - ephemeris.phase_angle
       - ephemeris.visual_mag
 
-  cutouts:
-    path: "/api/v1/cutouts"
-    method: GET
-    description: "Retrieve Rubin image stamps"
-    params:
-      diaObjectId:
-        required: true
-        type: string
-      kind:
-        required: false
-        type: string
-        enum: ["Science", "Template", "Difference"]
-    output_type: single_object
-    provides:
-      - cutouts.science
-      - cutouts.template
-      - cutouts.difference
+# Ovaj je za slike, trenutno sam ga izbacio
+#  cutouts:
+#    path: "/api/v1/cutouts"
+#    method: GET
+#    description: "Retrieve Rubin image stamps"
+#    params:
+#      diaObjectId:
+#        required: true
+#        type: string
+#      kind:
+#        required: false
+#        type: string
+#        enum: ["Science", "Template", "Difference"]
+#    output_type: single_object
+#    provides:
+#      - cutouts.science
+#      - cutouts.template
+#      - cutouts.difference

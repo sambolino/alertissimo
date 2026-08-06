@@ -1,0 +1,22 @@
+[
+  {
+    "r:band": "i",
+    "r:dec": -48.7134439257,
+    "r:diaObjectId": 313761043604045900,
+    "r:midpointMjdTai": 61235.4191836794,
+    "r:psfFlux": 35320.176,
+    "r:psfFluxErr": 383.7959,
+    "r:ra": 61.9648146203,
+    "v:separation_degree": 0.0004440305
+  },
+  {
+    "r:band": "r",
+    "r:dec": -48.7118612396,
+    "r:diaObjectId": 170028498820792320,
+    "r:midpointMjdTai": 61094.108123313,
+    "r:psfFlux": -768.76825,
+    "r:psfFluxErr": 155.99739,
+    "r:ra": 61.962764923,
+    "v:separation_degree": 0.0017606668
+  }
+]

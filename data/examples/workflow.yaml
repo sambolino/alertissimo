@@ -1,0 +1,22 @@
+name: demo_bright_alerts
+schedule: null
+source:
+  broker: ampel
+  stream: ztf
+  config:
+    survey: ZTF
+filter:
+  - attribute: magpsf
+    op: "<"
+    value: 20
+enrich:
+  - crossmatch_gaia
+classify:
+  - method: threshold
+    model: bright_transient
+score:
+  - name: brightness_priority
+    formula: "20 - magpsf"
+act:
+  - export: yaml
+    path: output/bright_alerts.yaml
