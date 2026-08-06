@@ -290,6 +290,37 @@
 #   Such a field may appear in an object summary and in a light-curve product.
 #   The path context determines the role.
 #
+#   A parent or wrapper can also re-contextualize a lower-level quantity. The
+#   lower-level quantity itself does not globally change level; the value becomes
+#   L7 only because it appears under an L7 survey wrapper such as threshold,
+#   aggregate, or selection. For example, photometry.g.psf.mag is normally an L1
+#   detection measurement, but:
+#
+#       portfolio.survey@lsst:alertissimo.threshold.photometry.g.psf.mag
+#
+#   is an L7 survey/selection threshold on that L1 quantity. Likewise:
+#
+#       portfolio.survey@lsst:alertissimo.threshold.redshift.value
+#
+#   is an L7 redshift cut, while ordinary redshift.value remains an ordinary
+#   redshift value in summary, detection, crossmatch, spectrum, or resolver
+#   contexts. Do not add L7 to a base container merely because the quantity may
+#   be thresholded or aggregated by a survey record.
+#
+#   Aggregates follow the same rule:
+#
+#       portfolio.survey@lsst:alertissimo.aggregate.photometry.g.psf.mag.median
+#       portfolio.survey@lsst:alertissimo.aggregate.redshift.median
+#
+#   are L7 because the values are computed over a survey, stream, sample, or
+#   selection. In such paths, the imported or nested container supplies the
+#   semantic quantity being constrained or summarized; the wrapper supplies the
+#   role and effective level of the value.
+#
+#   A level mismatch between a parent record and an imported field is therefore
+#   not automatically an error. It is suspicious only when the resulting path has
+#   ambiguous meaning.
+#
 #
 # ---------------------------------------------------------------------------
 # PORTFOLIO RECORDS AND STRUCTURAL CONTEXT
@@ -310,6 +341,7 @@
 #       spectrum
 #       data_product
 #       classification
+#       survey
 #
 #   The model deliberately keeps these nouns singular. Cardinality is expressed
 #   by $refs and runtime representation, not by plural path names.
@@ -639,6 +671,9 @@
 #       portfolio.data_product@gemini:archive.uri
 #       portfolio.crossmatch@gaia:fink.identity.object_id
 #       portfolio.classification@fink.assessment.snia_vs_nonia.probability
+#       portfolio.survey@lsst:alertissimo.raw_alerts
+#       portfolio.survey@lsst:alertissimo.threshold.quality.signal_to_noise
+#       portfolio.survey@lsst:alertissimo.aggregate.separation.median
 #
 #   Connection-plane example:
 #
@@ -685,6 +720,50 @@
 #
 #   It defines the semantic vocabulary, structural composition rules, level
 #   metadata, cardinality, provenance qualification, and edge grammar.
+#
+# ---------------------------------------------------------------------------
+# CODEX-STYLE SHORT IMPLEMENTATION RECIPE
+# ---------------------------------------------------------------------------
+#
+#   Treat this file as an ordered DSL, not ordinary YAML. Preserve repeated
+#   level, $ref, and $refs directives and compute effective levels after parsing.
+#
+#   Prefer stable semantic nouns over broker payload names. Good paths say what
+#   the value means, not where it happened to be stored. Avoid avoidable broker
+#   leakage such as fink_*, broker_*, packet_*, table_*, or catalog-specific
+#   prefixes inside stable field names when @producer:channel or provenance
+#   already carries that context.
+#
+#   If no accurate semantic mapping exists, leave the source field unmapped and
+#   explain why. Do not force approximate mappings just to improve coverage.
+#   Use [{field}] only as a documented escape hatch, and promote repeated escape
+#   fields into the stable vocabulary once their meaning is clear.
+#
+#   Put transforms in mapping files, not in semantic paths. Examples: convert JD
+#   to MJD in the adapter before mapping to time.mjd; convert degrees to arcsec
+#   before mapping to separation.total; bind fid to {filter} explicitly.
+#
+#   Use data_product for cutouts, files, stamps, embedded payloads, and archive
+#   artifacts. FITS, VOTable, HDF5, CSV, image/fits, base64, and similar values
+#   are formats or encodings, not record classes.
+#
+#   Do not fake producers to encode rank or array position. Multiple Pan-STARRS
+#   candidates are repeated crossmatch@panstarrs:fink records with rank or
+#   internal instance identifiers, not crossmatch@panstarrs_2:fink unless a
+#   source truly is a distinct producer.
+#
+#   Crossmatch is a reduced external enrichment record. A historical alert packet
+#   remains a detection; a catalog object, reduced source row, host-galaxy match,
+#   or literature entry is a crossmatch.
+#
+#   Survey thresholds, selections, and aggregates are L7 because of the survey
+#   wrapper. The constrained quantity may be L1/L2/L5/L6, but the threshold value
+#   lives at survey.threshold.<quantity> and must not force the base quantity
+#   container to become L7 globally.
+#
+#   Keep evidence in semantic containers and assertions in edges. Edges connect
+#   records and may carry score/basis/provenance, but should not absorb full
+#   photometry, localization, spectrum, image, or catalog payloads.
 #
 # ============================================================================
 
@@ -797,14 +876,18 @@ levels:
     description: "Pointing-specific additional field"
 
 <time>:
-  level: L1, L2, L5, L6
-  unit: mjd
-  description: "Time measurements (MJD)"
+  level: L1, L2, L5, L6, L7, L8
+  description: "Time measurements and time-like metadata"
   [mjd]:
     description: "Modified Julian Date associated with the enclosing record"
+    unit: mjd
+  [datetime]:
+    description: "Date/time associated with the enclosing record"
+    unit: datetime
   [exposure]:
     description: "Exposure duration"
     unit: sec
+
   level: L0
   description: "Historical temporal data"
   [first_detection]:
@@ -815,12 +898,21 @@ levels:
     unit: datetime
   [first_mjd]:
     description: "Earliest detection MJD"
+    unit: mjd
   [last_mjd]:
     description: "Latest detection MJD"
+    unit: mjd
   [timespan_days]:
     description: "Days between first and last detection"
     unit: days
+  [discovery_date]:
+    description: "Discovery date reported by a catalog, resolver, archive, or source system"
+    unit: datetime
 
+  level: L7
+  [snapshot_datetime]:
+    description: "Date/time of a survey, stream, statistics, or selection snapshot"
+    unit: datetime
 <identity>:
   level: L1
   description: "Identifier(s) of a single observational event in its originating system"
@@ -895,27 +987,63 @@ levels:
     description: "Provenance-specific additional field"
 
 <separation>:
-  level: L1
-  unit: arcsec
-  description: "Angular separation between two positions"
+  level: L1, L6
+  description: "Angular, projected, or query-context separation between positions, records, or associated sources"
   [total]:
-    description: "Total separation"
+    description: "Total angular separation"
+    unit: arcsec
   [north]:
-    description: "North-south component (negative = south)"
+    description: "North-south angular component (negative = south)"
+    unit: arcsec
   [east]:
-    description: "East-west component (negative = west)"
+    description: "East-west angular component (negative = west)"
+    unit: arcsec
+  [from_search_center]:
+    description: "Angular separation from a query, cone-search, or alert-search center"
+    unit: arcsec
 
+  level: L6
+  [reference]:
+    description: "Reference object, record, position, or catalog entry against which the separation is measured"
+  [method]:
+    description: "Method or criterion used to compute the separation or matching offset"
+  [normalized]:
+    description: "Separation normalized by a relevant angular or physical scale"
+  [projected]:
+    description: "Projected physical separation, where a distance or redshift has been assumed"
+    unit: kpc
+
+  level: L7
+  [median]:
+    description: "Median separation over a survey, stream, sample, or matching run"
+    unit: arcsec
+  [p95]:
+    description: "95th percentile separation over a survey, stream, sample, or matching run"
+    unit: arcsec
+  [maximum]:
+    description: "Maximum separation over a survey, stream, sample, or matching run"
+    unit: arcsec
 <redshift>:
-  level: L1
-  description: "Redshift measurements"
+  level: L0, L1, L2, L6, L8
+  description: "Redshift measurement, adopted value, or redshift-related catalog/service value"
   [value]:
     description: "Redshift value"
   [error]:
     description: "Redshift uncertainty"
   [type]:
-    description: "Spectroscopic or photometric"
-    enum: [spec, photo]
-
+    description: "Measurement type or technique"
+    enum: [spec, photo, host, inferred, unknown]
+  [measure]:
+    description: "Expanded measurement category, where the source distinguishes it"
+    enum: [spectroscopic, photometric, emission, absorption, host, inferred, unknown]
+  [method]:
+    description: "Method, model, catalog, or spectral feature used to estimate the redshift"
+  [confidence]:
+    description: "Confidence or reliability of the redshift estimate"
+    type: float
+    range: [0, 1]
+  [{field}]:
+    description: "Redshift-specific additional field"
 <photometry>:
   description: "Photometric measurements"
   <{filter}>:
@@ -969,6 +1097,9 @@ levels:
         unit: mag
       [mag_minus_aperture]:
         description: "Limiting magnitude minus the measured aperture magnitude"
+        unit: mag
+      [mag_offset_from_limit]:
+        description: "Magnitude offset between the reported limiting magnitude and the selected measured source magnitude; adapters must document or normalize the sign convention"
         unit: mag
       [upper_limit]:
         description: "True if the photometric value represents an upper limit or non-detection"
@@ -1074,8 +1205,8 @@ levels:
   $ref: <_photometry>
 
 <quality>:
-  level: L1, L5
-  description: "Higher-level trust, reliability, and usability metrics"
+  level: L1, L2, L5, L6
+  description: "Trust, significance, reliability, and usability metrics"
   [real_bogus]:
     description: "Deep learning real/bogus score"
     type: float
@@ -1088,11 +1219,40 @@ levels:
     range: [0, 1]
     [version]:
       description: "Random Forest real/bogus model version"
+  [signal_to_noise]:
+    description: "Generic signal-to-noise estimate"
+  [rate_snr]:
+    description: "Signal-to-noise ratio for a rate-based trigger or statistic"
+  [image_snr]:
+    description: "Signal-to-noise ratio for an image-based trigger or statistic"
+  [false_alarm_rate]:
+    description: "False alarm rate associated with a trigger, association, or classification"
+    unit: Hz
+  [p_astro]:
+    description: "Probability that the source or event is astrophysical"
+    type: float
+    range: [0, 1]
   [reliability]:
     description: "Reliability score, with higher values representing greater reliability"
     type: float
     range: [0, 1]
+  [score]:
+    description: "Generic quality, significance, or usability score when the source does not expose a more specific semantic meaning"
+  [{field}]:
+    description: "Quality-specific additional field"
 
+  level: L7
+  [median_reliability]:
+    description: "Median reliability score over a survey, stream, sample, or selection"
+    type: float
+    range: [0, 1]
+  [p95_false_alarm_rate]:
+    description: "95th percentile false alarm rate over a survey, stream, sample, or selection"
+    unit: Hz
+  [science_fraction]:
+    description: "Fraction of records passing science-quality selection"
+    type: float
+    range: [0, 1]
 <image_metrics>:
   level: L1
   description: "Detection-specific flags and metrics"
@@ -1243,6 +1403,8 @@ levels:
     description: "dsnrms - ssnrms"
   [seeratio]:
     description: "difffwhm / fwhm"
+  [sky_background]:
+    description: "Local or image-background sky estimate reported with the detection"
 
 <calibration>:
   level: L1
@@ -1367,11 +1529,16 @@ levels:
   [mpc_name]:
     description: "MPC name if within 30 arcsec"
   [mpc_distance]:
-    description: "Distance to nearest known SSO"
+    description: "Angular separation to the nearest known MPC Solar System object; prefer mpc_match.separation for new mappings"
     unit: arcsec
   [mpc_magnitude]:
     description: "Magnitude of nearest known SSO"
     unit: mag
+  <mpc_match>:
+    description: "Nearest known MPC Solar System object associated with the detection"
+      $ref: <identity>
+      $ref: <separation>(L1, L6)
+      $ref: <photometry>(L1, L6)
   [iau_name]:
     description: "IAU name of the Solar System object"
   [iau_number]:
@@ -1558,8 +1725,12 @@ levels:
   [mime_type]:
     description: "MIME type or media type, where available"
   [role]:
-    description: "Processing role or reduction state of the product"
-    enum: [raw, calibrated, reduced, derived, preview, auxiliary, other]
+    description: "Processing, contextual, or image-role label of the product"
+    enum: [raw, calibrated, reduced, derived, preview, auxiliary, science, template, difference, other]
+  [payload]:
+    description: "Embedded data payload, serialized data, or opaque content when the product is carried inline rather than referenced by URI"
+  [content_encoding]:
+    description: "Encoding used for an inline payload, e.g. base64"
   [checksum]:
     description: "Checksum or integrity hash"
   [size]:
@@ -1576,7 +1747,6 @@ levels:
     unit: Angstrom
   [{field}]:
     description: "Data-product-specific additional field"
-
 <data_product>:
   level: L3, L6
   description: "Instrumental, archive, or file-level data product associated with the portfolio"
@@ -1697,7 +1867,7 @@ levels:
   [{field}]:
     description: "Origin- or mediator-specific aggregate field"
 
-<reference>:
+<reference_image>:
   level: L1
   description: "Reference image information"
 
@@ -1720,7 +1890,7 @@ levels:
 
 <crossmatch>:
   level: L6
-  description: "External catalog cross-match record"
+  description: "External catalog, archive, service, or enrichment record associated with the portfolio or one of its records"
   $ref: <identity>
   $ref: <position>
   $ref: <separation>
@@ -1729,9 +1899,17 @@ levels:
   $ref: <classification>
   $ref: <provenance>
   $ref: <astrometric_solution>
+  [rank]:
+    description: "Rank of this match among multiple candidate matches from the same external source"
+    type: integer
+  [match_count]:
+    description: "Number of candidate matches or matched records reported by the source"
+    type: integer
+  [luminosity_distance]:
+    description: "Catalog-provided luminosity distance associated with the matched object; prefer a future <distance> container once adopted"
+    unit: Mpc
   [{field}]:
     description: "Catalog-specific additional fields"
-
 <_lightcurve_point>:
   $ref: <time>(L1)
   $ref: <photometry>(L1)
@@ -1760,13 +1938,16 @@ levels:
 
 <survey>:
   level: L7
-  description: "Survey-level statistics"
+  description: "Survey, stream, sample, or selection-level statistics, thresholds, distributions, and aggregate context"
+  $ref: <identity>(L0)
+  $ref: <time>(L7)
+  $ref: <provenance>
   [class_distribution]:
-    description: "Counts per classification"
+    description: "Counts or distribution per classification"
     type: object
     dynamic: true
   [filter_counts]:
-    description: "Alert counts per filter"
+    description: "Alert or record counts per filter"
     type: object
   [exposure_count]:
     description: "Number of exposures"
@@ -1780,16 +1961,75 @@ levels:
   [science_alerts]:
     description: "Science-quality alerts"
     type: integer
+  [snapshot_key]:
+    description: "Identifier or key for a survey/statistics snapshot, where the source exposes one"
 
+  <threshold>:
+    level: L7
+    description: "Selection thresholds or cuts applied to semantic quantities; the threshold value is L7 even when the constrained quantity is normally L1, L2, L5, or L6"
+    [operator]:
+      description: "Default comparison operator for threshold values in this block, when not specified more locally"
+      enum: [lt, lte, gt, gte, eq, between, outside, in, not_in]
+    [basis]:
+      description: "Reason, sample, or method used to determine the threshold values"
+    $ref: <photometry>(L1)
+    $ref: <quality>(L1, L2, L5, L6)
+    $ref: <separation>(L1, L6)
+    $ref: <redshift>(L0, L1, L2, L6)
+    [{field}]:
+      description: "Threshold-specific additional field"
+
+  <aggregate>:
+    level: L7
+    description: "Aggregate values, distributions, percentiles, or summaries over a survey, stream, sample, or selection"
+    $ref: <photometry>(L0, L4)
+    $ref: <quality>(L7)
+    $ref: <separation>(L7)
+    $ref: <color>(L0, L1, L6)
+    <redshift>:
+      description: "Aggregate redshift values over a survey, stream, sample, or selection"
+      [median]:
+        description: "Median redshift"
+      [minimum]:
+        description: "Minimum redshift"
+      [maximum]:
+        description: "Maximum redshift"
+      [distribution]:
+        description: "Distribution or histogram of redshifts"
+        type: object
+        dynamic: true
+    [{field}]:
+      description: "Aggregate-specific additional field"
+
+  <selection>:
+    level: L7
+    description: "Named selection, cut set, stream filter, or sample definition"
+    <{selection}>:
+      [description]:
+      [record_count]:
+        type: integer
+      [target]:
+        description: "Semantic path or concept targeted by the selection"
+      [operator]:
+        enum: [lt, lte, gt, gte, eq, between, outside, in, not_in]
+      [value]:
+      [lower]:
+      [upper]:
+      [basis]:
+        description: "Reason, sample, or method used to determine the selection"
+      [{field}]:
+        description: "Selection-specific additional field"
+
+  [{field}]:
+    description: "Survey-specific additional field"
 <resolver>:
   level: L8
-  description: "Name resolution service"
+  description: "Name resolution or external lookup service result"
   [catalog]:
     description: "Resolver source"
-    enum: [simbad, tns, ssodnet]
+    enum: [simbad, tns, ssodnet, other]
   [external_id]:
     description: "Object ID in external catalog"
-    type: integer
   [type_code]:
     description: "Object type code from external catalog"
   [position_string]:
@@ -1797,12 +2037,12 @@ levels:
   [external_name]:
     description: "Object name in external catalog"
   [redshift]:
-    description: "Redshift if available"
+    description: "Redshift if available in the resolver response; use redshift.value where structured redshift metadata is available"
   [reference_count]:
     description: "Number of references"
     type: integer
   $ref: <position>
-  
+  $ref: <time>(L8)
 --edge--:
   abstract: true
   level: L6
@@ -1916,7 +2156,7 @@ levels:
   $ref: <photometry>(L1)
   $ref: <forced_photometry>(L1)
   $ref: <image_metrics>
-  $ref: <reference>
+  $ref: <reference_image>
   $ref: <calibration>
   $ref: <color>
 
@@ -1949,4 +2189,4 @@ levels:
   $refs: <spectrum>@{producer}:{channel}
   $refs: <data_product>@{producer}:{channel}
   $refs: <classification>@{producer}:{channel}
-
+  $refs: <survey>@{producer}:{channel}
