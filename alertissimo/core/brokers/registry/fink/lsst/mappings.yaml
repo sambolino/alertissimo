@@ -348,18 +348,21 @@ mappings:
     field: "r:psfFlux"
     availability:
       - objects
+      - conesearch
       - latests
 
   detection@lsst:fink.photometry.{filter}.psf.flux_error:
     field: "r:psfFluxErr"
     availability:
       - objects
+      - conesearch
       - latests
 
   detection@lsst:fink.photometry.{filter}.psf.snr:
     field: "r:snr"
     availability:
       - objects
+      - conesearch
       - latests
 
   # ==================== L2: Solar System (Moving Objects) ====================
@@ -374,6 +377,8 @@ mappings:
       - objects
       - latests
       - sso
+    status: unverified
+    description: "Not present in the checked current LSST objects, conesearch, or SSO responses; retained for backward compatibility."
 
   # ==================== L3: Media (Binary Data) ====================
   cutouts.science:
@@ -423,15 +428,35 @@ mappings:
       - objects
       - latests
 
+  # Current LSST conesearch responses expose these classifier products under
+  # `f:clf_*`.  They are separate from the older model-specific mappings above.
+  classification@fink.assessment.cats.class:
+    field: "f:clf_cats_class"
+    availability: [conesearch]
+
+  classification@fink.assessment.cats.score:
+    field: "f:clf_cats_score"
+    availability: [conesearch]
+
+  classification@fink.assessment.early_snia.score:
+    field: "f:clf_earlySNIa_score"
+    availability: [conesearch]
+
+  classification@fink.assessment.snn_sn_vs_others.score:
+    field: "f:clf_snnSnVsOthers_score"
+    availability: [conesearch]
+
   # ==================== L6: Enrichment (Cross-Match) ====================
   crossmatch@simbad:fink.classification.best.class:
-    field: "f:xm.cdsxmatch"
+    field: "f:xm_simbad_otype"
+    fallback_field: "f:xm.cdsxmatch"
     availability:
       - objects
       - conesearch
 
   crossmatch@gaia:fink.identity.object_id:
-    field: "f:xm.DR3Name"
+    field: "f:xm_gaiadr3_DR3Name"
+    fallback_field: "f:xm.DR3Name"
     availability:
       - objects
 
