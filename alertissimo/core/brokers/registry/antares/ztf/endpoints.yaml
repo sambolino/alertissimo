@@ -1,0 +1,70 @@
+# brokers/antares/ztf/endpoints.yaml
+broker: antares
+origin: ztf
+baseurl: https://api.antares.noirlab.edu/v1
+
+endpoints:
+  loci:
+    path: "/loci"
+    method: GET
+    description: "Search ANTARES locus summaries using an Elasticsearch locus-listing query."
+    params:
+      elasticsearch_query[locus_listing]:
+        required: false
+        type: json
+        description: "JSON Elasticsearch query; passed by the official client."
+      sort:
+        required: false
+        type: string
+        default: "-properties.newest_alert_observation_time"
+    output_type: array_of_locus_summaries
+    provides:
+      - summary@ztf:antares.*
+
+  locus:
+    path: "/loci/{locus_id}"
+    method: GET
+    description: "Retrieve one ANTARES locus and its object-level metadata."
+    params:
+      locus_id: {required: true, type: string}
+    output_type: locus
+    provides:
+      - summary@ztf:antares.*
+
+  locus_alerts:
+    path: "/loci/{locus_id}/alerts"
+    method: GET
+    description: "Retrieve the individual alert records associated with a locus."
+    params:
+      locus_id: {required: true, type: string}
+    output_type: array_of_alerts
+    provides:
+      - detection@ztf:antares.*
+
+  catalog_matches:
+    path: "/loci/{locus_id}/catalog-matches"
+    method: GET
+    description: "Retrieve external-catalog matches associated with a locus."
+    params:
+      locus_id: {required: true, type: string}
+    output_type: array_of_catalog_matches
+    provides:
+      - crossmatch@{producer}:antares.*
+
+  thumbnails:
+    path: "/alerts/{alert_id}/thumbnails"
+    method: GET
+    description: "List the binary thumbnail products for a single alert."
+    params:
+      alert_id: {required: true, type: string}
+    output_type: array_of_data_products
+    provides:
+      - data_product@ztf:antares
+
+  statistics:
+    path: "/loci/statistics"
+    method: GET
+    description: "Retrieve aggregate ANTARES tag counts."
+    output_type: tag_statistics
+    provides:
+      - survey@ztf:antares.class_distribution
