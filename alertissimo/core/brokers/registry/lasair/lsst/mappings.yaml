@@ -1,0 +1,89 @@
+# brokers/lasair/lsst/mappings.yaml
+# Source paths verified against authenticated Lasair LSST REST API responses.
+broker: lasair
+origin: lsst
+
+mappings:
+  # ==================== L0: diaObject summary ====================
+  summary@lsst:lasair.identity.object_id:
+    field: "diaObjectId"
+    availability: [object, query]
+  summary@lsst:lasair.detection_count:
+    field: "lasairData.nDiaSources"
+    availability: [object]
+  summary@lsst:lasair.time.first_mjd:
+    field: "diaObject.firstDiaSourceMjdTai"
+    availability: [object]
+  summary@lsst:lasair.time.last_mjd:
+    field: "diaObject.lastDiaSourceMjdTai"
+    availability: [object]
+  summary@lsst:lasair.position.ra:
+    field: "diaObject.ra"
+    availability: [object]
+  summary@lsst:lasair.position.dec:
+    field: "diaObject.decl"
+    availability: [object]
+  # ==================== L1: diaSource light-curve records ====================
+  # diaSourcesList is a repeated collection; one normalized detection is emitted
+  # per member. Its `band` value binds the {filter} parameter.
+  detection@lsst:lasair.identity.source_id:
+    field: "diaSourcesList.diaSourceId"
+    availability: [object]
+  detection@lsst:lasair.time.mjd:
+    field: "diaSourcesList.midpointMjdTai"
+    availability: [object]
+  detection@lsst:lasair.photometry.{filter}:
+    field: "diaSourcesList.band"
+    availability: [object]
+  detection@lsst:lasair.photometry.{filter}.psf.flux:
+    field: "diaSourcesList.psfFlux"
+    availability: [object]
+  detection@lsst:lasair.photometry.{filter}.psf.flux_error:
+    field: "diaSourcesList.psfFluxErr"
+    availability: [object]
+  detection@lsst:lasair.quality.reliability:
+    field: "diaSourcesList.reliability"
+    availability: [object]
+
+  # ==================== L4: forced-photometry light curve ====================
+  # The response contains no native forced-source ID. These are light-curve
+  # points, not standalone L1 detection identities.
+  lightcurve@lsst:lasair.{filter}.points:
+    field: "diaForcedSourcesList"
+    filter_field: "band"
+    availability: [object]
+
+  # ==================== L5: Lasair/Sherlock assessment ====================
+  classification@lasair.assessment.sherlock.class:
+    field: "lasairData.sherlock.classification"
+    availability: [object]
+  classification@lasair.assessment.sherlock.score:
+    field: "lasairData.sherlock.classificationReliability"
+    availability: [object]
+
+  # ==================== L6: context and crossmatches ====================
+  crossmatch@{producer}:lasair.identity.object_id:
+    field: "lasairData.sherlock.catalogue_object_id"
+    producer_field: "lasairData.sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.position.ra:
+    field: "lasairData.sherlock.raDeg"
+    producer_field: "lasairData.sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.position.dec:
+    field: "lasairData.sherlock.decDeg"
+    producer_field: "lasairData.sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.separation.total:
+    field: "lasairData.sherlock.separationArcsec"
+    producer_field: "lasairData.sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@tns:lasair.identity.object_id:
+    field: "lasairData.TNS.name"
+    availability: [object]
+  crossmatch@tns:lasair.position.ra:
+    field: "lasairData.TNS.ra"
+    availability: [object]
+  crossmatch@tns:lasair.position.dec:
+    field: "lasairData.TNS.decl"
+    availability: [object]

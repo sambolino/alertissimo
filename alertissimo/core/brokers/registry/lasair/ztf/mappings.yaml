@@ -1,0 +1,118 @@
+# brokers/lasair/ztf/mappings.yaml
+# Source paths verified against authenticated Lasair ZTF REST API responses.
+broker: lasair
+origin: ztf
+
+mappings:
+  # ==================== L0: object summary ====================
+  summary@ztf:lasair.identity.object_id:
+    field: "objectId"
+    availability: [object, objects]
+  summary@ztf:lasair.detection_count:
+    field: "objectData.ncand"
+    availability: [object, objects]
+  summary@ztf:lasair.time.first_mjd:
+    field: "objectData.jdmin"
+    transform: jd_to_mjd
+    availability: [object, objects]
+  summary@ztf:lasair.time.last_mjd:
+    field: "objectData.jdmax"
+    transform: jd_to_mjd
+    availability: [object, objects]
+  summary@ztf:lasair.position.ra:
+    field: "objectData.ramean"
+    availability: [object, objects]
+  summary@ztf:lasair.position.dec:
+    field: "objectData.decmean"
+    availability: [object, objects]
+
+  # ==================== L1: candidate detections ====================
+  # candidates is repeated; one normalized detection is emitted per member.
+  # fid binds the {filter} parameter: 1=g, 2=r, 3=i.
+  detection@ztf:lasair.identity.source_id:
+    field: "candidates.candid"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.time.mjd:
+    field: "candidates.jd"
+    transform: jd_to_mjd
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.position.ra:
+    field: "candidates.ra"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.position.dec:
+    field: "candidates.dec"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.photometry.{filter}:
+    field: "candidates.fid"
+    transform: {1: g, 2: r, 3: i}
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.photometry.{filter}.psf.mag:
+    field: "candidates.magpsf"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.photometry.{filter}.psf.mag_error:
+    field: "candidates.sigmapsf"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
+    field: "candidates.magnr"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag_error:
+    field: "candidates.sigmagnr"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.calibration.{filter}.zero_point:
+    field: "candidates.magzpsci"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.quality.real_bogus:
+    field: "candidates.drb"
+    availability: [object, objects, lightcurves]
+  detection@ztf:lasair.image_metrics.is_positive:
+    field: "candidates.isdiffpos"
+    transform: {t: true, f: false}
+    availability: [object, objects, lightcurves]
+
+  # ==================== L4: light-curve history ====================
+  lightcurve@ztf:lasair.{filter}.points:
+    field: "candidates"
+    filter_field: fid
+    filter_transform: {1: g, 2: r, 3: i}
+    availability: [lightcurves]
+
+  # ==================== L5: contextual classifications ====================
+  classification@lasair.assessment.sherlock.class:
+    field: "sherlock.classification"
+    availability: [object]
+  classification@lasair.assessment.sherlock.score:
+    field: "sherlock.classificationReliability"
+    availability: [object]
+  classification@tns:lasair.best.class:
+    field: "TNS.type"
+    availability: [object]
+
+  # ==================== L6: external context ====================
+  crossmatch@{producer}:lasair.identity.object_id:
+    field: "sherlock.catalogue_object_id"
+    producer_field: "sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.position.ra:
+    field: "sherlock.raDeg"
+    producer_field: "sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.position.dec:
+    field: "sherlock.decDeg"
+    producer_field: "sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@{producer}:lasair.separation.total:
+    field: "sherlock.separationArcsec"
+    producer_field: "sherlock.catalogue_table_name"
+    availability: [object]
+  crossmatch@tns:lasair.identity.object_id:
+    field: "TNS.name"
+    availability: [object]
+  crossmatch@tns:lasair.position.ra:
+    field: "TNS.ra"
+    availability: [object]
+  crossmatch@tns:lasair.position.dec:
+    field: "TNS.decl"
+    availability: [object]
+  crossmatch@tns:lasair.redshift.value:
+    field: "TNS.z"
+    availability: [object]
