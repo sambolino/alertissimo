@@ -4,7 +4,10 @@ broker: lasair
 origin: ztf
 
 mappings:
-  # ==================== L0: object summary ====================
+  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
+  # dependent photometry paths and are not scalar output fields themselves.
+
+  # ==================== Object summary ====================
   summary@ztf:lasair.identity.object_id:
     field: "objectId"
     availability: [object, objects]
@@ -26,7 +29,7 @@ mappings:
     field: "objectData.decmean"
     availability: [object, objects]
 
-  # ==================== L1: candidate detections ====================
+  # ==================== Candidate detections ====================
   # candidates is repeated; one normalized detection is emitted per member.
   # fid binds the {filter} parameter: 1=g, 2=r, 3=i.
   detection@ztf:lasair.identity.source_id:
@@ -69,14 +72,14 @@ mappings:
     transform: {t: true, f: false}
     availability: [object, objects, lightcurves]
 
-  # ==================== L4: light-curve history ====================
+  # ==================== Light-curve history ====================
   lightcurve@ztf:lasair.{filter}.points:
     field: "candidates"
     filter_field: fid
     filter_transform: {1: g, 2: r, 3: i}
     availability: [lightcurves]
 
-  # ==================== L5: contextual classifications ====================
+  # ==================== Contextual classifications ====================
   classification@lasair.assessment.sherlock.class:
     field: "sherlock.classification"
     availability: [object]
@@ -87,7 +90,7 @@ mappings:
     field: "TNS.type"
     availability: [object]
 
-  # ==================== L6: external context ====================
+  # ==================== External context ====================
   crossmatch@{producer}:lasair.identity.object_id:
     field: "sherlock.catalogue_object_id"
     producer_field: "sherlock.catalogue_table_name"

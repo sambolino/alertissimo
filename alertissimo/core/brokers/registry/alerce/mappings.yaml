@@ -2,13 +2,17 @@
 #
 # Source fields are based on data/alerce/ztf/*.json.  This registry intentionally
 # leaves `features` and `magstats` unmapped: their generic named feature rows and
-# per-filter magnitude aggregates do not yet have an exact L4/L0 representation
-# in feature_catalog.yaml.  They must not be forced into detection semantics.
+# per-filter magnitude aggregates do not yet have an exact canonical feature
+# representation in feature_catalog.yaml. They must not be forced into
+# detection semantics.
 broker: alerce
 origin: ztf
 
 mappings:
-  # ==================== L0: Object summary ====================
+  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
+  # dependent photometry paths and are not scalar output fields themselves.
+
+  # ==================== Object summary ====================
   summary@ztf:alerce.identity.object_id:
     field: "oid"
     availability: [objects, object]
@@ -45,7 +49,7 @@ mappings:
     field: "g_r_mean"
     availability: [objects, object]
 
-  # ==================== L1: Individual detections ====================
+  # ==================== Individual detections ====================
   detection@ztf:alerce.position.ra:
     field: "ra"
     availability: [detections, lightcurve]
@@ -124,8 +128,8 @@ mappings:
     field: "distnr"
     availability: [detections, lightcurve]
 
-  # Lightcurve non_detections contains an L1 time/filter/limit tuple, not a
-  # detection record.  The qualifier below keeps it in the L4 time-series.
+  # Lightcurve non_detections contains a time/filter/limit tuple, not a
+  # standalone detection record.
   lightcurve@ztf:alerce.{filter}.points:
     field: "non_detections"
     availability: [lightcurve]
@@ -135,7 +139,7 @@ mappings:
     transform: true
     availability: [lightcurve]
 
-  # ==================== L5: Classifier assessments ====================
+  # ==================== Classifier assessments ====================
   classification@alerce.assessment.lc_classifier.class:
     field: "class_name"
     filter: {classifier_name: "lc_classifier"}

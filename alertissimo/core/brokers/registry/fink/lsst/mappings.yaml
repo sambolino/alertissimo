@@ -1,9 +1,13 @@
-### brokers/fink/lsst/mappings.yaml
+# brokers/fink/lsst/mappings.yaml
 broker: fink
 origin: lsst
 
 mappings:
-  # ==================== L0: Portfolio (Object-Level) ====================
+  # Prefer stable semantic paths.  Keep legacy feature IDs and add a new
+  # mapping only when an exact semantic representation exists. Dynamic
+  # `{filter}` entries bind dependent photometry paths.
+
+  # ==================== Object-level portfolio ====================
   summary@lsst:fink.identity.object_id:
     field: "r:diaObjectId"
     availability:
@@ -33,7 +37,7 @@ mappings:
     availability:
       - objects
 
-  # ==================== L1: Detection (Real-Time) ====================
+  # ==================== Real-time detections ====================
   detection@lsst:fink.position.ra:
     field: "r:ra"
     availability:
@@ -73,9 +77,9 @@ mappings:
     availability:
       - objects
 
-  # ==================== L0: Per-band object aggregates ====================
+  # ==================== Per-band object aggregates ====================
   # `psfFlux*` and `fpFlux*` are Fink's per-band summary statistics.  They
-  # are object-level values, unlike the L1 alert fields below.
+  # are object-level values, unlike the alert fields below.
   summary@lsst:fink.photometry.g.psf.flux_error_mean:
     field: "r:g_psfFluxErrMean"
     availability: [objects]
@@ -365,7 +369,7 @@ mappings:
       - conesearch
       - latests
 
-  # ==================== L2: Solar System (Moving Objects) ====================
+  # ==================== Solar System (moving objects) ====================
   detection@lsst:fink.solar_system.ss_object_id:
     field: "r:ssObjectId"
     availability:
@@ -380,7 +384,7 @@ mappings:
     status: unverified
     description: "Not present in the checked current LSST objects, conesearch, or SSO responses; retained for backward compatibility."
 
-  # ==================== L3: Media (Binary Data) ====================
+  # ==================== Media (binary data) ====================
   cutouts.science:
     field: "b:cutoutScience_stampData"
     availability:
@@ -396,7 +400,30 @@ mappings:
     availability:
       - cutouts
 
-  # ==================== L5: Machine Learning (ELAsTiCC) ====================
+  # Canonical repeated data-product representation.  The legacy `cutouts.*`
+  # mappings above remain for compatibility with existing endpoint consumers.
+  data_product@lsst:fink.payload:
+    instances:
+      - role: science
+        type: cutout
+        format: fits
+        content_encoding: base64
+        field: "b:cutoutScience_stampData"
+        availability: [cutouts]
+      - role: template
+        type: cutout
+        format: fits
+        content_encoding: base64
+        field: "b:cutoutTemplate_stampData"
+        availability: [cutouts]
+      - role: difference
+        type: cutout
+        format: fits
+        content_encoding: base64
+        field: "b:cutoutDifference_stampData"
+        availability: [cutouts]
+
+  # ==================== Machine learning (ELAsTiCC) ====================
   classification@fink.best.class:
     field: "v:classification"
     availability:
@@ -446,7 +473,7 @@ mappings:
     field: "f:clf_snnSnVsOthers_score"
     availability: [conesearch]
 
-  # ==================== L6: Enrichment (Cross-Match) ====================
+  # ==================== Enrichment (crossmatch) ====================
   crossmatch@simbad:fink.classification.best.class:
     field: "f:xm_simbad_otype"
     fallback_field: "f:xm.cdsxmatch"

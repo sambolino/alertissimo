@@ -4,7 +4,10 @@ broker: antares
 origin: lsst
 
 mappings:
-  # ==================== L0: LSST locus summary ====================
+  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
+  # dependent photometry paths and are not scalar output fields themselves.
+
+  # ==================== LSST locus summary ====================
   summary@lsst:antares.identity.object_id:
     field: "properties.survey.lsst.dia_object_id"
     availability: [loci, locus]
@@ -25,7 +28,7 @@ mappings:
     field: "dec"
     availability: [loci, locus]
 
-  # ==================== L1: LSST diaSource-derived alerts ====================
+  # ==================== LSST diaSource-derived alerts ====================
   detection@lsst:antares.identity.source_id:
     field: "properties.lsst_diaSource_diaSourceId"
     availability: [locus_alerts]
@@ -144,12 +147,12 @@ mappings:
     field: "properties.lsst_diaSource_shape_flag"
     availability: [locus_alerts]
 
-  # ==================== L2: Solar System linkage ====================
+  # ==================== Solar System linkage ====================
   detection@lsst:antares.solar_system.ss_object_id:
     field: "properties.lsst_diaSource_ssObjectId"
     availability: [locus_alerts]
 
-  # ==================== L6: catalog matches ====================
+  # ==================== Catalog matches ====================
   crossmatch@allwise:antares.identity.object_id:
     field: "object_id"
     filter: {"meta.catalog_name": "allwise"}

@@ -4,7 +4,10 @@ broker: antares
 origin: ztf
 
 mappings:
-  # ==================== L0: locus summary ====================
+  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
+  # dependent photometry paths and are not scalar output fields themselves.
+
+  # ==================== Locus summary ====================
   summary@ztf:antares.identity.object_id:
     field: "properties.ztf_object_id"
     availability: [loci, locus]
@@ -24,7 +27,7 @@ mappings:
     field: "dec"
     availability: [loci, locus]
 
-  # ==================== L1: ZTF alert records ====================
+  # ==================== ZTF alert records ====================
   detection@ztf:antares.identity.source_id:
     field: "properties.ztf_candid"
     availability: [locus_alerts]
@@ -66,7 +69,7 @@ mappings:
     field: "properties.ztf_magnr"
     availability: [locus_alerts]
 
-  # ==================== L6: catalog matches ====================
+  # ==================== Catalog matches ====================
   crossmatch@gaia:antares.identity.object_id:
     field: "object_id"
     filter: {"meta.catalog_name": "gaia_dr3_gaia_source"}

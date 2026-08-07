@@ -4,7 +4,10 @@ broker: lasair
 origin: lsst
 
 mappings:
-  # ==================== L0: diaObject summary ====================
+  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
+  # dependent photometry paths and are not scalar output fields themselves.
+
+  # ==================== diaObject summary ====================
   summary@lsst:lasair.identity.object_id:
     field: "diaObjectId"
     availability: [object, query]
@@ -23,7 +26,7 @@ mappings:
   summary@lsst:lasair.position.dec:
     field: "diaObject.decl"
     availability: [object]
-  # ==================== L1: diaSource light-curve records ====================
+  # ==================== diaSource light-curve records ====================
   # diaSourcesList is a repeated collection; one normalized detection is emitted
   # per member. Its `band` value binds the {filter} parameter.
   detection@lsst:lasair.identity.source_id:
@@ -45,15 +48,15 @@ mappings:
     field: "diaSourcesList.reliability"
     availability: [object]
 
-  # ==================== L4: forced-photometry light curve ====================
+  # ==================== Forced-photometry light curve ====================
   # The response contains no native forced-source ID. These are light-curve
-  # points, not standalone L1 detection identities.
+  # points, not standalone detection identities.
   lightcurve@lsst:lasair.{filter}.points:
     field: "diaForcedSourcesList"
     filter_field: "band"
     availability: [object]
 
-  # ==================== L5: Lasair/Sherlock assessment ====================
+  # ==================== Lasair/Sherlock assessment ====================
   classification@lasair.assessment.sherlock.class:
     field: "lasairData.sherlock.classification"
     availability: [object]
@@ -61,7 +64,7 @@ mappings:
     field: "lasairData.sherlock.classificationReliability"
     availability: [object]
 
-  # ==================== L6: context and crossmatches ====================
+  # ==================== Context and crossmatches ====================
   crossmatch@{producer}:lasair.identity.object_id:
     field: "lasairData.sherlock.catalogue_object_id"
     producer_field: "lasairData.sherlock.catalogue_table_name"

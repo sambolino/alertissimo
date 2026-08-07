@@ -10,7 +10,7 @@ mappings:
   # Dynamic namespace-carrier mappings such as photometry.{filter} are
   # ordinary mappings to path-bearing containers: they resolve dynamic
   # path segments for dependent mappings and are not emitted as scalar leaves.
-  # Do not include L1-L8 levels in comments
+  # Keep section comments descriptive rather than tier-numbered.
 
   # ==================== Alert packet / atomic detection fields ====================
   detection@ztf:fink.position.ra:
