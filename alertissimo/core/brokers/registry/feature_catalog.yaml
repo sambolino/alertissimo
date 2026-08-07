@@ -945,6 +945,10 @@ levels:
     description: "Name of the provenance agent"
   [id]:
     description: "Identifier of the provenance agent"
+  [program_id]:
+    description: "program id, e.g. wfd, ddf, too. ddt"
+  [program_pi]:
+    description: "Program principal investigator or responsible program owner, where available"
   [version]:
     description: "Version of the provenance agent"
   [schema_version]:
@@ -2105,12 +2109,10 @@ levels:
   description: "The subject record was obtained as follow-up of the target record"
   [request_id]:
     description: "Identifier of the follow-up request"
-  [observer]:
-    description: "Observer, team, facility, or program responsible for the follow-up"
-  [telescope_mode]:
-    description: "Telescope or observing mode used for the follow-up"
-  [requested_filter]:
-    description: "Requested photometric filter or observing band"
+  [reference]:
+    description: "Reference notice, circular, request, ticket, or external record connecting the subject to the target"
+  [basis]:
+    description: "Reason or criterion for treating the subject as follow-up"
   [program_id]:
     description: "Observing program identifier"
 
