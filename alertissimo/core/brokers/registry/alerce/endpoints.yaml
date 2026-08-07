@@ -1,139 +1,245 @@
-### brokers/alerce/endpoints.yaml
+# brokers/alerce/ztf/endpoints.yaml
+#
+# The ZTF endpoints and response shapes below are documented from the saved
+# responses in data/alerce/ztf/.  `{id}` is the required object identifier in
+# every object-scoped path.
 broker: alerce
-baseurl: https://api.alerce.online
+origin: ztf
+baseurl: https://api.alerce.online/ztf/v1
+
 endpoints:
-  # ==================== Object Level Queries ====================
   objects:
-    path: "/objects"
+    path: "/objects/"
     method: GET
-    description: "Retrieve object-level aggregates and metadata for ZTF or LSST objects."
+    description: "Search or list ALeRCE ZTF object summaries. The response is a paginated object with results in `items`."
     params:
-      survey:
-        required: true
+      oid:
+        required: false
         type: string
-        enum: ["ztf", "lsst"]
-        description: "Source survey (ZTF or Rubin LSST)"
+        description: "One object ID or a comma-separated list of ZTF object IDs."
       classifier:
         required: false
         type: string
-        description: "Filter by classifier name (e.g., lc_classifier)"
-      class_name:
+        description: "Classifier used for class and probability filtering."
+      classifier_version:
         required: false
         type: string
-        description: "Filter by astrophysical class (e.g., SNIa, AGN)"
+        description: "Classifier version used for filtering."
+      class:
+        required: false
+        type: string
+        description: "Class label used for filtering."
+      ranking:
+        required: false
+        type: integer
+        default: 1
+        description: "Requested rank within the classifier output."
       probability:
         required: false
         type: number
-        description: "Minimum probability threshold"
+        description: "Minimum classification probability."
       ndet:
         required: false
+        type: string
+        description: "Detection-count value or comma-separated inclusive range."
+      firstmjd:
+        required: false
+        type: string
+        description: "First-detection MJD value or comma-separated inclusive range."
+      lastmjd:
+        required: false
+        type: string
+        description: "Last-detection MJD value or comma-separated inclusive range."
+      ra:
+        required: false
+        type: number
+        description: "Cone-search right ascension in degrees; use with dec and radius."
+      dec:
+        required: false
+        type: number
+        description: "Cone-search declination in degrees; use with ra and radius."
+      radius:
+        required: false
+        type: number
+        default: 30.0
+        description: "Cone-search radius in arcseconds."
+      page:
+        required: false
         type: integer
-        description: "Minimum number of detections"
-    output_type: array_of_objects
+        description: "Result page number."
+      page_size:
+        required: false
+        type: integer
+        description: "Number of results per page."
+      count:
+        required: false
+        type: boolean
+        description: "Request a total result count."
+      order_by:
+        required: false
+        type: string
+        description: "Object-summary field by which to order results."
+      order_mode:
+        required: false
+        type: string
+        enum: [asc, desc]
+        description: "Ordering direction."
+    output_type: paginated_object_summaries
     provides:
-      - portfolio.id
-      - portfolio.detection_count
-      - portfolio.first_mjd
-      - portfolio.last_mjd
-      - classification.is_transient
-      - classification.nuclear_transient
-      - classification.known_asteroid
+      - summary@ztf:alerce.identity.object_id
+      - summary@ztf:alerce.detection_count
+      - summary@ztf:alerce.coverage_count
+      - summary@ztf:alerce.time.first_mjd
+      - summary@ztf:alerce.time.last_mjd
+      - summary@ztf:alerce.time.timespan_days
+      - summary@ztf:alerce.position.ra
+      - summary@ztf:alerce.position.dec
+      - summary@ztf:alerce.color.g-r.diff
 
   object:
-    path: "/objects/{oid}"
+    path: "/objects/{id}"
     method: GET
-    description: "Get a full single object profile including contextual enrichment data (L6)."
+    description: "Retrieve one ALeRCE ZTF object summary."
     params:
-      oid:
+      id:
         required: true
         type: string
-        description: "The unique ALeRCE ID (aid) or ZTF ID (oid)"
-    output_type: single_object
+        description: "ZTF object identifier (for example, ZTF20aaelulu)."
+    output_type: object_summary
     provides:
-      - crossmatch.gaia.distance
-      - crossmatch.gaia.parallax
-      - crossmatch.wise.w1
-      - crossmatch.wise.distance
-      - crossmatch.ps1.distance
-      - crossmatch.ps1.star_galaxy_score
+      - summary@ztf:alerce.identity.object_id
+      - summary@ztf:alerce.detection_count
+      - summary@ztf:alerce.coverage_count
+      - summary@ztf:alerce.time.first_mjd
+      - summary@ztf:alerce.time.last_mjd
+      - summary@ztf:alerce.time.timespan_days
+      - summary@ztf:alerce.position.ra
+      - summary@ztf:alerce.position.dec
+      - summary@ztf:alerce.color.g-r.diff
 
-  # ==================== Photometry & Sensor Data ====================
   detections:
-    path: "/objects/{oid}/detections"
+    path: "/objects/{id}/detections"
     method: GET
-    description: "Retrieve all high-SNR detections (L1) for a specific object."
+    description: "Retrieve the object’s ZTF detection records."
     params:
-      oid:
+      id:
         required: true
         type: string
-      survey:
-        required: true
-        type: string
+        description: "ZTF object identifier."
     output_type: array_of_detections
     provides:
-      - position.ra
-      - position.dec
-      - photometry.psf_mag
-      - photometry.flux
-      - photometry.mjd
-      - photometry.filter
-      - detection.is_positive
+      - detection@ztf:alerce.position.*
+      - detection@ztf:alerce.time.mjd
+      - detection@ztf:alerce.identity.*
+      - detection@ztf:alerce.photometry.*
+      - detection@ztf:alerce.quality.*
+      - detection@ztf:alerce.image_metrics.is_positive
+      - detection@ztf:alerce.reference_image.nearest_source.separation.total
+
+  lightcurve:
+    path: "/objects/{id}/lightcurve"
+    method: GET
+    description: "Retrieve the object’s detections and non-detection limiting magnitudes in one light-curve response."
+    params:
+      id:
+        required: true
+        type: string
+        description: "ZTF object identifier."
+    output_type: lightcurve_with_detections_and_non_detections
+    provides:
+      - detection@ztf:alerce.*
+      - lightcurve@ztf:alerce.{filter}.points
+      - lightcurve@ztf:alerce.{filter}.from_upper_limit
 
   forced_photometry:
-    path: "/objects/{oid}/forced_photometry"
+    # This data product is not part of ztf/v1.  ALeRCE Client 2.x uses the
+    # dedicated v2 route below for ZTF forced photometry.
+    baseurl: https://api.alerce.online
+    path: "/v2/lightcurve/forced-photometry/{id}"
     method: GET
-    description: "Retrieve sub-threshold measurements (forced photometry) for light curve history."
+    description: "Retrieve ZTF forced-photometry epochs from ALeRCE v2."
     params:
-      oid:
+      id:
         required: true
         type: string
-    output_type: array_of_detections
-    provides:
-      - photometry.science_flux
-      - photometry.template_flux
-      - photometry.mjd
+        description: "ZTF object identifier."
+    output_type: array_of_forced_photometry
+    provides: []
 
-  # ==================== Analytics & ML ====================
-  probabilities:
-    path: "/objects/{oid}/probabilities"
+  stamps:
+    # The client retrieves one FITS stamp per call and builds the science,
+    # template, and difference triplet.  This service is separate from ztf/v1.
+    baseurl: https://avro.alerce.online
+    path: "/get_stamp"
     method: GET
-    description: "Retrieve classification probabilities (L5) from various ML engines (CNN, BHRF, ATAT, Anomaly)."
+    description: "Retrieve one gzip-compressed FITS image stamp for a ZTF alert."
     params:
       oid:
         required: true
         type: string
-    output_type: array_of_probabilities
+        description: "ZTF object identifier."
+      candid:
+        required: true
+        type: integer
+        description: "ZTF alert candid identifying the stamp triplet."
+      type:
+        required: true
+        type: string
+        enum: [science, template, difference]
+        description: "Requested image role."
+      format:
+        required: true
+        type: string
+        enum: [fits, png]
+        default: fits
+        description: "Requested stamp serialization."
+    output_type: binary_fits_gzip_stamp
     provides:
-      - classification.alerce_stamp.class
-      - classification.alerce_stamp.probability
-      - classification.atat.class
-      - classification.anomaly_score
+      - data_product@ztf:alerce
+
+  magstats:
+    path: "/objects/{id}/magstats"
+    method: GET
+    description: "Retrieve ALeRCE per-filter magnitude statistics and correction-state metadata."
+    params:
+      id:
+        required: true
+        type: string
+        description: "ZTF object identifier."
+    output_type: array_of_filter_magnitude_statistics
+    provides: []
 
   features:
-    path: "/objects/{oid}/features"
+    path: "/objects/{id}/features"
     method: GET
-    description: "Retrieve 100+ statistical features (L4) calculated by the feature extractor pipeline."
+    description: "Retrieve named, per-filter derived light-curve feature rows."
     params:
-      oid:
+      id:
         required: true
         type: string
-    output_type: array_of_features
-    provides:
-      - lightcurve.period
-      - lightcurve.bazin_gamma
-      - lightcurve.spm_tau_rise
-      - lightcurve.feature_vector
+        description: "ZTF object identifier."
+      fid:
+        required: false
+        type: integer
+        description: "Filter ID used to restrict feature rows."
+      version:
+        required: false
+        type: string
+        description: "Feature-extractor version used to restrict feature rows."
+    output_type: array_of_named_features
+    provides: []
 
-  # ==================== Media & Stamps ====================
-  stamps:
-    path: "/objects/{oid}/stamps"
+  probabilities:
+    path: "/objects/{id}/probabilities"
     method: GET
-    description: "Retrieve binary cutout images (L3) for science and template frames."
+    description: "Retrieve ranked class-probability rows from ALeRCE classifiers."
     params:
-      oid:
+      id:
         required: true
         type: string
-    output_type: media_binary
+        description: "ZTF object identifier."
+    output_type: array_of_classification_assessments
     provides:
-      - cutouts.science
-      - cutouts.template
+      - classification@alerce.assessment.{output}.class
+      - classification@alerce.assessment.{output}.probability
+      - classification@alerce.assessment.{output}.provenance.producer.version

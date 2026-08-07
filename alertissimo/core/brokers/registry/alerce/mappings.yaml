@@ -1,308 +1,227 @@
-### brokers/alerce/ztf/mappings.yaml
+# brokers/alerce/ztf/mappings.yaml
+#
+# Source fields are based on data/alerce/ztf/*.json.  This registry intentionally
+# leaves `features` and `magstats` unmapped: their generic named feature rows and
+# per-filter magnitude aggregates do not yet have an exact L4/L0 representation
+# in feature_catalog.yaml.  They must not be forced into detection semantics.
 broker: alerce
 origin: ztf
+
 mappings:
-  # ==================== L0: Portfolio Aggregates ====================
-  portfolio.id:
+  # ==================== L0: Object summary ====================
+  summary@ztf:alerce.identity.object_id:
     field: "oid"
-    availability:
-      - objects
-      - detections
-      - features
-      - probabilities
-  portfolio.detection_count:
-    field: "ndet"
-    availability:
-      - objects
-  portfolio.first_mjd:
-    field: "firstmjd"
-    availability:
-      - objects
-  portfolio.last_mjd:
-    field: "lastmjd"
-    availability:
-      - objects
+    availability: [objects, object]
 
-  # ==================== L1: Single Detection Parameters ====================
-  position.ra:
+  summary@ztf:alerce.detection_count:
+    field: "ndethist"
+    availability: [objects, object]
+
+  summary@ztf:alerce.coverage_count:
+    field: "ncovhist"
+    availability: [objects, object]
+
+  summary@ztf:alerce.time.first_mjd:
+    field: "mjdstarthist"
+    availability: [objects, object]
+
+  summary@ztf:alerce.time.last_mjd:
+    field: "mjdendhist"
+    availability: [objects, object]
+
+  summary@ztf:alerce.time.timespan_days:
+    field: "deltajd"
+    availability: [objects, object]
+
+  summary@ztf:alerce.position.ra:
+    field: "meanra"
+    availability: [objects, object]
+
+  summary@ztf:alerce.position.dec:
+    field: "meandec"
+    availability: [objects, object]
+
+  summary@ztf:alerce.color.g-r.diff:
+    field: "g_r_mean"
+    availability: [objects, object]
+
+  # ==================== L1: Individual detections ====================
+  detection@ztf:alerce.position.ra:
     field: "ra"
-    availability:
-      - detections
-  position.dec:
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.position.dec:
     field: "dec"
-    availability:
-      - detections
-  photometry.psf_mag:
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.time.mjd:
+    field: "mjd"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.identity.source_id:
+    field: "candid"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.identity.field_id:
+    field: "fid"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.identity.night_id:
+    field: "nid"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}:
+    field: "fid"
+    transform: {1: "g", 2: "r", 3: "i"}
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.psf.mag:
     field: "magpsf"
-    availability:
-      - detections
-  photometry.psf_mag_error:
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.psf.mag_error:
     field: "sigmapsf"
-    availability:
-      - detections
-  photometry.mjd:
-    field: "mjd"
-    availability:
-      - detections
-  photometry.filter:
-    field: "fid"
-    transform:
-      1: "g"
-      2: "r"
-      3: "i"
-    availability:
-      - detections
-  detection.is_positive:
-    field: "isdiffpos"
-    availability:
-      - detections
+    availability: [detections, lightcurve]
 
-  # ==================== L1: Reference Context & Quality ====================
-  quality.real_bogus:
+  detection@ztf:alerce.photometry.{filter}.aperture.mag:
+    field: "magap"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.aperture.mag_error:
+    field: "sigmagap"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.aperture.large.mag:
+    field: "magapbig"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.aperture.large.mag_error:
+    field: "sigmagapbig"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.photometry.{filter}.limit.mag:
+    field: "diffmaglim"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.quality.real_bogus:
     field: "drb"
-    availability:
-      - detections
-  quality.rf_score:
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.quality.rf_real_bogus:
     field: "rb"
-    availability:
-      - detections
-  reference.nearest_distance:
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.quality.rf_real_bogus.version:
+    field: "rbversion"
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.image_metrics.is_positive:
+    field: "isdiffpos"
+    transform: {0: false, 1: true}
+    availability: [detections, lightcurve]
+
+  detection@ztf:alerce.reference_image.nearest_source.separation.total:
     field: "distnr"
-    availability:
-      - detections
-  reference.nearest_magnitude:
-    field: "magnr"
-    availability:
-      - detections
+    availability: [detections, lightcurve]
 
-  # ==================== L1/L2: Sorting Hat Flags (Nested) ====================
-  classification.is_transient:
-    field: "extra_fields.is_transient"
-    availability:
-      - objects
-  classification.is_variable:
-    field: "extra_fields.is_variable"
-    availability:
-      - objects
-  classification.in_galaxy:
-    field: "extra_fields.in_galaxy"
-    availability:
-      - objects
-  classification.nuclear_transient:
-    field: "extra_fields.nuclear_transient"
-    availability:
-      - objects
-  classification.near_bright_star:
-    field: "extra_fields.near_bright_star"
-    availability:
-      - objects
-  classification.known_asteroid:
-    field: "extra_fields.known_asteroid"
-    availability:
-      - objects
+  # Lightcurve non_detections contains an L1 time/filter/limit tuple, not a
+  # detection record.  The qualifier below keeps it in the L4 time-series.
+  lightcurve@ztf:alerce.{filter}.points:
+    field: "non_detections"
+    availability: [lightcurve]
 
-  # ==================== L3: Media (Cutouts) ====================
-  cutouts.science:
-    field: "stamps.science"
-    availability:
-      - stamps
-  cutouts.template:
-    field: "stamps.template"
-    availability:
-      - stamps
+  lightcurve@ztf:alerce.{filter}.from_upper_limit:
+    field: "non_detections"
+    transform: true
+    availability: [lightcurve]
 
-  # ==================== L4: Light Curve Features (Isolated) ====================
-  lightcurve.period:
-    field: "Period_fit"
-    availability:
-      - features
-  lightcurve.bazin_gamma:
-    field: "Bazin_gamma"
-    availability:
-      - features
-  lightcurve.spm_tau_rise:
-    field: "SPM_tau_rise"
-    availability:
-      - features
-  lightcurve.feature_vector:
-    field: "features"
-    availability:
-      - features
-
-  # ==================== L5: Machine Learning (Probabilities) ====================
-  classification.alerce_stamp.class:
+  # ==================== L5: Classifier assessments ====================
+  classification@alerce.assessment.lc_classifier.class:
     field: "class_name"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "stamp_classifier"
-  classification.alerce_stamp.probability:
+    filter: {classifier_name: "lc_classifier"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.lc_classifier.probability:
     field: "probability"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "stamp_classifier"
-  classification.anomaly_score:
-    field: "score"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "anomaly_detector_ae"
+    filter: {classifier_name: "lc_classifier"}
+    availability: [probabilities]
 
---------------------------------------------------------------------------------
+  classification@alerce.assessment.lc_classifier.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "lc_classifier"}
+    availability: [probabilities]
 
-### brokers/alerce/lsst/mappings.yaml
-broker: alerce
-origin: lsst
-mappings:
-  # ==================== L0: Object Metadata ====================
-  portfolio.id:
-    field: "aid"
-    availability:
-      - objects
-      - detections
-      - probabilities
-  portfolio.detection_count:
-    field: "ndet"
-    availability:
-      - objects
-
-  # ==================== L1: Rubin Direct Detections (Normalized Response) ====================
-  photometry.flux:
-    field: "mag"
-    availability:
-      - detections
-  photometry.flux_error:
-    field: "e_mag"
-    availability:
-      - detections
-  photometry.mjd:
-    field: "mjd"
-    availability:
-      - detections
-  photometry.filter:
-    field: "fid"
-    availability:
-      - detections
-
-  # ==================== L5: Rubin ML (ATAT / Anomaly / Rubin Stamp) ====================
-  classification.atat.class:
+  classification@alerce.assessment.lc_classifier_periodic.class:
     field: "class_name"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "lc_classifier_lsst"
-  classification.alerce_stamp.probability:
+    filter: {classifier_name: "lc_classifier_periodic"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.lc_classifier_periodic.probability:
     field: "probability"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "stamp_classifier_rubin_beta"
-  classification.anomaly_score:
-    field: "score"
-    availability:
-      - probabilities
-    filter:
-      classifier_name: "anomaly_detector_ae"
+    filter: {classifier_name: "lc_classifier_periodic"}
+    availability: [probabilities]
 
---------------------------------------------------------------------------------
+  classification@alerce.assessment.lc_classifier_periodic.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "lc_classifier_periodic"}
+    availability: [probabilities]
 
-### brokers/alerce/solar_system/mappings.yaml
-broker: alerce
-origin: solar_system
-mappings:
-  # ==================== L2: Solar System Specifics ====================
-  solar_system.id:
-    field: "ssObjectId"
-    availability:
-      - objects
-  solar_system.designation:
-    field: "designation"
-    availability:
-      - objects
-  solar_system.residual_total:
-    field: "ephOffset"
-    availability:
-      - detections
-  solar_system.residual_ra:
-    field: "ephOffsetRa"
-    availability:
-      - detections
-  solar_system.residual_dec:
-    field: "ephOffsetDec"
-    availability:
-      - detections
+  classification@alerce.assessment.lc_classifier_stochastic.class:
+    field: "class_name"
+    filter: {classifier_name: "lc_classifier_stochastic"}
+    availability: [probabilities]
 
-  # ==================== L2: Orbital Elements (mpc_orbits) ====================
-  solar_system.orbit.semi_major_axis:
-    field: "a"
-    availability:
-      - objects
-  solar_system.orbit.eccentricity:
-    field: "e"
-    availability:
-      - objects
-  solar_system.orbit.inclination:
-    field: "i"
-    availability:
-      - objects
-  solar_system.orbit.period:
-    field: "period"
-    availability:
-      - objects
-  solar_system.absolute_magnitude:
-    field: "h"
-    availability:
-      - objects
+  classification@alerce.assessment.lc_classifier_stochastic.probability:
+    field: "probability"
+    filter: {classifier_name: "lc_classifier_stochastic"}
+    availability: [probabilities]
 
---------------------------------------------------------------------------------
+  classification@alerce.assessment.lc_classifier_stochastic.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "lc_classifier_stochastic"}
+    availability: [probabilities]
 
-### brokers/alerce/forced_photometry/mappings.yaml
-broker: alerce
-origin: forced_photometry
-mappings:
-  # ==================== L1: Pre-Detection Fluxes ====================
-  photometry.science_flux:
-    field: "scienceFlux"
-    availability:
-      - forced_photometry
-  photometry.template_flux:
-    field: "templateFlux"
-    availability:
-      - forced_photometry
-  photometry.mjd:
-    field: "midpointMjdTai"
-    availability:
-      - forced_photometry
+  classification@alerce.assessment.lc_classifier_top.class:
+    field: "class_name"
+    filter: {classifier_name: "lc_classifier_top"}
+    availability: [probabilities]
 
---------------------------------------------------------------------------------
+  classification@alerce.assessment.lc_classifier_top.probability:
+    field: "probability"
+    filter: {classifier_name: "lc_classifier_top"}
+    availability: [probabilities]
 
-### brokers/alerce/enrichment/mappings.yaml
-broker: alerce
-origin: multiwavelength_context
-mappings:
-  # ==================== L6: Multiwavelength Context (Object Locus) ====================
-  crossmatch.gaia.distance:
-    field: "NearGAIA"
-    availability:
-      - objects
-  crossmatch.gaia.parallax:
-    field: "plxGAIA"
-    availability:
-      - objects
-  crossmatch.wise.w1:
-    field: "w1mpro"
-    availability:
-      - objects
-  crossmatch.wise.distance:
-    field: "NearAllWISE"
-    availability:
-      - objects
-  crossmatch.ps1.distance:
-    field: "distpsnr1"
-    availability:
-      - objects
-  crossmatch.ps1.star_galaxy_score:
-    field: "sgscore1"
-    availability:
-      - objects
+  classification@alerce.assessment.lc_classifier_top.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "lc_classifier_top"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.lc_classifier_transient.class:
+    field: "class_name"
+    filter: {classifier_name: "lc_classifier_transient"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.lc_classifier_transient.probability:
+    field: "probability"
+    filter: {classifier_name: "lc_classifier_transient"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.lc_classifier_transient.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "lc_classifier_transient"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.stamp_classifier.class:
+    field: "class_name"
+    filter: {classifier_name: "stamp_classifier"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.stamp_classifier.probability:
+    field: "probability"
+    filter: {classifier_name: "stamp_classifier"}
+    availability: [probabilities]
+
+  classification@alerce.assessment.stamp_classifier.provenance.producer.version:
+    field: "classifier_version"
+    filter: {classifier_name: "stamp_classifier"}
+    availability: [probabilities]
