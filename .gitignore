@@ -5,4 +5,5 @@ __pycache__/
 alertissimo.egg-info/
 *bak
 *bak2
+.idea
 
