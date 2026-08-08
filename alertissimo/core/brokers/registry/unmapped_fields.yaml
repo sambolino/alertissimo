@@ -1,0 +1,49 @@
+generated_by: registry_refactor_first_pass
+purpose: >
+  Raw broker fields that were observed or documented but not mapped because no exact
+  supported semantic path was found in feature_catalog.yaml.
+entries:
+  - broker: alerce
+    origin: ztf
+    source: query_magstats
+    raw_field: dmdt_first
+    reason: no_exact_feature_catalog_path
+    candidate_interpretation: magnitude_rate_or_rise_rate
+    proposed_catalog_addition: null
+    action_required: user_review
+  - broker: alerce
+    origin: lsst
+    source: query_magstats
+    raw_field: dmdt_first
+    reason: no_exact_feature_catalog_path
+    candidate_interpretation: magnitude_rate_or_rise_rate
+    proposed_catalog_addition: null
+    action_required: user_review
+  - broker: antares
+    origin: ztf
+    source: locus
+    raw_field: properties.{field}
+    reason: dynamic_raw_extension
+    mapped_as: summary@ztf:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: ztf
+    source: alert
+    raw_field: properties.{field}
+    reason: dynamic_raw_extension
+    mapped_as: detection@ztf:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: lsst
+    source: locus
+    raw_field: properties.{field}
+    reason: dynamic_raw_extension
+    mapped_as: summary@lsst:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: lsst
+    source: alert
+    raw_field: properties.{field}
+    reason: dynamic_raw_extension
+    mapped_as: detection@lsst:antares.properties.{field}
+    action_required: user_review

@@ -1,6 +1,3 @@
-# brokers/fink/ztf/endpoints.yaml
-# Endpoint contract + endpoint-level capabilities only.
-# Semantic field capabilities are generated from this file + mappings.yaml.
 broker: fink
 origin: ztf
 baseurl: https://api.ztf.fink-portal.org
@@ -11,6 +8,7 @@ endpoints:
     description: Retrieve object data from the Fink/ZTF database based on their name
     transport:
       kind: rest
+      method: GET
     params:
       objectId:
         required: true
@@ -81,12 +79,15 @@ endpoints:
       - withcutouts
       - cutout-kind
       post_filter: true
+    enabled: true
+    status: enabled
   conesearch:
     path: /api/v1/conesearch
     method: GET
     description: Retrieve object data from the Fink/ZTF database based on their coordinates
     transport:
       kind: rest
+      method: GET
     params:
       ra:
         required: true
@@ -179,12 +180,15 @@ endpoints:
       - stopdate
       - window
       post_filter: true
+    enabled: true
+    status: enabled
   latests:
     path: /api/v1/latests
     method: GET
     description: Retrieve object data from the Fink/ZTF database based on their Fink derived class
     transport:
       kind: rest
+      method: GET
     params:
       class:
         required: true
@@ -273,12 +277,15 @@ endpoints:
       - stopdate
       - color
       post_filter: true
+    enabled: true
+    status: enabled
   anomaly:
     path: /api/v1/anomaly
     method: GET
     description: Retrieve alerts tagged as anomaly from the Fink/ZTF database
     transport:
       kind: rest
+      method: GET
     params:
       n:
         required: false
@@ -338,12 +345,15 @@ endpoints:
       - start_date
       - stop_date
       post_filter: true
+    enabled: true
+    status: enabled
   cutouts:
     path: /api/v1/cutouts
     method: GET
     description: Retrieve cutout data from the Fink/ZTF datalake
     transport:
       kind: rest
+      method: GET
     params:
       objectId:
         required: true
@@ -441,12 +451,15 @@ endpoints:
       - output-format=array returns 2D array as shown
 
       '
+    enabled: true
+    status: enabled
   sso:
     path: /api/v1/sso
     method: GET
     description: Retrieve Solar System data from the Fink/ZTF database based on their ID
     transport:
       kind: rest
+      method: GET
     params:
       n_or_d:
         required: true
@@ -525,12 +538,15 @@ endpoints:
       - withCutouts
       - cutout-kind
       post_filter: true
+    enabled: true
+    status: enabled
   statistics:
     path: /api/v1/statistics
     method: GET
     description: Get statistics about Fink and the ZTF alert stream
     transport:
       kind: rest
+      method: GET
     params:
       date:
         required: true
@@ -585,12 +601,15 @@ endpoints:
       - Class fields include SIMBAD types, Fink classes, and special categories
 
       '
+    enabled: true
+    status: enabled
   resolver:
     path: /api/v1/resolver
     method: GET
     description: Explore existing names for a given object
     transport:
       kind: rest
+      method: GET
     params:
       resolver:
         required: true
@@ -659,3 +678,5 @@ endpoints:
       - Different resolvers return different fields (some may be null)
 
       '
+    enabled: true
+    status: enabled

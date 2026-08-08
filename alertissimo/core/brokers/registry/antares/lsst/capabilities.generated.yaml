@@ -1,0 +1,214 @@
+broker: antares
+origin: lsst
+generated_from:
+  endpoints_sha256: 90953621d5096a530db8fc9d223204b5375948326b9a9d39c8e45c599a40c8cc
+  mappings_sha256: 00d9e5ac6587dfa5f822c1e1216cd53d193407c79f7713b9647cbb21957ce242
+  feature_catalog_sha256: d12a32ec995873291a2134b4ea21eddffbd166f1606e68b1e3025e7444cd6977
+semantic_fields:
+  summary@lsst:antares.identity.object_id:
+    source: summary
+    raw_field: locus_id
+    endpoints: &id001
+    - get_by_id
+    - cone_search
+    - get_by_lsst_ss_object_id
+    - get_by_lsst_dia_object_id
+    - search
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  summary@lsst:antares.position.ra:
+    source: summary
+    raw_field: ra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  summary@lsst:antares.position.dec:
+    source: summary
+    raw_field: dec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  detection@lsst:antares.identity.alert_id:
+    source: alert
+    raw_field: alert_id
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  detection@lsst:antares.time.mjd:
+    source: alert
+    raw_field: mjd
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  summary@lsst:antares.properties.{field}:
+    source: summary
+    raw_field: properties.{field}
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: true
+    raw_extension: true
+  detection@lsst:antares.properties.{field}:
+    source: alert
+    raw_field: properties.{field}
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: true
+    raw_extension: true
+endpoints:
+  search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@lsst:antares.identity.alert_id
+    - detection@lsst:antares.properties.{field}
+    - detection@lsst:antares.time.mjd
+    - summary@lsst:antares.identity.object_id
+    - summary@lsst:antares.position.dec
+    - summary@lsst:antares.position.ra
+    - summary@lsst:antares.properties.{field}
+  cone_search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@lsst:antares.identity.alert_id
+    - detection@lsst:antares.properties.{field}
+    - detection@lsst:antares.time.mjd
+    - summary@lsst:antares.identity.object_id
+    - summary@lsst:antares.position.dec
+    - summary@lsst:antares.position.ra
+    - summary@lsst:antares.properties.{field}
+  get_by_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@lsst:antares.identity.alert_id
+    - detection@lsst:antares.properties.{field}
+    - detection@lsst:antares.time.mjd
+    - summary@lsst:antares.identity.object_id
+    - summary@lsst:antares.position.dec
+    - summary@lsst:antares.position.ra
+    - summary@lsst:antares.properties.{field}
+  get_by_lsst_dia_object_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@lsst:antares.identity.alert_id
+    - detection@lsst:antares.properties.{field}
+    - detection@lsst:antares.time.mjd
+    - summary@lsst:antares.identity.object_id
+    - summary@lsst:antares.position.dec
+    - summary@lsst:antares.position.ra
+    - summary@lsst:antares.properties.{field}
+  get_by_lsst_ss_object_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@lsst:antares.identity.alert_id
+    - detection@lsst:antares.properties.{field}
+    - detection@lsst:antares.time.mjd
+    - summary@lsst:antares.identity.object_id
+    - summary@lsst:antares.position.dec
+    - summary@lsst:antares.position.ra
+    - summary@lsst:antares.properties.{field}
+  get_random_locus_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_random_locus_ids:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_available_tags:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_catalog_samples:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  catalog_search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_thumbnails:
+    enabled: true
+    status: enabled
+    operation_types:
+    - locus_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  streaming_client:
+    enabled: false
+    status: known_unsupported
+    operation_types:
+    - stream
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []

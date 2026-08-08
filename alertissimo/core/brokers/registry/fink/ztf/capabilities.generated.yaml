@@ -1,0 +1,137 @@
+broker: fink
+origin: ztf
+generated_from:
+  endpoints_sha256: 6a881019c8a9be6376098cdea4c3733c7b377817fd10038042e1b5ae49b69298
+  mappings_sha256: 82c463588cae19fdc6e041ab4edeb946699e6f4d51a255d85f34d43ca04154a6
+  feature_catalog_sha256: d12a32ec995873291a2134b4ea21eddffbd166f1606e68b1e3025e7444cd6977
+semantic_fields:
+  summary@ztf:fink.identity.object_id:
+    source: summary
+    raw_field: objectId
+    endpoints: &id001
+    - objects
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:fink.position.ra:
+    source: summary
+    raw_field: i:ra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:fink.position.dec:
+    source: summary
+    raw_field: i:dec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+endpoints:
+  objects:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    - object_history
+    - lightcurve
+    record_scope:
+    - summary
+    - detection
+    - lightcurve
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - summary@ztf:fink.identity.object_id
+    - summary@ztf:fink.position.dec
+    - summary@ztf:fink.position.ra
+  conesearch:
+    enabled: true
+    status: enabled
+    operation_types:
+    - spatial_search
+    - alert_search
+    record_scope:
+    - detection
+    - lightcurve
+    required_bindings:
+    - cone.ra
+    - cone.dec
+    - cone.radius
+    semantic_fields: []
+  latests:
+    enabled: true
+    status: enabled
+    operation_types:
+    - class_tag_search
+    - latest_alert_search
+    - alert_search
+    record_scope:
+    - detection
+    - lightcurve
+    - classification
+    required_bindings:
+    - classification.label
+    semantic_fields: []
+  anomaly:
+    enabled: true
+    status: enabled
+    operation_types:
+    - anomaly_search
+    - alert_search
+    record_scope:
+    - detection
+    - lightcurve
+    - classification
+    required_bindings: []
+    semantic_fields: []
+  cutouts:
+    enabled: true
+    status: enabled
+    operation_types:
+    - data_product_lookup
+    - cutout
+    record_scope:
+    - data_product
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  sso:
+    enabled: true
+    status: enabled
+    operation_types:
+    - solar_system_lookup
+    - alert_search
+    record_scope:
+    - detection
+    - solar_system
+    - lightcurve
+    required_bindings:
+    - solar_system.name_or_designation
+    semantic_fields: []
+  statistics:
+    enabled: true
+    status: enabled
+    operation_types:
+    - stream_statistics
+    - survey_summary
+    record_scope:
+    - survey
+    required_bindings:
+    - time.date
+    semantic_fields: []
+  resolver:
+    enabled: true
+    status: enabled
+    operation_types:
+    - name_resolution
+    record_scope:
+    - resolver
+    - crossmatch
+    required_bindings:
+    - resolver.service
+    - identity.name
+    semantic_fields: []

@@ -1,24 +1,21 @@
 # alertissimo/core/brokers/__init__.py
-from .alerce import ALeRCEBroker
-from .lasair import LasairBroker
-from .fink import FinkBroker
-from .antares import AntaresBroker
-from .base import Broker
-import os
-
-def get_broker(name: str) -> Broker:
+def get_broker(name: str):
     name = name.lower()
     
     if name == "alerce":
+        from .alerce import ALeRCEBroker
         return ALeRCEBroker()
     
     elif name == "lasair":
+        from .lasair import LasairBroker
         return LasairBroker()
 
     elif name == "fink":
+        from .fink import FinkBroker
         return FinkBroker()
     
     elif name == "antares":
+        from .antares import AntaresBroker
         return AntaresBroker()
     
     else:

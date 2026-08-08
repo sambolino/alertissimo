@@ -1,96 +1,45 @@
-# brokers/antares/ztf/mappings.yaml
-# Source paths verified against the public ANTARES v1 client responses.
 broker: antares
 origin: ztf
-
+sources:
+  summary:
+    endpoints: &id001
+    - get_by_id
+    - cone_search
+    - get_by_ztf_object_id
+    - search
+    payload_path: .
+    record_scope:
+    - summary
+    status: declared
+  alert:
+    endpoints: *id001
+    payload_path: alerts[]
+    record_scope:
+    - detection
+    status: declared_lazy
 mappings:
-  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
-  # dependent photometry paths and are not scalar output fields themselves.
-
-  # ==================== Locus summary ====================
-  summary@ztf:antares.identity.object_id:
-    field: "properties.ztf_object_id"
-    availability: [loci, locus]
-  summary@ztf:antares.detection_count:
-    field: "properties.num_alerts"
-    availability: [loci, locus]
-  summary@ztf:antares.time.first_mjd:
-    field: "properties.oldest_alert_observation_time"
-    availability: [loci, locus]
-  summary@ztf:antares.time.last_mjd:
-    field: "properties.newest_alert_observation_time"
-    availability: [loci, locus]
-  summary@ztf:antares.position.ra:
-    field: "ra"
-    availability: [loci, locus]
-  summary@ztf:antares.position.dec:
-    field: "dec"
-    availability: [loci, locus]
-
-  # ==================== ZTF alert records ====================
-  detection@ztf:antares.identity.source_id:
-    field: "properties.ztf_candid"
-    availability: [locus_alerts]
-  detection@ztf:antares.time.mjd:
-    field: "mjd"
-    availability: [locus_alerts]
-  detection@ztf:antares.position.ra:
-    field: "properties.ant_ra"
-    availability: [locus_alerts]
-  detection@ztf:antares.position.dec:
-    field: "properties.ant_dec"
-    availability: [locus_alerts]
-  detection@ztf:antares.photometry.{filter}:
-    field: "properties.ant_passband"
-    availability: [locus_alerts]
-  detection@ztf:antares.photometry.{filter}.psf.mag:
-    field: "properties.ant_mag"
-    availability: [locus_alerts]
-  detection@ztf:antares.photometry.{filter}.psf.mag_error:
-    field: "properties.ant_magerr"
-    availability: [locus_alerts]
-  detection@ztf:antares.photometry.{filter}.limit.mag:
-    field: "properties.ant_maglim"
-    availability: [locus_alerts]
-  detection@ztf:antares.quality.real_bogus:
-    field: "properties.ztf_drb"
-    availability: [locus_alerts]
-  detection@ztf:antares.quality.rf_real_bogus:
-    field: "properties.ztf_rb"
-    availability: [locus_alerts]
-  detection@ztf:antares.image_metrics.is_positive:
-    field: "properties.ztf_isdiffpos"
-    transform: {"t": true, "f": false}
-    availability: [locus_alerts]
-  detection@ztf:antares.reference_image.nearest_source.separation.total:
-    field: "properties.ztf_distnr"
-    availability: [locus_alerts]
-  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
-    field: "properties.ztf_magnr"
-    availability: [locus_alerts]
-
-  # ==================== Catalog matches ====================
-  crossmatch@gaia:antares.identity.object_id:
-    field: "object_id"
-    filter: {"meta.catalog_name": "gaia_dr3_gaia_source"}
-    availability: [catalog_matches]
-  crossmatch@gaia:antares.astrometric_solution.parallax:
-    field: "properties.parallax"
-    filter: {"meta.catalog_name": "gaia_dr3_gaia_source"}
-    availability: [catalog_matches]
-  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
-    field: "properties.pmra"
-    filter: {"meta.catalog_name": "gaia_dr3_gaia_source"}
-    availability: [catalog_matches]
-  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
-    field: "properties.pmdec"
-    filter: {"meta.catalog_name": "gaia_dr3_gaia_source"}
-    availability: [catalog_matches]
-  crossmatch@allwise:antares.photometry.W1.mag:
-    field: "properties.w1mpro"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
-  crossmatch@allwise:antares.photometry.W2.mag:
-    field: "properties.w2mpro"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  summary@ztf:antares:
+    source: summary
+    fields:
+      identity.object_id:
+        field: locus_id
+      position.ra:
+        field: ra
+      position.dec:
+        field: dec
+  detection@ztf:antares:
+    source: alert
+    fields:
+      identity.alert_id:
+        field: alert_id
+      time.mjd:
+        field: mjd
+dynamic:
+  summary@ztf:antares.properties.{field}:
+    source: summary
+    field: properties.{field}
+    status: raw_extension
+  detection@ztf:antares.properties.{field}:
+    source: alert
+    field: properties.{field}
+    status: raw_extension

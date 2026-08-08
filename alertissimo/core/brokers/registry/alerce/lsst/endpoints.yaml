@@ -154,6 +154,9 @@ endpoints:
       - order_by
       - order_mode
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_object:
     enabled: true
     audit:
@@ -209,6 +212,9 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_detections:
     enabled: true
     audit:
@@ -265,6 +271,9 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_non_detections:
     enabled: true
     audit:
@@ -321,8 +330,11 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
     note: For LSST this route is implemented but the audit sample returned empty payloads; mappings include declared non_detection
       fields.
+    status: enabled
   query_forced_photometry:
     enabled: true
     audit:
@@ -380,6 +392,9 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_lightcurve:
     enabled: true
     audit:
@@ -440,6 +455,9 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_magstats:
     enabled: false
     audit:
@@ -497,8 +515,11 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
     disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE client/backend. Declared magstats fields
       are still included in mappings as declared_only/known_unsupported.
+    status: known_unsupported
   query_probabilities:
     enabled: true
     audit:
@@ -560,6 +581,9 @@ endpoints:
       - oid
       - classifier
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   query_features:
     enabled: false
     audit:
@@ -616,7 +640,10 @@ endpoints:
       server_filters:
       - oid
       post_filter: true
+      projection:
+        supports_columns: false
     disabled_reason: Multisurvey query_features not implemented in current ALeRCE client/backend.
+    status: known_unsupported
   query_feature:
     enabled: false
     audit:
@@ -674,7 +701,11 @@ endpoints:
       - oid
       - name
       post_filter: true
+      projection:
+        supports_columns: false
     note: LSST multisurvey query_feature raises NotImplementedError.
+    status: known_unsupported
+    disabled_reason: query_feature is not implemented for the current LSST client/backend.
   query_classifiers:
     enabled: false
     audit:
@@ -715,7 +746,10 @@ endpoints:
       optional_bindings: []
       server_filters: []
       post_filter: true
+      projection:
+        supports_columns: false
     disabled_reason: Multisurvey query_classifiers not implemented in current ALeRCE client/backend.
+    status: known_unsupported
   query_classes:
     enabled: false
     audit:
@@ -761,7 +795,11 @@ endpoints:
       optional_bindings: []
       server_filters: []
       post_filter: true
+      projection:
+        supports_columns: false
     note: LSST multisurvey query_classes raises NotImplementedError.
+    status: known_unsupported
+    disabled_reason: query_classes is not implemented for the current LSST client/backend.
   get_stamps:
     enabled: true
     audit:
@@ -820,6 +858,9 @@ endpoints:
       - candid
       - measurement_id
       post_filter: true
+      projection:
+        supports_columns: false
+    status: enabled
   get_avro:
     enabled: false
     audit:
@@ -870,8 +911,12 @@ endpoints:
       - oid
       - candid
       post_filter: true
+      projection:
+        supports_columns: false
     note: Current client default get_avro path failed for LSST; multisurvey AVRO path appears incomplete/buggy in current
       client.
+    status: known_unsupported
+    disabled_reason: get_avro is not implemented for the current LSST client/backend.
   catshtm_conesearch:
     enabled: true
     audit:
@@ -934,7 +979,10 @@ endpoints:
       - radius
       - catalog_name
       post_filter: true
+      projection:
+        supports_columns: false
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    status: enabled
   catshtm_crossmatch:
     enabled: true
     audit:
@@ -997,7 +1045,10 @@ endpoints:
       - radius
       - catalog_name
       post_filter: true
+      projection:
+        supports_columns: false
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    status: enabled
   catshtm_redshift:
     enabled: true
     audit:
@@ -1055,4 +1106,7 @@ endpoints:
       - radius
       - catalog_name
       post_filter: true
+      projection:
+        supports_columns: false
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    status: enabled

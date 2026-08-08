@@ -1,70 +1,268 @@
-# brokers/antares/ztf/endpoints.yaml
 broker: antares
 origin: ztf
-baseurl: https://api.antares.noirlab.edu/v1
-
 endpoints:
-  loci:
-    path: "/loci"
-    method: GET
-    description: "Search ANTARES locus summaries using an Elasticsearch locus-listing query."
-    params:
-      elasticsearch_query[locus_listing]:
-        required: false
-        type: json
-        description: "JSON Elasticsearch query; passed by the official client."
-      sort:
-        required: false
-        type: string
-        default: "-properties.newest_alert_observation_time"
-    output_type: array_of_locus_summaries
-    provides:
-      - summary@ztf:antares.*
-
-  locus:
-    path: "/loci/{locus_id}"
-    method: GET
-    description: "Retrieve one ANTARES locus and its object-level metadata."
-    params:
-      locus_id: {required: true, type: string}
-    output_type: locus
-    provides:
-      - summary@ztf:antares.*
-
-  locus_alerts:
-    path: "/loci/{locus_id}/alerts"
-    method: GET
-    description: "Retrieve the individual alert records associated with a locus."
-    params:
-      locus_id: {required: true, type: string}
-    output_type: array_of_alerts
-    provides:
-      - detection@ztf:antares.*
-
-  catalog_matches:
-    path: "/loci/{locus_id}/catalog-matches"
-    method: GET
-    description: "Retrieve external-catalog matches associated with a locus."
-    params:
-      locus_id: {required: true, type: string}
-    output_type: array_of_catalog_matches
-    provides:
-      - crossmatch@{producer}:antares.*
-
-  thumbnails:
-    path: "/alerts/{alert_id}/thumbnails"
-    method: GET
-    description: "List the binary thumbnail products for a single alert."
-    params:
-      alert_id: {required: true, type: string}
-    output_type: array_of_data_products
-    provides:
-      - data_product@ztf:antares
-
-  statistics:
-    path: "/loci/statistics"
-    method: GET
-    description: "Retrieve aggregate ANTARES tag counts."
-    output_type: tag_statistics
-    provides:
-      - survey@ztf:antares.class_distribution
+  search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: search
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  cone_search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: cone_search
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_by_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_by_id
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_by_ztf_object_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_by_ztf_object_id
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_random_locus_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_random_locus_id
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_random_locus_ids:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_random_locus_ids
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_available_tags:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_available_tags
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_catalog_samples:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_catalog_samples
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  catalog_search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: catalog_search
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_thumbnails:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: get_thumbnails
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - locus_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  streaming_client:
+    enabled: false
+    status: known_unsupported
+    transport:
+      kind: python
+      module: antares_client
+      client: search
+      method: streaming_client
+    params: {}
+    output:
+      type: object
+      item: locus
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - stream
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+    disabled_reason: The current client exposes no implemented streaming client.
