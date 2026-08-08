@@ -1,0 +1,228 @@
+broker: alerce
+origin: lsst
+notes: Raw ALeRCE attributes without an established stable semantic path.
+unmapped:
+- query_detections#band_name:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_detections#diaObjectId:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_forced_photometry#band:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_forced_photometry#band_name:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#detections:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#forced_photometry:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#non_detections:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#apFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#apFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#apFlux_flag:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#apFlux_flag_apertureTruncated:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#band:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#band_name:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#bboxSize:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#centroid_flag:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dec:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#decErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#detector:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#diaObjectId:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleAngle:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleChi2:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleFitAttempted:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleFluxDiff:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleFluxDiffErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleLength:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleMeanFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleMeanFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dipoleNdata:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#extendedness:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#forced_PsfFlux_flag:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#forced_PsfFlux_flag_edge:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#glint_trail:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#has_stamp:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#isDipole:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#isNegative:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ixx:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ixxPSF:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ixy:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ixyPSF:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#iyy:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#iyyPSF:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#measurement_id:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#mjd:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#oid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#parentDiaSourceId:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_bad:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_cr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_crCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_edge:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_injected:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_injectedCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_injected_template:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_injected_templateCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_interpolated:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_interpolatedCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_nodata:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_nodataCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_offimage:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_saturated:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_saturatedCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_streak:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_streakCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_suspect:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pixelFlags_suspectCenter:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfChi2:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfFlux_flag:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfFlux_flag_edge:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfFlux_flag_noGoodPixels:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfLnL:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#psfNdata:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ra:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#raErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ra_dec_Cov:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#reliability:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#scienceFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#scienceFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#shape_flag:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#shape_flag_no_pixels:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#shape_flag_not_contained:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#shape_flag_parent_source:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#snr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#ssObjectId:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#survey_id:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#templateFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#templateFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#timeProcessedMjdTai:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#timeWithdrawnMjdTai:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailAngle:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailAngleErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailChi2:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailDec:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailDecErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailFlux:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailFluxErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailLength:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailLengthErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailNdata:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailRa:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trailRaErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#trail_flag_edge:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#visit:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#x:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#xErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#y:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#yErr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_magstats#step_id_corr:
+    reason: Declared for an unsupported ALeRCE method; semantic meaning or availability is uncertain.
+- query_object#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_objects#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.

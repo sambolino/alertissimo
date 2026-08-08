@@ -1,3876 +1,450 @@
 broker: alerce
 origin: ztf
-source: Generated from alerce_schema_payload_audit_bundle.tar.gz; declared docs plus observed payload audit.
-mapping_policy:
-  semantic_mappings: Core scientific fields are mapped to stable semantic paths.
-  raw_fallback: Remaining declared/observed fields are retained as *.raw.<field> entries inside the relevant record.
-  unsupported_methods: Attributes from documented but nonimplemented methods are included with availability.endpoint_status=known_unsupported;
-    endpoints.yaml is the authority for enabled/disabled method status.
-  lightcurve: query_lightcurve exposes nested detections/non_detections/forced_photometry; these are modeled as alternate
-    source fields for the same semantic records.
+description: Minimal payload-reference mappings preserving the ALeRCE declared and observed attribute inventory.
+payloads:
+  query_classifiers:
+    path: '[]'
+  query_object:
+    path: .
+  query_detections:
+    path: '[]'
+  query_non_detections:
+    path: '[]'
+  query_forced_photometry:
+    path: '[]'
+  query_lightcurve:
+    path: .
+  query_lightcurve.forced_photometry:
+    endpoint: query_lightcurve
+    path: forced_photometry[]
+  query_lightcurve.non_detections:
+    endpoint: query_lightcurve
+    path: non_detections[]
+  query_lightcurve.detections:
+    endpoint: query_lightcurve
+    path: detections[]
+  query_magstats:
+    path: '[]'
+  query_probabilities:
+    path: '[]'
+  query_features:
+    path: '[]'
+  get_avro:
+    path: .
+  query_objects:
+    path: '[]'
+  get_stamps:
+    path: '[]'
 mappings:
   summary@ztf:alerce.identity.object_id:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: oid
-      field_status: observed
-    - endpoint: query_objects
-      field: oid
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#oid
+  - query_objects#oid
   summary@ztf:alerce.position.ra:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: meanra
-      field_status: observed
-    - endpoint: query_objects
-      field: meanra
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#meanra
+  - query_objects#meanra
   summary@ztf:alerce.position.dec:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: meandec
-      field_status: observed
-    - endpoint: query_objects
-      field: meandec
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#meandec
+  - query_objects#meandec
   summary@ztf:alerce.position.error.ra:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: sigmara
-      field_status: observed
-    - endpoint: query_objects
-      field: sigmara
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#sigmara
+  - query_objects#sigmara
   summary@ztf:alerce.position.error.dec:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: sigmadec
-      field_status: observed
-    - endpoint: query_objects
-      field: sigmadec
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#sigmadec
+  - query_objects#sigmadec
   summary@ztf:alerce.time.first_mjd:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: firstmjd
-      field_status: observed
-    - endpoint: query_objects
-      field: firstmjd
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#firstmjd
+  - query_objects#firstmjd
   summary@ztf:alerce.time.last_mjd:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: lastmjd
-      field_status: observed
-    - endpoint: query_objects
-      field: lastmjd
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#lastmjd
+  - query_objects#lastmjd
   summary@ztf:alerce.time.duration_days:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: deltajd
-      field_status: observed
-    - endpoint: query_objects
-      field: deltajd
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#deltajd
+  - query_objects#deltajd
   summary@ztf:alerce.history.start_mjd:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: mjdstarthist
-      field_status: observed
-    - endpoint: query_objects
-      field: mjdstarthist
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#mjdstarthist
+  - query_objects#mjdstarthist
   summary@ztf:alerce.history.end_mjd:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: mjdendhist
-      field_status: observed
-    - endpoint: query_objects
-      field: mjdendhist
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#mjdendhist
+  - query_objects#mjdendhist
   summary@ztf:alerce.detection.count:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: ndet
-      field_status: observed
-    - endpoint: query_objects
-      field: ndet
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#ndet
+  - query_objects#ndet
   summary@ztf:alerce.detection.history_count:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: ndethist
-      field_status: observed
-    - endpoint: query_objects
-      field: ndethist
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#ndethist
+  - query_objects#ndethist
   summary@ztf:alerce.coverage.count:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: ncovhist
-      field_status: observed
-    - endpoint: query_objects
-      field: ncovhist
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#ncovhist
+  - query_objects#ncovhist
   summary@ztf:alerce.quality.corrected:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: corrected
-      field_status: observed
-    - endpoint: query_objects
-      field: corrected
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#corrected
+  - query_objects#corrected
   summary@ztf:alerce.classification.stellar:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: stellar
-      field_status: observed
-    - endpoint: query_objects
-      field: stellar
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#stellar
+  - query_objects#stellar
   summary@ztf:alerce.color.g_minus_r.max:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: g_r_max
-      field_status: observed
-    - endpoint: query_objects
-      field: g_r_max
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#g_r_max
+  - query_objects#g_r_max
   summary@ztf:alerce.color.g_minus_r.max_corrected:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: g_r_max_corr
-      field_status: observed
-    - endpoint: query_objects
-      field: g_r_max_corr
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#g_r_max_corr
+  - query_objects#g_r_max_corr
   summary@ztf:alerce.color.g_minus_r.mean:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: g_r_mean
-      field_status: observed
-    - endpoint: query_objects
-      field: g_r_mean
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#g_r_mean
+  - query_objects#g_r_mean
   summary@ztf:alerce.color.g_minus_r.mean_corrected:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: g_r_mean_corr
-      field_status: observed
-    - endpoint: query_objects
-      field: g_r_mean_corr
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
+  - query_object#g_r_mean_corr
+  - query_objects#g_r_mean_corr
   summary@ztf:alerce.classification.best.class:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: class
-      field_status: declared_only
-    - endpoint: query_objects
-      field: class
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: object
+  - query_object#class
+  - query_objects#class
   summary@ztf:alerce.classification.best.classifier:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: classifier
-      field_status: declared_only
-    - endpoint: query_objects
-      field: classifier
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: object
+  - query_object#classifier
+  - query_objects#classifier
   summary@ztf:alerce.classification.best.probability:
-    endpoints:
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: probability
-      field_status: declared_only
-    - endpoint: query_objects
-      field: probability
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: object
-  summary@ztf:alerce.provenance.producer.pipeline.step_id_corr:
-    endpoints:
-    - query_magstats
-    - query_object
-    - query_objects
-    sources:
-    - endpoint: query_object
-      field: step_id_corr
-      field_status: observed
-    - endpoint: query_objects
-      field: step_id_corr
-      field_status: declared_only
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: object
-    field: step_id_corr
+  - query_object#probability
+  - query_objects#probability
   detection@ztf:alerce.photometry.{filter}:
-    field: fid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    role: namespace_carrier
-    transform:
-      op: map_filter_id
-      survey: ztf
-    description: Filter/band namespace carrier.
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#fid
+  - query_lightcurve#fid
   detection@ztf:alerce.identity.object_id:
-    field: oid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#oid
+  - query_lightcurve#oid
   detection@ztf:alerce.identity.source_id:
-    field: measurement_id
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#measurement_id
+  - query_lightcurve#measurement_id
   detection@ztf:alerce.identity.alert_id:
-    field: candid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#candid
+  - query_lightcurve#candid
   detection@ztf:alerce.relationship.parent_alert_id:
-    field: parent_candid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#parent_candid
+  - query_lightcurve#parent_candid
   detection@ztf:alerce.time.mjd:
-    field: mjd
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#mjd
+  - query_lightcurve#mjd
   detection@ztf:alerce.position.ra:
-    field: ra
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#ra
+  - query_lightcurve#ra
   detection@ztf:alerce.position.dec:
-    field: dec
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#dec
+  - query_lightcurve#dec
   detection@ztf:alerce.provenance.processing_id:
-    field: pid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#pid
+  - query_lightcurve#pid
   detection@ztf:alerce.provenance.night_id:
-    field: nid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#nid
+  - query_lightcurve#nid
   detection@ztf:alerce.provenance.reference_image_id:
-    field: rfid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#rfid
+  - query_lightcurve#rfid
   detection@ztf:alerce.provenance.producer.survey_id:
-    field: tid
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#tid
+  - query_lightcurve#tid
   detection@ztf:alerce.data_product.stamp.available:
-    field: has_stamp
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#has_stamp
+  - query_lightcurve#has_stamp
   detection@ztf:alerce.quality.corrected:
-    field: corrected
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#corrected
+  - query_lightcurve#corrected
   detection@ztf:alerce.quality.dubious:
-    field: dubious
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#dubious
+  - query_lightcurve#dubious
   detection@ztf:alerce.quality.realbogus.score:
-    field: rb
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#rb
+  - query_lightcurve#rb
   detection@ztf:alerce.quality.realbogus.version:
-    field: rbversion
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#rbversion
+  - query_lightcurve#rbversion
   detection@ztf:alerce.quality.deep_realbogus.score:
-    field: drb
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#drb
+  - query_lightcurve#drb
   detection@ztf:alerce.quality.deep_realbogus.version:
-    field: drbversion
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#drbversion
+  - query_lightcurve#drbversion
   detection@ztf:alerce.subtraction.sign:
-    field: isdiffpos
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#isdiffpos
+  - query_lightcurve#isdiffpos
   detection@ztf:alerce.crossmatch.nearest_source.distance:
-    field: distnr
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
-  detection@ztf:alerce.provenance.producer.pipeline.step_id_corr:
-    field: step_id_corr
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#distnr
+  - query_lightcurve#distnr
   detection@ztf:alerce.time.phase:
-    field: phase
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#phase
+  - query_lightcurve#phase
   detection@ztf:alerce.photometry.{filter}.limiting_magnitude:
-    field: diffmaglim
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#diffmaglim
+  - query_lightcurve#diffmaglim
   detection@ztf:alerce.photometry.{filter}.psf_magnitude:
-    field: magpsf
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#magpsf
+  - query_lightcurve#magpsf
   detection@ztf:alerce.photometry.{filter}.psf_magnitude_error:
-    field: sigmapsf
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#sigmapsf
+  - query_lightcurve#sigmapsf
   detection@ztf:alerce.photometry.{filter}.psf_magnitude_corrected:
-    field: magpsf_corr
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#magpsf_corr
+  - query_lightcurve#magpsf_corr
   detection@ztf:alerce.photometry.{filter}.psf_magnitude_corrected_error:
-    field: sigmapsf_corr
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#sigmapsf_corr
+  - query_lightcurve#sigmapsf_corr
   detection@ztf:alerce.photometry.{filter}.psf_magnitude_corrected_extended_error:
-    field: sigmapsf_corr_ext
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_detections#sigmapsf_corr_ext
+  - query_lightcurve#sigmapsf_corr_ext
   detection@ztf:alerce.photometry.{filter}.aperture_magnitude:
-    field: magap
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#magap
+  - query_lightcurve#magap
   detection@ztf:alerce.photometry.{filter}.aperture_magnitude_error:
-    field: sigmagap
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#sigmagap
+  - query_lightcurve#sigmagap
   detection@ztf:alerce.photometry.{filter}.large_aperture_magnitude:
-    field: magapbig
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#magapbig
+  - query_lightcurve#magapbig
   detection@ztf:alerce.photometry.{filter}.large_aperture_magnitude_error:
-    field: sigmagapbig
-    endpoints:
-    - query_detections
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_detections#sigmagapbig
+  - query_lightcurve#sigmagapbig
   detection@ztf:alerce.provenance.producer.program.field:
-    field: detections.field
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#field
   detection@ztf:alerce.provenance.producer.program.id:
-    field: detections.programid
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#programid
   detection@ztf:alerce.crossmatch.nearest_source.position.ra:
-    field: detections.ranr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#ranr
   detection@ztf:alerce.crossmatch.nearest_source.position.dec:
-    field: detections.decnr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#decnr
   detection@ztf:alerce.crossmatch.nearest_source.magnitude:
-    field: detections.magnr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#magnr
   detection@ztf:alerce.crossmatch.nearest_source.magnitude_error:
-    field: detections.sigmagnr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#sigmagnr
   detection@ztf:alerce.crossmatch.nearest_source.daophot_chi:
-    field: detections.chinr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#chinr
   detection@ztf:alerce.crossmatch.nearest_source.daophot_sharp:
-    field: detections.sharpnr
-    endpoints:
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#sharpnr
   detection@ztf:alerce.photometry.{filter}.psf_magnitude_corrected_extended_component:
-    field: detections.magpsf_corr_ext
-    endpoints:
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_lightcurve.detections#magpsf_corr_ext
   detection@ztf:alerce.photometry.{filter}.aperture_magnitude_corrected:
-    field: detections.magap_corr
-    endpoints:
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
+  - query_lightcurve.detections#magap_corr
   detection@ztf:alerce.photometry.{filter}.aperture_magnitude_corrected_error:
-    field: detections.sigmagap_corr
-    endpoints:
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_detection
-  detection@ztf:alerce.raw.adpctdif1:
-    field: detections.adpctdif1
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.adpctdif2:
-    field: detections.adpctdif2
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.clrcoeff:
-    field: detections.clrcoeff
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.clrcounc:
-    field: detections.clrcounc
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.e_mag:
-    field: detections.e_mag
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.e_mag_corr:
-    field: detections.e_mag_corr
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.e_mag_corr_ext:
-    field: detections.e_mag_corr_ext
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.exptime:
-    field: detections.exptime
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.mag:
-    field: detections.mag
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.mag_corr:
-    field: detections.mag_corr
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.magzpsci:
-    field: detections.magzpsci
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.magzpscirms:
-    field: detections.magzpscirms
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.magzpsciunc:
-    field: detections.magzpsciunc
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.procstatus:
-    field: detections.procstatus
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.rcid:
-    field: detections.rcid
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.scibckgnd:
-    field: detections.scibckgnd
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.sciinpseeing:
-    field: detections.sciinpseeing
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
-  detection@ztf:alerce.raw.scisigpix:
-    field: detections.scisigpix
-    endpoints:
-    - query_lightcurve
-    description: Raw broker-specific field retained for completeness.
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_detection
+  - query_lightcurve.detections#sigmagap_corr
   non_detection@ztf:alerce.photometry.{filter}:
-    field: fid
-    endpoints:
-    - query_lightcurve
-    - query_non_detections
-    role: namespace_carrier
-    transform:
-      op: map_filter_id
-      survey: ztf
-    description: Filter/band namespace carrier.
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: non_detection
+  - query_lightcurve#fid
+  - query_non_detections#fid
   non_detection@ztf:alerce.identity.object_id:
-    field: oid
-    endpoints:
-    - query_lightcurve
-    - query_non_detections
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: non_detection
+  - query_lightcurve#oid
+  - query_non_detections#oid
   non_detection@ztf:alerce.time.mjd:
-    field: mjd
-    endpoints:
-    - query_lightcurve
-    - query_non_detections
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: non_detection
+  - query_lightcurve#mjd
+  - query_non_detections#mjd
   non_detection@ztf:alerce.photometry.{filter}.limiting_magnitude:
-    field: diffmaglim
-    endpoints:
-    - query_lightcurve
-    - query_non_detections
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: non_detection
+  - query_lightcurve#diffmaglim
+  - query_non_detections#diffmaglim
   non_detection@ztf:alerce.provenance.producer.survey_id:
-    field: tid
-    endpoints:
-    - query_lightcurve
-    - query_non_detections
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: non_detection
+  - query_lightcurve#tid
+  - query_non_detections#tid
   forced_photometry@ztf:alerce.photometry.{filter}:
-    field: fid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    role: namespace_carrier
-    transform:
-      op: map_filter_id
-      survey: ztf
-    description: Filter/band namespace carrier.
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#fid
+  - query_lightcurve#fid
   forced_photometry@ztf:alerce.identity.object_id:
-    field: oid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#oid
+  - query_lightcurve#oid
   forced_photometry@ztf:alerce.identity.source_id:
-    field: measurement_id
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: ztf_forced_photometry
+  - query_forced_photometry#measurement_id
+  - query_lightcurve#measurement_id
   forced_photometry@ztf:alerce.identity.alert_id:
-    field: candid
-    endpoints:
-    - query_forced_photometry
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#candid
   forced_photometry@ztf:alerce.relationship.parent_alert_id:
-    field: parent_candid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#parent_candid
+  - query_lightcurve#parent_candid
   forced_photometry@ztf:alerce.time.mjd:
-    field: mjd
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#mjd
+  - query_lightcurve#mjd
   forced_photometry@ztf:alerce.position.ra:
-    field: ra
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#ra
+  - query_lightcurve#ra
   forced_photometry@ztf:alerce.position.dec:
-    field: dec
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#dec
+  - query_lightcurve#dec
   forced_photometry@ztf:alerce.position.error.ra:
-    field: e_ra
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#e_ra
+  - query_lightcurve#e_ra
   forced_photometry@ztf:alerce.position.error.dec:
-    field: e_dec
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#e_dec
+  - query_lightcurve#e_dec
   forced_photometry@ztf:alerce.provenance.processing_id:
-    field: pid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#pid
+  - query_lightcurve#pid
   forced_photometry@ztf:alerce.provenance.reference_image_id:
-    field: rfid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#rfid
+  - query_lightcurve#rfid
   forced_photometry@ztf:alerce.provenance.producer.program.field:
-    field: field
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#field
+  - query_lightcurve#field
   forced_photometry@ztf:alerce.provenance.producer.program.id:
-    field: programid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#programid
+  - query_lightcurve#programid
   forced_photometry@ztf:alerce.provenance.producer.survey_id:
-    field: tid
-    endpoints:
-    - query_forced_photometry
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#tid
   forced_photometry@ztf:alerce.quality.corrected:
-    field: corrected
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#corrected
+  - query_lightcurve#corrected
   forced_photometry@ztf:alerce.quality.dubious:
-    field: dubious
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#dubious
+  - query_lightcurve#dubious
   forced_photometry@ztf:alerce.data_product.stamp.available:
-    field: has_stamp
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#has_stamp
+  - query_lightcurve#has_stamp
   forced_photometry@ztf:alerce.subtraction.sign:
-    field: isdiffpos
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#isdiffpos
+  - query_lightcurve#isdiffpos
   forced_photometry@ztf:alerce.provenance.instrument.readout_channel_id:
-    field: rcid
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#rcid
+  - query_lightcurve#rcid
   forced_photometry@ztf:alerce.provenance.processing_status:
-    field: procstatus
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#procstatus
+  - query_lightcurve#procstatus
   forced_photometry@ztf:alerce.image.science.psf_fwhm:
-    field: sciinpseeing
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#sciinpseeing
+  - query_lightcurve#sciinpseeing
   forced_photometry@ztf:alerce.image.science.background:
-    field: scibckgnd
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#scibckgnd
+  - query_lightcurve#scibckgnd
   forced_photometry@ztf:alerce.image.science.sigma_per_pixel:
-    field: scisigpix
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#scisigpix
+  - query_lightcurve#scisigpix
   forced_photometry@ztf:alerce.calibration.zero_point.magnitude:
-    field: magzpsci
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#magzpsci
+  - query_lightcurve#magzpsci
   forced_photometry@ztf:alerce.calibration.zero_point.magnitude_error:
-    field: magzpsciunc
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#magzpsciunc
+  - query_lightcurve#magzpsciunc
   forced_photometry@ztf:alerce.calibration.zero_point.rms:
-    field: magzpscirms
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#magzpscirms
+  - query_lightcurve#magzpscirms
   forced_photometry@ztf:alerce.calibration.color_coefficient:
-    field: clrcoeff
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#clrcoeff
+  - query_lightcurve#clrcoeff
   forced_photometry@ztf:alerce.calibration.color_coefficient_error:
-    field: clrcounc
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#clrcounc
+  - query_lightcurve#clrcounc
   forced_photometry@ztf:alerce.observation.exposure_time:
-    field: exptime
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#exptime
+  - query_lightcurve#exptime
   forced_photometry@ztf:alerce.astrometry.rms.ra:
-    field: adpctdif1
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#adpctdif1
+  - query_lightcurve#adpctdif1
   forced_photometry@ztf:alerce.astrometry.rms.dec:
-    field: adpctdif2
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#adpctdif2
+  - query_lightcurve#adpctdif2
   forced_photometry@ztf:alerce.crossmatch.nearest_source.distance:
-    field: distnr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#distnr
+  - query_lightcurve#distnr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.position.ra:
-    field: ranr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#ranr
+  - query_lightcurve#ranr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.position.dec:
-    field: decnr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#decnr
+  - query_lightcurve#decnr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.magnitude:
-    field: magnr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#magnr
+  - query_lightcurve#magnr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.magnitude_error:
-    field: sigmagnr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#sigmagnr
+  - query_lightcurve#sigmagnr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.daophot_chi:
-    field: chinr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#chinr
+  - query_lightcurve#chinr
   forced_photometry@ztf:alerce.crossmatch.nearest_source.daophot_sharp:
-    field: sharpnr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#sharpnr
+  - query_lightcurve#sharpnr
   forced_photometry@ztf:alerce.photometry.{filter}.limiting_magnitude:
-    field: diffmaglim
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#diffmaglim
+  - query_lightcurve#diffmaglim
   forced_photometry@ztf:alerce.photometry.{filter}.forced_magnitude:
-    field: mag
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#mag
+  - query_lightcurve#mag
   forced_photometry@ztf:alerce.photometry.{filter}.forced_magnitude_error:
-    field: e_mag
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#e_mag
+  - query_lightcurve#e_mag
   forced_photometry@ztf:alerce.photometry.{filter}.forced_magnitude_corrected:
-    field: mag_corr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#mag_corr
+  - query_lightcurve#mag_corr
   forced_photometry@ztf:alerce.photometry.{filter}.forced_magnitude_corrected_error:
-    field: e_mag_corr
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#e_mag_corr
+  - query_lightcurve#e_mag_corr
   forced_photometry@ztf:alerce.photometry.{filter}.forced_magnitude_corrected_extended_error:
-    field: e_mag_corr_ext
-    endpoints:
-    - query_forced_photometry
-    - query_lightcurve
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: ztf_forced_photometry
+  - query_forced_photometry#e_mag_corr_ext
+  - query_lightcurve#e_mag_corr_ext
   summary@ztf:alerce.photometry.{filter}:
-    field: fid
-    endpoints:
-    - query_magstats
-    role: namespace_carrier
-    transform:
-      op: map_filter_id
-      survey: ztf
-    description: Filter/band namespace carrier.
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#fid
   summary@ztf:alerce.photometry.{filter}.statistics.stellar:
-    field: stellar
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#stellar
   summary@ztf:alerce.photometry.{filter}.statistics.corrected:
-    field: corrected
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#corrected
   summary@ztf:alerce.photometry.{filter}.statistics.detection_count:
-    field: ndet
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#ndet
   summary@ztf:alerce.photometry.{filter}.statistics.dubious_count:
-    field: ndubious
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#ndubious
   summary@ztf:alerce.photometry.{filter}.statistics.first_slope:
-    field: dmdt_first
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#dmdt_first
   summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude:
-    field: dm_first
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#dm_first
   summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude_error:
-    field: sigmadm_first
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#sigmadm_first
   summary@ztf:alerce.photometry.{filter}.statistics.first_delta_time:
-    field: dt_first
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#dt_first
   summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude:
-    field: magmean
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magmean
   summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude:
-    field: magmedian
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magmedian
   summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude:
-    field: magmax
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magmax
   summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude:
-    field: magmin
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magmin
   summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev:
-    field: magsigma
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magsigma
   summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude:
-    field: maglast
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#maglast
   summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude:
-    field: magfirst
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#magfirst
   summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude_corrected:
-    field: magmean_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magmean_corr
   summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude_corrected:
-    field: magmedian_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magmedian_corr
   summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude_corrected:
-    field: magmax_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magmax_corr
   summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude_corrected:
-    field: magmin_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magmin_corr
   summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev_corrected:
-    field: magsigma_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magsigma_corr
   summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude_corrected:
-    field: maglast_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#maglast_corr
   summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude_corrected:
-    field: magfirst_corr
-    endpoints:
-    - query_magstats
-    unit: mag
-    availability:
-      endpoint_status: ok
-      field_status: declared_only
-    model: magstats
+  - query_magstats#magfirst_corr
   summary@ztf:alerce.photometry.{filter}.statistics.first_mjd:
-    field: firstmjd
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#firstmjd
   summary@ztf:alerce.photometry.{filter}.statistics.last_mjd:
-    field: lastmjd
-    endpoints:
-    - query_magstats
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: magstats
+  - query_magstats#lastmjd
   classification@ztf:alerce.classifier.name:
-    field: classifier_name
-    endpoints:
-    - query_classifiers
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
+  - query_classifiers#classifier_name
+  - query_probabilities#classifier_name
   classification@ztf:alerce.classifier.version:
-    field: classifier_version
-    endpoints:
-    - query_classifiers
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
+  - query_classifiers#classifier_version
+  - query_probabilities#classifier_version
   classification@ztf:alerce.class:
-    field: class_name
-    endpoints:
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
+  - query_probabilities#class_name
   classification@ztf:alerce.probability:
-    field: probability
-    endpoints:
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
+  - query_probabilities#probability
   classification@ztf:alerce.ranking:
-    field: ranking
-    endpoints:
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
+  - query_probabilities#ranking
   summary@ztf:alerce.features.{name}:
-    field: name
-    endpoints:
-    - query_features
-    role: namespace_carrier
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: feature
+  - query_features#name
   summary@ztf:alerce.features.{name}.value:
-    field: value
-    endpoints:
-    - query_features
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: feature
+  - query_features#value
   summary@ztf:alerce.features.{name}.filter_id:
-    field: fid
-    endpoints:
-    - query_features
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: feature
+  - query_features#fid
   summary@ztf:alerce.features.{name}.version:
-    field: version
-    endpoints:
-    - query_features
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: feature
+  - query_features#version
   classification@ztf:alerce.classifier.classes:
-    field: classes
-    endpoints:
-    - query_classifiers
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: classifier_vocabulary
+  - query_classifiers#classes
   data_product@ztf:alerce.cutout.science:
-    field: '[0]'
-    endpoints:
-    - get_stamps
-    role: data_product
-    description: 'ZTF get_stamps(format=''numpy'') returned an ordered list: science, template, difference.'
-    availability:
-      endpoint_status: ok
-    model: stamp
+  - get_stamps#[0]
   data_product@ztf:alerce.cutout.template:
-    field: '[1]'
-    endpoints:
-    - get_stamps
-    role: data_product
-    description: 'ZTF get_stamps(format=''numpy'') returned an ordered list: science, template, difference.'
-    availability:
-      endpoint_status: ok
-    model: stamp
+  - get_stamps#[1]
   data_product@ztf:alerce.cutout.difference:
-    field: '[2]'
-    endpoints:
-    - get_stamps
-    role: data_product
-    description: 'ZTF get_stamps(format=''numpy'') returned an ordered list: science, template, difference.'
-    availability:
-      endpoint_status: ok
-    model: stamp
+  - get_stamps#[2]
   data_product@ztf:alerce.avro.bytes:
-    field: bytes
-    endpoints:
-    - get_avro
-    role: data_product
-    description: Serialized AVRO bytes; audit stored length and hex preview only.
-    availability:
-      endpoint_status: ok
-    model: avro
-attribute_inventory:
-- method: query_classifiers
-  field: classes
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_classifiers
-  field: classifier_name
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_classifiers
-  field: classifier_version
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_object
-  field: class
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: classifier
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: corrected
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: deltajd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: firstmjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: g_r_max
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: g_r_max_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: g_r_mean
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: g_r_mean_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: lastmjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: meandec
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: meanra
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: mjdendhist
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: mjdstarthist
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: ncovhist
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: ndet
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: ndethist
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: oid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: probability
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: sigmadec
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: sigmara
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: stellar
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_object
-  field: step_id_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - object
-  method_status: ok
-- method: query_detections
-  field: candid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: corrected
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: dec
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: diffmaglim
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: distnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: drb
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: drbversion
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: dubious
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: fid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: has_stamp
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: isdiffpos
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: magap
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: magapbig
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: magpsf
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: magpsf_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: measurement_id
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: mjd
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: nid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: oid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: parent_candid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: phase
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: pid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: ra
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: rb
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: rbversion
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: rfid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: sigmagap
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: sigmagapbig
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: sigmapsf
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: sigmapsf_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: sigmapsf_corr_ext
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: step_id_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_detections
-  field: tid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  method_status: ok
-- method: query_non_detections
-  field: band
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_non_detections
-  field: diffmaglim
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_non_detections
-  field: fid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_non_detections
-  field: mjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_non_detections
-  field: oid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_non_detections
-  field: tid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - non_detection
-  method_status: ok
-- method: query_forced_photometry
-  field: adpctdif1
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: adpctdif2
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: candid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: chinr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: clrcoeff
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: clrcounc
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: corrected
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: dec
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: decnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: diffmaglim
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: distnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: dubious
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: e_dec
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: e_mag
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: e_mag_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: e_mag_corr_ext
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: e_ra
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: exptime
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: fid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: field
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: has_stamp
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: isdiffpos
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: mag
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: mag_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: magnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: magzpsci
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: magzpscirms
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: magzpsciunc
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: measurement_id
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: mjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: oid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: parent_candid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: pid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: procstatus
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: programid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: ra
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: ranr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: rcid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: rfid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: scibckgnd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: sciinpseeing
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: scisigpix
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: sharpnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: sigmagnr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_forced_photometry
-  field: tid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_forced_photometry
-  - forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: adpctdif1
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: adpctdif2
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: band
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: chinr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: clrcoeff
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: clrcounc
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: corrected
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: decnr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections
-  in_docs: false
-  in_payload_top: false
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.candid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.candid_alert
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.corrected
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.dec
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.diffmaglim
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.distnr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.drb
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.dubious
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.fid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.has_stamp
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.isdiffpos
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magap
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magap_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magapbig
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magpsf
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magpsf_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.magpsf_corr_ext
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.mjd
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.nid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.parent_candid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.phase
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.pid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.ra
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.rb
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.rbversion
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.rfid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmagap
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmagap_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmagapbig
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmapsf
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmapsf_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.sigmapsf_corr_ext
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.step_id_corr
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: detections.tid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: diffmaglim
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: distnr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: drb
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: drbversion
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: dubious
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: e_mag
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: e_mag_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: e_mag_corr_ext
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: exptime
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: field
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: has_stamp
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: isdiffpos
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: mag
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: mag_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magap
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magapbig
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magnr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magpsf
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magpsf_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magzpsci
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magzpscirms
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: magzpsciunc
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: measurement_id
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: mjd
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: nid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: non_detections
-  in_docs: false
-  in_payload_top: false
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: non_detections.diffmaglim
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: non_detections.fid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: non_detections.mjd
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: non_detections.tid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: oid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: parent_candid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: pid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: procstatus
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: programid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: ranr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: rb
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: rbversion
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: rcid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: rfid
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: scibckgnd
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sciinpseeing
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: scisigpix
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sharpnr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmagap
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmagapbig
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmagnr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmapsf
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmapsf_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_lightcurve
-  field: sigmapsf_corr_ext
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - ztf_detection
-  - non_detection
-  - ztf_forced_photometry
-  method_status: ok
-- method: query_magstats
-  field: corrected
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: dm_first
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: dmdt_first
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: dt_first
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: fid
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: firstmjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: lastmjd
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magfirst
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magfirst_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: maglast
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: maglast_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmax
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmax_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmean
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmean_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmedian
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmedian_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmin
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magmin_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magsigma
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: magsigma_corr
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: ndet
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: ndubious
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: sigmadm_first
-  in_docs: true
-  in_payload_top: false
-  in_payload_flat: false
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: stellar
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_magstats
-  field: step_id_corr
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - magstats
-  method_status: ok
-- method: query_probabilities
-  field: class_name
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - probability
-  method_status: ok
-- method: query_probabilities
-  field: classifier_name
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - probability
-  method_status: ok
-- method: query_probabilities
-  field: classifier_version
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - probability
-  method_status: ok
-- method: query_probabilities
-  field: probability
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - probability
-  method_status: ok
-- method: query_probabilities
-  field: ranking
-  in_docs: true
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models:
-  - probability
-  method_status: ok
-- method: query_features
-  field: fid
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_features
-  field: name
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_features
-  field: value
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: query_features
-  field: version
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: get_avro
-  field: __type__
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: get_avro
-  field: length
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
-- method: get_avro
-  field: preview_hex
-  in_docs: false
-  in_payload_top: true
-  in_payload_flat: true
-  documented_models: []
-  method_status: ok
+  - get_avro#bytes

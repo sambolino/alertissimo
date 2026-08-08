@@ -1,0 +1,134 @@
+broker: alerce
+origin: ztf
+notes: Raw ALeRCE attributes without an established stable semantic path.
+unmapped:
+- get_avro#__type__:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- get_avro#length:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- get_avro#preview_hex:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_detections#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve#band:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#detections:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#non_detections:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#adpctdif1:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#adpctdif2:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#candid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#candid_alert:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#clrcoeff:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#clrcounc:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#corrected:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dec:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#diffmaglim:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#distnr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#drb:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#dubious:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#e_mag:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#e_mag_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#e_mag_corr_ext:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#exptime:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#fid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#has_stamp:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#isdiffpos:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#mag:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#mag_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#magap:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#magapbig:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#magpsf:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#magpsf_corr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#magzpsci:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#magzpscirms:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#magzpsciunc:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#mjd:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#nid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#parent_candid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#phase:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#pid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#procstatus:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#ra:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#rb:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#rbversion:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#rcid:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#rfid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#scibckgnd:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#sciinpseeing:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#scisigpix:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_lightcurve.detections#sigmagap:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#sigmagapbig:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#sigmapsf:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#sigmapsf_corr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#sigmapsf_corr_ext:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#step_id_corr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.detections#tid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.non_detections#diffmaglim:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.non_detections#fid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.non_detections#mjd:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_lightcurve.non_detections#tid:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_magstats#step_id_corr:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_non_detections#band:
+    reason: No stable semantic mapping is established for this raw ALeRCE attribute.
+- query_object#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.
+- query_objects#step_id_corr:
+    reason: No stable semantic path exists in feature_catalog.yaml.

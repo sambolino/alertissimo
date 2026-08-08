@@ -155,3 +155,29 @@ def test_all_skips_legacy_files_without_payloads(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "SKIPPED" in output
     assert "PASSED" not in output
+
+ALERCE_MAPPING_PATHS = [
+    Path("alertissimo/core/brokers/registry/alerce/lsst/mappings.yaml"),
+    Path("alertissimo/core/brokers/registry/alerce/ztf/mappings.yaml"),
+]
+
+
+@pytest.mark.parametrize("path", ALERCE_MAPPING_PATHS)
+def test_alerce_mapping_registry_uses_minimal_schema(path):
+    validate_mapping_file(path)
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    forbidden = {
+        "sources", "source_fields", "field_status", "availability", "record_type",
+        "object_summary", "attribute_inventory", "mapping_policy", "endpoints",
+    }
+
+    assert forbidden.isdisjoint(document)
+    payloads = set(document["payloads"])
+    for references in document["mappings"].values():
+        assert isinstance(references, list) and references
+        assert all(reference.split("#", 1)[0] in payloads for reference in references)
+
+    unmapped = yaml.safe_load(path.with_name("unmapped_fields.yaml").read_text(encoding="utf-8"))
+    for entry in unmapped["unmapped"]:
+        reference = next(iter(entry))
+        assert reference.split("#", 1)[0] in payloads
