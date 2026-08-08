@@ -1,0 +1,42 @@
+broker: alerce
+origin: ztf
+notes: Raw fields without a stable feature_catalog.yaml semantic path.
+unmapped:
+- get_avro#__type__:
+    reason: no_stable_feature_catalog_path
+- get_avro#length:
+    reason: no_stable_feature_catalog_path
+- get_avro#preview_hex:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classes:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_name:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_version:
+    reason: no_stable_feature_catalog_path
+- query_features#fid:
+    reason: no_stable_feature_catalog_path
+- query_features#name:
+    reason: no_stable_feature_catalog_path
+- query_features#value:
+    reason: no_stable_feature_catalog_path
+- query_features#version:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#candid_alert:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magap_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magpsf_corr_ext:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmagap_corr:
+    reason: no_stable_feature_catalog_path
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_non_detections#band:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#classifier_name:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#classifier_version:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path

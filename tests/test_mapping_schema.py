@@ -155,3 +155,69 @@ def test_all_skips_legacy_files_without_payloads(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "SKIPPED" in output
     assert "PASSED" not in output
+
+
+ALERCE_REGISTRY = Path("alertissimo/core/brokers/registry/alerce")
+
+
+@pytest.fixture(params=("lsst", "ztf"))
+def alerce_mapping(request):
+    directory = ALERCE_REGISTRY / request.param
+    mapping = yaml.safe_load((directory / "mappings.yaml").read_text(encoding="utf-8"))
+    unmapped = yaml.safe_load(
+        (directory / "unmapped_fields.yaml").read_text(encoding="utf-8")
+    )
+    return mapping, unmapped
+
+
+def test_alerce_lightcurve_rows_use_nested_payloads(alerce_mapping):
+    mapping, _ = alerce_mapping
+    forbidden_fields = {
+        "ra", "dec", "mjd", "measurement_id", "psfFlux", "psfFluxErr",
+        "scienceFlux", "templateFlux", "apFlux", "snr", "magpsf", "sigmapsf",
+        "diffmaglim",
+    }
+    references_by_semantic = mapping["mappings"]
+    references = {
+        reference
+        for semantic_references in references_by_semantic.values()
+        for reference in semantic_references
+    }
+
+    assert not {f"query_lightcurve#{field}" for field in forbidden_fields} & references
+
+    expected_payload = {
+        "detection@": "query_lightcurve.detections",
+        "forced_photometry@": "query_lightcurve.forced_photometry",
+        "non_detection@": "query_lightcurve.non_detections",
+    }
+    nested_references = {payload: [] for payload in expected_payload.values()}
+    for semantic, semantic_references in references_by_semantic.items():
+        for prefix, payload in expected_payload.items():
+            if semantic.startswith(prefix):
+                lightcurve_references = [
+                    reference
+                    for reference in semantic_references
+                    if reference.startswith("query_lightcurve")
+                ]
+                assert all(
+                    reference.startswith(f"{payload}#")
+                    for reference in lightcurve_references
+                )
+                nested_references[payload].extend(lightcurve_references)
+
+    assert all(nested_references.values())
+
+
+def test_alerce_mapped_references_are_not_also_unmapped(alerce_mapping):
+    mapping, unmapped = alerce_mapping
+    mapped_references = {
+        reference
+        for semantic_references in mapping["mappings"].values()
+        for reference in semantic_references
+    }
+    unmapped_references = {
+        next(iter(entry))
+        for entry in unmapped["unmapped"]
+    }
+    assert mapped_references.isdisjoint(unmapped_references)

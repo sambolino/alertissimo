@@ -1,0 +1,24 @@
+broker: alerce
+origin: lsst
+notes: Raw fields without a stable feature_catalog.yaml semantic path.
+unmapped:
+- query_detections#band_name:
+    reason: no_stable_feature_catalog_path
+- query_detections#diaObjectId:
+    reason: no_stable_feature_catalog_path
+- query_forced_photometry#band:
+    reason: no_stable_feature_catalog_path
+- query_forced_photometry#band_name:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#band_name:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#diaObjectId:
+    reason: no_stable_feature_catalog_path
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#classifier_name:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#classifier_version:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path
