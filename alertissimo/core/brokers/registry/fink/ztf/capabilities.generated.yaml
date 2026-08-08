@@ -1,0 +1,102 @@
+broker: fink
+origin: ztf
+generated_from:
+  endpoints_sha256: 396240d39d5cd167768c0c00a0ca3564ca0a8303198c6db2a9cc355bf9be11a9
+  mappings_sha256: 2d77f727ded1d2d0ef98b31979bc7a8295e0e46d0ff37e65d9ccff0197ad245e
+  feature_catalog_sha256: a457769d28012421ed793694331917bc5cfb43ddb0aefd5146ce161176c57583
+semantic_fields:
+  summary@ztf:fink.identity.object_id:
+    source: objects
+    raw_field: i:objectId
+    endpoints: &id001
+    - objects
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:fink.position.ra:
+    source: objects
+    raw_field: i:ra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:fink.position.dec:
+    source: objects
+    raw_field: i:dec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+endpoints:
+  objects:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - summary@ztf:fink.identity.object_id
+    - summary@ztf:fink.position.dec
+    - summary@ztf:fink.position.ra
+  conesearch:
+    enabled: true
+    status: enabled
+    operation_types:
+    - cone_search
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  statistics:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  cutouts:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  latests:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  anomaly:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  blocks:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []

@@ -1,0 +1,110 @@
+broker: fink
+origin: lsst
+endpoints:
+  objects:
+    enabled: true
+    status: enabled
+    transport:
+      kind: rest
+      module: https://api.fink-portal.org/api/v1/objects
+      method: objects
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  conesearch:
+    enabled: true
+    status: enabled
+    transport:
+      kind: rest
+      module: https://api.fink-portal.org/api/v1/conesearch
+      method: conesearch
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - cone_search
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  statistics:
+    enabled: true
+    status: enabled
+    transport:
+      kind: rest
+      module: https://api.fink-portal.org/api/v1/statistics
+      method: statistics
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - auxiliary_lookup
+      record_scope:
+      - metadata
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  cutouts:
+    enabled: true
+    status: enabled
+    transport:
+      kind: rest
+      module: https://api.fink-portal.org/api/v1/cutouts
+      method: cutouts
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - auxiliary_lookup
+      record_scope:
+      - metadata
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false

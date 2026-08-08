@@ -1,0 +1,102 @@
+broker: alerce
+origin: lsst
+sources:
+  query_object:
+    endpoints:
+    - query_object
+    payload_path: .
+    record_scope:
+    - summary
+    status: observed
+  query_detections:
+    endpoints:
+    - query_detections
+    payload_path: '[]'
+    record_scope:
+    - detection
+    status: observed
+  query_non_detections:
+    endpoints:
+    - query_non_detections
+    payload_path: '[]'
+    record_scope:
+    - non_detection
+    status: declared_only
+    endpoint_status: enabled
+    live_status: empty_in_sampling
+  query_probabilities:
+    endpoints:
+    - query_probabilities
+    payload_path: '[]'
+    record_scope:
+    - classification
+    status: observed
+  query_magstats:
+    endpoints:
+    - query_magstats
+    payload_path: '[]'
+    record_scope:
+    - summary
+    status: declared_only
+    endpoint_status: known_unsupported
+  query_features:
+    endpoints:
+    - query_features
+    payload_path: '[]'
+    record_scope:
+    - summary
+    status: declared_only
+    endpoint_status: known_unsupported
+  query_classifiers:
+    endpoints:
+    - query_classifiers
+    payload_path: '[]'
+    record_scope:
+    - metadata
+    status: declared_only
+    endpoint_status: known_unsupported
+mappings:
+  summary@lsst:alerce:
+    source: query_object
+    fields:
+      identity.object_id:
+        field: oid
+      position.ra:
+        field: meanra
+      position.dec:
+        field: meandec
+  detection@lsst:alerce:
+    source: query_detections
+    fields:
+      identity.object_id:
+        field: oid
+      time.mjd:
+        field: mjd
+      photometry.magnitude:
+        field: mag
+      photometry.magnitude_error:
+        field: e_mag
+      photometry.filter:
+        field: fid
+  non_detection@lsst:alerce:
+    source: query_non_detections
+    fields:
+      identity.object_id:
+        field: oid
+      time.mjd:
+        field: mjd
+      photometry.limiting_magnitude:
+        field: diffmaglim
+      photometry.filter:
+        field: fid
+  classification@lsst:alerce:
+    source: query_probabilities
+    fields:
+      assessment.{classifier_name}.class:
+        field: class_name
+      assessment.{classifier_name}.probability:
+        field: probability
+      assessment.{classifier_name}.version:
+        field: classifier_version
+      assessment.{classifier_name}.ranking:
+        field: ranking

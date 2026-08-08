@@ -1,0 +1,67 @@
+# Semantic vocabulary used by broker mappings.  Registry mappings may only use
+# paths rooted in one of these record types and composed from the listed nodes.
+records:
+  summary:
+    identity:
+      object_id: {level: L0}
+      broker_object_id: {level: L0}
+    position:
+      ra: {level: L0}
+      dec: {level: L0}
+    time:
+      first_mjd: {level: L1}
+      last_mjd: {level: L1}
+    photometry:
+      filters:
+        "{filter}":
+          count: {level: L1}
+          mean: {level: L1}
+          stdev: {level: L1}
+    tags: {level: L1}
+  detection:
+    identity:
+      alert_id: {level: L0}
+      object_id: {level: L0}
+    position:
+      ra: {level: L0}
+      dec: {level: L0}
+    time:
+      mjd: {level: L0}
+    photometry:
+      magnitude: {level: L0}
+      magnitude_error: {level: L0}
+      filter: {level: L0}
+      flux: {level: L0}
+      flux_error: {level: L0}
+  non_detection:
+    identity:
+      object_id: {level: L0}
+    time:
+      mjd: {level: L0}
+    photometry:
+      limiting_magnitude: {level: L0}
+      filter: {level: L0}
+  classification:
+    assessment:
+      "{classifier_name}":
+        class: {level: L1}
+        probability: {level: L1}
+        version: {level: L1}
+        ranking: {level: L1}
+    best:
+      class: {level: L1}
+      probability: {level: L1}
+  lightcurve:
+    time:
+      mjd: {level: L0}
+    photometry:
+      magnitude: {level: L0}
+      magnitude_error: {level: L0}
+      filter: {level: L0}
+
+# Raw dictionaries are intentionally outside the stable semantic vocabulary.
+# Only the named ANTARES payload dictionaries may use these extensions.
+raw_extensions:
+  antares:
+    - properties.{field}
+    - catalog_objects.{catalog}.{field}

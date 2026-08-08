@@ -1,0 +1,278 @@
+broker: antares
+origin: ztf
+endpoints:
+  search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: search
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  cone_search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: cone_search
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - cone_search
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_by_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_by_id
+      client: ANTARESClient
+    params:
+      broker_object_id:
+        required: true
+        type: string
+        binding: broker_object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - broker_object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_by_ztf_object_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_by_ztf_object_id
+      client: ANTARESClient
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_random_locus_id:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_random_locus_id
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_random_locus_ids:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_random_locus_ids
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_available_tags:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_available_tags
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - object_lookup
+      record_scope:
+      - metadata
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_catalog_samples:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_catalog_samples
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - object_lookup
+      record_scope:
+      - metadata
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  catalog_search:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: catalog_search
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  get_thumbnails:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: antares_client.search
+      method: get_thumbnails
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  streaming_client:
+    enabled: false
+    status: known_unsupported
+    transport:
+      kind: python
+      module: antares_client.search
+      method: streaming_client
+      client: ANTARESClient
+    params: {}
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - streaming
+      record_scope:
+      - metadata
+      required_bindings: []
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+    disabled_reason: Current client exposes only a placeholder streaming client.

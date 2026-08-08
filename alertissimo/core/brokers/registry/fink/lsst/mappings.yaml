@@ -1,0 +1,27 @@
+broker: fink
+origin: lsst
+sources:
+  objects:
+    endpoints:
+    - objects
+    payload_path: '[]'
+    record_scope:
+    - summary
+    status: observed
+  conesearch:
+    endpoints:
+    - conesearch
+    payload_path: '[]'
+    record_scope:
+    - summary
+    status: observed
+mappings:
+  summary@lsst:fink:
+    source: objects
+    fields:
+      identity.object_id:
+        field: i:objectId
+      position.ra:
+        field: i:ra
+      position.dec:
+        field: i:dec

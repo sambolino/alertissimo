@@ -1,0 +1,71 @@
+generated_by: registry_refactor_first_pass
+purpose: >
+  Raw broker fields that were observed or documented but not mapped because no exact
+  supported semantic path was found in feature_catalog.yaml.
+entries:
+  - broker: alerce
+    origin: ztf
+    source: query_magstats
+    raw_field: dmdt_first
+    raw_description: Initial rise estimate, if available from docs/payload
+    reason: no_exact_feature_catalog_path
+    candidate_interpretation: magnitude_rate_or_rise_rate
+    proposed_catalog_addition: null
+    action_required: user_review
+  - broker: alerce
+    origin: lsst
+    source: query_magstats
+    raw_field: dmdt_first
+    reason: unsupported_source_and_no_exact_feature_catalog_path
+    candidate_interpretation: magnitude_rate_or_rise_rate
+    proposed_catalog_addition: null
+    action_required: user_review
+  - broker: alerce
+    origin: ztf
+    source: query_probabilities
+    raw_field: classifier_name
+    reason: not_a_semantic_classifier_branch
+    candidate_interpretation: assessment_namespace
+    mapped_as: classification.assessment.{classifier_name}
+    action_required: none
+  - broker: alerce
+    origin: lsst
+    source: query_probabilities
+    raw_field: classifier_name
+    reason: not_a_semantic_classifier_branch
+    candidate_interpretation: assessment_namespace
+    mapped_as: classification.assessment.{classifier_name}
+    action_required: none
+  - broker: antares
+    origin: ztf
+    source: locus
+    raw_field: properties.{field}
+    reason: arbitrary_broker_dictionary
+    candidate_interpretation: survey_specific_raw_property
+    mapped_as: summary@ztf:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: ztf
+    source: alert
+    raw_field: properties.{field}
+    reason: arbitrary_broker_dictionary
+    candidate_interpretation: survey_specific_raw_property
+    mapped_as: detection@ztf:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: lsst
+    source: locus
+    raw_field: properties.{field}
+    reason: arbitrary_broker_dictionary
+    candidate_interpretation: survey_specific_raw_property
+    mapped_as: summary@lsst:antares.properties.{field}
+    action_required: user_review
+  - broker: antares
+    origin: lsst
+    source: alert
+    raw_field: properties.{field}
+    reason: arbitrary_broker_dictionary
+    candidate_interpretation: survey_specific_raw_property
+    mapped_as: detection@lsst:antares.properties.{field}
+    action_required: user_review
+

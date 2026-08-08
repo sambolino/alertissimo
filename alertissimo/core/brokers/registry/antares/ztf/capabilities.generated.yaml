@@ -1,0 +1,253 @@
+broker: antares
+origin: ztf
+generated_from:
+  endpoints_sha256: a6a51adda945e73375ae6c6f33875b950ec4e2d59f62698948d6ede8e79b9db1
+  mappings_sha256: e92b3b5d0cca672f061294a611c27c7efcf494c03512581c506c44d8a73cfdca
+  feature_catalog_sha256: a457769d28012421ed793694331917bc5cfb43ddb0aefd5146ce161176c57583
+semantic_fields:
+  summary@ztf:antares.identity.broker_object_id:
+    source: locus
+    raw_field: locus_id
+    endpoints: &id001
+    - get_by_id
+    - get_by_ztf_object_id
+    - cone_search
+    - search
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  summary@ztf:antares.position.ra:
+    source: locus
+    raw_field: ra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  summary@ztf:antares.position.dec:
+    source: locus
+    raw_field: dec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  summary@ztf:antares.tags:
+    source: locus
+    raw_field: tags
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: false
+  detection@ztf:antares.identity.alert_id:
+    source: alert
+    raw_field: alert_id
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  detection@ztf:antares.time.mjd:
+    source: alert
+    raw_field: mjd
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  lightcurve@ztf:antares.time.mjd:
+    source: lightcurve
+    raw_field: mjd
+    endpoints: &id002
+    - get_by_id
+    - get_by_ztf_object_id
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  lightcurve@ztf:antares.photometry.magnitude:
+    source: lightcurve
+    raw_field: magnitude
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  lightcurve@ztf:antares.photometry.magnitude_error:
+    source: lightcurve
+    raw_field: magnitude_error
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  lightcurve@ztf:antares.photometry.filter:
+    source: lightcurve
+    raw_field: filter
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: false
+  summary@ztf:antares.properties.{field}:
+    source: locus
+    raw_field: properties.{field}
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared
+    active: true
+    dynamic: true
+    status: raw_extension
+  detection@ztf:antares.properties.{field}:
+    source: alert
+    raw_field: properties.{field}
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: declared_lazy
+    active: true
+    dynamic: true
+    status: raw_extension
+endpoints:
+  search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@ztf:antares.identity.alert_id
+    - detection@ztf:antares.properties.{field}
+    - detection@ztf:antares.time.mjd
+    - summary@ztf:antares.identity.broker_object_id
+    - summary@ztf:antares.position.dec
+    - summary@ztf:antares.position.ra
+    - summary@ztf:antares.properties.{field}
+    - summary@ztf:antares.tags
+  cone_search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - cone_search
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields:
+    - detection@ztf:antares.identity.alert_id
+    - detection@ztf:antares.properties.{field}
+    - detection@ztf:antares.time.mjd
+    - summary@ztf:antares.identity.broker_object_id
+    - summary@ztf:antares.position.dec
+    - summary@ztf:antares.position.ra
+    - summary@ztf:antares.properties.{field}
+    - summary@ztf:antares.tags
+  get_by_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - broker_object_id
+    semantic_fields:
+    - detection@ztf:antares.identity.alert_id
+    - detection@ztf:antares.properties.{field}
+    - detection@ztf:antares.time.mjd
+    - lightcurve@ztf:antares.photometry.filter
+    - lightcurve@ztf:antares.photometry.magnitude
+    - lightcurve@ztf:antares.photometry.magnitude_error
+    - lightcurve@ztf:antares.time.mjd
+    - summary@ztf:antares.identity.broker_object_id
+    - summary@ztf:antares.position.dec
+    - summary@ztf:antares.position.ra
+    - summary@ztf:antares.properties.{field}
+    - summary@ztf:antares.tags
+  get_by_ztf_object_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - detection@ztf:antares.identity.alert_id
+    - detection@ztf:antares.properties.{field}
+    - detection@ztf:antares.time.mjd
+    - lightcurve@ztf:antares.photometry.filter
+    - lightcurve@ztf:antares.photometry.magnitude
+    - lightcurve@ztf:antares.photometry.magnitude_error
+    - lightcurve@ztf:antares.time.mjd
+    - summary@ztf:antares.identity.broker_object_id
+    - summary@ztf:antares.position.dec
+    - summary@ztf:antares.position.ra
+    - summary@ztf:antares.properties.{field}
+    - summary@ztf:antares.tags
+  get_random_locus_id:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_random_locus_ids:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_available_tags:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - metadata
+    required_bindings: []
+    semantic_fields: []
+  get_catalog_samples:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - metadata
+    required_bindings: []
+    semantic_fields: []
+  catalog_search:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  get_thumbnails:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  streaming_client:
+    enabled: false
+    status: known_unsupported
+    operation_types:
+    - streaming
+    record_scope:
+    - metadata
+    required_bindings: []
+    semantic_fields: []

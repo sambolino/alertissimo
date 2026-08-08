@@ -1,0 +1,226 @@
+broker: alerce
+origin: lsst
+generated_from:
+  endpoints_sha256: a14b0c41d744ef132c4ba008041f2cf8196aee80bc93cc9f3723b99f6d757951
+  mappings_sha256: cc28ca8f28c3f52e9240cd3513525a97b56b194ec90c92ef18516dc4cc56d22c
+  feature_catalog_sha256: a457769d28012421ed793694331917bc5cfb43ddb0aefd5146ce161176c57583
+semantic_fields:
+  summary@lsst:alerce.identity.object_id:
+    source: query_object
+    raw_field: oid
+    endpoints: &id001
+    - query_object
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@lsst:alerce.position.ra:
+    source: query_object
+    raw_field: meanra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@lsst:alerce.position.dec:
+    source: query_object
+    raw_field: meandec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@lsst:alerce.identity.object_id:
+    source: query_detections
+    raw_field: oid
+    endpoints: &id002
+    - query_detections
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@lsst:alerce.time.mjd:
+    source: query_detections
+    raw_field: mjd
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@lsst:alerce.photometry.magnitude:
+    source: query_detections
+    raw_field: mag
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@lsst:alerce.photometry.magnitude_error:
+    source: query_detections
+    raw_field: e_mag
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@lsst:alerce.photometry.filter:
+    source: query_detections
+    raw_field: fid
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  non_detection@lsst:alerce.identity.object_id:
+    source: query_non_detections
+    raw_field: oid
+    endpoints: &id003
+    - query_non_detections
+    endpoint_status: enabled
+    source_status: declared_only
+    active: false
+    dynamic: false
+  non_detection@lsst:alerce.time.mjd:
+    source: query_non_detections
+    raw_field: mjd
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: declared_only
+    active: false
+    dynamic: false
+  non_detection@lsst:alerce.photometry.limiting_magnitude:
+    source: query_non_detections
+    raw_field: diffmaglim
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: declared_only
+    active: false
+    dynamic: false
+  non_detection@lsst:alerce.photometry.filter:
+    source: query_non_detections
+    raw_field: fid
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: declared_only
+    active: false
+    dynamic: false
+  classification@lsst:alerce.assessment.{classifier_name}.class:
+    source: query_probabilities
+    raw_field: class_name
+    endpoints: &id004
+    - query_probabilities
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@lsst:alerce.assessment.{classifier_name}.probability:
+    source: query_probabilities
+    raw_field: probability
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@lsst:alerce.assessment.{classifier_name}.version:
+    source: query_probabilities
+    raw_field: classifier_version
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@lsst:alerce.assessment.{classifier_name}.ranking:
+    source: query_probabilities
+    raw_field: ranking
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+endpoints:
+  query_object:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - summary@lsst:alerce.identity.object_id
+    - summary@lsst:alerce.position.dec
+    - summary@lsst:alerce.position.ra
+  query_detections:
+    enabled: true
+    status: enabled
+    operation_types:
+    - detection_lookup
+    record_scope:
+    - detection
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - detection@lsst:alerce.identity.object_id
+    - detection@lsst:alerce.photometry.filter
+    - detection@lsst:alerce.photometry.magnitude
+    - detection@lsst:alerce.photometry.magnitude_error
+    - detection@lsst:alerce.time.mjd
+  query_non_detections:
+    enabled: true
+    status: enabled
+    operation_types:
+    - non_detection_lookup
+    record_scope:
+    - non_detection
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - non_detection@lsst:alerce.identity.object_id
+    - non_detection@lsst:alerce.photometry.filter
+    - non_detection@lsst:alerce.photometry.limiting_magnitude
+    - non_detection@lsst:alerce.time.mjd
+  query_probabilities:
+    enabled: true
+    status: enabled
+    operation_types:
+    - classification_lookup
+    record_scope:
+    - classification
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - classification@lsst:alerce.assessment.{classifier_name}.class
+    - classification@lsst:alerce.assessment.{classifier_name}.probability
+    - classification@lsst:alerce.assessment.{classifier_name}.ranking
+    - classification@lsst:alerce.assessment.{classifier_name}.version
+  query_magstats:
+    enabled: false
+    status: known_unsupported
+    operation_types:
+    - photometry_summary_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  query_features:
+    enabled: false
+    status: known_unsupported
+    operation_types:
+    - feature_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  query_classifiers:
+    enabled: false
+    status: known_unsupported
+    operation_types:
+    - classifier_metadata_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []

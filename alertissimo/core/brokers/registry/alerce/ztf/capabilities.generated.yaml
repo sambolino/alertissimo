@@ -1,0 +1,226 @@
+broker: alerce
+origin: ztf
+generated_from:
+  endpoints_sha256: 2a32aa35025e16e8571fb99e7e4e86a0637947744446cdb3299756c4deeda5f2
+  mappings_sha256: b6cdf150c7f40c5eb22489682633fe3ca5e430d2746c2ef336293fbc46fbac0e
+  feature_catalog_sha256: a457769d28012421ed793694331917bc5cfb43ddb0aefd5146ce161176c57583
+semantic_fields:
+  summary@ztf:alerce.identity.object_id:
+    source: query_object
+    raw_field: oid
+    endpoints: &id001
+    - query_object
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:alerce.position.ra:
+    source: query_object
+    raw_field: meanra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@ztf:alerce.position.dec:
+    source: query_object
+    raw_field: meandec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@ztf:alerce.identity.object_id:
+    source: query_detections
+    raw_field: oid
+    endpoints: &id002
+    - query_detections
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@ztf:alerce.time.mjd:
+    source: query_detections
+    raw_field: mjd
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@ztf:alerce.photometry.magnitude:
+    source: query_detections
+    raw_field: mag
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@ztf:alerce.photometry.magnitude_error:
+    source: query_detections
+    raw_field: e_mag
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  detection@ztf:alerce.photometry.filter:
+    source: query_detections
+    raw_field: fid
+    endpoints: *id002
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  non_detection@ztf:alerce.identity.object_id:
+    source: query_non_detections
+    raw_field: oid
+    endpoints: &id003
+    - query_non_detections
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  non_detection@ztf:alerce.time.mjd:
+    source: query_non_detections
+    raw_field: mjd
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  non_detection@ztf:alerce.photometry.limiting_magnitude:
+    source: query_non_detections
+    raw_field: diffmaglim
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  non_detection@ztf:alerce.photometry.filter:
+    source: query_non_detections
+    raw_field: fid
+    endpoints: *id003
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  classification@ztf:alerce.assessment.{classifier_name}.class:
+    source: query_probabilities
+    raw_field: class_name
+    endpoints: &id004
+    - query_probabilities
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@ztf:alerce.assessment.{classifier_name}.probability:
+    source: query_probabilities
+    raw_field: probability
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@ztf:alerce.assessment.{classifier_name}.version:
+    source: query_probabilities
+    raw_field: classifier_version
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+  classification@ztf:alerce.assessment.{classifier_name}.ranking:
+    source: query_probabilities
+    raw_field: ranking
+    endpoints: *id004
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: true
+endpoints:
+  query_object:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - summary@ztf:alerce.identity.object_id
+    - summary@ztf:alerce.position.dec
+    - summary@ztf:alerce.position.ra
+  query_detections:
+    enabled: true
+    status: enabled
+    operation_types:
+    - detection_lookup
+    record_scope:
+    - detection
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - detection@ztf:alerce.identity.object_id
+    - detection@ztf:alerce.photometry.filter
+    - detection@ztf:alerce.photometry.magnitude
+    - detection@ztf:alerce.photometry.magnitude_error
+    - detection@ztf:alerce.time.mjd
+  query_non_detections:
+    enabled: true
+    status: enabled
+    operation_types:
+    - non_detection_lookup
+    record_scope:
+    - non_detection
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - non_detection@ztf:alerce.identity.object_id
+    - non_detection@ztf:alerce.photometry.filter
+    - non_detection@ztf:alerce.photometry.limiting_magnitude
+    - non_detection@ztf:alerce.time.mjd
+  query_probabilities:
+    enabled: true
+    status: enabled
+    operation_types:
+    - classification_lookup
+    record_scope:
+    - classification
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - classification@ztf:alerce.assessment.{classifier_name}.class
+    - classification@ztf:alerce.assessment.{classifier_name}.probability
+    - classification@ztf:alerce.assessment.{classifier_name}.ranking
+    - classification@ztf:alerce.assessment.{classifier_name}.version
+  query_magstats:
+    enabled: true
+    status: enabled
+    operation_types:
+    - photometry_summary_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  query_features:
+    enabled: true
+    status: enabled
+    operation_types:
+    - feature_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  query_classifiers:
+    enabled: true
+    status: enabled
+    operation_types:
+    - classifier_metadata_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []

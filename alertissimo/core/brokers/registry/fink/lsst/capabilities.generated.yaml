@@ -1,0 +1,75 @@
+broker: fink
+origin: lsst
+generated_from:
+  endpoints_sha256: 24e4f4542d7967b5e92421082f6855853f6b1de9def81a81020dbba780242ab3
+  mappings_sha256: e4cfd167763a451356cbf60179f588a356901c96cf67dd493d1b624aaa97e4b8
+  feature_catalog_sha256: a457769d28012421ed793694331917bc5cfb43ddb0aefd5146ce161176c57583
+semantic_fields:
+  summary@lsst:fink.identity.object_id:
+    source: objects
+    raw_field: i:objectId
+    endpoints: &id001
+    - objects
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@lsst:fink.position.ra:
+    source: objects
+    raw_field: i:ra
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+  summary@lsst:fink.position.dec:
+    source: objects
+    raw_field: i:dec
+    endpoints: *id001
+    endpoint_status: enabled
+    source_status: observed
+    active: true
+    dynamic: false
+endpoints:
+  objects:
+    enabled: true
+    status: enabled
+    operation_types:
+    - object_lookup
+    record_scope:
+    - summary
+    required_bindings:
+    - object_id
+    semantic_fields:
+    - summary@lsst:fink.identity.object_id
+    - summary@lsst:fink.position.dec
+    - summary@lsst:fink.position.ra
+  conesearch:
+    enabled: true
+    status: enabled
+    operation_types:
+    - cone_search
+    record_scope:
+    - summary
+    required_bindings: []
+    semantic_fields: []
+  statistics:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []
+  cutouts:
+    enabled: true
+    status: enabled
+    operation_types:
+    - auxiliary_lookup
+    record_scope:
+    - metadata
+    required_bindings:
+    - object_id
+    semantic_fields: []

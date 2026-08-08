@@ -1,0 +1,220 @@
+broker: alerce
+origin: ztf
+endpoints:
+  query_object:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_object
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_detections:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_detections
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - detection_lookup
+      record_scope:
+      - detection
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_non_detections:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_non_detections
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - non_detection_lookup
+      record_scope:
+      - non_detection
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_probabilities:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_probabilities
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - classification_lookup
+      record_scope:
+      - classification
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_magstats:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_magstats
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - photometry_summary_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_features:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_features
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - feature_lookup
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false
+  query_classifiers:
+    enabled: true
+    status: enabled
+    transport:
+      kind: python
+      module: alerce.core
+      method: query_classifiers
+      client: Alerce
+      fixed_params:
+        survey: ztf
+    params:
+      object_id:
+        required: true
+        type: string
+        binding: object_id
+    output:
+      type: object
+      item: object
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - classifier_metadata_lookup
+      record_scope:
+      - metadata
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      projection:
+        supports_columns: false
+      server_filters: []
+      post_filter: false

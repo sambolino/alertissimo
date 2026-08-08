@@ -1,0 +1,66 @@
+broker: antares
+origin: ztf
+sources:
+  locus:
+    endpoints: &id001
+    - get_by_id
+    - get_by_ztf_object_id
+    - cone_search
+    - search
+    payload_path: .
+    record_scope:
+    - summary
+    status: declared
+  alert:
+    endpoints: *id001
+    payload_path: alerts[]
+    record_scope:
+    - detection
+    status: declared_lazy
+  lightcurve:
+    endpoints:
+    - get_by_id
+    - get_by_ztf_object_id
+    payload_path: lightcurve
+    record_scope:
+    - lightcurve
+    status: declared_lazy
+mappings:
+  summary@ztf:antares:
+    source: locus
+    fields:
+      identity.broker_object_id:
+        field: locus_id
+      position.ra:
+        field: ra
+      position.dec:
+        field: dec
+      tags:
+        field: tags
+  detection@ztf:antares:
+    source: alert
+    fields:
+      identity.alert_id:
+        field: alert_id
+      time.mjd:
+        field: mjd
+  lightcurve@ztf:antares:
+    source: lightcurve
+    fields:
+      time.mjd:
+        field: mjd
+      photometry.magnitude:
+        field: magnitude
+      photometry.magnitude_error:
+        field: magnitude_error
+      photometry.filter:
+        field: filter
+dynamic:
+  summary@ztf:antares.properties.{field}:
+    source: locus
+    field: properties.{field}
+    status: raw_extension
+  detection@ztf:antares.properties.{field}:
+    source: alert
+    field: properties.{field}
+    status: raw_extension
