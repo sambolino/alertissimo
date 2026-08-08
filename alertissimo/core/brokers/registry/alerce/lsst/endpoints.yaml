@@ -45,7 +45,7 @@ endpoints:
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        binding: classification.assessment.{output}
       class_name:
         type: string
         required: false
@@ -53,7 +53,7 @@ endpoints:
       ranking:
         type: integer
         required: false
-        binding: classification.ranking
+        binding: classification.assessment.{output}.ranking
       n_det:
         type: integer
         required: false
@@ -131,7 +131,7 @@ endpoints:
       - cone.dec
       - cone.radius
       - classification.class
-      - classification.classifier.name
+      - classification.assessment.{output}
       - classification.probability
       - time.first_mjd
       - time.last_mjd
@@ -541,7 +541,7 @@ endpoints:
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        binding: classification.assessment.{output}
     output:
       type: array
       item: classification_probability
@@ -555,7 +555,7 @@ endpoints:
       required_bindings:
       - object_id
       optional_bindings:
-      - classification.classifier.name
+      - classification.assessment.{output}
       server_filters:
       - oid
       - classifier
@@ -732,11 +732,11 @@ endpoints:
       classifier_name:
         type: string
         required: true
-        binding: classification.classifier.name
+        binding: classification.assessment.{output}
       classifier_version:
         type: string
         required: true
-        binding: classification.classifier.version
+        binding: classification.assessment.{output}
       format:
         type: string
         default: json
@@ -756,8 +756,7 @@ endpoints:
       record_scope:
       - classification_metadata
       required_bindings:
-      - classification.classifier.name
-      - classification.classifier.version
+      - classification.assessment.{output}
       optional_bindings: []
       server_filters: []
       post_filter: true

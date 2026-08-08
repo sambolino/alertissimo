@@ -2085,23 +2085,28 @@ mappings:
       endpoint_status: known_unsupported
       field_status: declared_only
     model: magstats
-  classification@lsst:alerce.classifier.name:
-    field: classifier_name
+  classification@lsst:alerce.assessment.{output}:
+    sources:
+    - endpoint: query_probabilities
+      field: classifier_name
+      field_status: observed
+    - endpoint: query_probabilities
+      field: classifier_version
+      field_status: observed
     endpoints:
     - query_probabilities
+    role: namespace_carrier
+    transform:
+      op: qualify_namespace
+      name_field: classifier_name
+      version_field: classifier_version
+      version_optional: true
+    description: Classifier name supplies the assessment output namespace; classifier version qualifies it when present.
     availability:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@lsst:alerce.classifier.version:
-    field: classifier_version
-    endpoints:
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
-  classification@lsst:alerce.class:
+  classification@lsst:alerce.assessment.{output}.class:
     field: class_name
     endpoints:
     - query_probabilities
@@ -2109,7 +2114,7 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@lsst:alerce.probability:
+  classification@lsst:alerce.assessment.{output}.probability:
     field: probability
     endpoints:
     - query_probabilities
@@ -2117,7 +2122,7 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@lsst:alerce.ranking:
+  classification@lsst:alerce.assessment.{output}.ranking:
     field: ranking
     endpoints:
     - query_probabilities

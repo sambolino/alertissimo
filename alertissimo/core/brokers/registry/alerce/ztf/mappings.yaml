@@ -1605,25 +1605,35 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: magstats
-  classification@ztf:alerce.classifier.name:
-    field: classifier_name
+  classification@ztf:alerce.assessment.{output}:
+    sources:
+    - endpoint: query_probabilities
+      field: classifier_name
+      field_status: observed
+    - endpoint: query_probabilities
+      field: classifier_version
+      field_status: observed
+    - endpoint: query_classifiers
+      field: classifier_name
+      field_status: observed
+    - endpoint: query_classifiers
+      field: classifier_version
+      field_status: observed
     endpoints:
     - query_classifiers
     - query_probabilities
+    role: namespace_carrier
+    transform:
+      op: qualify_namespace
+      name_field: classifier_name
+      version_field: classifier_version
+      version_optional: true
+    description: Classifier name supplies the assessment output namespace; classifier version qualifies it when present.
     availability:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@ztf:alerce.classifier.version:
-    field: classifier_version
-    endpoints:
-    - query_classifiers
-    - query_probabilities
-    availability:
-      endpoint_status: ok
-      field_status: observed
-    model: probability
-  classification@ztf:alerce.class:
+  classification@ztf:alerce.assessment.{output}.class:
     field: class_name
     endpoints:
     - query_probabilities
@@ -1631,7 +1641,7 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@ztf:alerce.probability:
+  classification@ztf:alerce.assessment.{output}.probability:
     field: probability
     endpoints:
     - query_probabilities
@@ -1639,7 +1649,7 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: probability
-  classification@ztf:alerce.ranking:
+  classification@ztf:alerce.assessment.{output}.ranking:
     field: ranking
     endpoints:
     - query_probabilities
@@ -1680,7 +1690,7 @@ mappings:
       endpoint_status: ok
       field_status: observed
     model: feature
-  classification@ztf:alerce.classifier.classes:
+  classification@ztf:alerce.assessment.{output}.classes:
     field: classes
     endpoints:
     - query_classifiers
