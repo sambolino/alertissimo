@@ -375,6 +375,9 @@ mappings:
     - query_object
     - query_objects
     sources:
+    - endpoint: query_magstats
+      field: step_id_corr
+      field_status: declared_only
     - endpoint: query_object
       field: step_id_corr
       field_status: declared_only
@@ -385,7 +388,6 @@ mappings:
       endpoint_status: ok
       field_status: declared_only
     model: object
-    field: step_id_corr
   summary@lsst:alerce.provenance.producer.survey_id:
     endpoints:
     - query_object
@@ -435,7 +437,13 @@ mappings:
       field_status: observed
     model: object
   detection@lsst:alerce.photometry.{filter}:
-    field: band
+    sources:
+    - endpoint: query_detections
+      field: band
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: band
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -449,7 +457,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.identity.object_id:
-    field: oid
+    sources:
+    - endpoint: query_detections
+      field: oid
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: oid
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -458,7 +472,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.identity.source_id:
-    field: measurement_id
+    sources:
+    - endpoint: query_detections
+      field: measurement_id
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: measurement_id
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -467,7 +487,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.relationship.parent_source_id:
-    field: parentDiaSourceId
+    sources:
+    - endpoint: query_detections
+      field: parentDiaSourceId
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: parentDiaSourceId
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -476,7 +502,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.time.mjd:
-    field: mjd
+    sources:
+    - endpoint: query_detections
+      field: mjd
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: mjd
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -485,7 +517,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.ra:
-    field: ra
+    sources:
+    - endpoint: query_detections
+      field: ra
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ra
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -494,7 +532,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.dec:
-    field: dec
+    sources:
+    - endpoint: query_detections
+      field: dec
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dec
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -503,7 +547,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.error.ra:
-    field: raErr
+    sources:
+    - endpoint: query_detections
+      field: raErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: raErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -512,7 +562,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.error.dec:
-    field: decErr
+    sources:
+    - endpoint: query_detections
+      field: decErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: decErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -521,7 +577,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.error.ra_dec_covariance:
-    field: ra_dec_Cov
+    sources:
+    - endpoint: query_detections
+      field: ra_dec_Cov
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ra_dec_Cov
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -530,7 +592,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.pixel.x:
-    field: x
+    sources:
+    - endpoint: query_detections
+      field: x
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: x
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -539,7 +607,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.pixel.y:
-    field: y
+    sources:
+    - endpoint: query_detections
+      field: y
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: y
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -548,7 +622,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.pixel.error.x:
-    field: xErr
+    sources:
+    - endpoint: query_detections
+      field: xErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: xErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -557,7 +637,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.position.pixel.error.y:
-    field: yErr
+    sources:
+    - endpoint: query_detections
+      field: yErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: yErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -566,7 +652,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.provenance.observation.visit:
-    field: visit
+    sources:
+    - endpoint: query_detections
+      field: visit
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: visit
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -575,7 +667,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.provenance.instrument.detector.id:
-    field: detector
+    sources:
+    - endpoint: query_detections
+      field: detector
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: detector
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -584,7 +682,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.provenance.producer.survey_id:
-    field: survey_id
+    sources:
+    - endpoint: query_detections
+      field: survey_id
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: survey_id
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -593,7 +697,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.solar_system.object_id:
-    field: ssObjectId
+    sources:
+    - endpoint: query_detections
+      field: ssObjectId
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ssObjectId
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -602,7 +712,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.data_product.stamp.available:
-    field: has_stamp
+    sources:
+    - endpoint: query_detections
+      field: has_stamp
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: has_stamp
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -611,7 +727,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.reliability:
-    field: reliability
+    sources:
+    - endpoint: query_detections
+      field: reliability
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: reliability
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -620,7 +742,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.signal_to_noise:
-    field: snr
+    sources:
+    - endpoint: query_detections
+      field: snr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: snr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -629,7 +757,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.subtraction.is_negative:
-    field: isNegative
+    sources:
+    - endpoint: query_detections
+      field: isNegative
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: isNegative
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -638,7 +772,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.is_dipole:
-    field: isDipole
+    sources:
+    - endpoint: query_detections
+      field: isDipole
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: isDipole
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -647,7 +787,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.dipole.fit_attempted:
-    field: dipoleFitAttempted
+    sources:
+    - endpoint: query_detections
+      field: dipoleFitAttempted
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleFitAttempted
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -656,7 +802,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.extendedness:
-    field: extendedness
+    sources:
+    - endpoint: query_detections
+      field: extendedness
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: extendedness
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -665,7 +817,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.provenance.processed_mjd_tai:
-    field: timeProcessedMjdTai
+    sources:
+    - endpoint: query_detections
+      field: timeProcessedMjdTai
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: timeProcessedMjdTai
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -674,7 +832,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.provenance.withdrawn_mjd_tai:
-    field: timeWithdrawnMjdTai
+    sources:
+    - endpoint: query_detections
+      field: timeWithdrawnMjdTai
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: timeWithdrawnMjdTai
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -683,7 +847,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.data_product.cutout.bbox_size:
-    field: bboxSize
+    sources:
+    - endpoint: query_detections
+      field: bboxSize
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: bboxSize
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -692,7 +862,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.glint_trail:
-    field: glint_trail
+    sources:
+    - endpoint: query_detections
+      field: glint_trail
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: glint_trail
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -701,7 +877,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.position.ra:
-    field: trailRa
+    sources:
+    - endpoint: query_detections
+      field: trailRa
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailRa
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -710,7 +892,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.position.ra_error:
-    field: trailRaErr
+    sources:
+    - endpoint: query_detections
+      field: trailRaErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailRaErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -719,7 +907,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.position.dec:
-    field: trailDec
+    sources:
+    - endpoint: query_detections
+      field: trailDec
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailDec
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -728,7 +922,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.position.dec_error:
-    field: trailDecErr
+    sources:
+    - endpoint: query_detections
+      field: trailDecErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailDecErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -737,7 +937,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.length:
-    field: trailLength
+    sources:
+    - endpoint: query_detections
+      field: trailLength
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailLength
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -746,7 +952,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.length_error:
-    field: trailLengthErr
+    sources:
+    - endpoint: query_detections
+      field: trailLengthErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailLengthErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -755,7 +967,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.angle:
-    field: trailAngle
+    sources:
+    - endpoint: query_detections
+      field: trailAngle
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailAngle
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -764,7 +982,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.angle_error:
-    field: trailAngleErr
+    sources:
+    - endpoint: query_detections
+      field: trailAngleErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailAngleErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -773,7 +997,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.chi2:
-    field: trailChi2
+    sources:
+    - endpoint: query_detections
+      field: trailChi2
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailChi2
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -782,7 +1012,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.trail.ndata:
-    field: trailNdata
+    sources:
+    - endpoint: query_detections
+      field: trailNdata
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailNdata
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -791,7 +1027,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.dipole.length:
-    field: dipoleLength
+    sources:
+    - endpoint: query_detections
+      field: dipoleLength
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleLength
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -800,7 +1042,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.dipole.angle:
-    field: dipoleAngle
+    sources:
+    - endpoint: query_detections
+      field: dipoleAngle
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleAngle
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -809,7 +1057,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.dipole.chi2:
-    field: dipoleChi2
+    sources:
+    - endpoint: query_detections
+      field: dipoleChi2
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleChi2
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -818,7 +1072,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.dipole.ndata:
-    field: dipoleNdata
+    sources:
+    - endpoint: query_detections
+      field: dipoleNdata
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleNdata
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -827,7 +1087,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.psf.chi2:
-    field: psfChi2
+    sources:
+    - endpoint: query_detections
+      field: psfChi2
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfChi2
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -836,7 +1102,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.psf.log_likelihood:
-    field: psfLnL
+    sources:
+    - endpoint: query_detections
+      field: psfLnL
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfLnL
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -845,7 +1117,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.psf.ndata:
-    field: psfNdata
+    sources:
+    - endpoint: query_detections
+      field: psfNdata
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfNdata
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -854,7 +1132,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.moments.ixx:
-    field: ixx
+    sources:
+    - endpoint: query_detections
+      field: ixx
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ixx
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -863,7 +1147,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.moments.iyy:
-    field: iyy
+    sources:
+    - endpoint: query_detections
+      field: iyy
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: iyy
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -872,7 +1162,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.moments.ixy:
-    field: ixy
+    sources:
+    - endpoint: query_detections
+      field: ixy
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ixy
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -881,7 +1177,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.psf_moments.ixx:
-    field: ixxPSF
+    sources:
+    - endpoint: query_detections
+      field: ixxPSF
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ixxPSF
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -890,7 +1192,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.psf_moments.iyy:
-    field: iyyPSF
+    sources:
+    - endpoint: query_detections
+      field: iyyPSF
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: iyyPSF
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -899,7 +1207,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.morphology.psf_moments.ixy:
-    field: ixyPSF
+    sources:
+    - endpoint: query_detections
+      field: ixyPSF
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ixyPSF
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -908,7 +1222,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.shape_flag_parent_source:
-    field: shape_flag_parent_source
+    sources:
+    - endpoint: query_detections
+      field: shape_flag_parent_source
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: shape_flag_parent_source
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -917,7 +1237,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_edge:
-    field: pixelFlags_edge
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_edge
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_edge
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -926,7 +1252,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_suspectCenter:
-    field: pixelFlags_suspectCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_suspectCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_suspectCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -935,7 +1267,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_saturated:
-    field: pixelFlags_saturated
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_saturated
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_saturated
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -944,7 +1282,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_saturatedCenter:
-    field: pixelFlags_saturatedCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_saturatedCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_saturatedCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -953,7 +1297,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_cr:
-    field: pixelFlags_cr
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_cr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_cr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -962,7 +1312,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_injectedCenter:
-    field: pixelFlags_injectedCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_injectedCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_injectedCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -971,7 +1327,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.shape_flag_no_pixels:
-    field: shape_flag_no_pixels
+    sources:
+    - endpoint: query_detections
+      field: shape_flag_no_pixels
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: shape_flag_no_pixels
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -980,7 +1342,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.centroid_flag:
-    field: centroid_flag
+    sources:
+    - endpoint: query_detections
+      field: centroid_flag
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: centroid_flag
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -989,7 +1357,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_offimage:
-    field: pixelFlags_offimage
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_offimage
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_offimage
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -998,7 +1372,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.apFlux_flag:
-    field: apFlux_flag
+    sources:
+    - endpoint: query_detections
+      field: apFlux_flag
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: apFlux_flag
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1007,7 +1387,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_injected:
-    field: pixelFlags_injected
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_injected
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_injected
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1016,7 +1402,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.psfFlux_flag_noGoodPixels:
-    field: psfFlux_flag_noGoodPixels
+    sources:
+    - endpoint: query_detections
+      field: psfFlux_flag_noGoodPixels
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFlux_flag_noGoodPixels
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1025,7 +1417,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_nodataCenter:
-    field: pixelFlags_nodataCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_nodataCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_nodataCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1034,7 +1432,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_interpolatedCenter:
-    field: pixelFlags_interpolatedCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_interpolatedCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_interpolatedCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1043,7 +1447,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_injected_template:
-    field: pixelFlags_injected_template
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_injected_template
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_injected_template
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1052,7 +1462,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.forced_PsfFlux_flag:
-    field: forced_PsfFlux_flag
+    sources:
+    - endpoint: query_detections
+      field: forced_PsfFlux_flag
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: forced_PsfFlux_flag
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1061,7 +1477,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_nodata:
-    field: pixelFlags_nodata
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_nodata
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_nodata
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1070,7 +1492,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags:
-    field: pixelFlags
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1079,7 +1507,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.forced_PsfFlux_flag_edge:
-    field: forced_PsfFlux_flag_edge
+    sources:
+    - endpoint: query_detections
+      field: forced_PsfFlux_flag_edge
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: forced_PsfFlux_flag_edge
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1088,7 +1522,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_streakCenter:
-    field: pixelFlags_streakCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_streakCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_streakCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1097,7 +1537,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.psfFlux_flag_edge:
-    field: psfFlux_flag_edge
+    sources:
+    - endpoint: query_detections
+      field: psfFlux_flag_edge
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFlux_flag_edge
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1106,7 +1552,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_crCenter:
-    field: pixelFlags_crCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_crCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_crCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1115,7 +1567,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_suspect:
-    field: pixelFlags_suspect
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_suspect
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_suspect
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1124,7 +1582,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_injected_templateCenter:
-    field: pixelFlags_injected_templateCenter
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_injected_templateCenter
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_injected_templateCenter
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1133,7 +1597,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.shape_flag_not_contained:
-    field: shape_flag_not_contained
+    sources:
+    - endpoint: query_detections
+      field: shape_flag_not_contained
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: shape_flag_not_contained
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1142,7 +1612,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_streak:
-    field: pixelFlags_streak
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_streak
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_streak
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1151,7 +1627,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_interpolated:
-    field: pixelFlags_interpolated
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_interpolated
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_interpolated
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1160,7 +1642,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.pixelFlags_bad:
-    field: pixelFlags_bad
+    sources:
+    - endpoint: query_detections
+      field: pixelFlags_bad
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: pixelFlags_bad
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1169,7 +1657,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.trail_flag_edge:
-    field: trail_flag_edge
+    sources:
+    - endpoint: query_detections
+      field: trail_flag_edge
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trail_flag_edge
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1178,7 +1672,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.apFlux_flag_apertureTruncated:
-    field: apFlux_flag_apertureTruncated
+    sources:
+    - endpoint: query_detections
+      field: apFlux_flag_apertureTruncated
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: apFlux_flag_apertureTruncated
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1187,7 +1687,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.psfFlux_flag:
-    field: psfFlux_flag
+    sources:
+    - endpoint: query_detections
+      field: psfFlux_flag
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFlux_flag
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1196,7 +1702,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.forced_PsfFlux_flag_noGoodPixels:
-    field: forced_PsfFlux_flag_noGoodPixels
+    sources:
+    - endpoint: query_detections
+      field: forced_PsfFlux_flag_noGoodPixels
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: forced_PsfFlux_flag_noGoodPixels
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1205,7 +1717,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.quality.flags.shape_flag:
-    field: shape_flag
+    sources:
+    - endpoint: query_detections
+      field: shape_flag
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: shape_flag
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1214,7 +1732,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.psf_flux:
-    field: psfFlux
+    sources:
+    - endpoint: query_detections
+      field: psfFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1224,7 +1748,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.psf_flux_error:
-    field: psfFluxErr
+    sources:
+    - endpoint: query_detections
+      field: psfFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1234,7 +1764,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.science_flux:
-    field: scienceFlux
+    sources:
+    - endpoint: query_detections
+      field: scienceFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: scienceFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1244,7 +1780,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.science_flux_error:
-    field: scienceFluxErr
+    sources:
+    - endpoint: query_detections
+      field: scienceFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: scienceFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1254,7 +1796,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.template_flux:
-    field: templateFlux
+    sources:
+    - endpoint: query_detections
+      field: templateFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: templateFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1264,7 +1812,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.template_flux_error:
-    field: templateFluxErr
+    sources:
+    - endpoint: query_detections
+      field: templateFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: templateFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1274,7 +1828,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.aperture_flux:
-    field: apFlux
+    sources:
+    - endpoint: query_detections
+      field: apFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: apFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1284,7 +1844,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.aperture_flux_error:
-    field: apFluxErr
+    sources:
+    - endpoint: query_detections
+      field: apFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: apFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1294,7 +1860,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.trail_flux:
-    field: trailFlux
+    sources:
+    - endpoint: query_detections
+      field: trailFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1304,7 +1876,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.trail_flux_error:
-    field: trailFluxErr
+    sources:
+    - endpoint: query_detections
+      field: trailFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: trailFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1314,7 +1892,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.dipole.mean_flux:
-    field: dipoleMeanFlux
+    sources:
+    - endpoint: query_detections
+      field: dipoleMeanFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleMeanFlux
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1324,7 +1908,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.dipole.mean_flux_error:
-    field: dipoleMeanFluxErr
+    sources:
+    - endpoint: query_detections
+      field: dipoleMeanFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleMeanFluxErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1334,7 +1924,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.dipole.flux_difference:
-    field: dipoleFluxDiff
+    sources:
+    - endpoint: query_detections
+      field: dipoleFluxDiff
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleFluxDiff
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1344,7 +1940,13 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.dipole.flux_difference_error:
-    field: dipoleFluxDiffErr
+    sources:
+    - endpoint: query_detections
+      field: dipoleFluxDiffErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dipoleFluxDiffErr
+      field_status: observed
     endpoints:
     - query_detections
     - query_lightcurve
@@ -1354,7 +1956,10 @@ mappings:
       field_status: observed
     model: lsst_detection
   detection@lsst:alerce.photometry.{filter}.limiting_magnitude:
-    field: detections.diffmaglim
+    sources:
+    - endpoint: query_lightcurve
+      field: detections.diffmaglim
+      field_status: declared_only
     endpoints:
     - query_lightcurve
     unit: mag
@@ -1363,7 +1968,13 @@ mappings:
       field_status: declared_only
     model: lsst_detection
   non_detection@lsst:alerce.photometry.{filter}:
-    field: band
+    sources:
+    - endpoint: query_lightcurve
+      field: band
+      field_status: declared_only
+    - endpoint: query_non_detections
+      field: band
+      field_status: declared_only
     endpoints:
     - query_lightcurve
     - query_non_detections
@@ -1377,7 +1988,13 @@ mappings:
       field_status: declared_only
     model: non_detection
   non_detection@lsst:alerce.identity.object_id:
-    field: oid
+    sources:
+    - endpoint: query_lightcurve
+      field: oid
+      field_status: declared_only
+    - endpoint: query_non_detections
+      field: oid
+      field_status: declared_only
     endpoints:
     - query_lightcurve
     - query_non_detections
@@ -1386,7 +2003,13 @@ mappings:
       field_status: declared_only
     model: non_detection
   non_detection@lsst:alerce.time.mjd:
-    field: mjd
+    sources:
+    - endpoint: query_lightcurve
+      field: mjd
+      field_status: declared_only
+    - endpoint: query_non_detections
+      field: mjd
+      field_status: declared_only
     endpoints:
     - query_lightcurve
     - query_non_detections
@@ -1395,7 +2018,13 @@ mappings:
       field_status: declared_only
     model: non_detection
   non_detection@lsst:alerce.photometry.{filter}.limiting_magnitude:
-    field: diffmaglim
+    sources:
+    - endpoint: query_lightcurve
+      field: diffmaglim
+      field_status: declared_only
+    - endpoint: query_non_detections
+      field: diffmaglim
+      field_status: declared_only
     endpoints:
     - query_lightcurve
     - query_non_detections
@@ -1405,7 +2034,13 @@ mappings:
       field_status: declared_only
     model: non_detection
   forced_photometry@lsst:alerce.photometry.{filter}:
-    field: fid
+    sources:
+    - endpoint: query_forced_photometry
+      field: fid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: fid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1419,7 +2054,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.identity.object_id:
-    field: oid
+    sources:
+    - endpoint: query_forced_photometry
+      field: oid
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: oid
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1428,7 +2069,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.identity.source_id:
-    field: measurement_id
+    sources:
+    - endpoint: query_forced_photometry
+      field: measurement_id
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: measurement_id
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1437,7 +2084,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.relationship.parent_alert_id:
-    field: parent_candid
+    sources:
+    - endpoint: query_forced_photometry
+      field: parent_candid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: parent_candid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1446,7 +2099,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.time.mjd:
-    field: mjd
+    sources:
+    - endpoint: query_forced_photometry
+      field: mjd
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: mjd
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1455,7 +2114,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.position.ra:
-    field: ra
+    sources:
+    - endpoint: query_forced_photometry
+      field: ra
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: ra
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1464,7 +2129,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.position.dec:
-    field: dec
+    sources:
+    - endpoint: query_forced_photometry
+      field: dec
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: dec
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1473,7 +2144,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.position.error.ra:
-    field: e_ra
+    sources:
+    - endpoint: query_forced_photometry
+      field: e_ra
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: e_ra
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1482,7 +2159,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.position.error.dec:
-    field: e_dec
+    sources:
+    - endpoint: query_forced_photometry
+      field: e_dec
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: e_dec
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1491,7 +2174,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.processing_id:
-    field: pid
+    sources:
+    - endpoint: query_forced_photometry
+      field: pid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: pid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1500,7 +2189,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.reference_image_id:
-    field: rfid
+    sources:
+    - endpoint: query_forced_photometry
+      field: rfid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: rfid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1509,7 +2204,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.producer.program.field:
-    field: field
+    sources:
+    - endpoint: query_forced_photometry
+      field: field
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: field
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1518,7 +2219,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.producer.program.id:
-    field: programid
+    sources:
+    - endpoint: query_forced_photometry
+      field: programid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: programid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1527,7 +2234,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.observation.visit:
-    field: visit
+    sources:
+    - endpoint: query_forced_photometry
+      field: visit
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: visit
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1536,7 +2249,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.instrument.detector.id:
-    field: detector
+    sources:
+    - endpoint: query_forced_photometry
+      field: detector
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: detector
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1545,7 +2264,10 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.producer.survey_id:
-    field: survey_id
+    sources:
+    - endpoint: query_forced_photometry
+      field: survey_id
+      field_status: observed
     endpoints:
     - query_forced_photometry
     availability:
@@ -1553,7 +2275,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.quality.corrected:
-    field: corrected
+    sources:
+    - endpoint: query_forced_photometry
+      field: corrected
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: corrected
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1562,7 +2290,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.quality.dubious:
-    field: dubious
+    sources:
+    - endpoint: query_forced_photometry
+      field: dubious
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: dubious
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1571,7 +2305,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.data_product.stamp.available:
-    field: has_stamp
+    sources:
+    - endpoint: query_forced_photometry
+      field: has_stamp
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: has_stamp
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1580,7 +2320,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.subtraction.sign:
-    field: isdiffpos
+    sources:
+    - endpoint: query_forced_photometry
+      field: isdiffpos
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: isdiffpos
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1589,7 +2335,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.instrument.readout_channel_id:
-    field: rcid
+    sources:
+    - endpoint: query_forced_photometry
+      field: rcid
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: rcid
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1598,7 +2350,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.provenance.processing_status:
-    field: procstatus
+    sources:
+    - endpoint: query_forced_photometry
+      field: procstatus
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: procstatus
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1607,7 +2365,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.image.science.psf_fwhm:
-    field: sciinpseeing
+    sources:
+    - endpoint: query_forced_photometry
+      field: sciinpseeing
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: sciinpseeing
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1616,7 +2380,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.image.science.background:
-    field: scibckgnd
+    sources:
+    - endpoint: query_forced_photometry
+      field: scibckgnd
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: scibckgnd
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1625,7 +2395,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.image.science.sigma_per_pixel:
-    field: scisigpix
+    sources:
+    - endpoint: query_forced_photometry
+      field: scisigpix
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: scisigpix
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1634,7 +2410,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.calibration.zero_point.magnitude:
-    field: magzpsci
+    sources:
+    - endpoint: query_forced_photometry
+      field: magzpsci
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: magzpsci
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1643,7 +2425,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.calibration.zero_point.magnitude_error:
-    field: magzpsciunc
+    sources:
+    - endpoint: query_forced_photometry
+      field: magzpsciunc
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: magzpsciunc
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1652,7 +2440,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.calibration.zero_point.rms:
-    field: magzpscirms
+    sources:
+    - endpoint: query_forced_photometry
+      field: magzpscirms
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: magzpscirms
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1661,7 +2455,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.calibration.color_coefficient:
-    field: clrcoeff
+    sources:
+    - endpoint: query_forced_photometry
+      field: clrcoeff
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: clrcoeff
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1670,7 +2470,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.calibration.color_coefficient_error:
-    field: clrcounc
+    sources:
+    - endpoint: query_forced_photometry
+      field: clrcounc
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: clrcounc
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1679,7 +2485,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.observation.exposure_time:
-    field: exptime
+    sources:
+    - endpoint: query_forced_photometry
+      field: exptime
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: exptime
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1688,7 +2500,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.astrometry.rms.ra:
-    field: adpctdif1
+    sources:
+    - endpoint: query_forced_photometry
+      field: adpctdif1
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: adpctdif1
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1697,7 +2515,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.astrometry.rms.dec:
-    field: adpctdif2
+    sources:
+    - endpoint: query_forced_photometry
+      field: adpctdif2
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: adpctdif2
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1706,7 +2530,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.distance:
-    field: distnr
+    sources:
+    - endpoint: query_forced_photometry
+      field: distnr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: distnr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1715,7 +2545,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.position.ra:
-    field: ranr
+    sources:
+    - endpoint: query_forced_photometry
+      field: ranr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: ranr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1724,7 +2560,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.position.dec:
-    field: decnr
+    sources:
+    - endpoint: query_forced_photometry
+      field: decnr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: decnr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1733,7 +2575,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.magnitude:
-    field: magnr
+    sources:
+    - endpoint: query_forced_photometry
+      field: magnr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: magnr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1742,7 +2590,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.magnitude_error:
-    field: sigmagnr
+    sources:
+    - endpoint: query_forced_photometry
+      field: sigmagnr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: sigmagnr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1751,7 +2605,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.daophot_chi:
-    field: chinr
+    sources:
+    - endpoint: query_forced_photometry
+      field: chinr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: chinr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1760,7 +2620,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.crossmatch.nearest_source.daophot_sharp:
-    field: sharpnr
+    sources:
+    - endpoint: query_forced_photometry
+      field: sharpnr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: sharpnr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1769,7 +2635,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.limiting_magnitude:
-    field: diffmaglim
+    sources:
+    - endpoint: query_forced_photometry
+      field: diffmaglim
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: diffmaglim
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1779,7 +2651,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.forced_magnitude:
-    field: mag
+    sources:
+    - endpoint: query_forced_photometry
+      field: mag
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: mag
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1789,7 +2667,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.forced_magnitude_error:
-    field: e_mag
+    sources:
+    - endpoint: query_forced_photometry
+      field: e_mag
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: e_mag
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1799,7 +2683,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.forced_magnitude_corrected:
-    field: mag_corr
+    sources:
+    - endpoint: query_forced_photometry
+      field: mag_corr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: mag_corr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1809,7 +2699,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.forced_magnitude_corrected_error:
-    field: e_mag_corr
+    sources:
+    - endpoint: query_forced_photometry
+      field: e_mag_corr
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: e_mag_corr
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1819,7 +2715,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.forced_magnitude_corrected_extended_error:
-    field: e_mag_corr_ext
+    sources:
+    - endpoint: query_forced_photometry
+      field: e_mag_corr_ext
+      field_status: declared_only
+    - endpoint: query_lightcurve
+      field: e_mag_corr_ext
+      field_status: declared_only
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1829,7 +2731,13 @@ mappings:
       field_status: declared_only
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.psf_flux:
-    field: psfFlux
+    sources:
+    - endpoint: query_forced_photometry
+      field: psfFlux
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFlux
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1839,7 +2747,13 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.psf_flux_error:
-    field: psfFluxErr
+    sources:
+    - endpoint: query_forced_photometry
+      field: psfFluxErr
+      field_status: observed
+    - endpoint: query_lightcurve
+      field: psfFluxErr
+      field_status: observed
     endpoints:
     - query_forced_photometry
     - query_lightcurve
@@ -1849,7 +2763,10 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.science_flux:
-    field: scienceFlux
+    sources:
+    - endpoint: query_forced_photometry
+      field: scienceFlux
+      field_status: observed
     endpoints:
     - query_forced_photometry
     unit: nJy
@@ -1858,7 +2775,10 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   forced_photometry@lsst:alerce.photometry.{filter}.science_flux_error:
-    field: scienceFluxErr
+    sources:
+    - endpoint: query_forced_photometry
+      field: scienceFluxErr
+      field_status: observed
     endpoints:
     - query_forced_photometry
     unit: nJy
@@ -1867,7 +2787,10 @@ mappings:
       field_status: observed
     model: lsst_forced_photometry
   summary@lsst:alerce.photometry.{filter}:
-    field: fid
+    sources:
+    - endpoint: query_magstats
+      field: fid
+      field_status: declared_only
     endpoints:
     - query_magstats
     role: namespace_carrier
@@ -1880,7 +2803,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.stellar:
-    field: stellar
+    sources:
+    - endpoint: query_magstats
+      field: stellar
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1888,7 +2814,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.corrected:
-    field: corrected
+    sources:
+    - endpoint: query_magstats
+      field: corrected
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1896,7 +2825,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.detection_count:
-    field: ndet
+    sources:
+    - endpoint: query_magstats
+      field: ndet
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1904,7 +2836,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.dubious_count:
-    field: ndubious
+    sources:
+    - endpoint: query_magstats
+      field: ndubious
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1912,7 +2847,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_slope:
-    field: dmdt_first
+    sources:
+    - endpoint: query_magstats
+      field: dmdt_first
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1920,7 +2858,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_delta_magnitude:
-    field: dm_first
+    sources:
+    - endpoint: query_magstats
+      field: dm_first
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1928,7 +2869,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_delta_magnitude_error:
-    field: sigmadm_first
+    sources:
+    - endpoint: query_magstats
+      field: sigmadm_first
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1936,7 +2880,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_delta_time:
-    field: dt_first
+    sources:
+    - endpoint: query_magstats
+      field: dt_first
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -1944,7 +2891,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.mean_magnitude:
-    field: magmean
+    sources:
+    - endpoint: query_magstats
+      field: magmean
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1953,7 +2903,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.median_magnitude:
-    field: magmedian
+    sources:
+    - endpoint: query_magstats
+      field: magmedian
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1962,7 +2915,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.max_magnitude:
-    field: magmax
+    sources:
+    - endpoint: query_magstats
+      field: magmax
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1971,7 +2927,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.min_magnitude:
-    field: magmin
+    sources:
+    - endpoint: query_magstats
+      field: magmin
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1980,7 +2939,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.magnitude_stddev:
-    field: magsigma
+    sources:
+    - endpoint: query_magstats
+      field: magsigma
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1989,7 +2951,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.last_magnitude:
-    field: maglast
+    sources:
+    - endpoint: query_magstats
+      field: maglast
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -1998,7 +2963,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_magnitude:
-    field: magfirst
+    sources:
+    - endpoint: query_magstats
+      field: magfirst
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2007,7 +2975,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.mean_magnitude_corrected:
-    field: magmean_corr
+    sources:
+    - endpoint: query_magstats
+      field: magmean_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2016,7 +2987,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.median_magnitude_corrected:
-    field: magmedian_corr
+    sources:
+    - endpoint: query_magstats
+      field: magmedian_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2025,7 +2999,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.max_magnitude_corrected:
-    field: magmax_corr
+    sources:
+    - endpoint: query_magstats
+      field: magmax_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2034,7 +3011,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.min_magnitude_corrected:
-    field: magmin_corr
+    sources:
+    - endpoint: query_magstats
+      field: magmin_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2043,7 +3023,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.magnitude_stddev_corrected:
-    field: magsigma_corr
+    sources:
+    - endpoint: query_magstats
+      field: magsigma_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2052,7 +3035,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.last_magnitude_corrected:
-    field: maglast_corr
+    sources:
+    - endpoint: query_magstats
+      field: maglast_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2061,7 +3047,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_magnitude_corrected:
-    field: magfirst_corr
+    sources:
+    - endpoint: query_magstats
+      field: magfirst_corr
+      field_status: declared_only
     endpoints:
     - query_magstats
     unit: mag
@@ -2070,7 +3059,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.first_mjd:
-    field: firstmjd
+    sources:
+    - endpoint: query_magstats
+      field: firstmjd
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -2078,7 +3070,10 @@ mappings:
       field_status: declared_only
     model: magstats
   summary@lsst:alerce.photometry.{filter}.statistics.last_mjd:
-    field: lastmjd
+    sources:
+    - endpoint: query_magstats
+      field: lastmjd
+      field_status: declared_only
     endpoints:
     - query_magstats
     availability:
@@ -2086,7 +3081,10 @@ mappings:
       field_status: declared_only
     model: magstats
   classification@lsst:alerce.classifier.name:
-    field: classifier_name
+    sources:
+    - endpoint: query_probabilities
+      field: classifier_name
+      field_status: observed
     endpoints:
     - query_probabilities
     availability:
@@ -2094,7 +3092,10 @@ mappings:
       field_status: observed
     model: probability
   classification@lsst:alerce.classifier.version:
-    field: classifier_version
+    sources:
+    - endpoint: query_probabilities
+      field: classifier_version
+      field_status: observed
     endpoints:
     - query_probabilities
     availability:
@@ -2102,7 +3103,10 @@ mappings:
       field_status: observed
     model: probability
   classification@lsst:alerce.class:
-    field: class_name
+    sources:
+    - endpoint: query_probabilities
+      field: class_name
+      field_status: observed
     endpoints:
     - query_probabilities
     availability:
@@ -2110,7 +3114,10 @@ mappings:
       field_status: observed
     model: probability
   classification@lsst:alerce.probability:
-    field: probability
+    sources:
+    - endpoint: query_probabilities
+      field: probability
+      field_status: observed
     endpoints:
     - query_probabilities
     availability:
@@ -2118,7 +3125,10 @@ mappings:
       field_status: observed
     model: probability
   classification@lsst:alerce.ranking:
-    field: ranking
+    sources:
+    - endpoint: query_probabilities
+      field: ranking
+      field_status: observed
     endpoints:
     - query_probabilities
     availability:
@@ -2126,7 +3136,10 @@ mappings:
       field_status: observed
     model: probability
   data_product@lsst:alerce.cutout.science:
-    field: cutoutScience
+    sources:
+    - endpoint: get_stamps
+      field: cutoutScience
+      field_status: observed
     endpoints:
     - get_stamps
     role: data_product
@@ -2135,7 +3148,10 @@ mappings:
       field_status: observed
     model: stamp
   data_product@lsst:alerce.cutout.template:
-    field: cutoutTemplate
+    sources:
+    - endpoint: get_stamps
+      field: cutoutTemplate
+      field_status: observed
     endpoints:
     - get_stamps
     role: data_product
@@ -2144,7 +3160,10 @@ mappings:
       field_status: observed
     model: stamp
   data_product@lsst:alerce.cutout.difference:
-    field: cutoutDifference
+    sources:
+    - endpoint: get_stamps
+      field: cutoutDifference
+      field_status: observed
     endpoints:
     - get_stamps
     role: data_product
@@ -2153,7 +3172,10 @@ mappings:
       field_status: observed
     model: stamp
   data_product@lsst:alerce.avro.bytes:
-    field: bytes
+    sources:
+    - endpoint: get_avro
+      field: bytes
+      field_status: not_observed
     endpoints:
     - get_avro
     role: data_product
