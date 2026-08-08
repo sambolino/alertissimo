@@ -1,0 +1,1058 @@
+broker: alerce
+origin: lsst
+source: Generated from alerce_schema_payload_audit_bundle.tar.gz and ALeRCE client/docs audit.
+transport_defaults:
+  kind: python
+  module: alerce.core
+  client: Alerce
+  fixed_params:
+    survey: lsst
+endpoint_contract_note: Endpoint contracts and endpoint-level capabilities only. Semantic field availability is in mappings.yaml/capabilities.generated,
+  not in provides lists.
+endpoints:
+  query_objects:
+    enabled: true
+    audit:
+      status: discovery_used
+      documented_models:
+      - object
+      note: Used by audit collector for candidate discovery; output model is the same object summary family as query_object/list_objects.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_objects
+      fixed_params:
+        survey: lsst
+    params:
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+      classifier:
+        type: string
+        required: false
+        binding: classification.classifier.name
+      class_name:
+        type: string
+        required: false
+        binding: classification.class
+      ranking:
+        type: integer
+        required: false
+        binding: classification.ranking
+      n_det:
+        type: integer
+        required: false
+        binding: detection.count
+      ndet:
+        type: integer
+        required: false
+        binding: detection.count
+        legacy_ztf_param: true
+      probability:
+        type: number
+        required: false
+        binding: classification.probability
+      firstmjd:
+        type: number
+        required: false
+        binding: time.first_mjd
+      lastmjd:
+        type: number
+        required: false
+        binding: time.last_mjd
+      ra:
+        type: number
+        required: false
+        binding: cone.ra
+        unit: deg
+      dec:
+        type: number
+        required: false
+        binding: cone.dec
+        unit: deg
+      radius:
+        type: number
+        required: false
+        binding: cone.radius
+        unit: arcsec
+      page:
+        type: integer
+        required: false
+        role: pagination
+      page_size:
+        type: integer
+        required: false
+        role: pagination
+      count:
+        type: boolean
+        required: false
+        role: pagination
+      order_by:
+        type: string
+        required: false
+        role: ordering
+      order_mode:
+        type: string
+        required: false
+        enum:
+        - ASC
+        - DESC
+        role: ordering
+    output:
+      type: array
+      item: object_summary
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_search
+      - cone_search
+      - classification_filter
+      - object_summary
+      record_scope:
+      - summary
+      required_bindings: []
+      optional_bindings:
+      - cone.ra
+      - cone.dec
+      - cone.radius
+      - classification.class
+      - classification.classifier.name
+      - classification.probability
+      - time.first_mjd
+      - time.last_mjd
+      - detection.count
+      server_filters:
+      - classifier
+      - class_name
+      - ranking
+      - n_det
+      - ndet
+      - probability
+      - firstmjd
+      - lastmjd
+      - ra
+      - dec
+      - radius
+      - page
+      - page_size
+      - count
+      - order_by
+      - order_mode
+      post_filter: true
+  query_object:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591527609303944'
+      documented_models:
+      - object
+      documented_field_count: 23
+      observed_top_field_count: 15
+      observed_flat_field_count: 15
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_object
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: object
+      item: object_summary
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_lookup
+      - object_summary
+      record_scope:
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+  query_detections:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591527609303944'
+      documented_models:
+      - lsst_detection
+      documented_field_count: 8
+      observed_top_field_count: 102
+      observed_flat_field_count: 102
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_detections
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: array
+      item: detection
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_history
+      - detection_lookup
+      - lightcurve_component
+      record_scope:
+      - detection
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+  query_non_detections:
+    enabled: true
+    audit:
+      status: empty
+      selected_oid: '170591527609303944'
+      documented_models:
+      - non_detection
+      documented_field_count: 4
+      observed_top_field_count: 0
+      observed_flat_field_count: 0
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_non_detections
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: array
+      item: non_detection
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_history
+      - non_detection_lookup
+      - lightcurve_component
+      record_scope:
+      - non_detection
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+    note: For LSST this route is implemented but the audit sample returned empty payloads; mappings include declared non_detection
+      fields.
+  query_forced_photometry:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591547426865168'
+      documented_models:
+      - lsst_forced_photometry
+      - forced_photometry
+      documented_field_count: 47
+      observed_top_field_count: 14
+      observed_flat_field_count: 14
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_forced_photometry
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: array
+      item: forced_photometry
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_history
+      - forced_photometry
+      - lightcurve_component
+      record_scope:
+      - forced_photometry
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+  query_lightcurve:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591527609303944'
+      documented_models:
+      - lsst_detection
+      - non_detection
+      - lsst_forced_photometry
+      documented_field_count: 13
+      observed_top_field_count: 104
+      observed_flat_field_count: 105
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_lightcurve
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: object
+      item: lightcurve_bundle
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - object_history
+      - lightcurve
+      record_scope:
+      - lightcurve
+      - detection
+      - non_detection
+      - forced_photometry
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+  query_magstats:
+    enabled: false
+    audit:
+      status: known_unsupported
+      selected_oid: null
+      documented_models:
+      - magstats
+      documented_field_count: 26
+      observed_top_field_count: 0
+      observed_flat_field_count: 0
+      note: Multisurvey query_magstats not implemented in current ALeRCE client/backend.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_magstats
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: array
+      item: magnitude_statistics
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - magnitude_statistics
+      - object_summary
+      record_scope:
+      - summary
+      - photometry_statistics
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+    disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE client/backend. Declared magstats fields
+      are still included in mappings as declared_only/known_unsupported.
+  query_probabilities:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591527609303944'
+      documented_models:
+      - probability
+      documented_field_count: 5
+      observed_top_field_count: 5
+      observed_flat_field_count: 5
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_probabilities
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+      classifier:
+        type: string
+        required: false
+        binding: classification.classifier.name
+    output:
+      type: array
+      item: classification_probability
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - classification_lookup
+      - object_classification
+      record_scope:
+      - classification
+      required_bindings:
+      - object_id
+      optional_bindings:
+      - classification.classifier.name
+      server_filters:
+      - oid
+      - classifier
+      post_filter: true
+  query_features:
+    enabled: false
+    audit:
+      status: known_unsupported
+      selected_oid: null
+      documented_models: []
+      documented_field_count: 0
+      observed_top_field_count: 0
+      observed_flat_field_count: 0
+      note: Multisurvey query_features not implemented in current ALeRCE client/backend.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_features
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: array
+      item: feature
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - feature_lookup
+      - object_features
+      record_scope:
+      - feature
+      - summary
+      required_bindings:
+      - object_id
+      optional_bindings: []
+      server_filters:
+      - oid
+      post_filter: true
+    disabled_reason: Multisurvey query_features not implemented in current ALeRCE client/backend.
+  query_feature:
+    enabled: false
+    audit:
+      status: known_unsupported
+      note: Multisurvey query_feature not implemented in current ALeRCE client/backend.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_feature
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      name:
+        type: string
+        required: true
+        binding: feature.name
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+      index:
+        type: string
+        required: false
+        role: client_formatting
+      sort:
+        type: string
+        required: false
+        role: client_formatting
+    output:
+      type: object
+      item: feature
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - feature_lookup
+      - object_features
+      record_scope:
+      - feature
+      - summary
+      required_bindings:
+      - object_id
+      - feature.name
+      optional_bindings: []
+      server_filters:
+      - oid
+      - name
+      post_filter: true
+    note: LSST multisurvey query_feature raises NotImplementedError.
+  query_classifiers:
+    enabled: false
+    audit:
+      status: known_unsupported
+      selected_oid: null
+      documented_models: []
+      documented_field_count: 0
+      observed_top_field_count: 0
+      observed_flat_field_count: 0
+      note: Multisurvey query_classifiers not implemented in current ALeRCE client/backend.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_classifiers
+      fixed_params:
+        survey: lsst
+    params:
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+    output:
+      type: array
+      item: classifier_vocabulary
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - classifier_vocabulary
+      record_scope:
+      - classification_metadata
+      required_bindings: []
+      optional_bindings: []
+      server_filters: []
+      post_filter: true
+    disabled_reason: Multisurvey query_classifiers not implemented in current ALeRCE client/backend.
+  query_classes:
+    enabled: false
+    audit:
+      status: known_unsupported
+      note: Multisurvey query_classes not implemented in current ALeRCE client/backend.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: query_classes
+      fixed_params:
+        survey: lsst
+    params:
+      classifier_name:
+        type: string
+        required: true
+        binding: classification.classifier.name
+      classifier_version:
+        type: string
+        required: true
+        binding: classification.classifier.version
+      format:
+        type: string
+        default: json
+        enum:
+        - json
+        - pandas
+        - votable
+        - csv
+        role: output_format
+    output:
+      type: array
+      item: class_vocabulary
+    capabilities:
+      returns_science_data: false
+      operation_types:
+      - class_vocabulary
+      record_scope:
+      - classification_metadata
+      required_bindings:
+      - classification.classifier.name
+      - classification.classifier.version
+      optional_bindings: []
+      server_filters: []
+      post_filter: true
+    note: LSST multisurvey query_classes raises NotImplementedError.
+  get_stamps:
+    enabled: true
+    audit:
+      status: ok
+      selected_oid: '170591527609303944'
+      documented_models: []
+      documented_field_count: 0
+      observed_top_field_count: 3
+      observed_flat_field_count: 3
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: get_stamps
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      candid:
+        type: integer
+        required: false
+        binding: source_id
+        aliases:
+        - measurement_id
+      format:
+        type: string
+        required: false
+        default: HDUList
+        enum:
+        - HDUList
+        - numpy
+        role: output_format
+      include_variance_and_psf:
+        type: boolean
+        required: false
+        default: false
+    output:
+      type: object
+      item: stamp_triplet
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - data_product_lookup
+      - cutout
+      record_scope:
+      - data_product
+      required_bindings:
+      - object_id
+      optional_bindings:
+      - source_id
+      server_filters:
+      - oid
+      - candid
+      - measurement_id
+      post_filter: true
+  get_avro:
+    enabled: false
+    audit:
+      status: empty
+      selected_oid: null
+      documented_models: []
+      documented_field_count: 0
+      observed_top_field_count: 0
+      observed_flat_field_count: 0
+      error: ObjectNotFoundError()
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: get_avro
+      fixed_params:
+        survey: lsst
+    params:
+      oid:
+        type: integer
+        required: true
+        binding: object_id
+      candid:
+        type: integer
+        required: false
+        binding: source_id
+        aliases:
+        - measurement_id
+      use_multisurvey_api:
+        type: boolean
+        required: false
+        default: true
+    output:
+      type: binary
+      item: avro_alert
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - data_product_lookup
+      - raw_alert
+      record_scope:
+      - data_product
+      required_bindings:
+      - object_id
+      optional_bindings:
+      - source_id
+      server_filters:
+      - oid
+      - candid
+      post_filter: true
+    note: Current client default get_avro path failed for LSST; multisurvey AVRO path appears incomplete/buggy in current
+      client.
+  catshtm_conesearch:
+    enabled: true
+    audit:
+      status: empty_in_sampling
+      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: catshtm_conesearch
+    params:
+      ra:
+        type: number
+        required: true
+        binding: position.ra
+        unit: deg
+      dec:
+        type: number
+        required: true
+        binding: position.dec
+        unit: deg
+      radius:
+        type: number
+        required: true
+        binding: cone.radius
+        unit: arcsec
+      catalog_name:
+        type: string
+        required: false
+        default: all
+        binding: catalog.name
+      format:
+        type: string
+        required: false
+        default: pandas
+        enum:
+        - pandas
+        - votable
+        role: output_format
+    output:
+      type: object
+      item: catalog_rows_by_position
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - catalog_conesearch
+      - external_enrichment
+      record_scope:
+      - crossmatch
+      - enrichment
+      required_bindings:
+      - position.ra
+      - position.dec
+      - cone.radius
+      optional_bindings:
+      - catalog.name
+      server_filters:
+      - ra
+      - dec
+      - radius
+      - catalog_name
+      post_filter: true
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+  catshtm_crossmatch:
+    enabled: true
+    audit:
+      status: empty_in_sampling
+      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: catshtm_crossmatch
+    params:
+      ra:
+        type: number
+        required: true
+        binding: position.ra
+        unit: deg
+      dec:
+        type: number
+        required: true
+        binding: position.dec
+        unit: deg
+      radius:
+        type: number
+        required: true
+        binding: cone.radius
+        unit: arcsec
+      catalog_name:
+        type: string
+        required: false
+        default: all
+        binding: catalog.name
+      format:
+        type: string
+        required: false
+        default: pandas
+        enum:
+        - pandas
+        - votable
+        role: output_format
+    output:
+      type: object
+      item: catalog_crossmatch_rows
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - catalog_crossmatch
+      - external_enrichment
+      record_scope:
+      - crossmatch
+      - enrichment
+      required_bindings:
+      - position.ra
+      - position.dec
+      - cone.radius
+      optional_bindings:
+      - catalog.name
+      server_filters:
+      - ra
+      - dec
+      - radius
+      - catalog_name
+      post_filter: true
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+  catshtm_redshift:
+    enabled: true
+    audit:
+      status: empty_in_sampling
+      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+    transport:
+      kind: python
+      module: alerce.core
+      client: Alerce
+      method: catshtm_redshift
+    params:
+      ra:
+        type: number
+        required: true
+        binding: position.ra
+        unit: deg
+      dec:
+        type: number
+        required: true
+        binding: position.dec
+        unit: deg
+      radius:
+        type: number
+        required: true
+        binding: cone.radius
+        unit: arcsec
+      format:
+        type: string
+        required: false
+        default: votable
+        enum:
+        - pandas
+        - votable
+        role: output_format
+    output:
+      type: object
+      item: redshift
+    capabilities:
+      returns_science_data: true
+      operation_types:
+      - redshift_lookup
+      - external_enrichment
+      record_scope:
+      - crossmatch
+      - enrichment
+      required_bindings:
+      - position.ra
+      - position.dec
+      - cone.radius
+      optional_bindings:
+      - catalog.name
+      server_filters:
+      - ra
+      - dec
+      - radius
+      - catalog_name
+      post_filter: true
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.

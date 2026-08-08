@@ -1,492 +1,1170 @@
 # brokers/fink/lsst/mappings.yaml
+# Cleaned from raw Fink LSST API schema responses.
+# Real attribute schema methods used: sources, objects, fp, conesearch, cutouts, sso, statistics.
+# Metadata/list methods kept out of the mapping: schema, tags.
 broker: fink
 origin: lsst
 
 mappings:
-  # Prefer stable semantic paths.  Keep legacy feature IDs and add a new
-  # mapping only when an exact semantic representation exists. Dynamic
-  # `{filter}` entries bind dependent photometry paths.
 
-  # ==================== Object-level portfolio ====================
+  # ==================== object / locus summary ====================
   summary@lsst:fink.identity.object_id:
     field: "r:diaObjectId"
-    availability:
-      - objects
-      - conesearch
-      - latests
-      - sso
-
+    availability: [objects, conesearch]
+  summary@lsst:fink.identity.latest_source_id:
+    field: "r:diaSourceId"
+    availability: [objects]
   summary@lsst:fink.detection_count:
     field: "r:nDiaSources"
-    availability:
-      - objects
-      - latests
-
+    availability: [objects, conesearch]
   summary@lsst:fink.time.first_mjd:
     field: "r:firstDiaSourceMjdTai"
-    availability:
-      - objects
-
+    availability: [objects, conesearch]
+    time_scale: "TAI"
   summary@lsst:fink.time.last_mjd:
     field: "r:lastDiaSourceMjdTai"
-    availability:
-      - objects
-
-  summary@lsst:fink.fink_first_mjd:
+    availability: [objects, conesearch]
+    time_scale: "TAI"
+  summary@lsst:fink.time.first_mjd_fink:
     field: "f:firstDiaSourceMjdTaiFink"
-    availability:
-      - objects
-
-  # ==================== Real-time detections ====================
-  detection@lsst:fink.position.ra:
-    field: "r:ra"
-    availability:
-      - conesearch
-      - latests
-      - sso
-  
-  detection@lsst:fink.position.dec:
-    field: "r:dec"
-    availability:
-      - conesearch
-      - latests
-      - sso
-
+    availability: [objects, conesearch]
+    time_scale: "TAI"
+    description: "Fink temporary replacement for Rubin diaObject.firstDiaSourceMjdTai when Rubin value is unavailable."
+  summary@lsst:fink.time.validity_start_mjd:
+    field: "r:validityStartMjdTai"
+    availability: [objects, conesearch]
+    time_scale: "TAI"
   summary@lsst:fink.position.ra:
     field: "r:ra"
-    availability:
-      - objects
-
+    availability: [objects]
   summary@lsst:fink.position.dec:
     field: "r:dec"
-    availability:
-      - objects
-
+    availability: [objects]
   summary@lsst:fink.position.ra_error:
     field: "r:raErr"
-    availability:
-      - objects
-
+    availability: [objects]
   summary@lsst:fink.position.dec_error:
     field: "r:decErr"
-    availability:
-      - objects
-
+    availability: [objects]
   summary@lsst:fink.position.ra_dec_covariance:
     field: "r:ra_dec_Cov"
-    availability:
-      - objects
-
-  # ==================== Per-band object aggregates ====================
-  # `psfFlux*` and `fpFlux*` are Fink's per-band summary statistics.  They
-  # are object-level values, unlike the alert fields below.
-  summary@lsst:fink.photometry.g.psf.flux_error_mean:
-    field: "r:g_psfFluxErrMean"
     availability: [objects]
-  summary@lsst:fink.photometry.g.psf.maximum:
-    field: "r:g_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.maximum_slope:
-    field: "r:g_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.mean:
-    field: "r:g_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.mean_error:
-    field: "r:g_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.minimum:
-    field: "r:g_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.measurement_count:
-    field: "r:g_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.g.psf.sigma:
-    field: "r:g_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.g.psf.mean:
-    field: "r:g_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.g.psf.mean_error:
-    field: "r:g_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_g_science_flux_mean:
-    field: "r:g_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_g_science_flux_mean_error:
-    field: "r:g_scienceFluxMeanErr"
-    availability: [objects]
-
-  summary@lsst:fink.photometry.r.psf.flux_error_mean:
-    field: "r:r_psfFluxErrMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.maximum:
-    field: "r:r_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.maximum_slope:
-    field: "r:r_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.mean:
-    field: "r:r_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.mean_error:
-    field: "r:r_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.minimum:
-    field: "r:r_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.measurement_count:
-    field: "r:r_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.r.psf.sigma:
-    field: "r:r_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.r.psf.mean:
-    field: "r:r_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.r.psf.mean_error:
-    field: "r:r_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_r_science_flux_mean:
-    field: "r:r_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_r_science_flux_mean_error:
-    field: "r:r_scienceFluxMeanErr"
-    availability: [objects]
-
-  summary@lsst:fink.photometry.i.psf.flux_error_mean:
-    field: "r:i_psfFluxErrMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.maximum:
-    field: "r:i_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.maximum_slope:
-    field: "r:i_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.mean:
-    field: "r:i_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.mean_error:
-    field: "r:i_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.minimum:
-    field: "r:i_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.measurement_count:
-    field: "r:i_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.i.psf.sigma:
-    field: "r:i_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.i.psf.mean:
-    field: "r:i_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.i.psf.mean_error:
-    field: "r:i_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_i_science_flux_mean:
-    field: "r:i_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_i_science_flux_mean_error:
-    field: "r:i_scienceFluxMeanErr"
-    availability: [objects]
-
-  summary@lsst:fink.photometry.u.psf.flux_error_mean:
-    field: "r:u_psfFluxErrMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.maximum:
-    field: "r:u_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.maximum_slope:
-    field: "r:u_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.mean:
-    field: "r:u_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.mean_error:
-    field: "r:u_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.minimum:
-    field: "r:u_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.measurement_count:
-    field: "r:u_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.u.psf.sigma:
-    field: "r:u_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.u.psf.mean:
-    field: "r:u_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.u.psf.mean_error:
-    field: "r:u_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_u_science_flux_mean:
-    field: "r:u_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_u_science_flux_mean_error:
-    field: "r:u_scienceFluxMeanErr"
-    availability: [objects]
-
-  summary@lsst:fink.photometry.z.psf.flux_error_mean:
-    field: "r:z_psfFluxErrMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.maximum:
-    field: "r:z_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.maximum_slope:
-    field: "r:z_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.mean:
-    field: "r:z_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.mean_error:
-    field: "r:z_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.minimum:
-    field: "r:z_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.measurement_count:
-    field: "r:z_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.z.psf.sigma:
-    field: "r:z_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.z.psf.mean:
-    field: "r:z_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.z.psf.mean_error:
-    field: "r:z_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_z_science_flux_mean:
-    field: "r:z_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_z_science_flux_mean_error:
-    field: "r:z_scienceFluxMeanErr"
-    availability: [objects]
-
-  summary@lsst:fink.photometry.y.psf.flux_error_mean:
-    field: "r:y_psfFluxErrMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.maximum:
-    field: "r:y_psfFluxMax"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.maximum_slope:
-    field: "r:y_psfFluxMaxSlope"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.mean:
-    field: "r:y_psfFluxMean"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.mean_error:
-    field: "r:y_psfFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.minimum:
-    field: "r:y_psfFluxMin"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.measurement_count:
-    field: "r:y_psfFluxNdata"
-    availability: [objects]
-  summary@lsst:fink.photometry.y.psf.sigma:
-    field: "r:y_psfFluxSigma"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.y.psf.mean:
-    field: "r:y_fpFluxMean"
-    availability: [objects]
-  summary@lsst:fink.forced_photometry.y.psf.mean_error:
-    field: "r:y_fpFluxMeanErr"
-    availability: [objects]
-  summary@lsst:fink.fink_y_science_flux_mean:
-    field: "r:y_scienceFluxMean"
-    availability: [objects]
-  summary@lsst:fink.fink_y_science_flux_mean_error:
-    field: "r:y_scienceFluxMeanErr"
-    availability: [objects]
-
-  # Broker-specific object metadata for which the semantic recipe intentionally
-  # leaves dynamic summary fields available.
-  summary@lsst:fink.fink_is_cataloged:
+  summary@lsst:fink.flags.is_cataloged:
     field: "f:is_cataloged"
-    availability: [objects]
-  summary@lsst:fink.fink_is_first:
+    availability: [objects, conesearch]
+  summary@lsst:fink.flags.is_first_detection:
     field: "f:is_first"
-    availability: [objects]
-  summary@lsst:fink.fink_is_sso:
+    availability: [objects, conesearch]
+  summary@lsst:fink.flags.is_solar_system:
     field: "f:is_sso"
-    availability: [objects]
-  summary@lsst:fink.fink_main_label_classifier:
-    field: "f:main_label_classifier"
-    availability: [objects]
-  summary@lsst:fink.fink_main_label_crossmatch:
-    field: "f:main_label_crossmatch"
-    availability: [objects]
-  summary@lsst:fink.fink_observation_reason:
+    availability: [objects, conesearch]
+  summary@lsst:fink.provenance.producer.program.id:
     field: "r:observation_reason"
     availability: [objects]
-  summary@lsst:fink.fink_target_name:
+    description: "Raw LSST scheduler/observing-program token, e.g. ddf_edfs_b."
+  summary@lsst:fink.provenance.producer.program.type:
+    field: "r:observation_reason"
+    availability: [objects]
+    transform:
+      op: regex_extract
+      pattern: "^(?P<type>wfd|ddf|too|ddt|mini(?:survey)?|calib(?:ration)?|commissioning|engineering)(?:_|$)"
+      group: type
+      lowercase: true
+  summary@lsst:fink.provenance.producer.program.field:
+    field: "r:observation_reason"
+    availability: [objects]
+    transform:
+      op: regex_extract
+      pattern: "^ddf_(?P<field>.+?)(?:_(?P<pointing>[a-z]))?$"
+      group: field
+      lowercase: true
+  summary@lsst:fink.provenance.producer.program.pointing.id:
+    field: "r:observation_reason"
+    availability: [objects]
+    transform:
+      op: regex_extract
+      pattern: "^ddf_(?P<field>.+?)(?:_(?P<pointing>[a-z]))?$"
+      group: pointing
+      lowercase: true
+  summary@lsst:fink.provenance.producer.program.target_name:
     field: "r:target_name"
     availability: [objects]
-  summary@lsst:fink.fink_salt:
-    field: "r:salt"
+    description: "Raw scheduler target string, e.g. ddf_edfs_b, lowdust."
+  summary@lsst:fink.provenance.producer.program.tags:
+    field: "r:target_name"
     availability: [objects]
-  summary@lsst:fink.fink_validity_start_mjd:
-    field: "r:validityStartMjdTai"
-    availability: [objects]
+    transform:
+      op: split
+      sep: ","
+      strip: true
+      lowercase: true
+  summary@lsst:fink.crossmatch.best.class:
+    field: "f:main_label_crossmatch"
+    availability: [objects, conesearch]
+    description: "Fink main crossmatch association label for the last received alert."
 
+  # ==================== per-band object aggregates ====================
+  summary@lsst:fink.photometry.u.psf.flux.error_mean:
+    field: "r:u_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.maximum:
+    field: "r:u_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.maximum_slope:
+    field: "r:u_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.mean:
+    field: "r:u_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.mean_error:
+    field: "r:u_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.minimum:
+    field: "r:u_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.measurement_count:
+    field: "r:u_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.u.psf.flux.sigma:
+    field: "r:u_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.u.psf.flux.mean:
+    field: "r:u_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.u.psf.flux.mean_error:
+    field: "r:u_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.u.science.flux.mean:
+    field: "r:u_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.u.science.flux.mean_error:
+    field: "r:u_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.error_mean:
+    field: "r:g_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.maximum:
+    field: "r:g_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.maximum_slope:
+    field: "r:g_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.mean:
+    field: "r:g_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.mean_error:
+    field: "r:g_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.minimum:
+    field: "r:g_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.measurement_count:
+    field: "r:g_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.g.psf.flux.sigma:
+    field: "r:g_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.g.psf.flux.mean:
+    field: "r:g_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.g.psf.flux.mean_error:
+    field: "r:g_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.g.science.flux.mean:
+    field: "r:g_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.g.science.flux.mean_error:
+    field: "r:g_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.error_mean:
+    field: "r:r_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.maximum:
+    field: "r:r_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.maximum_slope:
+    field: "r:r_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.mean:
+    field: "r:r_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.mean_error:
+    field: "r:r_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.minimum:
+    field: "r:r_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.measurement_count:
+    field: "r:r_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.r.psf.flux.sigma:
+    field: "r:r_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.r.psf.flux.mean:
+    field: "r:r_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.r.psf.flux.mean_error:
+    field: "r:r_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.r.science.flux.mean:
+    field: "r:r_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.r.science.flux.mean_error:
+    field: "r:r_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.error_mean:
+    field: "r:i_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.maximum:
+    field: "r:i_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.maximum_slope:
+    field: "r:i_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.mean:
+    field: "r:i_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.mean_error:
+    field: "r:i_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.minimum:
+    field: "r:i_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.measurement_count:
+    field: "r:i_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.i.psf.flux.sigma:
+    field: "r:i_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.i.psf.flux.mean:
+    field: "r:i_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.i.psf.flux.mean_error:
+    field: "r:i_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.i.science.flux.mean:
+    field: "r:i_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.i.science.flux.mean_error:
+    field: "r:i_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.error_mean:
+    field: "r:z_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.maximum:
+    field: "r:z_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.maximum_slope:
+    field: "r:z_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.mean:
+    field: "r:z_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.mean_error:
+    field: "r:z_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.minimum:
+    field: "r:z_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.measurement_count:
+    field: "r:z_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.z.psf.flux.sigma:
+    field: "r:z_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.z.psf.flux.mean:
+    field: "r:z_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.z.psf.flux.mean_error:
+    field: "r:z_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.z.science.flux.mean:
+    field: "r:z_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.z.science.flux.mean_error:
+    field: "r:z_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.error_mean:
+    field: "r:y_psfFluxErrMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.maximum:
+    field: "r:y_psfFluxMax"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.maximum_slope:
+    field: "r:y_psfFluxMaxSlope"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.mean:
+    field: "r:y_psfFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.mean_error:
+    field: "r:y_psfFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.minimum:
+    field: "r:y_psfFluxMin"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.measurement_count:
+    field: "r:y_psfFluxNdata"
+    availability: [objects, conesearch]
+  summary@lsst:fink.photometry.y.psf.flux.sigma:
+    field: "r:y_psfFluxSigma"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.y.psf.flux.mean:
+    field: "r:y_fpFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.y.psf.flux.mean_error:
+    field: "r:y_fpFluxMeanErr"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.y.science.flux.mean:
+    field: "r:y_scienceFluxMean"
+    availability: [objects, conesearch]
+  summary@lsst:fink.forced_photometry.y.science.flux.mean_error:
+    field: "r:y_scienceFluxMeanErr"
+    availability: [objects, conesearch]
+
+  # ==================== alert / DiaSource detections ====================
+  detection@lsst:fink.identity.source_id:
+    field: "r:diaSourceId"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.identity.object_id:
+    field: "r:diaObjectId"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.identity.parent_source_id:
+    field: "r:parentDiaSourceId"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.identity.visit_id:
+    field: "r:visit"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.identity.detector_id:
+    field: "r:detector"
+    availability: [sources, conesearch, sso]
   detection@lsst:fink.time.mjd:
     field: "r:midpointMjdTai"
-    availability:
-      - objects
-      - conesearch
-      - latests
-      - sso
+    availability: [sources, conesearch, sso]
+    time_scale: "TAI"
+  detection@lsst:fink.time.processed_mjd:
+    field: "r:timeProcessedMjdTai"
+    availability: [sources, conesearch, sso]
+    time_scale: "TAI"
+  detection@lsst:fink.time.withdrawn_mjd:
+    field: "r:timeWithdrawnMjdTai"
+    availability: [sources, conesearch, sso]
+    time_scale: "TAI"
+  detection@lsst:fink.position.ra:
+    field: "r:ra"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.dec:
+    field: "r:dec"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.ra_error:
+    field: "r:raErr"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.dec_error:
+    field: "r:decErr"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.ra_dec_covariance:
+    field: "r:ra_dec_Cov"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.pixel.x:
+    field: "r:x"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.pixel.x_error:
+    field: "r:xErr"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.pixel.y:
+    field: "r:y"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.position.pixel.y_error:
+    field: "r:yErr"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.exposure_time:
+    field: "r:exposureTime"
+    availability: [sources, conesearch, sso]
+    unit: "s"
+  detection@lsst:fink.provenance.producer.program.id:
+    field: "r:observation_reason"
+    availability: [sources, conesearch, sso]
+    description: "Raw LSST scheduler/observing-program token, e.g. ddf_edfs_b."
+  detection@lsst:fink.provenance.producer.program.type:
+    field: "r:observation_reason"
+    availability: [sources, conesearch, sso]
+    transform:
+      op: regex_extract
+      pattern: "^(?P<type>wfd|ddf|too|ddt|mini(?:survey)?|calib(?:ration)?|commissioning|engineering)(?:_|$)"
+      group: type
+      lowercase: true
+  detection@lsst:fink.provenance.producer.program.field:
+    field: "r:observation_reason"
+    availability: [sources, conesearch, sso]
+    transform:
+      op: regex_extract
+      pattern: "^ddf_(?P<field>.+?)(?:_(?P<pointing>[a-z]))?$"
+      group: field
+      lowercase: true
+  detection@lsst:fink.provenance.producer.program.pointing.id:
+    field: "r:observation_reason"
+    availability: [sources, conesearch, sso]
+    transform:
+      op: regex_extract
+      pattern: "^ddf_(?P<field>.+?)(?:_(?P<pointing>[a-z]))?$"
+      group: pointing
+      lowercase: true
+  detection@lsst:fink.provenance.producer.program.target_name:
+    field: "r:target_name"
+    availability: [sources, conesearch, sso]
+    description: "Raw scheduler target string, e.g. ddf_edfs_b, lowdust."
+  detection@lsst:fink.provenance.producer.program.tags:
+    field: "r:target_name"
+    availability: [sources, conesearch, sso]
+    transform:
+      op: split
+      sep: ","
+      strip: true
+      lowercase: true
+  detection@lsst:fink.provenance.channel.version:
+    field: "f:fink_broker_version"
+    availability: [sources, conesearch]
+  detection@lsst:fink.provenance.channel.science_version:
+    field: "f:fink_science_version"
+    availability: [sources, conesearch]
+  detection@lsst:fink.provenance.producer.schema_version:
+    field: "f:lsst_schema_version"
+    availability: [sources, conesearch]
 
+  # ==================== dynamic-band photometry ====================
   detection@lsst:fink.photometry.{filter}:
     field: "r:band"
-    availability:
-      - objects
-      - conesearch
-      - latests
-      - sso
-
+    availability: [sources, conesearch, sso]
+    role: "namespace_carrier"
+    description: "Dynamic container carrier: resolves photometry.{filter} and dependent sibling paths; not emitted as a scalar leaf."
   detection@lsst:fink.photometry.{filter}.psf.flux:
     field: "r:psfFlux"
-    availability:
-      - objects
-      - conesearch
-      - latests
-
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
   detection@lsst:fink.photometry.{filter}.psf.flux_error:
     field: "r:psfFluxErr"
-    availability:
-      - objects
-      - conesearch
-      - latests
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.photometry.{filter}.psf.fit_chi2:
+    field: "r:psfChi2"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.psf.log_likelihood:
+    field: "r:psfLnL"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.psf.fit_ndata:
+    field: "r:psfNdata"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.psf.flags.failed:
+    field: "r:psfFlux_flag"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.psf.flags.edge:
+    field: "r:psfFlux_flag_edge"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.psf.flags.no_good_pixels:
+    field: "r:psfFlux_flag_noGoodPixels"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.aperture.flux:
+    field: "r:apFlux"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.photometry.{filter}.aperture.flux_error:
+    field: "r:apFluxErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.photometry.{filter}.aperture.flags.failed:
+    field: "r:apFlux_flag"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.photometry.{filter}.aperture.flags.aperture_truncated:
+    field: "r:apFlux_flag_apertureTruncated"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.forced_photometry.{filter}.science.flux:
+    field: "r:scienceFlux"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.forced_photometry.{filter}.science.flux_error:
+    field: "r:scienceFluxErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.forced_photometry.{filter}.psf.flags.failed:
+    field: "r:forced_PsfFlux_flag"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.forced_photometry.{filter}.psf.flags.edge:
+    field: "r:forced_PsfFlux_flag_edge"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.forced_photometry.{filter}.psf.flags.no_good_pixels:
+    field: "r:forced_PsfFlux_flag_noGoodPixels"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.reference_image.photometry.{filter}.flux:
+    field: "r:templateFlux"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+  detection@lsst:fink.reference_image.photometry.{filter}.flux_error:
+    field: "r:templateFluxErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
 
-  detection@lsst:fink.photometry.{filter}.psf.snr:
+  # ==================== quality and image metrics ====================
+  detection@lsst:fink.quality.signal_to_noise:
     field: "r:snr"
-    availability:
-      - objects
-      - conesearch
-      - latests
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.quality.reliability:
+    field: "r:reliability"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.quality.reliability_version:
+    field: "r:reliabilityVersion"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.is_negative:
+    field: "r:isNegative"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.is_positive:
+    field: "r:isNegative"
+    availability: [sources, conesearch, sso]
+    transform:
+      True: false
+      False: true
+  detection@lsst:fink.image_metrics.bbox_size:
+    field: "r:bboxSize"
+    availability: [sources, conesearch, sso]
+    unit: "pixel"
+  detection@lsst:fink.image_metrics.extendedness:
+    field: "r:extendedness"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.centroid.flag:
+    field: "r:centroid_flag"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.flags.glint_trail:
+    field: "r:glint_trail"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.ixx:
+    field: "r:ixx"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.iyy:
+    field: "r:iyy"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.ixy:
+    field: "r:ixy"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.psf_ixx:
+    field: "r:ixxPSF"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.psf_iyy:
+    field: "r:iyyPSF"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.psf_ixy:
+    field: "r:ixyPSF"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.flags.failed:
+    field: "r:shape_flag"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.flags.no_pixels:
+    field: "r:shape_flag_no_pixels"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.flags.not_contained:
+    field: "r:shape_flag_not_contained"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.shape.flags.parent_source:
+    field: "r:shape_flag_parent_source"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.failed:
+    field: "r:pixelFlags"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.bad:
+    field: "r:pixelFlags_bad"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.cosmic_ray:
+    field: "r:pixelFlags_cr"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.cosmic_ray_center:
+    field: "r:pixelFlags_crCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.edge:
+    field: "r:pixelFlags_edge"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.injected:
+    field: "r:pixelFlags_injected"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.injected_center:
+    field: "r:pixelFlags_injectedCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.injected_template:
+    field: "r:pixelFlags_injected_template"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.injected_template_center:
+    field: "r:pixelFlags_injected_templateCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.interpolated:
+    field: "r:pixelFlags_interpolated"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.interpolated_center:
+    field: "r:pixelFlags_interpolatedCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.no_data:
+    field: "r:pixelFlags_nodata"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.no_data_center:
+    field: "r:pixelFlags_nodataCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.off_image:
+    field: "r:pixelFlags_offimage"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.saturated:
+    field: "r:pixelFlags_saturated"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.saturated_center:
+    field: "r:pixelFlags_saturatedCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.streak:
+    field: "r:pixelFlags_streak"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.streak_center:
+    field: "r:pixelFlags_streakCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.suspect:
+    field: "r:pixelFlags_suspect"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.pixel_flags.suspect_center:
+    field: "r:pixelFlags_suspectCenter"
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.image_metrics.dipole.is_dipole:
+    field: "r:isDipole"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.fit_attempted:
+    field: "r:dipoleFitAttempted"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.angle:
+    field: "r:dipoleAngle"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.chi2:
+    field: "r:dipoleChi2"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.flux_difference:
+    field: "r:dipoleFluxDiff"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.flux_difference_error:
+    field: "r:dipoleFluxDiffErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.length:
+    field: "r:dipoleLength"
+    availability: [sources, conesearch, sso]
+    unit: "arcsec"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.mean_flux:
+    field: "r:dipoleMeanFlux"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.mean_flux_error:
+    field: "r:dipoleMeanFluxErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.dipole.fit_ndata:
+    field: "r:dipoleNdata"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.trail.algorithm:
+    field: "r:trailAlgorithm"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.trail.angle:
+    field: "r:trailAngle"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.angle_error:
+    field: "r:trailAngleErr"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.chi2:
+    field: "r:trailChi2"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.trail.dec:
+    field: "r:trailDec"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.dec_error:
+    field: "r:trailDecErr"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.flux:
+    field: "r:trailFlux"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.flux_error:
+    field: "r:trailFluxErr"
+    availability: [sources, conesearch, sso]
+    unit: "nJy"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.length:
+    field: "r:trailLength"
+    availability: [sources, conesearch, sso]
+    unit: "arcsec"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.length_error:
+    field: "r:trailLengthErr"
+    availability: [sources, conesearch, sso]
+    unit: "arcsec"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.fit_ndata:
+    field: "r:trailNdata"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.trail.ra:
+    field: "r:trailRa"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.ra_error:
+    field: "r:trailRaErr"
+    availability: [sources, conesearch, sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.image_metrics.trail.flags.failed:
+    field: "r:trail_flag"
+    availability: [sources, conesearch, sso]
+    extension: true
+  detection@lsst:fink.image_metrics.trail.flags.edge:
+    field: "r:trail_flag_edge"
+    availability: [sources, conesearch, sso]
+    extension: true
 
-  # ==================== Solar System (moving objects) ====================
-  detection@lsst:fink.solar_system.ss_object_id:
+  # ==================== Solar System / moving-object fields ====================
+  detection@lsst:fink.solar_system.object.identity.object_id:
     field: "r:ssObjectId"
-    availability:
-      - sso
+    availability: [sources, conesearch, sso]
+  detection@lsst:fink.solar_system.object.designation:
+    field: "r:designation"
+    availability: [sso]
+  detection@lsst:fink.solar_system.object.name:
+    field: "f:sso_name"
+    availability: [sso]
+  detection@lsst:fink.solar_system.match.rank:
+    field: "r:diaDistanceRank"
+    availability: [sso]
+  detection@lsst:fink.position.galactic.longitude:
+    field: "r:galLon"
+    availability: [sso]
+    unit: "deg"
+  detection@lsst:fink.position.galactic.latitude:
+    field: "r:galLat"
+    availability: [sso]
+    unit: "deg"
+  detection@lsst:fink.solar_system.ecliptic.longitude:
+    field: "r:eclLambda"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.ecliptic.latitude:
+    field: "r:eclBeta"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.phase_angle:
+    field: "r:phaseAngle"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.elongation:
+    field: "r:elongation"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.ra:
+    field: "r:ephRa"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.dec:
+    field: "r:ephDec"
+    availability: [sso]
+    unit: "deg"
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.vmag:
+    field: "r:ephVmag"
+    availability: [sso]
+    unit: "mag"
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.offset.total:
+    field: "r:ephOffset"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.offset.ra:
+    field: "r:ephOffsetRa"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.offset.dec:
+    field: "r:ephOffsetDec"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.offset.along_track:
+    field: "r:ephOffsetAlongTrack"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.offset.cross_track:
+    field: "r:ephOffsetCrossTrack"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.rate.total:
+    field: "r:ephRate"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.rate.ra:
+    field: "r:ephRateRa"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.ephemeris.rate.dec:
+    field: "r:ephRateDec"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.range:
+    field: "r:helioRange"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.range_rate:
+    field: "r:helioRangeRate"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.position.x:
+    field: "r:helio_x"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.position.y:
+    field: "r:helio_y"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.position.z:
+    field: "r:helio_z"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.velocity.x:
+    field: "r:helio_vx"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.velocity.y:
+    field: "r:helio_vy"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.velocity.z:
+    field: "r:helio_vz"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.heliocentric.velocity.total:
+    field: "r:helio_vtot"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.range:
+    field: "r:topoRange"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.range_rate:
+    field: "r:topoRangeRate"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.position.x:
+    field: "r:topo_x"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.position.y:
+    field: "r:topo_y"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.position.z:
+    field: "r:topo_z"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.velocity.x:
+    field: "r:topo_vx"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.velocity.y:
+    field: "r:topo_vy"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.velocity.z:
+    field: "r:topo_vz"
+    availability: [sso]
+    extension: true
+  detection@lsst:fink.solar_system.topocentric.velocity.total:
+    field: "r:topo_vtot"
+    availability: [sso]
+    extension: true
 
-  detection@lsst:fink.solar_system.roid:
-    field: "f:roid"
-    availability:
-      - objects
-      - latests
-      - sso
-    status: unverified
-    description: "Not present in the checked current LSST objects, conesearch, or SSO responses; retained for backward compatibility."
-
-  # ==================== Media (binary data) ====================
-  cutouts.science:
-    field: "b:cutoutScience_stampData"
-    availability:
-      - cutouts
-
-  cutouts.template:
-    field: "b:cutoutTemplate_stampData"
-    availability:
-      - cutouts
-
-  cutouts.difference:
-    field: "b:cutoutDifference_stampData"
-    availability:
-      - cutouts
-
-  # Canonical repeated data-product representation.  The legacy `cutouts.*`
-  # mappings above remain for compatibility with existing endpoint consumers.
+  # ==================== cutout data products ====================
   data_product@lsst:fink.payload:
     instances:
-      - role: science
-        type: cutout
-        format: fits
-        content_encoding: base64
-        field: "b:cutoutScience_stampData"
+      - role: "science"
+        type: "cutout"
+        format: "fits"
+        field: "b:cutoutScience"
         availability: [cutouts]
-      - role: template
-        type: cutout
-        format: fits
-        content_encoding: base64
-        field: "b:cutoutTemplate_stampData"
+      - role: "template"
+        type: "cutout"
+        format: "fits"
+        field: "b:cutoutTemplate"
         availability: [cutouts]
-      - role: difference
-        type: cutout
-        format: fits
-        content_encoding: base64
-        field: "b:cutoutDifference_stampData"
+      - role: "difference"
+        type: "cutout"
+        format: "fits"
+        field: "b:cutoutDifference"
         availability: [cutouts]
 
-  # ==================== Machine learning (ELAsTiCC) ====================
+  # ==================== forced-photometry endpoint rows ====================
+  lightcurve@lsst:fink.identity.object_id:
+    field: "r:diaObjectId"
+    availability: [fp]
+  lightcurve@lsst:fink.identity.forced_source_id:
+    field: "r:diaForcedSourceId"
+    availability: [fp]
+  lightcurve@lsst:fink.identity.visit_id:
+    field: "r:visit"
+    availability: [fp]
+  lightcurve@lsst:fink.identity.detector_id:
+    field: "r:detector"
+    availability: [fp]
+  lightcurve@lsst:fink.time.mjd:
+    field: "r:midpointMjdTai"
+    availability: [fp]
+    time_scale: "TAI"
+  lightcurve@lsst:fink.time.processed_mjd:
+    field: "r:timeProcessedMjdTai"
+    availability: [fp]
+    time_scale: "TAI"
+  lightcurve@lsst:fink.time.withdrawn_mjd:
+    field: "r:timeWithdrawnMjdTai"
+    availability: [fp]
+    time_scale: "TAI"
+  lightcurve@lsst:fink.position.ra:
+    field: "r:ra"
+    availability: [fp]
+  lightcurve@lsst:fink.position.dec:
+    field: "r:dec"
+    availability: [fp]
+  lightcurve@lsst:fink.forced_photometry.{filter}:
+    field: "r:band"
+    availability: [fp]
+    role: "namespace_carrier"
+    description: "Dynamic container carrier for forced-photometry rows."
+  lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux:
+    field: "r:psfFlux"
+    availability: [fp]
+    unit: "nJy"
+  lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux_error:
+    field: "r:psfFluxErr"
+    availability: [fp]
+    unit: "nJy"
+  lightcurve@lsst:fink.forced_photometry.{filter}.science.flux:
+    field: "r:scienceFlux"
+    availability: [fp]
+    unit: "nJy"
+  lightcurve@lsst:fink.forced_photometry.{filter}.science.flux_error:
+    field: "r:scienceFluxErr"
+    availability: [fp]
+    unit: "nJy"
+
+  # ==================== Fink classifications ====================
   classification@fink.best.class:
-    field: "v:classification"
-    availability:
-      - objects
-      - latests
-      - sso
-
-  classification@fink.assessment.cats_pure.score:
-    field: "f:cats_pure_score"
-    availability:
-      - objects
-      - latests
-
-  classification@fink.assessment.rf_snia_vs_all.probability:
-    field: "f:rf_snia_vs_all"
-    availability:
-      - objects
-      - latests
-
-  classification@fink.assessment.snn_snia_vs_all.probability:
-    field: "f:snn_snia_vs_all"
-    availability:
-      - objects
-      - latests
-
-  classification@fink.assessment.rf_slsn_vs_all.probability:
-    field: "f:rf_slsn_vs_all"
-    availability:
-      - objects
-      - latests
-
-  # Current LSST conesearch responses expose these classifier products under
-  # `f:clf_*`.  They are separate from the older model-specific mappings above.
+    field: "f:main_label_classifier"
+    availability: [objects, conesearch]
+    transform:
+      "-1": "Not Processed"
+      "11": "SN-like"
+      "12": "Fast Transients"
+      "13": "Long Transients"
+      "21": "Periodic Variables"
+      "22": "Non-Periodic Variables"
+  classification@fink.best.description:
+    field: "f:main_label_classifier"
+    availability: [objects, conesearch]
+    transform:
+      "-1": "Alerts with insufficient data points or failed quality cuts"
+      "11": "Core-Collapse Supernovae, Type Ia Supernovae, Type Ib/Ic, Type II"
+      "12": "Kilonovae (KN), Microlensing events (μlens), Galactic Novae"
+      "13": "Superluminous Supernovae (SLSN), Tidal Disruption Events (TDE)"
+      "21": "RR Lyrae stars, Eclipsing Binaries (EB), Cepheids"
+      "22": "Non-Periodic Variables"
+  classification@fink.assessment.crossmatch.class:
+    field: "f:main_label_crossmatch"
+    availability: [objects, conesearch]
   classification@fink.assessment.cats.class:
     field: "f:clf_cats_class"
-    availability: [conesearch]
-
+    availability: [sources, conesearch]
+    transform:
+      "-1": "Not Processed"
+      "11": "SN-like"
+      "12": "Fast Transients"
+      "13": "Long Transients"
+      "21": "Periodic Variables"
+      "22": "Non-Periodic Variables"
+  classification@fink.assessment.cats.description:
+    field: "f:clf_cats_class"
+    availability: [sources, conesearch]
+    transform:
+      "-1": "Alerts with insufficient data points or failed quality cuts"
+      "11": "Core-Collapse Supernovae, Type Ia Supernovae, Type Ib/Ic, Type II"
+      "12": "Kilonovae (KN), Microlensing events (μlens), Galactic Novae"
+      "13": "Superluminous Supernovae (SLSN), Tidal Disruption Events (TDE)"
+      "21": "RR Lyrae stars, Eclipsing Binaries (EB), Cepheids"
+      "22": "Non-Periodic Variables"
   classification@fink.assessment.cats.score:
     field: "f:clf_cats_score"
-    availability: [conesearch]
-
+    availability: [sources, conesearch]
   classification@fink.assessment.early_snia.score:
     field: "f:clf_earlySNIa_score"
-    availability: [conesearch]
-
+    availability: [sources, conesearch]
   classification@fink.assessment.snn_sn_vs_others.score:
     field: "f:clf_snnSnVsOthers_score"
-    availability: [conesearch]
+    availability: [sources, conesearch]
+  classification@fink.assessment.elephant.hostless_science_score:
+    field: "f:clf_elephant_kstest_science"
+    availability: [sources, conesearch]
+  classification@fink.assessment.elephant.hostless_template_score:
+    field: "f:clf_elephant_kstest_template"
+    availability: [sources, conesearch]
 
-  # ==================== Enrichment (crossmatch) ====================
-  crossmatch@simbad:fink.classification.best.class:
-    field: "f:xm_simbad_otype"
-    fallback_field: "f:xm.cdsxmatch"
-    availability:
-      - objects
-      - conesearch
-
+  # ==================== catalog crossmatches / enrichment ====================
   crossmatch@gaia:fink.identity.object_id:
     field: "f:xm_gaiadr3_DR3Name"
-    fallback_field: "f:xm.DR3Name"
-    availability:
-      - objects
+    availability: [sources, conesearch]
+  crossmatch@gaia:fink.parallax.value:
+    field: "f:xm_gaiadr3_Plx"
+    availability: [sources, conesearch]
+    unit: "mas"
+  crossmatch@gaia:fink.parallax.error:
+    field: "f:xm_gaiadr3_e_Plx"
+    availability: [sources, conesearch]
+    unit: "mas"
+  crossmatch@gaia:fink.classification.variability_flag:
+    field: "f:xm_gaiadr3_VarFlag"
+    availability: [sources, conesearch]
+  crossmatch@gcvs:fink.classification.best.class:
+    field: "f:xm_gcvs_type"
+    availability: [sources, conesearch]
+  crossmatch@vsx:fink.classification.best.class:
+    field: "f:xm_vsx_Type"
+    availability: [sources, conesearch]
+  crossmatch@simbad:fink.classification.best.class:
+    field: "f:xm_simbad_otype"
+    availability: [sources, conesearch]
+  crossmatch@spicy:fink.classification.best.class:
+    field: "f:xm_spicy_class"
+    availability: [sources, conesearch]
+  crossmatch@x3hsp:fink.classification.best.class:
+    field: "f:xm_x3hsp_type"
+    availability: [sources, conesearch]
+  crossmatch@x4lac:fink.classification.best.class:
+    field: "f:xm_x4lac_type"
+    availability: [sources, conesearch]
+  crossmatch@tns:fink.identity.object_id:
+    field: "f:xm_tns_fullname"
+    availability: [sources, conesearch]
+  crossmatch@tns:fink.classification.best.class:
+    field: "f:xm_tns_type"
+    availability: [sources, conesearch]
+  crossmatch@tns:fink.redshift.value:
+    field: "f:xm_tns_redshift"
+    availability: [sources, conesearch]
+  crossmatch@legacydr8:fink.redshift.value:
+    field: "f:xm_legacydr8_zphot"
+    availability: [sources, conesearch]
+  crossmatch@legacydr8:fink.redshift.error:
+    field: "f:xm_legacydr8_e_zphot"
+    availability: [sources, conesearch]
+  crossmatch@legacydr8:fink.quality.photoz_flag:
+    field: "f:xm_legacydr8_fqual"
+    availability: [sources, conesearch]
+  crossmatch@legacydr8:fink.classification.star_probability:
+    field: "f:xm_legacydr8_pstar"
+    availability: [sources, conesearch]
+  crossmatch@mangrove:fink.identity.twomass_id:
+    field: "f:xm_mangrove_2MASS_name"
+    availability: [sources, conesearch]
+  crossmatch@mangrove:fink.identity.hyperleda_id:
+    field: "f:xm_mangrove_HyperLEDA_name"
+    availability: [sources, conesearch]
+  crossmatch@mangrove:fink.separation.total:
+    field: "f:xm_mangrove_ang_dist"
+    availability: [sources, conesearch]
+    description: "Angular distance of closest Mangrove source; raw Fink field is string-valued."
+  crossmatch@mangrove:fink.luminosity_distance:
+    field: "f:xm_mangrove_lum_dist"
+    availability: [sources, conesearch]
+    extension: true
+    description: "Temporary mapping until a distance container is adopted."
 
-  # Miriade ephemeris values (target, delta, r, phase, mv) deliberately have
-  # no mapping here: feature_catalog.yaml has no ephemeris semantic container.
-  # Add that container before exposing these source-specific fields.
+  # ==================== Fink statistics endpoint ====================
+  portfolio.survey@lsst:fink.time.night:
+    field: "f:night"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.alert_count:
+    field: "f:alerts"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.object_count:
+    field: "f:objects"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.visit_count:
+    field: "f:visits"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.u:
+    field: "f:alerts_u"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.g:
+    field: "f:alerts_g"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.r:
+    field: "f:alerts_r"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.i:
+    field: "f:alerts_i"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.z:
+    field: "f:alerts_z"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.filter_counts.y:
+    field: "f:alerts_y"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.is_cataloged:
+    field: "f:is_cataloged"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.is_first_detection:
+    field: "f:is_first"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.is_solar_system:
+    field: "f:is_sso"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.is_dipole:
+    field: "f:isDipole"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.glint_trail:
+    field: "f:glint_trail"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray:
+    field: "f:pixelFlags_cr"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.pixel_flags.saturated:
+    field: "f:pixelFlags_saturated"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.pixel_flags.streak:
+    field: "f:pixelFlags_streak"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.flag_counts.in_tns:
+    field: "f:in_tns"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.provenance.channel.version:
+    field: "f:fink_broker_version"
+    availability: [statistics]
+  portfolio.survey@lsst:fink.provenance.channel.science_version:
+    field: "f:fink_science_version"
+    availability: [statistics]

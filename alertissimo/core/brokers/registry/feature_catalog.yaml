@@ -937,6 +937,25 @@ levels:
   [{field}]:
     description: "Other specific object identifiers"
 
+<program>:
+  [id]:
+    description: "Raw program identifier or scheduler/program token as reported by the producer"
+  [type]:
+    description: "Canonical program type or family"
+    enum: [wfd, ddf, too, ddt, minisurvey, calibration, commissioning, engineering, unknown, other]
+  [field]:
+    description: "Named program field, campaign field, or survey field where encoded by the producer"
+  [target_name]:
+    description: "Raw target name or scheduler target string as reported by the producer"
+  [tags]:
+    description: "Program or target tags unpacked from producer metadata"
+    type: array
+  [pi]:
+    description: "Program principal investigator or responsible program owner, where available"
+  $ref: <pointing>
+  [{field}]:
+    description: "Program-specific additional field"
+
 <_provenance_core>:
   [type]:
     description: "Canonical provenance-agent type"
@@ -945,10 +964,7 @@ levels:
     description: "Name of the provenance agent"
   [id]:
     description: "Identifier of the provenance agent"
-  [program_id]:
-    description: "program id, e.g. wfd, ddf, too. ddt"
-  [program_pi]:
-    description: "Program principal investigator or responsible program owner, where available"
+  $ref: <program>
   [version]:
     description: "Version of the provenance agent"
   [schema_version]:
@@ -1257,6 +1273,7 @@ levels:
     description: "Fraction of records passing science-quality selection"
     type: float
     range: [0, 1]
+
 <image_metrics>:
   level: L1
   description: "Detection-specific flags and metrics"
