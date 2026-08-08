@@ -1,0 +1,66 @@
+broker: alerce
+origin: ztf
+notes: Raw inventory fields without a stable feature-catalog semantic path.
+unmapped:
+- get_avro#__type__:
+    reason: no_stable_feature_catalog_path
+- get_avro#length:
+    reason: no_stable_feature_catalog_path
+- get_avro#preview_hex:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classes:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_name:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_version:
+    reason: no_stable_feature_catalog_path
+- query_detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#adpctdif1:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#adpctdif2:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#candid_alert:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#clrcoeff:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#clrcounc:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#e_mag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#e_mag_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#e_mag_corr_ext:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#exptime:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#mag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#mag_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magzpsci:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magzpscirms:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magzpsciunc:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#procstatus:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#rcid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#scibckgnd:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sciinpseeing:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#scisigpix:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_non_detections#band:
+    reason: no_stable_feature_catalog_path
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path

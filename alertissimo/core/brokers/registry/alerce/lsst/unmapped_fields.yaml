@@ -1,0 +1,10 @@
+broker: alerce
+origin: lsst
+notes: Raw inventory fields without a stable feature-catalog semantic path.
+unmapped:
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path

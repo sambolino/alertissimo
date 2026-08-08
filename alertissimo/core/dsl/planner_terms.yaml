@@ -1,0 +1,37 @@
+terms:
+  object_id:
+    kind: input
+    synonyms: [object, object id, source, source id, oid, diaObjectId]
+  source_id:
+    kind: input
+    synonyms: [source id, detection id, alert id, candid, diaSourceId, measurement_id]
+  cone.ra:
+    kind: input
+    synonyms: [ra, right ascension]
+  cone.dec:
+    kind: input
+    synonyms: [dec, declination]
+  cone.radius:
+    kind: input
+    synonyms: [radius, search radius, within, around]
+  time.start:
+    kind: input
+    synonyms: [from, after, start time, start mjd]
+  time.end:
+    kind: input
+    synonyms: [until, before, end time, end mjd]
+  classifier:
+    kind: input
+    synonyms: [classifier, model, classification model, assessment, assessment output]
+  class_name:
+    kind: input
+    synonyms: [class, classification, class name, object class]
+  limit:
+    kind: input
+    synonyms: [limit, max results, number of results]
+  columns:
+    kind: input
+    synonyms: [columns, fields, projection]
+  format:
+    kind: input
+    synonyms: [format, output format]
