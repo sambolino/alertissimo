@@ -1,0 +1,1205 @@
+broker: alerce
+origin: lsst
+unmapped_fields:
+- method: query_detections
+  field: band_name
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_detections
+  field: diaObjectId
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_forced_photometry
+  field: band
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_forced_photometry
+  - forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_forced_photometry
+  field: band_name
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_forced_photometry
+  - forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections
+  in_docs: false
+  in_payload_top: false
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.apFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.apFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.apFlux_flag
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.apFlux_flag_apertureTruncated
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.band
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.band_name
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.bboxSize
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.centroid_flag
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dec
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.decErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.detector
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.diaObjectId
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleAngle
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleChi2
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleFitAttempted
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleFluxDiff
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleFluxDiffErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleLength
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleMeanFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleMeanFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.dipoleNdata
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.extendedness
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.forced_PsfFlux_flag
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.forced_PsfFlux_flag_edge
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.forced_PsfFlux_flag_noGoodPixels
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.glint_trail
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.has_stamp
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.isDipole
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.isNegative
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ixx
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ixxPSF
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ixy
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ixyPSF
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.iyy
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.iyyPSF
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.measurement_id
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.mjd
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.oid
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.parentDiaSourceId
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_bad
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_cr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_crCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_edge
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_injected
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_injectedCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_injected_template
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_injected_templateCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_interpolated
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_interpolatedCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_nodata
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_nodataCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_offimage
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_saturated
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_saturatedCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_streak
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_streakCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_suspect
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.pixelFlags_suspectCenter
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfChi2
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfFlux_flag
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfFlux_flag_edge
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfFlux_flag_noGoodPixels
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfLnL
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.psfNdata
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ra
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.raErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ra_dec_Cov
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.reliability
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.scienceFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.scienceFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.shape_flag
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.shape_flag_no_pixels
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.shape_flag_not_contained
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.shape_flag_parent_source
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.snr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.ssObjectId
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.survey_id
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.templateFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.templateFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.timeProcessedMjdTai
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.timeWithdrawnMjdTai
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailAngle
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailAngleErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailChi2
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailDec
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailDecErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailFlux
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailFluxErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailLength
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailLengthErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailNdata
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailRa
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trailRaErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.trail_flag_edge
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.visit
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.x
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.xErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.y
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: detections.yErr
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: forced_photometry
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_lightcurve
+  field: non_detections
+  in_docs: false
+  in_payload_top: true
+  in_payload_flat: true
+  documented_models:
+  - lsst_detection
+  - non_detection
+  - lsst_forced_photometry
+  method_status: ok
+  reason: No validated feature_catalog.yaml semantic path.
+- method: query_magstats
+  field: step_id_corr
+  in_docs: true
+  in_payload_top: false
+  in_payload_flat: false
+  documented_models:
+  - magstats
+  method_status: known_unsupported
+  reason: No validated feature_catalog.yaml semantic path.

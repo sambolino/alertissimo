@@ -1724,7 +1724,7 @@ mappings:
     availability:
       endpoint_status: ok
     model: avro
-attribute_inventory:
+sources:
 - method: query_classifiers
   field: classes
   in_docs: false

@@ -1,0 +1,21 @@
+brokers:
+  alerce/lsst:
+    preserved: 341
+    mapped: 231
+    unmapped: 110
+    missing: 0
+  alerce/ztf:
+    preserved: 241
+    mapped: 198
+    unmapped: 43
+    missing: 0
+  fink/lsst:
+    preserved: 618
+    mapped: 618
+    unmapped: 0
+    missing: 0
+  fink/ztf:
+    preserved: 472
+    mapped: 472
+    unmapped: 0
+    missing: 0

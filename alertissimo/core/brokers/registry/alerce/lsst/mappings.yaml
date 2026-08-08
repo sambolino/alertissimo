@@ -2162,7 +2162,7 @@ mappings:
       endpoint_status: empty/error
       field_status: not_observed
     model: avro
-attribute_inventory:
+sources:
 - method: query_object
   field: class
   in_docs: true
