@@ -1,92 +1,61 @@
-# brokers/lasair/lsst/mappings.yaml
-# Source paths verified against authenticated Lasair LSST REST API responses.
 broker: lasair
 origin: lsst
-
+payloads:
+  object:
+    endpoint: object
+    path: .
+  query:
+    endpoint: query
+    path: '[]'
+  cone:
+    endpoint: cone
+    path: '[]'
+  diaSourcesList:
+    endpoint: object
+    path: diaSourcesList[]
 mappings:
-  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
-  # dependent photometry paths and are not scalar output fields themselves.
-
-  # ==================== diaObject summary ====================
   summary@lsst:lasair.identity.object_id:
-    field: "diaObjectId"
-    availability: [object, query]
+  - object#diaObjectId
+  - query#diaObjectId
   summary@lsst:lasair.detection_count:
-    field: "lasairData.nDiaSources"
-    availability: [object]
+  - object#lasairData.nDiaSources
   summary@lsst:lasair.time.first_mjd:
-    field: "diaObject.firstDiaSourceMjdTai"
-    availability: [object]
+  - object#diaObject.firstDiaSourceMjdTai
   summary@lsst:lasair.time.last_mjd:
-    field: "diaObject.lastDiaSourceMjdTai"
-    availability: [object]
+  - object#diaObject.lastDiaSourceMjdTai
   summary@lsst:lasair.position.ra:
-    field: "diaObject.ra"
-    availability: [object]
+  - object#diaObject.ra
   summary@lsst:lasair.position.dec:
-    field: "diaObject.decl"
-    availability: [object]
-  # ==================== diaSource light-curve records ====================
-  # diaSourcesList is a repeated collection; one normalized detection is emitted
-  # per member. Its `band` value binds the {filter} parameter.
+  - object#diaObject.decl
   detection@lsst:lasair.identity.source_id:
-    field: "diaSourcesList.diaSourceId"
-    availability: [object]
+  - diaSourcesList#diaSourceId
   detection@lsst:lasair.time.mjd:
-    field: "diaSourcesList.midpointMjdTai"
-    availability: [object]
+  - diaSourcesList#midpointMjdTai
   detection@lsst:lasair.photometry.{filter}:
-    field: "diaSourcesList.band"
-    availability: [object]
+  - diaSourcesList#band
   detection@lsst:lasair.photometry.{filter}.psf.flux:
-    field: "diaSourcesList.psfFlux"
-    availability: [object]
+  - diaSourcesList#psfFlux
   detection@lsst:lasair.photometry.{filter}.psf.flux_error:
-    field: "diaSourcesList.psfFluxErr"
-    availability: [object]
+  - diaSourcesList#psfFluxErr
   detection@lsst:lasair.quality.reliability:
-    field: "diaSourcesList.reliability"
-    availability: [object]
-
-  # ==================== Forced-photometry light curve ====================
-  # The response contains no native forced-source ID. These are light-curve
-  # points, not standalone detection identities.
+  - diaSourcesList#reliability
   lightcurve@lsst:lasair.{filter}.points:
-    field: "diaForcedSourcesList"
-    filter_field: "band"
-    availability: [object]
-
-  # ==================== Lasair/Sherlock assessment ====================
+  - object#diaForcedSourcesList
   classification@lasair.assessment.sherlock.class:
-    field: "lasairData.sherlock.classification"
-    availability: [object]
+  - object#lasairData.sherlock.classification
   classification@lasair.assessment.sherlock.score:
-    field: "lasairData.sherlock.classificationReliability"
-    availability: [object]
-
-  # ==================== Context and crossmatches ====================
+  - object#lasairData.sherlock.classificationReliability
   crossmatch@{producer}:lasair.identity.object_id:
-    field: "lasairData.sherlock.catalogue_object_id"
-    producer_field: "lasairData.sherlock.catalogue_table_name"
-    availability: [object]
+  - object#lasairData.sherlock.catalogue_object_id
   crossmatch@{producer}:lasair.position.ra:
-    field: "lasairData.sherlock.raDeg"
-    producer_field: "lasairData.sherlock.catalogue_table_name"
-    availability: [object]
+  - object#lasairData.sherlock.raDeg
   crossmatch@{producer}:lasair.position.dec:
-    field: "lasairData.sherlock.decDeg"
-    producer_field: "lasairData.sherlock.catalogue_table_name"
-    availability: [object]
+  - object#lasairData.sherlock.decDeg
   crossmatch@{producer}:lasair.separation.total:
-    field: "lasairData.sherlock.separationArcsec"
-    producer_field: "lasairData.sherlock.catalogue_table_name"
-    availability: [object]
+  - object#lasairData.sherlock.separationArcsec
   crossmatch@tns:lasair.identity.object_id:
-    field: "lasairData.TNS.name"
-    availability: [object]
+  - object#lasairData.TNS.name
   crossmatch@tns:lasair.position.ra:
-    field: "lasairData.TNS.ra"
-    availability: [object]
+  - object#lasairData.TNS.ra
   crossmatch@tns:lasair.position.dec:
-    field: "lasairData.TNS.decl"
-    availability: [object]
+  - object#lasairData.TNS.decl
