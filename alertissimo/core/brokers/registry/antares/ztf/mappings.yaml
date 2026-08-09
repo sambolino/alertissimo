@@ -1,36 +1,21 @@
 broker: antares
 origin: ztf
 payloads:
-  loci:
-    endpoint: loci
-    path: '[]'
   locus:
-    endpoint: locus
+    endpoint: get_by_ztf_object_id
     path: .
+  loci:
+    endpoint: search
+    path: '[]'
   locus_alerts:
-    endpoint: locus_alerts
-    path: '[]'
-  catalog_matches:
-    endpoint: catalog_matches
-    path: '[]'
-  thumbnails:
-    endpoint: thumbnails
-    path: '[]'
-  statistics:
-    endpoint: statistics
-    path: .
+    endpoint: get_by_ztf_object_id
+    path: alerts[]
   catalog_matches.gaia:
-    endpoint: catalog_matches
-    path: '[]'
-    description: Gaia DR3 catalog-match rows from ANTARES catalog_matches.
-    row_filter:
-      meta.catalog_name: gaia_dr3_gaia_source
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
   catalog_matches.allwise:
-    endpoint: catalog_matches
-    path: '[]'
-    description: AllWISE catalog-match rows from ANTARES catalog_matches.
-    row_filter:
-      meta.catalog_name: allwise
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.allwise[]
 mappings:
   summary@ztf:antares.identity.object_id:
   - loci#properties.ztf_object_id
