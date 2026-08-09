@@ -1,179 +1,139 @@
-# brokers/antares/lsst/mappings.yaml
-# Source paths verified against live ANTARES v1 LSST JSON:API responses.
 broker: antares
 origin: lsst
-
+payloads:
+  loci:
+    endpoint: loci
+    path: '[]'
+  locus:
+    endpoint: locus
+    path: .
+  locus_alerts:
+    endpoint: locus_alerts
+    path: '[]'
+  catalog_matches:
+    endpoint: catalog_matches
+    path: '[]'
+  thumbnails:
+    endpoint: thumbnails
+    path: '[]'
+  statistics:
+    endpoint: statistics
+    path: .
+  catalog_matches.allwise:
+    endpoint: catalog_matches
+    path: '[]'
+    description: AllWISE catalog-match rows from ANTARES catalog_matches.
+    row_filter:
+      meta.catalog_name: allwise
 mappings:
-  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
-  # dependent photometry paths and are not scalar output fields themselves.
-
-  # ==================== LSST locus summary ====================
   summary@lsst:antares.identity.object_id:
-    field: "properties.survey.lsst.dia_object_id"
-    availability: [loci, locus]
-    description: "ANTARES exposes the LSST diaObjectId as a one-or-more-value survey association."
+  - loci#properties.survey.lsst.dia_object_id
+  - locus#properties.survey.lsst.dia_object_id
   summary@lsst:antares.detection_count:
-    field: "properties.num_alerts"
-    availability: [loci, locus]
+  - loci#properties.num_alerts
+  - locus#properties.num_alerts
   summary@lsst:antares.time.first_mjd:
-    field: "properties.oldest_alert_observation_time"
-    availability: [loci, locus]
+  - loci#properties.oldest_alert_observation_time
+  - locus#properties.oldest_alert_observation_time
   summary@lsst:antares.time.last_mjd:
-    field: "properties.newest_alert_observation_time"
-    availability: [loci, locus]
+  - loci#properties.newest_alert_observation_time
+  - locus#properties.newest_alert_observation_time
   summary@lsst:antares.position.ra:
-    field: "ra"
-    availability: [loci, locus]
+  - loci#ra
+  - locus#ra
   summary@lsst:antares.position.dec:
-    field: "dec"
-    availability: [loci, locus]
-
-  # ==================== LSST diaSource-derived alerts ====================
+  - loci#dec
+  - locus#dec
   detection@lsst:antares.identity.source_id:
-    field: "properties.lsst_diaSource_diaSourceId"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_diaSourceId
   detection@lsst:antares.identity.alert_id:
-    field: "id"
-    availability: [locus_alerts]
+  - locus_alerts#id
   detection@lsst:antares.identity.visit_id:
-    field: "properties.lsst_diaSource_visit"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_visit
   detection@lsst:antares.identity.detector_id:
-    field: "properties.lsst_diaSource_detector"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_detector
   detection@lsst:antares.time.mjd:
-    field: "properties.lsst_diaSource_midpointMjdTai"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_midpointMjdTai
   detection@lsst:antares.position.ra:
-    field: "properties.lsst_diaSource_ra"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_ra
   detection@lsst:antares.position.dec:
-    field: "properties.lsst_diaSource_dec"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_dec
   detection@lsst:antares.position.ra_error:
-    field: "properties.lsst_diaSource_raErr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_raErr
   detection@lsst:antares.position.dec_error:
-    field: "properties.lsst_diaSource_decErr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_decErr
   detection@lsst:antares.position.ra_dec_covariance:
-    field: "properties.lsst_diaSource_ra_dec_Cov"
-    availability: [locus_alerts]
-
+  - locus_alerts#properties.lsst_diaSource_ra_dec_Cov
   detection@lsst:antares.photometry.{filter}:
-    field: "properties.lsst_diaSource_band"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_band
   detection@lsst:antares.photometry.{filter}.mag:
-    field: "properties.ant_mag"
-    availability: [locus_alerts]
+  - locus_alerts#properties.ant_mag
   detection@lsst:antares.photometry.{filter}.mag_error:
-    field: "properties.ant_magerr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.ant_magerr
   detection@lsst:antares.photometry.{filter}.limit.mag:
-    field: "properties.ant_maglim"
-    availability: [locus_alerts]
+  - locus_alerts#properties.ant_maglim
   detection@lsst:antares.photometry.{filter}.psf.flux:
-    field: "properties.lsst_diaSource_psfFlux"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfFlux
   detection@lsst:antares.photometry.{filter}.psf.flux_error:
-    field: "properties.lsst_diaSource_psfFluxErr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfFluxErr
   detection@lsst:antares.photometry.{filter}.psf.fit_chi2:
-    field: "properties.lsst_diaSource_psfChi2"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfChi2
   detection@lsst:antares.photometry.{filter}.psf.fit_ndata:
-    field: "properties.lsst_diaSource_psfNdata"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfNdata
   detection@lsst:antares.photometry.{filter}.psf.snr:
-    field: "properties.lsst_diaSource_snr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_snr
   detection@lsst:antares.photometry.{filter}.psf.flags.failed:
-    field: "properties.lsst_diaSource_psfFlux_flag"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag
   detection@lsst:antares.photometry.{filter}.psf.flags.edge:
-    field: "properties.lsst_diaSource_psfFlux_flag_edge"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_edge
   detection@lsst:antares.photometry.{filter}.psf.flags.no_good_pixels:
-    field: "properties.lsst_diaSource_psfFlux_flag_noGoodPixels"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_noGoodPixels
   detection@lsst:antares.photometry.{filter}.aperture.flux:
-    field: "properties.lsst_diaSource_apFlux"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_apFlux
   detection@lsst:antares.photometry.{filter}.aperture.flux_error:
-    field: "properties.lsst_diaSource_apFluxErr"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_apFluxErr
   detection@lsst:antares.photometry.{filter}.aperture.flags.failed:
-    field: "properties.lsst_diaSource_apFlux_flag"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag
   detection@lsst:antares.photometry.{filter}.aperture.flags.aperture_truncated:
-    field: "properties.lsst_diaSource_apFlux_flag_apertureTruncated"
-    availability: [locus_alerts]
-
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
   detection@lsst:antares.quality.reliability:
-    field: "properties.lsst_diaSource_reliability"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_reliability
   detection@lsst:antares.image_metrics.is_positive:
-    field: "properties.lsst_diaSource_isNegative"
-    transform: {true: false, false: true}
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_isNegative
   detection@lsst:antares.image_metrics.bbox_size:
-    field: "properties.lsst_diaSource_bboxSize"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_bboxSize
   detection@lsst:antares.image_metrics.extendedness:
-    field: "properties.lsst_diaSource_extendedness"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_extendedness
   detection@lsst:antares.image_metrics.centroid_flag:
-    field: "properties.lsst_diaSource_centroid_flag"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_centroid_flag
   detection@lsst:antares.image_metrics.shape.ixx:
-    field: "properties.lsst_diaSource_ixx"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_ixx
   detection@lsst:antares.image_metrics.shape.iyy:
-    field: "properties.lsst_diaSource_iyy"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_iyy
   detection@lsst:antares.image_metrics.shape.ixy:
-    field: "properties.lsst_diaSource_ixy"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_ixy
   detection@lsst:antares.image_metrics.shape.psf_ixx:
-    field: "properties.lsst_diaSource_ixxPSF"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_ixxPSF
   detection@lsst:antares.image_metrics.shape.psf_iyy:
-    field: "properties.lsst_diaSource_iyyPSF"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_iyyPSF
   detection@lsst:antares.image_metrics.shape.psf_ixy:
-    field: "properties.lsst_diaSource_ixyPSF"
-    availability: [locus_alerts]
+  - locus_alerts#properties.lsst_diaSource_ixyPSF
   detection@lsst:antares.image_metrics.shape.flag:
-    field: "properties.lsst_diaSource_shape_flag"
-    availability: [locus_alerts]
-
-  # ==================== Solar System linkage ====================
-  detection@lsst:antares.solar_system.ss_object_id:
-    field: "properties.lsst_diaSource_ssObjectId"
-    availability: [locus_alerts]
-
-  # ==================== Catalog matches ====================
+  - locus_alerts#properties.lsst_diaSource_shape_flag
   crossmatch@allwise:antares.identity.object_id:
-    field: "object_id"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#object_id
   crossmatch@allwise:antares.position.ra:
-    field: "ra"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#ra
   crossmatch@allwise:antares.position.dec:
-    field: "dec"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#dec
   crossmatch@allwise:antares.separation.total:
-    field: "meta.separation"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#meta.separation
   crossmatch@allwise:antares.photometry.W1.mag:
-    field: "properties.w1mpro"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#properties.w1mpro
   crossmatch@allwise:antares.photometry.W2.mag:
-    field: "properties.w2mpro"
-    filter: {"meta.catalog_name": "allwise"}
-    availability: [catalog_matches]
+  - catalog_matches.allwise#properties.w2mpro
+transforms:
+  detection@lsst:antares.image_metrics.is_positive:
+    locus_alerts#properties.lsst_diaSource_isNegative:
+      type: boolean_not
+      note: ANTARES raw field isNegative is inverted to the semantic is_positive field.

@@ -1,0 +1,9 @@
+broker: antares
+origin: lsst
+notes: Only audited fields without a stable semantic feature catalog path are retained
+  here.
+unmapped:
+- locus_alerts#properties.lsst_diaSource_ssObjectId:
+    reason: no_stable_feature_catalog_path
+    note: LSST ssObjectId has no stable solar_system field in the current feature
+      catalog.

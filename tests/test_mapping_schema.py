@@ -183,3 +183,35 @@ def test_all_skips_legacy_files_without_payloads(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "SKIPPED" in output
     assert "PASSED" not in output
+
+
+def test_payload_row_filter_accepts_scalar_values(tmp_path, valid_mapping):
+    valid_mapping["payloads"]["objects"]["row_filter"] = {
+        "meta.catalog_name": "gaia", "rank": 1, "active": True, "missing": None,
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("value", [{"nested": "value"}, ["value"]])
+def test_payload_row_filter_rejects_nested_values(tmp_path, valid_mapping, value):
+    valid_mapping["payloads"]["objects"]["row_filter"] = {"meta": value}
+    with pytest.raises(MappingSchemaError, match="row_filter values must be scalar"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"type": "boolean_not"}}}
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize(("transforms", "match"), [
+    ({"object@ztf:example.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
+    ({"object@ztf:example.id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),
+    ({"object@ztf:example.id": {"objects#oid": {"type": "value_map"}}}, "requires 'map'"),
+    ({"object@ztf:example.id": {"objects#oid": {"type": "unknown"}}}, "transform type"),
+])
+def test_invalid_transform_fails(tmp_path, valid_mapping, transforms, match):
+    valid_mapping["transforms"] = transforms
+    with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
