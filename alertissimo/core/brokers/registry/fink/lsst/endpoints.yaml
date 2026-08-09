@@ -1,0 +1,561 @@
+broker: fink
+origin: lsst
+baseurl: https://api.lsst.fink-portal.org
+endpoints:
+  sources:
+    path: /api/v1/sources
+    method: GET
+    description: Retrieve diaSource/lightcurve data from the Fink/LSST database based on Rubin diaObjectId.
+    transport:
+      kind: rest
+    params:
+      diaObjectId:
+        required: true
+        type: string
+        description: Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds.
+      midpointMjdTai:
+        required: false
+        type: number
+        description: If set, transfer only the source observed at this midpointMjdTai; not supported for comma-separated diaObjectId lists.
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: source_row
+    operation_types:
+    - object_history
+    - lightcurve
+    server_filters:
+    - diaObjectId
+    - midpointMjdTai
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  objects:
+    path: /api/v1/objects
+    method: GET
+    description: Retrieve diaObject/aggregated object data from the Fink/LSST database based on Rubin diaObjectId.
+    transport:
+      kind: rest
+    params:
+      diaObjectId:
+        required: true
+        type: string
+        description: Single Rubin diaObjectId, or a comma-separated list of diaObjectIds.
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:firstDiaSourceMjdTai,r:nDiaSources,r:g_psfFluxMax'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: object_row
+    operation_types:
+    - object_lookup
+    - object_summary
+    server_filters:
+    - diaObjectId
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  fp:
+    path: /api/v1/fp
+    method: GET
+    description: Retrieve forced-photometry data from the Fink/LSST database based on Rubin diaObjectId.
+    transport:
+      kind: rest
+    params:
+      diaObjectId:
+        required: true
+        type: string
+        description: Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds.
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: forced_photometry_row
+    operation_types:
+    - forced_photometry
+    - object_history
+    server_filters:
+    - diaObjectId
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  conesearch:
+    path: /api/v1/conesearch
+    method: GET
+    description: Retrieve LSST alert/lightcurve data from the Fink database based on sky coordinates.
+    transport:
+      kind: rest
+    params:
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
+      radius:
+        required: true
+        type: number
+        unit: arcsec
+        description: Cone-search radius in arcseconds; maximum 18,000 arcsec / 5 degrees.
+      n:
+        required: false
+        type: integer
+        default: 1000
+        description: Maximum number of alerts to return.
+      startdate:
+        required: false
+        type: string
+        description: Starting date in UTC, JD, or MJD. Restricts alerts by first-detection date when used with kind=within.
+      stopdate:
+        required: false
+        type: string
+        description: Stopping date in UTC, JD, or MJD. Default is now.
+      window:
+        required: false
+        type: number
+        unit: day
+        description: Time window in days; may be used instead of stopdate.
+      kind:
+        required: false
+        type: string
+        enum:
+        - within
+        - across
+        default: within
+        description: 'Time-filtering mode: first detection within date range, or appeared across date range.'
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - spatial_search
+    - alert_search
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - startdate
+    - stopdate
+    - window
+    - kind
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  cutouts:
+    path: /api/v1/cutouts
+    method: GET
+    description: Retrieve Rubin/LSST alert cutout data from the Fink/Rubin datalake.
+    transport:
+      kind: rest
+    params:
+      diaSourceId:
+        required: true
+        type: string
+        description: diaSourceId / long integer source ID of the alert.
+      kind:
+        required: true
+        type: string
+        enum:
+        - Science
+        - Template
+        - Difference
+        - All
+        description: Science, Template, or Difference. For output-format=array, All returns all three cutouts.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - PNG
+        - FITS
+        - array
+        default: PNG
+        description: Cutout output format.
+      stretch:
+        required: false
+        type: string
+        enum:
+        - sigmoid
+        - linear
+        - sqrt
+        - power
+        - log
+        default: sigmoid
+        description: Stretch function applied to rendered image output.
+      colormap:
+        required: false
+        type: string
+        default: grayscale
+        description: Matplotlib colormap name for rendered image output.
+      pmin:
+        required: false
+        type: number
+        default: 0.5
+        description: Percentile used for minimum cut level; no effect for sigmoid stretch.
+      pmax:
+        required: false
+        type: number
+        default: 99.5
+        description: Percentile used for maximum cut level; no effect for sigmoid stretch.
+      convolution_kernel:
+        required: false
+        type: string
+        enum:
+        - gauss
+        - box
+        description: Optional convolution kernel; if omitted, no kernel is applied.
+    output:
+      type: data_product
+      item: cutout
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - diaSourceId
+    - kind
+    post_filter: false
+    projection:
+      supports_columns: false
+  schema:
+    path: /api/v1/schema
+    method: GET
+    description: Retrieve the data schema for a given Fink/Rubin endpoint. This describes fields; it is not itself a science data source.
+    transport:
+      kind: rest
+    params:
+      endpoint:
+        required: true
+        type: string
+        description: Endpoint name, e.g. '/api/v1/sources'.
+      major_version:
+        required: false
+        type: integer
+        description: LSST major version. Default is latest.
+      minor_version:
+        required: false
+        type: integer
+        description: LSST minor version. Default is latest.
+    output:
+      type: metadata
+      item: schema
+    operation_types:
+    - schema_lookup
+    server_filters:
+    - endpoint
+    post_filter: false
+    projection:
+      supports_columns: false
+  sso:
+    path: /api/v1/sso
+    method: GET
+    description: Retrieve Solar System object data from Fink/Rubin based on IAU number or designation.
+    transport:
+      kind: rest
+    params:
+      n_or_d:
+        required: true
+        type: string
+        description: IAU number, comet number, or designation. Packed form is allowed; comma-separated lists are allowed.
+      withEphem:
+        required: false
+        type: boolean
+        default: false
+        description: Attach Miriade ephemerides as extra columns.
+      withResiduals:
+        required: false
+        type: boolean
+        default: false
+        description: Return obs-model residuals using the sHG1G2 phase-curve model; only for single-object queries.
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:scienceFlux,r:band,r:ra,r:dec'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: solar_system_alert_row
+    operation_types:
+    - solar_system_lookup
+    - alert_search
+    server_filters:
+    - n_or_d
+    - withEphem
+    - withResiduals
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  resolver:
+    path: /api/v1/resolver
+    method: GET
+    description: Resolve astronomical names to LSST identifiers, or LSST identifiers back to external names.
+    transport:
+      kind: rest
+    params:
+      resolver:
+        required: true
+        type: string
+        enum:
+        - simbad
+        - ssodnet
+        - tns
+        description: Resolver service.
+      name_or_id:
+        required: true
+        type: string
+        description: Astronomical object name, or ID if reverse is true.
+      reverse:
+        required: false
+        type: boolean
+        default: false
+        description: If true, resolve an LSST diaObjectId instead of an external name.
+      nmax:
+        required: false
+        type: integer
+        default: 10
+        description: Maximum number of matches to return.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: resolver_match
+    operation_types:
+    - name_resolution
+    server_filters:
+    - resolver
+    - name_or_id
+    - reverse
+    - nmax
+    post_filter: false
+    projection:
+      supports_columns: false
+  skymap:
+    path: /api/v1/skymap
+    method: GET
+    description: Return Fink/LSST alerts inside a gravitational-wave skymap and time window.
+    transport:
+      kind: rest
+    params:
+      file:
+        required: false
+        type: file
+        exclusive_with: event_name
+        description: LIGO/Virgo probability skymap as gzipped FITS; not compatible with event_name.
+      event_name:
+        required: false
+        type: string
+        exclusive_with: file
+        description: GraceDB event name; not compatible with file.
+      credible_level:
+        required: true
+        type: number
+        description: GW credible-region threshold.
+      n_day_before:
+        required: false
+        type: number
+        default: 1
+        unit: day
+        description: Days to search before the event; max 7.
+      n_day_after:
+        required: false
+        type: number
+        default: 6
+        unit: day
+        description: Days to search after the event; max 14.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - skymap_search
+    - multimessenger_search
+    - alert_search
+    server_filters:
+    - file
+    - event_name
+    - credible_level
+    - n_day_before
+    - n_day_after
+    post_filter: true
+    projection:
+      supports_columns: false
+  statistics:
+    path: /api/v1/statistics
+    method: GET
+    description: Get statistics about Fink and the Rubin alert stream.
+    transport:
+      kind: rest
+    params:
+      date:
+        required: true
+        type: string
+        description: 'Observing date: YYYYMMDD, YYYYMM, YYYY, or empty string for everything.'
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'f:alerts,f:night'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: statistics_row
+    operation_types:
+    - stream_statistics
+    - survey_summary
+    server_filters:
+    - date
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  tags:
+    path: /api/v1/tags
+    method: GET
+    description: Retrieve LSST alert data from the Fink database by Fink tag.
+    transport:
+      kind: rest
+    params:
+      tag:
+        required: true
+        type: string
+        description: Fink tag based on user-defined filters. The endpoint documentation points to /api/v1/tags for available tags.
+      n:
+        required: false
+        type: integer
+        default: 100
+        description: Last N alerts to transfer between stopdate and startdate.
+      startdate:
+        required: false
+        type: string
+        default: '2026-01-01 00:00:00'
+        description: Starting date in UTC, JD, or MJD.
+      stopdate:
+        required: false
+        type: string
+        description: Stopping date in UTC, JD, or MJD. Default is now.
+      columns:
+        required: false
+        type: string
+        role: projection
+        description: Comma-separated data columns to transfer, e.g. 'r:psfFlux,r:midpointMjdTai,r:diaObjectId'. If not specified, transfer all columns.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - tag_search
+    - alert_search
+    server_filters:
+    - tag
+    - n
+    - startdate
+    - stopdate
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns

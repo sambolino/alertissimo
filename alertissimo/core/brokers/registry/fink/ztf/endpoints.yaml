@@ -1,0 +1,515 @@
+broker: fink
+origin: ztf
+baseurl: https://api.ztf.fink-portal.org
+endpoints:
+  objects:
+    path: /api/v1/objects
+    method: GET
+    description: Retrieve object data from the Fink/ZTF database based on their name
+    transport:
+      kind: rest
+    params:
+      objectId:
+        required: true
+        type: string
+        description: single ZTF Object ID, or a comma-separated list of object names, e.g. 'ZTF19acmdpyr,ZTF21aaxtctv'
+      withupperlim:
+        required: false
+        type: boolean
+        description: 'If True, retrieve also upper limit measurements, and bad quality measurements. Use the column `d:tag` in your results: valid, upperlim, badquality.'
+      withcutouts:
+        required: false
+        type: boolean
+        description: If True, retrieve also cutout data as 2D array. See also `cutout-kind`.
+      cutout-kind:
+        required: false
+        type: string
+        enum:
+        - Science
+        - Template
+        - Difference
+        description: '`Science`, `Template`, or `Difference`. If not specified, returned all three.'
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - object_lookup
+    - object_history
+    - lightcurve
+    server_filters:
+    - objectId
+    - withupperlim
+    - withcutouts
+    - cutout-kind
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  conesearch:
+    path: /api/v1/conesearch
+    method: GET
+    description: Retrieve object data from the Fink/ZTF database based on their coordinates
+    transport:
+      kind: rest
+    params:
+      ra:
+        required: true
+        type: number
+        description: Right Ascension, in decimal degree.
+        unit: deg
+      dec:
+        required: true
+        type: number
+        description: Declination, in decimal degree.
+        unit: deg
+      radius:
+        required: true
+        type: number
+        description: Conesearch radius in arcsec. Maximum is 18,000 arcseconds (5 degrees).
+        unit: arcsec
+      n:
+        required: false
+        type: integer
+        default: 1000
+        description: Maximal number of alerts to return.
+      startdate:
+        required: false
+        type: string
+        default: '2019-11-01 00:00:00'
+        description: Starting date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+      stopdate:
+        required: false
+        type: string
+        default: now
+        description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+      window:
+        required: false
+        type: number
+        description: Time window in days, may be used instead of stopdate.
+        unit: day
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - spatial_search
+    - alert_search
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - n
+    - startdate
+    - stopdate
+    - window
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  latests:
+    path: /api/v1/latests
+    method: GET
+    description: Retrieve object data from the Fink/ZTF database based on their Fink derived class
+    transport:
+      kind: rest
+    params:
+      class:
+        required: true
+        type: string
+        description: Fink derived label. See https://api.ztf.fink-portal.org/api/v1/classes for available tags.
+      trend:
+        required: false
+        type: string
+        enum:
+        - rising
+        - fading
+        - low_state
+        - new_low_state
+        description: 'Desired trend among: rising, fading. For `class=(CTA) Blazar`, two specific trends are available: low_state, new_low_state.'
+      n:
+        required: false
+        type: integer
+        default: 100
+        description: Last N alerts to transfer between stopping date and starting date.
+      startdate:
+        required: false
+        type: string
+        default: '2019-11-01 00:00:00'
+        description: Starting date in UTC (iso, jd, or MJD).
+      stopdate:
+        required: false
+        type: string
+        default: now
+        description: Stopping date in UTC (iso, jd, or MJD).
+      color:
+        required: false
+        type: boolean
+        default: false
+        description: If True, extract color information for the transient.
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - class_tag_search
+    - latest_alert_search
+    - alert_search
+    server_filters:
+    - class
+    - trend
+    - n
+    - startdate
+    - stopdate
+    - color
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  anomaly:
+    path: /api/v1/anomaly
+    method: GET
+    description: Retrieve alerts tagged as anomaly from the Fink/ZTF database
+    transport:
+      kind: rest
+    params:
+      n:
+        required: false
+        type: integer
+        default: 10
+        description: Last N alerts to transfer between stop and start date (going from most recent to older alerts).
+      start_date:
+        required: false
+        type: string
+        default: '2019-11-01'
+        description: '[Optional] Start date in UTC YYYY-MM-DD.'
+      stop_date:
+        required: false
+        type: string
+        default: now
+        description: '[Optional] Stop date in UTC YYYY-MM-DD.'
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: alert_row
+    operation_types:
+    - anomaly_search
+    - alert_search
+    server_filters:
+    - n
+    - start_date
+    - stop_date
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  cutouts:
+    path: /api/v1/cutouts
+    method: GET
+    description: Retrieve cutout data from the Fink/ZTF datalake
+    transport:
+      kind: rest
+    params:
+      objectId:
+        required: true
+        type: string
+        description: ZTF Object ID
+      kind:
+        required: false
+        type: string
+        enum:
+        - Science
+        - Template
+        - Difference
+        - All
+        default: Science
+        description: 'Science, Template, or Difference. For output-format=array, you can also specify `kind: All` to get the 3 cutouts.'
+      output-format:
+        required: false
+        type: string
+        enum:
+        - PNG
+        - FITS
+        - array
+        default: PNG
+        description: PNG[default], FITS, array
+      candid:
+        required: false
+        type: string
+        description: Candidate ID (long integer) of the alert belonging to the object with `objectId`. If not filled, the cutouts of the latest alert is returned
+      stretch:
+        required: false
+        type: string
+        enum:
+        - sigmoid
+        - linear
+        - sqrt
+        - power
+        - log
+        default: sigmoid
+        description: Stretch function to be applied.
+      colormap:
+        required: false
+        type: string
+        default: grayscale
+        description: Valid matplotlib colormap name (see matplotlib.cm). Default is grayscale.
+      pmin:
+        required: false
+        type: number
+        default: 0.5
+        description: The percentile value used to determine the pixel value of minimum cut level. Default is 0.5. No effect for sigmoid.
+      pmax:
+        required: false
+        type: number
+        default: 99.5
+        description: The percentile value used to determine the pixel value of maximum cut level. Default is 99.5. No effect for sigmoid.
+      convolution_kernel:
+        required: false
+        type: string
+        enum:
+        - gauss
+        - box
+        description: Convolve the image with a kernel (gauss or box). If not specified, no kernel is applied.
+    output:
+      type: data_product
+      item: cutout
+    notes: '- output-format=PNG or FITS returns URL to image
+
+      - output-format=array returns 2D array as shown
+
+      '
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - objectId
+    - kind
+    - candid
+    post_filter: false
+    projection:
+      supports_columns: false
+  sso:
+    path: /api/v1/sso
+    method: GET
+    description: Retrieve Solar System data from the Fink/ZTF database based on their ID
+    transport:
+      kind: rest
+    params:
+      n_or_d:
+        required: true
+        type: string
+        description: 'IAU number of the object, or designation of the object IF the number does not exist yet. Example for numbers: 8467 (asteroid) or 10P (comet). Example for designations: 2010JO69 (asteroid) or C/2020V2 (comet). You can also give a list of object names (comma-separated).'
+      withEphem:
+        required: false
+        type: boolean
+        description: Attach ephemerides provided by the Miriade service (https://ssp.imcce.fr/webservices/miriade/api/ephemcc/), as extra columns in the results.
+      withResiduals:
+        required: false
+        type: boolean
+        description: Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object query (`n_or_d` cannot be a list).
+      withCutouts:
+        required: false
+        type: boolean
+        description: If True, retrieve also cutout data as 2D array. See also `cutout-kind`.
+      cutout-kind:
+        required: false
+        type: string
+        enum:
+        - Science
+        - Template
+        - Difference
+        description: '`Science`, `Template`, or `Difference`.'
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'i:magpsf,i:jd'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: solar_system_alert_row
+    operation_types:
+    - solar_system_lookup
+    - alert_search
+    server_filters:
+    - n_or_d
+    - withEphem
+    - withResiduals
+    - withCutouts
+    - cutout-kind
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  statistics:
+    path: /api/v1/statistics
+    method: GET
+    description: Get statistics about Fink and the ZTF alert stream
+    transport:
+      kind: rest
+    params:
+      date:
+        required: true
+        type: string
+        description: Observing date. This can be either a given night (YYYYMMDD), month (YYYYMM), year (YYYY), or everything (empty string).
+      schema:
+        required: false
+        type: boolean
+        description: If True, return just the schema of statistics table instead of actual data
+      columns:
+        required: false
+        type: string
+        description: Comma-separated data columns to transfer, e.g. 'basic:sci,basic:date'. If not specified, transfer all columns.
+        role: projection
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: statistics_row
+    notes: '- class_counts is a dynamic map containing all class:* fields
+
+      - Class fields include SIMBAD types, Fink classes, and special categories
+
+      '
+    operation_types:
+    - stream_statistics
+    - survey_summary
+    server_filters:
+    - date
+    - schema
+    post_filter: true
+    projection:
+      supports_columns: true
+      param: columns
+  resolver:
+    path: /api/v1/resolver
+    method: GET
+    description: Explore existing names for a given object
+    transport:
+      kind: rest
+    params:
+      resolver:
+        required: true
+        type: string
+        enum:
+        - simbad
+        - ssodnet
+        - tns
+        description: 'Resolver among: `simbad`, `ssodnet`, `tns`'
+      name:
+        required: true
+        type: string
+        description: Object name to resolve.
+      reverse:
+        required: false
+        type: boolean
+        default: false
+        description: If True, resolve ZTF* name instead. Default is False.
+      nmax:
+        required: false
+        type: integer
+        default: 10
+        description: Maximum number of match to return. Default is 10.
+      output-format:
+        required: false
+        type: string
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format
+    output:
+      type: array
+      item: resolver_match
+    notes: '- Returns array of matches from external catalog
+
+      - position.ra and position.dec are extracted from jradeg/jdedeg
+
+      - Different resolvers return different fields (some may be null)
+
+      '
+    operation_types:
+    - name_resolution
+    server_filters:
+    - resolver
+    - name
+    - reverse
+    - nmax
+    post_filter: false
+    projection:
+      supports_columns: false

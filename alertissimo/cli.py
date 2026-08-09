@@ -1,4 +1,6 @@
+#nothing here while we test dummy pipelines
 
+'''
 import argparse
 from alertissimo.core.schema import WorkflowIR
 from alertissimo.core.orchestrator import AlertWorkflow
@@ -8,6 +10,12 @@ def load_ir_from_yaml(path):
     with open(path) as f:
         data = yaml.safe_load(f)
     return WorkflowIR(**data)
+
+@cli.command()
+def smbbh():
+    """Run prototype SMBBH workflow"""
+    from alertissimo.core.smbbh_pipeline import run_smbbh_pipeline
+    run_smbbh_pipeline()
 
 def main():
     parser = argparse.ArgumentParser(description="Run an Alertissimo workflow.")
@@ -27,3 +35,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''

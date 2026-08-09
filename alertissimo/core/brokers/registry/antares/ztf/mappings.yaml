@@ -1,0 +1,83 @@
+broker: antares
+origin: ztf
+payloads:
+  locus:
+    endpoint: get_by_ztf_object_id
+    path: .
+  loci:
+    endpoint: search
+    path: '[]'
+  locus_alerts:
+    endpoint: get_by_ztf_object_id
+    path: alerts[]
+  catalog_matches.gaia:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
+  catalog_matches.allwise:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.allwise[]
+mappings:
+  summary@ztf:antares.identity.object_id:
+  - loci#properties.ztf_object_id
+  - locus#properties.ztf_object_id
+  summary@ztf:antares.detection_count:
+  - loci#properties.num_alerts
+  - locus#properties.num_alerts
+  summary@ztf:antares.time.first_mjd:
+  - loci#properties.oldest_alert_observation_time
+  - locus#properties.oldest_alert_observation_time
+  summary@ztf:antares.time.last_mjd:
+  - loci#properties.newest_alert_observation_time
+  - locus#properties.newest_alert_observation_time
+  summary@ztf:antares.position.ra:
+  - loci#ra
+  - locus#ra
+  summary@ztf:antares.position.dec:
+  - loci#dec
+  - locus#dec
+  detection@ztf:antares.identity.source_id:
+  - locus_alerts#properties.ztf_candid
+  detection@ztf:antares.time.mjd:
+  - locus_alerts#mjd
+  detection@ztf:antares.position.ra:
+  - locus_alerts#properties.ant_ra
+  detection@ztf:antares.position.dec:
+  - locus_alerts#properties.ant_dec
+  detection@ztf:antares.photometry.{filter}:
+  - locus_alerts#properties.ant_passband
+  detection@ztf:antares.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  detection@ztf:antares.photometry.{filter}.psf.mag_error:
+  - locus_alerts#properties.ant_magerr
+  detection@ztf:antares.photometry.{filter}.limit.mag:
+  - locus_alerts#properties.ant_maglim
+  detection@ztf:antares.quality.real_bogus:
+  - locus_alerts#properties.ztf_drb
+  detection@ztf:antares.quality.rf_real_bogus:
+  - locus_alerts#properties.ztf_rb
+  detection@ztf:antares.image_metrics.is_positive:
+  - locus_alerts#properties.ztf_isdiffpos
+  detection@ztf:antares.reference_image.nearest_source.separation.total:
+  - locus_alerts#properties.ztf_distnr
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
+  - locus_alerts#properties.ztf_magnr
+  crossmatch@gaia:antares.identity.object_id:
+  - catalog_matches.gaia#object_id
+  crossmatch@gaia:antares.astrometric_solution.parallax:
+  - catalog_matches.gaia#properties.parallax
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
+  - catalog_matches.gaia#properties.pmra
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
+  - catalog_matches.gaia#properties.pmdec
+  crossmatch@allwise:antares.photometry.W1.mag:
+  - catalog_matches.allwise#properties.w1mpro
+  crossmatch@allwise:antares.photometry.W2.mag:
+  - catalog_matches.allwise#properties.w2mpro
+transforms:
+  detection@ztf:antares.image_metrics.is_positive:
+    locus_alerts#properties.ztf_isdiffpos:
+      type: value_map
+      map:
+        t: true
+        f: false
+      note: ZTF isdiffpos string flag normalized to boolean is_positive.

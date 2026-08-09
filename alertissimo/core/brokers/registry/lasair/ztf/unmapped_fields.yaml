@@ -1,0 +1,4 @@
+broker: lasair
+origin: ztf
+notes: Only audited fields without a stable semantic feature catalog path are retained here.
+unmapped: []

@@ -1,0 +1,92 @@
+broker: antares
+origin: lsst
+endpoints:
+  get_by_lsst_dia_object_id:
+    path: antares_client.search.get_by_lsst_dia_object_id
+    method: python
+    description: Get one ANTARES locus by LSST diaObjectId using the official antares_client Python client.
+    params:
+      lsst_object_id:
+        required: true
+        type: string
+        description: LSST diaObjectId / diaObject identifier.
+    output:
+      type: object_or_null
+      item: locus
+    operation_types: [object_lookup, locus_lookup, object_summary]
+    server_filters: [lsst_object_id]
+    post_filter: false
+    projection:
+      supports_columns: false
+  get_by_lsst_ss_object_id:
+    path: antares_client.search.get_by_lsst_ss_object_id
+    method: python
+    description: Get one ANTARES locus by LSST Solar System Object ID using the official antares_client Python client.
+    params:
+      ss_object_id:
+        required: true
+        type: string
+        description: LSST Solar System Object ID.
+    output:
+      type: object_or_null
+      item: locus
+    operation_types: [solar_system_lookup, locus_lookup, object_summary]
+    server_filters: [ss_object_id]
+    post_filter: false
+    projection:
+      supports_columns: false
+  get_by_id:
+    path: antares_client.search.get_by_id
+    method: python
+    description: Get one ANTARES locus by ANTARES locus_id using the official antares_client Python client.
+    params:
+      locus_id:
+        required: true
+        type: string
+        description: ANTARES locus identifier.
+    output:
+      type: object_or_null
+      item: locus
+    operation_types: [locus_lookup, object_summary]
+    server_filters: [locus_id]
+    post_filter: false
+    projection:
+      supports_columns: false
+  cone_search:
+    path: antares_client.search.cone_search
+    method: python
+    description: Search ANTARES loci by sky coordinate and radius using the official antares_client Python client.
+    params:
+      center:
+        required: true
+        type: SkyCoord
+        description: Astropy SkyCoord cone-search center.
+      radius:
+        required: true
+        type: Angle
+        description: Astropy Angle cone-search radius.
+    output:
+      type: iterator
+      item: locus
+    operation_types: [spatial_search, locus_search, object_summary]
+    server_filters: [center, radius]
+    post_filter: false
+    projection:
+      supports_columns: false
+  search:
+    path: antares_client.search.search
+    method: python
+    description: Run an ANTARES Elasticsearch locus query using the official antares_client Python client.
+    params:
+      query:
+        required: true
+        type: dict
+        description: Elasticsearch query dictionary with exactly one top-level query key.
+    output:
+      type: iterator
+      item: locus
+    operation_types: [locus_search, object_search, object_summary]
+    server_filters: [query]
+    post_filter: false
+    projection:
+      supports_columns: false
