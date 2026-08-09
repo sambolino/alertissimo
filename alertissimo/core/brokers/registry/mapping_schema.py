@@ -56,6 +56,16 @@ def _validate_payload_key(key: Any, where: str) -> str:
     return key
 
 
+def _validate_payload_path(value: Any, where: str) -> str:
+    """Validate the deliberately small payload-root/path notation."""
+    value = _nonempty_string(value, where)
+    if value != "." and not value.endswith("[]"):
+        raise MappingSchemaError(
+            f"{where} must be '.' or a collection path ending in '[]'"
+        )
+    return value
+
+
 def _validate_raw_reference(reference: Any, payloads: set[str], where: str) -> None:
     if not isinstance(reference, str) or reference.count("#") != 1:
         raise MappingSchemaError(f"{where} must be a string containing exactly one '#'")
@@ -144,7 +154,7 @@ def validate_mapping_file(path: str | Path) -> None:
         _allowed_keys(definition, PAYLOAD_KEYS, f"{path}: payload {key!r}")
         if "path" not in definition:
             raise MappingSchemaError(f"{path}: payload {key!r} is missing required key 'path'")
-        _nonempty_string(definition["path"], f"{path}: payload {key!r} path")
+        _validate_payload_path(definition["path"], f"{path}: payload {key!r} path")
         endpoint = definition.get("endpoint", key)
         _nonempty_string(endpoint, f"{path}: payload {key!r} endpoint")
         if "description" in definition and not isinstance(definition["description"], str):

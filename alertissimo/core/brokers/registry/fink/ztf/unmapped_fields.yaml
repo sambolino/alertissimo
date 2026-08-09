@@ -1,0 +1,49 @@
+broker: fink
+origin: ztf
+notes: Only audited fields without a stable semantic feature catalog path are retained here.
+unmapped:
+- resolver#d:source:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#name:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:ra:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:declination:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#oid:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:internalname:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#otype:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:type:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#jpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#oname:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:fullname:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#z:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:redshift:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#nrefs:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- resolver#d:discoverydate:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
