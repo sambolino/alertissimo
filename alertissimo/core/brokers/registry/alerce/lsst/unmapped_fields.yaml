@@ -1,0 +1,232 @@
+broker: alerce
+origin: lsst
+unmapped:
+- query_detections#band_name:
+    reason: no_stable_feature_catalog_path
+- query_detections#diaObjectId:
+    reason: no_stable_feature_catalog_path
+- query_forced_photometry#band:
+    reason: no_stable_feature_catalog_path
+- query_forced_photometry#band_name:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve#detections:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve#forced_photometry:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve#non_detections:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#apFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#apFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#apFlux_flag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#apFlux_flag_apertureTruncated:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#band:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#band_name:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#bboxSize:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#centroid_flag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dec:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#decErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#detector:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#diaObjectId:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleAngle:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleChi2:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleFitAttempted:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleFluxDiff:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleFluxDiffErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleLength:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleMeanFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleMeanFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dipoleNdata:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#extendedness:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#forced_PsfFlux_flag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#forced_PsfFlux_flag_edge:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#glint_trail:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#has_stamp:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#isDipole:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#isNegative:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ixx:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ixxPSF:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ixy:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ixyPSF:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#iyy:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#iyyPSF:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#measurement_id:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#mjd:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#oid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#parentDiaSourceId:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_bad:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_cr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_crCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_edge:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_injected:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_injectedCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_injected_template:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_injected_templateCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_interpolated:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_interpolatedCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_nodata:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_nodataCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_offimage:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_saturated:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_saturatedCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_streak:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_streakCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_suspect:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pixelFlags_suspectCenter:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfChi2:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfFlux_flag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfFlux_flag_edge:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfFlux_flag_noGoodPixels:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfLnL:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#psfNdata:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ra:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#raErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ra_dec_Cov:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#reliability:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#scienceFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#scienceFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#shape_flag:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#shape_flag_no_pixels:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#shape_flag_not_contained:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#shape_flag_parent_source:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#snr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ssObjectId:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#survey_id:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#templateFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#templateFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#timeProcessedMjdTai:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#timeWithdrawnMjdTai:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailAngle:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailAngleErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailChi2:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailDec:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailDecErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailFlux:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailFluxErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailLength:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailLengthErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailNdata:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailRa:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trailRaErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#trail_flag_edge:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#visit:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#x:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#xErr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#y:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#yErr:
+    reason: no_stable_feature_catalog_path
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path

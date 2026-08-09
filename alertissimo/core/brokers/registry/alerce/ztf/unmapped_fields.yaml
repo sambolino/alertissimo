@@ -1,0 +1,102 @@
+broker: alerce
+origin: ztf
+unmapped:
+- get_avro#__type__:
+    reason: no_stable_feature_catalog_path
+- get_avro#length:
+    reason: no_stable_feature_catalog_path
+- get_avro#preview_hex:
+    reason: no_stable_feature_catalog_path
+- query_detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_lightcurve#band:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve#detections:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve#non_detections:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#candid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#candid_alert:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#corrected:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dec:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#diffmaglim:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#distnr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#drb:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#dubious:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#fid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#has_stamp:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#isdiffpos:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magap:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magapbig:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magpsf:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#magpsf_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#mjd:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#nid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#parent_candid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#phase:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#pid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#ra:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#rb:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#rbversion:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#rfid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmagap:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmagapbig:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmapsf:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmapsf_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#sigmapsf_corr_ext:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_lightcurve.detections#tid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.non_detections#diffmaglim:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.non_detections#fid:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.non_detections#mjd:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.non_detections#tid:
+    reason: no_stable_feature_catalog_path
+- query_magstats#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_non_detections#band:
+    reason: no_stable_feature_catalog_path
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Correction pipeline step identifier.
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path
