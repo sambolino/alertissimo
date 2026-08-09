@@ -1,14 +1,15 @@
 broker: alerce
 origin: lsst
-source: Generated from alerce_schema_payload_audit_bundle.tar.gz and ALeRCE client/docs audit.
+source: Generated from alerce_schema_payload_audit_bundle.tar.gz and ALeRCE client/docs
+  audit.
 transport_defaults:
   kind: python
   module: alerce.core
   client: Alerce
   fixed_params:
     survey: lsst
-endpoint_contract_note: Endpoint contracts and endpoint-level capabilities only. Semantic field availability is in mappings.yaml/capabilities.generated,
-  not in provides lists.
+endpoint_contract_note: Physical endpoint contracts only; semantic bindings and planner
+  capabilities are intentionally excluded.
 endpoints:
   query_objects:
     enabled: true
@@ -16,7 +17,8 @@ endpoints:
       status: discovery_used
       documented_models:
       - object
-      note: Used by audit collector for candidate discovery; output model is the same object summary family as query_object/list_objects.
+      note: Used by audit collector for candidate discovery; output model is the same
+        object summary family as query_object/list_objects.
     transport:
       kind: python
       module: alerce.core
@@ -34,78 +36,85 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_objects.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_objects.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_objects.
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        description: Physical classifier parameter accepted by query_objects.
       class_name:
         type: string
         required: false
-        binding: classification.class
+        description: Physical class_name parameter accepted by query_objects.
       ranking:
         type: integer
         required: false
-        binding: classification.ranking
+        description: Physical ranking parameter accepted by query_objects.
       n_det:
         type: integer
         required: false
-        binding: detection.count
+        description: Physical n_det parameter accepted by query_objects.
       ndet:
         type: integer
         required: false
-        binding: detection.count
         legacy_ztf_param: true
+        description: Physical ndet parameter accepted by query_objects.
       probability:
         type: number
         required: false
-        binding: classification.probability
+        description: Physical probability parameter accepted by query_objects.
       firstmjd:
         type: number
         required: false
-        binding: time.first_mjd
+        description: Physical firstmjd parameter accepted by query_objects.
       lastmjd:
         type: number
         required: false
-        binding: time.last_mjd
+        description: Physical lastmjd parameter accepted by query_objects.
       ra:
         type: number
         required: false
-        binding: cone.ra
         unit: deg
+        description: Physical ra parameter accepted by query_objects.
       dec:
         type: number
         required: false
-        binding: cone.dec
         unit: deg
+        description: Physical dec parameter accepted by query_objects.
       radius:
         type: number
         required: false
-        binding: cone.radius
         unit: arcsec
+        description: Physical radius parameter accepted by query_objects.
       page:
         type: integer
         required: false
         role: pagination
+        description: Physical page parameter accepted by query_objects.
       page_size:
         type: integer
         required: false
         role: pagination
+        description: Physical page_size parameter accepted by query_objects.
       count:
         type: boolean
         required: false
         role: pagination
+        description: Physical count parameter accepted by query_objects.
       order_by:
         type: string
         required: false
         role: ordering
+        description: Physical order_by parameter accepted by query_objects.
       order_mode:
         type: string
         required: false
@@ -113,47 +122,33 @@ endpoints:
         - ASC
         - DESC
         role: ordering
+        description: Physical order_mode parameter accepted by query_objects.
     output:
       type: array
       item: object_summary
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_search
-      - cone_search
-      - classification_filter
-      - object_summary
-      record_scope:
-      - summary
-      required_bindings: []
-      optional_bindings:
-      - cone.ra
-      - cone.dec
-      - cone.radius
-      - classification.class
-      - classification.classifier.name
-      - classification.probability
-      - time.first_mjd
-      - time.last_mjd
-      - detection.count
-      server_filters:
-      - classifier
-      - class_name
-      - ranking
-      - n_det
-      - ndet
-      - probability
-      - firstmjd
-      - lastmjd
-      - ra
-      - dec
-      - radius
-      - page
-      - page_size
-      - count
-      - order_by
-      - order_mode
-      post_filter: true
+    operation_types:
+    - object_search
+    - cone_search
+    - classification_filter
+    - object_summary
+    server_filters:
+    - classifier
+    - class_name
+    - ranking
+    - n_det
+    - ndet
+    - probability
+    - firstmjd
+    - lastmjd
+    - ra
+    - dec
+    - radius
+    - page
+    - page_size
+    - count
+    - order_by
+    - order_mode
+    post_filter: true
   query_object:
     enabled: true
     audit:
@@ -175,7 +170,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_object.
       format:
         type: string
         default: json
@@ -185,30 +180,26 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_object.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_object.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_object.
     output:
       type: object
       item: object_summary
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_lookup
-      - object_summary
-      record_scope:
-      - summary
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_lookup
+    - object_summary
+    server_filters:
+    - oid
+    post_filter: true
   query_detections:
     enabled: true
     audit:
@@ -230,7 +221,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_detections.
       format:
         type: string
         default: json
@@ -240,31 +231,27 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_detections.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_detections.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_detections.
     output:
       type: array
       item: detection
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - detection_lookup
-      - lightcurve_component
-      record_scope:
-      - detection
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - detection_lookup
+    - lightcurve_component
+    server_filters:
+    - oid
+    post_filter: true
   query_non_detections:
     enabled: true
     audit:
@@ -286,7 +273,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_non_detections.
       format:
         type: string
         default: json
@@ -296,33 +283,29 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_non_detections.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_non_detections.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_non_detections.
     output:
       type: array
       item: non_detection
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - non_detection_lookup
-      - lightcurve_component
-      record_scope:
-      - non_detection
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
-    note: For LSST this route is implemented but the audit sample returned empty payloads; mappings include declared non_detection
-      fields.
+    note: For LSST this route is implemented but the audit sample returned empty payloads;
+      mappings include declared non_detection fields.
+    operation_types:
+    - object_history
+    - non_detection_lookup
+    - lightcurve_component
+    server_filters:
+    - oid
+    post_filter: true
   query_forced_photometry:
     enabled: true
     audit:
@@ -345,7 +328,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_forced_photometry.
       format:
         type: string
         default: json
@@ -355,31 +338,27 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_forced_photometry.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_forced_photometry.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_forced_photometry.
     output:
       type: array
       item: forced_photometry
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - forced_photometry
-      - lightcurve_component
-      record_scope:
-      - forced_photometry
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - forced_photometry
+    - lightcurve_component
+    server_filters:
+    - oid
+    post_filter: true
   query_lightcurve:
     enabled: true
     audit:
@@ -403,7 +382,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_lightcurve.
       format:
         type: string
         default: json
@@ -413,38 +392,31 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_lightcurve.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_lightcurve.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_lightcurve.
     output:
       type: object
       item: lightcurve_bundle
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - lightcurve
-      record_scope:
-      - lightcurve
-      - detection
-      - non_detection
-      - forced_photometry
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - lightcurve
+    server_filters:
+    - oid
+    post_filter: true
   query_magstats:
     enabled: false
     audit:
       status: known_unsupported
-      selected_oid: null
+      selected_oid:
       documented_models:
       - magstats
       documented_field_count: 26
@@ -462,7 +434,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_magstats.
       format:
         type: string
         default: json
@@ -472,33 +444,28 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_magstats.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_magstats.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_magstats.
     output:
       type: array
       item: magnitude_statistics
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - magnitude_statistics
-      - object_summary
-      record_scope:
-      - summary
-      - photometry_statistics
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
-    disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE client/backend. Declared magstats fields
-      are still included in mappings as declared_only/known_unsupported.
+    disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE
+      client/backend. Declared magstats fields are still included in mappings as declared_only/known_unsupported.
+    operation_types:
+    - magnitude_statistics
+    - object_summary
+    server_filters:
+    - oid
+    post_filter: true
   query_probabilities:
     enabled: true
     audit:
@@ -520,7 +487,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_probabilities.
       format:
         type: string
         default: json
@@ -530,41 +497,36 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_probabilities.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_probabilities.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_probabilities.
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        description: Physical classifier parameter accepted by query_probabilities.
     output:
       type: array
       item: classification_probability
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - classification_lookup
-      - object_classification
-      record_scope:
-      - classification
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - classification.classifier.name
-      server_filters:
-      - oid
-      - classifier
-      post_filter: true
+    operation_types:
+    - classification_lookup
+    - object_classification
+    server_filters:
+    - oid
+    - classifier
+    post_filter: true
   query_features:
     enabled: false
     audit:
       status: known_unsupported
-      selected_oid: null
+      selected_oid:
       documented_models: []
       documented_field_count: 0
       observed_top_field_count: 0
@@ -581,7 +543,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_features.
       format:
         type: string
         default: json
@@ -591,32 +553,28 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_features.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_features.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_features.
     output:
       type: array
       item: feature
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - feature_lookup
-      - object_features
-      record_scope:
-      - feature
-      - summary
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
-    disabled_reason: Multisurvey query_features not implemented in current ALeRCE client/backend.
+    disabled_reason: Multisurvey query_features not implemented in current ALeRCE
+      client/backend.
+    operation_types:
+    - feature_lookup
+    - object_features
+    server_filters:
+    - oid
+    post_filter: true
   query_feature:
     enabled: false
     audit:
@@ -633,11 +591,11 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by query_feature.
       name:
         type: string
         required: true
-        binding: feature.name
+        description: Physical name parameter accepted by query_feature.
       format:
         type: string
         default: json
@@ -647,39 +605,33 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_feature.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Physical index parameter accepted by query_feature.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Physical sort parameter accepted by query_feature.
     output:
       type: object
       item: feature
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - feature_lookup
-      - object_features
-      record_scope:
-      - feature
-      - summary
-      required_bindings:
-      - object_id
-      - feature.name
-      optional_bindings: []
-      server_filters:
-      - oid
-      - name
-      post_filter: true
     note: LSST multisurvey query_feature raises NotImplementedError.
+    operation_types:
+    - feature_lookup
+    - object_features
+    server_filters:
+    - oid
+    - name
+    post_filter: true
   query_classifiers:
     enabled: false
     audit:
       status: known_unsupported
-      selected_oid: null
+      selected_oid:
       documented_models: []
       documented_field_count: 0
       observed_top_field_count: 0
@@ -702,20 +654,16 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_classifiers.
     output:
       type: array
       item: classifier_vocabulary
-    capabilities:
-      returns_science_data: false
-      operation_types:
-      - classifier_vocabulary
-      record_scope:
-      - classification_metadata
-      required_bindings: []
-      optional_bindings: []
-      server_filters: []
-      post_filter: true
-    disabled_reason: Multisurvey query_classifiers not implemented in current ALeRCE client/backend.
+    disabled_reason: Multisurvey query_classifiers not implemented in current ALeRCE
+      client/backend.
+    operation_types:
+    - classifier_vocabulary
+    server_filters: []
+    post_filter: true
   query_classes:
     enabled: false
     audit:
@@ -732,11 +680,11 @@ endpoints:
       classifier_name:
         type: string
         required: true
-        binding: classification.classifier.name
+        description: Physical classifier_name parameter accepted by query_classes.
       classifier_version:
         type: string
         required: true
-        binding: classification.classifier.version
+        description: Physical classifier_version parameter accepted by query_classes.
       format:
         type: string
         default: json
@@ -746,22 +694,15 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Physical format parameter accepted by query_classes.
     output:
       type: array
       item: class_vocabulary
-    capabilities:
-      returns_science_data: false
-      operation_types:
-      - class_vocabulary
-      record_scope:
-      - classification_metadata
-      required_bindings:
-      - classification.classifier.name
-      - classification.classifier.version
-      optional_bindings: []
-      server_filters: []
-      post_filter: true
     note: LSST multisurvey query_classes raises NotImplementedError.
+    operation_types:
+    - class_vocabulary
+    server_filters: []
+    post_filter: true
   get_stamps:
     enabled: true
     audit:
@@ -782,13 +723,13 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by get_stamps.
       candid:
         type: integer
         required: false
-        binding: source_id
         aliases:
         - measurement_id
+        description: Physical candid parameter accepted by get_stamps.
       format:
         type: string
         required: false
@@ -797,34 +738,27 @@ endpoints:
         - HDUList
         - numpy
         role: output_format
+        description: Physical format parameter accepted by get_stamps.
       include_variance_and_psf:
         type: boolean
         required: false
         default: false
+        description: Physical include_variance_and_psf parameter accepted by get_stamps.
     output:
       type: object
       item: stamp_triplet
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - data_product_lookup
-      - cutout
-      record_scope:
-      - data_product
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - source_id
-      server_filters:
-      - oid
-      - candid
-      - measurement_id
-      post_filter: true
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - oid
+    - candid
+    post_filter: true
   get_avro:
     enabled: false
     audit:
       status: empty
-      selected_oid: null
+      selected_oid:
       documented_models: []
       documented_field_count: 0
       observed_top_field_count: 0
@@ -841,42 +775,36 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: Physical oid parameter accepted by get_avro.
       candid:
         type: integer
         required: false
-        binding: source_id
         aliases:
         - measurement_id
+        description: Physical candid parameter accepted by get_avro.
       use_multisurvey_api:
         type: boolean
         required: false
         default: true
+        description: Physical use_multisurvey_api parameter accepted by get_avro.
     output:
       type: binary
       item: avro_alert
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - data_product_lookup
-      - raw_alert
-      record_scope:
-      - data_product
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - source_id
-      server_filters:
-      - oid
-      - candid
-      post_filter: true
-    note: Current client default get_avro path failed for LSST; multisurvey AVRO path appears incomplete/buggy in current
-      client.
+    note: Current client default get_avro path failed for LSST; multisurvey AVRO path
+      appears incomplete/buggy in current client.
+    operation_types:
+    - data_product_lookup
+    - raw_alert
+    server_filters:
+    - oid
+    - candid
+    post_filter: true
   catshtm_conesearch:
     enabled: true
     audit:
       status: empty_in_sampling
-      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+      note: catsHTM call was attempted with the sample position but returned empty/no
+        fields.
     transport:
       kind: python
       module: alerce.core
@@ -886,23 +814,23 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Physical ra parameter accepted by catshtm_conesearch.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Physical dec parameter accepted by catshtm_conesearch.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Physical radius parameter accepted by catshtm_conesearch.
       catalog_name:
         type: string
         required: false
         default: all
-        binding: catalog.name
+        description: Physical catalog_name parameter accepted by catshtm_conesearch.
       format:
         type: string
         required: false
@@ -911,35 +839,27 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Physical format parameter accepted by catshtm_conesearch.
     output:
       type: object
       item: catalog_rows_by_position
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - catalog_conesearch
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
-    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here
+      for planner visibility.
+    operation_types:
+    - catalog_conesearch
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - catalog_name
+    post_filter: true
   catshtm_crossmatch:
     enabled: true
     audit:
       status: empty_in_sampling
-      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+      note: catsHTM call was attempted with the sample position but returned empty/no
+        fields.
     transport:
       kind: python
       module: alerce.core
@@ -949,23 +869,23 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Physical ra parameter accepted by catshtm_crossmatch.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Physical dec parameter accepted by catshtm_crossmatch.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Physical radius parameter accepted by catshtm_crossmatch.
       catalog_name:
         type: string
         required: false
         default: all
-        binding: catalog.name
+        description: Physical catalog_name parameter accepted by catshtm_crossmatch.
       format:
         type: string
         required: false
@@ -974,35 +894,27 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Physical format parameter accepted by catshtm_crossmatch.
     output:
       type: object
       item: catalog_crossmatch_rows
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - catalog_crossmatch
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
-    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here
+      for planner visibility.
+    operation_types:
+    - catalog_crossmatch
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - catalog_name
+    post_filter: true
   catshtm_redshift:
     enabled: true
     audit:
       status: empty_in_sampling
-      note: catsHTM call was attempted with the sample position but returned empty/no fields.
+      note: catsHTM call was attempted with the sample position but returned empty/no
+        fields.
     transport:
       kind: python
       module: alerce.core
@@ -1012,18 +924,18 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Physical ra parameter accepted by catshtm_redshift.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Physical dec parameter accepted by catshtm_redshift.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Physical radius parameter accepted by catshtm_redshift.
       format:
         type: string
         required: false
@@ -1032,27 +944,17 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Physical format parameter accepted by catshtm_redshift.
     output:
       type: object
       item: redshift
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - redshift_lookup
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
-    note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    note: catsHTM calls are not survey-specific in the ALeRCE client; included here
+      for planner visibility.
+    operation_types:
+    - redshift_lookup
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
+    post_filter: true

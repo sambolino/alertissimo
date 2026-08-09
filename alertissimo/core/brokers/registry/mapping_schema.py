@@ -80,9 +80,9 @@ def _validate_endpoints(path: Path, endpoints_used: list[tuple[str, str]]) -> No
             )
 
 
-def _validate_unmapped(path: Path, broker: str, origin: str, payloads: set[str]) -> None:
+def _validate_unmapped(path: Path, broker: str, origin: str, payloads: set[str]) -> set[str]:
     if not path.exists():
-        return
+        return set()
     document = _mapping(_load_yaml(path), str(path))
     _allowed_keys(document, UNMAPPED_KEYS, str(path))
     for required in ("broker", "origin", "unmapped"):
@@ -97,12 +97,16 @@ def _validate_unmapped(path: Path, broker: str, origin: str, payloads: set[str])
     entries = document["unmapped"]
     if not isinstance(entries, list):
         raise MappingSchemaError(f"{path}: unmapped must be a list")
+    references: set[str] = set()
     for index, entry in enumerate(entries):
         where = f"{path}: unmapped[{index}]"
         if not isinstance(entry, dict) or len(entry) != 1:
             raise MappingSchemaError(f"{where} must be a one-entry mapping")
         reference, details = next(iter(entry.items()))
         _validate_raw_reference(reference, payloads, where)
+        if reference in references:
+            raise MappingSchemaError(f"{where} duplicates unmapped reference {reference!r}")
+        references.add(reference)
         details = _mapping(details, f"{where} value")
         _allowed_keys(details, UNMAPPED_VALUE_KEYS, f"{where} value")
         if "reason" not in details:
@@ -111,6 +115,7 @@ def _validate_unmapped(path: Path, broker: str, origin: str, payloads: set[str])
         for optional in ("note", "candidate_meaning"):
             if optional in details and not isinstance(details[optional], str):
                 raise MappingSchemaError(f"{where} {optional} must be a string")
+    return references
 
 
 def validate_mapping_file(path: str | Path) -> None:
@@ -147,6 +152,7 @@ def validate_mapping_file(path: str | Path) -> None:
         endpoints_used.append((key, endpoint))
 
     mappings = _mapping(document["mappings"], f"{path}: mappings")
+    mapped_references: set[str] = set()
     for semantic_path, references in mappings.items():
         semantic_path = _nonempty_string(semantic_path, f"{path}: semantic path")
         if ("@" not in semantic_path or any(c.isspace() for c in semantic_path)
@@ -156,9 +162,18 @@ def validate_mapping_file(path: str | Path) -> None:
             raise MappingSchemaError(f"{path}: mapping {semantic_path!r} must be a non-empty list")
         for index, reference in enumerate(references):
             _validate_raw_reference(reference, payloads, f"{path}: {semantic_path}[{index}]")
+            mapped_references.add(reference)
 
     _validate_endpoints(path.with_name("endpoints.yaml"), endpoints_used)
-    _validate_unmapped(path.with_name("unmapped_fields.yaml"), broker, origin, payloads)
+    unmapped_references = _validate_unmapped(
+        path.with_name("unmapped_fields.yaml"), broker, origin, payloads
+    )
+    overlap = mapped_references & unmapped_references
+    if overlap:
+        raise MappingSchemaError(
+            f"{path}: references cannot be both mapped and unmapped: "
+            f"{', '.join(sorted(overlap))}"
+        )
 
 
 def _is_legacy(path: Path) -> bool:
