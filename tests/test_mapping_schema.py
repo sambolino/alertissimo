@@ -51,7 +51,7 @@ def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
 
 def test_payload_with_explicit_endpoint_passes(tmp_path, valid_mapping):
     valid_mapping["payloads"] = {
-        "query_object.detections": {"path": "detections", "endpoint": "query_object"}
+        "query_object.detections": {"path": "detections[]", "endpoint": "query_object"}
     }
     valid_mapping["mappings"] = {
         "detection@ztf:example.time.mjd": ["query_object.detections#mjd"]
@@ -106,6 +106,19 @@ def test_invalid_payload_fails(tmp_path, valid_mapping, key, definition, match):
     valid_mapping["payloads"] = {key: definition}
     valid_mapping["mappings"] = {}
     with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("path", [".", "[]", "detections[]", "non_detections[]", "forced_photometry[]"])
+def test_supported_payload_paths_pass(tmp_path, valid_mapping, path):
+    valid_mapping["payloads"]["objects"]["path"] = path
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("path", ["$", "", "   ", "detections"])
+def test_unsupported_payload_paths_fail(tmp_path, valid_mapping, path):
+    valid_mapping["payloads"]["objects"]["path"] = path
+    with pytest.raises(MappingSchemaError, match="non-empty|string|collection path"):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
