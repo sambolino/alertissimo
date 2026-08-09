@@ -1,0 +1,7 @@
+broker: alerce
+origin: lsst
+notes: Physical fields without a stable feature-catalog path.
+unmapped:
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path
+    candidate_meaning: Classifier-specific result ordering.
