@@ -1,6 +1,3 @@
-# brokers/fink/ztf/endpoints.yaml
-# Endpoint contract + endpoint-level capabilities only.
-# Semantic field capabilities are generated from this file + mappings.yaml.
 broker: fink
 origin: ztf
 baseurl: https://api.ztf.fink-portal.org
@@ -16,18 +13,15 @@ endpoints:
         required: true
         type: string
         description: single ZTF Object ID, or a comma-separated list of object names, e.g. 'ZTF19acmdpyr,ZTF21aaxtctv'
-        binding: object_id
       withupperlim:
         required: false
         type: boolean
         description: 'If True, retrieve also upper limit measurements, and bad quality measurements. Use the column `d:tag`
           in your results: valid, upperlim, badquality.'
-        binding: quality.include_upper_limits
       withcutouts:
         required: false
         type: boolean
         description: If True, retrieve also cutout data as 2D array. See also `cutout-kind`.
-        binding: data_product.include
       cutout-kind:
         required: false
         type: string
@@ -36,7 +30,6 @@ endpoints:
         - Template
         - Difference
         description: '`Science`, `Template`, or `Difference`. If not specified, returned all three.'
-        binding: data_product.role
       columns:
         required: false
         type: string
@@ -55,32 +48,19 @@ endpoints:
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_lookup
-      - object_history
-      - lightcurve
-      record_scope:
-      - summary
-      - detection
-      - lightcurve
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - quality.include_upper_limits
-      - quality.include_bad_quality
-      - data_product.include
-      - data_product.role
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - objectId
-      - withupperlim
-      - withcutouts
-      - cutout-kind
-      post_filter: true
+    operation_types:
+    - object_lookup
+    - object_history
+    - lightcurve
+    server_filters:
+    - objectId
+    - withupperlim
+    - withcutouts
+    - cutout-kind
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   conesearch:
     path: /api/v1/conesearch
     method: GET
@@ -92,45 +72,38 @@ endpoints:
         required: true
         type: number
         description: Right Ascension, in decimal degree.
-        binding: cone.ra
         unit: deg
       dec:
         required: true
         type: number
         description: Declination, in decimal degree.
-        binding: cone.dec
         unit: deg
       radius:
         required: true
         type: number
         description: Conesearch radius in arcsec. Maximum is 18,000 arcseconds (5 degrees).
-        binding: cone.radius
         unit: arcsec
       n:
         required: false
         type: integer
         default: 1000
         description: Maximal number of alerts to return.
-        binding: limit
       startdate:
         required: false
         type: string
         default: '2019-11-01 00:00:00'
         description: Starting date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within
           the specified range of dates.
-        binding: time.start
       stopdate:
         required: false
         type: string
         default: now
         description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within
           the specified range of dates.
-        binding: time.stop
       window:
         required: false
         type: number
         description: Time window in days, may be used instead of stopdate.
-        binding: time.window
         unit: day
       columns:
         required: false
@@ -150,35 +123,21 @@ endpoints:
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - spatial_search
-      - alert_search
-      record_scope:
-      - detection
-      - lightcurve
-      required_bindings:
-      - cone.ra
-      - cone.dec
-      - cone.radius
-      optional_bindings:
-      - limit
-      - time.start
-      - time.stop
-      - time.window
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - n
-      - startdate
-      - stopdate
-      - window
-      post_filter: true
+    operation_types:
+    - spatial_search
+    - alert_search
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - n
+    - startdate
+    - stopdate
+    - window
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   latests:
     path: /api/v1/latests
     method: GET
@@ -190,7 +149,6 @@ endpoints:
         required: true
         type: string
         description: Fink derived label. See https://api.ztf.fink-portal.org/api/v1/classes for available tags.
-        binding: classification.label
       trend:
         required: false
         type: string
@@ -201,31 +159,26 @@ endpoints:
         - new_low_state
         description: 'Desired trend among: rising, fading. For `class=(CTA) Blazar`, two specific trends are available: low_state,
           new_low_state.'
-        binding: trend
       n:
         required: false
         type: integer
         default: 100
         description: Last N alerts to transfer between stopping date and starting date.
-        binding: limit
       startdate:
         required: false
         type: string
         default: '2019-11-01 00:00:00'
         description: Starting date in UTC (iso, jd, or MJD).
-        binding: time.start
       stopdate:
         required: false
         type: string
         default: now
         description: Stopping date in UTC (iso, jd, or MJD).
-        binding: time.stop
       color:
         required: false
         type: boolean
         default: false
         description: If True, extract color information for the transient.
-        binding: color.include
       columns:
         required: false
         type: string
@@ -244,35 +197,21 @@ endpoints:
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - class_tag_search
-      - latest_alert_search
-      - alert_search
-      record_scope:
-      - detection
-      - lightcurve
-      - classification
-      required_bindings:
-      - classification.label
-      optional_bindings:
-      - trend
-      - limit
-      - time.start
-      - time.stop
-      - color.include
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - class
-      - trend
-      - n
-      - startdate
-      - stopdate
-      - color
-      post_filter: true
+    operation_types:
+    - class_tag_search
+    - latest_alert_search
+    - alert_search
+    server_filters:
+    - class
+    - trend
+    - n
+    - startdate
+    - stopdate
+    - color
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   anomaly:
     path: /api/v1/anomaly
     method: GET
@@ -285,19 +224,16 @@ endpoints:
         type: integer
         default: 10
         description: Last N alerts to transfer between stop and start date (going from most recent to older alerts).
-        binding: limit
       start_date:
         required: false
         type: string
         default: '2019-11-01'
         description: '[Optional] Start date in UTC YYYY-MM-DD.'
-        binding: time.start
       stop_date:
         required: false
         type: string
         default: now
         description: '[Optional] Stop date in UTC YYYY-MM-DD.'
-        binding: time.stop
       columns:
         required: false
         type: string
@@ -316,28 +252,17 @@ endpoints:
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - anomaly_search
-      - alert_search
-      record_scope:
-      - detection
-      - lightcurve
-      - classification
-      required_bindings: []
-      optional_bindings:
-      - limit
-      - time.start
-      - time.stop
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - n
-      - start_date
-      - stop_date
-      post_filter: true
+    operation_types:
+    - anomaly_search
+    - alert_search
+    server_filters:
+    - n
+    - start_date
+    - stop_date
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   cutouts:
     path: /api/v1/cutouts
     method: GET
@@ -349,7 +274,6 @@ endpoints:
         required: true
         type: string
         description: ZTF Object ID
-        binding: object_id
       kind:
         required: false
         type: string
@@ -361,7 +285,6 @@ endpoints:
         default: Science
         description: 'Science, Template, or Difference. For output-format=array, you can also specify `kind: All` to get the
           3 cutouts.'
-        binding: data_product.role
       output-format:
         required: false
         type: string
@@ -371,13 +294,11 @@ endpoints:
         - array
         default: PNG
         description: PNG[default], FITS, array
-        binding: data_product.format
       candid:
         required: false
         type: string
         description: Candidate ID (long integer) of the alert belonging to the object with `objectId`. If not filled, the
           cutouts of the latest alert is returned
-        binding: alert_id
       stretch:
         required: false
         type: string
@@ -416,31 +337,21 @@ endpoints:
     output:
       type: data_product
       item: cutout
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - data_product_lookup
-      - cutout
-      record_scope:
-      - data_product
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - data_product.role
-      - data_product.format
-      - alert_id
-      projection:
-        supports_columns: false
-      server_filters:
-      - objectId
-      - kind
-      - candid
-      post_filter: false
     notes: '- output-format=PNG or FITS returns URL to image
 
       - output-format=array returns 2D array as shown
 
       '
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - objectId
+    - kind
+    - candid
+    projection:
+      supports_columns: false
+    post_filter: false
   sso:
     path: /api/v1/sso
     method: GET
@@ -454,24 +365,20 @@ endpoints:
         description: 'IAU number of the object, or designation of the object IF the number does not exist yet. Example for
           numbers: 8467 (asteroid) or 10P (comet). Example for designations: 2010JO69 (asteroid) or C/2020V2 (comet). You
           can also give a list of object names (comma-separated).'
-        binding: solar_system.name_or_designation
       withEphem:
         required: false
         type: boolean
         description: Attach ephemerides provided by the Miriade service (https://ssp.imcce.fr/webservices/miriade/api/ephemcc/),
           as extra columns in the results.
-        binding: ephemeris.include
       withResiduals:
         required: false
         type: boolean
         description: Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object
           query (`n_or_d` cannot be a list).
-        binding: solar_system.residuals.include
       withCutouts:
         required: false
         type: boolean
         description: If True, retrieve also cutout data as 2D array. See also `cutout-kind`.
-        binding: data_product.include
       cutout-kind:
         required: false
         type: string
@@ -480,7 +387,6 @@ endpoints:
         - Template
         - Difference
         description: '`Science`, `Template`, or `Difference`.'
-        binding: data_product.role
       columns:
         required: false
         type: string
@@ -499,32 +405,19 @@ endpoints:
     output:
       type: array
       item: solar_system_alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - solar_system_lookup
-      - alert_search
-      record_scope:
-      - detection
-      - solar_system
-      - lightcurve
-      required_bindings:
-      - solar_system.name_or_designation
-      optional_bindings:
-      - ephemeris.include
-      - solar_system.residuals.include
-      - data_product.include
-      - data_product.role
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - n_or_d
-      - withEphem
-      - withResiduals
-      - withCutouts
-      - cutout-kind
-      post_filter: true
+    operation_types:
+    - solar_system_lookup
+    - alert_search
+    server_filters:
+    - n_or_d
+    - withEphem
+    - withResiduals
+    - withCutouts
+    - cutout-kind
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   statistics:
     path: /api/v1/statistics
     method: GET
@@ -537,12 +430,10 @@ endpoints:
         type: string
         description: Observing date. This can be either a given night (YYYYMMDD), month (YYYYMM), year (YYYY), or everything
           (empty string).
-        binding: time.date
       schema:
         required: false
         type: boolean
         description: If True, return just the schema of statistics table instead of actual data
-        binding: schema.include
       columns:
         required: false
         type: string
@@ -562,29 +453,21 @@ endpoints:
     output:
       type: array
       item: statistics_row
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - stream_statistics
-      - survey_summary
-      record_scope:
-      - survey
-      required_bindings:
-      - time.date
-      optional_bindings:
-      - schema.include
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters:
-      - date
-      - schema
-      post_filter: true
     notes: '- class_counts is a dynamic map containing all class:* fields
 
       - Class fields include SIMBAD types, Fink classes, and special categories
 
       '
+    operation_types:
+    - stream_statistics
+    - survey_summary
+    server_filters:
+    - date
+    - schema
+    projection:
+      supports_columns: true
+      param: columns
+    post_filter: true
   resolver:
     path: /api/v1/resolver
     method: GET
@@ -600,24 +483,20 @@ endpoints:
         - ssodnet
         - tns
         description: 'Resolver among: `simbad`, `ssodnet`, `tns`'
-        binding: resolver.service
       name:
         required: true
         type: string
         description: Object name to resolve.
-        binding: identity.name
       reverse:
         required: false
         type: boolean
         default: false
         description: If True, resolve ZTF* name instead. Default is False.
-        binding: resolver.reverse
       nmax:
         required: false
         type: integer
         default: 10
         description: Maximum number of match to return. Default is 10.
-        binding: limit
       output-format:
         required: false
         type: string
@@ -631,27 +510,6 @@ endpoints:
     output:
       type: array
       item: resolver_match
-    capabilities:
-      returns_science_data: false
-      operation_types:
-      - name_resolution
-      record_scope:
-      - resolver
-      - crossmatch
-      required_bindings:
-      - resolver.service
-      - identity.name
-      optional_bindings:
-      - resolver.reverse
-      - limit
-      projection:
-        supports_columns: false
-      server_filters:
-      - resolver
-      - name
-      - reverse
-      - nmax
-      post_filter: false
     notes: '- Returns array of matches from external catalog
 
       - position.ra and position.dec are extracted from jradeg/jdedeg
@@ -659,3 +517,13 @@ endpoints:
       - Different resolvers return different fields (some may be null)
 
       '
+    operation_types:
+    - name_resolution
+    server_filters:
+    - resolver
+    - name
+    - reverse
+    - nmax
+    projection:
+      supports_columns: false
+    post_filter: false

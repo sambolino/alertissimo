@@ -1,0 +1,354 @@
+broker: fink
+origin: ztf
+unmapped:
+- objects#i:xpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:xpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:xpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:xpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:ypos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:ypos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:ypos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:ypos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:mindtoedge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:mindtoedge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#v:separation_degree:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:magzpsci:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:magzpsci:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:magzpsci:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:magzpsci:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:magzpscirms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:magzpscirms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:magzpsciunc:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:magzpsciunc:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:exptime:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:exptime:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:drb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#i:drb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:drb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:drb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:drb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:rb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:rb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:rb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:rb:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:fwhm:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:fwhm:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:elong:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:elong:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:aimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:aimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:bimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:bimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:aimagerat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:aimagerat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:bimagerat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:bimagerat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:chinr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:chinr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:sharpnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:sharpnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:drbversion:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:drbversion:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:rbversion:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:rbversion:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:rfid:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:rfid:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:isdiffpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:isdiffpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:isdiffpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:isdiffpos:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:nbad:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:nbad:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:nneg:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:nneg:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:sumrat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:sumrat:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:scorr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:scorr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:ssnrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:ssnrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:dsnrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:dsnrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:dsdiff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:dsdiff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:seeratio:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:seeratio:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:sky:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:sky:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:ndethist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#i:ndethist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:ndethist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:ndethist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:ndethist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:distnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:distnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:distnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:distnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#i:distnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:magnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:magnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:magnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:magnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:sigmagnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#i:sigmagnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#i:sigmagnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:sigmagnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:ranr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:ranr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:decnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:decnr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:ncovhist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:ncovhist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:clrcoeff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:clrcoeff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:clrcounc:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:clrcounc:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:nmatches:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:nmatches:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:clrmed:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:clrmed:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:clrrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:clrrms:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:zpclrcov:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:zpclrcov:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#i:zpmed:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#i:zpmed:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#d:nalerthist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#d:nalerthist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#d:nalerthist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- latests#d:nalerthist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- anomaly#d:nalerthist:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.

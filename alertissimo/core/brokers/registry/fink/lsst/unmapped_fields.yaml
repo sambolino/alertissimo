@@ -1,0 +1,585 @@
+broker: fink
+origin: lsst
+unmapped:
+- objects#r:nDiaSources:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:nDiaSources:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#f:is_cataloged:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#f:is_cataloged:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#f:is_first:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#f:is_first:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- objects#f:is_sso:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#f:is_sso:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:templateFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:templateFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:templateFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:templateFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:templateFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:templateFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:isNegative:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:isNegative:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:isNegative:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:bboxSize:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:bboxSize:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:bboxSize:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:extendedness:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:extendedness:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:extendedness:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:centroid_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:centroid_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:centroid_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:glint_trail:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:glint_trail:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:glint_trail:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:ixx:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:ixx:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:ixx:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:iyy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:iyy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:iyy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:ixy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:ixy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:ixy:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:ixxPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:ixxPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:ixxPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:iyyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:iyyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:iyyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:ixyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:ixyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:ixyPSF:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:shape_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:shape_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:shape_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:shape_flag_no_pixels:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:shape_flag_no_pixels:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:shape_flag_no_pixels:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:shape_flag_not_contained:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:shape_flag_not_contained:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:shape_flag_not_contained:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:shape_flag_parent_source:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:shape_flag_parent_source:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:shape_flag_parent_source:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_bad:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_bad:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_bad:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_cr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_cr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_cr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_crCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_crCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_crCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_injected:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_injected:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_injected:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_injectedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_injectedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_injectedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_injected_template:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_injected_template:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_injected_template:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_injected_templateCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_injected_templateCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_injected_templateCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_interpolated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_interpolated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_interpolated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_interpolatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_interpolatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_interpolatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_nodata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_nodata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_nodata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_nodataCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_nodataCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_nodataCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_offimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_offimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_offimage:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_saturated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_saturated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_saturated:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_saturatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_saturatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_saturatedCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_streak:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_streak:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_streak:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_streakCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_streakCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_streakCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_suspect:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_suspect:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_suspect:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:pixelFlags_suspectCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:pixelFlags_suspectCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:pixelFlags_suspectCenter:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:isDipole:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:isDipole:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:isDipole:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleFitAttempted:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleFitAttempted:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleFitAttempted:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleFluxDiff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleFluxDiff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleFluxDiff:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleFluxDiffErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleFluxDiffErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleFluxDiffErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleMeanFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleMeanFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleMeanFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleMeanFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleMeanFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleMeanFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:dipoleNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:dipoleNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:dipoleNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailAngle:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailAngleErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailAngleErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailAngleErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailChi2:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailDec:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailDec:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailDec:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailDecErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailDecErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailDecErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailFlux:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailFluxErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailLength:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailLengthErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailLengthErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailLengthErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailNdata:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailRa:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailRa:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailRa:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trailRaErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trailRaErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trailRaErr:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trail_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trail_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trail_flag:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sources#r:trail_flag_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- conesearch#r:trail_flag_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
+- sso#r:trail_flag_edge:
+    reason: no_stable_feature_catalog_path
+    note: Raw field has no stable feature catalog semantic path.
