@@ -34,78 +34,85 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        description: Classifier used to filter returned records.
       class_name:
         type: string
         required: false
-        binding: classification.class
+        description: Class label used to filter returned records.
       ranking:
         type: integer
         required: false
-        binding: classification.ranking
+        description: Classification ranking used to filter returned records.
       n_det:
         type: integer
         required: false
-        binding: detection.count
+        description: Detection-count filter.
       ndet:
         type: integer
         required: false
-        binding: detection.count
         legacy_ztf_param: true
+        description: Legacy ZTF detection-count filter.
       probability:
         type: number
         required: false
-        binding: classification.probability
+        description: Minimum classification probability filter.
       firstmjd:
         type: number
         required: false
-        binding: time.first_mjd
+        description: Lower bound on the first-observation Modified Julian Date.
       lastmjd:
         type: number
         required: false
-        binding: time.last_mjd
+        description: Upper bound on the last-observation Modified Julian Date.
       ra:
         type: number
         required: false
-        binding: cone.ra
         unit: deg
+        description: Right ascension of the cone-search center.
       dec:
         type: number
         required: false
-        binding: cone.dec
         unit: deg
+        description: Declination of the cone-search center.
       radius:
         type: number
         required: false
-        binding: cone.radius
         unit: arcsec
+        description: Cone-search radius.
       page:
         type: integer
         required: false
         role: pagination
+        description: Results page number.
       page_size:
         type: integer
         required: false
         role: pagination
+        description: Maximum number of records per results page.
       count:
         type: boolean
         required: false
         role: pagination
+        description: Whether to include the total result count.
       order_by:
         type: string
         required: false
         role: ordering
+        description: Physical response field used to order results.
       order_mode:
         type: string
         required: false
@@ -113,47 +120,32 @@ endpoints:
         - ASC
         - DESC
         role: ordering
+        description: Result ordering direction.
     output:
       type: array
       item: object_summary
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_search
-      - cone_search
-      - classification_filter
-      - object_summary
-      record_scope:
-      - summary
-      required_bindings: []
-      optional_bindings:
-      - cone.ra
-      - cone.dec
-      - cone.radius
-      - classification.class
-      - classification.classifier.name
-      - classification.probability
-      - time.first_mjd
-      - time.last_mjd
-      - detection.count
-      server_filters:
-      - classifier
-      - class_name
-      - ranking
-      - n_det
-      - ndet
-      - probability
-      - firstmjd
-      - lastmjd
-      - ra
-      - dec
-      - radius
-      - page
-      - page_size
-      - count
-      - order_by
-      - order_mode
-      post_filter: true
+    operation_types:
+    - object_search
+    - cone_search
+    - classification_filter
+    - object_summary
+    server_filters:
+    - classifier
+    - class_name
+    - ranking
+    - n_det
+    - ndet
+    - probability
+    - firstmjd
+    - lastmjd
+    - ra
+    - dec
+    - radius
+    - page
+    - page_size
+    - count
+    - order_by
+    - order_mode
   query_object:
     enabled: true
     audit:
@@ -175,7 +167,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -185,30 +177,25 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: object
       item: object_summary
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_lookup
-      - object_summary
-      record_scope:
-      - summary
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_lookup
+    - object_summary
+    server_filters:
+    - oid
   query_detections:
     enabled: true
     audit:
@@ -230,7 +217,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -240,31 +227,26 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: array
       item: detection
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - detection_lookup
-      - lightcurve_component
-      record_scope:
-      - detection
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - detection_lookup
+    - lightcurve_component
+    server_filters:
+    - oid
   query_non_detections:
     enabled: true
     audit:
@@ -286,7 +268,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -296,33 +278,28 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: array
       item: non_detection
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - non_detection_lookup
-      - lightcurve_component
-      record_scope:
-      - non_detection
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
     note: For LSST this route is implemented but the audit sample returned empty payloads; mappings include declared non_detection
       fields.
+    operation_types:
+    - object_history
+    - non_detection_lookup
+    - lightcurve_component
+    server_filters:
+    - oid
   query_forced_photometry:
     enabled: true
     audit:
@@ -345,7 +322,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -355,31 +332,26 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: array
       item: forced_photometry
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - forced_photometry
-      - lightcurve_component
-      record_scope:
-      - forced_photometry
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - forced_photometry
+    - lightcurve_component
+    server_filters:
+    - oid
   query_lightcurve:
     enabled: true
     audit:
@@ -403,7 +375,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -413,33 +385,25 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: object
       item: lightcurve_bundle
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - object_history
-      - lightcurve
-      record_scope:
-      - lightcurve
-      - detection
-      - non_detection
-      - forced_photometry
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
+    operation_types:
+    - object_history
+    - lightcurve
+    server_filters:
+    - oid
   query_magstats:
     enabled: false
     audit:
@@ -462,7 +426,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -472,33 +436,27 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: array
       item: magnitude_statistics
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - magnitude_statistics
-      - object_summary
-      record_scope:
-      - summary
-      - photometry_statistics
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
     disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE client/backend. Declared magstats fields
       are still included in mappings as declared_only/known_unsupported.
+    operation_types:
+    - magnitude_statistics
+    - object_summary
+    server_filters:
+    - oid
   query_probabilities:
     enabled: true
     audit:
@@ -520,7 +478,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -530,36 +488,30 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
       classifier:
         type: string
         required: false
-        binding: classification.classifier.name
+        description: Classifier used to filter returned records.
     output:
       type: array
       item: classification_probability
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - classification_lookup
-      - object_classification
-      record_scope:
-      - classification
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - classification.classifier.name
-      server_filters:
-      - oid
-      - classifier
-      post_filter: true
+    operation_types:
+    - classification_lookup
+    - object_classification
+    server_filters:
+    - oid
+    - classifier
   query_features:
     enabled: false
     audit:
@@ -581,7 +533,7 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       format:
         type: string
         default: json
@@ -591,32 +543,26 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: array
       item: feature
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - feature_lookup
-      - object_features
-      record_scope:
-      - feature
-      - summary
-      required_bindings:
-      - object_id
-      optional_bindings: []
-      server_filters:
-      - oid
-      post_filter: true
     disabled_reason: Multisurvey query_features not implemented in current ALeRCE client/backend.
+    operation_types:
+    - feature_lookup
+    - object_features
+    server_filters:
+    - oid
   query_feature:
     enabled: false
     audit:
@@ -633,11 +579,11 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       name:
         type: string
         required: true
-        binding: feature.name
+        description: Feature name requested from ALeRCE.
       format:
         type: string
         default: json
@@ -647,34 +593,27 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
       index:
         type: string
         required: false
         role: client_formatting
+        description: Column to use as the returned table index.
       sort:
         type: string
         required: false
         role: client_formatting
+        description: Column used to sort the returned records.
     output:
       type: object
       item: feature
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - feature_lookup
-      - object_features
-      record_scope:
-      - feature
-      - summary
-      required_bindings:
-      - object_id
-      - feature.name
-      optional_bindings: []
-      server_filters:
-      - oid
-      - name
-      post_filter: true
     note: LSST multisurvey query_feature raises NotImplementedError.
+    operation_types:
+    - feature_lookup
+    - object_features
+    server_filters:
+    - oid
+    - name
   query_classifiers:
     enabled: false
     audit:
@@ -702,20 +641,14 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
     output:
       type: array
       item: classifier_vocabulary
-    capabilities:
-      returns_science_data: false
-      operation_types:
-      - classifier_vocabulary
-      record_scope:
-      - classification_metadata
-      required_bindings: []
-      optional_bindings: []
-      server_filters: []
-      post_filter: true
     disabled_reason: Multisurvey query_classifiers not implemented in current ALeRCE client/backend.
+    operation_types:
+    - classifier_vocabulary
+    server_filters: []
   query_classes:
     enabled: false
     audit:
@@ -732,11 +665,11 @@ endpoints:
       classifier_name:
         type: string
         required: true
-        binding: classification.classifier.name
+        description: Classifier name.
       classifier_version:
         type: string
         required: true
-        binding: classification.classifier.version
+        description: Classifier version.
       format:
         type: string
         default: json
@@ -746,22 +679,14 @@ endpoints:
         - votable
         - csv
         role: output_format
+        description: Response serialization format.
     output:
       type: array
       item: class_vocabulary
-    capabilities:
-      returns_science_data: false
-      operation_types:
-      - class_vocabulary
-      record_scope:
-      - classification_metadata
-      required_bindings:
-      - classification.classifier.name
-      - classification.classifier.version
-      optional_bindings: []
-      server_filters: []
-      post_filter: true
     note: LSST multisurvey query_classes raises NotImplementedError.
+    operation_types:
+    - class_vocabulary
+    server_filters: []
   get_stamps:
     enabled: true
     audit:
@@ -782,13 +707,13 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       candid:
         type: integer
         required: false
-        binding: source_id
         aliases:
         - measurement_id
+        description: Alert candidate identifier.
       format:
         type: string
         required: false
@@ -797,29 +722,21 @@ endpoints:
         - HDUList
         - numpy
         role: output_format
+        description: Response serialization format.
       include_variance_and_psf:
         type: boolean
         required: false
         default: false
+        description: Whether stamp responses include variance and PSF planes.
     output:
       type: object
       item: stamp_triplet
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - data_product_lookup
-      - cutout
-      record_scope:
-      - data_product
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - source_id
-      server_filters:
-      - oid
-      - candid
-      - measurement_id
-      post_filter: true
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - oid
+    - candid
   get_avro:
     enabled: false
     audit:
@@ -841,37 +758,29 @@ endpoints:
       oid:
         type: integer
         required: true
-        binding: object_id
+        description: ALeRCE object identifier.
       candid:
         type: integer
         required: false
-        binding: source_id
         aliases:
         - measurement_id
+        description: Alert candidate identifier.
       use_multisurvey_api:
         type: boolean
         required: false
         default: true
+        description: Whether to retrieve the alert through the multisurvey API.
     output:
       type: binary
       item: avro_alert
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - data_product_lookup
-      - raw_alert
-      record_scope:
-      - data_product
-      required_bindings:
-      - object_id
-      optional_bindings:
-      - source_id
-      server_filters:
-      - oid
-      - candid
-      post_filter: true
     note: Current client default get_avro path failed for LSST; multisurvey AVRO path appears incomplete/buggy in current
       client.
+    operation_types:
+    - data_product_lookup
+    - raw_alert
+    server_filters:
+    - oid
+    - candid
   catshtm_conesearch:
     enabled: true
     audit:
@@ -886,23 +795,23 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Right ascension of the cone-search center.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Declination of the cone-search center.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Cone-search radius.
       catalog_name:
         type: string
         required: false
         default: all
-        binding: catalog.name
+        description: Catalog queried by the catsHTM service.
       format:
         type: string
         required: false
@@ -911,30 +820,19 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Response serialization format.
     output:
       type: object
       item: catalog_rows_by_position
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - catalog_conesearch
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    operation_types:
+    - catalog_conesearch
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - catalog_name
   catshtm_crossmatch:
     enabled: true
     audit:
@@ -949,23 +847,23 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Right ascension of the cone-search center.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Declination of the cone-search center.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Cone-search radius.
       catalog_name:
         type: string
         required: false
         default: all
-        binding: catalog.name
+        description: Catalog queried by the catsHTM service.
       format:
         type: string
         required: false
@@ -974,30 +872,19 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Response serialization format.
     output:
       type: object
       item: catalog_crossmatch_rows
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - catalog_crossmatch
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    operation_types:
+    - catalog_crossmatch
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - catalog_name
   catshtm_redshift:
     enabled: true
     audit:
@@ -1012,18 +899,18 @@ endpoints:
       ra:
         type: number
         required: true
-        binding: position.ra
         unit: deg
+        description: Right ascension of the cone-search center.
       dec:
         type: number
         required: true
-        binding: position.dec
         unit: deg
+        description: Declination of the cone-search center.
       radius:
         type: number
         required: true
-        binding: cone.radius
         unit: arcsec
+        description: Cone-search radius.
       format:
         type: string
         required: false
@@ -1032,27 +919,15 @@ endpoints:
         - pandas
         - votable
         role: output_format
+        description: Response serialization format.
     output:
       type: object
       item: redshift
-    capabilities:
-      returns_science_data: true
-      operation_types:
-      - redshift_lookup
-      - external_enrichment
-      record_scope:
-      - crossmatch
-      - enrichment
-      required_bindings:
-      - position.ra
-      - position.dec
-      - cone.radius
-      optional_bindings:
-      - catalog.name
-      server_filters:
-      - ra
-      - dec
-      - radius
-      - catalog_name
-      post_filter: true
     note: catsHTM calls are not survey-specific in the ALeRCE client; included here for planner visibility.
+    operation_types:
+    - redshift_lookup
+    - external_enrichment
+    server_filters:
+    - ra
+    - dec
+    - radius
