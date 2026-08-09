@@ -18,7 +18,7 @@ MAPPING_KEYS = {
 }
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
 TRANSFORM_KEYS = {"type", "map", "note"}
-TRANSFORM_TYPES = {"boolean_not", "value_map"}
+TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd"}
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
 OLD_HELPER_KEYS = {
