@@ -34,6 +34,21 @@ def test_valid_minimal_mapping_and_default_endpoint_pass(tmp_path, valid_mapping
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
+    write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {}}})
+    write_yaml(
+        tmp_path / "unmapped_fields.yaml",
+        {
+            "broker": "example",
+            "origin": "ztf",
+            "unmapped": [{"objects#oid": {"reason": "unstable_semantics"}}],
+        },
+    )
+    path = write_yaml(tmp_path / "mappings.yaml", valid_mapping)
+    with pytest.raises(MappingSchemaError, match="both mapped and unmapped"):
+        validate_mapping_file(path)
+
+
 def test_payload_with_explicit_endpoint_passes(tmp_path, valid_mapping):
     valid_mapping["payloads"] = {
         "query_object.detections": {"path": "detections", "endpoint": "query_object"}
