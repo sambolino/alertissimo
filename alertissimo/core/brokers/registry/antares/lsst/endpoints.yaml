@@ -1,135 +1,92 @@
 broker: antares
 origin: lsst
-baseurl: https://api.antares.noirlab.edu/v1
 endpoints:
-  loci:
-    path: /loci
-    method: GET
-    description: Search Rubin/LSST locus summaries with an Elasticsearch locus-listing
-      query. Filter on properties.survey.lsst.dia_object_id to restrict results to
-      LSST.
+  get_by_lsst_dia_object_id:
+    path: antares_client.search.get_by_lsst_dia_object_id
+    method: python
+    description: Get one ANTARES locus by LSST diaObjectId using the official antares_client Python client.
     params:
-      elasticsearch_query[locus_listing]:
-        required: true
-        type: json
-        description: JSON Elasticsearch query. For one object use a term query on
-          properties.survey.lsst.dia_object_id.
-      sort:
-        required: false
-        type: string
-        default: -properties.newest_alert_observation_time
-        description: Physical ANTARES result sort expression passed to the /loci API.
-    output:
-      type: array
-      item: locus_summary
-    operation_types:
-    - locus_search
-    - object_search
-    - object_summary
-    server_filters:
-    - elasticsearch_query[locus_listing]
-    - sort
-    post_filter: true
-    projection:
-      supports_columns: false
-  locus:
-    path: /loci/{locus_id}
-    method: GET
-    description: Retrieve one Rubin/LSST ANTARES locus and its object-level metadata.
-    params:
-      locus_id:
+      lsst_object_id:
         required: true
         type: string
-        description: ANTARES locus identifier used in the /loci/{locus_id} path.
+        description: LSST diaObjectId / diaObject identifier.
     output:
-      type: object
+      type: object_or_null
       item: locus
-    operation_types:
-    - locus_lookup
-    - object_summary
-    server_filters:
-    - locus_id
-    post_filter: true
+    operation_types: [object_lookup, locus_lookup, object_summary]
+    server_filters: [lsst_object_id]
+    post_filter: false
     projection:
       supports_columns: false
-  locus_alerts:
-    path: /loci/{locus_id}/alerts
-    method: GET
-    description: Retrieve the individual Rubin/LSST diaSource-derived alert records
-      associated with a locus.
+  get_by_lsst_ss_object_id:
+    path: antares_client.search.get_by_lsst_ss_object_id
+    method: python
+    description: Get one ANTARES locus by LSST Solar System Object ID using the official antares_client Python client.
+    params:
+      ss_object_id:
+        required: true
+        type: string
+        description: LSST Solar System Object ID.
+    output:
+      type: object_or_null
+      item: locus
+    operation_types: [solar_system_lookup, locus_lookup, object_summary]
+    server_filters: [ss_object_id]
+    post_filter: false
+    projection:
+      supports_columns: false
+  get_by_id:
+    path: antares_client.search.get_by_id
+    method: python
+    description: Get one ANTARES locus by ANTARES locus_id using the official antares_client Python client.
     params:
       locus_id:
         required: true
         type: string
-        description: ANTARES locus identifier used in the /loci/{locus_id}/alerts
-          path.
+        description: ANTARES locus identifier.
     output:
-      type: array
-      item: alert
-    operation_types:
-    - object_history
-    - alert_history
-    - detection_lookup
-    server_filters:
-    - locus_id
-    post_filter: true
+      type: object_or_null
+      item: locus
+    operation_types: [locus_lookup, object_summary]
+    server_filters: [locus_id]
+    post_filter: false
     projection:
       supports_columns: false
-  catalog_matches:
-    path: /loci/{locus_id}/catalog-matches
-    method: GET
-    description: Retrieve external-catalog matches associated with a Rubin/LSST locus.
+  cone_search:
+    path: antares_client.search.cone_search
+    method: python
+    description: Search ANTARES loci by sky coordinate and radius using the official antares_client Python client.
     params:
-      locus_id:
+      center:
         required: true
-        type: string
-        description: ANTARES locus identifier used in the /loci/{locus_id}/catalog-matches
-          path.
+        type: SkyCoord
+        description: Astropy SkyCoord cone-search center.
+      radius:
+        required: true
+        type: Angle
+        description: Astropy Angle cone-search radius.
     output:
-      type: array
-      item: catalog_match
-    operation_types:
-    - crossmatch_lookup
-    - catalog_match_lookup
-    server_filters:
-    - locus_id
-    post_filter: true
+      type: iterator
+      item: locus
+    operation_types: [spatial_search, locus_search, object_summary]
+    server_filters: [center, radius]
+    post_filter: false
     projection:
       supports_columns: false
-  thumbnails:
-    path: /alerts/{alert_id}/thumbnails
-    method: GET
-    description: List binary thumbnail products for one LSST alert; alert IDs have
-      the lsst:<diaSourceId> form.
+  search:
+    path: antares_client.search.search
+    method: python
+    description: Run an ANTARES Elasticsearch locus query using the official antares_client Python client.
     params:
-      alert_id:
+      query:
         required: true
-        type: string
-        description: ANTARES alert identifier used in the /alerts/{alert_id}/thumbnails
-          path.
+        type: dict
+        description: Elasticsearch query dictionary with exactly one top-level query key.
     output:
-      type: array
-      item: data_product
-    operation_types:
-    - data_product_lookup
-    - thumbnail_lookup
-    server_filters:
-    - alert_id
-    post_filter: true
-    projection:
-      supports_columns: false
-  statistics:
-    path: /loci/statistics
-    method: GET
-    description: Retrieve aggregate ANTARES tag counts, including the combined broker
-      store.
-    output:
-      type: object
-      item: tag_statistics
-    operation_types:
-    - stream_statistics
-    - tag_statistics
-    - survey_summary
-    post_filter: true
+      type: iterator
+      item: locus
+    operation_types: [locus_search, object_search, object_summary]
+    server_filters: [query]
+    post_filter: false
     projection:
       supports_columns: false

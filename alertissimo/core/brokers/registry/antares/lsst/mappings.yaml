@@ -1,30 +1,18 @@
 broker: antares
 origin: lsst
 payloads:
-  loci:
-    endpoint: loci
-    path: '[]'
   locus:
-    endpoint: locus
+    endpoint: get_by_lsst_dia_object_id
     path: .
+  loci:
+    endpoint: search
+    path: '[]'
   locus_alerts:
-    endpoint: locus_alerts
-    path: '[]'
-  catalog_matches:
-    endpoint: catalog_matches
-    path: '[]'
-  thumbnails:
-    endpoint: thumbnails
-    path: '[]'
-  statistics:
-    endpoint: statistics
-    path: .
+    endpoint: get_by_lsst_dia_object_id
+    path: alerts[]
   catalog_matches.allwise:
-    endpoint: catalog_matches
-    path: '[]'
-    description: AllWISE catalog-match rows from ANTARES catalog_matches.
-    row_filter:
-      meta.catalog_name: allwise
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.allwise[]
 mappings:
   summary@lsst:antares.identity.object_id:
   - loci#properties.survey.lsst.dia_object_id
@@ -47,13 +35,13 @@ mappings:
   detection@lsst:antares.identity.source_id:
   - locus_alerts#properties.lsst_diaSource_diaSourceId
   detection@lsst:antares.identity.alert_id:
-  - locus_alerts#id
+  - locus_alerts#alert_id
   detection@lsst:antares.identity.visit_id:
   - locus_alerts#properties.lsst_diaSource_visit
   detection@lsst:antares.identity.detector_id:
   - locus_alerts#properties.lsst_diaSource_detector
   detection@lsst:antares.time.mjd:
-  - locus_alerts#properties.lsst_diaSource_midpointMjdTai
+  - locus_alerts#mjd
   detection@lsst:antares.position.ra:
   - locus_alerts#properties.lsst_diaSource_ra
   detection@lsst:antares.position.dec:
