@@ -182,12 +182,16 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             if not isinstance(endpoint, str):
                 raise CapabilityGraphError(f"{endpoint_path}: endpoint names must be strings")
             spec = _dict(raw_spec, f"{endpoint_path}: endpoint {endpoint!r}")
-            transport = spec.get("transport", {})
-            transport = _dict(transport, f"{endpoint_path}: endpoint {endpoint!r} transport")
-            method = spec.get("method", transport.get("method", ""))
-            path = spec.get("path", transport.get("method", endpoint))
-            if not isinstance(method, str) or not isinstance(path, str):
-                raise CapabilityGraphError(f"{endpoint_path}: endpoint {endpoint!r} path/method must be strings")
+            method = spec.get("method")
+            path = spec.get("path")
+            if not isinstance(method, str):
+                raise CapabilityGraphError(
+                    f"{endpoint_path}: endpoint {endpoint!r} method must be present and a string"
+                )
+            if not isinstance(path, str):
+                raise CapabilityGraphError(
+                    f"{endpoint_path}: endpoint {endpoint!r} path must be present and a string"
+                )
             params = _dict(spec.get("params", {}), f"{endpoint_path}: endpoint {endpoint!r} params")
             projection = _dict(
                 spec.get("projection", {}), f"{endpoint_path}: endpoint {endpoint!r} projection"

@@ -2,8 +2,47 @@
 
 from dataclasses import fields
 
+import pytest
+import yaml
+
 import alertissimo.core.brokers.registry.capabilities as capabilities
-from alertissimo.core.brokers.registry.capabilities import build_capability_graph
+from alertissimo.core.brokers.registry.capabilities import (
+    CapabilityGraphError,
+    build_capability_graph,
+)
+
+
+def _write_minimal_registry(tmp_path, missing=None):
+    registry = tmp_path / "example" / "ztf"
+    registry.mkdir(parents=True)
+    endpoint = {
+        "path": "/api/object/",
+        "method": "POST",
+        "transport": {"path": "/legacy/object/", "method": "GET"},
+        "params": {},
+        "output": {"type": "object"},
+        "operation_types": ["object_lookup"],
+        "server_filters": [],
+        "projection": {"supports_columns": False},
+    }
+    if missing is not None:
+        endpoint.pop(missing)
+    documents = {
+        "endpoints.yaml": {
+            "broker": "example",
+            "origin": "ztf",
+            "endpoints": {"object": endpoint},
+        },
+        "mappings.yaml": {
+            "broker": "example",
+            "origin": "ztf",
+            "payloads": {},
+            "mappings": {},
+        },
+        "unmapped_fields.yaml": {},
+    }
+    for filename, document in documents.items():
+        (registry / filename).write_text(yaml.safe_dump(document), encoding="utf-8")
 
 
 def test_graph_builds_for_all_normalized_registries():
@@ -17,6 +56,24 @@ def test_graph_builds_for_all_normalized_registries():
         for broker in ("alerce", "antares", "fink", "lasair")
         for origin in ("lsst", "ztf")
     }
+
+
+def test_endpoint_capability_uses_top_level_path_and_method(tmp_path):
+    _write_minimal_registry(tmp_path)
+
+    graph = build_capability_graph(tmp_path)
+    endpoint = graph.endpoints_for("example", "ztf")[0]
+
+    assert endpoint.path == "/api/object/"
+    assert endpoint.method == "POST"
+
+
+@pytest.mark.parametrize("missing", ["path", "method"])
+def test_endpoint_capability_requires_top_level_path_and_method(tmp_path, missing):
+    _write_minimal_registry(tmp_path, missing=missing)
+
+    with pytest.raises(CapabilityGraphError, match=missing):
+        build_capability_graph(tmp_path)
 
 
 def test_lasair_ztf_endpoint_capabilities_and_projection():
