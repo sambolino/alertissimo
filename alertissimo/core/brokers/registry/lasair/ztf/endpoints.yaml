@@ -1,128 +1,171 @@
 # brokers/lasair/ztf/endpoints.yaml
-# Verified against the authenticated Lasair ZTF REST API.
+# Physical contracts for the authenticated Lasair ZTF REST API.
 broker: lasair
 origin: ztf
 baseurl: https://lasair-ztf.lsst.ac.uk
 
 endpoints:
   object:
-    path: "/api/object/"
+    path: /api/object/
     method: POST
-    description: "Retrieve one ZTF object with its summary, candidate history, Sherlock/TNS context, and cutout URLs."
-    headers:
+    description: Retrieve one ZTF object with its history and optional Lasair-added context.
+    headers: &token_header
       Authorization:
         required: true
         type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
+        description: Lasair API token, formatted as 'Token <token>'.
     params:
-      objectId: {required: true, type: string}
+      objectId:
+        required: true
+        type: string
+        description: ZTF objectId.
       lasair_added:
         required: false
         type: boolean
         default: true
-        description: "Include Lasair-added context such as Sherlock, TNS, and image URLs."
-      lite: {required: false, type: boolean, default: false}
-    output_type: ztf_object
-    provides:
-      - summary@ztf:lasair.*
-      - detection@ztf:lasair.*
-      - classification@lasair.assessment.*
-      - crossmatch@{producer}:lasair.*
-      - data_product@ztf:lasair
+        description: Include Lasair-added context such as Sherlock, TNS, and image URLs.
+    output: {type: object, item: object_record}
+    operation_types: [object_lookup, object_summary, object_history]
+    server_filters: [objectId, lasair_added]
+    projection: {supports_columns: false}
 
   objects:
-    path: "/api/objects/"
+    path: /api/objects/
     method: POST
-    description: "Retrieve machine-readable records for a comma-separated list of ZTF object IDs."
-    headers:
-      Authorization:
-        required: true
-        type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
+    description: Retrieve records for a comma-separated list of ZTF object identifiers.
+    headers: *token_header
     params:
       objectIds:
         required: true
         type: string
-        description: "Comma-separated ZTF object IDs."
-    output_type: array_of_ztf_objects
-    provides:
-      - summary@ztf:lasair.*
-      - detection@ztf:lasair.*
+        description: Comma-separated ZTF objectIds.
+    output: {type: array, item: object_record}
+    operation_types: [object_batch_lookup, object_summary, object_history]
+    server_filters: [objectIds]
+    projection: {supports_columns: false}
 
   lightcurves:
-    path: "/api/lightcurves/"
+    path: /api/lightcurves/
     method: POST
-    description: "Retrieve ZTF candidate light curves for one or more object IDs. Magnitudes are difference magnitudes."
-    headers:
-      Authorization:
+    description: Retrieve ZTF candidate light curves for one or more objects.
+    headers: *token_header
+    params:
+      objectIds:
         required: true
         type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
-    params:
-      objectIds: {required: true, type: string}
-    output_type: array_of_ztf_lightcurves
-    provides:
-      - detection@ztf:lasair.*
-      - lightcurve@ztf:lasair.*
+        description: Comma-separated ZTF objectIds; documented limit is currently 50.
+    output: {type: array, item: lightcurve_record}
+    operation_types: [lightcurve_lookup, object_history]
+    server_filters: [objectIds]
+    projection: {supports_columns: false}
 
-  conesearch:
-    path: "/api/cone/"
+  cone:
+    path: /api/cone/
     method: POST
-    description: "Search ZTF objects around a sky position; returns object identifiers and angular separations."
-    headers:
-      Authorization:
-        required: true
-        type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
+    description: Search ZTF objects around a sky position.
+    headers: *token_header
     params:
-      ra: {required: true, type: number}
-      dec: {required: true, type: number}
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
       radius:
         required: true
         type: number
-        description: "Cone radius in arcseconds (maximum 1000)."
+        unit: arcsec
+        description: Angular cone radius in arcseconds; maximum 1000 arcseconds.
       requestType:
-        required: false
+        required: true
         type: string
         enum: [nearest, all, count]
         default: all
-    output_type: cone_search_result
-    provides:
-      - summary@ztf:lasair.identity.object_id
+        description: 'Cone request type: nearest, all, or count.'
+    output: {type: array, item: cone_result}
+    operation_types: [spatial_search, object_search]
+    server_filters: [ra, dec, radius, requestType]
+    projection: {supports_columns: false}
 
   query:
-    path: "/api/query/"
+    path: /api/query/
     method: POST
-    description: "Run an authenticated SQL SELECT over Lasair ZTF tables. Returned fields are selected by the caller."
-    headers:
-      Authorization:
+    description: Run an authenticated SQL SELECT over Lasair ZTF tables.
+    headers: *token_header
+    params:
+      selected:
         required: true
         type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
-    params:
-      selected: {required: true, type: string}
-      tables: {required: true, type: string}
-      conditions: {required: true, type: string}
-      limit: {required: false, type: integer, default: 1000}
-      offset: {required: false, type: integer, default: 0}
-    output_type: array_of_query_rows
-    provides:
-      - summary@ztf:lasair.*
-      - crossmatch@{producer}:lasair.*
+        description: Comma-separated list of attributes to return.
+      tables:
+        required: true
+        type: string
+        description: Comma-separated or joined Lasair table expression.
+      conditions:
+        required: true
+        type: string
+        description: SQL WHERE criteria without the WHERE keyword.
+      limit:
+        required: false
+        type: integer
+        default: 1000
+        description: Maximum number of records to return.
+      offset:
+        required: false
+        type: integer
+        default: 0
+        description: Offset of the first returned record.
+    output: {type: array, item: query_row}
+    operation_types: [sql_query, object_search, table_query]
+    server_filters: [selected, tables, conditions, limit, offset]
+    projection: {supports_columns: true, param: selected}
 
-  sherlock_object:
-    path: "/api/sherlock/object/"
+  sherlock_objects:
+    path: /api/sherlock/objects/
     method: POST
-    description: "Retrieve Sherlock classification and catalog-context candidates for one ZTF object."
-    headers:
-      Authorization:
+    description: Retrieve Sherlock classification and catalogue context for ZTF objects.
+    headers: *token_header
+    params:
+      objectIds:
         required: true
         type: string
-        description: "Lasair ZTF API token, formatted as 'Token <token>'."
+        description: Comma-separated objectIds; documented maximum is 10.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return lite Sherlock context when true.
+    output: {type: object, item: sherlock_context}
+    operation_types: [sherlock_lookup, crossmatch_lookup, classification_lookup]
+    server_filters: [objectIds, lite]
+    projection: {supports_columns: false}
+
+  sherlock_position:
+    path: /api/sherlock/position/
+    method: POST
+    description: Retrieve Sherlock classification and catalogue context at a ZTF sky position.
+    headers: *token_header
     params:
-      objectId: {required: true, type: string}
-      lite: {required: false, type: boolean, default: true}
-    output_type: sherlock_context
-    provides:
-      - classification@lasair.assessment.sherlock.*
-      - crossmatch@{producer}:lasair.*
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return lite Sherlock context when true.
+    output: {type: object, item: sherlock_context}
+    operation_types: [sherlock_position_lookup, crossmatch_lookup, classification_lookup]
+    server_filters: [ra, dec, lite]
+    projection: {supports_columns: false}

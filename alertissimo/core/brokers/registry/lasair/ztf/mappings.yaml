@@ -1,121 +1,66 @@
-# brokers/lasair/ztf/mappings.yaml
 # Source paths verified against authenticated Lasair ZTF REST API responses.
 broker: lasair
 origin: ztf
+description: Minimal payload references for Lasair's REST-first ZTF registry.
+notes: Dynamic Sherlock catalogue producers are represented by the existing {producer} semantic qualifier.
+payloads:
+  object: {endpoint: object, path: "."}
+  objects: {endpoint: objects, path: "[]"}
+  query: {endpoint: query, path: "[]"}
+  cone: {endpoint: cone, path: "[]"}
+  candidates: {endpoint: object, path: "candidates[]"}
+  lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
+  sherlock: {endpoint: object, path: "sherlock[]"}
+  tns: {endpoint: object, path: "TNS[]"}
 
 mappings:
-  # Keep semantic feature paths stable.  Dynamic `{filter}` entries bind
-  # dependent photometry paths and are not scalar output fields themselves.
+  summary@ztf:lasair.identity.object_id: [object#objectId, objects#objectId]
+  summary@ztf:lasair.detection_count: [object#objectData.ncand, objects#objectData.ncand]
+  summary@ztf:lasair.time.first_mjd: [object#objectData.jdmin, objects#objectData.jdmin]
+  summary@ztf:lasair.time.last_mjd: [object#objectData.jdmax, objects#objectData.jdmax]
+  summary@ztf:lasair.position.ra: [object#objectData.ramean, objects#objectData.ramean]
+  summary@ztf:lasair.position.dec: [object#objectData.decmean, objects#objectData.decmean]
+  detection@ztf:lasair.identity.source_id: [candidates#candid, lightcurve_candidates#candid]
+  detection@ztf:lasair.time.mjd: [candidates#jd, lightcurve_candidates#jd]
+  detection@ztf:lasair.position.ra: [candidates#ra]
+  detection@ztf:lasair.position.dec: [candidates#dec]
+  detection@ztf:lasair.photometry.{filter}: [candidates#fid, lightcurve_candidates#fid]
+  detection@ztf:lasair.photometry.{filter}.psf.mag: [candidates#magpsf, lightcurve_candidates#magpsf]
+  detection@ztf:lasair.photometry.{filter}.psf.mag_error: [candidates#sigmapsf, lightcurve_candidates#sigmapsf]
+  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag: [candidates#magnr, lightcurve_candidates#magnr]
+  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag_error: [candidates#sigmagnr, lightcurve_candidates#sigmagnr]
+  detection@ztf:lasair.calibration.{filter}.zero_point: [candidates#magzpsci, lightcurve_candidates#magzpsci]
+  detection@ztf:lasair.quality.real_bogus: [candidates#drb]
+  detection@ztf:lasair.image_metrics.is_positive: [candidates#isdiffpos, lightcurve_candidates#isdiffpos]
+  classification@lasair.assessment.sherlock.class: [sherlock#classification]
+  classification@lasair.assessment.sherlock.score: [sherlock#classificationReliability]
+  classification@tns:lasair.best.class: [tns#type]
+  crossmatch@{producer}:lasair.identity.object_id: [sherlock#catalogue_object_id]
+  crossmatch@{producer}:lasair.position.ra: [sherlock#raDeg]
+  crossmatch@{producer}:lasair.position.dec: [sherlock#decDeg]
+  crossmatch@{producer}:lasair.separation.total: [sherlock#separationArcsec]
+  crossmatch@tns:lasair.identity.object_id: [tns#name]
+  crossmatch@tns:lasair.position.ra: [tns#ra]
+  crossmatch@tns:lasair.position.dec: [tns#decl]
+  crossmatch@tns:lasair.redshift.value: [tns#z]
 
-  # ==================== Object summary ====================
-  summary@ztf:lasair.identity.object_id:
-    field: "objectId"
-    availability: [object, objects]
-  summary@ztf:lasair.detection_count:
-    field: "objectData.ncand"
-    availability: [object, objects]
+transforms:
   summary@ztf:lasair.time.first_mjd:
-    field: "objectData.jdmin"
-    transform: jd_to_mjd
-    availability: [object, objects]
+    object#objectData.jdmin: {type: jd_to_mjd}
+    objects#objectData.jdmin: {type: jd_to_mjd}
   summary@ztf:lasair.time.last_mjd:
-    field: "objectData.jdmax"
-    transform: jd_to_mjd
-    availability: [object, objects]
-  summary@ztf:lasair.position.ra:
-    field: "objectData.ramean"
-    availability: [object, objects]
-  summary@ztf:lasair.position.dec:
-    field: "objectData.decmean"
-    availability: [object, objects]
-
-  # ==================== Candidate detections ====================
-  # candidates is repeated; one normalized detection is emitted per member.
-  # fid binds the {filter} parameter: 1=g, 2=r, 3=i.
-  detection@ztf:lasair.identity.source_id:
-    field: "candidates.candid"
-    availability: [object, objects, lightcurves]
+    object#objectData.jdmax: {type: jd_to_mjd}
+    objects#objectData.jdmax: {type: jd_to_mjd}
   detection@ztf:lasair.time.mjd:
-    field: "candidates.jd"
-    transform: jd_to_mjd
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.position.ra:
-    field: "candidates.ra"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.position.dec:
-    field: "candidates.dec"
-    availability: [object, objects, lightcurves]
+    candidates#jd: {type: jd_to_mjd}
+    lightcurve_candidates#jd: {type: jd_to_mjd}
   detection@ztf:lasair.photometry.{filter}:
-    field: "candidates.fid"
-    transform: {1: g, 2: r, 3: i}
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.photometry.{filter}.psf.mag:
-    field: "candidates.magpsf"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.photometry.{filter}.psf.mag_error:
-    field: "candidates.sigmapsf"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
-    field: "candidates.magnr"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag_error:
-    field: "candidates.sigmagnr"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.calibration.{filter}.zero_point:
-    field: "candidates.magzpsci"
-    availability: [object, objects, lightcurves]
-  detection@ztf:lasair.quality.real_bogus:
-    field: "candidates.drb"
-    availability: [object, objects, lightcurves]
+    candidates#fid: &fid_map
+      type: value_map
+      map: {1: g, 2: r, 3: i}
+    lightcurve_candidates#fid: *fid_map
   detection@ztf:lasair.image_metrics.is_positive:
-    field: "candidates.isdiffpos"
-    transform: {t: true, f: false}
-    availability: [object, objects, lightcurves]
-
-  # ==================== Light-curve history ====================
-  lightcurve@ztf:lasair.{filter}.points:
-    field: "candidates"
-    filter_field: fid
-    filter_transform: {1: g, 2: r, 3: i}
-    availability: [lightcurves]
-
-  # ==================== Contextual classifications ====================
-  classification@lasair.assessment.sherlock.class:
-    field: "sherlock.classification"
-    availability: [object]
-  classification@lasair.assessment.sherlock.score:
-    field: "sherlock.classificationReliability"
-    availability: [object]
-  classification@tns:lasair.best.class:
-    field: "TNS.type"
-    availability: [object]
-
-  # ==================== External context ====================
-  crossmatch@{producer}:lasair.identity.object_id:
-    field: "sherlock.catalogue_object_id"
-    producer_field: "sherlock.catalogue_table_name"
-    availability: [object]
-  crossmatch@{producer}:lasair.position.ra:
-    field: "sherlock.raDeg"
-    producer_field: "sherlock.catalogue_table_name"
-    availability: [object]
-  crossmatch@{producer}:lasair.position.dec:
-    field: "sherlock.decDeg"
-    producer_field: "sherlock.catalogue_table_name"
-    availability: [object]
-  crossmatch@{producer}:lasair.separation.total:
-    field: "sherlock.separationArcsec"
-    producer_field: "sherlock.catalogue_table_name"
-    availability: [object]
-  crossmatch@tns:lasair.identity.object_id:
-    field: "TNS.name"
-    availability: [object]
-  crossmatch@tns:lasair.position.ra:
-    field: "TNS.ra"
-    availability: [object]
-  crossmatch@tns:lasair.position.dec:
-    field: "TNS.decl"
-    availability: [object]
-  crossmatch@tns:lasair.redshift.value:
-    field: "TNS.z"
-    availability: [object]
+    candidates#isdiffpos: &polarity_map
+      type: value_map
+      map: {t: true, f: false}
+    lightcurve_candidates#isdiffpos: *polarity_map

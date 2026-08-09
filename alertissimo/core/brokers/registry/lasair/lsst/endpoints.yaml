@@ -1,108 +1,157 @@
 # brokers/lasair/lsst/endpoints.yaml
-# Verified against the authenticated Lasair LSST REST API.
+# Physical contracts for the authenticated Lasair LSST REST API.
 broker: lasair
 origin: lsst
 baseurl: https://api.lasair.lsst.ac.uk
 
 endpoints:
   object:
-    path: "/api/object/"
+    path: /api/object/
     method: POST
-    description: "Retrieve one Rubin/LSST diaObject. With lasair_added=false and lite=true it returns diaSourcesList and diaForcedSourcesList; with lasair_added=true it also returns Lasair context, annotations, TNS data, and cutout URLs."
-    headers:
+    description: Retrieve one Rubin/LSST diaObject and optional Lasair-added context.
+    headers: &token_header
       Authorization:
         required: true
         type: string
-        description: "Lasair LSST API token, formatted as 'Token <token>'."
+        description: Lasair API token, formatted as 'Token <token>'.
     params:
       objectId:
         required: true
         type: string
-        description: "One LSST diaObjectId."
+        description: LSST diaObjectId.
       lasair_added:
         required: false
         type: boolean
         default: true
-        description: "Include Lasair-added Sherlock, TNS, annotation, and image-url context."
-      lite:
-        required: false
-        type: boolean
-        default: false
-        description: "Request the extended object payload; use true with lasair_added=false for light-curve lists."
-    output_type: lsst_object_with_lightcurve
-    provides:
-      - summary@lsst:lasair.*
-      - detection@lsst:lasair.*
-      - crossmatch@{producer}:lasair.*
-      - data_product@lsst:lasair
+        description: Include Lasair-added Sherlock, TNS, annotation, and image-url context.
+    output:
+      type: object
+      item: object_record
+    operation_types: [object_lookup, object_summary, object_history]
+    server_filters: [objectId, lasair_added]
+    projection:
+      supports_columns: false
 
-  conesearch:
-    path: "/api/cone/"
+  cone:
+    path: /api/cone/
     method: POST
-    description: "Search LSST diaObjects around a sky position. Returns object identifiers and angular separations."
-    headers:
-      Authorization:
+    description: Search LSST diaObjects around a sky position.
+    headers: *token_header
+    params: &cone_params
+      ra:
         required: true
-        type: string
-        description: "Lasair LSST API token, formatted as 'Token <token>'."
-    params:
-      ra: {required: true, type: number}
-      dec: {required: true, type: number}
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
       radius:
         required: true
         type: number
-        description: "Cone radius in arcseconds (maximum 1000)."
+        unit: arcsec
+        description: Angular cone radius in arcseconds; maximum 1000 arcseconds.
       requestType:
-        required: false
+        required: true
         type: string
         enum: [nearest, all, count]
         default: all
-    output_type: cone_search_result
-    provides:
-      - summary@lsst:lasair.identity.object_id
+        description: 'Cone request type: nearest, all, or count.'
+    output:
+      type: array
+      item: cone_result
+    operation_types: [spatial_search, object_search]
+    server_filters: [ra, dec, radius, requestType]
+    projection:
+      supports_columns: false
 
   query:
-    path: "/api/query/"
+    path: /api/query/
     method: POST
-    description: "Run an authenticated SQL SELECT over Lasair LSST tables. The requested columns determine the returned schema."
-    headers:
-      Authorization:
-        required: true
-        type: string
-        description: "Lasair LSST API token, formatted as 'Token <token>'."
-    params:
+    description: Run an authenticated SQL SELECT over Lasair LSST tables.
+    headers: *token_header
+    params: &query_params
       selected:
         required: true
         type: string
-        description: "Comma-separated SQL select list."
+        description: Comma-separated list of attributes to return.
       tables:
         required: true
         type: string
-        description: "Lasair table expression, e.g. objects."
+        description: Comma-separated or joined Lasair table expression.
       conditions:
         required: true
         type: string
-        description: "SQL WHERE condition without the WHERE keyword."
-      limit: {required: false, type: integer, default: 1000}
-      offset: {required: false, type: integer, default: 0}
-    output_type: array_of_query_rows
-    provides:
-      - summary@lsst:lasair.*
-      - crossmatch@{producer}:lasair.*
+        description: SQL WHERE criteria without the WHERE keyword.
+      limit:
+        required: false
+        type: integer
+        default: 1000
+        description: Maximum number of records to return.
+      offset:
+        required: false
+        type: integer
+        default: 0
+        description: Offset of the first returned record.
+    output:
+      type: array
+      item: query_row
+    operation_types: [sql_query, object_search, table_query]
+    server_filters: [selected, tables, conditions, limit, offset]
+    projection:
+      supports_columns: true
+      param: selected
 
   sherlock_object:
-    path: "/api/sherlock/object/"
+    path: /api/sherlock/object/
     method: POST
-    description: "Retrieve LSST Sherlock classification and catalog-context candidates for one diaObject."
-    headers:
-      Authorization:
+    description: Retrieve Sherlock classification and catalogue context for one LSST object.
+    headers: *token_header
+    params:
+      objectId:
         required: true
         type: string
-        description: "Lasair LSST API token, formatted as 'Token <token>'."
-    params:
-      objectId: {required: true, type: string}
-      lite: {required: false, type: boolean, default: true}
-    output_type: sherlock_context
-    provides:
-      - classification@lasair.assessment.sherlock.*
-      - crossmatch@{producer}:lasair.*
+        description: Object identifier for Sherlock context lookup.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return lite Sherlock context when true.
+    output:
+      type: object
+      item: sherlock_context
+    operation_types: [sherlock_lookup, crossmatch_lookup, classification_lookup]
+    server_filters: [objectId, lite]
+    projection:
+      supports_columns: false
+
+  sherlock_position:
+    path: /api/sherlock/position/
+    method: POST
+    description: Retrieve Sherlock classification and catalogue context at an LSST sky position.
+    headers: *token_header
+    params: &sherlock_position_params
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return lite Sherlock context when true.
+    output:
+      type: object
+      item: sherlock_context
+    operation_types: [sherlock_position_lookup, crossmatch_lookup, classification_lookup]
+    server_filters: [ra, dec, lite]
+    projection:
+      supports_columns: false
