@@ -1,0 +1,20 @@
+broker: alerce
+origin: ztf
+notes: Raw fields without a stable feature catalog semantic path.
+unmapped:
+- query_classifiers#classes:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_name:
+    reason: no_stable_feature_catalog_path
+- query_classifiers#classifier_version:
+    reason: no_stable_feature_catalog_path
+- query_detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_lightcurve.detections#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path

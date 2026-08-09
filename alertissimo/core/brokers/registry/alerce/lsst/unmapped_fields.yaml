@@ -1,0 +1,10 @@
+broker: alerce
+origin: lsst
+notes: Raw fields without a stable feature catalog semantic path.
+unmapped:
+- query_object#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_objects#step_id_corr:
+    reason: no_stable_feature_catalog_path
+- query_probabilities#ranking:
+    reason: no_stable_feature_catalog_path
