@@ -71,6 +71,13 @@ def test_valid_unmapped_fields_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_colon_in_mapped_raw_field_passes(tmp_path, valid_mapping):
+    valid_mapping["mappings"] = {
+        "object@ztf:example.id": ["objects#r:diaObjectId"]
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 @pytest.mark.parametrize(("change", "match"), [
     (("pop", "broker"), "missing required key 'broker'"),
     (("set", "broker", ""), "broker must be a non-empty string"),
@@ -144,6 +151,16 @@ def test_invalid_mapping_entry_fails(tmp_path, valid_mapping, semantic, referenc
 def test_invalid_unmapped_file_fails(tmp_path, valid_mapping, document, match):
     write_yaml(tmp_path / "unmapped_fields.yaml", document)
     with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_duplicate_unmapped_reference_fails(tmp_path, valid_mapping):
+    entry = {"objects#unsettled": {"reason": "no stable semantic path"}}
+    write_yaml(
+        tmp_path / "unmapped_fields.yaml",
+        {"broker": "example", "origin": "ztf", "unmapped": [entry, entry]},
+    )
+    with pytest.raises(MappingSchemaError, match="duplicates unmapped reference"):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
