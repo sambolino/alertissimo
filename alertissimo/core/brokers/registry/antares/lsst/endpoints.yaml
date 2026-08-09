@@ -1,72 +1,135 @@
-# brokers/antares/lsst/endpoints.yaml
-# ANTARES uses the same JSON:API v1 service for ZTF and Rubin/LSST.  LSST
-# loci are selected with properties.survey.lsst.dia_object_id.
 broker: antares
 origin: lsst
 baseurl: https://api.antares.noirlab.edu/v1
-
 endpoints:
   loci:
-    path: "/loci"
+    path: /loci
     method: GET
-    description: "Search Rubin/LSST locus summaries with an Elasticsearch locus-listing query. Filter on properties.survey.lsst.dia_object_id to restrict results to LSST."
+    description: Search Rubin/LSST locus summaries with an Elasticsearch locus-listing
+      query. Filter on properties.survey.lsst.dia_object_id to restrict results to
+      LSST.
     params:
       elasticsearch_query[locus_listing]:
         required: true
         type: json
-        description: "JSON Elasticsearch query. For one object use a term query on properties.survey.lsst.dia_object_id."
+        description: JSON Elasticsearch query. For one object use a term query on
+          properties.survey.lsst.dia_object_id.
       sort:
         required: false
         type: string
-        default: "-properties.newest_alert_observation_time"
-    output_type: array_of_locus_summaries
-    provides:
-      - summary@lsst:antares.*
-
+        default: -properties.newest_alert_observation_time
+        description: Physical ANTARES result sort expression passed to the /loci API.
+    output:
+      type: array
+      item: locus_summary
+    operation_types:
+    - locus_search
+    - object_search
+    - object_summary
+    server_filters:
+    - elasticsearch_query[locus_listing]
+    - sort
+    post_filter: true
+    projection:
+      supports_columns: false
   locus:
-    path: "/loci/{locus_id}"
+    path: /loci/{locus_id}
     method: GET
-    description: "Retrieve one Rubin/LSST ANTARES locus and its object-level metadata."
+    description: Retrieve one Rubin/LSST ANTARES locus and its object-level metadata.
     params:
-      locus_id: {required: true, type: string}
-    output_type: locus
-    provides:
-      - summary@lsst:antares.*
-
+      locus_id:
+        required: true
+        type: string
+        description: ANTARES locus identifier used in the /loci/{locus_id} path.
+    output:
+      type: object
+      item: locus
+    operation_types:
+    - locus_lookup
+    - object_summary
+    server_filters:
+    - locus_id
+    post_filter: true
+    projection:
+      supports_columns: false
   locus_alerts:
-    path: "/loci/{locus_id}/alerts"
+    path: /loci/{locus_id}/alerts
     method: GET
-    description: "Retrieve the individual Rubin/LSST diaSource-derived alert records associated with a locus."
+    description: Retrieve the individual Rubin/LSST diaSource-derived alert records
+      associated with a locus.
     params:
-      locus_id: {required: true, type: string}
-    output_type: array_of_alerts
-    provides:
-      - detection@lsst:antares.*
-
+      locus_id:
+        required: true
+        type: string
+        description: ANTARES locus identifier used in the /loci/{locus_id}/alerts
+          path.
+    output:
+      type: array
+      item: alert
+    operation_types:
+    - object_history
+    - alert_history
+    - detection_lookup
+    server_filters:
+    - locus_id
+    post_filter: true
+    projection:
+      supports_columns: false
   catalog_matches:
-    path: "/loci/{locus_id}/catalog-matches"
+    path: /loci/{locus_id}/catalog-matches
     method: GET
-    description: "Retrieve external-catalog matches associated with a Rubin/LSST locus."
+    description: Retrieve external-catalog matches associated with a Rubin/LSST locus.
     params:
-      locus_id: {required: true, type: string}
-    output_type: array_of_catalog_matches
-    provides:
-      - crossmatch@{producer}:antares.*
-
+      locus_id:
+        required: true
+        type: string
+        description: ANTARES locus identifier used in the /loci/{locus_id}/catalog-matches
+          path.
+    output:
+      type: array
+      item: catalog_match
+    operation_types:
+    - crossmatch_lookup
+    - catalog_match_lookup
+    server_filters:
+    - locus_id
+    post_filter: true
+    projection:
+      supports_columns: false
   thumbnails:
-    path: "/alerts/{alert_id}/thumbnails"
+    path: /alerts/{alert_id}/thumbnails
     method: GET
-    description: "List binary thumbnail products for one LSST alert; alert IDs have the lsst:<diaSourceId> form."
+    description: List binary thumbnail products for one LSST alert; alert IDs have
+      the lsst:<diaSourceId> form.
     params:
-      alert_id: {required: true, type: string}
-    output_type: array_of_data_products
-    provides:
-      - data_product@lsst:antares
-
+      alert_id:
+        required: true
+        type: string
+        description: ANTARES alert identifier used in the /alerts/{alert_id}/thumbnails
+          path.
+    output:
+      type: array
+      item: data_product
+    operation_types:
+    - data_product_lookup
+    - thumbnail_lookup
+    server_filters:
+    - alert_id
+    post_filter: true
+    projection:
+      supports_columns: false
   statistics:
-    path: "/loci/statistics"
+    path: /loci/statistics
     method: GET
-    description: "Retrieve aggregate ANTARES tag counts, including the combined broker store."
-    output_type: tag_statistics
-    provides:
-      - survey@lsst:antares.class_distribution
+    description: Retrieve aggregate ANTARES tag counts, including the combined broker
+      store.
+    output:
+      type: object
+      item: tag_statistics
+    operation_types:
+    - stream_statistics
+    - tag_statistics
+    - survey_summary
+    post_filter: true
+    projection:
+      supports_columns: false

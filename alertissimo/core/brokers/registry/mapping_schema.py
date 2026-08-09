@@ -13,8 +13,12 @@ class MappingSchemaError(ValueError):
     """Raised when a registry YAML file does not satisfy the minimal schema."""
 
 
-MAPPING_KEYS = {"broker", "origin", "payloads", "mappings", "description", "notes"}
-PAYLOAD_KEYS = {"path", "endpoint", "description"}
+MAPPING_KEYS = {
+    "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
+}
+PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
+TRANSFORM_KEYS = {"type", "map", "note"}
+TRANSFORM_TYPES = {"boolean_not", "value_map"}
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
 OLD_HELPER_KEYS = {
@@ -159,6 +163,16 @@ def validate_mapping_file(path: str | Path) -> None:
         _nonempty_string(endpoint, f"{path}: payload {key!r} endpoint")
         if "description" in definition and not isinstance(definition["description"], str):
             raise MappingSchemaError(f"{path}: payload {key!r} description must be a string")
+        if "row_filter" in definition:
+            row_filter = _mapping(
+                definition["row_filter"], f"{path}: payload {key!r} row_filter"
+            )
+            for filter_key, filter_value in row_filter.items():
+                _nonempty_string(filter_key, f"{path}: payload {key!r} row_filter key")
+                if not (filter_value is None or isinstance(filter_value, (str, int, float, bool))):
+                    raise MappingSchemaError(
+                        f"{path}: payload {key!r} row_filter values must be scalar"
+                    )
         endpoints_used.append((key, endpoint))
 
     mappings = _mapping(document["mappings"], f"{path}: mappings")
@@ -173,6 +187,39 @@ def validate_mapping_file(path: str | Path) -> None:
         for index, reference in enumerate(references):
             _validate_raw_reference(reference, payloads, f"{path}: {semantic_path}[{index}]")
             mapped_references.add(reference)
+
+    transforms = document.get("transforms", {})
+    transforms = _mapping(transforms, f"{path}: transforms")
+    for semantic_path, raw_transforms in transforms.items():
+        if semantic_path not in mappings:
+            raise MappingSchemaError(
+                f"{path}: transform semantic path {semantic_path!r} is not in mappings"
+            )
+        raw_transforms = _mapping(raw_transforms, f"{path}: transforms {semantic_path!r}")
+        for raw_reference, raw_specification in raw_transforms.items():
+            if raw_reference not in mappings[semantic_path]:
+                raise MappingSchemaError(
+                    f"{path}: transform raw reference {raw_reference!r} is not mapped under "
+                    f"{semantic_path!r}"
+                )
+            specification = _mapping(
+                raw_specification, f"{path}: transform {semantic_path!r} {raw_reference!r}"
+            )
+            _allowed_keys(
+                specification, TRANSFORM_KEYS,
+                f"{path}: transform {semantic_path!r} {raw_reference!r}",
+            )
+            transform_type = specification.get("type")
+            if transform_type not in TRANSFORM_TYPES:
+                raise MappingSchemaError(
+                    f"{path}: transform type must be one of {sorted(TRANSFORM_TYPES)}"
+                )
+            if transform_type == "value_map" and "map" not in specification:
+                raise MappingSchemaError(f"{path}: value_map transform requires 'map'")
+            if "map" in specification and not isinstance(specification["map"], dict):
+                raise MappingSchemaError(f"{path}: transform map must be a mapping")
+            if "note" in specification and not isinstance(specification["note"], str):
+                raise MappingSchemaError(f"{path}: transform note must be a string")
 
     _validate_endpoints(path.with_name("endpoints.yaml"), endpoints_used)
     unmapped_references = _validate_unmapped(
