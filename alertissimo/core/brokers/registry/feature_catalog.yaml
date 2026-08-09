@@ -1870,6 +1870,21 @@ levels:
     description: "Difference image 2D array"
     type: array
 
+<flags>:
+  level: L0
+  description: "Object-level boolean flags and status indicators"
+  [is_cataloged]:
+    description: "Whether the object has a catalog association or catalog-derived status according to the producer"
+    type: boolean
+  [is_first_detection]:
+    description: "Whether the represented object summary corresponds to the first known detection according to the producer"
+    type: boolean
+  [is_solar_system]:
+    description: "Whether the object is identified or flagged as a Solar System object"
+    type: boolean
+  [{field}]:
+    description: "Additional object-level flag"
+
 <summary>:
   level: L0
   description: "Object-level aggregate summaries"
@@ -1879,6 +1894,7 @@ levels:
   $ref: <photometry>(L0)
   $ref: <forced_photometry>(L0)
   $ref: <color>(L0)
+  $ref: <flags>(L0)
   [detection_count]:
     description: "Total number of detections for this object"
     type: integer
