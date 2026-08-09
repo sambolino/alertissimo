@@ -51,7 +51,7 @@ def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
 
 def test_payload_with_explicit_endpoint_passes(tmp_path, valid_mapping):
     valid_mapping["payloads"] = {
-        "query_object.detections": {"path": "detections", "endpoint": "query_object"}
+        "query_object.detections": {"path": "detections[]", "endpoint": "query_object"}
     }
     valid_mapping["mappings"] = {
         "detection@ztf:example.time.mjd": ["query_object.detections#mjd"]
@@ -101,6 +101,9 @@ def test_invalid_mapping_document_fails(tmp_path, valid_mapping, change, match):
     ("objects", {"path": ".", "source_fields": []}, "unsupported key"),
     ("objects", {}, "missing required key 'path'"),
     ("objects", {"path": ""}, "path must be a non-empty string"),
+    ("objects", {"path": "   "}, "path must be a non-empty string"),
+    ("objects", {"path": "$"}, "path must be"),
+    ("objects", {"path": "detections"}, "path must be"),
 ])
 def test_invalid_payload_fails(tmp_path, valid_mapping, key, definition, match):
     valid_mapping["payloads"] = {key: definition}

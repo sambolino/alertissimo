@@ -1,0 +1,363 @@
+broker: fink
+origin: lsst
+unmapped:
+- sources#r:isNegative:
+    reason: No stable canonical semantic path
+- conesearch#r:isNegative:
+    reason: No stable canonical semantic path
+- sso#r:isNegative:
+    reason: No stable canonical semantic path
+- sources#r:bboxSize:
+    reason: No stable canonical semantic path
+- conesearch#r:bboxSize:
+    reason: No stable canonical semantic path
+- sso#r:bboxSize:
+    reason: No stable canonical semantic path
+- sources#r:extendedness:
+    reason: No stable canonical semantic path
+- conesearch#r:extendedness:
+    reason: No stable canonical semantic path
+- sso#r:extendedness:
+    reason: No stable canonical semantic path
+- sources#r:centroid_flag:
+    reason: No stable canonical semantic path
+- conesearch#r:centroid_flag:
+    reason: No stable canonical semantic path
+- sso#r:centroid_flag:
+    reason: No stable canonical semantic path
+- sources#r:glint_trail:
+    reason: No stable canonical semantic path
+- conesearch#r:glint_trail:
+    reason: No stable canonical semantic path
+- sso#r:glint_trail:
+    reason: No stable canonical semantic path
+- sources#r:ixx:
+    reason: No stable canonical semantic path
+- conesearch#r:ixx:
+    reason: No stable canonical semantic path
+- sso#r:ixx:
+    reason: No stable canonical semantic path
+- sources#r:iyy:
+    reason: No stable canonical semantic path
+- conesearch#r:iyy:
+    reason: No stable canonical semantic path
+- sso#r:iyy:
+    reason: No stable canonical semantic path
+- sources#r:ixy:
+    reason: No stable canonical semantic path
+- conesearch#r:ixy:
+    reason: No stable canonical semantic path
+- sso#r:ixy:
+    reason: No stable canonical semantic path
+- sources#r:ixxPSF:
+    reason: No stable canonical semantic path
+- conesearch#r:ixxPSF:
+    reason: No stable canonical semantic path
+- sso#r:ixxPSF:
+    reason: No stable canonical semantic path
+- sources#r:iyyPSF:
+    reason: No stable canonical semantic path
+- conesearch#r:iyyPSF:
+    reason: No stable canonical semantic path
+- sso#r:iyyPSF:
+    reason: No stable canonical semantic path
+- sources#r:ixyPSF:
+    reason: No stable canonical semantic path
+- conesearch#r:ixyPSF:
+    reason: No stable canonical semantic path
+- sso#r:ixyPSF:
+    reason: No stable canonical semantic path
+- sources#r:shape_flag:
+    reason: No stable canonical semantic path
+- conesearch#r:shape_flag:
+    reason: No stable canonical semantic path
+- sso#r:shape_flag:
+    reason: No stable canonical semantic path
+- sources#r:shape_flag_no_pixels:
+    reason: No stable canonical semantic path
+- conesearch#r:shape_flag_no_pixels:
+    reason: No stable canonical semantic path
+- sso#r:shape_flag_no_pixels:
+    reason: No stable canonical semantic path
+- sources#r:shape_flag_not_contained:
+    reason: No stable canonical semantic path
+- conesearch#r:shape_flag_not_contained:
+    reason: No stable canonical semantic path
+- sso#r:shape_flag_not_contained:
+    reason: No stable canonical semantic path
+- sources#r:shape_flag_parent_source:
+    reason: No stable canonical semantic path
+- conesearch#r:shape_flag_parent_source:
+    reason: No stable canonical semantic path
+- sso#r:shape_flag_parent_source:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_bad:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_bad:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_bad:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_cr:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_cr:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_cr:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_crCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_crCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_crCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_edge:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_edge:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_edge:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_injected:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_injected:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_injected:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_injectedCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_injectedCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_injectedCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_injected_template:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_injected_template:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_injected_template:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_injected_templateCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_injected_templateCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_injected_templateCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_interpolated:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_interpolated:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_interpolated:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_interpolatedCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_interpolatedCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_interpolatedCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_nodata:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_nodata:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_nodata:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_nodataCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_nodataCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_nodataCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_offimage:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_offimage:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_offimage:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_saturated:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_saturated:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_saturated:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_saturatedCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_saturatedCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_saturatedCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_streak:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_streak:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_streak:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_streakCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_streakCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_streakCenter:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_suspect:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_suspect:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_suspect:
+    reason: No stable canonical semantic path
+- sources#r:pixelFlags_suspectCenter:
+    reason: No stable canonical semantic path
+- conesearch#r:pixelFlags_suspectCenter:
+    reason: No stable canonical semantic path
+- sso#r:pixelFlags_suspectCenter:
+    reason: No stable canonical semantic path
+- sources#r:isDipole:
+    reason: No stable canonical semantic path
+- conesearch#r:isDipole:
+    reason: No stable canonical semantic path
+- sso#r:isDipole:
+    reason: No stable canonical semantic path
+- sources#r:dipoleFitAttempted:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleFitAttempted:
+    reason: No stable canonical semantic path
+- sso#r:dipoleFitAttempted:
+    reason: No stable canonical semantic path
+- sources#r:dipoleAngle:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleAngle:
+    reason: No stable canonical semantic path
+- sso#r:dipoleAngle:
+    reason: No stable canonical semantic path
+- sources#r:dipoleChi2:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleChi2:
+    reason: No stable canonical semantic path
+- sso#r:dipoleChi2:
+    reason: No stable canonical semantic path
+- sources#r:dipoleFluxDiff:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleFluxDiff:
+    reason: No stable canonical semantic path
+- sso#r:dipoleFluxDiff:
+    reason: No stable canonical semantic path
+- sources#r:dipoleFluxDiffErr:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleFluxDiffErr:
+    reason: No stable canonical semantic path
+- sso#r:dipoleFluxDiffErr:
+    reason: No stable canonical semantic path
+- sources#r:dipoleLength:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleLength:
+    reason: No stable canonical semantic path
+- sso#r:dipoleLength:
+    reason: No stable canonical semantic path
+- sources#r:dipoleMeanFlux:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleMeanFlux:
+    reason: No stable canonical semantic path
+- sso#r:dipoleMeanFlux:
+    reason: No stable canonical semantic path
+- sources#r:dipoleMeanFluxErr:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleMeanFluxErr:
+    reason: No stable canonical semantic path
+- sso#r:dipoleMeanFluxErr:
+    reason: No stable canonical semantic path
+- sources#r:dipoleNdata:
+    reason: No stable canonical semantic path
+- conesearch#r:dipoleNdata:
+    reason: No stable canonical semantic path
+- sso#r:dipoleNdata:
+    reason: No stable canonical semantic path
+- sources#r:trailAlgorithm:
+    reason: No stable canonical semantic path
+- conesearch#r:trailAlgorithm:
+    reason: No stable canonical semantic path
+- sso#r:trailAlgorithm:
+    reason: No stable canonical semantic path
+- sources#r:trailAngle:
+    reason: No stable canonical semantic path
+- conesearch#r:trailAngle:
+    reason: No stable canonical semantic path
+- sso#r:trailAngle:
+    reason: No stable canonical semantic path
+- sources#r:trailAngleErr:
+    reason: No stable canonical semantic path
+- conesearch#r:trailAngleErr:
+    reason: No stable canonical semantic path
+- sso#r:trailAngleErr:
+    reason: No stable canonical semantic path
+- sources#r:trailChi2:
+    reason: No stable canonical semantic path
+- conesearch#r:trailChi2:
+    reason: No stable canonical semantic path
+- sso#r:trailChi2:
+    reason: No stable canonical semantic path
+- sources#r:trailDec:
+    reason: No stable canonical semantic path
+- conesearch#r:trailDec:
+    reason: No stable canonical semantic path
+- sso#r:trailDec:
+    reason: No stable canonical semantic path
+- sources#r:trailDecErr:
+    reason: No stable canonical semantic path
+- conesearch#r:trailDecErr:
+    reason: No stable canonical semantic path
+- sso#r:trailDecErr:
+    reason: No stable canonical semantic path
+- sources#r:trailFlux:
+    reason: No stable canonical semantic path
+- conesearch#r:trailFlux:
+    reason: No stable canonical semantic path
+- sso#r:trailFlux:
+    reason: No stable canonical semantic path
+- sources#r:trailFluxErr:
+    reason: No stable canonical semantic path
+- conesearch#r:trailFluxErr:
+    reason: No stable canonical semantic path
+- sso#r:trailFluxErr:
+    reason: No stable canonical semantic path
+- sources#r:trailLength:
+    reason: No stable canonical semantic path
+- conesearch#r:trailLength:
+    reason: No stable canonical semantic path
+- sso#r:trailLength:
+    reason: No stable canonical semantic path
+- sources#r:trailLengthErr:
+    reason: No stable canonical semantic path
+- conesearch#r:trailLengthErr:
+    reason: No stable canonical semantic path
+- sso#r:trailLengthErr:
+    reason: No stable canonical semantic path
+- sources#r:trailNdata:
+    reason: No stable canonical semantic path
+- conesearch#r:trailNdata:
+    reason: No stable canonical semantic path
+- sso#r:trailNdata:
+    reason: No stable canonical semantic path
+- sources#r:trailRa:
+    reason: No stable canonical semantic path
+- conesearch#r:trailRa:
+    reason: No stable canonical semantic path
+- sso#r:trailRa:
+    reason: No stable canonical semantic path
+- sources#r:trailRaErr:
+    reason: No stable canonical semantic path
+- conesearch#r:trailRaErr:
+    reason: No stable canonical semantic path
+- sso#r:trailRaErr:
+    reason: No stable canonical semantic path
+- sources#r:trail_flag:
+    reason: No stable canonical semantic path
+- conesearch#r:trail_flag:
+    reason: No stable canonical semantic path
+- sso#r:trail_flag:
+    reason: No stable canonical semantic path
+- sources#r:trail_flag_edge:
+    reason: No stable canonical semantic path
+- conesearch#r:trail_flag_edge:
+    reason: No stable canonical semantic path
+- sso#r:trail_flag_edge:
+    reason: No stable canonical semantic path

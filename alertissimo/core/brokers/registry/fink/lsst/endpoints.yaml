@@ -1,133 +1,121 @@
-# brokers/fink/lsst/endpoints.yaml
-# Endpoint contract + endpoint-level capabilities only.
-# Semantic field capabilities are generated from this file + mappings.yaml.
 broker: fink
 origin: lsst
 baseurl: https://api.lsst.fink-portal.org
-
 endpoints:
-
   sources:
-    path: "/api/v1/sources"
+    path: /api/v1/sources
     method: GET
-    description: "Retrieve diaSource/lightcurve data from the Fink/LSST database based on Rubin diaObjectId."
+    description: Retrieve diaSource/lightcurve data from the Fink/LSST database based on Rubin diaObjectId.
     transport:
       kind: rest
     params:
       diaObjectId:
         required: true
         type: string
-        binding: object_id
-        description: "Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds."
+        description: Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds.
       midpointMjdTai:
         required: false
         type: number
-        binding: time.mjd
-        description: "If set, transfer only the source observed at this midpointMjdTai; not supported for comma-separated diaObjectId lists."
+        description: If set, transfer only the source observed at this midpointMjdTai; not supported for comma-separated diaObjectId lists.
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: source_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [object_history, lightcurve]
-      record_scope: [detection, lightcurve]
-      required_bindings: [object_id]
-      optional_bindings: [time.mjd]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [diaObjectId, midpointMjdTai]
-      post_filter: true
-
+    operation_types:
+    - object_history
+    - lightcurve
+    server_filters:
+    - diaObjectId
+    - midpointMjdTai
+    post_filter: true
   objects:
-    path: "/api/v1/objects"
+    path: /api/v1/objects
     method: GET
-    description: "Retrieve diaObject/aggregated object data from the Fink/LSST database based on Rubin diaObjectId."
+    description: Retrieve diaObject/aggregated object data from the Fink/LSST database based on Rubin diaObjectId.
     transport:
       kind: rest
     params:
       diaObjectId:
         required: true
         type: string
-        binding: object_id
-        description: "Single Rubin diaObjectId, or a comma-separated list of diaObjectIds."
+        description: Single Rubin diaObjectId, or a comma-separated list of diaObjectIds.
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:firstDiaSourceMjdTai,r:nDiaSources,r:g_psfFluxMax'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:firstDiaSourceMjdTai,r:nDiaSources,r:g_psfFluxMax'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: object_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [object_lookup, object_summary]
-      record_scope: [summary]
-      required_bindings: [object_id]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [diaObjectId]
-      post_filter: true
-
+    operation_types:
+    - object_lookup
+    - object_summary
+    server_filters:
+    - diaObjectId
+    post_filter: true
   fp:
-    path: "/api/v1/fp"
+    path: /api/v1/fp
     method: GET
-    description: "Retrieve forced-photometry data from the Fink/LSST database based on Rubin diaObjectId."
+    description: Retrieve forced-photometry data from the Fink/LSST database based on Rubin diaObjectId.
     transport:
       kind: rest
     params:
       diaObjectId:
         required: true
         type: string
-        binding: object_id
-        description: "Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds."
+        description: Single Rubin diaObjectId as string, or a comma-separated list of diaObjectIds.
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: forced_photometry_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [forced_photometry, object_history]
-      record_scope: [forced_photometry, lightcurve]
-      required_bindings: [object_id]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [diaObjectId]
-      post_filter: true
-
+    operation_types:
+    - forced_photometry
+    - object_history
+    server_filters:
+    - diaObjectId
+    post_filter: true
   conesearch:
-    path: "/api/v1/conesearch"
+    path: /api/v1/conesearch
     method: GET
-    description: "Retrieve LSST alert/lightcurve data from the Fink database based on sky coordinates."
+    description: Retrieve LSST alert/lightcurve data from the Fink database based on sky coordinates.
     transport:
       kind: rest
     params:
@@ -135,420 +123,410 @@ endpoints:
         required: true
         type: number
         unit: deg
-        binding: cone.ra
-        description: "Right ascension in decimal degrees."
+        description: Right ascension in decimal degrees.
       dec:
         required: true
         type: number
         unit: deg
-        binding: cone.dec
-        description: "Declination in decimal degrees."
+        description: Declination in decimal degrees.
       radius:
         required: true
         type: number
         unit: arcsec
-        binding: cone.radius
-        description: "Cone-search radius in arcseconds; maximum 18,000 arcsec / 5 degrees."
+        description: Cone-search radius in arcseconds; maximum 18,000 arcsec / 5 degrees.
       n:
         required: false
         type: integer
         default: 1000
-        binding: limit
-        description: "Maximum number of alerts to return."
+        description: Maximum number of alerts to return.
       startdate:
         required: false
         type: string
-        binding: time.start
-        description: "Starting date in UTC, JD, or MJD. Restricts alerts by first-detection date when used with kind=within."
+        description: Starting date in UTC, JD, or MJD. Restricts alerts by first-detection date when used with kind=within.
       stopdate:
         required: false
         type: string
-        binding: time.stop
-        description: "Stopping date in UTC, JD, or MJD. Default is now."
+        description: Stopping date in UTC, JD, or MJD. Default is now.
       window:
         required: false
         type: number
         unit: day
-        binding: time.window
-        description: "Time window in days; may be used instead of stopdate."
+        description: Time window in days; may be used instead of stopdate.
       kind:
         required: false
         type: string
-        enum: ["within", "across"]
-        default: "within"
-        binding: time.mode
-        description: "Time-filtering mode: first detection within date range, or appeared across date range."
+        enum:
+        - within
+        - across
+        default: within
+        description: 'Time-filtering mode: first detection within date range, or appeared across date range.'
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:psfFlux,r:band,r:diaObjectId'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [spatial_search, alert_search]
-      record_scope: [detection, lightcurve]
-      required_bindings: [cone.ra, cone.dec, cone.radius]
-      optional_bindings: [limit, time.start, time.stop, time.window, time.mode]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [ra, dec, radius, startdate, stopdate, window, kind]
-      post_filter: true
-
+    operation_types:
+    - spatial_search
+    - alert_search
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - startdate
+    - stopdate
+    - window
+    - kind
+    post_filter: true
   cutouts:
-    path: "/api/v1/cutouts"
+    path: /api/v1/cutouts
     method: GET
-    description: "Retrieve Rubin/LSST alert cutout data from the Fink/Rubin datalake."
+    description: Retrieve Rubin/LSST alert cutout data from the Fink/Rubin datalake.
     transport:
       kind: rest
     params:
       diaSourceId:
         required: true
         type: string
-        binding: source_id
-        description: "diaSourceId / long integer source ID of the alert."
+        description: diaSourceId / long integer source ID of the alert.
       kind:
         required: true
         type: string
-        enum: ["Science", "Template", "Difference", "All"]
-        binding: data_product.role
-        description: "Science, Template, or Difference. For output-format=array, All returns all three cutouts."
+        enum:
+        - Science
+        - Template
+        - Difference
+        - All
+        description: Science, Template, or Difference. For output-format=array, All returns all three cutouts.
       output-format:
         required: false
         type: string
-        enum: ["PNG", "FITS", "array"]
-        default: "PNG"
-        binding: data_product.format
-        description: "Cutout output format."
+        enum:
+        - PNG
+        - FITS
+        - array
+        default: PNG
+        description: Cutout output format.
       stretch:
         required: false
         type: string
-        enum: ["sigmoid", "linear", "sqrt", "power", "log"]
-        default: "sigmoid"
-        description: "Stretch function applied to rendered image output."
+        enum:
+        - sigmoid
+        - linear
+        - sqrt
+        - power
+        - log
+        default: sigmoid
+        description: Stretch function applied to rendered image output.
       colormap:
         required: false
         type: string
-        default: "grayscale"
-        description: "Matplotlib colormap name for rendered image output."
+        default: grayscale
+        description: Matplotlib colormap name for rendered image output.
       pmin:
         required: false
         type: number
         default: 0.5
-        description: "Percentile used for minimum cut level; no effect for sigmoid stretch."
+        description: Percentile used for minimum cut level; no effect for sigmoid stretch.
       pmax:
         required: false
         type: number
         default: 99.5
-        description: "Percentile used for maximum cut level; no effect for sigmoid stretch."
+        description: Percentile used for maximum cut level; no effect for sigmoid stretch.
       convolution_kernel:
         required: false
         type: string
-        enum: ["gauss", "box"]
-        description: "Optional convolution kernel; if omitted, no kernel is applied."
+        enum:
+        - gauss
+        - box
+        description: Optional convolution kernel; if omitted, no kernel is applied.
     output:
       type: data_product
       item: cutout
-    capabilities:
-      returns_science_data: true
-      operation_types: [data_product_lookup, cutout]
-      record_scope: [data_product]
-      required_bindings: [source_id, data_product.role]
-      optional_bindings: [data_product.format]
-      projection:
-        supports_columns: false
-      server_filters: [diaSourceId, kind]
-      post_filter: false
-
+    operation_types:
+    - data_product_lookup
+    - cutout
+    server_filters:
+    - diaSourceId
+    - kind
+    post_filter: false
   schema:
-    path: "/api/v1/schema"
+    path: /api/v1/schema
     method: GET
-    description: "Retrieve the data schema for a given Fink/Rubin endpoint. This describes fields; it is not itself a science data source."
+    description: Retrieve the data schema for a given Fink/Rubin endpoint. This describes fields; it is not itself a science data source.
     transport:
       kind: rest
     params:
       endpoint:
         required: true
         type: string
-        binding: endpoint_name
-        description: "Endpoint name, e.g. '/api/v1/sources'."
+        description: Endpoint name, e.g. '/api/v1/sources'.
       major_version:
         required: false
         type: integer
-        description: "LSST major version. Default is latest."
+        description: LSST major version. Default is latest.
       minor_version:
         required: false
         type: integer
-        description: "LSST minor version. Default is latest."
+        description: LSST minor version. Default is latest.
     output:
       type: metadata
       item: schema
-    capabilities:
-      returns_science_data: false
-      operation_types: [schema_lookup]
-      record_scope: [metadata]
-      required_bindings: [endpoint_name]
-      projection:
-        supports_columns: false
-      server_filters: [endpoint]
-      post_filter: false
-
+    operation_types:
+    - schema_lookup
+    server_filters:
+    - endpoint
+    post_filter: false
   sso:
-    path: "/api/v1/sso"
+    path: /api/v1/sso
     method: GET
-    description: "Retrieve Solar System object data from Fink/Rubin based on IAU number or designation."
+    description: Retrieve Solar System object data from Fink/Rubin based on IAU number or designation.
     transport:
       kind: rest
     params:
       n_or_d:
         required: true
         type: string
-        binding: solar_system.name_or_designation
-        description: "IAU number, comet number, or designation. Packed form is allowed; comma-separated lists are allowed."
+        description: IAU number, comet number, or designation. Packed form is allowed; comma-separated lists are allowed.
       withEphem:
         required: false
         type: boolean
         default: false
-        binding: ephemeris.include
-        description: "Attach Miriade ephemerides as extra columns."
+        description: Attach Miriade ephemerides as extra columns.
       withResiduals:
         required: false
         type: boolean
         default: false
-        binding: solar_system.residuals.include
-        description: "Return obs-model residuals using the sHG1G2 phase-curve model; only for single-object queries."
+        description: Return obs-model residuals using the sHG1G2 phase-curve model; only for single-object queries.
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:scienceFlux,r:band,r:ra,r:dec'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:midpointMjdTai,r:scienceFlux,r:band,r:ra,r:dec'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: solar_system_alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [solar_system_lookup, alert_search]
-      record_scope: [detection, solar_system]
-      required_bindings: [solar_system.name_or_designation]
-      optional_bindings: [ephemeris.include, solar_system.residuals.include]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [n_or_d, withEphem, withResiduals]
-      post_filter: true
-
+    operation_types:
+    - solar_system_lookup
+    - alert_search
+    server_filters:
+    - n_or_d
+    - withEphem
+    - withResiduals
+    post_filter: true
   resolver:
-    path: "/api/v1/resolver"
+    path: /api/v1/resolver
     method: GET
-    description: "Resolve astronomical names to LSST identifiers, or LSST identifiers back to external names."
+    description: Resolve astronomical names to LSST identifiers, or LSST identifiers back to external names.
     transport:
       kind: rest
     params:
       resolver:
         required: true
         type: string
-        enum: ["simbad", "ssodnet", "tns"]
-        binding: resolver.service
-        description: "Resolver service."
+        enum:
+        - simbad
+        - ssodnet
+        - tns
+        description: Resolver service.
       name_or_id:
         required: true
         type: string
-        binding: identity.name_or_id
-        description: "Astronomical object name, or ID if reverse is true."
+        description: Astronomical object name, or ID if reverse is true.
       reverse:
         required: false
         type: boolean
         default: false
-        binding: resolver.reverse
-        description: "If true, resolve an LSST diaObjectId instead of an external name."
+        description: If true, resolve an LSST diaObjectId instead of an external name.
       nmax:
         required: false
         type: integer
         default: 10
-        binding: limit
-        description: "Maximum number of matches to return."
+        description: Maximum number of matches to return.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: resolver_match
-    capabilities:
-      returns_science_data: false
-      operation_types: [name_resolution]
-      record_scope: [resolver, crossmatch]
-      required_bindings: [resolver.service, identity.name_or_id]
-      optional_bindings: [resolver.reverse, limit]
-      projection:
-        supports_columns: false
-      server_filters: [resolver, name_or_id, reverse, nmax]
-      post_filter: false
-
+    operation_types:
+    - name_resolution
+    server_filters:
+    - resolver
+    - name_or_id
+    - reverse
+    - nmax
+    post_filter: false
   skymap:
-    path: "/api/v1/skymap"
+    path: /api/v1/skymap
     method: GET
-    description: "Return Fink/LSST alerts inside a gravitational-wave skymap and time window."
+    description: Return Fink/LSST alerts inside a gravitational-wave skymap and time window.
     transport:
       kind: rest
     params:
       file:
         required: false
         type: file
-        binding: localization.skymap_file
         exclusive_with: event_name
-        description: "LIGO/Virgo probability skymap as gzipped FITS; not compatible with event_name."
+        description: LIGO/Virgo probability skymap as gzipped FITS; not compatible with event_name.
       event_name:
         required: false
         type: string
-        binding: external_event.name
         exclusive_with: file
-        description: "GraceDB event name; not compatible with file."
+        description: GraceDB event name; not compatible with file.
       credible_level:
         required: true
         type: number
-        binding: localization.credible_level
-        description: "GW credible-region threshold."
+        description: GW credible-region threshold.
       n_day_before:
         required: false
         type: number
         default: 1
         unit: day
-        binding: time.before
-        description: "Days to search before the event; max 7."
+        description: Days to search before the event; max 7.
       n_day_after:
         required: false
         type: number
         default: 6
         unit: day
-        binding: time.after
-        description: "Days to search after the event; max 14."
+        description: Days to search after the event; max 14.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [skymap_search, multimessenger_search, alert_search]
-      record_scope: [detection]
-      required_bindings: [localization.credible_level]
-      one_of_bindings: [localization.skymap_file, external_event.name]
-      optional_bindings: [time.before, time.after]
-      projection:
-        supports_columns: false
-      server_filters: [file, event_name, credible_level, n_day_before, n_day_after]
-      post_filter: true
-
+    operation_types:
+    - skymap_search
+    - multimessenger_search
+    - alert_search
+    server_filters:
+    - file
+    - event_name
+    - credible_level
+    - n_day_before
+    - n_day_after
+    post_filter: true
   statistics:
-    path: "/api/v1/statistics"
+    path: /api/v1/statistics
     method: GET
-    description: "Get statistics about Fink and the Rubin alert stream."
+    description: Get statistics about Fink and the Rubin alert stream.
     transport:
       kind: rest
     params:
       date:
         required: true
         type: string
-        binding: time.date
-        description: "Observing date: YYYYMMDD, YYYYMM, YYYY, or empty string for everything."
+        description: 'Observing date: YYYYMMDD, YYYYMM, YYYY, or empty string for everything.'
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'f:alerts,f:night'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'f:alerts,f:night'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: statistics_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [stream_statistics, survey_summary]
-      record_scope: [survey]
-      required_bindings: [time.date]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [date]
-      post_filter: true
-
+    operation_types:
+    - stream_statistics
+    - survey_summary
+    server_filters:
+    - date
+    post_filter: true
   tags:
-    path: "/api/v1/tags"
+    path: /api/v1/tags
     method: GET
-    description: "Retrieve LSST alert data from the Fink database by Fink tag."
+    description: Retrieve LSST alert data from the Fink database by Fink tag.
     transport:
       kind: rest
     params:
       tag:
         required: true
         type: string
-        binding: tag
-        description: "Fink tag based on user-defined filters. The endpoint documentation points to /api/v1/tags for available tags."
+        description: Fink tag based on user-defined filters. The endpoint documentation points to /api/v1/tags for available tags.
       n:
         required: false
         type: integer
         default: 100
-        binding: limit
-        description: "Last N alerts to transfer between stopdate and startdate."
+        description: Last N alerts to transfer between stopdate and startdate.
       startdate:
         required: false
         type: string
-        default: "2026-01-01 00:00:00"
-        binding: time.start
-        description: "Starting date in UTC, JD, or MJD."
+        default: '2026-01-01 00:00:00'
+        description: Starting date in UTC, JD, or MJD.
       stopdate:
         required: false
         type: string
-        binding: time.stop
-        description: "Stopping date in UTC, JD, or MJD. Default is now."
+        description: Stopping date in UTC, JD, or MJD. Default is now.
       columns:
         required: false
         type: string
         role: projection
-        description: "Comma-separated data columns to transfer, e.g. 'r:psfFlux,r:midpointMjdTai,r:diaObjectId'. If not specified, transfer all columns."
+        description: Comma-separated data columns to transfer, e.g. 'r:psfFlux,r:midpointMjdTai,r:diaObjectId'. If not specified, transfer all columns.
       output-format:
         required: false
         type: string
-        enum: ["json", "csv", "parquet", "votable"]
-        default: "json"
-        description: "Output format."
+        enum:
+        - json
+        - csv
+        - parquet
+        - votable
+        default: json
+        description: Output format.
     output:
       type: array
       item: alert_row
-    capabilities:
-      returns_science_data: true
-      operation_types: [tag_search, alert_search]
-      record_scope: [detection, lightcurve]
-      required_bindings: [tag]
-      optional_bindings: [limit, time.start, time.stop]
-      projection:
-        supports_columns: true
-        param: columns
-      server_filters: [tag, n, startdate, stopdate]
-      post_filter: true
+    operation_types:
+    - tag_search
+    - alert_search
+    server_filters:
+    - tag
+    - n
+    - startdate
+    - stopdate
+    post_filter: true

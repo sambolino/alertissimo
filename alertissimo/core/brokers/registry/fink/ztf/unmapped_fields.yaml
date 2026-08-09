@@ -1,0 +1,113 @@
+broker: fink
+origin: ztf
+unmapped:
+- objects#i:fwhm:
+    reason: No stable canonical semantic path
+- anomaly#i:fwhm:
+    reason: No stable canonical semantic path
+- objects#i:elong:
+    reason: No stable canonical semantic path
+- anomaly#i:elong:
+    reason: No stable canonical semantic path
+- objects#i:aimage:
+    reason: No stable canonical semantic path
+- anomaly#i:aimage:
+    reason: No stable canonical semantic path
+- objects#i:bimage:
+    reason: No stable canonical semantic path
+- anomaly#i:bimage:
+    reason: No stable canonical semantic path
+- objects#i:aimagerat:
+    reason: No stable canonical semantic path
+- anomaly#i:aimagerat:
+    reason: No stable canonical semantic path
+- objects#i:bimagerat:
+    reason: No stable canonical semantic path
+- anomaly#i:bimagerat:
+    reason: No stable canonical semantic path
+- objects#i:chinr:
+    reason: No stable canonical semantic path
+- anomaly#i:chinr:
+    reason: No stable canonical semantic path
+- objects#i:sharpnr:
+    reason: No stable canonical semantic path
+- anomaly#i:sharpnr:
+    reason: No stable canonical semantic path
+- objects#i:isdiffpos:
+    reason: No stable canonical semantic path
+- sso#i:isdiffpos:
+    reason: No stable canonical semantic path
+- latests#i:isdiffpos:
+    reason: No stable canonical semantic path
+- anomaly#i:isdiffpos:
+    reason: No stable canonical semantic path
+- objects#i:nbad:
+    reason: No stable canonical semantic path
+- anomaly#i:nbad:
+    reason: No stable canonical semantic path
+- objects#i:nneg:
+    reason: No stable canonical semantic path
+- anomaly#i:nneg:
+    reason: No stable canonical semantic path
+- objects#i:sumrat:
+    reason: No stable canonical semantic path
+- anomaly#i:sumrat:
+    reason: No stable canonical semantic path
+- objects#i:scorr:
+    reason: No stable canonical semantic path
+- anomaly#i:scorr:
+    reason: No stable canonical semantic path
+- objects#i:ssnrms:
+    reason: No stable canonical semantic path
+- anomaly#i:ssnrms:
+    reason: No stable canonical semantic path
+- objects#i:dsnrms:
+    reason: No stable canonical semantic path
+- anomaly#i:dsnrms:
+    reason: No stable canonical semantic path
+- objects#i:dsdiff:
+    reason: No stable canonical semantic path
+- anomaly#i:dsdiff:
+    reason: No stable canonical semantic path
+- objects#i:seeratio:
+    reason: No stable canonical semantic path
+- anomaly#i:seeratio:
+    reason: No stable canonical semantic path
+- objects#i:sky:
+    reason: No stable canonical semantic path
+- anomaly#i:sky:
+    reason: No stable canonical semantic path
+- objects#i:distnr:
+    reason: No stable canonical semantic path
+- sso#i:distnr:
+    reason: No stable canonical semantic path
+- latests#i:distnr:
+    reason: No stable canonical semantic path
+- anomaly#i:distnr:
+    reason: No stable canonical semantic path
+- conesearch#i:distnr:
+    reason: No stable canonical semantic path
+- objects#i:magnr:
+    reason: No stable canonical semantic path
+- sso#i:magnr:
+    reason: No stable canonical semantic path
+- latests#i:magnr:
+    reason: No stable canonical semantic path
+- anomaly#i:magnr:
+    reason: No stable canonical semantic path
+- objects#i:sigmagnr:
+    reason: No stable canonical semantic path
+- sso#i:sigmagnr:
+    reason: No stable canonical semantic path
+- latests#i:sigmagnr:
+    reason: No stable canonical semantic path
+- anomaly#i:sigmagnr:
+    reason: No stable canonical semantic path
+- objects#i:ranr:
+    reason: No stable canonical semantic path
+- anomaly#i:ranr:
+    reason: No stable canonical semantic path
+- objects#i:decnr:
+    reason: No stable canonical semantic path
+- anomaly#i:decnr:
+    reason: No stable canonical semantic path

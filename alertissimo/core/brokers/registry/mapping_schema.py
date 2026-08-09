@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ OLD_HELPER_KEYS = {
     "sources", "attribute_inventory", "mapping_policy", "availability",
     "source_fields", "field_status", "record_type", "object_summary", "endpoints",
 }
+PAYLOAD_PATH_RE = re.compile(r"^(?:\.|\[\]|[^\s$]+\[\])$")
 
 
 def _load_yaml(path: Path) -> Any:
@@ -144,7 +146,13 @@ def validate_mapping_file(path: str | Path) -> None:
         _allowed_keys(definition, PAYLOAD_KEYS, f"{path}: payload {key!r}")
         if "path" not in definition:
             raise MappingSchemaError(f"{path}: payload {key!r} is missing required key 'path'")
-        _nonempty_string(definition["path"], f"{path}: payload {key!r} path")
+        payload_path = _nonempty_string(
+            definition["path"], f"{path}: payload {key!r} path"
+        )
+        if not PAYLOAD_PATH_RE.fullmatch(payload_path):
+            raise MappingSchemaError(
+                f"{path}: payload {key!r} path must be '.', '[]', or a nested collection path ending in '[]'"
+            )
         endpoint = definition.get("endpoint", key)
         _nonempty_string(endpoint, f"{path}: payload {key!r} endpoint")
         if "description" in definition and not isinstance(definition["description"], str):
