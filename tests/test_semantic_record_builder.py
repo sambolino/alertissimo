@@ -162,6 +162,56 @@ def test_dynamic_filter_binds_sibling_field_paths(tmp_path):
     assert "photometry.{filter}.psf.mag" not in fields
 
 
+def test_unresolved_semantic_type_producer_falls_back_to_unknown(tmp_path):
+    portfolio = _build(
+        tmp_path,
+        {"sherlock": {"catalogue_object_id": "WISEA J081336.12+221200.3"}},
+        {
+            "broker": "lasair",
+            "origin": "ztf",
+            "payloads": {"object": {"endpoint": "object", "path": "."}},
+            "mappings": {
+                "crossmatch@{producer}:lasair.identity.object_id": [
+                    "object#sherlock.catalogue_object_id"
+                ],
+            },
+        },
+    )
+
+    semantic_types = [record.semantic_type for record in portfolio.records]
+    assert semantic_types == ["crossmatch@unknown:lasair"]
+    assert "crossmatch@{producer}:lasair" not in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert dict(portfolio.records[0].fields) == {
+        "identity.object_id": "WISEA J081336.12+221200.3"
+    }
+
+
+def test_semantic_type_producer_uses_dynamic_field_binding(tmp_path):
+    portfolio = _build(
+        tmp_path,
+        {"catalogue": "gaia", "source_id": "123"},
+        {
+            "broker": "lasair",
+            "origin": "ztf",
+            "payloads": {"object": {"endpoint": "object", "path": "."}},
+            "mappings": {
+                "crossmatch@{producer}:lasair.identity.{producer}": [
+                    "object#catalogue"
+                ],
+                "crossmatch@{producer}:lasair.identity.object_id": [
+                    "object#source_id"
+                ],
+            },
+        },
+    )
+
+    assert [record.semantic_type for record in portfolio.records] == [
+        "crossmatch@gaia:lasair"
+    ]
+    assert dict(portfolio.records[0].fields) == {"identity.object_id": "123"}
+
+
 def test_dynamic_filter_binding_is_scoped_to_each_payload_item(tmp_path):
     portfolio = _build(tmp_path, {"candidates": [
         {"fid": 1, "magpsf": 18.2},
