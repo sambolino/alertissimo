@@ -1,4 +1,4 @@
-"""Identifiers owned by the broker execution boundary."""
+"""Identifiers owned by the provider execution boundary."""
 
 from uuid import uuid4
 

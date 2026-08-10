@@ -1,4 +1,4 @@
-"""Public broker endpoint execution API."""
+"""Public provider endpoint execution API."""
 
 from .executor import EndpointExecutor, RegistryEndpointExecutor
 from .models import EndpointSpec, ExecutionResult, TransportResult

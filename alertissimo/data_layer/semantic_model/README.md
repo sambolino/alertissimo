@@ -1,5 +1,13 @@
 # Alertissimo semantic model
 
-`ontology.yaml` is the canonical Alertissimo semantic model / ontology. It defines the semantic vocabulary and constraints for records, edges, field namespaces, provenance vocabulary, and connection-plane grammar.
+`ontology.yaml` is the canonical Alertissimo semantic model / ontology.
 
-It is YAML syntax interpreted through an Alertissimo ontology schema; callers should not treat arbitrary YAML structure as meaningful without validation.
+It uses an ordered YAML-like ontology notation. It is not ordinary generic YAML
+for direct semantic consumption.
+
+Repeated directives, order, and scope may be meaningful. A plain
+`yaml.safe_load` pass may be useful only as a low-level syntax step where safe,
+but it is not sufficient to interpret the ontology.
+
+A dedicated ontology loader/validator will be responsible for interpreting
+this file.
