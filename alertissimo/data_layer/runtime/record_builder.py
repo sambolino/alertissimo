@@ -17,6 +17,10 @@ from alertissimo.data_layer.representations import (
     Portfolio,
     SemanticRecord,
 )
+from alertissimo.data_layer.semantic_model.index import SemanticModelIndex
+from alertissimo.data_layer.semantic_model.validation import (
+    validate_portfolio_against_semantic_model,
+)
 
 from .capability_graph import split_semantic_path
 from .mapping_schema import validate_mapping_file
@@ -50,6 +54,8 @@ def build_portfolio_from_execution(
     mappings_path: Path,
     internal_portfolio_id: InternalPortfolioId | None = None,
     record_id_factory: Callable[[], InternalRecordId] | None = None,
+    validate_semantic_model: bool = False,
+    semantic_model: SemanticModelIndex | None = None,
 ) -> Portfolio:
     """Interpret one provider mapping and transform an execution's raw payload."""
     mappings_path = Path(mappings_path)
@@ -63,8 +69,6 @@ def build_portfolio_from_execution(
     records: list[SemanticRecord] = []
     make_record_id = record_id_factory or new_internal_record_id
 
-    # TODO: validate semantic_type and relative field paths against
-    # data_layer/semantic_model/ontology.yaml once the ordered ontology loader exists.
     for payload_key, payload_definition in payload_definitions.items():
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
@@ -107,9 +111,12 @@ def build_portfolio_from_execution(
                     )
                 )
 
-    return Portfolio(
+    portfolio = Portfolio(
         internal_portfolio_id=internal_portfolio_id or new_internal_portfolio_id(),
         records=tuple(records),
         edges=(),
         executions=(execution.execution_provenance,),
     )
+    if validate_semantic_model:
+        validate_portfolio_against_semantic_model(portfolio, semantic_model)
+    return portfolio
