@@ -71,6 +71,10 @@ mappings:
     - object#sherlock.classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
+  # Sherlock exposes the crossmatch/enrichment fields here, but the actual
+  # external catalog producer is not resolved from this minimal payload.
+  # Keep the producer placeholder in the mapping template; concrete portfolio
+  # records fall back to unknown only if the placeholder remains unresolved.
   crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
   crossmatch@{producer}:lasair.position.ra:

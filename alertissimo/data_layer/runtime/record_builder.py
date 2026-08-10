@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Callable
@@ -32,6 +33,13 @@ class PortfolioBuildError(ValueError):
     """Raised when a portfolio cannot be built from registry resources."""
 
 
+SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
+    "producer": "unknown",
+}
+
+_PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
+
+
 def _placeholder_name(segment: str) -> str | None:
     """Return the name of a placeholder that occupies an entire path segment."""
     if len(segment) >= 3 and segment.startswith("{") and segment.endswith("}"):
@@ -41,8 +49,10 @@ def _placeholder_name(segment: str) -> str | None:
     return None
 
 
-def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
-    """Bind final-segment placeholders and rewrite sibling relative paths."""
+def _collect_dynamic_field_bindings(
+    fields: Mapping[str, Any],
+) -> tuple[dict[str, Any], set[str]]:
+    """Collect values supplied by final-segment placeholder fields."""
     bindings: dict[str, Any] = {}
     binder_paths: set[str] = set()
     for path, value in fields.items():
@@ -57,6 +67,12 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
             )
         bindings[placeholder] = value
         binder_paths.add(path)
+    return bindings, binder_paths
+
+
+def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
+    """Bind final-segment placeholders and rewrite sibling relative paths."""
+    bindings, binder_paths = _collect_dynamic_field_bindings(fields)
 
     resolved: dict[str, Any] = {}
     for path, value in fields.items():
@@ -71,6 +87,22 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
         ]
         resolved[".".join(rewritten)] = value
     return resolved
+
+
+def _resolve_dynamic_semantic_type(
+    semantic_type: str,
+    fields: Mapping[str, Any],
+) -> str:
+    """Resolve semantic-type placeholders, applying only explicit defaults."""
+    bindings, _ = _collect_dynamic_field_bindings(fields)
+
+    def replacement(match: re.Match[str]) -> str:
+        placeholder = match.group(1)
+        if placeholder in bindings:
+            return str(bindings[placeholder])
+        return SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS.get(placeholder, match.group(0))
+
+    return _PLACEHOLDER_PATTERN.sub(replacement, semantic_type)
 
 
 def new_internal_portfolio_id() -> InternalPortfolioId:
@@ -160,6 +192,7 @@ def build_portfolio_from_execution(
             for semantic_type, fields in fields_by_type.items():
                 if not fields:
                     continue
+                semantic_type = _resolve_dynamic_semantic_type(semantic_type, fields)
                 fields = _resolve_dynamic_field_paths(fields)
                 if not fields:
                     continue
