@@ -73,15 +73,15 @@ mappings:
     - object#TNS.type
   # Sherlock exposes the crossmatch/enrichment fields here, but the actual
   # external catalog producer is not resolved from this minimal payload.
-  # Keep the unresolved producer explicit rather than leaking an internal method
-  # name into the semantic producer qualifier.
-  crossmatch@unknown:lasair.identity.object_id:
+  # Keep the producer placeholder in the mapping template; portfolio records
+  # fall back to unknown only when the placeholder remains unresolved at build time.
+  crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
-  crossmatch@unknown:lasair.position.ra:
+  crossmatch@{producer}:lasair.position.ra:
     - object#sherlock.raDeg
-  crossmatch@unknown:lasair.position.dec:
+  crossmatch@{producer}:lasair.position.dec:
     - object#sherlock.decDeg
-  crossmatch@unknown:lasair.separation.total:
+  crossmatch@{producer}:lasair.separation.total:
     - object#sherlock.separationArcsec
   crossmatch@tns:lasair.identity.object_id:
     - object#TNS.name
