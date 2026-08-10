@@ -66,6 +66,7 @@ def test_payload_script_reads_file_and_reports_summary(tmp_path):
     assert len(portfolio["edges"]) == 0
     assert len([record for record in portfolio["records"] if record["semantic_type"] == "detection@ztf:lasair"]) == 3
     assert "payload keys:" in result.stderr
+    assert "endpoint: object" in result.stderr
     assert "records built:" in result.stderr
     assert "edges built: 0" in result.stderr
 
