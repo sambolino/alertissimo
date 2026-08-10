@@ -8,7 +8,7 @@ def test_browser_renders_content_and_escapes_values():
         "records": [{"internal_record_id": "record:1", "semantic_type": "summary@ztf:lasair", "internal_source": {"payload_key": "candidates", "payload_index": 0}, "fields": {"identity.object_id": "<script>alert(1)</script>", "photometry.g.psf.mag": 18.2}}],
         "edges": [],
     })
-    for expected in ("portfolio:test", "summary@ztf:lasair", "identity.object_id", "lasair / ztf / object", "No semantic edges yet", "candidates[0]"):
+    for expected in ("portfolio:test", "summary@ztf:lasair", "identity.object_id", "lasair / ztf / object", "No explicit edges", "candidates[0]"):
         assert expected in page
     assert "<script>alert(1)</script>" not in page
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page
@@ -19,6 +19,40 @@ def test_browser_renders_content_and_escapes_values():
     ):
         assert expected in page
     assert '<details class="tree-node"' in page
+
+
+def test_browser_groups_records_and_explains_empty_edge_plane():
+    def record(identifier, semantic_type, source=None):
+        return {
+            "internal_record_id": identifier,
+            "semantic_type": semantic_type,
+            "internal_source": {"payload_key": source} if source else None,
+            "fields": {"identity.object_id": "ZTF1"},
+        }
+
+    page = render_portfolio_html({
+        "internal_portfolio_id": "portfolio:grouped",
+        "executions": [],
+        "records": [
+            record("record:s", "summary@ztf:lasair"),
+            record("record:d1", "detection@ztf:lasair", "candidates[][0]"),
+            record("record:d2", "detection@ztf:lasair", "candidates[][1]"),
+            record("record:c", "classification@lasair"),
+            record("record:x1", "crossmatch@sherlock:lasair"),
+            record("record:x2", "crossmatch@tns:lasair"),
+        ],
+        "edges": [],
+    })
+
+    for expected in (
+        "summary (1)", "detection (2)", "classification (1)", "crossmatch (2)",
+        "No semantic edges", "Containment is represented by the portfolio itself",
+        "crossmatch@sherlock:lasair",
+    ):
+        assert expected in page
+    assert '<details class="record-group"' in page
+    assert '<details class="rail-record-group"' in page
+    assert "crossmatch@{producer}:lasair" not in page
 
 
 def test_field_tree_nests_dot_path_segments():

@@ -71,13 +71,13 @@ mappings:
     - object#sherlock.classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
-  crossmatch@{producer}:lasair.identity.object_id:
+  crossmatch@sherlock:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
-  crossmatch@{producer}:lasair.position.ra:
+  crossmatch@sherlock:lasair.position.ra:
     - object#sherlock.raDeg
-  crossmatch@{producer}:lasair.position.dec:
+  crossmatch@sherlock:lasair.position.dec:
     - object#sherlock.decDeg
-  crossmatch@{producer}:lasair.separation.total:
+  crossmatch@sherlock:lasair.separation.total:
     - object#sherlock.separationArcsec
   crossmatch@tns:lasair.identity.object_id:
     - object#TNS.name
