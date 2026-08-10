@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import yaml
 
+from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalPortfolioId,
@@ -25,6 +26,10 @@ from alertissimo.data_layer.semantic_model.validation import (
 from .capability_graph import split_semantic_path
 from .mapping_schema import validate_mapping_file
 from .payload_paths import RawFieldMissing, extract_raw_field, resolve_payload_items
+
+
+class PortfolioBuildError(ValueError):
+    """Raised when a portfolio cannot be built from registry resources."""
 
 
 def new_internal_portfolio_id() -> InternalPortfolioId:
@@ -51,17 +56,34 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
 def build_portfolio_from_execution(
     execution: ExecutionResult,
     *,
-    mappings_path: Path,
+    mappings_path: Path | None = None,
+    providers_root: Path | None = None,
     internal_portfolio_id: InternalPortfolioId | None = None,
     record_id_factory: Callable[[], InternalRecordId] | None = None,
     validate_semantic_model: bool = False,
     semantic_model: SemanticModelIndex | None = None,
 ) -> Portfolio:
     """Interpret one provider mapping and transform an execution's raw payload."""
-    mappings_path = Path(mappings_path)
-    validate_mapping_file(mappings_path)
-    with mappings_path.open(encoding="utf-8") as stream:
-        document = yaml.safe_load(stream)
+    if mappings_path is None:
+        provenance = execution.execution_provenance
+        root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
+        mappings_path = root / provenance.broker / provenance.origin / "mappings.yaml"
+        if not mappings_path.is_file():
+            raise PortfolioBuildError(
+                f"cannot resolve mappings.yaml for {provenance.broker}/"
+                f"{provenance.origin} under {root}"
+            )
+    else:
+        mappings_path = Path(mappings_path)
+
+    try:
+        validate_mapping_file(mappings_path)
+        with mappings_path.open(encoding="utf-8") as stream:
+            document = yaml.safe_load(stream)
+    except (OSError, yaml.YAMLError) as error:
+        raise PortfolioBuildError(
+            f"cannot load portfolio mappings from {mappings_path}: {error}"
+        ) from error
 
     payload_definitions = document["payloads"]
     mappings = document["mappings"]
