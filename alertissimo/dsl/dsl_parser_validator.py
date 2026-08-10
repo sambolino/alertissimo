@@ -6,7 +6,7 @@ from typing import List, Optional
 import logging
 
 from alertissimo.core.schema import ExecutableModel, IRResult, ExecutionContext
-from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
+from alertissimo.data_layer.runtime.load import BROKER_REGISTRY
 from alertissimo.dsl.transformer import DSLTransformer
 from alertissimo.dsl.definitions import DSLParseError, get_all_verbs
 from alertissimo.dsl.grammar_tools import generate_grammar, validate_grammar

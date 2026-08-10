@@ -1,27 +1,5 @@
-"""Internal portfolio models for concrete semantic records and connections."""
+"""Compatibility wrapper for the old core portfolio import path.
 
-from .models import (
-    InternalEdgeId,
-    InternalExecutionId,
-    InternalExecutionProvenance,
-    InternalPortfolioId,
-    InternalRecordId,
-    InternalRecordSource,
-    Portfolio,
-    PortfolioModelError,
-    SemanticEdge,
-    SemanticRecord,
-)
-
-__all__ = (
-    "InternalEdgeId",
-    "InternalExecutionId",
-    "InternalExecutionProvenance",
-    "InternalPortfolioId",
-    "InternalRecordId",
-    "InternalRecordSource",
-    "Portfolio",
-    "PortfolioModelError",
-    "SemanticEdge",
-    "SemanticRecord",
-)
+Use :mod:`alertissimo.data_layer.representations` instead.
+"""
+from alertissimo.data_layer.representations import *  # noqa: F401,F403

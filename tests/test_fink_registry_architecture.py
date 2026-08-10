@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).parents[1] / "alertissimo/core/brokers/registry/fink"
+ROOT = Path(__file__).parents[1] / "alertissimo/data_layer/providers/fink"
 ORIGINS = ("lsst", "ztf")
 
 

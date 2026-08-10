@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 
-ROOT = Path(__file__).parents[1] / "alertissimo/core/brokers/registry/alerce"
+ROOT = Path(__file__).parents[1] / "alertissimo/data_layer/providers/alerce"
 
 
 @pytest.mark.parametrize("origin", ("lsst", "ztf"))

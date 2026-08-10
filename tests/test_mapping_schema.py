@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from alertissimo.core.brokers.registry.mapping_schema import (
+from alertissimo.data_layer.runtime.mapping_schema import (
     MappingSchemaError,
     main,
     validate_mapping_file,
@@ -163,7 +163,7 @@ def test_invalid_unmapped_file_fails(tmp_path, valid_mapping, document, match):
 def test_cli_succeeds_for_valid_fixture(tmp_path, valid_mapping):
     path = write_yaml(tmp_path / "mappings.yaml", valid_mapping)
     result = subprocess.run(
-        [sys.executable, "-m", "alertissimo.core.brokers.registry.mapping_schema", str(path)],
+        [sys.executable, "-m", "alertissimo.data_layer.runtime.mapping_schema", str(path)],
         text=True, capture_output=True, check=False,
     )
     assert result.returncode == 0
@@ -171,13 +171,14 @@ def test_cli_succeeds_for_valid_fixture(tmp_path, valid_mapping):
 
 
 def test_all_skips_legacy_files_without_payloads(tmp_path, monkeypatch, capsys):
-    registry = tmp_path / "registry"
-    path = registry / "broker" / "origin" / "mappings.yaml"
+    data_layer = tmp_path / "data_layer"
+    providers = data_layer / "providers"
+    path = providers / "broker" / "origin" / "mappings.yaml"
     path.parent.mkdir(parents=True)
     write_yaml(path, {"broker": "old", "origin": "ztf", "mappings": {}})
     monkeypatch.setattr(
-        "alertissimo.core.brokers.registry.mapping_schema.__file__",
-        str(registry / "mapping_schema.py"),
+        "alertissimo.data_layer.runtime.mapping_schema.__file__",
+        str(data_layer / "runtime" / "mapping_schema.py"),
     )
     assert main(["--all"]) == 0
     output = capsys.readouterr().out

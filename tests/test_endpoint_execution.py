@@ -1,16 +1,16 @@
 from pathlib import Path
 
-from alertissimo.core.brokers.execution import (
+from alertissimo.data_layer.execution import (
     EndpointRegistry,
     EndpointSpec,
     RegistryEndpointExecutor,
     RestTransport,
     TransportResult,
 )
-from alertissimo.core.portfolio import InternalExecutionId
+from alertissimo.data_layer.representations import InternalExecutionId
 
 
-REGISTRY = Path(__file__).parents[1] / "alertissimo/core/brokers/registry"
+REGISTRY = Path(__file__).parents[1] / "alertissimo/data_layer/providers"
 
 
 def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
@@ -40,7 +40,7 @@ def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
         captured["request"] = request
         return Response()
 
-    monkeypatch.setattr("alertissimo.core.brokers.execution.transports.urlopen", fake_urlopen)
+    monkeypatch.setattr("alertissimo.data_layer.execution.transports.urlopen", fake_urlopen)
     spec = EndpointSpec(
         broker="example",
         origin="ztf",

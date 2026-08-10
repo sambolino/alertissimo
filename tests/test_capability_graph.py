@@ -2,8 +2,8 @@
 
 from dataclasses import fields
 
-import alertissimo.core.brokers.registry.capabilities as capabilities
-from alertissimo.core.brokers.registry.capabilities import build_capability_graph
+import alertissimo.data_layer.runtime.capability_graph as capabilities
+from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 
 
 def test_graph_builds_for_all_normalized_registries():

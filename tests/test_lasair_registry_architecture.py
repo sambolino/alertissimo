@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 
-REGISTRY = Path("alertissimo/core/brokers/registry/lasair")
+REGISTRY = Path("alertissimo/data_layer/providers/lasair")
 ENDPOINT_KEYS = {
     "path", "method", "description", "headers", "params", "output",
     "operation_types", "server_filters", "post_filter", "projection",
