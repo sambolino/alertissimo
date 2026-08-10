@@ -33,3 +33,27 @@ def test_semantic_type_parts_are_tolerant():
     assert _semantic_type_parts("summary") == {
         "base": "summary", "namespace": None, "producer": None,
     }
+
+
+def test_browser_renders_connection_cards_and_escapes_edge_metadata():
+    page = render_portfolio_html({
+        "internal_portfolio_id": "portfolio:edges",
+        "executions": [],
+        "records": [
+            {"internal_record_id": "record:d", "semantic_type": "detection@ztf:lasair", "fields": {}},
+            {"internal_record_id": "record:s", "semantic_type": "summary@ztf:lasair", "fields": {}},
+        ],
+        "edges": [{
+            "internal_edge_id": "edge:1", "edge_type": "--association--",
+            "subject_record_id": "record:d", "target_record_id": "record:s",
+            "fields": {"basis": "same_execution_summary_context", "note": "<script>alert(1)</script>"},
+            "internal_source": None,
+        }],
+    })
+    for expected in (
+        "Connection browser", "--association--", "detection@ztf:lasair",
+        "summary@ztf:lasair", "same_execution_summary_context", "edge:1",
+    ):
+        assert expected in page
+    assert "<script>alert(1)</script>" not in page
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page
