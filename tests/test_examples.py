@@ -6,5 +6,6 @@ def test_lasair_example_has_concrete_types_and_no_inferred_edges():
     semantic_types = {record.semantic_type for record in portfolio.records}
 
     assert "crossmatch@{producer}:lasair" not in semantic_types
-    assert "crossmatch@sherlock:lasair" in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert "crossmatch@unknown:lasair" in semantic_types
     assert portfolio.edges == ()
