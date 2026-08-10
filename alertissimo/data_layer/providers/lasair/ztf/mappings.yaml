@@ -71,13 +71,17 @@ mappings:
     - object#sherlock.classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
-  crossmatch@sherlock:lasair.identity.object_id:
+  # Sherlock exposes the crossmatch/enrichment fields here, but the actual
+  # external catalog producer is not resolved from this minimal payload.
+  # Keep the unresolved producer explicit rather than leaking an internal method
+  # name into the semantic producer qualifier.
+  crossmatch@unknown:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
-  crossmatch@sherlock:lasair.position.ra:
+  crossmatch@unknown:lasair.position.ra:
     - object#sherlock.raDeg
-  crossmatch@sherlock:lasair.position.dec:
+  crossmatch@unknown:lasair.position.dec:
     - object#sherlock.decDeg
-  crossmatch@sherlock:lasair.separation.total:
+  crossmatch@unknown:lasair.separation.total:
     - object#sherlock.separationArcsec
   crossmatch@tns:lasair.identity.object_id:
     - object#TNS.name
