@@ -36,7 +36,7 @@ from alertissimo.core.brokers.execution.examples.get_ZTF19acmdpyr_from_fink_ztf 
 from alertissimo.core.brokers.execution.examples.get_ZTF25aazqavg_from_lasair_ztf import (
     run as run_lasair_example,
 )
-from alertissimo.core.internal import (
+from alertissimo.core.portfolio import (
     InternalExecutionId,
     InternalPortfolioId,
     InternalRecordId,
@@ -49,10 +49,10 @@ def registry():
 
 
 def test_internal_ids_are_strongly_typed_and_immutable():
-    execution_id = InternalExecutionId("exec_test")
-    assert str(execution_id) == "exec_test"
-    assert execution_id != InternalPortfolioId("exec_test")
-    assert execution_id != InternalRecordId("exec_test")
+    execution_id = InternalExecutionId("exec:test")
+    assert str(execution_id) == "exec:test"
+    assert execution_id != InternalPortfolioId("exec:test")
+    assert execution_id != InternalRecordId("exec:test")
     with pytest.raises(FrozenInstanceError):
         execution_id.value = "changed"
 
@@ -88,7 +88,7 @@ def test_executor_dispatches_fixture_and_preserves_payload(registry):
     executor = RegistryEndpointExecutor(
         registry,
         {"rest": transport},
-        execution_id_factory=lambda: InternalExecutionId("exec_fixed"),
+        execution_id_factory=lambda: InternalExecutionId("exec:fixed"),
     )
 
     result = executor.call(
@@ -99,17 +99,24 @@ def test_executor_dispatches_fixture_and_preserves_payload(registry):
     )
 
     assert result.payload is payload
-    assert result.internal_execution_id == InternalExecutionId("exec_fixed")
-    assert result.metadata.transport == "fixture"
-    assert result.metadata.elapsed_ms >= 0
-    assert result.metadata.completed_at >= result.metadata.started_at
-    assert result.metadata.request.method == "POST"
-    assert result.metadata.request.url == "https://lasair-ztf.lsst.ac.uk/api/object/"
-    assert result.metadata.request.params == {
+    assert result.internal_execution_id == InternalExecutionId("exec:fixed")
+    assert result.execution_provenance.internal_execution_id == InternalExecutionId(
+        "exec:fixed"
+    )
+    assert result.execution_provenance.broker == "lasair"
+    assert result.execution_provenance.origin == "ztf"
+    assert result.execution_provenance.endpoint == "object"
+    assert result.execution_provenance.status == "success"
+    assert result.execution_provenance.transport == "fixture"
+    assert result.execution_provenance.elapsed_ms >= 0
+    assert result.execution_provenance.finished_at >= result.execution_provenance.started_at
+    assert result.execution_provenance.method == "POST"
+    assert result.execution_provenance.url == "https://lasair-ztf.lsst.ac.uk/api/object/"
+    assert result.execution_provenance.params == {
         "objectId": "ZTF25aazqavg",
         "lasair_added": True,
     }
-    assert result.metadata.response.status_code is None
+    assert result.execution_provenance.response_status_code is None
 
 
 def test_transport_result_controls_runtime_metadata(registry):
@@ -131,10 +138,10 @@ def test_transport_result_controls_runtime_metadata(registry):
         params={"objectId": "ZTF-test"},
     )
 
-    assert result.metadata.request.sanitized_headers == {"x-request-id": "safe"}
-    assert result.metadata.response.status_code == 200
-    assert result.metadata.response.content_type == "application/json"
-    assert result.metadata.response.raw_size_bytes == 2
+    assert result.execution_provenance.sanitized_headers == {"x-request-id": "safe"}
+    assert result.execution_provenance.response_status_code == 200
+    assert result.execution_provenance.response_content_type == "application/json"
+    assert result.execution_provenance.raw_size_bytes == 2
 
 
 def test_rest_transport_executes_get_and_decodes_broker_json(registry):
@@ -181,9 +188,9 @@ def test_rest_transport_executes_get_and_decodes_broker_json(registry):
         )
 
     assert response.payload == [{"i:objectId": "123"}]
-    assert response.metadata.response.status_code == 200
-    assert response.metadata.response.content_type == "application/json; charset=utf-8"
-    assert response.metadata.response.raw_size_bytes == 23
+    assert response.execution_provenance.response_status_code == 200
+    assert response.execution_provenance.response_content_type == "application/json; charset=utf-8"
+    assert response.execution_provenance.raw_size_bytes == 23
 
 
 def test_rest_transport_uses_credentials_and_redacts_metadata(registry):
@@ -228,8 +235,8 @@ def test_rest_transport_uses_credentials_and_redacts_metadata(registry):
         )
 
     assert response.payload == {"objectId": "ZTF25aazqavg"}
-    assert response.metadata.request.sanitized_headers["Authorization"] == "<redacted>"
-    assert "secret-value" not in repr(response.metadata)
+    assert response.execution_provenance.sanitized_headers["Authorization"] == "<redacted>"
+    assert "secret-value" not in repr(response.execution_provenance)
 
 
 def test_toml_credential_resolver(tmp_path):
@@ -329,7 +336,7 @@ def test_executor_reports_lookup_and_dispatch_errors(registry):
 def test_provisional_example_commands(command, expected):
     result = execute_example_command(command, build_example_executor())
     assert result.payload == expected
-    assert str(result.internal_execution_id).startswith("exec_")
+    assert str(result.internal_execution_id).startswith("exec:")
 
 
 @pytest.mark.parametrize(
@@ -344,4 +351,4 @@ def test_example_files_return_complete_execution_response(run_example):
     response = run_example()
     assert response.payload is not None
     assert isinstance(response.internal_execution_id, InternalExecutionId)
-    assert response.metadata.transport == "fixture"
+    assert response.execution_provenance.transport == "fixture"

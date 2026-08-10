@@ -12,9 +12,9 @@ views:
 - `capabilities.yaml` supplies the existing broker-level capability inventory.
 
 The executor validates physical parameters, selects a configured transport,
-measures the call, and generates an `InternalExecutionId`. It deliberately does
-not resolve payload paths, transform fields, build semantic records, or create
-portfolio/provenance objects.
+measures the call, and returns the broker-native payload together with canonical
+`InternalExecutionProvenance`. It does not resolve payload paths or construct
+semantic portfolio records.
 
 ## Direct API
 
@@ -43,7 +43,7 @@ result = executor.call(
 )
 
 assert result.payload["objectId"] == "ZTF25aazqavg"
-assert str(result.internal_execution_id).startswith("exec_")
+assert str(result.internal_execution_id).startswith("exec:")
 ```
 
 `FixtureTransport` can be registered under `rest` and/or `python` during tests.
@@ -91,7 +91,7 @@ ANTARES Python client and prints a JSON view of the returned `Locus` while
 preserving that original object in `ExecutionResult.payload`.
 `get_ZTF25aazqavg_from_lasair_ztf` calls the authenticated Lasair REST endpoint;
 it resolves `LASAIR_ZTF_TOKEN` first from the environment and then from
-`.streamlit/secrets.toml`, and redacts the authorization header in metadata.
+`.streamlit/secrets.toml`, and redacts the authorization header in execution provenance.
 
 Each module exposes a `run()` function that returns the complete
 `ExecutionResult`. Its `main()` function prints that response when the module is
@@ -103,7 +103,7 @@ from alertissimo.core.brokers.execution.examples.get_ZTF25aazqavg_from_lasair_zt
 response = run()
 print(response.payload)
 print(response.internal_execution_id)
-print(response.metadata)
+print(response.execution_provenance)
 ```
 
 The adapter is intentionally isolated in the `examples` package; replacing it
