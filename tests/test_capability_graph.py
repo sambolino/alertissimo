@@ -42,7 +42,7 @@ def test_lasair_ztf_semantic_records():
     assert {
         "summary@ztf:lasair", "detection@ztf:lasair", "classification@lasair",
         "classification@tns:lasair", "crossmatch@tns:lasair",
-        "crossmatch@sherlock:lasair",
+        "crossmatch@unknown:lasair",
     } <= records
 
 
