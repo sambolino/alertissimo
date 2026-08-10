@@ -38,7 +38,7 @@ def test_browser_groups_records_and_explains_empty_edge_plane():
             record("record:d1", "detection@ztf:lasair", "candidates[][0]"),
             record("record:d2", "detection@ztf:lasair", "candidates[][1]"),
             record("record:c", "classification@lasair"),
-            record("record:x1", "crossmatch@sherlock:lasair"),
+            record("record:x1", "crossmatch@unknown:lasair"),
             record("record:x2", "crossmatch@tns:lasair"),
         ],
         "edges": [],
@@ -47,12 +47,13 @@ def test_browser_groups_records_and_explains_empty_edge_plane():
     for expected in (
         "summary (1)", "detection (2)", "classification (1)", "crossmatch (2)",
         "No semantic edges", "Containment is represented by the portfolio itself",
-        "crossmatch@sherlock:lasair",
+        "crossmatch@unknown:lasair",
     ):
         assert expected in page
     assert '<details class="record-group"' in page
     assert '<details class="rail-record-group"' in page
     assert "crossmatch@{producer}:lasair" not in page
+    assert "crossmatch@sherlock:lasair" not in page
 
 
 def test_field_tree_nests_dot_path_segments():
