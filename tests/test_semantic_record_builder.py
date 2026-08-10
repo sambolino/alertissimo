@@ -182,6 +182,22 @@ def test_missing_dynamic_binder_leaves_placeholder_inspectable(tmp_path):
     }
 
 
+def test_unresolved_semantic_type_producer_falls_back_to_unknown(tmp_path):
+    portfolio = _build(tmp_path, {"object": {"catalogue_object_id": "WISEA J081336.12+221200.3"}}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"endpoint": "object", "path": "."}},
+        "mappings": {
+            "crossmatch@{producer}:lasair.identity.object_id": ["object#object.catalogue_object_id"],
+        },
+    })
+    assert [record.semantic_type for record in portfolio.records] == [
+        "crossmatch@unknown:lasair"
+    ]
+    assert dict(portfolio.records[0].fields) == {
+        "identity.object_id": "WISEA J081336.12+221200.3"
+    }
+
+
 def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):
     mapping = _dynamic_mapping()
     mapping["mappings"]["detection@ztf:lasair.calibration.{filter}"] = ["candidate#other_fid"]
