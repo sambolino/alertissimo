@@ -1,5 +1,6 @@
 from itertools import count
 
+import pytest
 import yaml
 
 from alertissimo.data_layer.execution import ExecutionResult
@@ -9,7 +10,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import PortfolioBuildError, build_portfolio_from_execution
 
 
 def _execution(payload):
@@ -111,3 +112,21 @@ def test_boolean_not_and_value_map(tmp_path):
     assert dict(portfolio.records[0].fields) == {
         "flags.active": True, "classification.label": "star",
     }
+
+
+def test_discovers_mapping_from_execution_provenance(tmp_path):
+    root = tmp_path / "providers"
+    path = root / "lasair" / "ztf" / "mappings.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(yaml.safe_dump({
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {"summary@ztf:lasair.identity.object_id": ["object#objectId"]},
+    }), encoding="utf-8")
+    portfolio = build_portfolio_from_execution(_execution({"objectId": "ZTF-test"}), providers_root=root)
+    assert portfolio.records[0].fields["identity.object_id"] == "ZTF-test"
+
+
+def test_missing_discovered_mapping_has_builder_error(tmp_path):
+    with pytest.raises(PortfolioBuildError, match="cannot resolve mappings.yaml for lasair/ztf"):
+        build_portfolio_from_execution(_execution({}), providers_root=tmp_path)
