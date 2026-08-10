@@ -34,7 +34,7 @@ def test_lasair_ztf_endpoint_capabilities_and_projection():
 
 def test_lasair_ztf_semantic_records():
     graph = build_capability_graph()
-    records = {
+    semantic_types = {
         item.semantic_record_type
         for item in graph.semantic_record_capabilities
         if item.broker == "lasair" and item.origin == "ztf"
@@ -42,8 +42,11 @@ def test_lasair_ztf_semantic_records():
     assert {
         "summary@ztf:lasair", "detection@ztf:lasair", "classification@lasair",
         "classification@tns:lasair", "crossmatch@tns:lasair",
-        "crossmatch@{producer}:lasair",
-    } <= records
+        "crossmatch@unknown:lasair",
+    } <= semantic_types
+    assert "crossmatch@{producer}:lasair" not in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert "crossmatch@unknown:lasair" in semantic_types
 
 
 def test_semantic_paths_are_split_at_first_dot():
