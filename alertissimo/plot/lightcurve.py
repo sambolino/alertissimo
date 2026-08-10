@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from typing import Optional
 
-def plot_lightcurve(lc: dict, title:Optional[str] = none):
+def plot_lightcurve(lc: dict, title:Optional[str] = None):
     """
     Plots a normalized magpsf lightcurve from a lightcurve dict as returned by ALeRCE or other brokers.
     Assumes detections are under lc["detections"].
