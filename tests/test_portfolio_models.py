@@ -208,3 +208,27 @@ def test_module_has_no_execution_parsing_or_field_trace_models():
         "Kafka",
     ):
         assert not hasattr(models, name)
+
+
+def test_execution_provenance_executor_metadata_is_defensively_copied():
+    params = {"objectId": "ZTF25aazqavg"}
+    headers = {"Authorization": "<redacted>"}
+    execution = InternalExecutionProvenance(
+        InternalExecutionId("execution-optional-metadata"),
+        broker="lasair",
+        origin="ztf",
+        endpoint="object",
+        params=params,
+        sanitized_headers=headers,
+        elapsed_ms=1.5,
+        transport="fixture",
+        method="POST",
+        url="https://example.test/object",
+        response_status_code=200,
+        response_content_type="application/json",
+        raw_size_bytes=42,
+    )
+    params["objectId"] = "changed"
+    headers["Authorization"] = "secret"
+    assert execution.params["objectId"] == "ZTF25aazqavg"
+    assert execution.sanitized_headers == {"Authorization": "<redacted>"}

@@ -106,6 +106,14 @@ class InternalExecutionProvenance:
     payload_fingerprint: str | None = None
     registry_version: str | None = None
     adapter_version: str | None = None
+    elapsed_ms: float | None = None
+    transport: str | None = None
+    method: str | None = None
+    url: str | None = None
+    sanitized_headers: Mapping[str, str] | None = None
+    response_status_code: int | None = None
+    response_content_type: str | None = None
+    raw_size_bytes: int | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.internal_execution_id, InternalExecutionId):
@@ -115,6 +123,12 @@ class InternalExecutionProvenance:
         if self.status is not None and not isinstance(self.status, str):
             raise PortfolioModelError("status must be a string or None")
         object.__setattr__(self, "params", _immutable_mapping(self.params, "params"))
+        if self.sanitized_headers is not None:
+            object.__setattr__(
+                self,
+                "sanitized_headers",
+                _immutable_mapping(self.sanitized_headers, "sanitized_headers"),
+            )
 
 
 @dataclass(frozen=True)
