@@ -37,7 +37,7 @@ payload = {
 
 
 def build_example_portfolio() -> Portfolio:
-    """Build the deterministic offline Lasair dossier used by this example."""
+    """Build the deterministic seven-record Lasair dossier with no inferred edges."""
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:example:lasair"),
         broker="lasair", origin="ztf", endpoint="object",
