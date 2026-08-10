@@ -42,11 +42,10 @@ def test_lasair_ztf_semantic_records():
     assert {
         "summary@ztf:lasair", "detection@ztf:lasair", "classification@lasair",
         "classification@tns:lasair", "crossmatch@tns:lasair",
-        "crossmatch@unknown:lasair",
+        "crossmatch@{producer}:lasair",
     } <= semantic_types
-    assert "crossmatch@{producer}:lasair" not in semantic_types
     assert "crossmatch@sherlock:lasair" not in semantic_types
-    assert "crossmatch@unknown:lasair" in semantic_types
+    assert "crossmatch@unknown:lasair" not in semantic_types
 
 
 def test_semantic_paths_are_split_at_first_dot():
