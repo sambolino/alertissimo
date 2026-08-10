@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import json
 from typing import Any, Mapping
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .models import EndpointSpec, TransportResult
@@ -24,14 +25,28 @@ class RestTransport:
         params: Mapping[str, Any],
         headers: Mapping[str, str] | None = None,
     ) -> TransportResult:
+        method = (spec.method or "GET").upper()
+        url = spec.url
+        if url is None:
+            raise ValueError("REST endpoint has no URL")
+
         request_headers = dict(headers or {})
-        request_headers.setdefault("Content-Type", "application/json")
-        body = json.dumps(dict(params)).encode()
+        body = None
+
+        if method in {"GET", "DELETE"}:
+            query = urlencode(dict(params), doseq=True)
+            if query:
+                separator = "&" if "?" in url else "?"
+                url = f"{url}{separator}{query}"
+        else:
+            body = json.dumps(dict(params)).encode("utf-8")
+            request_headers.setdefault("Content-Type", "application/json")
+
         request = Request(
-            spec.url or "",
+            url,
             data=body,
             headers=request_headers,
-            method=spec.method or "POST",
+            method=method,
         )
         with urlopen(request) as response:  # noqa: S310 - registry URLs are trusted configuration
             raw = response.read()

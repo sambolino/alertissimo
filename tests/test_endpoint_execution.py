@@ -2,13 +2,65 @@ from pathlib import Path
 
 from alertissimo.core.brokers.execution import (
     EndpointRegistry,
+    EndpointSpec,
     RegistryEndpointExecutor,
+    RestTransport,
     TransportResult,
 )
 from alertissimo.core.portfolio import InternalExecutionId
 
 
 REGISTRY = Path(__file__).parents[1] / "alertissimo/core/brokers/registry"
+
+
+def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
+    raw = b'{"objects": ["ZTF1", "ZTF2"]}'
+    captured = {}
+
+    class Headers:
+        @staticmethod
+        def get_content_type():
+            return "application/json"
+
+    class Response:
+        status = 200
+        headers = Headers()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        @staticmethod
+        def read():
+            return raw
+
+    def fake_urlopen(request):
+        captured["request"] = request
+        return Response()
+
+    monkeypatch.setattr("alertissimo.core.brokers.execution.transports.urlopen", fake_urlopen)
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="objects",
+        transport_kind="rest",
+        method="GET",
+        url="https://example.test/objects",
+    )
+
+    result = RestTransport().execute(spec, {"object_ids": "ZTF1,ZTF2", "limit": 2})
+
+    request = captured["request"]
+    assert request.method == "GET"
+    assert request.data is None
+    assert request.full_url == (
+        "https://example.test/objects?object_ids=ZTF1%2CZTF2&limit=2"
+    )
+    assert result.payload == {"objects": ["ZTF1", "ZTF2"]}
+    assert result.url == request.full_url
+    assert result.raw_size_bytes == len(raw)
 
 
 def test_registry_resolves_lasair_rest_endpoint():
