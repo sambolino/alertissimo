@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Build a semantic portfolio from a saved Lasair ZTF object payload."""
+"""Build a semantic portfolio from a saved Lasair ZTF payload.
+
+For example, inspect a saved endpoint response without making an API call::
+
+    python examples/build_lasair_portfolio_from_payload.py \
+      --endpoint sherlock_position --summary payload.json
+
+The endpoint is execution provenance only; provider mappings still determine
+which parts of the saved response can produce semantic records.
+"""
 
 from __future__ import annotations
 
@@ -23,15 +32,23 @@ from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_e
 from alertissimo.data_layer.runtime.serialization import portfolio_to_json
 
 
-def build_portfolio_from_payload(payload: dict[str, Any]) -> Portfolio:
-    """Build a portfolio from one previously saved Lasair object response."""
+ENDPOINTS = (
+    "object", "objects", "lightcurves", "cone", "query",
+    "sherlock_objects", "sherlock_position",
+)
+
+
+def build_portfolio_from_payload(
+    payload: dict[str, Any], *, endpoint: str = "object"
+) -> Portfolio:
+    """Build a portfolio from one previously saved Lasair response."""
     object_id = payload.get("objectId")
     params = {"objectId": object_id} if object_id is not None else {}
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:local:lasair-payload"),
         broker="lasair",
         origin="ztf",
-        endpoint="object",
+        endpoint=endpoint,
         params=params,
         status="success",
     )
@@ -52,6 +69,11 @@ def _print_summary(payload: dict[str, Any], portfolio: Portfolio) -> None:
     print(f"records built: {len(portfolio.records)}", file=sys.stderr)
     print(f"semantic types: {', '.join(semantic_types)}", file=sys.stderr)
     print(f"edges built: {len(portfolio.edges)}", file=sys.stderr)
+    if not portfolio.records:
+        print(
+            "No semantic records were built for this endpoint/payload shape.",
+            file=sys.stderr,
+        )
 
 
 def _load_payload(path: Path) -> dict[str, Any]:
@@ -68,6 +90,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("payload", type=Path, help="saved Lasair object JSON response")
     parser.add_argument(
+        "--endpoint",
+        choices=ENDPOINTS,
+        default="object",
+        help="endpoint recorded in execution provenance (default: object)",
+    )
+    parser.add_argument(
         "--summary",
         action="store_true",
         help="write payload and portfolio diagnostics to stderr",
@@ -76,7 +104,7 @@ def main() -> int:
 
     try:
         payload = _load_payload(args.payload)
-        portfolio = build_portfolio_from_payload(payload)
+        portfolio = build_portfolio_from_payload(payload, endpoint=args.endpoint)
     except Exception as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
