@@ -31,8 +31,11 @@ def _immutable_mapping(value: Any, name: str) -> Mapping[str, Any]:
 def _validate_relative_fields(fields: Mapping[str, Any], name: str) -> None:
     for field_path in fields:
         _require_non_empty_string(field_path, f"{name} key")
-        first_component = field_path.split(".", 1)[0]
-        if "@" in first_component or first_component.startswith("--"):
+        if (
+            "@" in field_path
+            or field_path.startswith("portfolio.")
+            or field_path.startswith("--")
+        ):
             raise PortfolioModelError(
                 f"{name} key {field_path!r} must be relative to its semantic object"
             )
