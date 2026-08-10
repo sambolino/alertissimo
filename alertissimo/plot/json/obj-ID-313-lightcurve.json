@@ -1,0 +1,116 @@
+{
+  "diaObjectId": "313761043604045880",
+  "tns": {
+    "name": "AT 2025AGPZ",
+    "type": "Astronomical Transient"
+  },
+  "coordinates": {
+    "ra": 8.986275,
+    "dec": -42.709834
+  },
+  "filters": {
+    "g": 146,
+    "r": 172,
+    "i": 214,
+    "z": 161
+  },
+  "lightCurve": [
+    {
+      "date": "2025-11-24T03:14:22Z",
+      "band": "g",
+      "magnitude": 22.8,
+      "magnitudeError": 0.18
+    },
+    {
+      "date": "2025-11-24T03:17:05Z",
+      "band": "r",
+      "magnitude": 23.1,
+      "magnitudeError": 0.21
+    },
+    {
+      "date": "2025-12-01T02:41:18Z",
+      "band": "z",
+      "magnitude": 20.6,
+      "magnitudeError": 0.09
+    },
+    {
+      "date": "2025-12-07T01:55:44Z",
+      "band": "i",
+      "magnitude": 19.8,
+      "magnitudeError": 0.06
+    },
+    {
+      "date": "2025-12-18T04:12:51Z",
+      "band": "r",
+      "magnitude": 19.4,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-01-05T03:33:20Z",
+      "band": "g",
+      "magnitude": 19.3,
+      "magnitudeError": 0.05
+    },
+    {
+      "date": "2026-01-12T02:28:41Z",
+      "band": "r",
+      "magnitude": 19.0,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-01-12T02:31:02Z",
+      "band": "i",
+      "magnitude": 18.8,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-01-12T02:34:11Z",
+      "band": "z",
+      "magnitude": 18.7,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-02-27T01:44:33Z",
+      "band": "g",
+      "magnitude": 19.1,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-02-27T01:47:19Z",
+      "band": "r",
+      "magnitude": 18.9,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-02-27T01:50:07Z",
+      "band": "i",
+      "magnitude": 18.6,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-07-08T23:16:22Z",
+      "band": "r",
+      "magnitude": 20.3,
+      "magnitudeError": 0.08
+    },
+    {
+      "date": "2026-07-08T23:19:10Z",
+      "band": "i",
+      "magnitude": 19.7,
+      "magnitudeError": 0.06
+    },
+    {
+      "date": "2026-07-15T22:58:01Z",
+      "band": "z",
+      "magnitude": 19.4,
+      "magnitudeError": 0.05
+    }
+  ],
+  "summary": {
+    "firstDetection": "2025-11-24T03:14:22Z",
+    "lastDetection": "2026-07-15T22:58:01Z",
+    "brightestMagnitude": 18.6,
+    "faintestMagnitude": 23.1,
+    "numberOfMeasurements": 693
+  }
+}
