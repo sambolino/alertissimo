@@ -130,3 +130,66 @@ def test_discovers_mapping_from_execution_provenance(tmp_path):
 def test_missing_discovered_mapping_has_builder_error(tmp_path):
     with pytest.raises(PortfolioBuildError, match="cannot resolve mappings.yaml for lasair/ztf"):
         build_portfolio_from_execution(_execution({}), providers_root=tmp_path)
+
+
+def _dynamic_mapping():
+    return {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"candidate": {"endpoint": "object", "path": "candidates[]"}},
+        "mappings": {
+            "detection@ztf:lasair.photometry.{filter}": ["candidate#fid"],
+            "detection@ztf:lasair.photometry.{filter}.psf.mag": ["candidate#magpsf"],
+            "detection@ztf:lasair.photometry.{filter}.psf.mag_error": ["candidate#sigmapsf"],
+        },
+        "transforms": {
+            "detection@ztf:lasair.photometry.{filter}": {
+                "candidate#fid": {"type": "value_map", "map": {1: "g", 2: "r", 3: "i"}}
+            }
+        },
+    }
+
+
+def test_dynamic_filter_binds_sibling_field_paths(tmp_path):
+    portfolio = _build(tmp_path, {
+        "candidates": [{"fid": 1, "magpsf": 18.2, "sigmapsf": 0.1}]
+    }, _dynamic_mapping())
+    fields = dict(portfolio.records[0].fields)
+    assert fields == {
+        "photometry.g.psf.mag": 18.2,
+        "photometry.g.psf.mag_error": 0.1,
+    }
+    assert "photometry.{filter}" not in fields
+    assert "photometry.{filter}.psf.mag" not in fields
+
+
+def test_dynamic_filter_binding_is_scoped_to_each_payload_item(tmp_path):
+    portfolio = _build(tmp_path, {"candidates": [
+        {"fid": 1, "magpsf": 18.2},
+        {"fid": 2, "magpsf": 18.7},
+    ]}, _dynamic_mapping())
+    assert [dict(record.fields) for record in portfolio.records] == [
+        {"photometry.g.psf.mag": 18.2},
+        {"photometry.r.psf.mag": 18.7},
+    ]
+
+
+def test_missing_dynamic_binder_leaves_placeholder_inspectable(tmp_path):
+    portfolio = _build(
+        tmp_path, {"candidates": [{"magpsf": 18.2}]}, _dynamic_mapping()
+    )
+    assert dict(portfolio.records[0].fields) == {
+        "photometry.{filter}.psf.mag": 18.2
+    }
+
+
+def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):
+    mapping = _dynamic_mapping()
+    mapping["mappings"]["detection@ztf:lasair.calibration.{filter}"] = ["candidate#other_fid"]
+    mapping["transforms"]["detection@ztf:lasair.calibration.{filter}"] = {
+        "candidate#other_fid": {"type": "value_map", "map": {2: "r"}}
+    }
+    with pytest.raises(
+        PortfolioBuildError,
+        match=r"conflicting binding for placeholder \{filter\}: g vs r",
+    ):
+        _build(tmp_path, {"candidates": [{"fid": 1, "other_fid": 2}]}, mapping)

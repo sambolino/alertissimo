@@ -16,7 +16,7 @@ from alertissimo.data_layer.runtime.serialization import portfolio_to_json
 payload = {
     "objectId": "ZTF25aazqavg",
     "objectData": {"ncand": 1, "jdmin": 2460000.5, "jdmax": 2460000.5, "ramean": 123.4, "decmean": 22.2},
-    "candidates": [{"candid": 1, "jd": 2460000.5, "ra": 123.4, "dec": 22.2, "magpsf": 18.2, "fid": 1}],
+    "candidates": [{"candid": 1, "jd": 2460000.5, "ra": 123.4, "dec": 22.2, "magpsf": 18.2, "sigmapsf": 0.08, "fid": 1}],
 }
 provenance = InternalExecutionProvenance(
     internal_execution_id=InternalExecutionId("execution:example:lasair"),

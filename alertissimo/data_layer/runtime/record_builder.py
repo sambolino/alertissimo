@@ -32,6 +32,47 @@ class PortfolioBuildError(ValueError):
     """Raised when a portfolio cannot be built from registry resources."""
 
 
+def _placeholder_name(segment: str) -> str | None:
+    """Return the name of a placeholder that occupies an entire path segment."""
+    if len(segment) >= 3 and segment.startswith("{") and segment.endswith("}"):
+        name = segment[1:-1]
+        if name and "{" not in name and "}" not in name:
+            return name
+    return None
+
+
+def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
+    """Bind final-segment placeholders and rewrite sibling relative paths."""
+    bindings: dict[str, Any] = {}
+    binder_paths: set[str] = set()
+    for path, value in fields.items():
+        placeholder = _placeholder_name(path.split(".")[-1])
+        if placeholder is None:
+            continue
+        if placeholder in bindings and bindings[placeholder] != value:
+            previous = bindings[placeholder]
+            raise PortfolioBuildError(
+                f"conflicting binding for placeholder {{{placeholder}}}: "
+                f"{previous} vs {value}"
+            )
+        bindings[placeholder] = value
+        binder_paths.add(path)
+
+    resolved: dict[str, Any] = {}
+    for path, value in fields.items():
+        if path in binder_paths:
+            continue
+        segments = path.split(".")
+        rewritten = [
+            str(bindings[name])
+            if (name := _placeholder_name(segment)) in bindings
+            else segment
+            for segment in segments
+        ]
+        resolved[".".join(rewritten)] = value
+    return resolved
+
+
 def new_internal_portfolio_id() -> InternalPortfolioId:
     return InternalPortfolioId(f"portfolio:{uuid4().hex}")
 
@@ -117,6 +158,9 @@ def build_portfolio_from_execution(
                     break
 
             for semantic_type, fields in fields_by_type.items():
+                if not fields:
+                    continue
+                fields = _resolve_dynamic_field_paths(fields)
                 if not fields:
                     continue
                 records.append(
