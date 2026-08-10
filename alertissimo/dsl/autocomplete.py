@@ -2,7 +2,7 @@
 from lark import UnexpectedInput
 from .parser import parser
 from .transformer import DSL_MAPPING, FIELD_ALIASES
-from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
+from alertissimo.data_layer.runtime.load import BROKER_REGISTRY
 
 
 def get_autocomplete_suggestions(text: str):

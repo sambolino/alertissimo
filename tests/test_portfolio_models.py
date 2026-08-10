@@ -2,8 +2,8 @@
 
 import pytest
 
-import alertissimo.core.portfolio.models as models
-from alertissimo.core.portfolio import (
+import alertissimo.data_layer.representations.portfolio as models
+from alertissimo.data_layer.representations import (
     InternalEdgeId,
     InternalExecutionId,
     InternalExecutionProvenance,

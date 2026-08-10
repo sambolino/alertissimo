@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-ROOT = Path("alertissimo/core/brokers/registry/antares")
+ROOT = Path("alertissimo/data_layer/providers/antares")
 EXPECTED_ENDPOINTS = {
     "lsst": {"get_by_lsst_dia_object_id", "get_by_lsst_ss_object_id", "get_by_id", "cone_search", "search"},
     "ztf": {"get_by_ztf_object_id", "get_by_id", "cone_search", "search"},

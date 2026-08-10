@@ -1,11 +1,5 @@
-"""Public broker endpoint execution API."""
+"""Compatibility wrapper for the old broker execution import path.
 
-from .executor import EndpointExecutor, RegistryEndpointExecutor
-from .models import EndpointSpec, ExecutionResult, TransportResult
-from .registry import EndpointRegistry
-from .transports import PythonClientTransport, RestTransport
-
-__all__ = (
-    "EndpointExecutor", "RegistryEndpointExecutor", "EndpointRegistry", "EndpointSpec",
-    "ExecutionResult", "TransportResult", "RestTransport", "PythonClientTransport",
-)
+Use :mod:`alertissimo.data_layer.execution` instead.
+"""
+from alertissimo.data_layer.execution import *  # noqa: F401,F403
