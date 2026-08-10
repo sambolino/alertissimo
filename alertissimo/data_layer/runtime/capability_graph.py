@@ -1,4 +1,4 @@
-"""Compile normalized broker registries into an internal capability graph.
+"""Compile data-layer providers into an internal capability graph.
 
 The objects in this module describe what registry contracts can produce.  They
 do not call endpoints or construct portfolio records.
@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import yaml
+
+from ..paths import PROVIDERS_ROOT
 
 
 class CapabilityGraphError(ValueError):
@@ -148,8 +150,8 @@ def _strings(value: Any, where: str) -> tuple[str, ...]:
 
 
 def build_capability_graph(registry_root: Path | str | None = None) -> CapabilityGraph:
-    """Build a deterministic graph from every normalized broker/origin registry."""
-    root = Path(registry_root) if registry_root is not None else Path(__file__).parents[1] / "providers"
+    """Build a deterministic graph from every data-layer provider declaration."""
+    root = Path(registry_root) if registry_root is not None else PROVIDERS_ROOT
     endpoint_items: list[EndpointCapability] = []
     payload_items: list[PayloadCapability] = []
     field_items: list[FieldMappingCapability] = []

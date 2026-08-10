@@ -1,4 +1,4 @@
-"""Normalization of the broker endpoint YAML dialects."""
+"""Normalization of provider endpoint declarations."""
 
 from __future__ import annotations
 
@@ -8,12 +8,13 @@ from urllib.parse import urljoin
 
 import yaml
 
+from ..paths import PROVIDERS_ROOT
 from .models import EndpointSpec
 
 
 class EndpointRegistry:
     def __init__(self, root: str | Path | None = None) -> None:
-        self.root = Path(root) if root else Path(__file__).parents[1] / "providers"
+        self.root = Path(root) if root else PROVIDERS_ROOT
 
     def resolve(self, broker: str, origin: str, endpoint: str) -> EndpointSpec:
         path = self.root / broker / origin / "endpoints.yaml"

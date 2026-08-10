@@ -4,7 +4,7 @@ from typing import Dict, List
 from pathlib import Path
 
 def load_broker_registry_from_yaml() -> Dict[str, List[str]]:
-    """Load broker capabilities from YAML file as simple strings"""
+    """Load provider capabilities from YAML as simple strings."""
     possible_paths = [Path(__file__).parent / "capabilities.yaml"]
 
     for path in possible_paths:
@@ -29,7 +29,7 @@ def load_broker_registry_from_yaml() -> Dict[str, List[str]]:
     return {}
 
 
-# Global registry - simple dict of broker → list of capability strings
+# Global provider registry: schema broker name → list of capability strings.
 BROKER_REGISTRY = load_broker_registry_from_yaml()
 ALL_BROKERS = list(BROKER_REGISTRY.keys())
 

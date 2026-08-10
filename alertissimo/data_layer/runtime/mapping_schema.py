@@ -1,4 +1,4 @@
-"""Validation for the human-authored minimal broker mapping schema."""
+"""Validation for the human-authored minimal provider mapping schema."""
 
 from __future__ import annotations
 
