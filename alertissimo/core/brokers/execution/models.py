@@ -7,45 +7,19 @@ later pipeline step.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Mapping
 
-from alertissimo.core.internal import InternalExecutionId
-
-
-@dataclass(frozen=True)
-class RequestMetadata:
-    method: str | None
-    url: str | None
-    params: dict[str, Any]
-    sanitized_headers: dict[str, str] | None = None
-
-
-@dataclass(frozen=True)
-class ResponseMetadata:
-    status_code: int | None = None
-    content_type: str | None = None
-    raw_size_bytes: int | None = None
-
-
-@dataclass(frozen=True)
-class ExecutionMetadata:
-    broker: str
-    origin: str
-    endpoint: str
-    transport: str
-    started_at: datetime
-    completed_at: datetime
-    elapsed_ms: float
-    request: RequestMetadata
-    response: ResponseMetadata
+from alertissimo.core.portfolio import InternalExecutionId, InternalExecutionProvenance
 
 
 @dataclass(frozen=True)
 class ExecutionResult:
     payload: Any
-    internal_execution_id: InternalExecutionId
-    metadata: ExecutionMetadata
+    execution_provenance: InternalExecutionProvenance
+
+    @property
+    def internal_execution_id(self) -> InternalExecutionId:
+        return self.execution_provenance.internal_execution_id
 
 
 @dataclass(frozen=True)
@@ -93,10 +67,7 @@ class EndpointSpec:
 
 __all__ = [
     "EndpointSpec",
-    "ExecutionMetadata",
     "ExecutionResult",
     "PayloadBinding",
-    "RequestMetadata",
-    "ResponseMetadata",
     "TransportResult",
 ]

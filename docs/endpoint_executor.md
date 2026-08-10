@@ -43,7 +43,7 @@ result = executor.call(
 )
 
 assert result.payload["objectId"] == "ZTF25aazqavg"
-assert str(result.internal_execution_id).startswith("exec_")
+assert str(result.internal_execution_id).startswith("exec:")
 ```
 
 `FixtureTransport` can be registered under `rest` and/or `python` during tests.
@@ -103,7 +103,7 @@ from alertissimo.core.brokers.execution.examples.get_ZTF25aazqavg_from_lasair_zt
 response = run()
 print(response.payload)
 print(response.internal_execution_id)
-print(response.metadata)
+print(response.execution_provenance)
 ```
 
 The adapter is intentionally isolated in the `examples` package; replacing it
