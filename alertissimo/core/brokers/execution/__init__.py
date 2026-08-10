@@ -21,11 +21,8 @@ from .errors import (
 from .executor import EndpointExecutor, RegistryEndpointExecutor
 from .models import (
     EndpointSpec,
-    ExecutionMetadata,
     ExecutionResult,
     PayloadBinding,
-    RequestMetadata,
-    ResponseMetadata,
     TransportResult,
 )
 from .registry import EndpointRegistry
@@ -45,7 +42,6 @@ __all__ = [
     "EndpointTransport",
     "ExampleCommandError",
     "ExecutionError",
-    "ExecutionMetadata",
     "ExecutionResult",
     "FixtureNotFoundError",
     "FixtureTransport",
@@ -59,9 +55,7 @@ __all__ = [
     "PayloadBinding",
     "PythonClientTransport",
     "RegistryEndpointExecutor",
-    "RequestMetadata",
     "RestTransport",
-    "ResponseMetadata",
     "TransportExecutionError",
     "TransportNotConfiguredError",
     "TransportResult",
