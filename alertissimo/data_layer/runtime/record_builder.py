@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
+import re
 
 import yaml
 
@@ -32,6 +33,10 @@ class PortfolioBuildError(ValueError):
     """Raised when a portfolio cannot be built from registry resources."""
 
 
+_PLACEHOLDER_RE = re.compile(r"\{([^{}]+)\}")
+_SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {"producer": "unknown"}
+
+
 def _placeholder_name(segment: str) -> str | None:
     """Return the name of a placeholder that occupies an entire path segment."""
     if len(segment) >= 3 and segment.startswith("{") and segment.endswith("}"):
@@ -41,8 +46,8 @@ def _placeholder_name(segment: str) -> str | None:
     return None
 
 
-def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
-    """Bind final-segment placeholders and rewrite sibling relative paths."""
+def _dynamic_bindings(fields: dict[str, Any]) -> tuple[dict[str, Any], set[str]]:
+    """Collect placeholder bindings from binder-only relative field paths."""
     bindings: dict[str, Any] = {}
     binder_paths: set[str] = set()
     for path, value in fields.items():
@@ -57,6 +62,28 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
             )
         bindings[placeholder] = value
         binder_paths.add(path)
+    return bindings, binder_paths
+
+
+def _resolve_dynamic_semantic_type(
+    semantic_type: str,
+    fields: dict[str, Any],
+) -> str:
+    """Resolve semantic-type placeholders, falling back only for known defaults."""
+    bindings, _ = _dynamic_bindings(fields)
+
+    def replacement(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name in bindings:
+            return str(bindings[name])
+        return _SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS.get(name, match.group(0))
+
+    return _PLACEHOLDER_RE.sub(replacement, semantic_type)
+
+
+def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
+    """Bind final-segment placeholders and rewrite sibling relative paths."""
+    bindings, binder_paths = _dynamic_bindings(fields)
 
     resolved: dict[str, Any] = {}
     for path, value in fields.items():
@@ -160,13 +187,17 @@ def build_portfolio_from_execution(
             for semantic_type, fields in fields_by_type.items():
                 if not fields:
                     continue
+                resolved_semantic_type = _resolve_dynamic_semantic_type(
+                    semantic_type,
+                    fields,
+                )
                 fields = _resolve_dynamic_field_paths(fields)
                 if not fields:
                     continue
                 records.append(
                     SemanticRecord(
                         internal_record_id=make_record_id(),
-                        semantic_type=semantic_type,
+                        semantic_type=resolved_semantic_type,
                         fields=fields,
                         internal_source=InternalRecordSource(
                             internal_execution_id=execution.internal_execution_id,
