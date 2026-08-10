@@ -46,15 +46,41 @@ def test_record_fields_are_relative_paths_and_allow_semantic_provenance():
             "time.mjd": 60321.123,
             "photometry.g.psf.mag": 19.46,
             "provenance.producer.name": "ZTF",
+            "provenance.channel.name": "public",
         },
     )
     assert item.get("provenance.producer.name") == "ZTF"
+    assert item.get("provenance.channel.name") == "public"
 
+
+@pytest.mark.parametrize(
+    "field_path",
+    [
+        "detection@ztf:lasair.photometry.g.psf.mag",
+        "portfolio.detection@ztf:lasair.photometry.g.psf.mag",
+        "portfolio.detection.photometry.g.psf.mag",
+        "photometry.g@lsst.psf.mag",
+    ],
+)
+def test_record_fields_reject_qualified_paths(field_path: str):
     with pytest.raises(PortfolioModelError, match="relative"):
         record(
             "rec:invalid",
             "detection@ztf:lasair",
-            **{"detection@ztf:lasair.photometry.g.psf.mag": 19.46},
+            **{field_path: 19.46},
+        )
+
+
+def test_edge_fields_reject_qualified_paths():
+    record_id = InternalRecordId("rec:target")
+
+    with pytest.raises(PortfolioModelError, match="relative"):
+        SemanticEdge(
+            InternalEdgeId("edge:invalid"),
+            "--association--",
+            record_id,
+            record_id,
+            {"target@ztf.score": 0.9},
         )
 
 
@@ -66,7 +92,11 @@ def test_semantic_edges_are_first_class_and_require_existing_participants():
         "--followup_of-->",
         spectrum.internal_record_id,
         detection.internal_record_id,
-        {"basis": "candidate workflow", "provenance.producer.name": "Alertissimo"},
+        {
+            "basis": "candidate workflow",
+            "score": 0.95,
+            "provenance.producer.name": "Alertissimo",
+        },
     )
     portfolio = Portfolio(InternalPortfolioId("portfolio:edge"), (detection, spectrum), (edge,))
 
@@ -74,6 +104,7 @@ def test_semantic_edges_are_first_class_and_require_existing_participants():
     assert edge.subject_record_id == spectrum.internal_record_id
     assert edge.target_record_id == detection.internal_record_id
     assert edge.get("basis") == "candidate workflow"
+    assert edge.get("score") == 0.95
     assert edge.get("provenance.producer.name") == "Alertissimo"
     assert not detection.has("--followup_of-->")
 
