@@ -17,14 +17,43 @@ def _text(value: Any) -> str:
     return html.escape(str(value))
 
 
-def _fields_table(fields: dict[str, Any]) -> str:
+def _field_tree(fields: dict[str, Any]) -> dict[str, Any]:
+    """Turn dot-separated field paths into a nested dictionary."""
+    tree: dict[str, Any] = {}
+    for path, value in fields.items():
+        branch = tree
+        segments = path.split(".")
+        for segment in segments[:-1]:
+            branch = branch.setdefault(segment, {})
+        branch[segments[-1]] = value
+    return tree
+
+
+def _render_field_tree(tree: dict[str, Any], prefix: str = "") -> str:
+    """Render a nested field tree with collapsible branches and searchable leaves."""
+    parts: list[str] = []
+    for key, value in tree.items():
+        path = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            parts.append(
+                f'<details class="tree-node" open><summary>{_text(key)}</summary>'
+                f'<div class="tree-children">{_render_field_tree(value, path)}</div></details>'
+            )
+        else:
+            searchable = f"{path} {_text(value)}"
+            parts.append(
+                f'<div class="field-leaf" data-path="{_text(path)}" '
+                f'data-search="{_text(searchable).lower()}"><span class="field-key">'
+                f'{_text(key)}</span><span class="field-value">{_text(value)}</span>'
+                f'<span class="full-path">{_text(path)}</span></div>'
+            )
+    return "".join(parts)
+
+
+def _fields_tree(fields: dict[str, Any]) -> str:
     if not fields:
         return '<p class="empty">No fields</p>'
-    rows = "".join(
-        f"<tr><th>{_text(name)}</th><td><pre>{_text(value)}</pre></td></tr>"
-        for name, value in fields.items()
-    )
-    return f"<table>{rows}</table>"
+    return f'<div class="field-tree">{_render_field_tree(_field_tree(fields))}</div>'
 
 
 def render_portfolio_html(portfolio: dict[str, Any]) -> str:
@@ -43,19 +72,21 @@ def render_portfolio_html(portfolio: dict[str, Any]) -> str:
         f"""<details open><summary>{_text(item.get('semantic_type'))}</summary>
         <p><strong>ID:</strong> {_text(item.get('internal_record_id'))}</p>
         <p><strong>Source:</strong></p><pre>{_text(item.get('internal_source'))}</pre>
-        {_fields_table(item.get('fields', {}))}</details>"""
+        {_fields_tree(item.get('fields', {}))}</details>"""
         for item in records
     ) or '<p class="empty">No records</p>'
     edge_html = "".join(
-        f"<details><summary>{_text(item.get('edge_type'))}</summary>{_fields_table(item.get('fields', {}))}</details>"
+        f"<details><summary>{_text(item.get('edge_type'))}</summary>{_fields_tree(item.get('fields', {}))}</details>"
         for item in edges
     ) or '<p class="empty">No edges</p>'
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Portfolio {_text(portfolio.get('internal_portfolio_id'))}</title><style>
-body{{font:15px system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#172033;background:#f5f7fb}}h1,h2{{color:#193b6a}}section,details{{background:white;border:1px solid #d8deea;border-radius:8px;padding:1rem;margin:.8rem 0}}summary{{font-weight:700;cursor:pointer}}dl{{display:grid;grid-template-columns:8rem 1fr;gap:.4rem}}dt{{font-weight:700}}dd{{margin:0}}table{{border-collapse:collapse;width:100%}}th,td{{text-align:left;vertical-align:top;border-top:1px solid #e1e5ed;padding:.5rem}}th{{width:35%}}pre{{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}}.counts{{color:#526177}}.empty{{font-style:italic;color:#657085}}
-</style></head><body><header><h1>Portfolio</h1><p><strong>{_text(portfolio.get('internal_portfolio_id'))}</strong></p>
-<p class="counts">{len(records)} records · {len(edges)} edges · {len(executions)} executions</p></header>
-<section><h2>Executions</h2>{execution_html}</section><section><h2>Records</h2>{record_html}</section><section><h2>Edges</h2>{edge_html}</section></body></html>"""
+*{{box-sizing:border-box}}body{{font:15px system-ui,sans-serif;margin:0;color:#172033;background:#eef1f5}}header{{background:#14243a;color:white;padding:1.5rem max(1rem,calc((100% - 1100px)/2))}}header h1{{margin:0;color:white}}main{{max-width:1100px;margin:auto;padding:1rem}}h2{{color:#193b6a}}section,.record-card{{background:white;border:1px solid #d8deea;border-radius:12px;padding:1rem;margin:.8rem 0;box-shadow:0 2px 8px #1720330d}}details{{margin:.4rem 0}}summary{{font-weight:700;cursor:pointer}}.toolbar{{position:sticky;top:0;z-index:2;display:flex;gap:.5rem;align-items:center;background:#eef1f5;padding:.7rem 0}}button,input{{font:inherit;border:1px solid #aeb8c8;border-radius:6px;padding:.45rem .7rem;background:white}}input{{flex:1}}dl{{display:grid;grid-template-columns:8rem 1fr;gap:.4rem}}dt{{font-weight:700}}dd{{margin:0}}pre,.field-leaf{{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}}pre{{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}}.counts{{color:#c7d2e2}}.empty{{font-style:italic;color:#657085}}.tree-node{{border-left:1px solid #d8deea;padding-left:.8rem}}.tree-children{{margin-left:.6rem}}.field-leaf{{display:grid;grid-template-columns:minmax(8rem,1fr) minmax(8rem,2fr);gap:.7rem;padding:.35rem .5rem;border-radius:5px}}.field-leaf:hover{{background:#f3f6fa}}.field-key{{font-weight:700}}.field-value{{overflow-wrap:anywhere}}.full-path{{display:none}}.badge{{display:inline-block;background:#dfe9f7;color:#244b78;border-radius:999px;padding:.15rem .5rem;margin-right:.3rem}}
+</style></head><body><header><h1>Portfolio summary</h1><p><strong>{_text(portfolio.get('internal_portfolio_id'))}</strong></p>
+<p class="counts">{len(records)} records · {len(edges)} edges · {len(executions)} executions</p></header><main>
+<div class="toolbar"><button type="button" onclick="setExpanded(true)">Expand all</button><button type="button" onclick="setExpanded(false)">Collapse all</button><input id="path-filter" type="search" placeholder="Filter by path or value" oninput="filterFields(this.value)"></div>
+<section><h2>Execution summary</h2>{execution_html}</section><section><h2>Dot-path data browser</h2>{record_html}</section><section><h2>Connection browser</h2>{edge_html}</section></main>
+<script>function setExpanded(open){{document.querySelectorAll('details').forEach(d=>d.open=open)}}function filterFields(query){{const q=query.toLowerCase();document.querySelectorAll('.field-leaf').forEach(el=>{{el.hidden=!el.dataset.search.includes(q)}});document.querySelectorAll('.tree-node').forEach(node=>{{node.hidden=q!==''&&!node.querySelector('.field-leaf:not([hidden])')}})}}</script></body></html>"""
 
 
 def main() -> None:
