@@ -1,7 +1,6 @@
 broker: alerce
 origin: ztf
-notes: Only audited fields without a stable semantic feature catalog path are retained
-  here.
+notes: Only audited fields without a stable semantic feature catalog path are retained here.
 unmapped:
 - query_detections#step_id_corr:
     reason: no_stable_feature_catalog_path
@@ -10,12 +9,6 @@ unmapped:
     reason: no_stable_feature_catalog_path
     note: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#adpctdif2:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
-- query_lightcurve.detections#clrcoeff:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
-- query_lightcurve.detections#clrcounc:
     reason: no_stable_feature_catalog_path
     note: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#e_mag:
@@ -55,8 +48,8 @@ unmapped:
     reason: no_stable_feature_catalog_path
     note: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#sciinpseeing:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: incompatible_ontology_unit
+    candidate_meaning: ALeRCE reports science-image seeing/FWHM in arcseconds; current image_metrics.fwhm is pixels and the payload provides no valid conversion context.
 - query_lightcurve.detections#scisigpix:
     reason: no_stable_feature_catalog_path
     note: No stable semantic feature catalog path is available for this raw field.
@@ -72,3 +65,246 @@ unmapped:
 - query_probabilities#ranking:
     reason: no_stable_feature_catalog_path
     note: Ranking semantics are classifier-output dependent.
+- query_object#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.history.start_mjd exists in the current ontology.
+- query_objects#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.history.start_mjd exists in the current ontology.
+- query_object#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.history.end_mjd exists in the current ontology.
+- query_objects#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.history.end_mjd exists in the current ontology.
+- query_object#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.detection.history_count exists in the current ontology.
+- query_objects#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.detection.history_count exists in the current ontology.
+- query_object#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.quality.corrected exists in the current ontology.
+- query_objects#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.quality.corrected exists in the current ontology.
+- query_object#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.classification.stellar exists in the current ontology.
+- query_objects#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.classification.stellar exists in the current ontology.
+- query_object#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.max exists in the current ontology.
+- query_objects#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.max exists in the current ontology.
+- query_object#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.max_corrected exists in the current ontology.
+- query_objects#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.max_corrected exists in the current ontology.
+- query_object#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.mean exists in the current ontology.
+- query_objects#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.mean exists in the current ontology.
+- query_object#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.mean_corrected exists in the current ontology.
+- query_objects#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.color.g_minus_r.mean_corrected exists in the current ontology.
+- query_detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.relationship.parent_alert_id exists in the current ontology.
+- query_lightcurve.detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.relationship.parent_alert_id exists in the current ontology.
+- query_forced_photometry#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.relationship.parent_alert_id exists in the current ontology.
+- query_lightcurve.forced_photometry#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.relationship.parent_alert_id exists in the current ontology.
+- query_detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.data_product.stamp.available exists in the current ontology.
+- query_lightcurve.detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.data_product.stamp.available exists in the current ontology.
+- query_forced_photometry#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.data_product.stamp.available exists in the current ontology.
+- query_lightcurve.forced_photometry#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.data_product.stamp.available exists in the current ontology.
+- query_detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.time.phase exists in the current ontology.
+- query_lightcurve.detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.time.phase exists in the current ontology.
+- query_detections#magpsf_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected exists in the current ontology.
+- query_lightcurve.detections#magpsf_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected exists in the current ontology.
+- query_detections#sigmapsf_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_error exists in the current ontology.
+- query_lightcurve.detections#sigmapsf_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_error exists in the current ontology.
+- query_detections#sigmapsf_corr_ext:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_error exists in the current ontology.
+- query_lightcurve.detections#sigmapsf_corr_ext:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_error exists in the current ontology.
+- query_lightcurve.detections#magpsf_corr_ext:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_component exists in the current ontology.
+- query_lightcurve.detections#magap_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.aperture.mag_corrected exists in the current ontology.
+- query_lightcurve.detections#sigmagap_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.photometry.{filter}.aperture.mag_corrected_error exists in the current ontology.
+- query_forced_photometry#rcid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.provenance.instrument.readout_channel_id exists in the current ontology.
+- query_lightcurve.forced_photometry#rcid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.provenance.instrument.readout_channel_id exists in the current ontology.
+- query_forced_photometry#sciinpseeing:
+    reason: incompatible_ontology_unit
+    candidate_meaning: ALeRCE reports science-image seeing/FWHM in arcseconds; current image_metrics.fwhm is pixels and the payload provides no valid conversion context.
+- query_lightcurve.forced_photometry#sciinpseeing:
+    reason: incompatible_ontology_unit
+    candidate_meaning: ALeRCE reports science-image seeing/FWHM in arcseconds; current image_metrics.fwhm is pixels and the payload provides no valid conversion context.
+- query_forced_photometry#scibckgnd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.image.science.background exists in the current ontology.
+- query_lightcurve.forced_photometry#scibckgnd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.image.science.background exists in the current ontology.
+- query_forced_photometry#scisigpix:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.image.science.sigma_per_pixel exists in the current ontology.
+- query_lightcurve.forced_photometry#scisigpix:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.image.science.sigma_per_pixel exists in the current ontology.
+- query_forced_photometry#adpctdif1:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.astrometry.rms.ra exists in the current ontology.
+- query_lightcurve.forced_photometry#adpctdif1:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.astrometry.rms.ra exists in the current ontology.
+- query_forced_photometry#adpctdif2:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.astrometry.rms.dec exists in the current ontology.
+- query_lightcurve.forced_photometry#adpctdif2:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under detection@ztf:alerce.astrometry.rms.dec exists in the current ontology.
+- query_magstats#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.stellar exists in the current ontology.
+- query_magstats#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.corrected exists in the current ontology.
+- query_magstats#ndet:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.detection_count exists in the current ontology.
+- query_magstats#ndubious:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.dubious_count exists in the current ontology.
+- query_magstats#dmdt_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_slope exists in the current ontology.
+- query_magstats#dm_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude exists in the current ontology.
+- query_magstats#sigmadm_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude_error exists in the current ontology.
+- query_magstats#dt_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_delta_time exists in the current ontology.
+- query_magstats#magmean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude exists in the current ontology.
+- query_magstats#magmedian:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude exists in the current ontology.
+- query_magstats#magmax:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude exists in the current ontology.
+- query_magstats#magmin:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude exists in the current ontology.
+- query_magstats#magsigma:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev exists in the current ontology.
+- query_magstats#maglast:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude exists in the current ontology.
+- query_magstats#magfirst:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude exists in the current ontology.
+- query_magstats#magmean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude_corrected exists in the current ontology.
+- query_magstats#magmedian_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude_corrected exists in the current ontology.
+- query_magstats#magmax_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude_corrected exists in the current ontology.
+- query_magstats#magmin_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude_corrected exists in the current ontology.
+- query_magstats#magsigma_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev_corrected exists in the current ontology.
+- query_magstats#maglast_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude_corrected exists in the current ontology.
+- query_magstats#magfirst_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude_corrected exists in the current ontology.
+- query_magstats#firstmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.first_mjd exists in the current ontology.
+- query_magstats#lastmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.photometry.{filter}.statistics.last_mjd exists in the current ontology.
+- query_features#name:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.features.{name} exists in the current ontology.
+- query_features#value:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.features.{name}.value exists in the current ontology.
+- query_features#fid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.features.{name}.filter_id exists in the current ontology.
+- query_features#version:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under summary@ztf:alerce.features.{name}.version exists in the current ontology.
+- get_stamps#[0]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under data_product@ztf:alerce.cutout.science exists in the current ontology.
+- get_stamps#[1]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under data_product@ztf:alerce.cutout.template exists in the current ontology.
+- get_stamps#[2]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under data_product@ztf:alerce.cutout.difference exists in the current ontology.
+- get_avro#bytes:
+    reason: unsupported_semantic_concept
+    candidate_meaning: No same-meaning field for the provider value formerly grouped under data_product@ztf:alerce.avro.bytes exists in the current ontology.

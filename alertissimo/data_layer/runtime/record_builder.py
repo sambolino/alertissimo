@@ -39,8 +39,14 @@ SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
 }
 
 SEMANTIC_TYPE_BINDING_FIELD_PATHS = {
-    "producer": ("provenance.producer.id",),
+    "producer": ("provenance.producer.id", "provenance.producer.name"),
 }
+
+
+def _semantic_identifier(value: Any) -> str:
+    """Normalize a payload label for use in a semantic path segment."""
+    normalized = re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+    return normalized or "unknown"
 
 _PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
 
@@ -85,7 +91,7 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
             continue
         segments = path.split(".")
         rewritten = [
-            str(bindings[name])
+            _semantic_identifier(bindings[name])
             if (name := _placeholder_name(segment)) in bindings
             else segment
             for segment in segments
@@ -107,7 +113,7 @@ def _resolve_dynamic_semantic_type(
             return str(bindings[placeholder])
         for field_path in SEMANTIC_TYPE_BINDING_FIELD_PATHS.get(placeholder, ()):
             if field_path in fields:
-                return str(fields[field_path])
+                return _semantic_identifier(fields[field_path])
         return SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS.get(placeholder, match.group(0))
 
     return _PLACEHOLDER_PATTERN.sub(replacement, semantic_type)
@@ -195,6 +201,9 @@ def build_portfolio_from_execution(
     make_record_id = record_id_factory or new_internal_record_id
 
     for payload_key, payload_definition in payload_definitions.items():
+        endpoint = payload_definition.get("endpoint", payload_key)
+        if endpoint != execution.execution_provenance.endpoint:
+            continue
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
             execution.payload,
