@@ -77,6 +77,8 @@ def audit_payload(
         key: definition
         for key, definition in document["payloads"].items()
         if definition["endpoint"] == endpoint
+        and not (isinstance(payload, list) and definition["path"] == ".")
+        and not (isinstance(payload, dict) and definition["path"] == "[]")
     }
     refs_by_payload: dict[str, list[tuple[str, str]]] = {key: [] for key in definitions}
     for semantic_path, references in document["mappings"].items():

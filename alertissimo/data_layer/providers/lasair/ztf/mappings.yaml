@@ -7,6 +7,7 @@ payloads:
   objects: {endpoint: objects, path: "[]"}
   query: {endpoint: query, path: "[]"}
   cone: {endpoint: cone, path: "[]"}
+  cone_count: {endpoint: cone, path: "."}
   candidates: {endpoint: object, path: "candidates[]"}
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
   sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
@@ -18,7 +19,7 @@ mappings:
   summary@ztf:lasair.identity.object_id:
     - object#objectId
     - objects#objectId
-    - cone#objectId
+    - cone#object
     - query#objectId
   summary@ztf:lasair.detection_count:
     - object#objectData.ncand
@@ -32,12 +33,10 @@ mappings:
   summary@ztf:lasair.position.ra:
     - object#objectData.ramean
     - objects#objectData.ramean
-    - cone#ramean
     - query#ramean
   summary@ztf:lasair.position.dec:
     - object#objectData.decmean
     - objects#objectData.decmean
-    - cone#decmean
     - query#decmean
   detection@ztf:lasair.identity.source_id:
     - candidates#candid
@@ -86,6 +85,7 @@ mappings:
   classification@tns:lasair.best.class:
     - object#TNS.type
   classification@sherlock:lasair.best.description:
+    - object#sherlock.description
     - sherlock_position_classifications#_value.1
     - sherlock_objects_classifications#_value.1
   crossmatch@{producer}:lasair.identity.object_id:
@@ -93,9 +93,11 @@ mappings:
     - sherlock_position_crossmatches#catalogue_object_id
     - sherlock_objects_crossmatches#catalogue_object_id
   crossmatch@{producer}:lasair.provenance.producer.name:
+    - object#sherlock.catalogue_table_name
     - sherlock_position_crossmatches#catalogue_table_name
     - sherlock_objects_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.provenance.producer.id:
+    - object#sherlock.catalogue_table_name
     - sherlock_position_crossmatches#catalogue_table_name
     - sherlock_objects_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.position.ra:
@@ -111,20 +113,26 @@ mappings:
     - sherlock_position_crossmatches#separationArcsec
     - sherlock_objects_crossmatches#separationArcsec
   crossmatch@{producer}:lasair.separation.north:
+    - object#sherlock.northSeparationArcsec
     - sherlock_position_crossmatches#northSeparationArcsec
     - sherlock_objects_crossmatches#northSeparationArcsec
   crossmatch@{producer}:lasair.separation.east:
+    - object#sherlock.eastSeparationArcsec
     - sherlock_position_crossmatches#eastSeparationArcsec
     - sherlock_objects_crossmatches#eastSeparationArcsec
   crossmatch@{producer}:lasair.separation.projected:
+    - object#sherlock.physical_separation_kpc
     - sherlock_position_crossmatches#physical_separation_kpc
     - sherlock_objects_crossmatches#physical_separation_kpc
   crossmatch@{producer}:lasair.redshift.value:
+    - object#sherlock.z
+    - object#sherlock.photoZ
     - sherlock_position_crossmatches#z
     - sherlock_position_crossmatches#photoZ
     - sherlock_objects_crossmatches#z
     - sherlock_objects_crossmatches#photoZ
   crossmatch@{producer}:lasair.redshift.error:
+    - object#sherlock.photoZErr
     - sherlock_position_crossmatches#photoZErr
     - sherlock_objects_crossmatches#photoZErr
   crossmatch@{producer}:lasair.distance.estimate.best.value:
@@ -178,17 +186,21 @@ mappings:
     - sherlock_position_crossmatches#merged_rank
     - sherlock_objects_crossmatches#merged_rank
   crossmatch@{producer}:lasair.classification.assessment.catalogue.class:
+    - object#sherlock.catalogue_object_type
     - sherlock_position_crossmatches#catalogue_object_type
     - sherlock_objects_crossmatches#catalogue_object_type
   crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
+    - object#sherlock.association_type
     - sherlock_position_crossmatches#association_type
     - sherlock_objects_crossmatches#association_type
     - sherlock_position_crossmatches#classification
     - sherlock_objects_crossmatches#classification
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+    - object#sherlock.classificationReliability
     - sherlock_position_crossmatches#classificationReliability
     - sherlock_objects_crossmatches#classificationReliability
   crossmatch@{producer}:lasair.classification.assessment.sherlock.method:
+    - object#sherlock.search_name
     - sherlock_position_crossmatches#search_name
     - sherlock_objects_crossmatches#search_name
   crossmatch@{producer}:lasair.photometry.J.mag:
@@ -255,6 +267,8 @@ mappings:
     - object#TNS.z
 
 transforms:
+  classification@sherlock:lasair.best.score:
+    object#sherlock.classificationReliability: {type: to_float, skip_null: true}
   summary@ztf:lasair.time.first_mjd:
     object#objectData.jdmin:
       type: jd_to_mjd
@@ -302,54 +316,55 @@ transforms:
     sherlock_objects_crossmatches#catalogue_object_id:
       type: to_string_strip
   crossmatch@{producer}:lasair.provenance.producer.id:
+    object#sherlock.catalogue_table_name: &producer_map
+      type: value_map
+      map:
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
+        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
+        Gaia DR3: gaia
+        DESI Legacy Survey DR10: desi_legacy_survey
+      default: unknown
     sherlock_position_crossmatches#catalogue_table_name:
-      type: value_map
-      map:
-        SDSS/2MASS/PS1: sdss_2mass_ps1
-        2MASS PSC: twomass
-        PanSTARRS DR1: panstarrs
-        SDSS DR12 PhotoObjAll Table: sdss
-        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
-        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
-        Gaia DR3: gaia
-        DESI Legacy Survey DR10: desi_legacy_survey
-      default: unknown
+      <<: *producer_map
     sherlock_objects_crossmatches#catalogue_table_name:
-      type: value_map
-      map:
-        SDSS/2MASS/PS1: sdss_2mass_ps1
-        2MASS PSC: twomass
-        PanSTARRS DR1: panstarrs
-        SDSS DR12 PhotoObjAll Table: sdss
-        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
-        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
-        Gaia DR3: gaia
-        DESI Legacy Survey DR10: desi_legacy_survey
-      default: unknown
+      <<: *producer_map
   crossmatch@{producer}:lasair.position.ra:
+    object#sherlock.raDeg: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#raDeg: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#raDeg: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.position.dec:
+    object#sherlock.decDeg: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#decDeg: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#decDeg: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.separation.total:
+    object#sherlock.separationArcsec: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#separationArcsec: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#separationArcsec: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.separation.north:
+    object#sherlock.northSeparationArcsec: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#northSeparationArcsec: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#northSeparationArcsec: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.separation.east:
+    object#sherlock.eastSeparationArcsec: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.separation.projected:
+    object#sherlock.physical_separation_kpc: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#physical_separation_kpc: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#physical_separation_kpc: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.redshift.value:
+    object#sherlock.z: {type: to_float, skip_null: true}
+    object#sherlock.photoZ: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#z: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#photoZ: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#z: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#photoZ: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.redshift.error:
+    object#sherlock.photoZErr: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#photoZErr: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#photoZErr: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.distance.estimate.best.value:
@@ -388,9 +403,11 @@ transforms:
     sherlock_position_crossmatches#merged_rank: {type: to_int, skip_null: true}
     sherlock_objects_crossmatches#merged_rank: {type: to_int, skip_null: true}
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+    object#sherlock.classificationReliability: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#classificationReliability: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#classificationReliability: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
+    object#sherlock.association_type: {skip_null: true}
     sherlock_position_crossmatches#association_type: {skip_null: true}
     sherlock_objects_crossmatches#association_type: {skip_null: true}
     sherlock_position_crossmatches#classification: {skip_null: true}

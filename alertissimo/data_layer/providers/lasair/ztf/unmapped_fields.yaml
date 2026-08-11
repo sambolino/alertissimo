@@ -3,8 +3,11 @@ origin: ztf
 notes: Explicit semantic-debt registry produced by the representative saved-payload audit.
 unmapped:
   - cone#separation:
-      reason: ambiguous_meaning
-      candidate_meaning: Provider cone-result separation; units and exact reference position are not encoded in the response.
+      reason: unsupported_semantic_concept
+      candidate_meaning: Query-context angular separation is known in arcsec, but the summary record currently has no ontology-backed separation container/path for this value.
+  - cone_count#count:
+      reason: unsupported_semantic_record
+      candidate_meaning: Aggregate query result, not a per-object summary; no existing ontology-backed aggregate record is appropriate.
   - lightcurve_candidates#programid:
       reason: provider_native_implementation_identifier
       candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.
@@ -19,6 +22,14 @@ unmapped:
       reason: provider_native_implementation_identifier
       candidate_meaning: Internal Sherlock catalogue-table database identifier; producer name supplies the scientific provenance.
   - sherlock_objects_crossmatches#catalogue_table_id: *catalogue_table_id
+  - sherlock_position_crossmatches#catalogue_view_id: &catalogue_view_id
+      reason: provider_native_implementation_identifier
+      candidate_meaning: Internal Sherlock catalogue-view database identifier.
+  - sherlock_objects_crossmatches#catalogue_view_id: *catalogue_view_id
+  - sherlock_position_crossmatches#catalogue_view_name: &catalogue_view_name
+      reason: provider_native_implementation_metadata
+      candidate_meaning: Sherlock implementation/search-view metadata, distinct from the scientific classification method in search_name.
+  - sherlock_objects_crossmatches#catalogue_view_name: *catalogue_view_name
   - sherlock_position_crossmatches#major_axis_arcsec: &major_axis
       reason: unsupported_semantic_concept
       candidate_meaning: Catalogue-source apparent major axis; no same-meaning crossmatch morphology path exists.
@@ -27,3 +38,20 @@ unmapped:
       reason: duplicate_execution_payload_context
       candidate_meaning: Sherlock's native transient identifier; it is not the identity of the matched catalogue object.
   - sherlock_objects_crossmatches#transient_object_id: *transient_id
+  - sherlock_position_crossmatches#original_search_radius_arcsec: &search_radius
+      reason: unsupported_semantic_concept
+      candidate_meaning: Sherlock search configuration, not a measured crossmatch separation.
+  - sherlock_objects_crossmatches#original_search_radius_arcsec: *search_radius
+  - sherlock_position_crossmatches#catalogue_object_subtype: &catalogue_subtype
+      reason: unsupported_semantic_concept
+      candidate_meaning: Provider-native catalogue subtype with no same-meaning crossmatch path.
+  - sherlock_objects_crossmatches#catalogue_object_subtype: *catalogue_subtype
+  - sherlock_position_crossmatches#rankScore: &rank_score
+      reason: unsupported_semantic_concept
+      candidate_meaning: Sherlock ranking score, distinct from the ordinal rank field.
+  - sherlock_objects_crossmatches#rankScore: *rank_score
+  - sherlock_position_crossmatches#scale: &legacy_distance
+      reason: ambiguous_provider_field
+      candidate_meaning: Legacy Sherlock distance metadata whose precise semantics are not established by the observed payload.
+  - sherlock_position_crossmatches#distance: *legacy_distance
+  - sherlock_position_crossmatches#distance_modulus: *legacy_distance
