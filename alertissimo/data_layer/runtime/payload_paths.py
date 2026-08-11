@@ -23,9 +23,17 @@ class RawFieldMissing(LookupError):
 def _mapping_path(value: Any, path: str) -> Any:
     current = value
     for key in path.split("."):
-        if not key or not isinstance(current, Mapping) or key not in current:
+        if not key:
             raise RawFieldMissing(path)
-        current = current[key]
+        if isinstance(current, Mapping) and key in current:
+            current = current[key]
+        elif isinstance(current, (list, tuple)) and key.isdigit():
+            try:
+                current = current[int(key)]
+            except IndexError as exc:
+                raise RawFieldMissing(path) from exc
+        else:
+            raise RawFieldMissing(path)
     return current
 
 
@@ -39,12 +47,15 @@ def resolve_payload_items(
     if payload_path == ".":
         return (ResolvedPayloadItem(payload_key, payload_path, payload),)
 
+    dictionary_expansion = payload_path.endswith("{}")
     root_expansion = payload_path.startswith("[].")
     path = payload_path[3:] if root_expansion else payload_path
+    collection_suffix = "{}" if dictionary_expansion else "[]"
     if (
-        not path.endswith("[]")
+        not path.endswith(collection_suffix)
         or path == "[]"
         or "[]" in path[:-2]
+        or "{}" in path[:-2]
         or any(not part or not part.replace("_", "a").isalnum() for part in path[:-2].split("."))
     ):
         if payload_path == "[]":
@@ -70,12 +81,20 @@ def resolve_payload_items(
             collection = _mapping_path(root, path[:-2])
         except RawFieldMissing:
             continue
-        if not isinstance(collection, (list, tuple)):
-            continue
-        resolved.extend(
-            (value, (*root_indexes, index))
-            for index, value in enumerate(collection)
-        )
+        if dictionary_expansion:
+            if not isinstance(collection, Mapping):
+                continue
+            resolved.extend(
+                ({"_key": key, "_value": value}, (*root_indexes, index))
+                for index, (key, value) in enumerate(collection.items())
+            )
+        else:
+            if not isinstance(collection, (list, tuple)):
+                continue
+            resolved.extend(
+                (value, (*root_indexes, index))
+                for index, value in enumerate(collection)
+            )
 
     return tuple(
         ResolvedPayloadItem(

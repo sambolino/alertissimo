@@ -105,3 +105,74 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
     assert "payload keys: classifications, crossmatches" in result.stderr
     assert "records built: 0" in result.stderr
     assert "No semantic records were built for this endpoint/payload shape." in result.stderr
+
+
+def test_observed_sherlock_payload_catalogues_and_classifications_are_supported():
+    payload = {
+        "crossmatches": [
+            {
+                "catalogue_table_name": name,
+                "catalogue_table_id": index,
+                "catalogue_object_id": f"catalogue-object-{index}",
+                "raDeg": 12.3,
+                "decDeg": -4.5,
+                "separationArcsec": 0.2,
+            }
+            for index, name in enumerate(
+                (
+                    "SDSS/2MASS/PS1",
+                    "2MASS PSC",
+                    "PanSTARRS DR1",
+                    "SDSS DR12 PhotoObjAll Table",
+                ),
+                start=1,
+            )
+        ],
+        "classifications": {
+            "ZTF20acpwljl": ["SN", "The transient is possibly associated"]
+        },
+    }
+
+    portfolio = build_portfolio_from_payload(payload, endpoint="sherlock_position")
+    records = portfolio.records
+    semantic_types = {record.semantic_type for record in records}
+    assert {
+        "crossmatch@sdss_2mass_ps1:lasair",
+        "crossmatch@twomass:lasair",
+        "crossmatch@panstarrs:lasair",
+        "crossmatch@sdss:lasair",
+        "classification@sherlock:lasair",
+    } <= semantic_types
+    assert "crossmatch@unknown:lasair" not in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert not any("{producer}" in semantic_type for semantic_type in semantic_types)
+
+    first = dict(records[0].fields)
+    assert first["provenance.producer.name"] == "SDSS/2MASS/PS1"
+    assert first["provenance.producer.id"] == 1
+    classification = dict(next(
+        record.fields
+        for record in records
+        if record.semantic_type == "classification@sherlock:lasair"
+    ))
+    assert classification["best.class"] == "SN"
+    assert classification["best.description"] == "The transient is possibly associated"
+    assert classification["identity.object_id"] == "ZTF20acpwljl"
+    assert portfolio.edges == ()
+
+
+def test_sherlock_objects_classification_dictionary_is_supported():
+    portfolio = build_portfolio_from_payload(
+        [{"classifications": {"ZTF-object": ["AGN", "likely"]}}],
+        endpoint="sherlock_objects",
+    )
+    records = [
+        record for record in portfolio.records
+        if record.semantic_type == "classification@sherlock:lasair"
+    ]
+    assert len(records) == 1
+    assert dict(records[0].fields) == {
+        "identity.object_id": "ZTF-object",
+        "best.class": "AGN",
+        "best.description": "likely",
+    }

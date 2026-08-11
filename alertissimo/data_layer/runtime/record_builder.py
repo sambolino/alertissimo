@@ -123,6 +123,10 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
         return specification["map"].get(value, value)
     if transform_type == "jd_to_mjd":
         return value - 2400000.5
+    if transform_type == "lowercase":
+        return value.lower()
+    if transform_type == "to_int":
+        return int(value)
     return value  # The mapping schema rejects unknown transform types.
 
 
@@ -165,6 +169,8 @@ def build_portfolio_from_execution(
     make_record_id = record_id_factory or new_internal_record_id
 
     for payload_key, payload_definition in payload_definitions.items():
+        if payload_definition.get("endpoint", payload_key) != execution.execution_provenance.endpoint:
+            continue
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
             execution.payload,
@@ -184,8 +190,10 @@ def build_portfolio_from_execution(
                     except RawFieldMissing:
                         continue
                     specification = transforms.get(semantic_path, {}).get(raw_reference)
-                    fields_by_type.setdefault(semantic_type, {})[relative_field] = (
-                        _apply_transform(value, specification)
+                    if specification and specification.get("skip_null") and value is None:
+                        continue
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = _apply_transform(
+                        value, specification
                     )
                     break
 

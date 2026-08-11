@@ -9,6 +9,10 @@ payloads:
   cone: {endpoint: cone, path: "[]"}
   candidates: {endpoint: object, path: "candidates[]"}
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
+  sherlock_position_crossmatches: {endpoint: sherlock_position, path: "crossmatches[]"}
+  sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
+  sherlock_objects_crossmatches: {endpoint: sherlock_objects, path: "[].crossmatches[]"}
+  sherlock_objects_classifications: {endpoint: sherlock_objects, path: "[].classifications{}"}
 
 mappings:
   summary@ztf:lasair.identity.object_id:
@@ -73,12 +77,20 @@ mappings:
     - object#TNS.type
   crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
+    - sherlock_position_crossmatches#catalogue_object_id
+    - sherlock_objects_crossmatches#catalogue_object_id
   crossmatch@{producer}:lasair.position.ra:
     - object#sherlock.raDeg
+    - sherlock_position_crossmatches#raDeg
+    - sherlock_objects_crossmatches#raDeg
   crossmatch@{producer}:lasair.position.dec:
     - object#sherlock.decDeg
+    - sherlock_position_crossmatches#decDeg
+    - sherlock_objects_crossmatches#decDeg
   crossmatch@{producer}:lasair.separation.total:
     - object#sherlock.separationArcsec
+    - sherlock_position_crossmatches#separationArcsec
+    - sherlock_objects_crossmatches#separationArcsec
   crossmatch@tns:lasair.identity.object_id:
     - object#TNS.name
   crossmatch@tns:lasair.position.ra:
@@ -87,6 +99,30 @@ mappings:
     - object#TNS.decl
   crossmatch@tns:lasair.redshift.value:
     - object#TNS.z
+  crossmatch@{producer}:lasair.identity.{producer}:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.provenance.producer.name:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.provenance.producer.id:
+    - sherlock_position_crossmatches#catalogue_table_id
+    - sherlock_objects_crossmatches#catalogue_table_id
+  crossmatch@{producer}:lasair.native.lasair_sherlock.catalogue_table_name:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.native.lasair_sherlock.catalogue_table_id:
+    - sherlock_position_crossmatches#catalogue_table_id
+    - sherlock_objects_crossmatches#catalogue_table_id
+  classification@sherlock:lasair.identity.object_id:
+    - sherlock_position_classifications#_key
+    - sherlock_objects_classifications#_key
+  classification@sherlock:lasair.best.class:
+    - sherlock_position_classifications#_value.0
+    - sherlock_objects_classifications#_value.0
+  classification@sherlock:lasair.best.description:
+    - sherlock_position_classifications#_value.1
+    - sherlock_objects_classifications#_value.1
 
 transforms:
   summary@ztf:lasair.time.first_mjd:
@@ -128,3 +164,14 @@ transforms:
       map:
         t: true
         f: false
+  crossmatch@{producer}:lasair.identity.{producer}:
+    sherlock_position_crossmatches#catalogue_table_name:
+      type: value_map
+      map: &sherlock_catalogue_producers
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+    sherlock_objects_crossmatches#catalogue_table_name:
+      type: value_map
+      map: *sherlock_catalogue_producers

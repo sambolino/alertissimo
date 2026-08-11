@@ -23,9 +23,9 @@ from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_e
 from alertissimo.data_layer.runtime.serialization import portfolio_to_json
 
 
-def build_portfolio_from_payload(payload: dict[str, Any], *, endpoint: str = "object") -> Portfolio:
+def build_portfolio_from_payload(payload: Any, *, endpoint: str = "object") -> Portfolio:
     """Build a portfolio from one previously saved Lasair object response."""
-    object_id = payload.get("objectId")
+    object_id = payload.get("objectId") if isinstance(payload, dict) else None
     params = {"objectId": object_id} if object_id is not None else {}
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:local:lasair-payload"),
