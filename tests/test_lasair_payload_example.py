@@ -66,6 +66,7 @@ def test_payload_script_reads_file_and_reports_summary(tmp_path):
     assert len(portfolio["edges"]) == 0
     assert len([record for record in portfolio["records"] if record["semantic_type"] == "detection@ztf:lasair"]) == 3
     assert "payload keys:" in result.stderr
+    assert "endpoint: object" in result.stderr
     assert "records built:" in result.stderr
     assert "edges built: 0" in result.stderr
 
@@ -81,3 +82,26 @@ def test_payload_script_rejects_non_object_json(tmp_path):
 
     assert result.returncode == 1
     assert "must be a JSON object" in result.stderr
+
+
+def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
+    payload_path = tmp_path / "sherlock_position.json"
+    payload_path.write_text(json.dumps({"classifications": [], "crossmatches": []}), encoding="utf-8")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "examples/build_lasair_portfolio_from_payload.py",
+            str(payload_path),
+            "--endpoint",
+            "sherlock_position",
+            "--summary",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "endpoint: sherlock_position" in result.stderr
+    assert "payload keys: classifications, crossmatches" in result.stderr
+    assert "records built: 0" in result.stderr
+    assert "No semantic records were built for this endpoint/payload shape." in result.stderr
