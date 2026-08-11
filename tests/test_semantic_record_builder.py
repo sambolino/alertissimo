@@ -6,6 +6,7 @@ import yaml
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalExecutionId,
+    InternalEdgeId,
     InternalExecutionProvenance,
     InternalPortfolioId,
     InternalRecordId,
@@ -27,12 +28,43 @@ def _build(tmp_path, payload, document):
     path = tmp_path / "mappings.yaml"
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
     ids = count()
+    edge_ids = count()
     return build_portfolio_from_execution(
         _execution(payload),
         mappings_path=path,
         internal_portfolio_id=InternalPortfolioId("portfolio:test"),
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
+        edge_id_factory=lambda: InternalEdgeId(f"edge:{next(edge_ids)}"),
     )
+
+
+def test_item_local_edge_declaration_links_only_records_from_each_item(tmp_path):
+    portfolio = _build(tmp_path, {"rows": [
+        {"producer": "gaia", "object_id": "one", "class": "star"},
+        {"producer": "sdss", "object_id": "two", "class": "galaxy"},
+    ]}, {
+        "broker": "example", "origin": "ztf",
+        "payloads": {"rows": {"path": "rows[]"}},
+        "edges": [{
+            "edge_type": "--derived_from-->",
+            "subject": "classification@example:ztf",
+            "target": "crossmatch@{producer}:ztf",
+            "payloads": ["rows"],
+        }],
+        "mappings": {
+            "classification@example:ztf.best.class": ["rows#class"],
+            "crossmatch@{producer}:ztf.provenance.producer.id": ["rows#producer"],
+            "crossmatch@{producer}:ztf.identity.object_id": ["rows#object_id"],
+        },
+    })
+
+    assert [edge.internal_edge_id.value for edge in portfolio.edges] == ["edge:0", "edge:1"]
+    records = {record.internal_record_id: record for record in portfolio.records}
+    for edge in portfolio.edges:
+        assert records[edge.subject_record_id].semantic_type == "classification@example:ztf"
+        assert records[edge.target_record_id].semantic_type.startswith("crossmatch@")
+        assert edge.internal_source == records[edge.subject_record_id].internal_source
+        assert edge.internal_source == records[edge.target_record_id].internal_source
 
 
 def test_root_object_builds_one_record_with_relative_fields(tmp_path):

@@ -35,6 +35,37 @@ def test_valid_minimal_mapping_and_default_endpoint_pass(tmp_path, valid_mapping
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_valid_edge_declaration_passes(tmp_path, valid_mapping):
+    valid_mapping["edges"] = [{
+        "edge_type": "--derived_from-->",
+        "subject": "classification@example:ztf",
+        "target": "crossmatch@{producer}:ztf",
+        "payloads": ["objects"],
+    }]
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize(("change", "match"), [
+    ({"extra": True}, "unsupported key"),
+    ({"edge_type": "--unknown-->"}, "unknown ontology edge type"),
+    ({"subject": "unknown@example:ztf"}, "ontology-derived first-level"),
+    ({"target": "crossmatch@prefix-{producer}:ztf"}, "whole-segment"),
+    ({"payloads": []}, "non-empty list"),
+    ({"payloads": ["missing"]}, "unknown payload"),
+])
+def test_invalid_edge_declaration_fails(tmp_path, valid_mapping, change, match):
+    declaration = {
+        "edge_type": "--derived_from-->",
+        "subject": "classification@example:ztf",
+        "target": "crossmatch@{producer}:ztf",
+        "payloads": ["objects"],
+    }
+    declaration.update(change)
+    valid_mapping["edges"] = [declaration]
+    with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
     write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {}}})
     write_yaml(

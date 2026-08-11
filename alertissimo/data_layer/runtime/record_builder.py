@@ -15,9 +15,11 @@ from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalPortfolioId,
+    InternalEdgeId,
     InternalRecordId,
     InternalRecordSource,
     Portfolio,
+    SemanticEdge,
     SemanticRecord,
 )
 from alertissimo.data_layer.semantic_model.index import SemanticModelIndex
@@ -121,6 +123,23 @@ def new_internal_record_id() -> InternalRecordId:
     return InternalRecordId(f"record:{uuid4().hex}")
 
 
+def new_internal_edge_id() -> InternalEdgeId:
+    return InternalEdgeId(f"edge:{uuid4().hex}")
+
+
+def _semantic_type_matches(template: str, semantic_type: str) -> bool:
+    """Match semantic types, treating whole qualifier placeholders as wildcards."""
+    template_segments = re.split(r"([@:])", template)
+    type_segments = re.split(r"([@:])", semantic_type)
+    if len(template_segments) != len(type_segments):
+        return False
+    return all(
+        template_segment == type_segment
+        or _placeholder_name(template_segment) is not None
+        for template_segment, type_segment in zip(template_segments, type_segments)
+    )
+
+
 def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any:
     if not specification:
         return value
@@ -163,6 +182,7 @@ def build_portfolio_from_execution(
     providers_root: Path | None = None,
     internal_portfolio_id: InternalPortfolioId | None = None,
     record_id_factory: Callable[[], InternalRecordId] | None = None,
+    edge_id_factory: Callable[[], InternalEdgeId] | None = None,
     validate_semantic_model: bool = False,
     semantic_model: SemanticModelIndex | None = None,
 ) -> Portfolio:
@@ -192,7 +212,10 @@ def build_portfolio_from_execution(
     mappings = document["mappings"]
     transforms = document.get("transforms", {})
     records: list[SemanticRecord] = []
+    edges: list[SemanticEdge] = []
     make_record_id = record_id_factory or new_internal_record_id
+    make_edge_id = edge_id_factory or new_internal_edge_id
+    edge_declarations = document.get("edges", [])
 
     for payload_key, payload_definition in payload_definitions.items():
         payload_path = payload_definition["path"]
@@ -202,6 +225,7 @@ def build_portfolio_from_execution(
             payload_path=payload_path,
         )
         for item in items:
+            item_records: list[SemanticRecord] = []
             fields_by_type: dict[str, dict[str, Any]] = {}
             for semantic_path, references in mappings.items():
                 semantic_type, relative_field = split_semantic_path(semantic_path)
@@ -231,7 +255,7 @@ def build_portfolio_from_execution(
                 fields = _resolve_dynamic_field_paths(fields)
                 if not fields:
                     continue
-                records.append(
+                item_records.append(
                     SemanticRecord(
                         internal_record_id=make_record_id(),
                         semantic_type=semantic_type,
@@ -244,11 +268,38 @@ def build_portfolio_from_execution(
                         ),
                     )
                 )
+            records.extend(item_records)
+
+            for declaration in edge_declarations:
+                if payload_key not in declaration["payloads"]:
+                    continue
+                subjects = [
+                    record for record in item_records
+                    if _semantic_type_matches(declaration["subject"], record.semantic_type)
+                ]
+                targets = [
+                    record for record in item_records
+                    if _semantic_type_matches(declaration["target"], record.semantic_type)
+                ]
+                if len(subjects) > 1 or len(targets) > 1:
+                    raise PortfolioBuildError(
+                        f"edge declaration {declaration['edge_type']!r} matched multiple "
+                        f"records in payload item {payload_key!r} index {item.payload_index!r}"
+                    )
+                if not subjects or not targets:
+                    continue
+                edges.append(SemanticEdge(
+                    internal_edge_id=make_edge_id(),
+                    edge_type=declaration["edge_type"],
+                    subject_record_id=subjects[0].internal_record_id,
+                    target_record_id=targets[0].internal_record_id,
+                    internal_source=subjects[0].internal_source,
+                ))
 
     portfolio = Portfolio(
         internal_portfolio_id=internal_portfolio_id or new_internal_portfolio_id(),
         records=tuple(records),
-        edges=(),
+        edges=tuple(edges),
         executions=(execution.execution_provenance,),
     )
     if validate_semantic_model:

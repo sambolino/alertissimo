@@ -1566,6 +1566,8 @@ levels:
 <classification>:
   level: L5, L6
   description: "Classification, annotation, or taxonomic interpretation"
+  $edges:
+    --derived_from--> <crossmatch>@{producer}:{channel}
 
   <best>:
     description: "Selected or preferred classification result"

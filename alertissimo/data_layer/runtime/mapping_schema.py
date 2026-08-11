@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from alertissimo.data_layer.semantic_model import SemanticPathModel
+from alertissimo.data_layer.semantic_model import (
+    SemanticPathModel,
+    load_semantic_model_index,
+)
 
 
 class MappingSchemaError(ValueError):
@@ -20,8 +24,12 @@ class InvalidSemanticPathError(MappingSchemaError):
 
 
 MAPPING_KEYS = {
-    "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
+    "broker", "origin", "payloads", "mappings", "transforms", "edges",
+    "description", "notes",
 }
+EDGE_KEYS = {"edge_type", "subject", "target", "payloads"}
+_SEMANTIC_TYPE_SEGMENT = re.compile(r"^[A-Za-z0-9_.-]+$")
+_PLACEHOLDER_SEGMENT = re.compile(r"^\{[A-Za-z_][A-Za-z0-9_]*\}$")
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
 TRANSFORM_KEYS = {"type", "map", "default", "skip_null", "note"}
 TRANSFORM_TYPES = {
@@ -107,6 +115,31 @@ def _validate_raw_reference(reference: Any, payloads: set[str], where: str) -> N
         raise MappingSchemaError(f"{where} must not contain whitespace around either part")
     if payload_key not in payloads:
         raise MappingSchemaError(f"{where} references unknown payload {payload_key!r}")
+
+
+def _validate_semantic_type_template(
+    value: Any, record_types: frozenset[str], where: str
+) -> None:
+    value = _nonempty_string(value, where)
+    if "@" not in value or any(character.isspace() for character in value):
+        raise MappingSchemaError(
+            f"{where} must be a qualified semantic record-type template"
+        )
+    base_type, qualifiers = value.split("@", 1)
+    segments = qualifiers.split(":")
+    if (
+        base_type not in record_types
+        or not all(segments)
+        or any(
+            _SEMANTIC_TYPE_SEGMENT.fullmatch(segment) is None
+            and _PLACEHOLDER_SEGMENT.fullmatch(segment) is None
+            for segment in segments
+        )
+    ):
+        raise MappingSchemaError(
+            f"{where} must use an ontology-derived first-level record type and "
+            "whole-segment qualifier placeholders"
+        )
 
 
 def _validate_endpoints(path: Path, endpoints_used: list[tuple[str, str]]) -> None:
@@ -266,6 +299,40 @@ def validate_mapping_file(path: str | Path) -> None:
                 raise MappingSchemaError(f"{path}: transform skip_null must be boolean")
             if "note" in specification and not isinstance(specification["note"], str):
                 raise MappingSchemaError(f"{path}: transform note must be a string")
+
+    edges = document.get("edges", [])
+    if not isinstance(edges, list):
+        raise MappingSchemaError(f"{path}: edges must be a list")
+    semantic_index = load_semantic_model_index()
+    for index, declaration in enumerate(edges):
+        where = f"{path}: edges[{index}]"
+        declaration = _mapping(declaration, where)
+        _allowed_keys(declaration, EDGE_KEYS, where)
+        missing = EDGE_KEYS - set(declaration)
+        if missing:
+            raise MappingSchemaError(
+                f"{where} is missing required key(s): {', '.join(sorted(missing))}"
+            )
+        edge_type = _nonempty_string(declaration["edge_type"], f"{where} edge_type")
+        if edge_type not in semantic_index.edge_types:
+            raise MappingSchemaError(f"{where} uses unknown ontology edge type {edge_type!r}")
+        _validate_semantic_type_template(
+            declaration["subject"], semantic_model.record_types, f"{where} subject"
+        )
+        _validate_semantic_type_template(
+            declaration["target"], semantic_model.record_types, f"{where} target"
+        )
+        edge_payloads = declaration["payloads"]
+        if not isinstance(edge_payloads, list) or not edge_payloads:
+            raise MappingSchemaError(f"{where} payloads must be a non-empty list")
+        for payload_index, payload_key in enumerate(edge_payloads):
+            payload_key = _validate_payload_key(
+                payload_key, f"{where} payloads[{payload_index}]"
+            )
+            if payload_key not in payloads:
+                raise MappingSchemaError(
+                    f"{where} references unknown payload {payload_key!r}"
+                )
 
     _validate_endpoints(path.with_name("endpoints.yaml"), endpoints_used)
     unmapped_references = _validate_unmapped(

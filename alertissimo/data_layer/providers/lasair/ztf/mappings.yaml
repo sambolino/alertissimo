@@ -14,6 +14,14 @@ payloads:
   sherlock_position_crossmatches: {endpoint: sherlock_position, path: "crossmatches[]"}
   sherlock_objects_crossmatches: {endpoint: sherlock_objects, path: "[].crossmatches[]"}
 
+edges:
+  - edge_type: --derived_from-->
+    subject: classification@sherlock:lasair
+    target: crossmatch@{producer}:lasair
+    payloads:
+      - sherlock_position_crossmatches
+      - sherlock_objects_crossmatches
+
 mappings:
   summary@ztf:lasair.identity.object_id:
     - object#objectId
@@ -81,6 +89,14 @@ mappings:
   classification@sherlock:lasair.best.description:
     - sherlock_position_classifications#_value.1
     - sherlock_objects_classifications#_value.1
+  classification@sherlock:lasair.assessment.sherlock.class:
+    - sherlock_position_crossmatches#association_type
+    - sherlock_position_crossmatches#classification
+    - sherlock_objects_crossmatches#association_type
+    - sherlock_objects_crossmatches#classification
+  classification@sherlock:lasair.assessment.sherlock.score:
+    - sherlock_position_crossmatches#classificationReliability
+    - sherlock_objects_crossmatches#classificationReliability
   crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
     - sherlock_position_crossmatches#catalogue_object_id
@@ -191,6 +207,14 @@ mappings:
     - object#TNS.z
 
 transforms:
+  classification@sherlock:lasair.assessment.sherlock.class:
+    sherlock_position_crossmatches#association_type: {skip_null: true}
+    sherlock_position_crossmatches#classification: {skip_null: true}
+    sherlock_objects_crossmatches#association_type: {skip_null: true}
+    sherlock_objects_crossmatches#classification: {skip_null: true}
+  classification@sherlock:lasair.assessment.sherlock.score:
+    sherlock_position_crossmatches#classificationReliability: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#classificationReliability: {type: to_float, skip_null: true}
   summary@ztf:lasair.time.first_mjd:
     object#objectData.jdmin:
       type: jd_to_mjd

@@ -361,7 +361,8 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     assert fields["classification.best.class"] == "galaxy"
     assert fields["classification.assessment.sherlock.class"] == "SN"
     assert fields["classification.assessment.sherlock.score"] == 2.0
-    assert portfolio.edges == ()
+    assert len(portfolio.edges) == 1
+    assert portfolio.edges[0].edge_type == "--derived_from-->"
 
 
 def test_sherlock_crossmatch_rank_falls_back_to_merged_rank():
@@ -472,6 +473,51 @@ def test_sherlock_objects_crossmatch_maps_core_science_fields():
     assert fields["position.dec"] == 3.4
     assert fields["classification.assessment.sherlock.class"] == "AGN"
     assert fields["classification.assessment.sherlock.score"] == 0.9
+
+
+def test_sherlock_position_crossmatch_builds_first_class_classification_edge():
+    portfolio = _build_endpoint_payload({"crossmatches": [{
+        "catalogue_table_name": "SDSS/MILLIQUAS/GAIA/DESI/PS1",
+        "catalogue_object_id": "J122001.74+082413.4",
+        "association_type": "AGN",
+        "classificationReliability": "2",
+    }]}, "sherlock_position")
+
+    crossmatch = next(record for record in portfolio.records if record.semantic_type ==
+                      "crossmatch@sdss_milliquas_gaia_desi_ps1:lasair")
+    classification = next(record for record in portfolio.records if record.semantic_type ==
+                          "classification@sherlock:lasair")
+    assert classification.fields["assessment.sherlock.class"] == "AGN"
+    assert classification.fields["assessment.sherlock.score"] == 2.0
+    assert len(portfolio.edges) == 1
+    edge = portfolio.edges[0]
+    assert edge.edge_type == "--derived_from-->"
+    assert edge.subject_record_id == classification.internal_record_id
+    assert edge.target_record_id == crossmatch.internal_record_id
+    assert edge.internal_source == classification.internal_source == crossmatch.internal_source
+
+
+def test_sherlock_objects_crossmatch_edges_are_isolated_by_nested_row():
+    portfolio = _build_endpoint_payload([{"crossmatches": [
+        {"catalogue_table_name": "Gaia DR3", "catalogue_object_id": "one",
+         "association_type": "Star", "classificationReliability": "1"},
+        {"catalogue_table_name": "DESI Legacy Survey DR10", "catalogue_object_id": "two",
+         "association_type": None, "classification": "Galaxy",
+         "classificationReliability": "0.8"},
+    ]}], "sherlock_objects")
+
+    crossmatches = [r for r in portfolio.records if r.semantic_type.startswith("crossmatch@")]
+    classifications = [r for r in portfolio.records if r.semantic_type ==
+                       "classification@sherlock:lasair"]
+    assert len(crossmatches) == len(classifications) == len(portfolio.edges) == 2
+    records = {record.internal_record_id: record for record in portfolio.records}
+    assert {record.fields["assessment.sherlock.class"] for record in classifications} == {
+        "Star", "Galaxy",
+    }
+    for edge in portfolio.edges:
+        subject = records[edge.subject_record_id]
+        target = records[edge.target_record_id]
+        assert edge.internal_source == subject.internal_source == target.internal_source
 
 
 def test_sherlock_crossmatch_does_not_map_photometry_or_native_audit_fields():
