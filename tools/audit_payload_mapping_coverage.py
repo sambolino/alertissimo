@@ -29,7 +29,7 @@ def _top_level_payload_branch(payload_path: str) -> str | None:
     if payload_path.startswith("[]."):
         payload_path = payload_path[3:]
     first = payload_path.split(".", 1)[0]
-    if first.endswith("[]"):
+    if first.endswith(("[]", "{}")):
         first = first[:-2]
     return first or None
 

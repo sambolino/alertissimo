@@ -3,6 +3,9 @@ import subprocess
 import sys
 
 from examples.build_lasair_portfolio_from_payload import build_portfolio_from_payload
+from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
 
 
 def _payload():
@@ -105,3 +108,56 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
     assert "payload keys: classifications, crossmatches" in result.stderr
     assert "records built: 0" in result.stderr
     assert "No semantic records were built for this endpoint/payload shape." in result.stderr
+
+
+def test_sherlock_position_classification_dictionary():
+    portfolio = build_portfolio_from_payload(
+        {
+            "classifications": {
+                "ZTF20acpwljl": ["SN", "The transient is possibly associated"]
+            }
+        },
+        endpoint="sherlock_position",
+    )
+
+    records = [
+        record
+        for record in portfolio.records
+        if record.semantic_type == "classification@sherlock:lasair"
+    ]
+    assert len(records) == 1
+    assert dict(records[0].fields) == {
+        "identity.object_id": "ZTF20acpwljl",
+        "best.class": "SN",
+        "best.description": "The transient is possibly associated",
+    }
+    assert portfolio.edges == ()
+
+
+def test_sherlock_objects_classification_dictionary():
+    provenance = InternalExecutionProvenance(
+        internal_execution_id=InternalExecutionId("execution:test:sherlock-objects"),
+        broker="lasair",
+        origin="ztf",
+        endpoint="sherlock_objects",
+    )
+    portfolio = build_portfolio_from_execution(
+        ExecutionResult(
+            payload=[{"classifications": {"ZTF-object": ["AGN", "likely"]}}],
+            execution_provenance=provenance,
+        ),
+        validate_semantic_model=True,
+    )
+
+    records = [
+        record
+        for record in portfolio.records
+        if record.semantic_type == "classification@sherlock:lasair"
+    ]
+    assert len(records) == 1
+    assert dict(records[0].fields) == {
+        "identity.object_id": "ZTF-object",
+        "best.class": "AGN",
+        "best.description": "likely",
+    }
+    assert portfolio.edges == ()

@@ -36,6 +36,19 @@ def test_endpoint_without_payload_definitions_reports_sherlock_branches():
         payload_file="sherlock_position.json",
     )
 
-    assert extract_unmapped_branches(report) == {"classifications", "crossmatches"}
+    assert extract_unmapped_branches(report) == {"crossmatches"}
     assert "Portfolio records: 0" in report
     assert "No semantic records were built for this endpoint/payload shape." in report
+
+
+def test_sherlock_position_classifications_are_covered_by_mapping():
+    payload = {"classifications": {"ZTF20acpwljl": ["SN", "description"]}}
+    report = audit_payload(
+        payload,
+        broker="lasair",
+        origin="ztf",
+        endpoint="sherlock_position",
+        payload_file="sherlock_position.json",
+    )
+
+    assert "classifications" not in extract_unmapped_branches(report)
