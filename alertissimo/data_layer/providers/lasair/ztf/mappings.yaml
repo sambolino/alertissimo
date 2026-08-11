@@ -75,9 +75,6 @@ mappings:
     - object#sherlock.classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
-  classification@sherlock:lasair.identity.object_id:
-    - sherlock_position_classifications#_key
-    - sherlock_objects_classifications#_key
   classification@sherlock:lasair.best.class:
     - sherlock_position_classifications#_value.0
     - sherlock_objects_classifications#_value.0

@@ -151,6 +151,26 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     assert mappings["classification@lasair.assessment.sherlock.class"] == [
         "object#sherlock.classification"
     ]
+    assert mappings["classification@sherlock:lasair.best.class"] == [
+        "sherlock_position_classifications#_value.0",
+        "sherlock_objects_classifications#_value.0",
+    ]
+    assert mappings["classification@sherlock:lasair.best.description"] == [
+        "sherlock_position_classifications#_value.1",
+        "sherlock_objects_classifications#_value.1",
+    ]
+    assert not any(
+        key.startswith("classification@sherlock:lasair.")
+        and key.endswith(("identity.object_id", "subject.object_id", "target.object_id"))
+        for key in mappings
+    )
+    assert not any(
+        ref.endswith("#_key")
+        for key, refs in mappings.items()
+        if key.startswith("classification@sherlock:lasair.")
+        for ref in refs
+    )
+    assert "classification@sherlock:lasair.description" not in mappings
     assert mappings["classification@tns:lasair.best.class"] == ["object#TNS.type"]
     assert mappings["crossmatch@tns:lasair.identity.object_id"] == ["object#TNS.name"]
     assert "lightcurve@ztf:lasair.{filter}.points" not in mappings
