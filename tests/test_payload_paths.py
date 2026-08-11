@@ -1,6 +1,10 @@
 import pytest
 
-from alertissimo.data_layer.runtime.payload_paths import resolve_payload_items
+from alertissimo.data_layer.runtime.payload_paths import (
+    RawFieldMissing,
+    extract_raw_field,
+    resolve_payload_items,
+)
 
 
 def test_root_singleton():
@@ -40,13 +44,54 @@ def test_nested_root_list_preserves_index_path_and_flattens_index():
     assert [item.index_path for item in items] == [(0, 0), (0, 1), (0, 2), (1, 0)]
 
 
+def test_mapping_expansion_is_sorted_by_key():
+    payload = {
+        "classifications": {
+            "ZTF20b": ["AGN", "likely"],
+            "ZTF20a": ["SN", "description"],
+        }
+    }
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="classifications{}"
+    )
+    assert [item.value for item in items] == [
+        {"_key": "ZTF20a", "_value": ["SN", "description"]},
+        {"_key": "ZTF20b", "_value": ["AGN", "likely"]},
+    ]
+    assert [item.index_path for item in items] == [(0,), (1,)]
+
+
+def test_mapping_expansion_below_root_list():
+    payload = [
+        {"classifications": {"ZTF20b": ["AGN", "likely"]}},
+        {"classifications": {"ZTF20a": ["SN", "description"]}},
+    ]
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="[].classifications{}"
+    )
+    assert [item.value["_key"] for item in items] == ["ZTF20b", "ZTF20a"]
+    assert [item.index_path for item in items] == [(0, 0), (1, 0)]
+
+
+def test_extract_raw_field_supports_list_indexes():
+    record = {"_key": "ZTF20a", "_value": ["SN", "description"]}
+    assert extract_raw_field(record, "_key") == "ZTF20a"
+    assert extract_raw_field(record, "_value.0") == "SN"
+    assert extract_raw_field(record, "_value.1") == "description"
+    with pytest.raises(RawFieldMissing):
+        extract_raw_field(record, "_value.2")
+
+
 def test_missing_and_structural_mismatches_are_empty():
     assert resolve_payload_items({}, payload_key="x", payload_path="missing[]") == ()
     assert resolve_payload_items({"rows": {}}, payload_key="x", payload_path="rows[]") == ()
     assert resolve_payload_items({}, payload_key="x", payload_path="[]") == ()
 
 
-@pytest.mark.parametrize("path", ["", "candidates", ".candidates[]", "a[].b[]", "[]candidates[]"])
+@pytest.mark.parametrize(
+    "path",
+    ["", "candidates", ".candidates[]", "a[].b[]", "[]candidates[]", "a{}.b{}"],
+)
 def test_invalid_syntax_raises(path):
     with pytest.raises(ValueError):
         resolve_payload_items({}, payload_key="x", payload_path=path)

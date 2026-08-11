@@ -23,9 +23,17 @@ class RawFieldMissing(LookupError):
 def _mapping_path(value: Any, path: str) -> Any:
     current = value
     for key in path.split("."):
-        if not key or not isinstance(current, Mapping) or key not in current:
+        if isinstance(current, Mapping) and key in current:
+            current = current[key]
+            continue
+        if isinstance(current, (list, tuple)) and key.isdigit():
+            index = int(key)
+            if index < len(current):
+                current = current[index]
+                continue
+        if not key:
             raise RawFieldMissing(path)
-        current = current[key]
+        raise RawFieldMissing(path)
     return current
 
 
@@ -41,15 +49,22 @@ def resolve_payload_items(
 
     root_expansion = payload_path.startswith("[].")
     path = payload_path[3:] if root_expansion else payload_path
+    expansion = path[-2:] if path.endswith(("[]", "{}")) else ""
+    collection_path = path[:-2] if expansion else path
     if (
-        not path.endswith("[]")
-        or path == "[]"
-        or "[]" in path[:-2]
-        or any(not part or not part.replace("_", "a").isalnum() for part in path[:-2].split("."))
+        not expansion
+        or not collection_path
+        or "[]" in collection_path
+        or "{}" in collection_path
+        or any(
+            not part or not part.replace("_", "a").isalnum()
+            for part in collection_path.split(".")
+        )
     ):
         if payload_path == "[]":
             root_expansion = True
             path = ""
+            expansion = "[]"
         else:
             raise ValueError(f"invalid payload path: {payload_path!r}")
 
@@ -67,14 +82,22 @@ def resolve_payload_items(
             resolved.append((root, root_indexes))
             continue
         try:
-            collection = _mapping_path(root, path[:-2])
+            collection = _mapping_path(root, collection_path)
         except RawFieldMissing:
             continue
-        if not isinstance(collection, (list, tuple)):
-            continue
+        if expansion == "[]":
+            if not isinstance(collection, (list, tuple)):
+                continue
+            values = collection
+        else:
+            if not isinstance(collection, Mapping):
+                continue
+            values = tuple(
+                {"_key": key, "_value": value}
+                for key, value in sorted(collection.items(), key=lambda item: str(item[0]))
+            )
         resolved.extend(
-            (value, (*root_indexes, index))
-            for index, value in enumerate(collection)
+            (value, (*root_indexes, index)) for index, value in enumerate(values)
         )
 
     return tuple(
