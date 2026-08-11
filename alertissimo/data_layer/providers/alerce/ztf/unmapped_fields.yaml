@@ -1,74 +1,391 @@
 broker: alerce
 origin: ztf
-notes: Only audited fields without a stable semantic feature catalog path are retained
-  here.
+notes: Semantic debt from the payload-first re-audit. Entries are intentionally not forced into merely similar ontology paths.
 unmapped:
+- get_avro#bytes:
+    reason: binary_transport_content
+    candidate_meaning: ALeRCE raw field 'bytes'; previous path 'data_product@ztf:alerce.avro.bytes' is not equivalent to a current ontology-backed semantic path.
+- get_stamps#[0]:
+    reason: binary_transport_content
+    candidate_meaning: ALeRCE raw field '[0]'; previous path 'data_product@ztf:alerce.cutouts.science' is not equivalent to a current ontology-backed semantic path.
+- get_stamps#[1]:
+    reason: binary_transport_content
+    candidate_meaning: ALeRCE raw field '[1]'; previous path 'data_product@ztf:alerce.cutouts.template' is not equivalent to a current ontology-backed semantic path.
+- get_stamps#[2]:
+    reason: binary_transport_content
+    candidate_meaning: ALeRCE raw field '[2]'; previous path 'data_product@ztf:alerce.cutouts.difference' is not equivalent to a current ontology-backed semantic path.
+- query_detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'has_stamp'; previous path 'detection@ztf:alerce.data_product.stamp.available' is not equivalent to a current ontology-backed semantic path.
+- query_detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'parent_candid'; previous path 'detection@ztf:alerce.relationship.parent_alert_id' is not equivalent to a current ontology-backed semantic path.
+- query_detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'phase'; previous path 'detection@ztf:alerce.time.phase' is not equivalent to a current ontology-backed semantic path.
 - query_detections#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
+    reason: provider_native_processing_metadata
+    candidate_meaning: Pipeline correction-step identifier has no stable semantic mapping.
+- query_features#fid:
+    reason: unsupported_feature_semantics
+    candidate_meaning: ALeRCE raw field 'fid'; previous path 'summary@ztf:alerce.features.{name}.filter_id' is not equivalent to a current ontology-backed semantic path.
+- query_features#name:
+    reason: unsupported_feature_semantics
+    candidate_meaning: ALeRCE raw field 'name'; previous path 'summary@ztf:alerce.features.{name}' is not equivalent to a current ontology-backed semantic path.
+- query_features#value:
+    reason: unsupported_feature_semantics
+    candidate_meaning: ALeRCE raw field 'value'; previous path 'summary@ztf:alerce.features.{name}.value' is not equivalent to a current ontology-backed semantic path.
+- query_features#version:
+    reason: unsupported_feature_semantics
+    candidate_meaning: ALeRCE raw field 'version'; previous path 'summary@ztf:alerce.features.{name}.version' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#adpctdif1:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'adpctdif1'; previous path 'detection@ztf:alerce.astrometry.rms.ra' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#adpctdif2:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'adpctdif2'; previous path 'detection@ztf:alerce.astrometry.rms.dec' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#chinr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'chinr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.daophot_chi' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#decnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'decnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.position.dec' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#distnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'distnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.distance' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#e_dec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'e_dec'; previous path 'detection@ztf:alerce.position.error.dec' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#e_ra:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'e_ra'; previous path 'detection@ztf:alerce.position.error.ra' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#exptime:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'exptime'; previous path 'detection@ztf:alerce.observation.exposure_time' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'has_stamp'; previous path 'detection@ztf:alerce.data_product.stamp.available' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#isdiffpos:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'isdiffpos'; previous path 'detection@ztf:alerce.subtraction.sign' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#magnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#magzpsci:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpsci'; previous path 'detection@ztf:alerce.calibration.zero_point.magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#magzpscirms:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpscirms'; previous path 'detection@ztf:alerce.calibration.zero_point.rms' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#magzpsciunc:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpsciunc'; previous path 'detection@ztf:alerce.calibration.zero_point.magnitude_error' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'parent_candid'; previous path 'detection@ztf:alerce.relationship.parent_alert_id' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#ranr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ranr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.position.ra' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#rcid:
+    reason: provider_native_processing_metadata
+    candidate_meaning: ALeRCE raw field 'rcid'; previous path 'detection@ztf:alerce.provenance.instrument.readout_channel_id' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#scibckgnd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'scibckgnd'; previous path 'detection@ztf:alerce.image.science.background' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#sciinpseeing:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sciinpseeing'; previous path 'detection@ztf:alerce.image.science.psf_fwhm' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#scisigpix:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'scisigpix'; previous path 'detection@ztf:alerce.image.science.sigma_per_pixel' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#sharpnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sharpnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.daophot_sharp' is not equivalent to a current ontology-backed semantic path.
+- query_forced_photometry#sigmagnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sigmagnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.magnitude_error' is not equivalent to a current ontology-backed semantic path.
 - query_lightcurve.detections#adpctdif1:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#adpctdif2:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#clrcoeff:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#clrcounc:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#e_mag:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#e_mag_corr:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#e_mag_corr_ext:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#exptime:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
+- query_lightcurve.detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'has_stamp'; previous path 'detection@ztf:alerce.data_product.stamp.available' is not equivalent to a current ontology-backed semantic path.
 - query_lightcurve.detections#mag:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#mag_corr:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#magzpsci:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#magzpscirms:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#magzpsciunc:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
+- query_lightcurve.detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'parent_candid'; previous path 'detection@ztf:alerce.relationship.parent_alert_id' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'phase'; previous path 'detection@ztf:alerce.time.phase' is not equivalent to a current ontology-backed semantic path.
 - query_lightcurve.detections#procstatus:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#rcid:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#scibckgnd:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#sciinpseeing:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#scisigpix:
-    reason: no_stable_feature_catalog_path
-    note: No stable semantic feature catalog path is available for this raw field.
+    reason: unsupported_semantic_concept
+    candidate_meaning: No stable semantic feature catalog path is available for this raw field.
 - query_lightcurve.detections#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
+    reason: provider_native_processing_metadata
+    candidate_meaning: Pipeline correction-step identifier has no stable semantic mapping.
+- query_lightcurve.forced_photometry#adpctdif1:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'adpctdif1'; previous path 'detection@ztf:alerce.astrometry.rms.ra' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#adpctdif2:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'adpctdif2'; previous path 'detection@ztf:alerce.astrometry.rms.dec' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#chinr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'chinr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.daophot_chi' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#decnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'decnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.position.dec' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#distnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'distnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.distance' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#e_dec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'e_dec'; previous path 'detection@ztf:alerce.position.error.dec' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#e_ra:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'e_ra'; previous path 'detection@ztf:alerce.position.error.ra' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#exptime:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'exptime'; previous path 'detection@ztf:alerce.observation.exposure_time' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'has_stamp'; previous path 'detection@ztf:alerce.data_product.stamp.available' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#isdiffpos:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'isdiffpos'; previous path 'detection@ztf:alerce.subtraction.sign' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#magnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#magzpsci:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpsci'; previous path 'detection@ztf:alerce.calibration.zero_point.magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#magzpscirms:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpscirms'; previous path 'detection@ztf:alerce.calibration.zero_point.rms' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#magzpsciunc:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magzpsciunc'; previous path 'detection@ztf:alerce.calibration.zero_point.magnitude_error' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'parent_candid'; previous path 'detection@ztf:alerce.relationship.parent_alert_id' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#ranr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ranr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.position.ra' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#rcid:
+    reason: provider_native_processing_metadata
+    candidate_meaning: ALeRCE raw field 'rcid'; previous path 'detection@ztf:alerce.provenance.instrument.readout_channel_id' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#scibckgnd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'scibckgnd'; previous path 'detection@ztf:alerce.image.science.background' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#sciinpseeing:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sciinpseeing'; previous path 'detection@ztf:alerce.image.science.psf_fwhm' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#scisigpix:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'scisigpix'; previous path 'detection@ztf:alerce.image.science.sigma_per_pixel' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#sharpnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sharpnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.daophot_sharp' is not equivalent to a current ontology-backed semantic path.
+- query_lightcurve.forced_photometry#sigmagnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sigmagnr'; previous path 'detection@ztf:alerce.crossmatch.nearest_source.magnitude_error' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'corrected'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#dm_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'dm_first'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#dmdt_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'dmdt_first'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_slope' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#dt_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'dt_first'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_delta_time' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#firstmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'firstmjd'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#lastmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'lastmjd'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.last_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magfirst:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magfirst'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magfirst_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magfirst_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#maglast:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'maglast'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#maglast_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'maglast_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmax:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmax'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmax_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmax_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmean'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmean_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmedian:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmedian'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmedian_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmedian_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmin:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmin'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magmin_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magmin_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magsigma:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magsigma'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#magsigma_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'magsigma_corr'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#ndet:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ndet'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.detection_count' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#ndubious:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ndubious'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.dubious_count' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#sigmadm_first:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'sigmadm_first'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.first_delta_magnitude_error' is not equivalent to a current ontology-backed semantic path.
+- query_magstats#stellar:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'stellar'; previous path 'summary@ztf:alerce.photometry.{filter}.statistics.stellar' is not equivalent to a current ontology-backed semantic path.
+- query_object#class:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'class'; previous path 'summary@ztf:alerce.classification.best.class' is not equivalent to a current ontology-backed semantic path.
+- query_object#classifier:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'classifier'; previous path 'summary@ztf:alerce.classification.best.classifier' is not equivalent to a current ontology-backed semantic path.
+- query_object#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'corrected'; previous path 'summary@ztf:alerce.quality.corrected' is not equivalent to a current ontology-backed semantic path.
+- query_object#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_max'; previous path 'summary@ztf:alerce.color.g_minus_r.max' is not equivalent to a current ontology-backed semantic path.
+- query_object#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_max_corr'; previous path 'summary@ztf:alerce.color.g_minus_r.max_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_object#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_mean'; previous path 'summary@ztf:alerce.color.g_minus_r.mean' is not equivalent to a current ontology-backed semantic path.
+- query_object#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_mean_corr'; previous path 'summary@ztf:alerce.color.g_minus_r.mean_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_object#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'mjdendhist'; previous path 'summary@ztf:alerce.history.end_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_object#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'mjdstarthist'; previous path 'summary@ztf:alerce.history.start_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_object#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ndethist'; previous path 'summary@ztf:alerce.detection.history_count' is not equivalent to a current ontology-backed semantic path.
+- query_object#probability:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'probability'; previous path 'summary@ztf:alerce.classification.best.probability' is not equivalent to a current ontology-backed semantic path.
+- query_object#stellar:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'stellar'; previous path 'summary@ztf:alerce.classification.stellar' is not equivalent to a current ontology-backed semantic path.
 - query_object#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
+    reason: provider_native_processing_metadata
+    candidate_meaning: Pipeline correction-step identifier has no stable semantic mapping.
+- query_objects#class:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'class'; previous path 'summary@ztf:alerce.classification.best.class' is not equivalent to a current ontology-backed semantic path.
+- query_objects#classifier:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'classifier'; previous path 'summary@ztf:alerce.classification.best.classifier' is not equivalent to a current ontology-backed semantic path.
+- query_objects#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'corrected'; previous path 'summary@ztf:alerce.quality.corrected' is not equivalent to a current ontology-backed semantic path.
+- query_objects#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_max'; previous path 'summary@ztf:alerce.color.g_minus_r.max' is not equivalent to a current ontology-backed semantic path.
+- query_objects#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_max_corr'; previous path 'summary@ztf:alerce.color.g_minus_r.max_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_objects#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_mean'; previous path 'summary@ztf:alerce.color.g_minus_r.mean' is not equivalent to a current ontology-backed semantic path.
+- query_objects#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'g_r_mean_corr'; previous path 'summary@ztf:alerce.color.g_minus_r.mean_corrected' is not equivalent to a current ontology-backed semantic path.
+- query_objects#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'mjdendhist'; previous path 'summary@ztf:alerce.history.end_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_objects#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'mjdstarthist'; previous path 'summary@ztf:alerce.history.start_mjd' is not equivalent to a current ontology-backed semantic path.
+- query_objects#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE raw field 'ndethist'; previous path 'summary@ztf:alerce.detection.history_count' is not equivalent to a current ontology-backed semantic path.
+- query_objects#probability:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'probability'; previous path 'summary@ztf:alerce.classification.best.probability' is not equivalent to a current ontology-backed semantic path.
+- query_objects#stellar:
+    reason: ambiguous_provider_field
+    candidate_meaning: ALeRCE raw field 'stellar'; previous path 'summary@ztf:alerce.classification.stellar' is not equivalent to a current ontology-backed semantic path.
 - query_objects#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
+    reason: provider_native_processing_metadata
+    candidate_meaning: Pipeline correction-step identifier has no stable semantic mapping.
 - query_probabilities#ranking:
-    reason: no_stable_feature_catalog_path
-    note: Ranking semantics are classifier-output dependent.
+    reason: unsupported_semantic_concept
+    candidate_meaning: Ranking semantics are classifier-output dependent.
