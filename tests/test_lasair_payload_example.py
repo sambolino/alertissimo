@@ -105,3 +105,42 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
     assert "payload keys: classifications, crossmatches" in result.stderr
     assert "records built: 0" in result.stderr
     assert "No semantic records were built for this endpoint/payload shape." in result.stderr
+
+
+def test_sherlock_position_catalog_producers_and_dictionary_classification():
+    names = [
+        "SDSS/2MASS/PS1", "2MASS PSC", "PanSTARRS DR1",
+        "SDSS DR12 PhotoObjAll Table",
+    ]
+    first = {
+        "catalogue_object_id": "1237673709862061782 ", "catalogue_table_name": names[0],
+        "catalogue_table_id": 12, "raDeg": "124.88026", "decDeg": -6.02082,
+        "separationArcsec": "1.5719427375338366", "northSeparationArcsec": "-1.15164",
+        "eastSeparationArcsec": "1.06992", "catalogue_object_type": "galaxy",
+        "association_type": "SN", "classificationReliability": "2", "J": "17.007",
+        "_r": "19.141700744628906",
+    }
+    rows = [first] + [
+        {"catalogue_object_id": value, "catalogue_table_name": name}
+        for value, name in zip(["08193126-0601149 ", 100771248804585479, "last"], names[1:])
+    ]
+    portfolio = build_portfolio_from_payload({
+        "classifications": {"ZTF20acpwljl": ["SN", "The transient is possibly associated"]},
+        "crossmatches": rows,
+    }, endpoint="sherlock_position")
+    types = {record.semantic_type for record in portfolio.records}
+    assert types == {
+        "crossmatch@sdss_2mass_ps1:lasair", "crossmatch@twomass:lasair",
+        "crossmatch@panstarrs:lasair", "crossmatch@sdss:lasair",
+        "classification@sherlock:lasair",
+    }
+    assert not any("{producer}" in value for value in types)
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@sdss_2mass_ps1:lasair")
+    assert record.fields["identity.object_id"] == "1237673709862061782"
+    assert record.fields["position.ra"] == 124.88026
+    assert record.fields["separation.north"] == -1.15164
+    assert record.fields["classification.assessment.sherlock.score"] == 2.0
+    assert record.fields["photometry.j.mag"] == 17.007
+    classification = next(r for r in portfolio.records if r.semantic_type == "classification@sherlock:lasair")
+    assert classification.fields["best.class"] == "SN"
+    assert classification.fields["provenance.channel.id"] == "ZTF20acpwljl"

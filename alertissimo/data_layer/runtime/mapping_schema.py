@@ -17,8 +17,8 @@ MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
-TRANSFORM_KEYS = {"type", "map", "note"}
-TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd"}
+TRANSFORM_KEYS = {"type", "map", "default", "note"}
+TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd", "to_string_strip", "to_float"}
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
 OLD_HELPER_KEYS = {
@@ -63,9 +63,9 @@ def _validate_payload_key(key: Any, where: str) -> str:
 def _validate_payload_path(value: Any, where: str) -> str:
     """Validate the deliberately small payload-root/path notation."""
     value = _nonempty_string(value, where)
-    if value != "." and not value.endswith("[]"):
+    if value != "." and not value.endswith(("[]", "{}")):
         raise MappingSchemaError(
-            f"{where} must be '.' or a collection path ending in '[]'"
+            f"{where} must be '.' or a collection path ending in '[]' or '{{}}'"
         )
     return value
 

@@ -1,6 +1,6 @@
 import pytest
 
-from alertissimo.data_layer.runtime.payload_paths import resolve_payload_items
+from alertissimo.data_layer.runtime.payload_paths import extract_raw_field, resolve_payload_items
 
 
 def test_root_singleton():
@@ -38,6 +38,30 @@ def test_nested_root_list_preserves_index_path_and_flattens_index():
     assert [item.value for item in items] == ["a", "b", "c", "d"]
     assert [item.payload_index for item in items] == [0, 1, 2, 3]
     assert [item.index_path for item in items] == [(0, 0), (0, 1), (0, 2), (1, 0)]
+
+
+def test_dictionary_entries_are_sorted_and_expose_indexable_values():
+    payload = {"classifications": {
+        "ZTF20acpwljl": ["SN", "description"],
+        "ZTF20abc": ["AGN", "another"],
+    }}
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="classifications{}"
+    )
+    assert [item.value["_key"] for item in items] == ["ZTF20abc", "ZTF20acpwljl"]
+    assert extract_raw_field(items[1].value, "_value.0") == "SN"
+    assert extract_raw_field(items[1].value, "_value.1") == "description"
+
+
+def test_dictionary_entries_below_root_list():
+    payload = [{"classifications": {"b": [2], "a": [1]}}]
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="[].classifications{}"
+    )
+    assert [item.value for item in items] == [
+        {"_key": "a", "_value": [1]}, {"_key": "b", "_value": [2]}
+    ]
+    assert [item.index_path for item in items] == [(0, 0), (0, 1)]
 
 
 def test_missing_and_structural_mismatches_are_empty():

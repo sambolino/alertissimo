@@ -120,7 +120,12 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
     if transform_type == "boolean_not":
         return not bool(value)
     if transform_type == "value_map":
-        return specification["map"].get(value, value)
+        fallback = specification.get("default", value)
+        return specification["map"].get(value, fallback)
+    if transform_type == "to_string_strip":
+        return None if value is None else str(value).strip()
+    if transform_type == "to_float":
+        return None if value is None else float(value)
     if transform_type == "jd_to_mjd":
         return value - 2400000.5
     return value  # The mapping schema rejects unknown transform types.
@@ -165,6 +170,9 @@ def build_portfolio_from_execution(
     make_record_id = record_id_factory or new_internal_record_id
 
     for payload_key, payload_definition in payload_definitions.items():
+        if (payload_definition.get("endpoint") is not None
+                and payload_definition["endpoint"] != execution.execution_provenance.endpoint):
+            continue
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
             execution.payload,

@@ -114,6 +114,28 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+def test_string_float_and_value_map_default_transforms(tmp_path):
+    portfolio = _build(tmp_path, {"rows": [{"id": 123, "number": " 1.5 ", "code": "X"}]}, {
+        "broker": "lasair", "origin": "ztf", "payloads": {"row": {"path": "rows[]"}},
+        "mappings": {
+            "object@ztf:lasair.identity.object_id": ["row#id"],
+            "object@ztf:lasair.measurement.value": ["row#number"],
+            "object@ztf:lasair.classification.label": ["row#code"],
+        },
+        "transforms": {
+            "object@ztf:lasair.identity.object_id": {"row#id": {"type": "to_string_strip"}},
+            "object@ztf:lasair.measurement.value": {"row#number": {"type": "to_float"}},
+            "object@ztf:lasair.classification.label": {
+                "row#code": {"type": "value_map", "map": {"A": "star"}, "default": "unknown"}
+            },
+        },
+    })
+    assert dict(portfolio.records[0].fields) == {
+        "identity.object_id": "123", "measurement.value": 1.5,
+        "classification.label": "unknown",
+    }
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"

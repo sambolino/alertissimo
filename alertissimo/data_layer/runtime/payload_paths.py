@@ -23,9 +23,17 @@ class RawFieldMissing(LookupError):
 def _mapping_path(value: Any, path: str) -> Any:
     current = value
     for key in path.split("."):
-        if not key or not isinstance(current, Mapping) or key not in current:
+        if not key:
             raise RawFieldMissing(path)
-        current = current[key]
+        if isinstance(current, Mapping) and key in current:
+            current = current[key]
+        elif isinstance(current, (list, tuple)) and key.isdigit():
+            index = int(key)
+            if index >= len(current):
+                raise RawFieldMissing(path)
+            current = current[index]
+        else:
+            raise RawFieldMissing(path)
     return current
 
 
@@ -41,10 +49,12 @@ def resolve_payload_items(
 
     root_expansion = payload_path.startswith("[].")
     path = payload_path[3:] if root_expansion else payload_path
+    expansion = path[-2:] if len(path) >= 2 else ""
     if (
-        not path.endswith("[]")
+        expansion not in {"[]", "{}"}
         or path == "[]"
         or "[]" in path[:-2]
+        or "{}" in path[:-2]
         or any(not part or not part.replace("_", "a").isalnum() for part in path[:-2].split("."))
     ):
         if payload_path == "[]":
@@ -70,12 +80,17 @@ def resolve_payload_items(
             collection = _mapping_path(root, path[:-2])
         except RawFieldMissing:
             continue
-        if not isinstance(collection, (list, tuple)):
-            continue
-        resolved.extend(
-            (value, (*root_indexes, index))
-            for index, value in enumerate(collection)
-        )
+        if expansion == "[]":
+            if not isinstance(collection, (list, tuple)):
+                continue
+            resolved.extend((value, (*root_indexes, index)) for index, value in enumerate(collection))
+        else:
+            if not isinstance(collection, Mapping):
+                continue
+            resolved.extend(
+                ({"_key": key, "_value": collection[key]}, (*root_indexes, index))
+                for index, key in enumerate(sorted(collection, key=str))
+            )
 
     return tuple(
         ResolvedPayloadItem(
