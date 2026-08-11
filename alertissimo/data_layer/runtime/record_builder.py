@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
@@ -116,13 +117,35 @@ def new_internal_record_id() -> InternalRecordId:
 def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any:
     if not specification:
         return value
-    transform_type = specification["type"]
+    transform_type = specification.get("type")
+    if transform_type is None:
+        return value
     if transform_type == "boolean_not":
         return not bool(value)
     if transform_type == "value_map":
-        return specification["map"].get(value, value)
+        fallback = specification.get("default", value)
+        return specification["map"].get(value, fallback)
     if transform_type == "jd_to_mjd":
         return value - 2400000.5
+    if value is None:
+        return None
+    if transform_type == "to_string_strip":
+        return str(value).strip()
+    if transform_type == "to_float":
+        try:
+            return float(value)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"cannot convert {value!r} to float") from error
+    if transform_type == "to_int":
+        if isinstance(value, int):
+            return int(value)
+        try:
+            converted = Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError) as error:
+            raise ValueError(f"cannot convert {value!r} to int") from error
+        if not converted.is_finite() or converted != converted.to_integral_value():
+            raise ValueError(f"cannot convert non-integral value {value!r} to int")
+        return int(converted)
     return value  # The mapping schema rejects unknown transform types.
 
 
@@ -184,8 +207,13 @@ def build_portfolio_from_execution(
                     except RawFieldMissing:
                         continue
                     specification = transforms.get(semantic_path, {}).get(raw_reference)
+                    value = _apply_transform(value, specification)
+                    if value is None and specification and specification.get(
+                        "skip_null", False
+                    ):
+                        continue
                     fields_by_type.setdefault(semantic_type, {})[relative_field] = (
-                        _apply_transform(value, specification)
+                        value
                     )
                     break
 
