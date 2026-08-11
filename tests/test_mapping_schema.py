@@ -25,7 +25,7 @@ def valid_mapping():
         "description": "Minimal example",
         "notes": "Human-authored",
         "payloads": {"objects": {"path": ".", "description": "Rows"}},
-        "mappings": {"object@ztf:example.id": ["objects#oid"]},
+        "mappings": {"summary@ztf:example.identity.object_id": ["objects#oid"]},
     }
 
 
@@ -143,13 +143,13 @@ def test_unknown_endpoint_fails_when_endpoints_file_present(tmp_path, valid_mapp
 
 @pytest.mark.parametrize(("semantic", "references", "match"), [
     ("object.id", ["objects#oid"], "invalid semantic path"),
-    ("object@ztf:example.id", "objects#oid", "must be a non-empty list"),
-    ("object@ztf:example.id", [], "must be a non-empty list"),
-    ("object@ztf:example.id", ["missing#oid"], "unknown payload"),
-    ("object@ztf:example.id", ["objects#oid#extra"], "exactly one"),
-    ("object@ztf:example.id", ["objects #oid"], "whitespace around"),
-    ("object@ztf:example.id", ["objects# oid"], "whitespace around"),
-    ("object@ztf:example.id", ["objects#"], "non-empty payload and raw field"),
+    ("summary@ztf:example.identity.object_id", "objects#oid", "must be a non-empty list"),
+    ("summary@ztf:example.identity.object_id", [], "must be a non-empty list"),
+    ("summary@ztf:example.identity.object_id", ["missing#oid"], "unknown payload"),
+    ("summary@ztf:example.identity.object_id", ["objects#oid#extra"], "exactly one"),
+    ("summary@ztf:example.identity.object_id", ["objects #oid"], "whitespace around"),
+    ("summary@ztf:example.identity.object_id", ["objects# oid"], "whitespace around"),
+    ("summary@ztf:example.identity.object_id", ["objects#"], "non-empty payload and raw field"),
 ])
 def test_invalid_mapping_entry_fails(tmp_path, valid_mapping, semantic, references, match):
     valid_mapping["mappings"] = {semantic: references}
@@ -183,6 +183,25 @@ def test_cli_succeeds_for_valid_fixture(tmp_path, valid_mapping):
     assert "PASSED" in result.stdout
 
 
+def test_invalid_ontology_path_fails(tmp_path, valid_mapping):
+    semantic = "classification@sherlock:lasair.description"
+    valid_mapping["mappings"] = {semantic: ["objects#oid"]}
+
+    with pytest.raises(MappingSchemaError, match="not reachable from ontology.yaml"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("origin", ["lsst", "ztf"])
+def test_current_lasair_mapping_passes_ontology_validation(origin):
+    path = (
+        Path(__file__).parents[1]
+        / "alertissimo/data_layer/providers/lasair"
+        / origin
+        / "mappings.yaml"
+    )
+    validate_mapping_file(path)
+
+
 def test_all_skips_legacy_files_without_payloads(tmp_path, monkeypatch, capsys):
     data_layer = tmp_path / "data_layer"
     providers = data_layer / "providers"
@@ -214,7 +233,7 @@ def test_payload_row_filter_rejects_nested_values(tmp_path, valid_mapping, value
 
 
 def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {semantic: {"objects#oid": {"type": "boolean_not"}}}
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
@@ -223,7 +242,7 @@ def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
     "transform_type", ["to_string_strip", "to_float", "to_int", "jd_to_mjd"]
 )
 def test_new_transform_types_pass(tmp_path, valid_mapping, transform_type):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {
         semantic: {"objects#oid": {"type": transform_type}}
     }
@@ -231,7 +250,7 @@ def test_new_transform_types_pass(tmp_path, valid_mapping, transform_type):
 
 
 def test_skip_null_boolean_passes(tmp_path, valid_mapping):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {
         semantic: {"objects#oid": {"skip_null": True}}
     }
@@ -239,7 +258,7 @@ def test_skip_null_boolean_passes(tmp_path, valid_mapping):
 
 
 def test_skip_null_non_boolean_fails(tmp_path, valid_mapping):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {
         semantic: {"objects#oid": {"type": "to_float", "skip_null": "yes"}}
     }
@@ -248,7 +267,7 @@ def test_skip_null_non_boolean_fails(tmp_path, valid_mapping):
 
 
 def test_value_map_default_passes(tmp_path, valid_mapping):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {semantic: {"objects#oid": {
         "type": "value_map", "map": {"A": "star"}, "default": "unknown",
     }}}
@@ -257,7 +276,7 @@ def test_value_map_default_passes(tmp_path, valid_mapping):
 
 @pytest.mark.parametrize("default", [["unknown"], {"value": "unknown"}])
 def test_default_non_scalar_fails(tmp_path, valid_mapping, default):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {semantic: {"objects#oid": {
         "type": "value_map", "map": {}, "default": default,
     }}}
@@ -266,7 +285,7 @@ def test_default_non_scalar_fails(tmp_path, valid_mapping, default):
 
 
 def test_unknown_transform_type_fails(tmp_path, valid_mapping):
-    semantic = "object@ztf:example.id"
+    semantic = "summary@ztf:example.identity.object_id"
     valid_mapping["transforms"] = {
         semantic: {"objects#oid": {"type": "unknown"}}
     }
@@ -275,10 +294,10 @@ def test_unknown_transform_type_fails(tmp_path, valid_mapping):
 
 
 @pytest.mark.parametrize(("transforms", "match"), [
-    ({"object@ztf:example.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
-    ({"object@ztf:example.id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),
-    ({"object@ztf:example.id": {"objects#oid": {"type": "value_map"}}}, "requires 'map'"),
-    ({"object@ztf:example.id": {"objects#oid": {"type": "unknown"}}}, "transform type"),
+    ({"summary@ztf:example.identity.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
+    ({"summary@ztf:example.identity.object_id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),
+    ({"summary@ztf:example.identity.object_id": {"objects#oid": {"type": "value_map"}}}, "requires 'map'"),
+    ({"summary@ztf:example.identity.object_id": {"objects#oid": {"type": "unknown"}}}, "transform type"),
 ])
 def test_invalid_transform_fails(tmp_path, valid_mapping, transforms, match):
     valid_mapping["transforms"] = transforms

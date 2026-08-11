@@ -13,9 +13,11 @@ from alertissimo.data_layer.representations import (
     SemanticRecord,
 )
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.mapping_schema import MappingSchemaError
 from alertissimo.data_layer.semantic_model import (
     SemanticModelValidationError,
     load_semantic_model_index,
+    load_semantic_path_model,
     validate_portfolio_against_semantic_model,
 )
 
@@ -88,6 +90,58 @@ def test_temporary_ontology_index_ignores_dynamic_declarations(tmp_path):
     assert index.edge_types == frozenset({"--followup_of-->"})
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "classification.best.class",
+        "classification.best.description",
+        "classification.assessment.sherlock.class",
+        "crossmatch.identity.object_id",
+        "crossmatch.provenance.producer.id",
+        "crossmatch.provenance.producer.name",
+        "crossmatch.position.ra",
+        "crossmatch.position.dec",
+        "crossmatch.separation.total",
+        "crossmatch.separation.projected",
+        "crossmatch.redshift.value",
+        "crossmatch.distance.estimate.best.value",
+        "crossmatch.distance.estimate.redshift.modulus",
+        "photometry.g.mag",
+        "photometry.r.psf.mag",
+    ],
+)
+def test_composed_semantic_paths_are_reachable(path):
+    assert load_semantic_path_model().is_valid(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "classification.description",
+        "classification.identity.object_id",
+        "classification.subject.object_id",
+        "classification.target.object_id",
+        "photometry.g.unknown.nested",
+        "position.unknown",
+    ],
+)
+def test_invented_semantic_paths_are_not_reachable(path):
+    assert not load_semantic_path_model().is_valid(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "classification@sherlock:lasair.best.class",
+        "classification@sherlock:lasair.best.description",
+        "classification@lasair.assessment.sherlock.class",
+        "crossmatch@sdss:lasair.distance.estimate.best.value",
+    ],
+)
+def test_mapping_qualifier_is_removed_before_path_validation(path):
+    assert load_semantic_path_model().is_valid_mapping_path(path)
+
+
 def test_valid_portfolio_passes():
     validate_portfolio_against_semantic_model(_portfolio("detection@ztf:lasair"))
 
@@ -116,13 +170,12 @@ def test_record_builder_semantic_validation_is_opt_in(
         portfolio = build_portfolio_from_execution(_execution(), **arguments)
         assert portfolio.records[0].semantic_type == semantic_type
     else:
-        with pytest.raises(SemanticModelValidationError, match="banana"):
+        with pytest.raises(MappingSchemaError, match="banana"):
             build_portfolio_from_execution(_execution(), **arguments)
 
 
-def test_record_builder_default_still_allows_unknown_type(tmp_path):
-    portfolio = build_portfolio_from_execution(
-        _execution(), mappings_path=_mapping(tmp_path, "banana@ztf:lasair")
-    )
-
-    assert portfolio.records[0].semantic_type == "banana@ztf:lasair"
+def test_mapping_validation_rejects_unknown_type_before_record_building(tmp_path):
+    with pytest.raises(MappingSchemaError, match="banana"):
+        build_portfolio_from_execution(
+            _execution(), mappings_path=_mapping(tmp_path, "banana@ztf:lasair")
+        )
