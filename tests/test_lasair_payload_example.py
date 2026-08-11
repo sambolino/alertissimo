@@ -523,6 +523,45 @@ def test_object_sherlock_crossmatch_uses_unknown_producer_fallback():
     assert "crossmatch@{producer}:lasair" not in semantic_types
 
 
+def test_compact_object_sherlock_crossmatch_binds_producer_and_fields():
+    portfolio = _build_endpoint_payload(
+        {
+            "objectId": "ZTF-test",
+            "sherlock": {
+                "catalogue_table_name": "2MASS PSC",
+                "catalogue_object_id": "08193126-0601149 ",
+                "association_type": "VS",
+                "catalogue_object_type": "star",
+                "classificationReliability": "2",
+                "search_name": "2mass star angular",
+                "northSeparationArcsec": "-1.15164",
+                "eastSeparationArcsec": "1.06992",
+            },
+        },
+        "object",
+    )
+    semantic_types = {record.semantic_type for record in portfolio.records}
+
+    assert "crossmatch@twomass:lasair" in semantic_types
+    assert "crossmatch@unknown:lasair" not in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert "crossmatch@{producer}:lasair" not in semantic_types
+    record = next(
+        record for record in portfolio.records
+        if record.semantic_type == "crossmatch@twomass:lasair"
+    )
+    fields = dict(record.fields)
+    assert fields["identity.object_id"] == "08193126-0601149"
+    assert fields["provenance.producer.id"] == "twomass"
+    assert fields["provenance.producer.name"] == "2MASS PSC"
+    assert fields["classification.assessment.catalogue.class"] == "star"
+    assert fields["classification.assessment.sherlock.class"] == "VS"
+    assert fields["classification.assessment.sherlock.score"] == 2.0
+    assert fields["classification.assessment.sherlock.method"] == "2mass star angular"
+    assert fields["separation.north"] == -1.15164
+    assert fields["separation.east"] == 1.06992
+
+
 def test_rich_sherlock_fixture_keeps_final_and_row_assessments_distinct():
     from pathlib import Path
     payload = json.loads((Path(__file__).parent / "fixtures/lasair/ztf/sherlock_position.json").read_text())

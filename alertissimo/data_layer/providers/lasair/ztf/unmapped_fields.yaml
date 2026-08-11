@@ -4,7 +4,7 @@ notes: Explicit semantic-debt registry produced by the representative saved-payl
 unmapped:
   - cone#separation:
       reason: ambiguous_meaning
-      candidate_meaning: Provider cone-result separation; units and exact reference position are not encoded in the response.
+      candidate_meaning: Query-context angular separation in arcseconds from the requested cone position.
   - lightcurve_candidates#programid:
       reason: provider_native_implementation_identifier
       candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.
