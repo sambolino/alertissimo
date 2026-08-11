@@ -88,15 +88,12 @@ mappings:
     - object#sherlock.catalogue_object_id
     - sherlock_position_crossmatches#catalogue_object_id
     - sherlock_objects_crossmatches#catalogue_object_id
-  crossmatch@{producer}:lasair.identity.{producer}:
-    - sherlock_position_crossmatches#catalogue_table_name
-    - sherlock_objects_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.provenance.producer.name:
     - sherlock_position_crossmatches#catalogue_table_name
     - sherlock_objects_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.provenance.producer.id:
-    - sherlock_position_crossmatches#catalogue_table_id
-    - sherlock_objects_crossmatches#catalogue_table_id
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.position.ra:
     - object#sherlock.raDeg
     - sherlock_position_crossmatches#raDeg
@@ -196,7 +193,7 @@ transforms:
       type: to_string_strip
     sherlock_objects_crossmatches#catalogue_object_id:
       type: to_string_strip
-  crossmatch@{producer}:lasair.identity.{producer}:
+  crossmatch@{producer}:lasair.provenance.producer.id:
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
       map:
@@ -204,6 +201,10 @@ transforms:
         2MASS PSC: twomass
         PanSTARRS DR1: panstarrs
         SDSS DR12 PhotoObjAll Table: sdss
+        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
+        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
+        Gaia DR3: gaia
+        DESI Legacy Survey DR10: desi_legacy_survey
       default: unknown
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
@@ -212,6 +213,10 @@ transforms:
         2MASS PSC: twomass
         PanSTARRS DR1: panstarrs
         SDSS DR12 PhotoObjAll Table: sdss
+        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
+        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
+        Gaia DR3: gaia
+        DESI Legacy Survey DR10: desi_legacy_survey
       default: unknown
   crossmatch@{producer}:lasair.position.ra:
     sherlock_position_crossmatches#raDeg: {type: to_float, skip_null: true}

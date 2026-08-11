@@ -38,6 +38,10 @@ SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
     "producer": "unknown",
 }
 
+SEMANTIC_TYPE_BINDING_FIELD_PATHS = {
+    "producer": ("provenance.producer.id",),
+}
+
 _PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
 
 
@@ -94,13 +98,16 @@ def _resolve_dynamic_semantic_type(
     semantic_type: str,
     fields: Mapping[str, Any],
 ) -> str:
-    """Resolve semantic-type placeholders, applying only explicit defaults."""
+    """Resolve semantic-type placeholders from binders, stable fields, or defaults."""
     bindings, _ = _collect_dynamic_field_bindings(fields)
 
     def replacement(match: re.Match[str]) -> str:
         placeholder = match.group(1)
         if placeholder in bindings:
             return str(bindings[placeholder])
+        for field_path in SEMANTIC_TYPE_BINDING_FIELD_PATHS.get(placeholder, ()):
+            if field_path in fields:
+                return str(fields[field_path])
         return SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS.get(placeholder, match.group(0))
 
     return _PLACEHOLDER_PATTERN.sub(replacement, semantic_type)
