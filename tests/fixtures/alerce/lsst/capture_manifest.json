@@ -1,0 +1,61 @@
+{
+  "calls": {
+    "query_detections": {
+      "object": "170587117485817955",
+      "shape": "list[16]",
+      "status": "ok"
+    },
+    "query_features": {
+      "error": "NotImplementedError: Multisurvey query_features not implemented.",
+      "object": "170587117485817955",
+      "status": "not_implemented"
+    },
+    "query_forced_photometry": {
+      "object": "170587117485817955",
+      "shape": "list[10]",
+      "status": "ok"
+    },
+    "query_lightcurve": {
+      "object": "170587117485817955",
+      "shape": "dict keys=['detections', 'non_detections', 'forced_photometry'] (detections=list[16], non_detections=list[0], forced_photometry=list[10])",
+      "status": "ok"
+    },
+    "query_magstats": {
+      "error": "NotImplementedError: Multisurvey query_magstats not implemented.",
+      "object": "170587117485817955",
+      "status": "not_implemented"
+    },
+    "query_non_detections": {
+      "object": "170587117485817955",
+      "shape": "list[0]",
+      "status": "empty"
+    },
+    "query_object": {
+      "object": "170587117485817955",
+      "shape": "dict keys=['oid', 'tid', 'sid', 'meanra', 'meandec', 'sigmara', 'sigmadec', 'firstmjd', 'lastmjd', 'deltamjd', 'n_det', 'n_forced', 'n_non_det', 'created_date', 'updated_date']",
+      "status": "ok"
+    },
+    "query_objects": {
+      "query": {
+        "oid": [
+          "170587117485817955"
+        ]
+      },
+      "shape": "list[2]",
+      "status": "ok"
+    },
+    "query_probabilities": {
+      "object": "170587117485817955",
+      "shape": "list[10]",
+      "status": "ok"
+    }
+  },
+  "captured_at": "2026-08-11T23:14:41.531448+00:00",
+  "client": "alerce.core.Alerce",
+  "client_package": "alerce",
+  "client_version": "2.3.1",
+  "format": "json",
+  "http_timeout_seconds": 20,
+  "object": "170587117485817955",
+  "survey": "lsst"
+}
