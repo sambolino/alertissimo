@@ -8,9 +8,15 @@ from typing import Any
 
 import yaml
 
+from alertissimo.data_layer.semantic_model import SemanticPathModel
+
 
 class MappingSchemaError(ValueError):
     """Raised when a registry YAML file does not satisfy the minimal schema."""
+
+
+class InvalidSemanticPathError(MappingSchemaError):
+    """Raised with all mapping keys that cannot be composed from the ontology."""
 
 
 MAPPING_KEYS = {
@@ -198,16 +204,26 @@ def validate_mapping_file(path: str | Path) -> None:
 
     mappings = _mapping(document["mappings"], f"{path}: mappings")
     mapped_references: set[str] = set()
+    invalid_semantic_paths: list[str] = []
+    semantic_model = SemanticPathModel.from_ontology()
     for semantic_path, references in mappings.items():
         semantic_path = _nonempty_string(semantic_path, f"{path}: semantic path")
         if ("@" not in semantic_path or any(c.isspace() for c in semantic_path)
                 or semantic_path in OLD_HELPER_KEYS):
             raise MappingSchemaError(f"{path}: invalid semantic path {semantic_path!r}")
+        if not semantic_model.is_valid(semantic_path):
+            invalid_semantic_paths.append(semantic_path)
         if not isinstance(references, list) or not references:
             raise MappingSchemaError(f"{path}: mapping {semantic_path!r} must be a non-empty list")
         for index, reference in enumerate(references):
             _validate_raw_reference(reference, payloads, f"{path}: {semantic_path}[{index}]")
             mapped_references.add(reference)
+
+    if invalid_semantic_paths:
+        formatted = ", ".join(repr(value) for value in invalid_semantic_paths)
+        raise InvalidSemanticPathError(
+            f"{path}: ontology-invalid semantic path(s): {formatted}"
+        )
 
     transforms = document.get("transforms", {})
     transforms = _mapping(transforms, f"{path}: transforms")
