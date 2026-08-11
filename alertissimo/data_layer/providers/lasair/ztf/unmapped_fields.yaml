@@ -5,9 +5,6 @@ unmapped:
   - cone#separation:
       reason: unsupported_semantic_concept
       candidate_meaning: Query-context angular separation is known in arcsec, but the summary record currently has no ontology-backed separation container/path for this value.
-  - cone_count#count:
-      reason: unsupported_semantic_record
-      candidate_meaning: Aggregate query result, not a per-object summary; no existing ontology-backed aggregate record is appropriate.
   - lightcurve_candidates#programid:
       reason: provider_native_implementation_identifier
       candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.

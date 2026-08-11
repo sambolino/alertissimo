@@ -51,6 +51,22 @@ def test_build_portfolio_from_saved_lasair_payload():
     assert portfolio.executions[0].params == {"objectId": "ZTF25realistic"}
 
 
+def test_compact_object_sherlock_binds_crossmatch_producer():
+    payload = _payload()
+    payload["sherlock"]["catalogue_table_name"] = "Gaia DR3"
+
+    portfolio = build_portfolio_from_payload(payload)
+    crossmatches = [
+        record for record in portfolio.records
+        if record.semantic_type.startswith("crossmatch@")
+    ]
+
+    assert len(crossmatches) == 1
+    assert crossmatches[0].semantic_type == "crossmatch@gaia:lasair"
+    assert dict(crossmatches[0].fields)["provenance.producer.id"] == "gaia"
+    assert dict(crossmatches[0].fields)["provenance.producer.name"] == "Gaia DR3"
+
+
 def test_payload_script_reads_file_and_reports_summary(tmp_path):
     payload_path = tmp_path / "object.json"
     payload_path.write_text(json.dumps(_payload()), encoding="utf-8")

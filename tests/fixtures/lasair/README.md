@@ -7,7 +7,6 @@ possible API response field is complete.
 | Origin | Endpoint | Fixture | Status | Evidence |
 |---|---|---|---|---|
 | ZTF | cone | `ztf/cone.json` | authoritative | Documented normal Lasair cone result shape. |
-| ZTF | cone (`requestType=count`) | `ztf/cone_count.json` | authoritative | Documented aggregate count result shape. |
 | ZTF | sherlock_position | `ztf/sherlock_position.json` | authoritative | Observed `ZTF20acpwljl` response supplied by the user. |
 | ZTF | object | `ztf/object.json` | provisional | Reduced representative payload; no complete official example was available locally. |
 | ZTF | objects, lightcurves, query, sherlock_objects | corresponding `ztf/*.json` | provisional | Representative mapping fixtures; query columns are caller-selected. |
@@ -20,3 +19,6 @@ possible API response field is complete.
 The authoritative rows above establish completeness only for those observed or
 documented response shapes. Provisional fixtures exercise registry behavior without
 asserting completeness of the real endpoint payload.
+
+Cone-search count mode is documented, but its exact serialized response shape is
+unverified.
