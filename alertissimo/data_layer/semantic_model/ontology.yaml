@@ -1043,6 +1043,67 @@ levels:
   [maximum]:
     description: "Maximum separation over a survey, stream, sample, or matching run"
     unit: arcsec
+<distance>:
+  level: L0, L1, L2, L6, L8
+  description: "Distance estimate, distance modulus, or distance-related catalog/service value"
+
+  [value]:
+    description: "Distance value"
+    type: float
+
+  [error]:
+    description: "Distance uncertainty"
+    type: float
+
+  [unit]:
+    description: "Distance unit"
+    enum: [pc, kpc, Mpc, Gpc, ly, unknown]
+
+  [modulus]:
+    description: "Distance modulus"
+    type: float
+
+  [type]:
+    description: "Distance estimate type or role"
+    enum: [best, redshift, photometric_redshift, direct, luminosity, inferred, unknown]
+
+  [source]:
+    description: "Catalog, service, paper, model, or provider source for the distance"
+
+  [flag]:
+    description: "Provider-specific distance flag"
+
+  <estimate>:
+    description: "Named distance estimate where several distance estimates are carried in one record"
+
+    <{method}>:
+      [value]:
+        description: "Distance value"
+        type: float
+
+      [modulus]:
+        description: "Distance modulus"
+        type: float
+
+      [scale]:
+        description: "Angular scale associated with this distance"
+        type: float
+
+      [scale_unit]:
+        description: "Angular-scale unit"
+        enum: [pc_per_arcsec, kpc_per_arcsec, unknown]
+
+      [source]:
+        description: "Catalog, service, paper, model, or provider source for this estimate"
+
+      [flag]:
+        description: "Provider-specific flag for this estimate"
+
+      [{field}]:
+        description: "Estimate-specific additional field"
+
+  [{field}]:
+    description: "Distance-specific additional field"
 <redshift>:
   level: L0, L1, L2, L6, L8
   description: "Redshift measurement, adopted value, or redshift-related catalog/service value"
@@ -1931,6 +1992,7 @@ levels:
   $ref: <identity>
   $ref: <position>
   $ref: <separation>
+  $ref: <distance>
   $ref: <redshift>
   $ref: <photometry>
   $ref: <classification>
@@ -1943,7 +2005,7 @@ levels:
     description: "Number of candidate matches or matched records reported by the source"
     type: integer
   [luminosity_distance]:
-    description: "Catalog-provided luminosity distance associated with the matched object; prefer a future <distance> container once adopted"
+    description: "Legacy shortcut for catalog-provided luminosity distance associated with the matched object; prefer distance.value or distance.estimate.* for new mappings"
     unit: Mpc
   [{field}]:
     description: "Catalog-specific additional fields"
