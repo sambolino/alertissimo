@@ -9,6 +9,8 @@ payloads:
   cone: {endpoint: cone, path: "[]"}
   candidates: {endpoint: object, path: "candidates[]"}
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
+  sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
+  sherlock_objects_classifications: {endpoint: sherlock_objects, path: "[].classifications{}"}
 
 mappings:
   summary@ztf:lasair.identity.object_id:
@@ -71,6 +73,15 @@ mappings:
     - object#sherlock.classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
+  classification@sherlock:lasair.identity.object_id:
+    - sherlock_position_classifications#_key
+    - sherlock_objects_classifications#_key
+  classification@sherlock:lasair.best.class:
+    - sherlock_position_classifications#_value.0
+    - sherlock_objects_classifications#_value.0
+  classification@sherlock:lasair.best.description:
+    - sherlock_position_classifications#_value.1
+    - sherlock_objects_classifications#_value.1
   crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
   crossmatch@{producer}:lasair.position.ra:
