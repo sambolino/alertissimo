@@ -3,8 +3,8 @@ origin: ztf
 description: Minimal semantic mapping registry for ALeRCE ZTF payloads.
 payloads:
   query_objects:
-    path: '[]'
-    description: query_objects response payload.
+    path: items[]
+    description: Object rows inside the paginated query_objects response.
     endpoint: query_objects
   query_object:
     path: .
@@ -78,10 +78,6 @@ payloads:
     path: non_detections[]
     endpoint: query_lightcurve
     description: Rows from the non_detections collection in the light-curve bundle.
-  query_lightcurve.forced_photometry:
-    path: forced_photometry[]
-    endpoint: query_lightcurve
-    description: Rows from the forced_photometry collection in the light-curve bundle.
 mappings:
   summary@ztf:alerce.identity.object_id:
   - query_object#oid
@@ -109,12 +105,10 @@ mappings:
   - query_lightcurve.non_detections#oid
   - query_non_detections#oid
   - query_forced_photometry#oid
-  - query_lightcurve.forced_photometry#oid
   detection@ztf:alerce.identity.source_id:
   - query_detections#measurement_id
   - query_lightcurve.detections#measurement_id
   - query_forced_photometry#measurement_id
-  - query_lightcurve.forced_photometry#measurement_id
   detection@ztf:alerce.identity.alert_id:
   - query_detections#candid
   - query_lightcurve.detections#candid
@@ -125,22 +119,18 @@ mappings:
   - query_lightcurve.non_detections#mjd
   - query_non_detections#mjd
   - query_forced_photometry#mjd
-  - query_lightcurve.forced_photometry#mjd
   detection@ztf:alerce.position.ra:
   - query_detections#ra
   - query_lightcurve.detections#ra
   - query_forced_photometry#ra
-  - query_lightcurve.forced_photometry#ra
   detection@ztf:alerce.position.dec:
   - query_detections#dec
   - query_lightcurve.detections#dec
   - query_forced_photometry#dec
-  - query_lightcurve.forced_photometry#dec
   detection@ztf:alerce.provenance.processing_id:
   - query_detections#pid
   - query_lightcurve.detections#pid
   - query_forced_photometry#pid
-  - query_lightcurve.forced_photometry#pid
   detection@ztf:alerce.provenance.night_id:
   - query_detections#nid
   - query_lightcurve.detections#nid
@@ -148,7 +138,6 @@ mappings:
   - query_detections#rfid
   - query_lightcurve.detections#rfid
   - query_forced_photometry#rfid
-  - query_lightcurve.forced_photometry#rfid
   detection@ztf:alerce.provenance.producer.survey_id:
   - query_detections#tid
   - query_lightcurve.detections#tid
@@ -159,12 +148,10 @@ mappings:
   - query_detections#corrected
   - query_lightcurve.detections#corrected
   - query_forced_photometry#corrected
-  - query_lightcurve.forced_photometry#corrected
   detection@ztf:alerce.quality.dubious:
   - query_detections#dubious
   - query_lightcurve.detections#dubious
   - query_forced_photometry#dubious
-  - query_lightcurve.forced_photometry#dubious
   detection@ztf:alerce.photometry.{filter}.limit.mag:
   - query_detections#diffmaglim
   - query_lightcurve.detections#diffmaglim
@@ -191,35 +178,25 @@ mappings:
   detection@ztf:alerce.provenance.producer.program.field:
   - query_lightcurve.detections#field
   - query_forced_photometry#field
-  - query_lightcurve.forced_photometry#field
   detection@ztf:alerce.provenance.producer.program.id:
   - query_lightcurve.detections#programid
   - query_forced_photometry#programid
-  - query_lightcurve.forced_photometry#programid
   detection@ztf:alerce.forced_photometry.{filter}:
   - query_forced_photometry#fid
-  - query_lightcurve.forced_photometry#fid
   detection@ztf:alerce.provenance.processing_status:
   - query_forced_photometry#procstatus
-  - query_lightcurve.forced_photometry#procstatus
   detection@ztf:alerce.forced_photometry.{filter}.limit.mag:
   - query_forced_photometry#diffmaglim
-  - query_lightcurve.forced_photometry#diffmaglim
   detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude:
   - query_forced_photometry#mag
-  - query_lightcurve.forced_photometry#mag
   detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_error:
   - query_forced_photometry#e_mag
-  - query_lightcurve.forced_photometry#e_mag
   detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected:
   - query_forced_photometry#mag_corr
-  - query_lightcurve.forced_photometry#mag_corr
   detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_error:
   - query_forced_photometry#e_mag_corr
-  - query_lightcurve.forced_photometry#e_mag_corr
   detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_extended_error:
   - query_forced_photometry#e_mag_corr_ext
-  - query_lightcurve.forced_photometry#e_mag_corr_ext
   summary@ztf:alerce.photometry.{filter}:
   - query_magstats#fid
   summary@ztf:alerce.position.ra_error:
@@ -250,63 +227,49 @@ mappings:
   - query_detections#drbversion
   - query_lightcurve.detections#drbversion
   detection@ztf:alerce.image_metrics.is_positive:
+  - query_detections#isdiffpos
+  - query_lightcurve.detections#isdiffpos
   - query_forced_photometry#isdiffpos
-  - query_lightcurve.forced_photometry#isdiffpos
   detection@ztf:alerce.reference_image.nearest_source.separation.total:
   - query_detections#distnr
   - query_lightcurve.detections#distnr
   - query_forced_photometry#distnr
-  - query_lightcurve.forced_photometry#distnr
   detection@ztf:alerce.reference_image.nearest_source.position.ra:
   - query_lightcurve.detections#ranr
   - query_forced_photometry#ranr
-  - query_lightcurve.forced_photometry#ranr
   detection@ztf:alerce.reference_image.nearest_source.position.dec:
   - query_lightcurve.detections#decnr
   - query_forced_photometry#decnr
-  - query_lightcurve.forced_photometry#decnr
   detection@ztf:alerce.reference_image.nearest_source.photometry.{filter}.mag:
   - query_lightcurve.detections#magnr
   - query_forced_photometry#magnr
-  - query_lightcurve.forced_photometry#magnr
   detection@ztf:alerce.reference_image.nearest_source.photometry.{filter}.mag_error:
   - query_lightcurve.detections#sigmagnr
   - query_forced_photometry#sigmagnr
-  - query_lightcurve.forced_photometry#sigmagnr
   detection@ztf:alerce.reference_image.nearest_source.image_metrics.fit_chi:
   - query_lightcurve.detections#chinr
   - query_forced_photometry#chinr
-  - query_lightcurve.forced_photometry#chinr
   detection@ztf:alerce.reference_image.nearest_source.image_metrics.sharpness:
   - query_lightcurve.detections#sharpnr
   - query_forced_photometry#sharpnr
-  - query_lightcurve.forced_photometry#sharpnr
   detection@ztf:alerce.time.exposure:
   - query_forced_photometry#exptime
-  - query_lightcurve.forced_photometry#exptime
   detection@ztf:alerce.calibration.{filter}.zero_point:
   - query_forced_photometry#magzpsci
-  - query_lightcurve.forced_photometry#magzpsci
   detection@ztf:alerce.calibration.{filter}.zero_point_uncertainty:
   - query_forced_photometry#magzpsciunc
-  - query_lightcurve.forced_photometry#magzpsciunc
   detection@ztf:alerce.calibration.{filter}.zero_point_rms:
   - query_forced_photometry#magzpscirms
-  - query_lightcurve.forced_photometry#magzpscirms
   detection@ztf:alerce.calibration.{filter}.color_coefficient:
   - query_forced_photometry#clrcoeff
-  - query_lightcurve.forced_photometry#clrcoeff
   - query_lightcurve.detections#clrcoeff
   detection@ztf:alerce.calibration.{filter}.color_coefficient_uncertainty:
   - query_forced_photometry#clrcounc
-  - query_lightcurve.forced_photometry#clrcounc
   - query_lightcurve.detections#clrcounc
   detection@ztf:alerce.position.ra_error:
   - query_forced_photometry#e_ra
-  - query_lightcurve.forced_photometry#e_ra
   detection@ztf:alerce.position.dec_error:
   - query_forced_photometry#e_dec
-  - query_lightcurve.forced_photometry#e_dec
   classification@{producer}:alerce.best.class:
   - query_object#class
   - query_objects#class
@@ -378,7 +341,6 @@ transforms:
         3: i
         '3': i
       default: unknown
-    query_lightcurve.forced_photometry#fid:
       type: value_map
       map:
         1: g
@@ -400,7 +362,7 @@ transforms:
         '3': i
       default: unknown
   detection@ztf:alerce.image_metrics.is_positive:
-    query_forced_photometry#isdiffpos:
+    query_detections#isdiffpos:
       type: value_map
       map:
         '1': true
@@ -409,7 +371,16 @@ transforms:
         -1: false
       default: null
       skip_null: true
-    query_lightcurve.forced_photometry#isdiffpos:
+    query_lightcurve.detections#isdiffpos:
+      type: value_map
+      map:
+        '1': true
+        1: true
+        '-1': false
+        -1: false
+      default: null
+      skip_null: true
+    query_forced_photometry#isdiffpos:
       type: value_map
       map:
         '1': true

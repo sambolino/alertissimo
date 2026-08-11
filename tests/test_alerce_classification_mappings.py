@@ -108,7 +108,7 @@ def test_isdiffpos_uses_ztf_sign_semantics_without_unsafe_default():
     assert "image_metrics.is_positive" not in records[2].fields
 
 
-def test_payload_selection_uses_physical_endpoint_and_allows_nested_lightcurve_rows():
+def test_payload_selection_uses_only_authoritative_nested_lightcurve_rows():
     object_portfolio = _build("query_object", {
         "oid": "ZTF-object", "candid": 999, "classifier_name": "wrong endpoint",
     })
@@ -117,11 +117,9 @@ def test_payload_selection_uses_physical_endpoint_and_allows_nested_lightcurve_r
     lightcurve = _build("query_lightcurve", {
         "detections": [{"oid": "ZTF-detection", "fid": 1, "mjd": 1.0}],
         "non_detections": [{"oid": "ZTF-limit", "fid": 2, "mjd": 2.0, "diffmaglim": 20.2}],
-        "forced_photometry": [{"oid": "ZTF-forced", "fid": 1, "mjd": 3.0, "isdiffpos": -1}],
     })
-    assert len(lightcurve.records) == 3
+    assert len(lightcurve.records) == 2
     assert {record.internal_source.payload_key for record in lightcurve.records} == {
         "query_lightcurve.detections",
         "query_lightcurve.non_detections",
-        "query_lightcurve.forced_photometry",
     }

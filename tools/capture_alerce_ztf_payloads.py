@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""Capture raw JSON responses from the official ALeRCE client for offline tests."""
+"""Capture complete ALeRCE/ZTF JSON responses with the official Python client."""
 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 import inspect
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 KNOWN_OBJECTS = (
+    "ZTF18abbuksn",
     "ZTF21aaeyldq",
     "ZTF17aaaaaak",
     "ZTF17aaaaaal",
-    "ZTF18abbuksn",
 )
+SELECTED_OID = "ZTF18abbuksn"
+HTTP_TIMEOUT_SECONDS = 20
 OBJECT_ENDPOINTS = (
     "query_object",
     "query_detections",
@@ -58,10 +62,18 @@ def _nonempty(value: Any) -> bool:
     return bool(value) if isinstance(value, (dict, list, tuple)) else value is not None
 
 
+def _shape(value: Any) -> str:
+    if isinstance(value, list):
+        return f"list[{len(value)}]"
+    if isinstance(value, dict):
+        return f"dict keys={sorted(value)}"
+    return type(value).__name__
+
+
 def _result_entry(
-    value: Any = None, *, query: str | None = None, error: BaseException | None = None
+    value: Any = None, *, query: Any = None, error: BaseException | None = None
 ) -> dict[str, Any]:
-    """Describe an attempted call, keeping valid empty results distinct from errors."""
+    """Describe a call while keeping empty results distinct from failures."""
     entry: dict[str, Any] = {
         "status": "failed" if error else ("ok" if _nonempty(value) else "empty")
     }
@@ -69,22 +81,23 @@ def _result_entry(
         entry["query"] = query
     if error is not None:
         entry["error"] = repr(error)
+    else:
+        entry["shape"] = _shape(value)
     return entry
 
 
 def _invocation(method: Any, endpoint: str, oid: str | None = None) -> dict[str, Any]:
-    """Build endpoint-specific arguments verified against the installed client."""
-    requested: dict[str, Any]
+    """Validate endpoint arguments separately from executing client code."""
     if endpoint == "query_objects":
-        requested = {"survey": "ztf", "format": "json", "page": 1, "page_size": 100}
+        requested: dict[str, Any] = {
+            "oid": list(KNOWN_OBJECTS), "survey": "ztf", "format": "json"
+        }
     elif endpoint in OBJECT_ENDPOINTS:
         requested = {"oid": oid, "format": "json"}
     else:  # pragma: no cover - internal programming error
         raise ValueError(f"unknown endpoint {endpoint!r}")
 
     signature = inspect.signature(method)
-    # Object methods differ across official-client releases. Survey is explicit
-    # only when that installed method actually declares it.
     if endpoint != "query_objects" and "survey" in signature.parameters:
         requested["survey"] = "ztf"
     accepts_extra = any(
@@ -97,9 +110,33 @@ def _invocation(method: Any, endpoint: str, oid: str | None = None) -> dict[str,
             f"{endpoint}{signature} does not support configured arguments "
             f"{sorted(unsupported)}"
         )
-    # Binding catches client drift before an API request and before trying another OID.
     signature.bind(**requested)
     return requested
+
+
+@contextmanager
+def _finite_http_timeout(
+    seconds: int = HTTP_TIMEOUT_SECONDS, requests_module: Any = None
+) -> Iterator[None]:
+    """Give requests made inside the legacy ZTF client a finite default timeout."""
+    requests_module = requests_module or import_module("requests")
+    original = requests_module.sessions.Session.request
+
+    def request(session: Any, method: str, url: str, **kwargs: Any) -> Any:
+        kwargs.setdefault("timeout", seconds)
+        return original(session, method, url, **kwargs)
+
+    requests_module.sessions.Session.request = request
+    try:
+        yield
+    finally:
+        requests_module.sessions.Session.request = original
+
+
+def _write_fixture(output_dir: Path, endpoint: str, value: Any) -> None:
+    (output_dir / f"{endpoint}.json").write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def capture(output_dir: Path) -> int:
@@ -113,76 +150,45 @@ def capture(output_dir: Path) -> int:
         "client_version": _package_version(),
         "client": "alerce.core.Alerce",
         "survey": "ztf",
-        "requested_format": "json",
+        "format": "json",
+        "http_timeout_seconds": HTTP_TIMEOUT_SECONDS,
         "calls": {},
     }
-    discovery = None
-    try:
-        discovery = client.query_objects(
-            **_invocation(client.query_objects, "query_objects")
-        )
-        serial = _json_value(discovery)
-        manifest["calls"]["query_objects"] = _result_entry(
-            serial, query="page=1,page_size=100"
-        )
-        if _nonempty(serial):
-            (output_dir / "query_objects.json").write_text(
-                json.dumps(serial, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-            )
-    except Exception as exc:  # continue capturing independent endpoints
-        manifest["calls"]["query_objects"] = _result_entry(
-            query="page=1,page_size=100", error=exc
-        )
+    failures = 0
+    calls = (("query_objects", list(KNOWN_OBJECTS)),) + tuple(
+        (endpoint, SELECTED_OID) for endpoint in OBJECT_ENDPOINTS
+    )
 
-    discovered_ids: list[str] = []
-    rows = serial if "serial" in locals() and isinstance(serial, list) else []
-    for row in rows:
-        if isinstance(row, dict) and row.get("oid"):
-            discovered_ids.append(str(row["oid"]))
-    candidates = tuple(dict.fromkeys((*KNOWN_OBJECTS, *discovered_ids)))
-
-    failures = int(manifest["calls"]["query_objects"]["status"] == "failed")
-    for endpoint in OBJECT_ENDPOINTS:
-        result = None
-        errors = []
-        chosen = None
-        had_empty_response = False
-        for oid in candidates:
+    with _finite_http_timeout():
+        for endpoint, query in calls:
+            print(f"{endpoint}: requesting {query}", flush=True)
+            method = getattr(client, endpoint)
+            # Signature drift is a configuration error. Validate before entering the
+            # execution handler so a TypeError raised *inside* the client stays a call failure.
             try:
-                method = getattr(client, endpoint)
-                candidate = method(**_invocation(method, endpoint, oid))
-                serial = _json_value(candidate)
-                if _nonempty(serial):
-                    result, chosen = serial, oid
-                    break
-                had_empty_response = True
-                errors.append(f"{oid}: empty response")
-            except TypeError as exc:
-                # A signature mismatch is a capture-tool bug, not evidence that an OID is bad.
-                errors.append(f"invocation error: {exc!r}")
-                break
-            except Exception as exc:
-                errors.append(f"{oid}: {exc!r}")
-        if result is None:
-            status = (
-                "empty"
-                if had_empty_response
-                and all("empty response" in attempt for attempt in errors)
-                else "failed"
-            )
-            failures += status == "failed"
-            manifest["calls"][endpoint] = {"status": status, "attempts": errors}
-            continue
-        (output_dir / f"{endpoint}.json").write_text(
-            json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
-        manifest["calls"][endpoint] = {"status": "ok", "object": chosen}
+                arguments = _invocation(
+                    method, endpoint, None if endpoint == "query_objects" else SELECTED_OID
+                )
+            except (TypeError, ValueError) as error:
+                entry = _result_entry(query=query, error=error)
+            else:
+                try:
+                    value = _json_value(method(**arguments))
+                except Exception as error:  # continue capturing independent endpoints
+                    entry = _result_entry(query=query, error=error)
+                else:
+                    entry = _result_entry(value, query=query)
+                    if endpoint == "query_objects" and isinstance(value, dict):
+                        entry["item_count"] = len(value.get("items", []))
+                    if entry["status"] == "ok":
+                        _write_fixture(output_dir, endpoint, value)
+            manifest["calls"][endpoint] = entry
+            failures += entry["status"] == "failed"
+            print(f"{endpoint}: {entry['status']} ({entry.get('shape', 'no response')})", flush=True)
 
     (output_dir / "capture_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    for endpoint, result in manifest["calls"].items():
-        print(f"{endpoint}: {result['status']}")
     return 1 if failures else 0
 
 

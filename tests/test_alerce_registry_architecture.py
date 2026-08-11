@@ -9,7 +9,6 @@ ORIGINS = ("lsst", "ztf")
 ROW_PAYLOADS = {
     "query_lightcurve.detections": "detections[]",
     "query_lightcurve.non_detections": "non_detections[]",
-    "query_lightcurve.forced_photometry": "forced_photometry[]",
 }
 
 
@@ -21,12 +20,18 @@ def load(origin, filename):
 def test_payload_shapes_and_semantic_paths(origin):
     document = load(origin, "mappings.yaml")
     payloads = document["payloads"]
-    assert payloads["query_objects"]["path"] == "[]"
+    assert payloads["query_objects"]["path"] == (
+        "items[]" if origin == "ztf" else "[]"
+    )
     assert payloads["query_object"]["path"] == "."
     assert payloads["query_lightcurve"]["path"] == "."
     for payload, path in ROW_PAYLOADS.items():
         assert payloads[payload]["path"] == path
         assert payloads[payload]["endpoint"] == "query_lightcurve"
+    if origin == "lsst":
+        assert payloads["query_lightcurve.forced_photometry"]["path"] == "forced_photometry[]"
+    else:
+        assert "query_lightcurve.forced_photometry" not in payloads
 
     for semantic_path, references in document["mappings"].items():
         assert ".raw." not in semantic_path
