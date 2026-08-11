@@ -99,10 +99,47 @@ mappings:
     - sherlock_objects_crossmatches#catalogue_table_id
   crossmatch@{producer}:lasair.position.ra:
     - object#sherlock.raDeg
+    - sherlock_position_crossmatches#raDeg
+    - sherlock_objects_crossmatches#raDeg
   crossmatch@{producer}:lasair.position.dec:
     - object#sherlock.decDeg
+    - sherlock_position_crossmatches#decDeg
+    - sherlock_objects_crossmatches#decDeg
   crossmatch@{producer}:lasair.separation.total:
     - object#sherlock.separationArcsec
+    - sherlock_position_crossmatches#separationArcsec
+    - sherlock_objects_crossmatches#separationArcsec
+  crossmatch@{producer}:lasair.separation.north:
+    - sherlock_position_crossmatches#northSeparationArcsec
+    - sherlock_objects_crossmatches#northSeparationArcsec
+  crossmatch@{producer}:lasair.separation.east:
+    - sherlock_position_crossmatches#eastSeparationArcsec
+    - sherlock_objects_crossmatches#eastSeparationArcsec
+  crossmatch@{producer}:lasair.redshift.value:
+    - sherlock_position_crossmatches#photoZ
+    - sherlock_objects_crossmatches#photoZ
+  crossmatch@{producer}:lasair.redshift.error:
+    - sherlock_position_crossmatches#photoZErr
+    - sherlock_objects_crossmatches#photoZErr
+  crossmatch@{producer}:lasair.redshift.native_z:
+    - sherlock_position_crossmatches#z
+    - sherlock_objects_crossmatches#z
+  crossmatch@{producer}:lasair.rank:
+    - sherlock_position_crossmatches#rank
+    - sherlock_objects_crossmatches#rank
+    - sherlock_position_crossmatches#merged_rank
+    - sherlock_objects_crossmatches#merged_rank
+  crossmatch@{producer}:lasair.classification.best.class:
+    - sherlock_position_crossmatches#catalogue_object_type
+    - sherlock_objects_crossmatches#catalogue_object_type
+  crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
+    - sherlock_position_crossmatches#association_type
+    - sherlock_objects_crossmatches#association_type
+    - sherlock_position_crossmatches#classification
+    - sherlock_objects_crossmatches#classification
+  crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+    - sherlock_position_crossmatches#classificationReliability
+    - sherlock_objects_crossmatches#classificationReliability
   crossmatch@tns:lasair.identity.object_id:
     - object#TNS.name
   crossmatch@tns:lasair.position.ra:
@@ -176,3 +213,35 @@ transforms:
         PanSTARRS DR1: panstarrs
         SDSS DR12 PhotoObjAll Table: sdss
       default: unknown
+  crossmatch@{producer}:lasair.position.ra:
+    sherlock_position_crossmatches#raDeg: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#raDeg: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.position.dec:
+    sherlock_position_crossmatches#decDeg: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#decDeg: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.separation.total:
+    sherlock_position_crossmatches#separationArcsec: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#separationArcsec: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.separation.north:
+    sherlock_position_crossmatches#northSeparationArcsec: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#northSeparationArcsec: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.separation.east:
+    sherlock_position_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.redshift.value:
+    sherlock_position_crossmatches#photoZ: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#photoZ: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.redshift.error:
+    sherlock_position_crossmatches#photoZErr: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#photoZErr: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.redshift.native_z:
+    sherlock_position_crossmatches#z: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#z: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.rank:
+    sherlock_position_crossmatches#rank: {type: to_int, skip_null: true}
+    sherlock_objects_crossmatches#rank: {type: to_int, skip_null: true}
+    sherlock_position_crossmatches#merged_rank: {type: to_int, skip_null: true}
+    sherlock_objects_crossmatches#merged_rank: {type: to_int, skip_null: true}
+  crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+    sherlock_position_crossmatches#classificationReliability: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#classificationReliability: {type: to_float, skip_null: true}

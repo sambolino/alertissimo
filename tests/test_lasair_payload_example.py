@@ -259,6 +259,86 @@ def test_sherlock_objects_crossmatch_list_shape():
     assert portfolio.edges == ()
 
 
+def test_sherlock_crossmatch_maps_observed_core_science_fields():
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{
+            "catalogue_table_name": "SDSS/2MASS/PS1", "catalogue_table_id": 1,
+            "catalogue_object_id": "1237673709862061782", "catalogue_object_type": "galaxy",
+            "association_type": "SN", "classification": "fallback",
+            "classificationReliability": "2", "raDeg": "124.88026", "decDeg": "-6.02082",
+            "separationArcsec": "1.5719427375338366", "northSeparationArcsec": "-1.15164",
+            "eastSeparationArcsec": "1.06992", "photoZ": "0.123", "photoZErr": "0.004",
+            "z": None, "rank": "1", "merged_rank": "9",
+        }]},
+        "sherlock_position",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@sdss_2mass_ps1:lasair")
+    fields = dict(record.fields)
+    assert fields["identity.object_id"] == "1237673709862061782"
+    assert fields["provenance.producer.name"] == "SDSS/2MASS/PS1"
+    assert fields["provenance.producer.id"] == 1
+    assert fields["position.ra"] == 124.88026
+    assert fields["position.dec"] == -6.02082
+    assert fields["separation.total"] == 1.5719427375338366
+    assert fields["separation.north"] == -1.15164
+    assert fields["separation.east"] == 1.06992
+    assert fields["redshift.value"] == 0.123
+    assert fields["redshift.error"] == 0.004
+    assert "redshift.native_z" not in fields
+    assert fields["rank"] == 1
+    assert fields["classification.best.class"] == "galaxy"
+    assert fields["classification.assessment.sherlock.class"] == "SN"
+    assert fields["classification.assessment.sherlock.score"] == 2.0
+    assert portfolio.edges == ()
+
+
+def test_sherlock_crossmatch_rank_falls_back_to_merged_rank():
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{"catalogue_table_name": "2MASS PSC", "catalogue_table_id": 2,
+                           "catalogue_object_id": "abc", "rank": None, "merged_rank": "3"}]},
+        "sherlock_position",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@twomass:lasair")
+    assert dict(record.fields)["rank"] == 3
+
+
+def test_sherlock_crossmatch_maps_non_null_native_redshift():
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{"catalogue_table_name": "PanSTARRS DR1", "catalogue_table_id": 3,
+                           "catalogue_object_id": "ps1-object", "z": "0.42"}]},
+        "sherlock_position",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@panstarrs:lasair")
+    assert dict(record.fields)["redshift.native_z"] == 0.42
+
+
+def test_sherlock_objects_crossmatch_maps_core_science_fields():
+    portfolio = _build_endpoint_payload(
+        [{"crossmatches": [{"catalogue_table_name": "SDSS DR12 PhotoObjAll Table",
+                             "catalogue_table_id": 4, "catalogue_object_id": "sdss-object",
+                             "raDeg": "1.2", "decDeg": "3.4", "association_type": "AGN",
+                             "classificationReliability": "0.9"}]}],
+        "sherlock_objects",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@sdss:lasair")
+    fields = dict(record.fields)
+    assert fields["position.ra"] == 1.2
+    assert fields["position.dec"] == 3.4
+    assert fields["classification.assessment.sherlock.class"] == "AGN"
+    assert fields["classification.assessment.sherlock.score"] == 0.9
+
+
+def test_sherlock_crossmatch_does_not_map_photometry_or_native_audit_fields():
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{"catalogue_table_name": "2MASS PSC", "catalogue_object_id": "abc",
+                           "gMag": "17.2", "majorAxisArcsec": "0.4"}]},
+        "sherlock_position",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@twomass:lasair")
+    assert not any(name.startswith("photometry.") for name in record.fields)
+    assert not any(name.startswith("native.lasair_sherlock.") for name in record.fields)
+
+
 def test_sherlock_crossmatch_unknown_producer_fallback():
     portfolio = _build_endpoint_payload(
         {
