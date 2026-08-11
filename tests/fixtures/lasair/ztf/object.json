@@ -1,0 +1,53 @@
+{
+  "objectId": "ZTF20acpwljl",
+  "objectData": {
+    "ncand": 2,
+    "jdmin": 2459000.5,
+    "jdmax": 2459001.5,
+    "ramean": 124.88,
+    "decmean": -6.02
+  },
+  "candidates": [
+    {
+      "candid": 1,
+      "jd": 2459000.5,
+      "ra": 124.88,
+      "dec": -6.02,
+      "fid": 1,
+      "magpsf": 18.2,
+      "sigmapsf": 0.1,
+      "magnr": 19.1,
+      "sigmagnr": 0.2,
+      "magzpsci": 26.1,
+      "isdiffpos": "t",
+      "drb": 0.99
+    },
+    {
+      "candid": 2,
+      "jd": 2459001.5,
+      "ra": 124.88,
+      "dec": -6.02,
+      "fid": 2,
+      "diffmaglim": 20.5,
+      "isdiffpos": "t"
+    }
+  ],
+  "sherlock": {
+    "classification": "SN",
+    "classificationReliability": 0.93,
+    "catalogue_object_id": "gal-1",
+    "raDeg": 124.88,
+    "decDeg": -6.02,
+    "separationArcsec": 1.57
+  },
+  "TNS": {
+    "name": "AT2020abc",
+    "type": "SN",
+    "ra": 124.88,
+    "decl": -6.02,
+    "z": 0.123
+  },
+  "image_urls": {
+    "cutout": "https://lasair.invalid/cutout"
+  }
+}

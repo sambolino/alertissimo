@@ -1,77 +1,44 @@
+import json
+from pathlib import Path
+
+import pytest
+
 from tools.audit_payload_mapping_coverage import audit_payload
 
-
-def object_payload():
-    return {
-        "objectId": "ZTF25audit",
-        "objectData": {"ncand": 1, "jdmin": 2460000.5, "jdmax": 2460001.5},
-        "candidates": [{"candid": 1, "jd": 2460000.5, "magpsf": 18.1}],
-    }
+FIXTURES = Path(__file__).parent / "fixtures" / "lasair"
+ENDPOINTS = {
+    "ztf": ("object", "objects", "lightcurves", "cone", "query", "sherlock_objects", "sherlock_position"),
+    "lsst": ("object", "cone", "query", "sherlock_object", "sherlock_position"),
+}
 
 
-def extract_unmapped_branches(report: str) -> set[str]:
-    section = report.split("Unmapped top-level branches:\n", 1)[1].split("\n\n", 1)[0]
-    return {line.strip() for line in section.splitlines() if line.strip() != "(none)"}
-
-
-def test_list_payload_definition_represents_its_top_level_branch():
-    payload = object_payload()
-    payload["unexpectedBranch"] = {"x": 1}
+@pytest.mark.parametrize(
+    ("origin", "endpoint"),
+    [(origin, endpoint) for origin, endpoints in ENDPOINTS.items() for endpoint in endpoints],
+)
+def test_every_registered_lasair_endpoint_fixture_is_fully_accounted(origin, endpoint):
+    path = FIXTURES / origin / f"{endpoint}.json"
     report = audit_payload(
-        payload, broker="lasair", origin="ztf", endpoint="object", payload_file="object.json"
+        json.loads(path.read_text()), broker="lasair", origin=origin,
+        endpoint=endpoint, payload_file=str(path),
     )
+    assert "Unaccounted leaves: 0" in report
+    assert "Unaccounted leaves:\n  (none)" in report
+    assert "Portfolio records:" in report
 
-    unmapped = extract_unmapped_branches(report)
-    assert "unexpectedBranch" in unmapped
-    assert "candidates" not in unmapped
+
+def test_recursive_audit_reports_concrete_unaccounted_candidate_leaf():
+    payload = json.loads((FIXTURES / "ztf" / "object.json").read_text())
+    payload["candidates"][0]["unexpected_leaf"] = 1
+    report = audit_payload(payload, broker="lasair", origin="ztf", endpoint="object")
+    assert "candidates#unexpected_leaf" in report
+    assert "object#candidates" not in report
 
 
-def test_sherlock_crossmatches_are_covered_and_build_records():
-    payload = {"classifications": [], "crossmatches": []}
+def test_query_fixture_scope_is_explicitly_projection_specific():
+    # Query columns are caller-selected; this fixture audits only its known projection.
     report = audit_payload(
-        payload,
-        broker="lasair",
-        origin="ztf",
-        endpoint="sherlock_position",
-        payload_file="sherlock_position.json",
+        json.loads((FIXTURES / "ztf" / "query.json").read_text()),
+        broker="lasair", origin="ztf", endpoint="query",
     )
-
-    assert extract_unmapped_branches(report) == set()
-    assert "Portfolio records: 0" in report
-    assert "No semantic records were built for this endpoint/payload shape." in report
-
-
-def test_sherlock_position_classifications_are_covered_by_mapping():
-    payload = {"classifications": {"ZTF20acpwljl": ["SN", "description"]}}
-    report = audit_payload(
-        payload,
-        broker="lasair",
-        origin="ztf",
-        endpoint="sherlock_position",
-        payload_file="sherlock_position.json",
-    )
-
-    assert "classifications" not in extract_unmapped_branches(report)
-
-
-def test_sherlock_crossmatch_payload_builds_records_and_covers_both_branches():
-    payload = {
-        "classifications": {"ZTF20acpwljl": ["SN", "description"]},
-        "crossmatches": [
-            {
-                "catalogue_table_name": "2MASS PSC",
-                "catalogue_table_id": 2,
-                "catalogue_object_id": "abc",
-            }
-        ],
-    }
-    report = audit_payload(
-        payload,
-        broker="lasair",
-        origin="ztf",
-        endpoint="sherlock_position",
-        payload_file="sherlock_position.json",
-    )
-
-    assert extract_unmapped_branches(report) == set()
-    assert "Portfolio records: 2" in report
+    assert "Unaccounted leaves: 0" in report

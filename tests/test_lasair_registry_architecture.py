@@ -91,7 +91,7 @@ def test_mappings_use_minimal_payload_references() -> None:
 
         for payload in payloads.values():
             assert payload["endpoint"] in endpoints
-            assert payload["path"] == "." or payload["path"].endswith("[]")
+            assert payload["path"] == "." or payload["path"].endswith(("[]", "{}"))
         for refs in mappings.values():
             assert isinstance(refs, list) and refs
             for ref in refs:
@@ -135,9 +135,9 @@ def test_singleton_context_is_rooted_in_object_payload() -> None:
 
 def test_lsst_context_and_collection_mappings() -> None:
     mappings = load("lsst", "mappings.yaml")["mappings"]
-    assert mappings["classification@lasair.assessment.sherlock.class"] == [
+    assert mappings["classification@sherlock:lasair.best.class"][0] == (
         "object#lasairData.sherlock.classification"
-    ]
+    )
     assert mappings["crossmatch@tns:lasair.identity.object_id"] == [
         "object#lasairData.TNS.name"
     ]
@@ -148,10 +148,8 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     document = load("ztf", "mappings.yaml")
     mappings = document["mappings"]
     transforms = document["transforms"]
-    assert mappings["classification@lasair.assessment.sherlock.class"] == [
-        "object#sherlock.classification"
-    ]
     assert mappings["classification@sherlock:lasair.best.class"] == [
+        "object#sherlock.classification",
         "sherlock_position_classifications#_value.0",
         "sherlock_objects_classifications#_value.0",
     ]

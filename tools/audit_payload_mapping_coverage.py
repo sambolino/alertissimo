@@ -22,16 +22,36 @@ from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_e
 from tools.inspect_payload_shape import inspect_payload_shape
 
 
-def _top_level_payload_branch(payload_path: str) -> str | None:
-    """Return the payload branch selected by the deliberately small path syntax."""
-    if payload_path in {".", "[]"}:
-        return None
-    if payload_path.startswith("[]."):
-        payload_path = payload_path[3:]
-    first = payload_path.split(".", 1)[0]
-    if first.endswith(("[]", "{}")):
-        first = first[:-2]
-    return first or None
+def _leaf_paths(value: Any, prefix: str = "") -> set[str]:
+    """Return concrete leaf paths, collapsing homogeneous list rows."""
+    if isinstance(value, dict):
+        leaves: set[str] = set()
+        for key, child in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            leaves.update(_leaf_paths(child, path))
+        return leaves
+    if isinstance(value, (list, tuple)):
+        leaves: set[str] = set()
+        indexed = all(not isinstance(child, (dict, list, tuple)) for child in value)
+        for index, child in enumerate(value):
+            child_prefix = f"{prefix}.{index}" if indexed else prefix
+            leaves.update(_leaf_paths(child, child_prefix))
+        return leaves
+    return {prefix} if prefix else set()
+
+
+def _delegated_roots(payload_path: str, definitions: dict[str, Any]) -> set[str]:
+    """Find branches owned by definitions nested below this definition."""
+    roots: set[str] = set()
+    for definition in definitions.values():
+        child = definition["path"]
+        if child == payload_path:
+            continue
+        if payload_path == "." and not child.startswith("[]"):
+            roots.add(child.split(".", 1)[0].removesuffix("[]").removesuffix("{}"))
+        elif payload_path == "[]" and child.startswith("[]."):
+            roots.add(child[3:].split(".", 1)[0].removesuffix("[]").removesuffix("{}"))
+    return roots
 
 
 def _mapping_document(broker: str, origin: str, providers_root: Path) -> tuple[Path, dict[str, Any]]:
@@ -65,26 +85,46 @@ def audit_payload(
             if payload_key in refs_by_payload:
                 refs_by_payload[payload_key].append((semantic_path, raw_path))
 
-    represented: set[str] = set()
+    unmapped_path = mappings_path.with_name("unmapped_fields.yaml")
+    unmapped_document = yaml.safe_load(unmapped_path.read_text(encoding="utf-8"))
+    unmapped_by_payload: dict[str, set[str]] = {key: set() for key in definitions}
+    for entry in unmapped_document.get("unmapped", []):
+        reference = next(iter(entry))
+        payload_key, raw_path = reference.split("#", 1)
+        if payload_key in unmapped_by_payload:
+            unmapped_by_payload[payload_key].add(raw_path)
+
     resolved: list[str] = []
     missing: list[str] = []
+    mapped_leaves: set[str] = set()
+    intentional_leaves: set[str] = set()
+    delegated_leaves: set[str] = set()
+    unaccounted_leaves: set[str] = set()
+    observed_leaves: set[str] = set()
     for payload_key, definition in definitions.items():
-        branch = _top_level_payload_branch(definition["path"])
-        if branch is not None:
-            represented.add(branch)
         items = resolve_payload_items(payload, payload_key=payload_key, payload_path=definition["path"])
+        delegated = _delegated_roots(definition["path"], definitions)
+        mapped_raw = {raw for _, raw in refs_by_payload[payload_key]}
         for semantic_path, raw_path in refs_by_payload[payload_key]:
             reference = f"{payload_key}#{raw_path} -> {semantic_path}"
             if any(_has_raw_field(item.value, raw_path) for item in items):
                 resolved.append(reference)
             else:
                 missing.append(reference)
-            # Root-object refs are relative to the payload and therefore identify branches.
-            if definition["path"] == ".":
-                represented.add(raw_path.split(".", 1)[0])
-
-    top_level = set(payload) if isinstance(payload, dict) else set()
-    unmapped = sorted(top_level - represented)
+        for item in items:
+            for raw_path in _leaf_paths(item.value):
+                reference = f"{payload_key}#{raw_path}"
+                root_name = raw_path.split(".", 1)[0]
+                if root_name in delegated:
+                    delegated_leaves.add(reference)
+                    continue
+                observed_leaves.add(reference)
+                if raw_path in mapped_raw:
+                    mapped_leaves.add(reference)
+                elif raw_path in unmapped_by_payload[payload_key]:
+                    intentional_leaves.add(reference)
+                else:
+                    unaccounted_leaves.add(reference)
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:audit:payload"),
         broker=broker, origin=origin, endpoint=endpoint, params={}, status="success",
@@ -103,7 +143,11 @@ def audit_payload(
         *([f"  {key}: {definition['path']}" for key, definition in definitions.items()] or ["  (none)"]),
         "", "Resolved mapped fields:", *([f"  {item}" for item in sorted(set(resolved))] or ["  (none)"]),
         "", "Mapped fields with missing raw refs:", *([f"  {item}" for item in sorted(set(missing))] or ["  (none)"]),
-        "", "Unmapped top-level branches:", *([f"  {item}" for item in unmapped] or ["  (none)"]),
+        "", "Unaccounted leaves:", *([f"  {item}" for item in sorted(unaccounted_leaves)] or ["  (none)"]),
+        "", f"Observed leaves: {len(observed_leaves)}", f"Mapped leaves: {len(mapped_leaves)}",
+        f"Intentionally unmapped leaves: {len(intentional_leaves)}",
+        f"Delegated / structural leaves: {len(delegated_leaves)}",
+        f"Unaccounted leaves: {len(unaccounted_leaves)}",
         "", f"Portfolio records: {len(portfolio.records)}",
         f"Semantic record types: {', '.join(semantic_types)}",
         f"Edges: {len(portfolio.edges)}",

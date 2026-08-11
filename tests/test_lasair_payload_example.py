@@ -41,7 +41,7 @@ def test_build_portfolio_from_saved_lasair_payload():
 
     assert "summary@ztf:lasair" in semantic_types
     assert "detection@ztf:lasair" in semantic_types
-    assert "classification@lasair" in semantic_types
+    assert "classification@sherlock:lasair" in semantic_types
     assert "crossmatch@unknown:lasair" in semantic_types
     assert "crossmatch@{producer}:lasair" not in semantic_types
     assert "crossmatch@sherlock:lasair" not in semantic_types
@@ -358,7 +358,7 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     assert fields["redshift.error"] == 0.004
     assert "redshift.native_z" not in fields
     assert fields["rank"] == 1
-    assert fields["classification.best.class"] == "galaxy"
+    assert fields["classification.assessment.catalogue.class"] == "galaxy"
     assert fields["classification.assessment.sherlock.class"] == "SN"
     assert fields["classification.assessment.sherlock.score"] == 2.0
     assert portfolio.edges == ()
@@ -521,3 +521,19 @@ def test_object_sherlock_crossmatch_uses_unknown_producer_fallback():
     assert "crossmatch@unknown:lasair" in semantic_types
     assert "crossmatch@sherlock:lasair" not in semantic_types
     assert "crossmatch@{producer}:lasair" not in semantic_types
+
+
+def test_rich_sherlock_fixture_keeps_final_and_row_assessments_distinct():
+    from pathlib import Path
+    payload = json.loads((Path(__file__).parent / "fixtures/lasair/ztf/sherlock_position.json").read_text())
+    portfolio = _build_endpoint_payload(payload, "sherlock_position")
+    final = [r for r in portfolio.records if r.semantic_type == "classification@sherlock:lasair"]
+    assert len(final) == 1
+    assert dict(final[0].fields)["best.class"] == "SN"
+    rows = {dict(r.fields)["classification.assessment.catalogue.class"]: dict(r.fields)
+            for r in portfolio.records if r.semantic_type.startswith("crossmatch@")}
+    assert rows["star"]["classification.assessment.sherlock.class"] == "VS"
+    assert rows["galaxy"]["classification.assessment.sherlock.class"] == "SN"
+    assert rows["star"]["classification.assessment.sherlock.method"] == "association"
+    assert rows["galaxy"]["classification.assessment.sherlock.method"] == "synonym"
+    assert portfolio.edges == ()
