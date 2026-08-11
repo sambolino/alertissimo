@@ -112,15 +112,62 @@ mappings:
   crossmatch@{producer}:lasair.separation.east:
     - sherlock_position_crossmatches#eastSeparationArcsec
     - sherlock_objects_crossmatches#eastSeparationArcsec
+  crossmatch@{producer}:lasair.separation.projected:
+    - sherlock_position_crossmatches#physical_separation_kpc
+    - sherlock_objects_crossmatches#physical_separation_kpc
   crossmatch@{producer}:lasair.redshift.value:
+    - sherlock_position_crossmatches#z
     - sherlock_position_crossmatches#photoZ
+    - sherlock_objects_crossmatches#z
     - sherlock_objects_crossmatches#photoZ
   crossmatch@{producer}:lasair.redshift.error:
     - sherlock_position_crossmatches#photoZErr
     - sherlock_objects_crossmatches#photoZErr
-  crossmatch@{producer}:lasair.redshift.native_z:
-    - sherlock_position_crossmatches#z
-    - sherlock_objects_crossmatches#z
+  crossmatch@{producer}:lasair.distance.estimate.best.value:
+    - sherlock_position_crossmatches#best_distance
+    - sherlock_objects_crossmatches#best_distance
+  crossmatch@{producer}:lasair.distance.estimate.best.source:
+    - sherlock_position_crossmatches#best_distance_source
+    - sherlock_objects_crossmatches#best_distance_source
+  crossmatch@{producer}:lasair.distance.estimate.best.flag:
+    - sherlock_position_crossmatches#best_distance_flag
+    - sherlock_objects_crossmatches#best_distance_flag
+  crossmatch@{producer}:lasair.distance.estimate.redshift.value:
+    - sherlock_position_crossmatches#z_distance
+    - sherlock_objects_crossmatches#z_distance
+  crossmatch@{producer}:lasair.distance.estimate.redshift.modulus:
+    - sherlock_position_crossmatches#z_distance_modulus
+    - sherlock_objects_crossmatches#z_distance_modulus
+  crossmatch@{producer}:lasair.distance.estimate.redshift.scale:
+    - sherlock_position_crossmatches#z_distance_scale
+    - sherlock_objects_crossmatches#z_distance_scale
+  crossmatch@{producer}:lasair.distance.estimate.redshift.source:
+    - sherlock_position_crossmatches#z_distance_cat
+    - sherlock_objects_crossmatches#z_distance_cat
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.value:
+    - sherlock_position_crossmatches#pz_distance
+    - sherlock_objects_crossmatches#pz_distance
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.modulus:
+    - sherlock_position_crossmatches#pz_distance_modulus
+    - sherlock_objects_crossmatches#pz_distance_modulus
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.scale:
+    - sherlock_position_crossmatches#pz_distance_scale
+    - sherlock_objects_crossmatches#pz_distance_scale
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.source:
+    - sherlock_position_crossmatches#pz_distance_cat
+    - sherlock_objects_crossmatches#pz_distance_cat
+  crossmatch@{producer}:lasair.distance.estimate.direct.value:
+    - sherlock_position_crossmatches#direct_distance
+    - sherlock_objects_crossmatches#direct_distance
+  crossmatch@{producer}:lasair.distance.estimate.direct.modulus:
+    - sherlock_position_crossmatches#direct_distance_modulus
+    - sherlock_objects_crossmatches#direct_distance_modulus
+  crossmatch@{producer}:lasair.distance.estimate.direct.scale:
+    - sherlock_position_crossmatches#direct_distance_scale
+    - sherlock_objects_crossmatches#direct_distance_scale
+  crossmatch@{producer}:lasair.distance.estimate.direct.source:
+    - sherlock_position_crossmatches#direct_distance_cat
+    - sherlock_objects_crossmatches#direct_distance_cat
   crossmatch@{producer}:lasair.rank:
     - sherlock_position_crossmatches#rank
     - sherlock_objects_crossmatches#rank
@@ -233,15 +280,47 @@ transforms:
   crossmatch@{producer}:lasair.separation.east:
     sherlock_position_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#eastSeparationArcsec: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.separation.projected:
+    sherlock_position_crossmatches#physical_separation_kpc: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#physical_separation_kpc: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.redshift.value:
+    sherlock_position_crossmatches#z: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#photoZ: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#z: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#photoZ: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.redshift.error:
     sherlock_position_crossmatches#photoZErr: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#photoZErr: {type: to_float, skip_null: true}
-  crossmatch@{producer}:lasair.redshift.native_z:
-    sherlock_position_crossmatches#z: {type: to_float, skip_null: true}
-    sherlock_objects_crossmatches#z: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.best.value:
+    sherlock_position_crossmatches#best_distance: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#best_distance: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.redshift.value:
+    sherlock_position_crossmatches#z_distance: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#z_distance: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.redshift.modulus:
+    sherlock_position_crossmatches#z_distance_modulus: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#z_distance_modulus: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.redshift.scale:
+    sherlock_position_crossmatches#z_distance_scale: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#z_distance_scale: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.value:
+    sherlock_position_crossmatches#pz_distance: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#pz_distance: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.modulus:
+    sherlock_position_crossmatches#pz_distance_modulus: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#pz_distance_modulus: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.photometric_redshift.scale:
+    sherlock_position_crossmatches#pz_distance_scale: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#pz_distance_scale: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.direct.value:
+    sherlock_position_crossmatches#direct_distance: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#direct_distance: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.direct.modulus:
+    sherlock_position_crossmatches#direct_distance_modulus: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#direct_distance_modulus: {type: to_float, skip_null: true}
+  crossmatch@{producer}:lasair.distance.estimate.direct.scale:
+    sherlock_position_crossmatches#direct_distance_scale: {type: to_float, skip_null: true}
+    sherlock_objects_crossmatches#direct_distance_scale: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.rank:
     sherlock_position_crossmatches#rank: {type: to_int, skip_null: true}
     sherlock_objects_crossmatches#rank: {type: to_int, skip_null: true}

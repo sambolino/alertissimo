@@ -356,14 +356,88 @@ def test_sherlock_crossmatch_rank_falls_back_to_merged_rank():
     assert dict(record.fields)["rank"] == 3
 
 
-def test_sherlock_crossmatch_maps_non_null_native_redshift():
+def test_sherlock_crossmatch_redshift_z_wins_over_photo_z():
     portfolio = _build_endpoint_payload(
-        {"crossmatches": [{"catalogue_table_name": "PanSTARRS DR1", "catalogue_table_id": 3,
-                           "catalogue_object_id": "ps1-object", "z": "0.42"}]},
+        {"crossmatches": [{
+            "catalogue_table_name": "Million Quasars (MILLIQUAS) Catalog v8.0",
+            "catalogue_object_id": "SDSS J122001.73+082413.4",
+            "z": 2.492, "photoZ": 0.111, "photoZErr": 0.004,
+        }]},
         "sherlock_position",
     )
-    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@panstarrs:lasair")
-    assert dict(record.fields)["redshift.native_z"] == 0.42
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@milliquas:lasair")
+    fields = dict(record.fields)
+    assert fields["redshift.value"] == 2.492
+    assert fields["redshift.error"] == 0.004
+    assert "redshift.native_z" not in fields
+
+
+def test_sherlock_crossmatch_maps_projected_separation():
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{
+            "catalogue_table_name": "Million Quasars (MILLIQUAS) Catalog v8.0",
+            "catalogue_object_id": "SDSS J122001.73+082413.4",
+            "separationArcsec": 0.030735851265057398,
+            "physical_separation_kpc": 0.24822273481660356,
+        }]},
+        "sherlock_position",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@milliquas:lasair")
+    fields = dict(record.fields)
+    assert fields["separation.total"] == 0.030735851265057398
+    assert fields["separation.projected"] == 0.24822273481660356
+
+
+def test_sherlock_crossmatch_maps_distance_estimates_and_skips_null_numbers():
+    source = "Million Quasars (MILLIQUAS) Catalog v8.0"
+    portfolio = _build_endpoint_payload(
+        {"crossmatches": [{
+            "catalogue_table_name": "SDSS/MILLIQUAS/GAIA/DESI/PS1",
+            "catalogue_object_id": "1237661972796145844",
+            "best_distance": 20313.445, "best_distance_flag": "sz",
+            "best_distance_source": source,
+            "z_distance": 20313.445, "z_distance_cat": source,
+            "z_distance_modulus": 46.539, "z_distance_scale": 8.076,
+            "pz_distance": None, "pz_distance_cat": source,
+            "pz_distance_modulus": None, "pz_distance_scale": None,
+            "direct_distance": None, "direct_distance_cat": source,
+            "direct_distance_modulus": None, "direct_distance_scale": None,
+        }]},
+        "sherlock_position",
+    )
+    record = next(
+        r for r in portfolio.records
+        if r.semantic_type == "crossmatch@sdss_milliquas_gaia_desi_ps1:lasair"
+    )
+    fields = dict(record.fields)
+    assert fields["distance.estimate.best.value"] == 20313.445
+    assert fields["distance.estimate.best.flag"] == "sz"
+    assert fields["distance.estimate.best.source"] == source
+    assert fields["distance.estimate.redshift.value"] == 20313.445
+    assert fields["distance.estimate.redshift.source"] == source
+    assert fields["distance.estimate.redshift.modulus"] == 46.539
+    assert fields["distance.estimate.redshift.scale"] == 8.076
+    for estimate in ("photometric_redshift", "direct"):
+        for quantity in ("value", "modulus", "scale"):
+            assert f"distance.estimate.{estimate}.{quantity}" not in fields
+
+
+def test_sherlock_objects_crossmatch_maps_distance_and_projected_separation():
+    portfolio = _build_endpoint_payload(
+        [{"crossmatches": [{
+            "catalogue_table_name": "Gaia DR3",
+            "catalogue_object_id": 3902146494731655680,
+            "z_distance": "123.4", "z_distance_modulus": "35.1",
+            "z_distance_scale": "2.3", "physical_separation_kpc": "0.5",
+        }]}],
+        "sherlock_objects",
+    )
+    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@gaia:lasair")
+    fields = dict(record.fields)
+    assert fields["distance.estimate.redshift.value"] == 123.4
+    assert fields["distance.estimate.redshift.modulus"] == 35.1
+    assert fields["distance.estimate.redshift.scale"] == 2.3
+    assert fields["separation.projected"] == 0.5
 
 
 def test_sherlock_objects_crossmatch_maps_core_science_fields():
