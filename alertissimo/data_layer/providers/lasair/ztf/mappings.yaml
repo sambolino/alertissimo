@@ -11,6 +11,8 @@ payloads:
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
   sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
   sherlock_objects_classifications: {endpoint: sherlock_objects, path: "[].classifications{}"}
+  sherlock_position_crossmatches: {endpoint: sherlock_position, path: "crossmatches[]"}
+  sherlock_objects_crossmatches: {endpoint: sherlock_objects, path: "[].crossmatches[]"}
 
 mappings:
   summary@ztf:lasair.identity.object_id:
@@ -84,6 +86,17 @@ mappings:
     - sherlock_objects_classifications#_value.1
   crossmatch@{producer}:lasair.identity.object_id:
     - object#sherlock.catalogue_object_id
+    - sherlock_position_crossmatches#catalogue_object_id
+    - sherlock_objects_crossmatches#catalogue_object_id
+  crossmatch@{producer}:lasair.identity.{producer}:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.provenance.producer.name:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.provenance.producer.id:
+    - sherlock_position_crossmatches#catalogue_table_id
+    - sherlock_objects_crossmatches#catalogue_table_id
   crossmatch@{producer}:lasair.position.ra:
     - object#sherlock.raDeg
   crossmatch@{producer}:lasair.position.dec:
@@ -139,3 +152,27 @@ transforms:
       map:
         t: true
         f: false
+  crossmatch@{producer}:lasair.identity.object_id:
+    object#sherlock.catalogue_object_id:
+      type: to_string_strip
+    sherlock_position_crossmatches#catalogue_object_id:
+      type: to_string_strip
+    sherlock_objects_crossmatches#catalogue_object_id:
+      type: to_string_strip
+  crossmatch@{producer}:lasair.identity.{producer}:
+    sherlock_position_crossmatches#catalogue_table_name:
+      type: value_map
+      map:
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+      default: unknown
+    sherlock_objects_crossmatches#catalogue_table_name:
+      type: value_map
+      map:
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+      default: unknown

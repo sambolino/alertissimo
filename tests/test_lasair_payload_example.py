@@ -161,3 +161,133 @@ def test_sherlock_objects_classification_dictionary():
         "best.description": "likely",
     }
     assert portfolio.edges == ()
+
+
+def _build_endpoint_payload(payload, endpoint):
+    provenance = InternalExecutionProvenance(
+        internal_execution_id=InternalExecutionId(f"execution:test:{endpoint}"),
+        broker="lasair",
+        origin="ztf",
+        endpoint=endpoint,
+    )
+    return build_portfolio_from_execution(
+        ExecutionResult(payload=payload, execution_provenance=provenance),
+        validate_semantic_model=True,
+    )
+
+
+def test_sherlock_crossmatch_observed_producers_normalize():
+    payload = {
+        "crossmatches": [
+            {
+                "catalogue_table_name": "SDSS/2MASS/PS1",
+                "catalogue_table_id": 1,
+                "catalogue_object_id": "1237673709862061782",
+            },
+            {
+                "catalogue_table_name": "2MASS PSC",
+                "catalogue_table_id": 2,
+                "catalogue_object_id": "08193126-0601149 ",
+            },
+            {
+                "catalogue_table_name": "PanSTARRS DR1",
+                "catalogue_table_id": 3,
+                "catalogue_object_id": 100771248804585479,
+            },
+            {
+                "catalogue_table_name": "SDSS DR12 PhotoObjAll Table",
+                "catalogue_table_id": 4,
+                "catalogue_object_id": "123",
+            },
+        ]
+    }
+    portfolio = _build_endpoint_payload(payload, "sherlock_position")
+    records = [
+        record
+        for record in portfolio.records
+        if record.semantic_type.startswith("crossmatch@")
+    ]
+    semantic_types = {record.semantic_type for record in records}
+
+    assert semantic_types == {
+        "crossmatch@sdss_2mass_ps1:lasair",
+        "crossmatch@twomass:lasair",
+        "crossmatch@panstarrs:lasair",
+        "crossmatch@sdss:lasair",
+    }
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert "crossmatch@{producer}:lasair" not in semantic_types
+    assert "crossmatch@unknown:lasair" not in semantic_types
+    fields = {record.semantic_type: dict(record.fields) for record in records}
+    assert fields["crossmatch@sdss_2mass_ps1:lasair"] == {
+        "identity.object_id": "1237673709862061782",
+        "provenance.producer.name": "SDSS/2MASS/PS1",
+        "provenance.producer.id": 1,
+    }
+    assert (
+        fields["crossmatch@twomass:lasair"]["identity.object_id"] == "08193126-0601149"
+    )
+    assert (
+        fields["crossmatch@panstarrs:lasair"]["identity.object_id"]
+        == "100771248804585479"
+    )
+    assert portfolio.edges == ()
+
+
+def test_sherlock_objects_crossmatch_list_shape():
+    portfolio = _build_endpoint_payload(
+        [
+            {
+                "crossmatches": [
+                    {
+                        "catalogue_table_name": "2MASS PSC",
+                        "catalogue_table_id": 2,
+                        "catalogue_object_id": "abc",
+                    }
+                ]
+            }
+        ],
+        "sherlock_objects",
+    )
+
+    records = [
+        record
+        for record in portfolio.records
+        if record.semantic_type == "crossmatch@twomass:lasair"
+    ]
+    assert len(records) == 1
+    assert portfolio.edges == ()
+
+
+def test_sherlock_crossmatch_unknown_producer_fallback():
+    portfolio = _build_endpoint_payload(
+        {
+            "crossmatches": [
+                {
+                    "catalogue_table_name": "Some Unmapped Catalogue",
+                    "catalogue_table_id": 99,
+                    "catalogue_object_id": "unknown-source",
+                }
+            ]
+        },
+        "sherlock_position",
+    )
+
+    assert [record.semantic_type for record in portfolio.records] == [
+        "crossmatch@unknown:lasair"
+    ]
+
+
+def test_object_sherlock_crossmatch_uses_unknown_producer_fallback():
+    portfolio = _build_endpoint_payload(
+        {
+            "objectId": "ZTF25realistic",
+            "sherlock": {"catalogue_object_id": "WISEA J081336.12+221200.3"},
+        },
+        "object",
+    )
+    semantic_types = {record.semantic_type for record in portfolio.records}
+
+    assert "crossmatch@unknown:lasair" in semantic_types
+    assert "crossmatch@sherlock:lasair" not in semantic_types
+    assert "crossmatch@{producer}:lasair" not in semantic_types
