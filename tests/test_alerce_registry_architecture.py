@@ -53,7 +53,10 @@ def test_unmapped_is_disjoint_and_excludes_lightcurve_containers(origin):
         "query_lightcurve#forced_photometry",
     } & unmapped_refs
     assert "query_probabilities#ranking" in unmapped_refs
-    assert any("step_id_corr" in ref for ref in unmapped_refs)
+    if origin == "ztf":
+        assert any("step_id_corr" in ref for ref in unmapped_refs)
+    else:
+        assert not any("step_id_corr" in ref for ref in unmapped_refs)
     assert not any("step_id_corr" in ref for ref in mapped_refs)
 
 

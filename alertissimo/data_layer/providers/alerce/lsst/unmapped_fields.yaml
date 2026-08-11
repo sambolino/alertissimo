@@ -1,14 +1,173 @@
 broker: alerce
 origin: lsst
-notes: Only audited fields without a stable semantic feature catalog path are retained
-  here.
+notes: >-
+  Semantic debt for observed authoritative ALeRCE 2.3.1 LSST leaves that cannot be represented faithfully.
 unmapped:
-- query_object#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
-- query_objects#step_id_corr:
-    reason: no_stable_feature_catalog_path
-    note: Pipeline correction-step identifier has no stable semantic mapping.
+- query_object#created_date:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider row creation timestamp is distinct from the object observation time.
+- query_object#n_forced:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider count of forced measurements has no same-meaning current summary field.
+- query_object#n_non_det:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider count of non-detections has no same-meaning current summary field.
+- query_object#sid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric survey identifier is not established as a semantic producer identifier.
+- query_object#tid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric transport/survey type identifier is not established as a semantic producer identifier.
+- query_object#updated_date:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider row update timestamp is distinct from the object observation time.
+- query_objects#deltamjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#firstmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#lastmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#meandec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#meanra:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#n_det:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#n_forced:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#n_non_det:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#oid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#ranking:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Captured query_objects row is provider-ranked; rank is used only as evidence that its supplied class is selected, not emitted as a field.
+- query_objects#sid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#sigmadec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#sigmara:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_objects#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Nullable stellar indicator is not a transient class and has no same-meaning stable ontology field.
+- query_objects#tid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+- query_detections#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_detections#diaObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Rubin diaObject identifier duplicates a distinct provider object identity column; the registry cannot preserve two object identifiers without an established qualifier.
+- query_detections#forced_PsfFlux_flag:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF failure flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_detections#forced_PsfFlux_flag_edge:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF edge flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_detections#forced_PsfFlux_flag_noGoodPixels:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF no-good-pixels flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Stamp availability metadata has no same-meaning detection field.
+- query_detections#parentDiaSourceId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Parent diaSource relationship has no current noun-plane ontology path; edges are out of scope.
+- query_detections#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_detections#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
+- query_detections#ssObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Rubin Solar System object identifier has no stable same-meaning field without using a dynamic escape path.
+- query_detections#templateFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Template-image flux is not a source photometry measurement in the ontology contract.
+- query_detections#templateFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for templateFlux, which has no same-meaning ontology path.
+- query_detections#timeProcessedMjdTai:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Processing timestamp in MJD TAI has no same-meaning provenance field with this time scale.
+- query_detections#timeWithdrawnMjdTai:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Withdrawal timestamp in MJD TAI has no same-meaning provenance field with this time scale.
+- query_forced_photometry#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_forced_photometry#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_forced_photometry#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
 - query_probabilities#ranking:
-    reason: no_stable_feature_catalog_path
-    note: Ranking semantics are classifier-output dependent.
+    reason: unsupported_semantic_concept
+    candidate_meaning: Classifier-dependent ordering is neither a class assessment nor a selected-best assertion for the full probability response.
+- query_lightcurve.detections#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_lightcurve.detections#diaObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Rubin diaObject identifier duplicates a distinct provider object identity column; the registry cannot preserve two object identifiers without an established qualifier.
+- query_lightcurve.detections#forced_PsfFlux_flag:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF failure flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_lightcurve.detections#forced_PsfFlux_flag_edge:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF edge flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Forced-PSF no-good-pixels flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+- query_lightcurve.detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Stamp availability metadata has no same-meaning detection field.
+- query_lightcurve.detections#parentDiaSourceId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Parent diaSource relationship has no current noun-plane ontology path; edges are out of scope.
+- query_lightcurve.detections#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_lightcurve.detections#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
+- query_lightcurve.detections#ssObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Rubin Solar System object identifier has no stable same-meaning field without using a dynamic escape path.
+- query_lightcurve.detections#templateFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Template-image flux is not a source photometry measurement in the ontology contract.
+- query_lightcurve.detections#templateFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for templateFlux, which has no same-meaning ontology path.
+- query_lightcurve.detections#timeProcessedMjdTai:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Processing timestamp in MJD TAI has no same-meaning provenance field with this time scale.
+- query_lightcurve.detections#timeWithdrawnMjdTai:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Withdrawal timestamp in MJD TAI has no same-meaning provenance field with this time scale.
+- query_lightcurve.forced_photometry#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_lightcurve.forced_photometry#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_lightcurve.forced_photometry#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
