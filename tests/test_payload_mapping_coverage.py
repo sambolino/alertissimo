@@ -26,7 +26,7 @@ def test_list_payload_definition_represents_its_top_level_branch():
     assert "candidates" not in unmapped
 
 
-def test_endpoint_without_payload_definitions_reports_sherlock_branches():
+def test_sherlock_crossmatches_are_covered_and_build_records():
     payload = {"classifications": [], "crossmatches": []}
     report = audit_payload(
         payload,
@@ -36,7 +36,7 @@ def test_endpoint_without_payload_definitions_reports_sherlock_branches():
         payload_file="sherlock_position.json",
     )
 
-    assert extract_unmapped_branches(report) == {"crossmatches"}
+    assert extract_unmapped_branches(report) == set()
     assert "Portfolio records: 0" in report
     assert "No semantic records were built for this endpoint/payload shape." in report
 
@@ -52,3 +52,26 @@ def test_sherlock_position_classifications_are_covered_by_mapping():
     )
 
     assert "classifications" not in extract_unmapped_branches(report)
+
+
+def test_sherlock_crossmatch_payload_builds_records_and_covers_both_branches():
+    payload = {
+        "classifications": {"ZTF20acpwljl": ["SN", "description"]},
+        "crossmatches": [
+            {
+                "catalogue_table_name": "2MASS PSC",
+                "catalogue_table_id": 2,
+                "catalogue_object_id": "abc",
+            }
+        ],
+    }
+    report = audit_payload(
+        payload,
+        broker="lasair",
+        origin="ztf",
+        endpoint="sherlock_position",
+        payload_file="sherlock_position.json",
+    )
+
+    assert extract_unmapped_branches(report) == set()
+    assert "Portfolio records: 2" in report
