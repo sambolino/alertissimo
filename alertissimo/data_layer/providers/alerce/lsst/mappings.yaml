@@ -132,9 +132,11 @@ mappings:
   summary@lsst:alerce.classification.best.class:
   - query_object#class
   - query_objects#class
+  - query_objects#class_name
   summary@lsst:alerce.classification.best.classifier:
   - query_object#classifier
   - query_objects#classifier
+  - query_objects#classifier_name
   summary@lsst:alerce.classification.best.probability:
   - query_object#probability
   - query_objects#probability
