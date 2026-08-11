@@ -9,6 +9,7 @@ from typing import Any
 import altair as alt
 import pandas as pd
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 
 DEFAULT_DATA_PATH = (
@@ -17,14 +18,20 @@ DEFAULT_DATA_PATH = (
     / "json"
     / "obj-ID-313-lightcurve.json"
 )
+DEFAULT_IMAGE_PATH = (
+    Path(__file__).resolve().parent
+    / "plot"
+    / "images"
+    / "obj-ID-313-lightcurve.png"
+)
 
 BAND_COLORS = {
-    "g": "#2878ff",
-    "r": "#ed3b47",
-    "i": "#e88b19",
-    "z": "#7c55c7",
+    "g": "#00c853",
+    "r": "#ff1744",
+    "i": "#ff9100",
+    "z": "#d500f9",
 }
-FALLBACK_COLORS = ["#0891b2", "#0f766e", "#db2777", "#475569"]
+FALLBACK_COLORS = ["#00b8d4", "#00b85c", "#ff4081", "#651fff"]
 
 
 def load_lightcurve_json(source: Path) -> dict[str, Any]:
@@ -80,26 +87,40 @@ def lightcurve_chart(frame: pd.DataFrame) -> alt.LayerChart:
     """Create the interactive chart used by the Streamlit page."""
     color = alt.Color(
         "band:N",
-        title="Filter",
+        title="Band",
         scale=band_scale(frame),
         legend=alt.Legend(orient="bottom", direction="horizontal"),
     )
-    x_axis = alt.X("date:T", title="Time (UTC)")
+    x_axis = alt.X(
+        "date:T",
+        title="Time (UTC)",
+        scale=alt.Scale(padding=20),
+        axis=alt.Axis(
+            format="%d %b %Y",
+            tickCount=8,
+            labelAngle=-30,
+            labelAlign="right",
+            labelOverlap="greedy",
+        ),
+    )
     y_axis = alt.Y(
         "magnitude:Q",
         title="sci mag",
-        scale=alt.Scale(zero=False, reverse=True),
+        scale=alt.Scale(zero=False, reverse=True, padding=20),
     )
 
     base = alt.Chart(frame)
     error_bars = base.mark_rule(strokeWidth=1.25).encode(
         x=x_axis,
-        y=alt.Y("magnitudeLow:Q", scale=alt.Scale(zero=False, reverse=True)),
+        y=alt.Y(
+            "magnitudeLow:Q",
+            scale=alt.Scale(zero=False, reverse=True, padding=20),
+        ),
         y2="magnitudeHigh:Q",
         color=color,
     )
 
-    points = base.mark_circle(size=95, stroke="white", strokeWidth=1.5).encode(
+    points = base.mark_circle(size=95).encode(
         x=x_axis,
         y=y_axis,
         color=color,
@@ -130,6 +151,61 @@ def format_utc(value: pd.Timestamp) -> str:
     return value.strftime("%d/%m/%Y %H:%M UTC")
 
 
+def render_lightcurve_table(data: dict[str, Any]) -> None:
+    """Render the original light-curve data in a sortable, paginated grid."""
+    table = pd.DataFrame(data["lightCurve"])
+    st.subheader("Light curve data")
+
+    grid = GridOptionsBuilder.from_dataframe(table)
+    grid.configure_default_column(
+        sortable=True,
+        filter=False,
+        resizable=True,
+        editable=False,
+    )
+    grid.configure_columns(
+        list(table.columns),
+        sortable=True,
+        filter=False,
+        editable=False,
+    )
+    grid.configure_column("date", header_name="UTC date", minWidth=190, flex=2)
+    grid.configure_column("mjd", header_name="MJD", minWidth=145, flex=1)
+    grid.configure_column(
+        "band",
+        header_name="Band",
+        minWidth=90,
+        flex=1,
+        headerClass="ag-right-aligned-header",
+        cellClass="ag-right-aligned-cell",
+    )
+    grid.configure_column("magnitude", header_name="Magnitude", minWidth=130, flex=1)
+    grid.configure_column(
+        "magnitudeError",
+        header_name="Magnitude error",
+        minWidth=160,
+        flex=1,
+    )
+    grid.configure_pagination(
+        enabled=True,
+        paginationAutoPageSize=False,
+        paginationPageSize=25,
+    )
+    grid.configure_grid_options(paginationPageSizeSelector=[25, 50, 100])
+
+    AgGrid(
+        table,
+        gridOptions=grid.build(),
+        height=500,
+        theme="streamlit",
+        enable_enterprise_modules=False,
+        update_on=[],
+        show_search=False,
+        show_download_button=False,
+        key="lightcurve_table",
+    )
+
+
 def main() -> None:
     st.set_page_config(page_title="Alertissimo Light Curve", page_icon="📈", layout="wide")
     st.markdown(
@@ -139,14 +215,40 @@ def main() -> None:
         .stApp,
         [data-testid="stAppViewContainer"],
         [data-testid="stHeader"],
-        [data-testid="stFileUploaderDropzone"],
         [data-testid="stMetric"],
         [data-testid="stExpander"] {
             background-color: #ffffff;
         }
         .stApp, .stApp p, .stApp label,
-        .stApp h1, .stApp h2, .stApp h3 {
-            color: #172033;
+        .stApp h1, .stApp h2, .stApp h3,
+        [data-testid="stCaptionContainer"],
+        [data-testid="stMetricLabel"],
+        [data-testid="stMetricValue"],
+        [data-testid="stExpander"] summary,
+        [data-testid="stMarkdownContainer"] {
+            color: #172033 !important;
+        }
+        [data-testid="stCaptionContainer"] *,
+        [data-testid="stMetricLabel"] *,
+        [data-testid="stMetricValue"] *,
+        [data-testid="stExpander"] summary * {
+            color: inherit !important;
+        }
+        .st-key-band_filter label,
+        .st-key-band_filter label p {
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+        }
+        .st-key-band_filter button {
+            width: 2.5rem !important;
+            min-width: 2.5rem !important;
+            max-width: 2.5rem !important;
+            height: 2.5rem !important;
+            min-height: 2.5rem !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            aspect-ratio: 1 / 1;
+            flex: 0 0 2.5rem !important;
         }
         </style>
         """,
@@ -179,7 +281,27 @@ def main() -> None:
     brightest_col.metric("Brightest", f"{brightest:.2f} mag")
     count_col.metric("Displayed points", len(frame))
 
-    st.altair_chart(lightcurve_chart(frame), use_container_width=True)
+    image_col, chart_col = st.columns([1, 5], gap="large")
+    with image_col:
+        st.image(
+            DEFAULT_IMAGE_PATH,
+            caption="Object image",
+            use_container_width=True,
+        )
+    with chart_col:
+        bands = list(dict.fromkeys(frame["band"].astype(str)))
+        selected_bands = st.pills(
+            "Filter",
+            options=bands,
+            default=bands,
+            selection_mode="multi",
+            key="band_filter",
+        )
+        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)]
+        if filtered_frame.empty:
+            st.info("Select at least one band to display the light curve.")
+        else:
+            st.altair_chart(lightcurve_chart(filtered_frame), use_container_width=True)
     st.caption(
         "The Y axis is inverted according to astronomical convention: "
         "a lower magnitude means a brighter source."
@@ -187,6 +309,8 @@ def main() -> None:
 
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
+
+    render_lightcurve_table(data)
 
     with st.expander("Object metadata"):
         metadata = {key: value for key, value in data.items() if key != "lightCurve"}

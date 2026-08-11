@@ -32,6 +32,7 @@ setup(
         "python-dotenv==1.1.1",
         "rich==14.0.0",
         "streamlit==1.47.0",
+        "streamlit-aggrid==1.2.1.post2",
         "pyarrow>=7.0,<25",  # PyArrow 25.0.0 segfaults across Streamlit reruns
         "matplotlib==3.10.3",
         "pandas==2.2.3",
