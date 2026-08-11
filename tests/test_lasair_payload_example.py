@@ -282,6 +282,35 @@ def test_sherlock_crossmatch_new_producer_aliases_normalize():
         "crossmatch@gaia:lasair",
         "crossmatch@desi_legacy_survey:lasair",
     }
+    records = {
+        record.semantic_type: dict(record.fields)
+        for record in portfolio.records
+    }
+
+    combined_fields = records["crossmatch@sdss_milliquas_gaia_desi_ps1:lasair"]
+    assert (
+        combined_fields["provenance.producer.id"]
+        == "sdss_milliquas_gaia_desi_ps1"
+    )
+    assert (
+        combined_fields["provenance.producer.name"]
+        == "SDSS/MILLIQUAS/GAIA/DESI/PS1"
+    )
+
+    milliquas_fields = records["crossmatch@milliquas:lasair"]
+    assert milliquas_fields["provenance.producer.id"] == "milliquas"
+    assert (
+        milliquas_fields["provenance.producer.name"]
+        == "Million Quasars (MILLIQUAS) Catalog v8.0"
+    )
+
+    gaia_fields = records["crossmatch@gaia:lasair"]
+    assert gaia_fields["provenance.producer.id"] == "gaia"
+    assert gaia_fields["provenance.producer.name"] == "Gaia DR3"
+
+    desi_fields = records["crossmatch@desi_legacy_survey:lasair"]
+    assert desi_fields["provenance.producer.id"] == "desi_legacy_survey"
+    assert desi_fields["provenance.producer.name"] == "DESI Legacy Survey DR10"
 
 
 def test_sherlock_crossmatch_maps_observed_core_science_fields():
