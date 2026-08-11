@@ -1,4 +1,33 @@
+import pytest
+
 from alertissimo.data_layer.semantic_model import SemanticPathModel
+
+
+@pytest.mark.parametrize(
+    "semantic_path",
+    (
+        "classification@fink.best.class",
+        "classification@fink:lasair.best.class",
+        "classification@sherlock:lasair.best.description",
+    ),
+)
+def test_valid_record_qualifiers(semantic_path):
+    model = SemanticPathModel.from_ontology()
+
+    assert model.is_valid(semantic_path)
+
+
+@pytest.mark.parametrize(
+    "semantic_path",
+    (
+        "classification@fink@lasair.best.class",
+        "classification@@fink.best.class",
+    ),
+)
+def test_record_qualifier_rejects_multiple_at_signs(semantic_path):
+    model = SemanticPathModel.from_ontology()
+
+    assert not model.is_valid(semantic_path)
 
 
 def test_projection_reference_flattens_ordinary_container_contents():

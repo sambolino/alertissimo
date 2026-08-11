@@ -84,7 +84,12 @@ class SemanticPathModel:
         """Return whether *semantic_path* can be composed from the ontology."""
         head, separator, tail = semantic_path.partition(".")
         record_type, at, provider = head.partition("@")
-        if not at or ":" not in provider or record_type not in self.record_types or not tail:
+        if (
+            head.count("@") != 1
+            or not provider
+            or record_type not in self.record_types
+            or not tail
+        ):
             return False
         nodes = self._children(self.roots[record_type])
         for component in tail.split("."):
