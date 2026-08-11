@@ -153,7 +153,7 @@ def main() -> None:
         unsafe_allow_html=True,
     )
     st.title("Alertissimo Light Curve")
-    st.caption("Time versus sci mag · data loaded from JSON")
+    st.caption("Time versus sci mag")
 
     try:
         data = load_lightcurve_json(DEFAULT_DATA_PATH)
