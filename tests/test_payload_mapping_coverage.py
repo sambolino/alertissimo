@@ -35,17 +35,6 @@ def test_recursive_audit_reports_concrete_unaccounted_candidate_leaf():
     assert "object#candidates" not in report
 
 
-def test_cone_count_object_shape_selects_aggregate_payload_definition():
-    path = FIXTURES / "ztf" / "cone_count.json"
-    report = audit_payload(
-        json.loads(path.read_text()), broker="lasair", origin="ztf",
-        endpoint="cone", payload_file=str(path),
-    )
-    assert "cone_count: ." in report
-    assert "cone: []" not in report
-    assert "Unaccounted leaves: 0" in report
-
-
 def test_scalar_classification_array_leaves_keep_indices():
     assert _leaf_paths({"_value": ["SN", "description"]}) == {
         "_value.0", "_value.1",

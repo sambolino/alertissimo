@@ -7,7 +7,6 @@ payloads:
   objects: {endpoint: objects, path: "[]"}
   query: {endpoint: query, path: "[]"}
   cone: {endpoint: cone, path: "[]"}
-  cone_count: {endpoint: cone, path: "."}
   candidates: {endpoint: object, path: "candidates[]"}
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
   sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
