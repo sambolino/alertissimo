@@ -63,9 +63,23 @@ def _validate_payload_key(key: Any, where: str) -> str:
 def _validate_payload_path(value: Any, where: str) -> str:
     """Validate the deliberately small payload-root/path notation."""
     value = _nonempty_string(value, where)
-    if value != "." and not value.endswith("[]"):
+    if value in (".", "[]"):
+        return value
+    path = value[3:] if value.startswith("[].") else value
+    suffix = path[-2:] if path.endswith(("[]", "{}")) else ""
+    collection_path = path[:-2] if suffix else path
+    if (
+        not suffix
+        or not collection_path
+        or "[]" in collection_path
+        or "{}" in collection_path
+        or any(
+            not part or not part.replace("_", "a").isalnum()
+            for part in collection_path.split(".")
+        )
+    ):
         raise MappingSchemaError(
-            f"{where} must be '.' or a collection path ending in '[]'"
+            f"{where} must be '.' or a collection path ending in '[]' or '{{}}'"
         )
     return value
 

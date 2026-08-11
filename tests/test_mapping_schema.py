@@ -109,13 +109,26 @@ def test_invalid_payload_fails(tmp_path, valid_mapping, key, definition, match):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
-@pytest.mark.parametrize("path", [".", "[]", "detections[]", "non_detections[]", "forced_photometry[]"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        ".",
+        "[]",
+        "detections[]",
+        "non_detections[]",
+        "forced_photometry[]",
+        "classifications{}",
+        "[].classifications{}",
+    ],
+)
 def test_supported_payload_paths_pass(tmp_path, valid_mapping, path):
     valid_mapping["payloads"]["objects"]["path"] = path
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
-@pytest.mark.parametrize("path", ["$", "", "   ", "detections"])
+@pytest.mark.parametrize(
+    "path", ["$", "", "   ", "detections", "{}", "a[].b[]", "[].a{}.b{}"]
+)
 def test_unsupported_payload_paths_fail(tmp_path, valid_mapping, path):
     valid_mapping["payloads"]["objects"]["path"] = path
     with pytest.raises(MappingSchemaError, match="non-empty|string|collection path"):
