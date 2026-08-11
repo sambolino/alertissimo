@@ -17,8 +17,10 @@ MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
-TRANSFORM_KEYS = {"type", "map", "note"}
-TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd"}
+TRANSFORM_KEYS = {"type", "map", "default", "skip_null", "note"}
+TRANSFORM_TYPES = {
+    "boolean_not", "value_map", "jd_to_mjd", "to_string_strip", "to_float", "to_int",
+}
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
 OLD_HELPER_KEYS = {
@@ -210,7 +212,10 @@ def validate_mapping_file(path: str | Path) -> None:
                 f"{path}: transform {semantic_path!r} {raw_reference!r}",
             )
             transform_type = specification.get("type")
-            if transform_type not in TRANSFORM_TYPES:
+            if transform_type is None:
+                if set(specification) - {"skip_null", "note"}:
+                    raise MappingSchemaError(f"{path}: transform is missing required key 'type'")
+            elif transform_type not in TRANSFORM_TYPES:
                 raise MappingSchemaError(
                     f"{path}: transform type must be one of {sorted(TRANSFORM_TYPES)}"
                 )
@@ -218,6 +223,13 @@ def validate_mapping_file(path: str | Path) -> None:
                 raise MappingSchemaError(f"{path}: value_map transform requires 'map'")
             if "map" in specification and not isinstance(specification["map"], dict):
                 raise MappingSchemaError(f"{path}: transform map must be a mapping")
+            if "default" in specification and not (
+                specification["default"] is None
+                or isinstance(specification["default"], (str, int, float, bool))
+            ):
+                raise MappingSchemaError(f"{path}: transform default must be a scalar")
+            if "skip_null" in specification and not isinstance(specification["skip_null"], bool):
+                raise MappingSchemaError(f"{path}: transform skip_null must be a boolean")
             if "note" in specification and not isinstance(specification["note"], str):
                 raise MappingSchemaError(f"{path}: transform note must be a string")
 

@@ -206,6 +206,46 @@ def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+@pytest.mark.parametrize("transform_type", [
+    "boolean_not", "jd_to_mjd", "to_string_strip", "to_float", "to_int",
+])
+def test_supported_transform_types_pass(tmp_path, valid_mapping, transform_type):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": transform_type}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("specification", [
+    {"type": "to_float", "skip_null": True},
+    {"skip_null": True},
+    {"type": "value_map", "map": {"A": "star"}, "default": "unknown"},
+])
+def test_new_transform_options_pass(tmp_path, valid_mapping, specification):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": specification}}
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_skip_null_must_be_boolean(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": "to_float", "skip_null": "yes"}}
+    }
+    with pytest.raises(MappingSchemaError, match="skip_null must be a boolean"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_value_map_default_must_be_scalar(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {
+        "type": "value_map", "map": {}, "default": {"nested": "value"},
+    }}}
+    with pytest.raises(MappingSchemaError, match="default must be a scalar"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 @pytest.mark.parametrize(("transforms", "match"), [
     ({"object@ztf:example.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
     ({"object@ztf:example.id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),

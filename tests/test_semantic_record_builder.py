@@ -114,6 +114,76 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+@pytest.mark.parametrize(("raw", "expected"), [
+    (None, None), (" abc ", "abc"), (123, "123"), (12.5, "12.5"),
+])
+def test_to_string_strip_converts_scalars(tmp_path, raw, expected):
+    portfolio = _build_with_transform(tmp_path, raw, {"type": "to_string_strip"})
+    assert portfolio.records[0].fields["value"] == expected
+
+
+@pytest.mark.parametrize(("raw", "expected"), [
+    (None, None), ("12.3", 12.3), (12, 12.0), (12.3, 12.3),
+])
+def test_to_float_converts_numeric_values(tmp_path, raw, expected):
+    portfolio = _build_with_transform(tmp_path, raw, {"type": "to_float"})
+    assert portfolio.records[0].fields["value"] == expected
+
+
+def test_to_float_rejects_invalid_values(tmp_path):
+    with pytest.raises(ValueError, match="cannot convert 'abc' to float"):
+        _build_with_transform(tmp_path, "abc", {"type": "to_float"})
+
+
+@pytest.mark.parametrize(("raw", "expected"), [
+    (None, None), (1, 1), ("2", 2), (3.0, 3), ("4.0", 4),
+])
+def test_to_int_converts_only_integral_values(tmp_path, raw, expected):
+    portfolio = _build_with_transform(tmp_path, raw, {"type": "to_int"})
+    assert portfolio.records[0].fields["value"] == expected
+
+
+@pytest.mark.parametrize("raw", [1.5, "2.5", "abc"])
+def test_to_int_rejects_non_integral_values(tmp_path, raw):
+    with pytest.raises(ValueError, match="cannot convert"):
+        _build_with_transform(tmp_path, raw, {"type": "to_int"})
+
+
+@pytest.mark.parametrize(("specification", "expected"), [
+    ({"type": "value_map", "map": {"A": "star"}, "default": "unknown"}, "unknown"),
+    ({"type": "value_map", "map": {"A": "star"}}, "B"),
+])
+def test_value_map_optional_default(tmp_path, specification, expected):
+    portfolio = _build_with_transform(tmp_path, "B", specification)
+    assert portfolio.records[0].fields["value"] == expected
+
+
+@pytest.mark.parametrize("specification", [
+    {"type": "to_float"}, {"type": "to_float", "skip_null": False},
+])
+def test_null_is_preserved_without_enabled_skip_null(tmp_path, specification):
+    portfolio = _build_with_transform(tmp_path, None, specification)
+    assert portfolio.records[0].fields["value"] is None
+
+
+@pytest.mark.parametrize("specification", [
+    {"type": "to_float", "skip_null": True}, {"skip_null": True},
+])
+def test_skip_null_omits_null_field(tmp_path, specification):
+    portfolio = _build_with_transform(tmp_path, None, specification)
+    assert portfolio.records == ()
+
+
+def _build_with_transform(tmp_path, raw, specification):
+    semantic_path = "object@ztf:lasair.value"
+    return _build(tmp_path, {"raw": raw}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {semantic_path: ["object#raw"]},
+        "transforms": {semantic_path: {"object#raw": specification}},
+    })
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"
