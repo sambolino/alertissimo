@@ -154,6 +154,7 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         "sherlock_objects_classifications#_value.0",
     ]
     assert mappings["classification@sherlock:lasair.best.description"] == [
+        "object#sherlock.description",
         "sherlock_position_classifications#_value.1",
         "sherlock_objects_classifications#_value.1",
     ]

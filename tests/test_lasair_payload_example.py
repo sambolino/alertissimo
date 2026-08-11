@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 from examples.build_lasair_portfolio_from_payload import build_portfolio_from_payload
 from alertissimo.data_layer.execution import ExecutionResult
@@ -137,6 +138,41 @@ def test_sherlock_position_classification_dictionary():
     assert "identity.object_id" not in fields
     assert "subject.object_id" not in fields
     assert "target.object_id" not in fields
+    assert portfolio.edges == ()
+
+
+def test_observed_ztf_sherlock_position_preserves_scientific_roles():
+    path = Path("tests/fixtures/lasair/ztf/sherlock_position.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    portfolio = _build_endpoint_payload(payload, "sherlock_position")
+    classifications = [r for r in portfolio.records if r.semantic_type == "classification@sherlock:lasair"]
+    crossmatches = [r for r in portfolio.records if r.semantic_type.startswith("crossmatch@")]
+    assert len(classifications) == 1
+    assert len(crossmatches) == 4
+    classification = dict(classifications[0].fields)
+    assert classification == {
+        "best.class": "SN",
+        "best.description": payload["classifications"]["ZTF20acpwljl"][1],
+    }
+    records = {r.semantic_type: dict(r.fields) for r in crossmatches}
+    combined = records["crossmatch@sdss_2mass_ps1:lasair"]
+    assert combined["classification.assessment.catalogue.class"] == "galaxy"
+    assert combined["classification.assessment.sherlock.class"] == "SN"
+    assert combined["classification.assessment.sherlock.score"] == 2.0
+    assert combined["classification.assessment.sherlock.method"] == "multiple"
+    assert combined["redshift.value"] == 0.129075
+    assert combined["redshift.error"] == 0.03112
+    assert combined["separation.north"] == -1.15164
+    assert combined["separation.east"] == 1.06992
+    assert combined["photometry.J.mag"] == 17.007
+    twomass = records["crossmatch@twomass:lasair"]
+    assert twomass["identity.object_id"] == "08193126-0601149"
+    assert twomass["classification.assessment.catalogue.class"] == "star"
+    assert twomass["classification.assessment.sherlock.class"] == "VS"
+    assert twomass["classification.assessment.sherlock.score"] == 2.0
+    assert twomass["classification.assessment.sherlock.method"] == "2mass star angular"
+    assert records["crossmatch@panstarrs:lasair"]["classification.assessment.sherlock.method"] == "ps1 galaxy r angular"
+    assert records["crossmatch@sdss:lasair"]["classification.assessment.sherlock.method"] == "sdss phot galaxy angular"
     assert portfolio.edges == ()
 
 
@@ -534,6 +570,6 @@ def test_rich_sherlock_fixture_keeps_final_and_row_assessments_distinct():
             for r in portfolio.records if r.semantic_type.startswith("crossmatch@")}
     assert rows["star"]["classification.assessment.sherlock.class"] == "VS"
     assert rows["galaxy"]["classification.assessment.sherlock.class"] == "SN"
-    assert rows["star"]["classification.assessment.sherlock.method"] == "association"
-    assert rows["galaxy"]["classification.assessment.sherlock.method"] == "synonym"
+    assert rows["star"]["classification.assessment.sherlock.method"] == "2mass star angular"
+    assert rows["galaxy"]["classification.assessment.sherlock.method"] == "sdss phot galaxy angular"
     assert portfolio.edges == ()
