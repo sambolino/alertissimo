@@ -10,7 +10,10 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import (
+    _resolve_dynamic_field_paths,
+    build_portfolio_from_execution,
+)
 
 
 MAPPINGS = Path(__file__).parents[1] / "alertissimo/data_layer/providers/alerce/ztf/mappings.yaml"
@@ -76,3 +79,49 @@ def test_filter_specific_calibration_paths_are_bound_from_fid():
     assert fields["calibration.g.color_coefficient"] == -0.04
     assert fields["calibration.g.color_coefficient_uncertainty"] == 0.01
     assert "calibration.color_coefficient" not in fields
+
+
+def test_only_declared_identifier_placeholders_are_slugified():
+    assert _resolve_dynamic_field_paths({
+        "assessment.{output}": "SN Ia",
+        "assessment.{output}.probability": 0.82,
+    }) == {"assessment.sn_ia.probability": 0.82}
+    assert _resolve_dynamic_field_paths({
+        "photometry.{filter}": "g",
+        "photometry.{filter}.mag": 19.1,
+    }) == {"photometry.g.mag": 19.1}
+    assert _resolve_dynamic_field_paths({
+        "result.{method}": "Human Label",
+        "result.{method}.value": 1,
+    }) == {"result.Human Label.value": 1}
+
+
+def test_isdiffpos_uses_ztf_sign_semantics_without_unsafe_default():
+    portfolio = _build("query_forced_photometry", [
+        {"fid": 1, "isdiffpos": 1, "mjd": 1.0},
+        {"fid": 1, "isdiffpos": -1, "mjd": 2.0},
+        {"fid": 1, "isdiffpos": "unexpected", "mjd": 3.0},
+    ])
+    records = sorted(portfolio.records, key=lambda record: record.fields["time.mjd"])
+    assert records[0].fields["image_metrics.is_positive"] is True
+    assert records[1].fields["image_metrics.is_positive"] is False
+    assert "image_metrics.is_positive" not in records[2].fields
+
+
+def test_payload_selection_uses_physical_endpoint_and_allows_nested_lightcurve_rows():
+    object_portfolio = _build("query_object", {
+        "oid": "ZTF-object", "candid": 999, "classifier_name": "wrong endpoint",
+    })
+    assert [record.semantic_type for record in object_portfolio.records] == ["summary@ztf:alerce"]
+
+    lightcurve = _build("query_lightcurve", {
+        "detections": [{"oid": "ZTF-detection", "fid": 1, "mjd": 1.0}],
+        "non_detections": [{"oid": "ZTF-limit", "fid": 2, "mjd": 2.0, "diffmaglim": 20.2}],
+        "forced_photometry": [{"oid": "ZTF-forced", "fid": 1, "mjd": 3.0, "isdiffpos": -1}],
+    })
+    assert len(lightcurve.records) == 3
+    assert {record.internal_source.payload_key for record in lightcurve.records} == {
+        "query_lightcurve.detections",
+        "query_lightcurve.non_detections",
+        "query_lightcurve.forced_photometry",
+    }

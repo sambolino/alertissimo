@@ -1,14 +1,23 @@
-# ALeRCE/ZTF payload evidence
+# ALeRCE/ZTF response fixtures
 
-No JSON in this directory is currently claimed as authoritative. On 2026-08-11 the audit searched the repository history and workspace for `alerce_schema_payload_audit_bundle.tar.gz` and saved ALeRCE JSON, but found neither. Installing the official `alerce` client was blocked by the environment's network proxy. Synthetic payloads are deliberately not substituted.
+No response fixture is committed yet. Repository history contained capture utilities and
+schema-derived audit material, but no captured response bytes. On 2026-08-11, installing
+the official client was blocked by the environment's package-network proxy (HTTP 403),
+so schema-generated or synthetic dictionaries have deliberately **not** been presented
+as authoritative payload evidence.
 
-| endpoint | fixture | status | source | object/query | capture date | notes |
+Run `python tools/capture_alerce_ztf_payloads.py tests/fixtures/alerce/ztf` in a normal
+networked environment with the official `alerce` package installed. Review the resulting
+manifest before committing it; a successful manifest records each call and its query.
+
+| endpoint | fixture | status | source | object/query | capture date | sampling notes |
 |---|---|---|---|---|---|---|
-| `query_object` | — | provisional | endpoint metadata only | — | 2026-08-11 | Live capture still required. |
-| `query_detections` | — | provisional | endpoint metadata only | — | 2026-08-11 | Live capture still required. |
-| `query_non_detections` | — | provisional | endpoint metadata only | — | 2026-08-11 | Live capture still required; runtime cannot inject `limit.upper_limit = true` from endpoint context. |
-| `query_forced_photometry` | — | provisional | endpoint metadata only | — | 2026-08-11 | Live capture still required. |
-| `query_lightcurve` | — | provisional | endpoint metadata only | — | 2026-08-11 | Nested branches delegate to their branch payload definitions. |
-| `query_probabilities` | — | provisional | endpoint metadata only | — | 2026-08-11 | Live capture still required. |
-
-The mapping keeps non-detection rows as `detection@ztf:alerce` and maps their limiting magnitude. Because the current mapping DSL only derives values from raw leaves, it cannot add the context-derived constant `photometry.{filter}.limit.upper_limit = true`. Endpoint and execution provenance therefore remain the only formal runtime distinction until a provider-neutral constant mapping is introduced.
+| query_object | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_detections | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_non_detections | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_forced_photometry | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_lightcurve | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_probabilities | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_objects | — | provisional | runtime capture unavailable; no payload bytes | first non-empty discovery query | 2026-08-11 | no fixture invented |
+| query_magstats | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
+| query_features | — | provisional | runtime capture unavailable; no payload bytes | discovery object | 2026-08-11 | no fixture invented |
