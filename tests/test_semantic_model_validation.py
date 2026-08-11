@@ -13,6 +13,7 @@ from alertissimo.data_layer.representations import (
     SemanticRecord,
 )
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.mapping_schema import InvalidSemanticPathError
 from alertissimo.data_layer.semantic_model import (
     SemanticModelValidationError,
     load_semantic_model_index,
@@ -97,32 +98,21 @@ def test_unknown_record_type_fails():
         validate_portfolio_against_semantic_model(_portfolio("banana@ztf:lasair"))
 
 
-@pytest.mark.parametrize(
-    ("semantic_type", "should_pass"),
-    [("detection@ztf:lasair", True), ("banana@ztf:lasair", False)],
-)
-def test_record_builder_semantic_validation_is_opt_in(
-    tmp_path, semantic_type, should_pass
-):
+def test_record_builder_semantic_validation_accepts_valid_detection(tmp_path):
     ids = count()
     arguments = {
-        "mappings_path": _mapping(tmp_path, semantic_type),
+        "mappings_path": _mapping(tmp_path, "detection@ztf:lasair"),
         "internal_portfolio_id": InternalPortfolioId("portfolio:test"),
         "record_id_factory": lambda: InternalRecordId(f"record:{next(ids)}"),
         "validate_semantic_model": True,
     }
 
-    if should_pass:
-        portfolio = build_portfolio_from_execution(_execution(), **arguments)
-        assert portfolio.records[0].semantic_type == semantic_type
-    else:
-        with pytest.raises(SemanticModelValidationError, match="banana"):
-            build_portfolio_from_execution(_execution(), **arguments)
+    portfolio = build_portfolio_from_execution(_execution(), **arguments)
+    assert portfolio.records[0].semantic_type == "detection@ztf:lasair"
 
 
-def test_record_builder_default_still_allows_unknown_type(tmp_path):
-    portfolio = build_portfolio_from_execution(
-        _execution(), mappings_path=_mapping(tmp_path, "banana@ztf:lasair")
-    )
-
-    assert portfolio.records[0].semantic_type == "banana@ztf:lasair"
+def test_record_builder_mapping_validation_rejects_unknown_type_by_default(tmp_path):
+    with pytest.raises(InvalidSemanticPathError, match="banana"):
+        build_portfolio_from_execution(
+            _execution(), mappings_path=_mapping(tmp_path, "banana@ztf:lasair")
+        )
