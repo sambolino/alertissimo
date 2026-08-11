@@ -219,6 +219,61 @@ def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+@pytest.mark.parametrize(
+    "transform_type", ["to_string_strip", "to_float", "to_int", "jd_to_mjd"]
+)
+def test_new_transform_types_pass(tmp_path, valid_mapping, transform_type):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": transform_type}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_skip_null_boolean_passes(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"skip_null": True}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_skip_null_non_boolean_fails(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": "to_float", "skip_null": "yes"}}
+    }
+    with pytest.raises(MappingSchemaError, match="skip_null must be boolean"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_value_map_default_passes(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {
+        "type": "value_map", "map": {"A": "star"}, "default": "unknown",
+    }}}
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("default", [["unknown"], {"value": "unknown"}])
+def test_default_non_scalar_fails(tmp_path, valid_mapping, default):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {
+        "type": "value_map", "map": {}, "default": default,
+    }}}
+    with pytest.raises(MappingSchemaError, match="default must be scalar or null"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_unknown_transform_type_fails(tmp_path, valid_mapping):
+    semantic = "object@ztf:example.id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": "unknown"}}
+    }
+    with pytest.raises(MappingSchemaError, match="transform type"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 @pytest.mark.parametrize(("transforms", "match"), [
     ({"object@ztf:example.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
     ({"object@ztf:example.id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),

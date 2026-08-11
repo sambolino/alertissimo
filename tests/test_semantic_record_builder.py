@@ -114,6 +114,105 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+def _transform_document(transform, references=None):
+    semantic_path = "object@ztf:lasair.value"
+    references = references or ["object#value"]
+    return {
+        "broker": "lasair",
+        "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {semantic_path: references},
+        "transforms": {semantic_path: transform},
+    }
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [(None, None), (" abc ", "abc"), (123, "123"), (12.5, "12.5")],
+)
+def test_to_string_strip_strips_strings_and_converts_scalars(
+    tmp_path, value, expected
+):
+    document = _transform_document(
+        {"object#value": {"type": "to_string_strip"}}
+    )
+    portfolio = _build(tmp_path, {"value": value}, document)
+    assert portfolio.records[0].fields["value"] == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"), [(None, None), ("12.3", 12.3), (12, 12.0), (12.3, 12.3)]
+)
+def test_to_float_converts_numeric_strings_and_numbers(tmp_path, value, expected):
+    document = _transform_document({"object#value": {"type": "to_float"}})
+    portfolio = _build(tmp_path, {"value": value}, document)
+    assert portfolio.records[0].fields["value"] == expected
+
+
+def test_to_float_rejects_invalid_values(tmp_path):
+    document = _transform_document({"object#value": {"type": "to_float"}})
+    with pytest.raises(ValueError, match="cannot convert 'abc' to float"):
+        _build(tmp_path, {"value": "abc"}, document)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"), [(None, None), (1, 1), ("2", 2), (3.0, 3), ("4.0", 4)]
+)
+def test_to_int_converts_integral_values_only(tmp_path, value, expected):
+    document = _transform_document({"object#value": {"type": "to_int"}})
+    portfolio = _build(tmp_path, {"value": value}, document)
+    assert portfolio.records[0].fields["value"] == expected
+
+
+@pytest.mark.parametrize("value", [1.5, "2.5", "abc"])
+def test_to_int_rejects_non_integral_values(tmp_path, value):
+    document = _transform_document({"object#value": {"type": "to_int"}})
+    with pytest.raises(ValueError, match="cannot convert"):
+        _build(tmp_path, {"value": value}, document)
+
+
+def test_value_map_default_maps_unknown_to_default(tmp_path):
+    document = _transform_document(
+        {"object#value": {"type": "value_map", "map": {"A": "star"}, "default": "unknown"}}
+    )
+    portfolio = _build(tmp_path, {"value": "B"}, document)
+    assert portfolio.records[0].fields["value"] == "unknown"
+
+
+def test_value_map_without_default_preserves_old_behavior(tmp_path):
+    document = _transform_document(
+        {"object#value": {"type": "value_map", "map": {"A": "star"}}}
+    )
+    portfolio = _build(tmp_path, {"value": "B"}, document)
+    assert portfolio.records[0].fields["value"] == "B"
+
+
+def test_skip_null_omits_null_field_when_no_fallback_exists(tmp_path):
+    document = _transform_document(
+        {"object#value": {"type": "to_float", "skip_null": True}}
+    )
+    portfolio = _build(tmp_path, {"value": None}, document)
+    assert portfolio.records == ()
+
+
+def test_skip_null_continues_to_fallback_reference(tmp_path):
+    document = _transform_document(
+        {
+            "object#primary": {"type": "to_float", "skip_null": True},
+            "object#fallback": {"type": "to_float"},
+        },
+        ["object#primary", "object#fallback"],
+    )
+    portfolio = _build(tmp_path, {"primary": None, "fallback": "2.5"}, document)
+    assert portfolio.records[0].fields["value"] == 2.5
+
+
+def test_skip_null_only_specification_does_not_require_type(tmp_path):
+    document = _transform_document({"object#value": {"skip_null": True}})
+    portfolio = _build(tmp_path, {"value": "present"}, document)
+    assert portfolio.records[0].fields["value"] == "present"
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"
