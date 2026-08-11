@@ -126,6 +126,19 @@ endpoints:
     output:
       type: array
       item: object_summary
+      pagination:
+        total:
+          type: integer
+          nullable: true
+        page:
+          type: integer
+          nullable: true
+        next:
+          type: integer
+          nullable: true
+        prev:
+          type: integer
+          nullable: true
     operation_types:
     - object_search
     - cone_search
