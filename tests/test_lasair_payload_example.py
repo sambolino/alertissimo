@@ -222,8 +222,13 @@ def test_sherlock_crossmatch_observed_producers_normalize():
     assert fields["crossmatch@sdss_2mass_ps1:lasair"] == {
         "identity.object_id": "1237673709862061782",
         "provenance.producer.name": "SDSS/2MASS/PS1",
-        "provenance.producer.id": 1,
+        "provenance.producer.id": "sdss_2mass_ps1",
     }
+    for record_fields in fields.values():
+        assert "identity.sdss_2mass_ps1" not in record_fields
+        assert "identity.{producer}" not in record_fields
+        assert "provenance.producer.sdss_2mass_ps1" not in record_fields
+        assert "provenance.producer.{producer}" not in record_fields
     assert (
         fields["crossmatch@twomass:lasair"]["identity.object_id"] == "08193126-0601149"
     )
@@ -276,7 +281,7 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     fields = dict(record.fields)
     assert fields["identity.object_id"] == "1237673709862061782"
     assert fields["provenance.producer.name"] == "SDSS/2MASS/PS1"
-    assert fields["provenance.producer.id"] == 1
+    assert fields["provenance.producer.id"] == "sdss_2mass_ps1"
     assert fields["position.ra"] == 124.88026
     assert fields["position.dec"] == -6.02082
     assert fields["separation.total"] == 1.5719427375338366
@@ -290,6 +295,57 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     assert fields["classification.assessment.sherlock.class"] == "SN"
     assert fields["classification.assessment.sherlock.score"] == 2.0
     assert portfolio.edges == ()
+
+
+def test_sherlock_crossmatch_new_producer_aliases_normalize():
+    payload = {
+        "crossmatches": [
+            {
+                "catalogue_table_name": "SDSS/MILLIQUAS/GAIA/DESI/PS1",
+                "catalogue_table_id": 85,
+                "catalogue_object_id": "1237661972796145844",
+            },
+            {
+                "catalogue_table_name": "Million Quasars (MILLIQUAS) Catalog v8.0",
+                "catalogue_table_id": 85,
+                "catalogue_object_id": "SDSS J122001.73+082413.4",
+            },
+            {
+                "catalogue_table_name": "Gaia DR3",
+                "catalogue_table_id": 83,
+                "catalogue_object_id": 3902146494731655680,
+            },
+            {
+                "catalogue_table_name": "DESI Legacy Survey DR10",
+                "catalogue_table_id": 84,
+                "catalogue_object_id": "10000,379924,4223",
+            },
+        ]
+    }
+    portfolio = _build_endpoint_payload(payload, "sherlock_position")
+    records = {
+        record.semantic_type: dict(record.fields)
+        for record in portfolio.records
+        if record.semantic_type.startswith("crossmatch@")
+    }
+
+    assert set(records) == {
+        "crossmatch@sdss_milliquas_gaia_desi_ps1:lasair",
+        "crossmatch@milliquas:lasair",
+        "crossmatch@gaia:lasair",
+        "crossmatch@desi_legacy_survey:lasair",
+    }
+    gaia_fields = records["crossmatch@gaia:lasair"]
+    assert gaia_fields["identity.object_id"] == "3902146494731655680"
+    assert gaia_fields["provenance.producer.id"] == "gaia"
+    assert gaia_fields["provenance.producer.name"] == "Gaia DR3"
+    for record_fields in records.values():
+        assert not any(name.endswith(".{producer}") for name in record_fields)
+        assert not any(
+            name.startswith("provenance.producer.")
+            and name not in {"provenance.producer.id", "provenance.producer.name"}
+            for name in record_fields
+        )
 
 
 def test_sherlock_crossmatch_rank_falls_back_to_merged_rank():
