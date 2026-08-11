@@ -206,6 +206,24 @@ def test_boolean_not_transform_without_map_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [(1, 1), ("2", 2), (3.0, 3), ("4.0", 4)],
+)
+def test_to_int_transform_accepts_integral_values(value, expected):
+    from alertissimo.data_layer.runtime.record_builder import _apply_transform
+
+    assert _apply_transform(value, {"type": "to_int"}) == expected
+
+
+@pytest.mark.parametrize("value", [1.5, "2.5"])
+def test_to_int_transform_rejects_non_integral_values(value):
+    from alertissimo.data_layer.runtime.record_builder import _apply_transform
+
+    with pytest.raises(ValueError, match="non-integral"):
+        _apply_transform(value, {"type": "to_int"})
+
+
 @pytest.mark.parametrize(("transforms", "match"), [
     ({"object@ztf:example.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
     ({"object@ztf:example.id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),

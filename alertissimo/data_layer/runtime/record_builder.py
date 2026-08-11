@@ -116,13 +116,24 @@ def new_internal_record_id() -> InternalRecordId:
 def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any:
     if not specification:
         return value
-    transform_type = specification["type"]
+    transform_type = specification.get("type")
+    if transform_type is None:
+        return value
     if transform_type == "boolean_not":
         return not bool(value)
     if transform_type == "value_map":
         return specification["map"].get(value, value)
     if transform_type == "jd_to_mjd":
         return value - 2400000.5
+    if transform_type == "to_int":
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return value
+        converted = float(value)
+        if not converted.is_integer():
+            raise ValueError(f"cannot convert non-integral value {value!r} to int")
+        return int(converted)
     return value  # The mapping schema rejects unknown transform types.
 
 
@@ -165,6 +176,9 @@ def build_portfolio_from_execution(
     make_record_id = record_id_factory or new_internal_record_id
 
     for payload_key, payload_definition in payload_definitions.items():
+        endpoint = payload_definition.get("endpoint", payload_key)
+        if endpoint != execution.execution_provenance.endpoint:
+            continue
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
             execution.payload,
@@ -184,6 +198,8 @@ def build_portfolio_from_execution(
                     except RawFieldMissing:
                         continue
                     specification = transforms.get(semantic_path, {}).get(raw_reference)
+                    if specification and specification.get("skip_null") and value is None:
+                        continue
                     fields_by_type.setdefault(semantic_type, {})[relative_field] = (
                         _apply_transform(value, specification)
                     )

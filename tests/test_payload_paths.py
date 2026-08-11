@@ -40,6 +40,18 @@ def test_nested_root_list_preserves_index_path_and_flattens_index():
     assert [item.index_path for item in items] == [(0, 0), (0, 1), (0, 2), (1, 0)]
 
 
+def test_nested_root_list_mapping_expansion_exposes_key_and_value():
+    payload = [{"classifications": {"ZTF-object": ["AGN", "likely"]}}]
+    items = resolve_payload_items(
+        payload,
+        payload_key="classifications",
+        payload_path="[].classifications{}",
+    )
+    assert [item.value for item in items] == [
+        {"_key": "ZTF-object", "_value": ["AGN", "likely"]}
+    ]
+
+
 def test_missing_and_structural_mismatches_are_empty():
     assert resolve_payload_items({}, payload_key="x", payload_path="missing[]") == ()
     assert resolve_payload_items({"rows": {}}, payload_key="x", payload_path="rows[]") == ()

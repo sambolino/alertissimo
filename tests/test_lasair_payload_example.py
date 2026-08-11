@@ -71,7 +71,7 @@ def test_payload_script_reads_file_and_reports_summary(tmp_path):
     assert "edges built: 0" in result.stderr
 
 
-def test_payload_script_rejects_non_object_json(tmp_path):
+def test_payload_script_accepts_array_json(tmp_path):
     payload_path = tmp_path / "array.json"
     payload_path.write_text("[]", encoding="utf-8")
     result = subprocess.run(
@@ -80,8 +80,45 @@ def test_payload_script_rejects_non_object_json(tmp_path):
         text=True,
     )
 
-    assert result.returncode == 1
-    assert "must be a JSON object" in result.stderr
+    assert result.returncode == 0
+
+
+def test_build_portfolio_from_saved_sherlock_objects_list():
+    portfolio = build_portfolio_from_payload(
+        [{"classifications": {"ZTF-object": ["AGN", "likely"]}}],
+        endpoint="sherlock_objects",
+    )
+
+    records = [
+        record for record in portfolio.records
+        if record.semantic_type == "classification@sherlock:lasair"
+    ]
+    assert len(records) == 1
+    assert records[0].fields == {
+        "identity.object_id": "ZTF-object",
+        "best.class": "AGN",
+        "best.description": "likely",
+    }
+
+
+def test_observed_sherlock_crossmatch_uses_association_type_for_assessment():
+    portfolio = build_portfolio_from_payload(
+        {
+            "crossmatches": [{
+                "catalogue_table_name": "tcs_cat_gaia_dr2",
+                "catalogue_object_id": "Gaia-source",
+                "association_type": "SN",
+            }]
+        },
+        endpoint="sherlock_position",
+    )
+
+    crossmatches = [
+        record for record in portfolio.records
+        if record.semantic_type == "crossmatch@gaia:lasair"
+    ]
+    assert len(crossmatches) == 1
+    assert crossmatches[0].fields["classification.assessment.sherlock.class"] == "SN"
 
 
 def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
