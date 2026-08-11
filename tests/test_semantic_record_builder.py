@@ -114,6 +114,39 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+def test_skip_null_transform_tries_fallback_reference(tmp_path):
+    portfolio = _build(tmp_path, {"primary": None, "fallback": "2.5"}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"endpoint": "object", "path": "."}},
+        "mappings": {
+            "object@ztf:lasair.value": ["object#primary", "object#fallback"],
+        },
+        "transforms": {
+            "object@ztf:lasair.value": {
+                "object#primary": {"type": "to_float", "skip_null": True},
+                "object#fallback": {"type": "to_float"},
+            },
+        },
+    })
+
+    assert portfolio.records[0].fields["value"] == 2.5
+
+
+def test_skip_null_transform_without_fallback_omits_record(tmp_path):
+    portfolio = _build(tmp_path, {"primary": None}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"endpoint": "object", "path": "."}},
+        "mappings": {"object@ztf:lasair.value": ["object#primary"]},
+        "transforms": {
+            "object@ztf:lasair.value": {
+                "object#primary": {"type": "to_float", "skip_null": True},
+            },
+        },
+    })
+
+    assert portfolio.records == ()
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"

@@ -17,8 +17,8 @@ MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
-TRANSFORM_KEYS = {"type", "map", "note"}
-TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd"}
+TRANSFORM_KEYS = {"type", "map", "note", "skip_null"}
+TRANSFORM_TYPES = {"boolean_not", "value_map", "jd_to_mjd", "to_float"}
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
 OLD_HELPER_KEYS = {
@@ -234,6 +234,10 @@ def validate_mapping_file(path: str | Path) -> None:
                 raise MappingSchemaError(f"{path}: transform map must be a mapping")
             if "note" in specification and not isinstance(specification["note"], str):
                 raise MappingSchemaError(f"{path}: transform note must be a string")
+            if "skip_null" in specification and not isinstance(
+                specification["skip_null"], bool
+            ):
+                raise MappingSchemaError(f"{path}: transform skip_null must be a boolean")
 
     _validate_endpoints(path.with_name("endpoints.yaml"), endpoints_used)
     unmapped_references = _validate_unmapped(
