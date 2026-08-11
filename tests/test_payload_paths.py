@@ -40,6 +40,18 @@ def test_nested_root_list_preserves_index_path_and_flattens_index():
     assert [item.index_path for item in items] == [(0, 0), (0, 1), (0, 2), (1, 0)]
 
 
+def test_mapping_expansion_is_sorted_and_supports_synthetic_value_paths():
+    payload = {"classifications": {"ZTF-b": ["AGN", "likely"], "ZTF-a": ["SN", "possible"]}}
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="classifications{}"
+    )
+
+    assert [item.value["_key"] for item in items] == ["ZTF-a", "ZTF-b"]
+    from alertissimo.data_layer.runtime.payload_paths import extract_raw_field
+    assert extract_raw_field(items[0].value, "_value.0") == "SN"
+    assert extract_raw_field(items[0].value, "_value.1") == "possible"
+
+
 def test_missing_and_structural_mismatches_are_empty():
     assert resolve_payload_items({}, payload_key="x", payload_path="missing[]") == ()
     assert resolve_payload_items({"rows": {}}, payload_key="x", payload_path="rows[]") == ()
