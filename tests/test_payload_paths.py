@@ -1,6 +1,6 @@
 import pytest
 
-from alertissimo.data_layer.runtime.payload_paths import resolve_payload_items
+from alertissimo.data_layer.runtime.payload_paths import extract_raw_field, resolve_payload_items
 
 
 def test_root_singleton():
@@ -38,6 +38,19 @@ def test_nested_root_list_preserves_index_path_and_flattens_index():
     assert [item.value for item in items] == ["a", "b", "c", "d"]
     assert [item.payload_index for item in items] == [0, 1, 2, 3]
     assert [item.index_path for item in items] == [(0, 0), (0, 1), (0, 2), (1, 0)]
+
+
+def test_dictionary_expansion_preserves_keys_values_and_list_indexes():
+    items = resolve_payload_items(
+        {"classifications": {"ZTF20acpwljl": ["SN", "description"]}},
+        payload_key="sherlock_position_classifications",
+        payload_path="classifications{}",
+    )
+    assert items[0].value == {
+        "_key": "ZTF20acpwljl", "_value": ["SN", "description"],
+    }
+    assert extract_raw_field(items[0].value, "_value.0") == "SN"
+    assert extract_raw_field(items[0].value, "_value.1") == "description"
 
 
 def test_missing_and_structural_mismatches_are_empty():

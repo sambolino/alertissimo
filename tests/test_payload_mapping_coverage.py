@@ -26,8 +26,8 @@ def test_list_payload_definition_represents_its_top_level_branch():
     assert "candidates" not in unmapped
 
 
-def test_endpoint_without_payload_definitions_reports_sherlock_branches():
-    payload = {"classifications": [], "crossmatches": []}
+def test_sherlock_payload_definitions_represent_observed_branches():
+    payload = {"classifications": {}, "crossmatches": []}
     report = audit_payload(
         payload,
         broker="lasair",
@@ -36,6 +36,6 @@ def test_endpoint_without_payload_definitions_reports_sherlock_branches():
         payload_file="sherlock_position.json",
     )
 
-    assert extract_unmapped_branches(report) == {"classifications", "crossmatches"}
+    assert extract_unmapped_branches(report) == set()
     assert "Portfolio records: 0" in report
     assert "No semantic records were built for this endpoint/payload shape." in report

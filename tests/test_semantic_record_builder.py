@@ -114,6 +114,37 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+def test_conversion_transforms_skip_null_and_value_map_default(tmp_path):
+    portfolio = _build(tmp_path, {"rows": [{"rank": 2.0, "z": None, "catalog": "new"}]}, {
+        "broker": "lasair", "origin": "ztf", "payloads": {"row": {"path": "rows[]"}},
+        "mappings": {
+            "object@ztf:lasair.rank": ["row#rank"],
+            "object@ztf:lasair.redshift": ["row#z"],
+            "object@ztf:lasair.catalog": ["row#catalog"],
+        },
+        "transforms": {
+            "object@ztf:lasair.rank": {"row#rank": {"type": "to_int"}},
+            "object@ztf:lasair.redshift": {"row#z": {"type": "to_float", "skip_null": True}},
+            "object@ztf:lasair.catalog": {"row#catalog": {
+                "type": "value_map", "map": {"old": "known"}, "default": "unknown",
+            }},
+        },
+    })
+    assert dict(portfolio.records[0].fields) == {"rank": 2, "catalog": "unknown"}
+    assert isinstance(portfolio.records[0].fields["rank"], int)
+
+
+def test_to_int_rejects_non_integral_float(tmp_path):
+    with pytest.raises(ValueError, match="integral value"):
+        _build(tmp_path, {"rank": 2.5}, {
+            "broker": "lasair", "origin": "ztf", "payloads": {"row": {"path": "."}},
+            "mappings": {"object@ztf:lasair.rank": ["row#rank"]},
+            "transforms": {"object@ztf:lasair.rank": {
+                "row#rank": {"type": "to_int"},
+            }},
+        })
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"
