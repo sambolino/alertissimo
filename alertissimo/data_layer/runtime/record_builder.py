@@ -42,6 +42,10 @@ SEMANTIC_TYPE_BINDING_FIELD_PATHS = {
     "producer": ("provenance.producer.id", "provenance.producer.name"),
 }
 
+# Only labels that explicitly become semantic identifiers are normalized.
+# Ordinary dynamic-container binders retain their endpoint-specific value.
+SEMANTIC_IDENTIFIER_PLACEHOLDERS = frozenset({"producer", "output"})
+
 
 def _semantic_identifier(value: Any) -> str:
     """Normalize a payload label for use in a semantic path segment."""
@@ -90,12 +94,15 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
         if path in binder_paths:
             continue
         segments = path.split(".")
-        rewritten = [
-            _semantic_identifier(bindings[name])
-            if (name := _placeholder_name(segment)) in bindings
-            else segment
-            for segment in segments
-        ]
+        rewritten = []
+        for segment in segments:
+            name = _placeholder_name(segment)
+            if name not in bindings:
+                rewritten.append(segment)
+            elif name in SEMANTIC_IDENTIFIER_PLACEHOLDERS:
+                rewritten.append(_semantic_identifier(bindings[name]))
+            else:
+                rewritten.append(str(bindings[name]))
         resolved[".".join(rewritten)] = value
     return resolved
 

@@ -403,20 +403,18 @@ transforms:
     query_forced_photometry#isdiffpos:
       type: value_map
       map:
-        t: true
         '1': true
         1: true
-        f: false
-        '0': false
-        0: false
-      default: false
+        '-1': false
+        -1: false
+      default: null
+      skip_null: true
     query_lightcurve.forced_photometry#isdiffpos:
       type: value_map
       map:
-        t: true
         '1': true
         1: true
-        f: false
-        '0': false
-        0: false
-      default: false
+        '-1': false
+        -1: false
+      default: null
+      skip_null: true
