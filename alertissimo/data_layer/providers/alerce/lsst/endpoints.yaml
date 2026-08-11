@@ -14,11 +14,12 @@ endpoints:
   query_objects:
     enabled: true
     audit:
-      status: discovery_used
+      status: authoritative_capture
+      selected_oid: '170587117485817955'
+      observed_row_count: 2
       documented_models:
       - object
-      note: Used by audit collector for candidate discovery; output model is the same
-        object summary family as query_object/list_objects.
+      note: The authoritative response has two classification-bearing rows for one OID; repeated object statistics are not treated as unique object rows.
     transport:
       kind: python
       module: alerce.core
@@ -153,7 +154,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: '170591527609303944'
+      selected_oid: '170587117485817955'
       documented_models:
       - object
       documented_field_count: 23
@@ -204,7 +205,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: '170591527609303944'
+      selected_oid: '170587117485817955'
       documented_models:
       - lsst_detection
       documented_field_count: 8
@@ -256,7 +257,7 @@ endpoints:
     enabled: true
     audit:
       status: empty
-      selected_oid: '170591527609303944'
+      selected_oid: '170587117485817955'
       documented_models:
       - non_detection
       documented_field_count: 4
@@ -310,7 +311,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: '170591547426865168'
+      selected_oid: '170587117485817955'
       documented_models:
       - lsst_forced_photometry
       - forced_photometry
@@ -363,7 +364,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: '170591527609303944'
+      selected_oid: '170587117485817955'
       documented_models:
       - lsst_detection
       - non_detection
@@ -458,8 +459,7 @@ endpoints:
     output:
       type: array
       item: magnitude_statistics
-    disabled_reason: Multisurvey query_magstats not implemented in current ALeRCE
-      client/backend. Declared magstats fields are still included in mappings as declared_only/known_unsupported.
+    disabled_reason: ALeRCE 2.3.1 multisurvey query_magstats raises NotImplementedError; no active payload mapping is registered.
     operation_types:
     - magnitude_statistics
     - object_summary
@@ -470,7 +470,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: '170591527609303944'
+      selected_oid: '170587117485817955'
       documented_models:
       - probability
       documented_field_count: 5
