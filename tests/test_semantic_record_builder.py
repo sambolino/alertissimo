@@ -311,6 +311,41 @@ def test_semantic_type_producer_uses_dynamic_field_binding(tmp_path):
     assert dict(portfolio.records[0].fields) == {"identity.object_id": "123"}
 
 
+def test_semantic_type_producer_uses_stable_provenance_field(tmp_path):
+    portfolio = _build(
+        tmp_path,
+        {"catalogue_id": "gaia", "catalogue_name": "Gaia DR3", "source_id": "123"},
+        {
+            "broker": "lasair",
+            "origin": "ztf",
+            "payloads": {"object": {"endpoint": "object", "path": "."}},
+            "mappings": {
+                "crossmatch@{producer}:lasair.provenance.producer.id": [
+                    "object#catalogue_id"
+                ],
+                "crossmatch@{producer}:lasair.provenance.producer.name": [
+                    "object#catalogue_name"
+                ],
+                "crossmatch@{producer}:lasair.identity.object_id": [
+                    "object#source_id"
+                ],
+            },
+        },
+    )
+
+    record = portfolio.records[0]
+    fields = dict(record.fields)
+    assert record.semantic_type == "crossmatch@gaia:lasair"
+    assert fields["provenance.producer.id"] == "gaia"
+    assert fields["provenance.producer.name"] == "Gaia DR3"
+    assert not {
+        "identity.gaia",
+        "identity.{producer}",
+        "provenance.producer.gaia",
+        "provenance.producer.{producer}",
+    } & fields.keys()
+
+
 def test_dynamic_filter_binding_is_scoped_to_each_payload_item(tmp_path):
     portfolio = _build(tmp_path, {"candidates": [
         {"fid": 1, "magpsf": 18.2},

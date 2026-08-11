@@ -222,7 +222,7 @@ def test_sherlock_crossmatch_observed_producers_normalize():
     assert fields["crossmatch@sdss_2mass_ps1:lasair"] == {
         "identity.object_id": "1237673709862061782",
         "provenance.producer.name": "SDSS/2MASS/PS1",
-        "provenance.producer.id": 1,
+        "provenance.producer.id": "sdss_2mass_ps1",
     }
     assert (
         fields["crossmatch@twomass:lasair"]["identity.object_id"] == "08193126-0601149"
@@ -259,6 +259,31 @@ def test_sherlock_objects_crossmatch_list_shape():
     assert portfolio.edges == ()
 
 
+def test_sherlock_crossmatch_new_producer_aliases_normalize():
+    names = [
+        "SDSS/MILLIQUAS/GAIA/DESI/PS1",
+        "Million Quasars (MILLIQUAS) Catalog v8.0",
+        "Gaia DR3",
+        "DESI Legacy Survey DR10",
+    ]
+    portfolio = _build_endpoint_payload(
+        {
+            "crossmatches": [
+                {"catalogue_table_name": name, "catalogue_object_id": str(index)}
+                for index, name in enumerate(names)
+            ]
+        },
+        "sherlock_position",
+    )
+
+    assert {record.semantic_type for record in portfolio.records} == {
+        "crossmatch@sdss_milliquas_gaia_desi_ps1:lasair",
+        "crossmatch@milliquas:lasair",
+        "crossmatch@gaia:lasair",
+        "crossmatch@desi_legacy_survey:lasair",
+    }
+
+
 def test_sherlock_crossmatch_maps_observed_core_science_fields():
     portfolio = _build_endpoint_payload(
         {"crossmatches": [{
@@ -276,7 +301,7 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     fields = dict(record.fields)
     assert fields["identity.object_id"] == "1237673709862061782"
     assert fields["provenance.producer.name"] == "SDSS/2MASS/PS1"
-    assert fields["provenance.producer.id"] == 1
+    assert fields["provenance.producer.id"] == "sdss_2mass_ps1"
     assert fields["position.ra"] == 124.88026
     assert fields["position.dec"] == -6.02082
     assert fields["separation.total"] == 1.5719427375338366
@@ -356,6 +381,10 @@ def test_sherlock_crossmatch_unknown_producer_fallback():
     assert [record.semantic_type for record in portfolio.records] == [
         "crossmatch@unknown:lasair"
     ]
+    fields = dict(portfolio.records[0].fields)
+    assert fields["provenance.producer.id"] == "unknown"
+    assert fields["provenance.producer.name"] == "Some Unmapped Catalogue"
+    assert 99 not in fields.values()
 
 
 def test_object_sherlock_crossmatch_uses_unknown_producer_fallback():
