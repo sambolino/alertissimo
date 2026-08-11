@@ -83,23 +83,67 @@ def band_scale(frame: pd.DataFrame) -> alt.Scale:
     return alt.Scale(domain=bands, range=colors)
 
 
-def lightcurve_chart(frame: pd.DataFrame) -> alt.LayerChart:
+def month_midpoint_ticks(frame: pd.DataFrame) -> list[object]:
+    """Return one centered tick for every month covered by the observations."""
+    first_date = frame["date"].min()
+    last_date = frame["date"].max()
+    first_month = pd.Timestamp(
+        year=first_date.year,
+        month=first_date.month,
+        day=1,
+        tz="UTC",
+    )
+    last_month = pd.Timestamp(
+        year=last_date.year,
+        month=last_date.month,
+        day=1,
+        tz="UTC",
+    )
+    return [
+        (month_start + pd.Timedelta(days=14)).to_pydatetime()
+        for month_start in pd.date_range(first_month, last_month, freq="MS")
+    ]
+
+
+def lightcurve_chart(
+    frame: pd.DataFrame,
+    band_counts: dict[str, int] | None = None,
+) -> alt.LayerChart:
     """Create the interactive chart used by the Streamlit page."""
+    if band_counts is None:
+        band_counts = frame["band"].astype(str).value_counts().to_dict()
+    count_label_expr = "datum.label"
+    for band, count in reversed(list(band_counts.items())):
+        count_label_expr = (
+            f"datum.label === {json.dumps(band)} "
+            f"? {json.dumps(f'{band} ({count})')} : ({count_label_expr})"
+        )
     color = alt.Color(
         "band:N",
         title="Band",
         scale=band_scale(frame),
-        legend=alt.Legend(orient="bottom", direction="horizontal"),
+        legend=alt.Legend(
+            orient="bottom",
+            direction="vertical",
+            columns=1,
+            labelExpr=count_label_expr,
+        ),
     )
+    month_ticks = month_midpoint_ticks(frame)
+    first_date = frame["date"].min().to_pydatetime()
+    last_date = frame["date"].max().to_pydatetime()
     x_axis = alt.X(
         "date:T",
         title="Time (UTC)",
-        scale=alt.Scale(padding=20),
+        scale=alt.Scale(
+            domain=[min(first_date, month_ticks[0]), max(last_date, month_ticks[-1])],
+            padding=20,
+        ),
         axis=alt.Axis(
-            format="%d %b %Y",
-            tickCount=8,
-            labelAngle=-30,
-            labelAlign="right",
+            format="%b %Y",
+            values=month_ticks,
+            labelAngle=0,
+            labelAlign="center",
             labelOverlap="greedy",
         ),
     )
@@ -234,10 +278,11 @@ def main() -> None:
         [data-testid="stExpander"] summary * {
             color: inherit !important;
         }
-        .st-key-band_filter label,
-        .st-key-band_filter label p {
+        .filter-title {
+            color: #172033;
             font-size: 1.25rem !important;
             font-weight: 700 !important;
+            margin-bottom: 0.1rem;
         }
         .st-key-band_filter button {
             width: 2.5rem !important;
@@ -249,6 +294,43 @@ def main() -> None:
             border-radius: 50% !important;
             aspect-ratio: 1 / 1;
             flex: 0 0 2.5rem !important;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(1) {
+            --band-color: #00c853;
+            --band-soft-color: #e4f8ea;
+            --band-text-color: #007a32;
+            --band-active-text-color: #072b15;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(2) {
+            --band-color: #ff1744;
+            --band-soft-color: #ffe5ea;
+            --band-text-color: #b80028;
+            --band-active-text-color: #ffffff;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(3) {
+            --band-color: #ff9100;
+            --band-soft-color: #fff1dc;
+            --band-text-color: #945400;
+            --band-active-text-color: #3b2200;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(4) {
+            --band-color: #d500f9;
+            --band-soft-color: #f8e0fb;
+            --band-text-color: #850098;
+            --band-active-text-color: #ffffff;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button {
+            background-color: var(--band-soft-color) !important;
+            border: 2px solid var(--band-color) !important;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button * {
+            color: var(--band-text-color) !important;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button[kind="pillsActive"] {
+            background-color: var(--band-color) !important;
+        }
+        .st-key-band_filter [data-baseweb="button-group"] button[kind="pillsActive"] * {
+            color: var(--band-active-text-color) !important;
         }
         </style>
         """,
@@ -289,19 +371,28 @@ def main() -> None:
             use_container_width=True,
         )
     with chart_col:
-        bands = list(dict.fromkeys(frame["band"].astype(str)))
+        observed_bands = list(dict.fromkeys(frame["band"].astype(str)))
+        configured_bands = list(data.get("filters", {}))
+        bands = [band for band in configured_bands if band in observed_bands]
+        bands.extend(band for band in observed_bands if band not in bands)
+        band_counts = frame["band"].astype(str).value_counts().to_dict()
+        st.markdown('<div class="filter-title">Filter</div>', unsafe_allow_html=True)
         selected_bands = st.pills(
             "Filter",
             options=bands,
             default=bands,
             selection_mode="multi",
             key="band_filter",
+            label_visibility="collapsed",
         )
         filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)]
         if filtered_frame.empty:
             st.info("Select at least one band to display the light curve.")
         else:
-            st.altair_chart(lightcurve_chart(filtered_frame), use_container_width=True)
+            st.altair_chart(
+                lightcurve_chart(filtered_frame, band_counts),
+                use_container_width=True,
+            )
     st.caption(
         "The Y axis is inverted according to astronomical convention: "
         "a lower magnitude means a brighter source."
