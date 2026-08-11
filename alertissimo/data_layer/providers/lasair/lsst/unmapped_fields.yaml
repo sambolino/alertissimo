@@ -1,4 +1,30 @@
 broker: lasair
 origin: lsst
-notes: Only audited fields without a stable semantic feature catalog path are retained here; forced-source rows remain deliberately out of scope.
-unmapped: []
+notes: Explicit semantic-debt registry produced by the representative saved-payload audit; forced-source rows remain deliberately out of scope.
+unmapped:
+  - cone#separation:
+      reason: ambiguous_meaning
+      candidate_meaning: Provider cone-result separation; units and exact reference position are not encoded in the response.
+  - object#diaForcedSourcesList.diaForcedSourceId: &forced
+      reason: deliberately_out_of_scope_payload_family
+      candidate_meaning: Forced-photometry source data requires a dedicated payload definition and runtime treatment.
+  - object#diaForcedSourcesList.midpointMjdTai: *forced
+  - object#diaForcedSourcesList.band: *forced
+  - object#diaForcedSourcesList.psfFlux: *forced
+  - object#diaForcedSourcesList.psfFluxErr: *forced
+  - sherlock_object_classifications#_key: &classification_key
+      reason: duplicate_execution_payload_context
+      candidate_meaning: Native transient identifier used as the key of Sherlock's classification dictionary; portfolio context already identifies the transient.
+  - sherlock_position_classifications#_key: *classification_key
+  - sherlock_object_crossmatches#catalogue_table_id: &catalogue_table_id
+      reason: provider_native_implementation_identifier
+      candidate_meaning: Internal Sherlock catalogue-table database identifier; producer name supplies scientific provenance.
+  - sherlock_position_crossmatches#catalogue_table_id: *catalogue_table_id
+  - sherlock_object_crossmatches#major_axis_arcsec: &major_axis
+      reason: unsupported_semantic_concept
+      candidate_meaning: Catalogue-source apparent major axis; no same-meaning crossmatch morphology path exists.
+  - sherlock_position_crossmatches#major_axis_arcsec: *major_axis
+  - sherlock_object_crossmatches#transient_object_id: &transient_id
+      reason: duplicate_execution_payload_context
+      candidate_meaning: Sherlock's native transient identifier; it is not the identity of the matched catalogue object.
+  - sherlock_position_crossmatches#transient_object_id: *transient_id

@@ -1,0 +1,44 @@
+{
+  "diaObjectId": 3069424811013379278,
+  "diaObject": {
+    "firstDiaSourceMjdTai": 61000.1,
+    "lastDiaSourceMjdTai": 61001.2,
+    "ra": 124.88,
+    "decl": -6.02
+  },
+  "diaSourcesList": [
+    {
+      "diaSourceId": 11,
+      "midpointMjdTai": 61000.1,
+      "band": "g",
+      "psfFlux": 1200.0,
+      "psfFluxErr": 20.0,
+      "reliability": 0.98
+    }
+  ],
+  "diaForcedSourcesList": [
+    {
+      "diaForcedSourceId": 21,
+      "midpointMjdTai": 61000.0,
+      "band": "g",
+      "psfFlux": 100.0,
+      "psfFluxErr": 15.0
+    }
+  ],
+  "lasairData": {
+    "nDiaSources": 1,
+    "sherlock": {
+      "classification": "SN",
+      "classificationReliability": 0.93,
+      "catalogue_object_id": "gal-1",
+      "raDeg": 124.88,
+      "decDeg": -6.02,
+      "separationArcsec": 1.57
+    },
+    "TNS": {
+      "name": "AT2026abc",
+      "ra": 124.88,
+      "decl": -6.02
+    }
+  }
+}

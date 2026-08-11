@@ -1,0 +1,12 @@
+[
+  {
+    "objectId": "ZTF20acpwljl",
+    "objectData": {
+      "ncand": 2,
+      "jdmin": 2459000.5,
+      "jdmax": 2459001.5,
+      "ramean": 124.88,
+      "decmean": -6.02
+    }
+  }
+]
