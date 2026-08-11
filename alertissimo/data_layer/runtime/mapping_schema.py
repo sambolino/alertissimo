@@ -8,9 +8,15 @@ from typing import Any
 
 import yaml
 
+from alertissimo.data_layer.semantic_model import SemanticPathModel
+
 
 class MappingSchemaError(ValueError):
     """Raised when a registry YAML file does not satisfy the minimal schema."""
+
+
+class InvalidSemanticPathError(MappingSchemaError):
+    """Raised when a provider mapping path is not reachable in the ontology."""
 
 
 MAPPING_KEYS = {
@@ -153,9 +159,12 @@ def _validate_unmapped(path: Path, broker: str, origin: str, payloads: set[str])
     return references
 
 
-def validate_mapping_file(path: str | Path) -> None:
+def validate_mapping_file(
+    path: str | Path, semantic_model: SemanticPathModel | None = None
+) -> None:
     """Validate one mappings.yaml and its sibling registry files, if present."""
     path = Path(path)
+    semantic_model = semantic_model or SemanticPathModel()
     document = _mapping(_load_yaml(path), str(path))
     _allowed_keys(document, MAPPING_KEYS, str(path))
     for required in ("broker", "origin", "payloads", "mappings"):
@@ -203,6 +212,10 @@ def validate_mapping_file(path: str | Path) -> None:
         if ("@" not in semantic_path or any(c.isspace() for c in semantic_path)
                 or semantic_path in OLD_HELPER_KEYS):
             raise MappingSchemaError(f"{path}: invalid semantic path {semantic_path!r}")
+        if not semantic_model.is_valid_mapping_path(semantic_path):
+            raise InvalidSemanticPathError(
+                f"{path}: ontology-invalid semantic path {semantic_path!r}"
+            )
         if not isinstance(references, list) or not references:
             raise MappingSchemaError(f"{path}: mapping {semantic_path!r} must be a non-empty list")
         for index, reference in enumerate(references):
