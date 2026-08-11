@@ -1,4 +1,10 @@
 broker: lasair
 origin: ztf
 notes: Only audited fields without a stable semantic feature catalog path are retained here.
-unmapped: []
+unmapped:
+  - cone#separation:
+      reason: "Query-context angular separation is known (arcsec), but summary currently has no ontology-backed separation container"
+      candidate_meaning: "Angular separation from the cone-query position in arcseconds"
+  - cone_count#count:
+      reason: "Count-mode response is an aggregate query result, not an astronomical summary record"
+      candidate_meaning: "Number of objects matching the cone query"
