@@ -1,0 +1,36 @@
+[
+  {
+    "corrected": true,
+    "fid": 1,
+    "firstmjd": 58286.43,
+    "lastmjd": 61032.094,
+    "magfirst": 17.579912,
+    "maglast": 15.655473,
+    "magmax": 18.6928,
+    "magmean": 16.074663,
+    "magmedian": 15.786714,
+    "magmin": 15.282741,
+    "magsigma": 0.6218887,
+    "ndet": 677,
+    "ndubious": 0,
+    "stellar": false,
+    "step_id_corr": "27.5.7a32.dev1"
+  },
+  {
+    "corrected": true,
+    "fid": 2,
+    "firstmjd": 58293.48,
+    "lastmjd": 61030.156,
+    "magfirst": 15.302551,
+    "maglast": 13.291049,
+    "magmax": 16.0941,
+    "magmean": 13.769836,
+    "magmedian": 13.53537,
+    "magmin": 13.116133,
+    "magsigma": 0.60897225,
+    "ndet": 367,
+    "ndubious": 1,
+    "stellar": false,
+    "step_id_corr": "27.5.7a32.dev1"
+  }
+]
