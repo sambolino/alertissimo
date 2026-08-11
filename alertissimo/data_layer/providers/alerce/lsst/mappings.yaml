@@ -1,6 +1,12 @@
 broker: alerce
 origin: lsst
 description: Minimal semantic mapping registry for ALeRCE LSST payloads.
+notes: >-
+  Each query_objects row describes one object and its selected classifier result.
+  The summary and classification records intentionally retain distinct semantic
+  types; their identical internal source payload key and payload index document
+  that they are associated with the same object row. The row oid remains the
+  identity of the summary rather than being folded into classification fields.
 payloads:
   query_objects:
     path: "[]"
@@ -129,15 +135,16 @@ mappings:
   summary@lsst:alerce.color.g_minus_r.mean_corrected:
   - query_object#g_r_mean_corr
   - query_objects#g_r_mean_corr
-  summary@lsst:alerce.classification.best.class:
-  - query_object#class
-  - query_objects#class
-  summary@lsst:alerce.classification.best.classifier:
-  - query_object#classifier
-  - query_objects#classifier
-  summary@lsst:alerce.classification.best.probability:
-  - query_object#probability
+  classification@{producer}:alerce.best.class:
+  - query_objects#class_name
+  classification@{producer}:alerce.best.probability:
   - query_objects#probability
+  classification@{producer}:alerce.provenance.producer.name:
+  - query_objects#classifier_name
+  - query_probabilities#classifier_name
+  classification@{producer}:alerce.provenance.producer.version:
+  - query_objects#classifier_version
+  - query_probabilities#classifier_version
   summary@lsst:alerce.provenance.producer.survey_id:
   - query_object#tid
   summary@lsst:alerce.provenance.producer.source_id:
@@ -665,10 +672,26 @@ mappings:
   - get_stamps#cutoutDifference
   data_product@lsst:alerce.avro.bytes:
   - get_avro#bytes
-  classification@lsst:alerce.assessment.{output}:
+  classification@{producer}:alerce.assessment.{output}:
   - query_probabilities#classifier_name
   - query_probabilities#classifier_version
-  classification@lsst:alerce.assessment.{output}.class:
+  classification@{producer}:alerce.assessment.{output}.class:
   - query_probabilities#class_name
-  classification@lsst:alerce.assessment.{output}.probability:
+  classification@{producer}:alerce.assessment.{output}.probability:
   - query_probabilities#probability
+transforms:
+  detection@lsst:alerce.quality.flags.psfFlux_flag:
+    query_detections#psfFlux_flag: &strict_binary_boolean
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+    query_lightcurve.detections#psfFlux_flag: *strict_binary_boolean
+  detection@lsst:alerce.quality.flags.psfFlux_flag_edge:
+    query_detections#psfFlux_flag_edge: *strict_binary_boolean
+    query_lightcurve.detections#psfFlux_flag_edge: *strict_binary_boolean
+  detection@lsst:alerce.quality.flags.psfFlux_flag_noGoodPixels:
+    query_detections#psfFlux_flag_noGoodPixels: *strict_binary_boolean
+    query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_binary_boolean

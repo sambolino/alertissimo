@@ -508,10 +508,6 @@ endpoints:
         required: false
         role: client_formatting
         description: Physical sort parameter accepted by query_probabilities.
-      classifier:
-        type: string
-        required: false
-        description: Physical classifier parameter accepted by query_probabilities.
     output:
       type: array
       item: classification_probability
@@ -520,7 +516,6 @@ endpoints:
     - object_classification
     server_filters:
     - oid
-    - classifier
     post_filter: true
   query_features:
     enabled: false

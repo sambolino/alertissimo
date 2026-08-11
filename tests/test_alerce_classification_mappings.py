@@ -11,12 +11,14 @@ from alertissimo.data_layer.representations import (
     InternalRecordId,
 )
 from alertissimo.data_layer.runtime.record_builder import (
+    _apply_transform,
     _resolve_dynamic_field_paths,
     build_portfolio_from_execution,
 )
 
 
 MAPPINGS = Path(__file__).parents[1] / "alertissimo/data_layer/providers/alerce/ztf/mappings.yaml"
+LSST_MAPPINGS = MAPPINGS.parents[1] / "lsst/mappings.yaml"
 
 
 def _build(endpoint, payload):
@@ -67,6 +69,35 @@ def test_probability_version_is_provenance_and_class_is_assessment_namespace():
     assert record.fields["assessment.sn_ia.class"] == "SN Ia"
     assert record.fields["assessment.sn_ia.probability"] == 0.82
     assert not any("1.2.0" in field for field in record.fields)
+
+
+def test_lsst_query_objects_keeps_summary_and_classification_semantics_distinct():
+    document = yaml.safe_load(LSST_MAPPINGS.read_text())
+    mappings = document["mappings"]
+    assert mappings["summary@lsst:alerce.identity.object_id"][-1] == "query_objects#oid"
+    assert mappings["classification@{producer}:alerce.best.class"] == [
+        "query_objects#class_name"
+    ]
+    assert mappings["classification@{producer}:alerce.provenance.producer.name"][0] == (
+        "query_objects#classifier_name"
+    )
+    assert not any(
+        path.startswith("summary@lsst:alerce.classification.best") for path in mappings
+    )
+    assert "payload key and payload index" in document["notes"]
+
+
+def test_lsst_psf_flags_are_strict_binary_booleans_without_mutating_raw_values():
+    document = yaml.safe_load(LSST_MAPPINGS.read_text())
+    transforms = document["transforms"]
+    for field in ("psfFlux_flag", "psfFlux_flag_edge", "psfFlux_flag_noGoodPixels"):
+        specification = transforms[f"detection@lsst:alerce.quality.flags.{field}"][
+            f"query_detections#{field}"
+        ]
+        assert _apply_transform(0, specification) is False
+        assert _apply_transform(1, specification) is True
+        assert _apply_transform(2, specification) is None
+        assert specification["skip_null"] is True
 
 
 def test_filter_specific_calibration_paths_are_bound_from_fid():
