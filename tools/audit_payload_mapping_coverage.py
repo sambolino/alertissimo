@@ -125,6 +125,21 @@ def audit_payload(
                     intentional_leaves.add(reference)
                 else:
                     unaccounted_leaves.add(reference)
+    # A nested selector can intentionally skip a service wrapper. Account for the
+    # wrapper's other leaves as structure rather than silently ignoring them or
+    # pretending that pagination metadata belongs to each selected science row.
+    if isinstance(payload, dict) and definitions and not any(
+        definition["path"] == "." for definition in definitions.values()
+    ):
+        selected_roots = {
+            definition["path"].split(".", 1)[0].removesuffix("[]").removesuffix("{}")
+            for definition in definitions.values()
+            if definition["path"] != "[]"
+        }
+        for key, value in payload.items():
+            if key not in selected_roots:
+                for raw_path in _leaf_paths(value, str(key)):
+                    delegated_leaves.add(f"{endpoint}#{raw_path}")
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:audit:payload"),
         broker=broker, origin=origin, endpoint=endpoint, params={}, status="success",
