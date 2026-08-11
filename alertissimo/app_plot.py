@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any
 
 import altair as alt
 import pandas as pd
@@ -27,13 +27,10 @@ BAND_COLORS = {
 FALLBACK_COLORS = ["#0891b2", "#0f766e", "#db2777", "#475569"]
 
 
-def load_lightcurve_json(source: Path | BinaryIO) -> dict[str, Any]:
-    """Load a light-curve document from a path or an uploaded JSON file."""
-    if isinstance(source, Path):
-        with source.open(encoding="utf-8") as json_file:
-            data = json.load(json_file)
-    else:
-        data = json.load(source)
+def load_lightcurve_json(source: Path) -> dict[str, Any]:
+    """Load a light-curve document from a JSON file."""
+    with source.open(encoding="utf-8") as json_file:
+        data = json.load(json_file)
 
     if not isinstance(data, dict):
         raise ValueError("The JSON root must be an object.")
@@ -158,15 +155,8 @@ def main() -> None:
     st.title("Alertissimo Light Curve")
     st.caption("Time versus sci mag · data loaded from JSON")
 
-    uploaded_file = st.file_uploader(
-        "Load another JSON",
-        type=["json"],
-        help="Expected schema: a JSON object containing a lightCurve array.",
-    )
-
     try:
-        source = uploaded_file if uploaded_file is not None else DEFAULT_DATA_PATH
-        data = load_lightcurve_json(source)
+        data = load_lightcurve_json(DEFAULT_DATA_PATH)
         frame, rejected_count = lightcurve_dataframe(data)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         st.error(f"Unable to display the JSON: {error}")
