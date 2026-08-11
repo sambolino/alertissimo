@@ -1,7 +1,7 @@
 broker: alerce
 origin: ztf
-source: Generated from alerce_schema_payload_audit_bundle.tar.gz and ALeRCE client/docs
-  audit.
+source: ALeRCE client/docs audit, synchronized with authoritative alerce 2.3.1
+  Python-client JSON fixtures captured on 2026-08-11.
 transport_defaults:
   kind: python
   module: alerce.core
@@ -10,15 +10,44 @@ transport_defaults:
     survey: ztf
 endpoint_contract_note: Physical endpoint contracts only; semantic bindings and planner
   capabilities are intentionally excluded.
+authoritative_capture:
+  package: alerce
+  version: 2.3.1
+  client: alerce.core.Alerce
+  survey: ztf
+  format: json
+  date: '2026-08-11'
+  endpoints:
+  - query_objects
+  - query_object
+  - query_detections
+  - query_non_detections
+  - query_forced_photometry
+  - query_lightcurve
+  - query_probabilities
+  - query_magstats
+  - query_features
 endpoints:
   query_objects:
     enabled: true
     audit:
-      status: discovery_used
+      status: ok
+      client_package: alerce
+      client_version: 2.3.1
+      capture_oids:
+      - ZTF18abbuksn
+      - ZTF21aaeyldq
+      - ZTF17aaaaaak
+      - ZTF17aaaaaal
       documented_models:
       - object
-      note: Used by audit collector for candidate discovery; output model is the same
-        object summary family as query_object/list_objects.
+      documented_field_count: 23
+      observed_top_field_count: 7
+      observed_flat_field_count: 30
+      observed_row_count: 4
+      note: The seven top-level fields are pagination/service metadata plus items;
+        the flat count includes those seven wrapper fields and the 23-field union
+        of the object summaries in items.
     transport:
       kind: python
       module: alerce.core
@@ -124,8 +153,17 @@ endpoints:
         role: ordering
         description: Physical order_mode parameter accepted by query_objects.
     output:
-      type: array
-      item: object_summary
+      type: object
+      fields:
+        total: integer
+        page: integer
+        next: string_or_null
+        has_next: boolean
+        prev: string_or_null
+        has_prev: boolean
+        items:
+          type: array
+          item: object_summary
     operation_types:
     - object_search
     - cone_search
@@ -153,7 +191,7 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF21aaeyldq
+      selected_oid: ZTF18abbuksn
       documented_models:
       - object
       documented_field_count: 23
@@ -204,12 +242,13 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF21aaeyldq
+      selected_oid: ZTF18abbuksn
       documented_models:
       - ztf_detection
       documented_field_count: 25
-      observed_top_field_count: 27
-      observed_flat_field_count: 27
+      observed_top_field_count: 30
+      observed_flat_field_count: 30
+      observed_row_count: 1044
     transport:
       kind: python
       module: alerce.core
@@ -256,12 +295,13 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF21aaeyldq
+      selected_oid: ZTF18abbuksn
       documented_models:
       - non_detection
       documented_field_count: 4
       observed_top_field_count: 4
       observed_flat_field_count: 4
+      observed_row_count: 319
     transport:
       kind: python
       module: alerce.core
@@ -310,13 +350,14 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF17aaaaaak
+      selected_oid: ZTF18abbuksn
       documented_models:
       - ztf_forced_photometry
       - forced_photometry
       documented_field_count: 43
       observed_top_field_count: 44
       observed_flat_field_count: 44
+      observed_row_count: 286
     transport:
       kind: python
       module: alerce.core
@@ -363,14 +404,23 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF21aaeyldq
+      selected_oid: ZTF18abbuksn
       documented_models:
       - ztf_detection
       - non_detection
-      - ztf_forced_photometry
-      documented_field_count: 53
+      documented_field_count: 29
       observed_top_field_count: 38
       observed_flat_field_count: 40
+      observed_branches:
+        detections:
+          row_count: 1044
+          observed_field_count: 34
+        non_detections:
+          row_count: 319
+          observed_field_count: 4
+      note: observed_top_field_count is the sum of the per-branch row-field unions
+        (34 + 4); observed_flat_field_count additionally counts the two branch
+        container keys. Forced photometry is returned only by query_forced_photometry.
     transport:
       kind: python
       module: alerce.core
@@ -406,6 +456,13 @@ endpoints:
     output:
       type: object
       item: lightcurve_bundle
+      fields:
+        detections:
+          type: array
+          item: detection
+        non_detections:
+          type: array
+          item: non_detection
     operation_types:
     - object_history
     - lightcurve
@@ -416,12 +473,13 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF21aaeyldq
+      selected_oid: ZTF18abbuksn
       documented_models:
       - magstats
       documented_field_count: 26
       observed_top_field_count: 15
       observed_flat_field_count: 15
+      observed_row_count: 2
     transport:
       kind: python
       module: alerce.core
@@ -467,12 +525,13 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF17aaaaaak
+      selected_oid: ZTF18abbuksn
       documented_models:
       - probability
       documented_field_count: 5
       observed_top_field_count: 5
       observed_flat_field_count: 5
+      observed_row_count: 344
     transport:
       kind: python
       module: alerce.core
@@ -523,11 +582,12 @@ endpoints:
     enabled: true
     audit:
       status: ok
-      selected_oid: ZTF17aaaaaal
+      selected_oid: ZTF18abbuksn
       documented_models: []
       documented_field_count: 0
       observed_top_field_count: 4
       observed_flat_field_count: 4
+      observed_row_count: 3290
     transport:
       kind: python
       module: alerce.core
