@@ -111,10 +111,15 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
 
 
 def test_sherlock_position_classification_dictionary():
+    description = (
+        'The transient is synonymous with <a href="http://skyserver.sdss.org/dr12/'
+        'en/tools/explore/summary.aspx?id=1237661972796145844">'
+        'SDSS J122001.74+082413.4</a>; a G=19.91 mag AGN.'
+    )
     portfolio = build_portfolio_from_payload(
         {
             "classifications": {
-                "ZTF20acpwljl": ["SN", "The transient is possibly associated"]
+                "170028526577123339": ["AGN", description]
             }
         },
         endpoint="sherlock_position",
@@ -126,15 +131,21 @@ def test_sherlock_position_classification_dictionary():
         if record.semantic_type == "classification@sherlock:lasair"
     ]
     assert len(records) == 1
-    assert dict(records[0].fields) == {
-        "identity.object_id": "ZTF20acpwljl",
-        "best.class": "SN",
-        "best.description": "The transient is possibly associated",
-    }
+    fields = dict(records[0].fields)
+    assert fields["best.class"] == "AGN"
+    assert fields["best.description"] == description
+    assert "identity.object_id" not in fields
+    assert "subject.object_id" not in fields
+    assert "target.object_id" not in fields
     assert portfolio.edges == ()
 
 
 def test_sherlock_objects_classification_dictionary():
+    description = (
+        'The transient is synonymous with <a href="http://skyserver.sdss.org/dr12/'
+        'en/tools/explore/summary.aspx?id=1237661972796145844">'
+        'SDSS J122001.74+082413.4</a>; a G=19.91 mag AGN.'
+    )
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:test:sherlock-objects"),
         broker="lasair",
@@ -143,7 +154,13 @@ def test_sherlock_objects_classification_dictionary():
     )
     portfolio = build_portfolio_from_execution(
         ExecutionResult(
-            payload=[{"classifications": {"ZTF-object": ["AGN", "likely"]}}],
+            payload=[
+                {
+                    "classifications": {
+                        "170028526577123339": ["AGN", description]
+                    }
+                }
+            ],
             execution_provenance=provenance,
         ),
         validate_semantic_model=True,
@@ -155,11 +172,12 @@ def test_sherlock_objects_classification_dictionary():
         if record.semantic_type == "classification@sherlock:lasair"
     ]
     assert len(records) == 1
-    assert dict(records[0].fields) == {
-        "identity.object_id": "ZTF-object",
-        "best.class": "AGN",
-        "best.description": "likely",
-    }
+    fields = dict(records[0].fields)
+    assert fields["best.class"] == "AGN"
+    assert fields["best.description"] == description
+    assert "identity.object_id" not in fields
+    assert "subject.object_id" not in fields
+    assert "target.object_id" not in fields
     assert portfolio.edges == ()
 
 
