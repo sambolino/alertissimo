@@ -9,6 +9,9 @@ payloads:
   cone: {endpoint: cone, path: "[]"}
   candidates: {endpoint: object, path: "candidates[]"}
   lightcurve_candidates: {endpoint: lightcurves, path: "[].candidates[]"}
+  sherlock_position_classifications: {endpoint: sherlock_position, path: "classifications{}"}
+  sherlock_position_crossmatches: {endpoint: sherlock_position, path: "crossmatches{}"}
+  sherlock_objects_crossmatches: {endpoint: sherlock_objects, path: "[].crossmatches[]"}
 
 mappings:
   summary@ztf:lasair.identity.object_id:
@@ -69,6 +72,10 @@ mappings:
     - object#sherlock.classification
   classification@lasair.assessment.sherlock.score:
     - object#sherlock.classificationReliability
+  classification@sherlock:lasair.best.class:
+    - sherlock_position_classifications#classification
+  classification@sherlock:lasair.best.probability:
+    - sherlock_position_classifications#classificationReliability
   classification@tns:lasair.best.class:
     - object#TNS.type
   crossmatch@{producer}:lasair.identity.object_id:
@@ -87,6 +94,20 @@ mappings:
     - object#TNS.decl
   crossmatch@tns:lasair.redshift.value:
     - object#TNS.z
+  crossmatch@{producer}:lasair.identity.{producer}:
+    - sherlock_position_crossmatches#catalogue_table_name
+    - sherlock_objects_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.rank:
+    - sherlock_position_crossmatches#rank
+    - sherlock_position_crossmatches#merged_rank
+    - sherlock_objects_crossmatches#rank
+    - sherlock_objects_crossmatches#merged_rank
+  crossmatch@{producer}:lasair.redshift.native_z:
+    - sherlock_position_crossmatches#z
+    - sherlock_objects_crossmatches#z
+  crossmatch@{producer}:lasair.native.lasair_sherlock.merged_rank:
+    - sherlock_position_crossmatches#merged_rank
+    - sherlock_objects_crossmatches#merged_rank
 
 transforms:
   summary@ztf:lasair.time.first_mjd:
@@ -128,3 +149,24 @@ transforms:
       map:
         t: true
         f: false
+  crossmatch@{producer}:lasair.identity.{producer}:
+    sherlock_position_crossmatches#catalogue_table_name: &sherlock_catalogue
+      type: value_map
+      map:
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS: twomass
+        PS1: panstarrs
+        SDSS: sdss
+    sherlock_objects_crossmatches#catalogue_table_name: *sherlock_catalogue
+  crossmatch@{producer}:lasair.rank:
+    sherlock_position_crossmatches#rank: &sherlock_rank
+      type: to_int
+      skip_null: true
+    sherlock_position_crossmatches#merged_rank: *sherlock_rank
+    sherlock_objects_crossmatches#rank: *sherlock_rank
+    sherlock_objects_crossmatches#merged_rank: *sherlock_rank
+  crossmatch@{producer}:lasair.redshift.native_z:
+    sherlock_position_crossmatches#z: &sherlock_native_z
+      type: to_float
+      skip_null: true
+    sherlock_objects_crossmatches#z: *sherlock_native_z

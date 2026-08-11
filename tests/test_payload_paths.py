@@ -19,6 +19,15 @@ def test_root_list():
     assert [item.index_path for item in items] == [(0,), (1,)]
 
 
+def test_mapping_dictionary_path_expands_values():
+    payload = {"classifications": {"one": {"class": "SN"}, "two": {"class": "AGN"}}}
+    items = resolve_payload_items(
+        payload, payload_key="classifications", payload_path="classifications{}"
+    )
+    assert [item.value for item in items] == [{"class": "SN"}, {"class": "AGN"}]
+    assert [item.index_path for item in items] == [(0,), (1,)]
+
+
 @pytest.mark.parametrize(
     ("path", "payload", "expected"),
     [

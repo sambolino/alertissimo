@@ -105,3 +105,28 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
     assert "payload keys: classifications, crossmatches" in result.stderr
     assert "records built: 0" in result.stderr
     assert "No semantic records were built for this endpoint/payload shape." in result.stderr
+
+
+def test_sherlock_crossmatches_skip_null_z_and_fall_back_to_merged_rank():
+    payload = {
+        "crossmatches": {
+            "first": {"catalogue_table_name": "SDSS", "rank": 1, "z": None},
+            "second": {"catalogue_table_name": "2MASS", "merged_rank": 2, "z": None},
+        }
+    }
+
+    portfolio = build_portfolio_from_payload(payload, endpoint="sherlock_position")
+    records = [record for record in portfolio.records if record.semantic_type.startswith("crossmatch@")]
+
+    assert [record.semantic_type for record in records] == [
+        "crossmatch@sdss:lasair",
+        "crossmatch@twomass:lasair",
+    ]
+    first_record, second_record = records
+    assert "redshift.native_z" not in first_record.fields
+    assert "redshift.native_z" not in second_record.fields
+    assert first_record.fields["rank"] == 1
+    assert isinstance(first_record.fields["rank"], int)
+    assert second_record.fields["rank"] == 2
+    assert isinstance(second_record.fields["rank"], int)
+    assert portfolio.edges == ()

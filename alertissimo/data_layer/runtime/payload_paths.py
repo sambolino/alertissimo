@@ -41,23 +41,29 @@ def resolve_payload_items(
 
     root_expansion = payload_path.startswith("[].")
     path = payload_path[3:] if root_expansion else payload_path
+    dictionary_expansion = path.endswith("{}")
     if (
-        not path.endswith("[]")
-        or path == "[]"
+        not path.endswith(("[]", "{}"))
+        or path in ("[]", "{}")
         or "[]" in path[:-2]
+        or "{}" in path[:-2]
         or any(not part or not part.replace("_", "a").isalnum() for part in path[:-2].split("."))
     ):
-        if payload_path == "[]":
+        if payload_path in ("[]", "{}"):
             root_expansion = True
             path = ""
+            dictionary_expansion = payload_path == "{}"
         else:
             raise ValueError(f"invalid payload path: {payload_path!r}")
 
     roots: tuple[tuple[Any, tuple[int, ...]], ...]
     if root_expansion:
-        if not isinstance(payload, (list, tuple)):
+        if dictionary_expansion and isinstance(payload, Mapping):
+            roots = tuple((value, (index,)) for index, value in enumerate(payload.values()))
+        elif not dictionary_expansion and isinstance(payload, (list, tuple)):
+            roots = tuple((value, (index,)) for index, value in enumerate(payload))
+        else:
             return ()
-        roots = tuple((value, (index,)) for index, value in enumerate(payload))
     else:
         roots = ((payload, ()),)
 
@@ -70,11 +76,15 @@ def resolve_payload_items(
             collection = _mapping_path(root, path[:-2])
         except RawFieldMissing:
             continue
-        if not isinstance(collection, (list, tuple)):
+        if dictionary_expansion and isinstance(collection, Mapping):
+            values = collection.values()
+        elif not dictionary_expansion and isinstance(collection, (list, tuple)):
+            values = collection
+        else:
             continue
         resolved.extend(
             (value, (*root_indexes, index))
-            for index, value in enumerate(collection)
+            for index, value in enumerate(values)
         )
 
     return tuple(

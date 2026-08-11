@@ -114,6 +114,43 @@ def test_boolean_not_and_value_map(tmp_path):
     }
 
 
+def test_transform_skip_null_omits_only_the_requested_field(tmp_path):
+    portfolio = _build(tmp_path, {"rows": [{"z": None, "label": None}]}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"row": {"path": "rows[]"}},
+        "mappings": {
+            "crossmatch@gaia:lasair.redshift.native_z": ["row#z"],
+            "crossmatch@gaia:lasair.native.label": ["row#label"],
+        },
+        "transforms": {
+            "crossmatch@gaia:lasair.redshift.native_z": {
+                "row#z": {"type": "to_float", "skip_null": True}
+            }
+        },
+    })
+
+    assert dict(portfolio.records[0].fields) == {"native.label": None}
+    assert "redshift.native_z" not in portfolio.records[0].fields
+
+
+@pytest.mark.parametrize(("raw_rank", "expected"), [(1, 1), ("2", 2), (3.0, 3)])
+def test_to_int_preserves_integer_rank(tmp_path, raw_rank, expected):
+    portfolio = _build(tmp_path, {"rows": [{"rank": raw_rank}]}, {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"row": {"path": "rows[]"}},
+        "mappings": {"crossmatch@gaia:lasair.rank": ["row#rank"]},
+        "transforms": {
+            "crossmatch@gaia:lasair.rank": {
+                "row#rank": {"type": "to_int"}
+            }
+        },
+    })
+
+    rank = portfolio.records[0].fields["rank"]
+    assert rank == expected
+    assert isinstance(rank, int)
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"

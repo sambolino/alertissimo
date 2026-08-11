@@ -123,6 +123,15 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
         return specification["map"].get(value, value)
     if transform_type == "jd_to_mjd":
         return value - 2400000.5
+    if transform_type == "to_float":
+        return None if value is None else float(value)
+    if transform_type == "to_int":
+        if value is None:
+            return None
+        converted = int(value)
+        if isinstance(value, float) and not value.is_integer():
+            raise ValueError(f"cannot convert non-integral value {value!r} to int")
+        return converted
     return value  # The mapping schema rejects unknown transform types.
 
 
@@ -184,9 +193,10 @@ def build_portfolio_from_execution(
                     except RawFieldMissing:
                         continue
                     specification = transforms.get(semantic_path, {}).get(raw_reference)
-                    fields_by_type.setdefault(semantic_type, {})[relative_field] = (
-                        _apply_transform(value, specification)
-                    )
+                    transformed = _apply_transform(value, specification)
+                    if transformed is None and specification and specification.get("skip_null"):
+                        continue
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = transformed
                     break
 
             for semantic_type, fields in fields_by_type.items():
