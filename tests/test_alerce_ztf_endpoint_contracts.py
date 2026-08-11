@@ -60,6 +60,16 @@ def test_query_objects_contract_preserves_the_observed_wrapper():
         "type": "array",
         "item": "object_summary",
     }
+
+    # ALeRCE documents these pagination values as integers, while this
+    # authoritative response serializes them as null.
+    for field in ("total", "page", "next", "prev"):
+        assert endpoint["output"]["fields"][field] == {
+            "type": "integer",
+            "nullable": True,
+        }
+        assert payload[field] is None
+
     assert audit["capture_oids"] == [row["oid"] for row in payload["items"]]
     assert audit["observed_row_count"] == len(payload["items"])
     assert audit["observed_top_field_count"] == len(payload)

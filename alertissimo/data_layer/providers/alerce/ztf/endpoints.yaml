@@ -155,11 +155,19 @@ endpoints:
     output:
       type: object
       fields:
-        total: integer
-        page: integer
-        next: string_or_null
+        total:
+          type: integer
+          nullable: true
+        page:
+          type: integer
+          nullable: true
+        next:
+          type: integer
+          nullable: true
         has_next: boolean
-        prev: string_or_null
+        prev:
+          type: integer
+          nullable: true
         has_prev: boolean
         items:
           type: array
