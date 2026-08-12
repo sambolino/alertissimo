@@ -50,10 +50,13 @@ def test_authoritative_alert_semantics_and_aliases():
 def test_strict_unknown_band_is_omitted():
  x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
 def test_optional_ss_object_id_suppresses_zero_and_preserves_integer():
- x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])]
- fields=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields)
- assert 'solar_system.object.identity.object_id' not in fields
- x['alerts'][0]['properties']['lsst_diaSource_ssObjectId']=123456789
+ x=rich_locus()
+ detections=records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')
+ assert all('solar_system.object.identity.object_id' not in d.fields for d in detections)
+
+ row=copy.deepcopy(x['alerts'][0])
+ row['properties']['lsst_diaSource_ssObjectId']=123456789
+ x['alerts']=[row]
  fields=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields)
  assert fields['solar_system.object.identity.object_id']==123456789
  assert type(fields['solar_system.object.identity.object_id']) is int
