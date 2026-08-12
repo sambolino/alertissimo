@@ -7,15 +7,35 @@ payloads:
   loci:
     endpoint: search
     path: '[]'
+  cone_loci:
+    endpoint: cone_search
+    path: '[]'
   locus_alerts:
     endpoint: get_by_ztf_object_id
     path: alerts[]
-  catalog_matches.gaia:
-    endpoint: get_by_ztf_object_id
-    path: catalog_objects.gaia_dr3_gaia_source[]
   catalog_matches.allwise:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.allwise[]
+  lightcurve_secondary:
+    endpoint: get_by_ztf_object_id
+    path: lightcurve_secondary[]
+    description: Non-emitting secondary fixture surface, audited mechanically without
+      runtime adaptation.
+  catalog_matches.2mass_psc:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.2mass_psc[]
+  catalog_matches.bright_guide_star_cat:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.bright_guide_star_cat[]
+  catalog_matches.gaia_dr3_variability:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_variability[]
+  catalog_matches.gaia_edr3_distances_bailer_jones:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_edr3_distances_bailer_jones[]
+  catalog_matches.gaia_dr3_gaia_source:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
 mappings:
   summary@ztf:antares.identity.object_id:
   - loci#properties.ztf_object_id
@@ -35,8 +55,6 @@ mappings:
   summary@ztf:antares.position.dec:
   - loci#dec
   - locus#dec
-  detection@ztf:antares.identity.source_id:
-  - locus_alerts#properties.ztf_candid
   detection@ztf:antares.time.mjd:
   - locus_alerts#mjd
   detection@ztf:antares.position.ra:
@@ -45,12 +63,6 @@ mappings:
   - locus_alerts#properties.ant_dec
   detection@ztf:antares.photometry.{filter}:
   - locus_alerts#properties.ant_passband
-  detection@ztf:antares.photometry.{filter}.psf.mag:
-  - locus_alerts#properties.ant_mag
-  detection@ztf:antares.photometry.{filter}.psf.mag_error:
-  - locus_alerts#properties.ant_magerr
-  detection@ztf:antares.photometry.{filter}.limit.mag:
-  - locus_alerts#properties.ant_maglim
   detection@ztf:antares.quality.real_bogus:
   - locus_alerts#properties.ztf_drb
   detection@ztf:antares.quality.rf_real_bogus:
@@ -61,23 +73,299 @@ mappings:
   - locus_alerts#properties.ztf_distnr
   detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
   - locus_alerts#properties.ztf_magnr
-  crossmatch@gaia:antares.identity.object_id:
-  - catalog_matches.gaia#object_id
-  crossmatch@gaia:antares.astrometric_solution.parallax:
-  - catalog_matches.gaia#properties.parallax
-  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
-  - catalog_matches.gaia#properties.pmra
-  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
-  - catalog_matches.gaia#properties.pmdec
   crossmatch@allwise:antares.photometry.W1.mag:
+  - catalog_matches.allwise#w1mpro
   - catalog_matches.allwise#properties.w1mpro
   crossmatch@allwise:antares.photometry.W2.mag:
+  - catalog_matches.allwise#w2mpro
   - catalog_matches.allwise#properties.w2mpro
+  detection@ztf:antares.identity.alert_id:
+  - locus_alerts#alert_id
+  detection@ztf:antares.photometry.{filter}.aperture.mag:
+  - locus_alerts#properties.ztf_magap
+  detection@ztf:antares.photometry.{filter}.aperture.mag_error:
+  - locus_alerts#properties.ztf_sigmagap
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag:
+  - locus_alerts#properties.ztf_magapbig
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag_error:
+  - locus_alerts#properties.ztf_sigmagapbig
+  detection@ztf:antares.time.exposure:
+  - locus_alerts#properties.ztf_exptime
+  detection@ztf:antares.calibration.{filter}.zero_point:
+  - locus_alerts#properties.ztf_magzpsci
+  detection@ztf:antares.calibration.{filter}.zero_point_uncertainty:
+  - locus_alerts#properties.ztf_magzpsciunc
+  detection@ztf:antares.calibration.{filter}.zero_point_rms:
+  - locus_alerts#properties.ztf_magzpscirms
+  detection@ztf:antares.calibration.{filter}.color_coefficient:
+  - locus_alerts#properties.ztf_clrcoeff
+  detection@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
+  - locus_alerts#properties.ztf_clrcounc
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
+  - locus_alerts#properties.ztf_chinr
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
+  - locus_alerts#properties.ztf_sharpnr
+  detection@ztf:antares.reference_image.nearest_source.position.ra:
+  - locus_alerts#properties.ztf_ranr
+  detection@ztf:antares.reference_image.nearest_source.position.dec:
+  - locus_alerts#properties.ztf_decnr
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag_error:
+  - locus_alerts#properties.ztf_sigmagnr
+  detection@ztf:antares.provenance.processing_id:
+  - locus_alerts#properties.ztf_pid
+  detection@ztf:antares.provenance.night_id:
+  - locus_alerts#properties.ztf_nid
+  detection@ztf:antares.provenance.reference_image_id:
+  - locus_alerts#properties.ztf_rfid
+  detection@ztf:antares.provenance.producer.program.field:
+  - locus_alerts#properties.ztf_field
+  detection@ztf:antares.provenance.producer.program.id:
+  - locus_alerts#properties.ztf_programid
+  detection@ztf:antares.quality.real_bogus.version:
+  - locus_alerts#properties.ztf_drbversion
+  detection@ztf:antares.quality.rf_real_bogus.version:
+  - locus_alerts#properties.ztf_rbversion
+  detection@ztf:antares.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  detection@ztf:antares.photometry.{filter}.psf.mag_error:
+  - locus_alerts#properties.ant_magerr
+  detection@ztf:antares.photometry.{filter}.limit.mag:
+  - locus_alerts#properties.ant_maglim
+  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+  - locus_alerts#properties.ant_survey
+  crossmatch@2mass_psc:antares.identity.object_id:
+  - catalog_matches.2mass_psc#designation
+  - catalog_matches.2mass_psc#object_id
+  crossmatch@allwise:antares.identity.object_id:
+  - catalog_matches.allwise#designation
+  - catalog_matches.allwise#object_id
+  crossmatch@bright_guide_star_cat:antares.identity.object_id:
+  - catalog_matches.bright_guide_star_cat#gscID2
+  - catalog_matches.bright_guide_star_cat#object_id
+  crossmatch@gaia_dr3_gaia_source:antares.identity.object_id:
+  - catalog_matches.gaia_dr3_gaia_source#source_id
+  - catalog_matches.gaia_dr3_gaia_source#object_id
+  crossmatch@gaia_dr3_variability:antares.identity.object_id:
+  - catalog_matches.gaia_dr3_variability#source
+  - catalog_matches.gaia_dr3_variability#object_id
+  crossmatch@gaia_edr3_distances_bailer_jones:antares.identity.object_id:
+  - catalog_matches.gaia_edr3_distances_bailer_jones#source
+  - catalog_matches.gaia_edr3_distances_bailer_jones#object_id
+  crossmatch@gaia_dr3_gaia_source:antares.astrometric_solution.parallax:
+  - catalog_matches.gaia_dr3_gaia_source#parallax
+  - catalog_matches.gaia_dr3_gaia_source#properties.parallax
+  crossmatch@gaia_dr3_gaia_source:antares.astrometric_solution.proper_motion_ra:
+  - catalog_matches.gaia_dr3_gaia_source#pmra
+  - catalog_matches.gaia_dr3_gaia_source#properties.pmra
+  crossmatch@gaia_dr3_gaia_source:antares.astrometric_solution.proper_motion_dec:
+  - catalog_matches.gaia_dr3_gaia_source#pmdec
+  - catalog_matches.gaia_dr3_gaia_source#properties.pmdec
 transforms:
   detection@ztf:antares.image_metrics.is_positive:
     locus_alerts#properties.ztf_isdiffpos:
       type: value_map
       map:
         t: true
+        '1': true
+        1: true
         f: false
-      note: ZTF isdiffpos string flag normalized to boolean is_positive.
+        '0': false
+        0: false
+      default: null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}:
+    locus_alerts#properties.ant_passband:
+      type: value_map
+      map:
+        R: r
+        r: r
+        g: g
+        G: g
+      default: null
+      skip_null: true
+  detection@ztf:antares.position.ra:
+    locus_alerts#properties.ant_ra:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.position.dec:
+    locus_alerts#properties.ant_dec:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
+    locus_alerts#properties.ztf_magnr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.aperture.mag:
+    locus_alerts#properties.ztf_magap:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.aperture.mag_error:
+    locus_alerts#properties.ztf_sigmagap:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag:
+    locus_alerts#properties.ztf_magapbig:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag_error:
+    locus_alerts#properties.ztf_sigmagapbig:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.time.exposure:
+    locus_alerts#properties.ztf_exptime:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.calibration.{filter}.zero_point:
+    locus_alerts#properties.ztf_magzpsci:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.calibration.{filter}.zero_point_uncertainty:
+    locus_alerts#properties.ztf_magzpsciunc:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.calibration.{filter}.zero_point_rms:
+    locus_alerts#properties.ztf_magzpscirms:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.calibration.{filter}.color_coefficient:
+    locus_alerts#properties.ztf_clrcoeff:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
+    locus_alerts#properties.ztf_clrcounc:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
+    locus_alerts#properties.ztf_chinr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
+    locus_alerts#properties.ztf_sharpnr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.position.ra:
+    locus_alerts#properties.ztf_ranr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.position.dec:
+    locus_alerts#properties.ztf_decnr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag_error:
+    locus_alerts#properties.ztf_sigmagnr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.provenance.reference_image_id:
+    locus_alerts#properties.ztf_rfid:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.psf.mag:
+    locus_alerts#properties.ant_mag:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.psf.mag_error:
+    locus_alerts#properties.ant_magerr:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.limit.mag:
+    locus_alerts#properties.ant_maglim:
+      type: value_map
+      map:
+        -999: null
+        '-999': null
+        'null': null
+      skip_null: true
+  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+    locus_alerts#properties.ant_survey:
+      type: value_map
+      map:
+        1: false
+        '1': false
+        2: true
+        '2': true
+      default: null
+      skip_null: true

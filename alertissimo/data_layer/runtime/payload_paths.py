@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,6 +25,9 @@ def _mapping_path(value: Any, path: str) -> Any:
     for key in path.split("."):
         if isinstance(current, Mapping) and key in current:
             current = current[key]
+            continue
+        if hasattr(current, key):
+            current = getattr(current, key)
             continue
         if isinstance(current, (list, tuple)) and key.isdigit():
             index = int(key)
@@ -70,6 +73,10 @@ def resolve_payload_items(
 
     roots: tuple[tuple[Any, tuple[int, ...]], ...]
     if root_expansion:
+        if isinstance(payload, Iterable) and not isinstance(
+            payload, (str, bytes, Mapping)
+        ):
+            payload = tuple(payload)
         if not isinstance(payload, (list, tuple)):
             return ()
         roots = tuple((value, (index,)) for index, value in enumerate(payload))
@@ -86,6 +93,10 @@ def resolve_payload_items(
         except RawFieldMissing:
             continue
         if expansion == "[]":
+            if isinstance(collection, Iterable) and not isinstance(
+                collection, (str, bytes, Mapping)
+            ):
+                collection = tuple(collection)
             if not isinstance(collection, (list, tuple)):
                 continue
             values = collection

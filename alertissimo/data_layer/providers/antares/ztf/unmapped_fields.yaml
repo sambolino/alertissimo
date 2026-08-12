@@ -1,5 +1,284 @@
 broker: antares
 origin: ztf
-notes: Only audited fields without a stable semantic feature catalog path are retained
-  here.
-unmapped: []
+notes: Authoritative frozen ANTARES 1.14.0 debt. Alert leaves and the non-emitting
+  secondary lightcurve surface are mechanically audited.
+unmapped:
+- locus_alerts#processed_at:
+    reason: Provider transport metadata not emitted as science semantics.
+- locus_alerts#properties.ant_input_msg_time:
+    reason: ANTARES broker metadata or derived quantity without an established canonical
+      semantic path.
+- locus_alerts#properties.ant_mjd:
+    reason: ANTARES broker metadata or derived quantity without an established canonical
+      semantic path.
+- locus_alerts#properties.ant_time_received:
+    reason: ANTARES broker metadata or derived quantity without an established canonical
+      semantic path.
+- locus_alerts#properties.ztf_aimage:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_aimagerat:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_bimage:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_bimagerat:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_candid:
+    reason: Redundant numeric ZTF candidate identifier; the complete ANTARES alert_id
+      is emitted.
+- locus_alerts#properties.ztf_chipsf:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_classtar:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_clrmed:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_clrrms:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_dec:
+    reason: Redundant raw ZTF alias of emitted ant_dec coordinate.
+- locus_alerts#properties.ztf_diffmaglim:
+    reason: Redundant raw ZTF alias of emitted ant_maglim limiting magnitude.
+- locus_alerts#properties.ztf_distpsnr1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_distpsnr2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_distpsnr3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_dsdiff:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_dsnrms:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_elong:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_fid:
+    reason: Redundant raw ZTF passband alias; ant_passband is the strict canonical
+      filter binder.
+- locus_alerts#properties.ztf_fwhm:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_jd:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_jdendhist:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_jdendref:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_jdstarthist:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_jdstartref:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_magdiff:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_magfromlim:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_maggaia:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_maggaiabright:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_magpsf:
+    reason: Redundant raw ZTF alias of emitted ant_mag PSF magnitude.
+- locus_alerts#properties.ztf_mindtoedge:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_nbad:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ncovhist:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ndethist:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_neargaia:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_neargaiabright:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_nframesref:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_nmatches:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_nmtchps:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_nneg:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_object_id:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_objectidps1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_objectidps2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_objectidps3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_pdiffimfilename:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_programpi:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ra:
+    reason: Redundant raw ZTF alias of emitted ant_ra coordinate.
+- locus_alerts#properties.ztf_rcid:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_scorr:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_seeratio:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgmag1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgmag2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgmag3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgscore1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgscore2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sgscore3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sigmapsf:
+    reason: Redundant raw ZTF alias of emitted ant_magerr PSF uncertainty.
+- locus_alerts#properties.ztf_simag1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_simag2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_simag3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sky:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_srmag1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_srmag2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_srmag3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ssdistnr:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ssmagnr:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ssnamenr:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ssnrms:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_sumrat:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_szmag1:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_szmag2:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_szmag3:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_tblid:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_tooflag:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_xpos:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_ypos:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_zpclrcov:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- locus_alerts#properties.ztf_zpmed:
+    reason: Observed authoritative ZTF field without an established same-meaning canonical
+      mapping; retained as explicit semantic debt.
+- lightcurve_secondary#alert_id:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_dec:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_mag:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_mag_corrected:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_magerr:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_magerr_corrected:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_maglim:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_magllim_corrected:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_magulim_corrected:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_mjd:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_passband:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_ra:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#ant_survey:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.
+- lightcurve_secondary#time:
+    reason: Secondary/duplicate lightcurve representation of Alert history; intentionally
+      not emitted as semantic records.

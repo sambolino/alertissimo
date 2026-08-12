@@ -94,6 +94,15 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
         if path in binder_paths:
             continue
         segments = path.split(".")
+        # A strict binder transform may intentionally omit an unknown value.
+        # In that case, omit dependent dynamic fields rather than leaking an
+        # unresolved placeholder (or inventing a semantic identifier).
+        if any(
+            (name := _placeholder_name(segment)) is not None
+            and name not in bindings
+            for segment in segments
+        ):
+            continue
         rewritten = []
         for segment in segments:
             name = _placeholder_name(segment)
