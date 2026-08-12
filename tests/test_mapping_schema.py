@@ -254,6 +254,21 @@ def test_skip_null_boolean_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_object_key_is_orthogonal_to_scalar_transform(tmp_path, valid_mapping):
+    semantic = "detection@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": "to_int", "object_key": "AGN"}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_empty_object_key_fails(tmp_path, valid_mapping):
+    semantic = "detection@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"object_key": ""}}}
+    with pytest.raises(MappingSchemaError, match="object_key must be a non-empty string"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 def test_scale_transform_with_numeric_factor_passes(tmp_path, valid_mapping):
     semantic = "detection@ztf:example.identity.source_id"
     valid_mapping["transforms"] = {

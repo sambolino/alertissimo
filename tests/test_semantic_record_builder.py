@@ -412,3 +412,63 @@ def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):
         match=r"conflicting binding for placeholder \{filter\}: g vs r",
     ):
         _build(tmp_path, {"candidates": [{"fid": 1, "other_fid": 2}]}, mapping)
+
+
+def _composition_document(references, transforms):
+    semantic = "survey@example.class_distribution"
+    return {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"endpoint": "object", "path": "."}},
+        "mappings": {semantic: [f"object#{reference}" for reference in references]},
+        "transforms": {semantic: {
+            f"object#{reference}": specification
+            for reference, specification in transforms.items()
+        }},
+    }
+
+
+def test_object_composition_is_orthogonal_to_transforms(tmp_path):
+    transforms = {
+        "plain": {"object_key": "**"},
+        "integer": {"type": "to_int", "object_key": "AGN"},
+        "floating": {"type": "to_float", "object_key": "OH/IR"},
+        "mapped": {
+            "type": "value_map", "map": {"yes": True}, "object_key": "Radio(cm)"
+        },
+        "missing": {"object_key": "AGB*", "skip_null": True},
+    }
+    portfolio = _build(
+        tmp_path,
+        {"plain": 17, "integer": "17", "floating": "2.5", "mapped": "yes", "missing": None},
+        _composition_document(list(transforms), transforms),
+    )
+    assert dict(portfolio.records[0].fields)["class_distribution"] == {
+        "**": 17, "AGN": 17, "OH/IR": 2.5, "Radio(cm)": True,
+    }
+
+
+def test_duplicate_object_key_same_value_deduplicates(tmp_path):
+    transforms = {"a": {"object_key": "Early SN Ia candidate"},
+                  "b": {"object_key": "Early SN Ia candidate"}}
+    portfolio = _build(tmp_path, {"a": 6, "b": 6}, _composition_document(["a", "b"], transforms))
+    assert dict(portfolio.records[0].fields)["class_distribution"] == {
+        "Early SN Ia candidate": 6
+    }
+
+
+def test_duplicate_object_key_conflict_raises(tmp_path):
+    transforms = {"a": {"object_key": "AGN"}, "b": {"object_key": "AGN"}}
+    with pytest.raises(PortfolioBuildError, match="conflicting values for object key 'AGN'"):
+        _build(tmp_path, {"a": 1, "b": 2}, _composition_document(["a", "b"], transforms))
+
+
+def test_ordinary_mapping_keeps_first_success(tmp_path):
+    document = _composition_document(["a", "b"], {})
+    portfolio = _build(tmp_path, {"a": 1, "b": 2}, document)
+    assert dict(portfolio.records[0].fields)["class_distribution"] == 1
+
+
+def test_mixed_ordinary_and_composed_assignment_raises(tmp_path):
+    transforms = {"a": {"object_key": "AGN"}}
+    with pytest.raises(PortfolioBuildError, match="mixed ordinary assignment and object composition"):
+        _build(tmp_path, {"a": 1, "b": 2}, _composition_document(["a", "b"], transforms))

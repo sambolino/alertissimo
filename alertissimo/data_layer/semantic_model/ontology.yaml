@@ -2122,6 +2122,13 @@ levels:
       type: boolean
     [feature_vector]:
       description: "Serialized feature vector (e.g. lc_features_g)"
+    [magnitude_rate]:
+      description: "Fink-derived rate of change in magnitude"
+    [magnitude_rate_error]:
+      description: "Uncertainty of the Fink-derived magnitude rate"
+  [detection_count]:
+    description: "Number of detections represented by the lightcurve history"
+    type: integer
 
 <survey>:
   level: L7

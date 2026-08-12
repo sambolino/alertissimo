@@ -111,7 +111,7 @@ def test_gaia_and_panstarrs_rank_one_crossmatches_are_exact():
 def test_solar_system_identity_feature_vectors_and_sentinels():
     portfolio = _build("sso")
     detection = _records(portfolio, "detection@ztf:fink")[0]
-    lightcurve = _records(portfolio, "lightcurve@ztf:fink")[0]
+    lightcurve = _records(portfolio, "lightcurve@fink")[0]
     assert detection.fields["solar_system.roid"] == 3
     assert detection.fields["solar_system.iau_name"] == "Benoitcarry"
     assert detection.fields["solar_system.iau_number"] == 8467
@@ -203,16 +203,45 @@ def test_object_and_cone_final_classification_converge():
 def test_fast_transient_fields_use_lightcurve_semantics():
     no_rate = [{"i:fid": 1, "d:lower_rate": None, "d:upper_rate": None,
                 "d:delta_time": None, "d:from_upper": False}]
-    records = _records(_build("anomaly", no_rate), "lightcurve@ztf:fink")
+    records = _records(_build("anomaly", no_rate), "lightcurve@fink")
     assert not records or "g.from_upper_limit" not in records[0].fields
 
     upper = [{"i:fid": 2, "d:lower_rate": -0.2, "d:upper_rate": 0.4,
               "d:delta_time": 0.5, "d:from_upper": True}]
-    record = _records(_build("anomaly", upper), "lightcurve@ztf:fink")[0]
+    record = _records(_build("anomaly", upper), "lightcurve@fink")[0]
     assert record.fields["r.rate_lower_percentile"] == -0.2
     assert record.fields["r.rate_upper_percentile"] == 0.4
     assert record.fields["r.delta_time_rate"] == 0.5
     assert record.fields["r.from_upper_limit"] is True
+
+    derived = _records(_build("anomaly", [{
+        "i:fid": 1, "d:nalerthist": 17, "d:mag_rate": 0.25,
+        "d:sigma_rate": 0.05,
+    }]), "lightcurve@fink")[0]
+    assert derived.semantic_type == "lightcurve@fink"
+    assert derived.fields["detection_count"] == 17
+    assert derived.fields["g.magnitude_rate"] == 0.25
+    assert derived.fields["g.magnitude_rate_error"] == 0.05
+
+
+def test_blazar_extreme_state_assessments_are_explicit_and_suppress_minus_one():
+    positive = _records(_build("anomaly", [{
+        "d:blazar_stats_instantness_low": 0.1,
+        "d:blazar_stats_robustness_low": 0.2,
+        "d:blazar_stats_instantness_high": 0.3,
+        "d:blazar_stats_robustness_high": 0.4,
+    }]), "classification@fink")[0]
+    assert dict(positive.fields) == {
+        "assessment.blazar_extreme_state_instantness_low.value": 0.1,
+        "assessment.blazar_extreme_state_robustness_low.value": 0.2,
+        "assessment.blazar_extreme_state_instantness_high.value": 0.3,
+        "assessment.blazar_extreme_state_robustness_high.value": 0.4,
+    }
+    unavailable = _build("anomaly", [{
+        "d:blazar_stats_instantness_low": -1,
+        "d:blazar_stats_robustness_low": -1.0,
+    }])
+    assert not _records(unavailable, "classification@fink")
 
 
 def test_frozen_service_failures_are_never_scientific_values():
@@ -231,15 +260,29 @@ def test_frozen_service_failures_are_never_scientific_values():
 def test_statistics_emit_only_first_level_survey_records():
     portfolio = _build("statistics")
     assert not _records(portfolio, "detection@ztf:fink")
-    survey = _records(portfolio, "survey@ztf:fink")
+    survey = _records(portfolio, "survey@fink")
     assert len(survey) == 1
-    assert dict(survey[0].fields) == {
-        "exposure_count": 460,
-        "field_count": 236,
-        "raw_alerts": 346644,
-        "science_alerts": 246843,
-        "snapshot_key": "ztf_20211103",
-    }
+    fields = dict(survey[0].fields)
+    assert fields["exposure_count"] == 460
+    assert fields["field_count"] == 236
+    assert fields["raw_alerts"] == 346644
+    assert fields["science_alerts"] == 246843
+    assert fields["snapshot_key"] == "ztf_20211103"
+    assert fields["filter_counts"] == {"g": 112699, "r": 134144}
+    distribution = fields["class_distribution"]
+    assert distribution["**"] == 17
+    assert distribution["AGN"] == 136
+    assert distribution["Early SN Ia candidate"] == 6
+    assert distribution["OH/IR"] == 0
+    assert distribution["Radio(cm)"] == 0
+    assert "simbad_tot" not in distribution
+    assert "simbad_gal" not in distribution
+    assert all(isinstance(value, int) and not isinstance(value, bool)
+               for value in distribution.values())
+    assert all(isinstance(value, int) and not isinstance(value, bool)
+               for value in fields["filter_counts"].values())
+    assert fields["selection.simbad_match.record_count"] == 76905
+    assert fields["selection.simbad_extragalactic_host.record_count"] == 1449
 
 
 def test_frozen_scalar_accounting_and_positive_record_counts():
