@@ -5,7 +5,7 @@ payloads:
   query_objects:
     path: '[]'
     endpoint: query_objects
-    description: Classification-bearing object-search rows; repeated object columns are intentionally not emitted as duplicate summaries.
+    description: Classification-bearing object-search rows; each row emits minimal object identity alongside its independent classifier result.
   query_object:
     path: '.'
     endpoint: query_object
@@ -44,6 +44,7 @@ payloads:
     description: Forced-photometry rows delegated from the light-curve bundle.
 mappings:
   summary@lsst:alerce.identity.object_id:
+  - query_objects#oid
   - query_object#oid
   summary@lsst:alerce.position.ra:
   - query_object#meanra
@@ -367,6 +368,19 @@ mappings:
   - query_forced_photometry#psfFluxErr
   - query_lightcurve.forced_photometry#psfFluxErr
 transforms:
+  detection@lsst:alerce.photometry.{filter}.psf.flags.failed:
+    query_detections#psfFlux_flag: &strict_psf_flag
+      type: value_map
+      map: {0: false, 1: true}
+      default: null
+      skip_null: true
+    query_lightcurve.detections#psfFlux_flag: *strict_psf_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.edge:
+    query_detections#psfFlux_flag_edge: *strict_psf_flag
+    query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.no_good_pixels:
+    query_detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
+    query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
   detection@lsst:alerce.image_metrics.is_positive:
     query_detections#isNegative:
       type: boolean_not
