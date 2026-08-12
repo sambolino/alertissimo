@@ -1,0 +1,2727 @@
+{
+  "alerts": {
+    "count": 16,
+    "field_summary": {
+      "ant_dec": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          -48.48149141631282,
+          -48.481485247309166,
+          -48.481493363633504,
+          -48.48149152449487,
+          -48.48148789343325,
+          -48.48150568453737,
+          -48.481485058468984,
+          -48.48148396689908,
+          -48.481524797121025,
+          -48.48150595673617,
+          -48.4814796544385,
+          -48.481538290741035
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_mag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          22.83574015725973,
+          22.84820317988438,
+          22.74830301099807,
+          22.564380627118226,
+          22.676517668582637,
+          22.518915747078147,
+          22.587372236435257,
+          22.849940209722917,
+          22.75959469860697,
+          22.775225980266185,
+          22.9970347365788,
+          22.5920907236571
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_magerr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.056685694960724446,
+          0.054283844727463525,
+          0.049085870775848674,
+          0.08142906690888849,
+          0.08899130381088421,
+          0.10374692327011681,
+          0.1096281558268634,
+          0.09438344531880935,
+          0.08090766174687303,
+          0.07950322943467597,
+          0.09742127405770883,
+          0.17037944058820903
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_maglim": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          22.83574015725973,
+          22.84820317988438,
+          22.74830301099807,
+          22.564380627118226,
+          22.676517668582637,
+          22.518915747078147,
+          22.587372236435257,
+          22.849940209722917,
+          22.75959469860697,
+          22.775225980266185,
+          22.9970347365788,
+          22.5920907236571
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_mjd": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          61217.42118006405,
+          61217.42217825258,
+          61217.42270507246,
+          61217.4251461513,
+          61217.425639118446,
+          61227.41962591419,
+          61227.420054280956,
+          61230.417929722025,
+          61230.41836263283,
+          61230.418804941335,
+          61230.41923626095,
+          61230.42116970118
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_passband": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          "g",
+          "i",
+          "r",
+          "z"
+        ],
+        "types": [
+          "str"
+        ]
+      },
+      "ant_ra": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          62.45761131986638,
+          62.457615906913695,
+          62.45762812914096,
+          62.45763644393913,
+          62.457640526543564,
+          62.45761390602757,
+          62.457636440749944,
+          62.45766506141362,
+          62.45763726740424,
+          62.45763483126541,
+          62.45760732013752,
+          62.45763778963614
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "ant_survey": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          4
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "ant_time_received": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1782469622,
+          1782472009,
+          1782471051,
+          1782471544,
+          1782471120,
+          1783333555,
+          1783332837,
+          1783601397,
+          1783605143,
+          1783602812,
+          1783602215,
+          1783600950
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_dec": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          -48.48149141631282,
+          -48.48148524730916,
+          -48.481493363633504,
+          -48.48149152449487,
+          -48.481489476686036,
+          -48.4814904527103,
+          -48.48148978980723,
+          -48.481489584335414,
+          -48.48149176725101,
+          -48.48149172239423,
+          -48.48148971455258,
+          -48.48149181227364
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_decErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1.1530524716363288e-05,
+          1.1015840755135287e-05,
+          9.070350643014535e-06,
+          1.2984112800040748e-05,
+          9.12752602744149e-06,
+          4.958879799232818e-06,
+          4.992072717868723e-06,
+          4.768742655869573e-06,
+          4.815010015590815e-06,
+          4.676235676015494e-06,
+          4.7728958634252194e-06,
+          4.840992005483713e-06
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_diaObjectId": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          170587117485817955
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxErrMean": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          139.14035034179688,
+          131.72402954101562,
+          130.59031677246094,
+          133.8182373046875,
+          154.22877502441406,
+          160.39468383789062,
+          171.4078369140625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxMax": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          2665.041259765625,
+          2634.62451171875,
+          2888.542724609375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxMaxSlope": {
+        "count": 11,
+        "non_null": 11,
+        "sample_distinct": [
+          481982.96875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxMean": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          2665.041259765625,
+          2634.624755859375,
+          2888.542724609375,
+          2732.647216796875,
+          2614.251953125,
+          2649.2138671875,
+          2549.4375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxMeanErr": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          139.14035034179688,
+          131.72402954101562,
+          130.59031677246094,
+          77.16925048828125,
+          72.65008544921875,
+          73.4685287475586,
+          69.53712463378906
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxMin": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          2665.041259765625,
+          2634.62451171875,
+          2888.542724609375,
+          1691.2957763671875,
+          1841.3778076171875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1,
+          0,
+          3,
+          4,
+          5
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_g_psfFluxSigma": {
+        "count": 11,
+        "non_null": 11,
+        "sample_distinct": [
+          138.65577697753906,
+          531.2565307617188,
+          458.2183532714844,
+          539.1448364257812
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_scienceFluxMean": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          4041.996337890625,
+          3973.66943359375,
+          4325.490234375,
+          4117.07666015625,
+          4025.619873046875,
+          4084.874267578125,
+          4003.886962890625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_g_scienceFluxMeanErr": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          136.0059356689453,
+          128.5660858154297,
+          127.92792510986328,
+          75.4499282836914,
+          71.2343521118164,
+          72.0510025024414,
+          68.35305786132812
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxErrMean": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          256.6273193359375,
+          252.93922424316406,
+          283.5039367675781,
+          282.6083984375,
+          297.1925964355469,
+          299.0494689941406
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxMax": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          3421.745849609375,
+          3085.978759765625,
+          3568.07275390625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxMaxSlope": {
+        "count": 11,
+        "non_null": 11,
+        "sample_distinct": [
+          48.238407135009766,
+          26.421737670898438
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxMean": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          3421.745849609375,
+          3085.978515625,
+          3320.53759765625,
+          3273.22216796875,
+          3325.893310546875,
+          3207.992919921875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxMeanErr": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          256.6273193359375,
+          252.93922424316406,
+          159.27845764160156,
+          159.00198364257812,
+          144.10205078125,
+          130.40628051757812
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxMin": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          3421.745849609375,
+          3085.978759765625,
+          2674.69384765625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0,
+          1,
+          3,
+          4,
+          5
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_i_psfFluxSigma": {
+        "count": 11,
+        "non_null": 11,
+        "sample_distinct": [
+          247.17259216308594,
+          176.8299102783203,
+          201.86085510253906,
+          351.4573669433594
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_scienceFluxMean": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          5733.92333984375,
+          5446.60107421875,
+          5825.54736328125,
+          5798.017578125,
+          5956.138671875,
+          6055.37255859375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_i_scienceFluxMeanErr": {
+        "count": 13,
+        "non_null": 13,
+        "sample_distinct": [
+          259.67926025390625,
+          255.38963317871094,
+          161.3054962158203,
+          161.1538543701172,
+          146.21286010742188,
+          132.34222412109375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_nDiaSources": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1,
+          2,
+          6,
+          8,
+          12,
+          14,
+          16
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxErrMean": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          228.66275024414062,
+          213.02346801757812,
+          206.33364868164062,
+          206.1178436279297,
+          207.480712890625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxMax": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          2630.412841796875,
+          2858.657470703125,
+          2817.79638671875,
+          2297.1328125
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxMaxSlope": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          527232.4375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxMean": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          2630.412841796875,
+          2858.6572265625,
+          2817.79638671875,
+          2297.1328125,
+          2659.914794921875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxMeanErr": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          228.66275024414062,
+          213.02346801757812,
+          206.33364868164062,
+          206.1178436279297,
+          92.072021484375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxMin": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          2630.412841796875,
+          2858.657470703125,
+          2817.79638671875,
+          2297.1328125
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0,
+          1,
+          5
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_r_psfFluxSigma": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          222.52462768554688
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_scienceFluxMean": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          5706.091796875,
+          5720.6904296875,
+          5575.5439453125,
+          4883.2109375,
+          5397.248046875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_r_scienceFluxMeanErr": {
+        "count": 8,
+        "non_null": 8,
+        "sample_distinct": [
+          230.6654815673828,
+          213.81492614746094,
+          207.2344970703125,
+          206.19009399414062,
+          92.2930679321289
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_ra": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          62.45761131986637,
+          62.457615906913695,
+          62.45762812914096,
+          62.45763644393914,
+          62.45762379927807,
+          62.45762450130107,
+          62.457625312517266,
+          62.457626401600606,
+          62.457625729295344,
+          62.4576251737018,
+          62.457624261796916,
+          62.45762534098197
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_raErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1.1499909305712208e-05,
+          1.0609356650093105e-05,
+          9.975812645279802e-06,
+          1.16908404379501e-05,
+          8.698469173396006e-06,
+          4.8849283302843105e-06,
+          4.90821776111261e-06,
+          4.742212240671506e-06,
+          4.700304543803213e-06,
+          4.687736236519413e-06,
+          4.737811195809627e-06,
+          4.757714123115875e-06
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_ra_dec_Cov": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2.768527768148843e-11,
+          1.4147539043052326e-11,
+          -2.0290236504849624e-11,
+          1.6729045232422024e-11,
+          1.3109169999525605e-11,
+          6.726526887573803e-13,
+          5.34678421329482e-13,
+          1.0330457870426704e-13,
+          4.903073390002954e-13,
+          1.2751492841234918e-13,
+          2.793276677667822e-13,
+          4.325726517435957e-13
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_u_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_validityStartMjdTai": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          61217.42273967144,
+          61217.423801361525,
+          61217.42429357908,
+          61217.42703570092,
+          61217.42747777641,
+          61227.42142204418,
+          61227.42194572447,
+          61230.419603915034,
+          61230.41994056599,
+          61230.420368991574,
+          61230.420850755094,
+          61230.422788083306
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_y_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxErrMean": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          523.4275512695312
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxMax": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          3335.521240234375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxMean": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          3335.521240234375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxMeanErr": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          523.4275512695312
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxMin": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          3335.521240234375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_psfFluxNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0,
+          1
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaObject_z_scienceFluxMean": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          6863.9951171875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaObject_z_scienceFluxMeanErr": {
+        "count": 4,
+        "non_null": 4,
+        "sample_distinct": [
+          532.8279418945312
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_apFlux": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          3038.638427734375,
+          2694.951171875,
+          2926.1982421875,
+          3414.200439453125,
+          2614.72802734375,
+          3961.47216796875,
+          4299.0390625,
+          2826.8818359375,
+          3479.7841796875,
+          2673.171875,
+          2121.389404296875,
+          2822.601806640625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_apFluxErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          312.80535888671875,
+          301.24822998046875,
+          297.8897399902344,
+          721.9710083007812,
+          715.1928100585938,
+          720.649169921875,
+          720.8045043945312,
+          441.4455871582031,
+          438.6631164550781,
+          432.18157958984375,
+          434.763916015625,
+          1273.43212890625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_apFlux_flag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_apFlux_flag_apertureTruncated": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_band": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          "g",
+          "i",
+          "r",
+          "z"
+        ],
+        "types": [
+          "str"
+        ]
+      },
+      "lsst_diaSource_bboxSize": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          23,
+          22,
+          15,
+          16,
+          25,
+          26,
+          24,
+          14,
+          20
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_centroid_flag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_dec": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          -48.48149141631282,
+          -48.481485247309166,
+          -48.481493363633504,
+          -48.48149152449487,
+          -48.48148789343325,
+          -48.48150568453737,
+          -48.481485058468984,
+          -48.48148396689908,
+          -48.481524797121025,
+          -48.48150595673617,
+          -48.4814796544385,
+          -48.481538290741035
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_decErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1.1530524716363288e-05,
+          1.1015840755135287e-05,
+          9.070350643014535e-06,
+          1.2984112800040748e-05,
+          1.5019860256870743e-05,
+          2.9223916499176994e-05,
+          4.716984403785318e-05,
+          2.0139790649409406e-05,
+          2.3621832951903343e-05,
+          1.5224421076709405e-05,
+          1.9814036932075396e-05,
+          2.7302508897264488e-05
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_detector": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          160,
+          93,
+          86,
+          164,
+          136,
+          128,
+          127,
+          64,
+          63,
+          133,
+          22,
+          105
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_diaObjectId": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          170587117485817955
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_diaSourceId": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          170587117485817955,
+          170587117719126124,
+          170587117849673766,
+          170587118024786011,
+          170587118144323658,
+          170631126925180997,
+          170631127058874473,
+          170644275128696916,
+          170644275262390364,
+          170644275433308168,
+          170644275567525992,
+          170644275643547650
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_dipoleFitAttempted": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_dipoleNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_extendedness": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.2799968123435974,
+          0.00749990064650774,
+          0.022329796105623245,
+          0.13204145431518555,
+          0.02113109454512596,
+          0.6385306715965271,
+          0.06600198149681091,
+          0.06923883408308029,
+          0.9683268666267395,
+          0.01626863144338131,
+          0.003604194149374962,
+          0.030933817848563194
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_forced_PsfFlux_flag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_forced_PsfFlux_flag_edge": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_forced_PsfFlux_flag_noGoodPixels": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_glint_trail": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_isDipole": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_isNegative": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_ixx": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.2769754230976105,
+          0.22594048082828522,
+          0.1561604142189026,
+          0.09285809099674225,
+          0.11212515830993652,
+          0.35624468326568604,
+          0.14507025480270386,
+          0.4465751051902771,
+          0.3552371859550476,
+          0.34102097153663635,
+          0.29505816102027893,
+          0.21250507235527039
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_ixxPSF": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.22990334033966064,
+          0.21535171568393707,
+          0.19168445467948914,
+          0.13642257452011108,
+          0.14315322041511536,
+          0.26362454891204834,
+          0.25807514786720276,
+          0.32441654801368713,
+          0.26181668043136597,
+          0.25514325499534607,
+          0.265738308429718,
+          0.1744496077299118
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_ixy": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.08170422911643982,
+          0.007000034675002098,
+          0.024165775626897812,
+          -0.011628910899162292,
+          0.006777722388505936,
+          0.04604364559054375,
+          0.029911749064922333,
+          -0.1360410451889038,
+          0.07292825728654861,
+          -0.024637538939714432,
+          -0.008166034705936909,
+          0.12982818484306335
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_ixyPSF": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.04328050836920738,
+          0.04606756195425987,
+          0.02949589118361473,
+          -0.016840560361742973,
+          -0.009260580874979496,
+          -0.0155256986618042,
+          0.0016977917402982712,
+          -0.02758106030523777,
+          -0.006882995832711458,
+          -0.011396795511245728,
+          -0.007730408105999231,
+          0.0016939275665208697
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_iyy": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.24477507174015045,
+          0.20261169970035553,
+          0.2666601240634918,
+          0.12873882055282593,
+          0.18798863887786865,
+          0.3827557861804962,
+          0.4227721095085144,
+          0.22255279123783112,
+          0.5749387145042419,
+          0.18800291419029236,
+          0.22400885820388794,
+          0.13228939473628998
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_iyyPSF": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.1872488558292389,
+          0.19741345942020416,
+          0.20435325801372528,
+          0.1412387639284134,
+          0.13513875007629395,
+          0.2673952579498291,
+          0.2567349672317505,
+          0.2855958044528961,
+          0.28136134147644043,
+          0.24817880988121033,
+          0.24122929573059082,
+          0.2010183483362198
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_midpointMjdTai": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          61217.42118006405,
+          61217.42217825258,
+          61217.42270507246,
+          61217.4251461513,
+          61217.425639118446,
+          61227.41962591419,
+          61227.420054280956,
+          61230.417929722025,
+          61230.41836263283,
+          61230.418804941335,
+          61230.41923626095,
+          61230.42116970118
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_parentDiaSourceId": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_pixelFlags": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_bad": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_cr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_crCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_edge": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_injected": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_injectedCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_injected_template": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_injected_templateCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_interpolated": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_interpolatedCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_nodata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_nodataCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_offimage": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_saturated": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_saturatedCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_streak": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_streakCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_suspect": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_pixelFlags_suspectCenter": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_psfChi2": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1681.6793212890625,
+          1779.81005859375,
+          1755.9439697265625,
+          1582.9281005859375,
+          1676.2540283203125,
+          1628.386474609375,
+          1793.1951904296875,
+          1681.8370361328125,
+          1639.361328125,
+          1689.716064453125,
+          1706.895751953125,
+          1603.7763671875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_psfFlux": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2665.041259765625,
+          2634.62451171875,
+          2888.542724609375,
+          3421.745849609375,
+          3085.978759765625,
+          3568.07275390625,
+          3350.048583984375,
+          2630.412841796875,
+          2858.657470703125,
+          2817.79638671875,
+          2297.1328125,
+          3335.521240234375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_psfFluxErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          139.14035034179688,
+          131.72402954101562,
+          130.59031677246094,
+          256.6273193359375,
+          252.93922424316406,
+          340.9452209472656,
+          338.2586364746094,
+          228.66275024414062,
+          213.02346801757812,
+          206.33364868164062,
+          206.1178436279297,
+          523.4275512695312
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_psfFlux_flag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_psfFlux_flag_edge": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_psfFlux_flag_noGoodPixels": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_psfNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1681
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_ra": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          62.45761131986638,
+          62.457615906913695,
+          62.45762812914096,
+          62.45763644393913,
+          62.457640526543564,
+          62.45761390602757,
+          62.457636440749944,
+          62.45766506141362,
+          62.45763726740424,
+          62.45763483126541,
+          62.45760732013752,
+          62.45763778963614
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_raErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1.1499909305712208e-05,
+          1.0609356650093105e-05,
+          9.975812645279802e-06,
+          1.16908404379501e-05,
+          1.333138789050281e-05,
+          2.7470361601444893e-05,
+          3.894758629030548e-05,
+          2.5938426915672608e-05,
+          2.0514678908511996e-05,
+          1.9680443074321374e-05,
+          2.4501339794369414e-05,
+          2.7643744033412077e-05
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_ra_dec_Cov": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2.768527768148843e-11,
+          1.4147539043052326e-11,
+          -2.0290236504849624e-11,
+          1.6729045232422024e-11,
+          1.9521557981239113e-11,
+          -1.0599550404055691e-10,
+          -1.0032620290090222e-09,
+          -1.3310985647052576e-10,
+          5.42735544006856e-11,
+          -4.039277939904551e-11,
+          -4.148175206108995e-11,
+          5.220781446046985e-11
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_reliability": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.9421387314796448,
+          0.959725558757782,
+          0.9649856686592102,
+          0.9883825182914734,
+          0.9686431884765625,
+          0.978286623954773,
+          0.750503659248352,
+          0.8568899631500244,
+          0.8912332057952881,
+          0.9435266852378845,
+          0.7930038571357727,
+          0.7993477582931519
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_reliabilityVersion": {
+        "count": 9,
+        "non_null": 9,
+        "sample_distinct": [
+          "0.2",
+          "0.3"
+        ],
+        "types": [
+          "str"
+        ]
+      },
+      "lsst_diaSource_scienceFlux": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          4041.996337890625,
+          3973.66943359375,
+          4325.490234375,
+          5733.92333984375,
+          5446.60107421875,
+          6692.22021484375,
+          6557.66015625,
+          5706.091796875,
+          5720.6904296875,
+          5575.5439453125,
+          4883.2109375,
+          6863.9951171875
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_scienceFluxErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          136.0059356689453,
+          128.5660858154297,
+          127.92792510986328,
+          259.67926025390625,
+          255.3896484375,
+          347.7027893066406,
+          346.19171142578125,
+          230.6654815673828,
+          213.81492614746094,
+          207.2344970703125,
+          206.19009399414062,
+          532.8279418945312
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_shape_flag": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_shape_flag_no_pixels": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_shape_flag_not_contained": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_shape_flag_parent_source": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_snr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          18.848682403564453,
+          19.781435012817383,
+          21.757904052734375,
+          13.16971206665039,
+          12.063187599182129,
+          10.521154403686523,
+          9.778800964355469,
+          11.302104949951172,
+          13.176182746887207,
+          13.513802528381348,
+          10.995657920837402,
+          6.273802757263184
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_ssObjectId": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_templateFlux": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1294.5572509765625,
+          1278.4964599609375,
+          1340.76171875,
+          2231.22021484375,
+          2268.092041015625,
+          3117.81884765625,
+          3163.206298828125,
+          3011.665283203125,
+          2841.875244140625,
+          2742.00634765625,
+          2523.8701171875,
+          3489.728515625
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_templateFluxErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          37.68742752075195,
+          36.17306900024414,
+          34.095123291015625,
+          46.213233947753906,
+          39.00395584106445,
+          12.370986938476562,
+          11.083700180053711,
+          14.89159870147705,
+          15.563182830810547,
+          19.52451515197754,
+          16.313995361328125,
+          47.29093933105469
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_timeProcessedMjdTai": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          61217.42270213738,
+          61217.42375410448,
+          61217.42424659729,
+          61217.426954413066,
+          61217.42739002969,
+          61227.42133736833,
+          61227.4218611341,
+          61230.419552160136,
+          61230.41989402087,
+          61230.4203204197,
+          61230.42079536501,
+          61230.42272677493
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailAlgorithm": {
+        "count": 9,
+        "non_null": 9,
+        "sample_distinct": [
+          2,
+          1
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_trailAngle": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          84.06050109863281,
+          51.77071762084961,
+          111.40223693847656,
+          40.45978927612305,
+          -167.11598205566406,
+          110.50485229492188,
+          138.5841522216797,
+          87.07540893554688,
+          -176.49334716796875,
+          94.64839172363281,
+          93.97673034667969,
+          175.47299194335938
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailAngleErr": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          9.828812599182129,
+          45.73737716674805,
+          9.584126472473145,
+          23.983644485473633,
+          17.9263916015625,
+          41.54417037963867,
+          10.124659538269043,
+          15.307543754577637,
+          13.8129243850708,
+          36.8307991027832,
+          17.28823471069336,
+          10.08862018585205
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailDec": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          -48.4814921919953,
+          -48.48148624698915,
+          -48.48149233682489,
+          -48.48149117289172,
+          -48.48148695216294,
+          -48.481507486866,
+          -48.48148235627675,
+          -48.48148893187903,
+          -48.48151639988057,
+          -48.48150634144399,
+          -48.481477995260846,
+          -48.48154574246692
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailFlux": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2826.2587890625,
+          2535.517578125,
+          2949.9296875,
+          3233.775390625,
+          3087.913330078125,
+          3667.2099609375,
+          3691.408447265625,
+          2880.17919921875,
+          3088.42041015625,
+          2865.90625,
+          2226.484375,
+          3391.480224609375
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailFluxErr": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          85.76836395263672,
+          112.01055145263672,
+          76.25845336914062,
+          112.61625671386719,
+          150.5789337158203,
+          350.5813293457031,
+          161.4741973876953,
+          184.65614318847656,
+          109.5384521484375,
+          138.5885009765625,
+          152.84848022460938,
+          65.3012466430664
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailLength": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          1.293677568435669,
+          0.5644525289535522,
+          1.1037015914916992,
+          0.6666052341461182,
+          0.8926526308059692,
+          1.0349855422973633,
+          1.6388508081436157,
+          1.8082417249679565,
+          1.6166929006576538,
+          1.2707130908966064,
+          0.8916214108467102,
+          1.2451257705688477
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailLengthErr": {
+        "count": 15,
+        "non_null": 15,
+        "sample_distinct": [
+          0.19345834851264954,
+          0.4349324107170105,
+          0.1703936755657196,
+          0.25629279017448425,
+          0.2629755735397339,
+          0.7002119421958923,
+          0.31618422269821167,
+          0.3912073075771332,
+          0.28825414180755615,
+          0.541068434715271,
+          0.3119308054447174,
+          0.16916804015636444
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trailNdata": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_trailRa": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          62.45761257291669,
+          62.457614111181634,
+          62.45762362874479,
+          62.457634488832326,
+          62.457642774956035,
+          62.45761390251745,
+          62.45763234551117,
+          62.45767312085356,
+          62.45763809569286,
+          62.45763945343629,
+          62.457605848243006,
+          62.45764971977727
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_trail_flag": {
+        "count": 9,
+        "non_null": 9,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_trail_flag_edge": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          false
+        ],
+        "types": [
+          "bool"
+        ]
+      },
+      "lsst_diaSource_visit": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2026062500651,
+          2026062500653,
+          2026062500654,
+          2026062500655,
+          2026062500656,
+          2026070500867,
+          2026070500868,
+          2026070800525,
+          2026070800526,
+          2026070800527,
+          2026070800528,
+          2026070800529
+        ],
+        "types": [
+          "int"
+        ]
+      },
+      "lsst_diaSource_x": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          3058.294189453125,
+          843.6961669921875,
+          3013.613525390625,
+          2865.783203125,
+          364.9461669921875,
+          3612.884033203125,
+          2506.224609375,
+          602.0970458984375,
+          3174.299072265625,
+          3380.32763671875,
+          1191.3692626953125,
+          3038.401611328125
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_xErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.2282164990901947,
+          0.20635674893856049,
+          0.14917661249637604,
+          0.2048085778951645,
+          0.23500919342041016,
+          0.4716876149177551,
+          0.511337399482727,
+          0.486193984746933,
+          0.3612505793571472,
+          0.3586326241493225,
+          0.44389691948890686,
+          0.47730931639671326
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_y": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          2349.54443359375,
+          3778.47705078125,
+          1505.788818359375,
+          2349.2236328125,
+          1360.58935546875,
+          2201.96484375,
+          3430.013427734375,
+          2915.04638671875,
+          3006.672119140625,
+          282.6356201171875,
+          2566.53271484375,
+          49.07971954345703
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_diaSource_yErr": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          0.18447312712669373,
+          0.18168136477470398,
+          0.19103212654590607,
+          0.23885245621204376,
+          0.27433907985687256,
+          0.5462570190429688,
+          0.9750766754150391,
+          0.337302565574646,
+          0.4326089918613434,
+          0.26816609501838684,
+          0.3531569540500641,
+          0.512718141078949
+        ],
+        "types": [
+          "float"
+        ]
+      },
+      "lsst_observation_reason": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          "ddf_edfs_a",
+          "ddf_edfs_b",
+          "pairs_ri_15.0"
+        ],
+        "types": [
+          "str"
+        ]
+      },
+      "lsst_target_name": {
+        "count": 16,
+        "non_null": 16,
+        "sample_distinct": [
+          "ddf_edfs_a, lowdust",
+          "ddf_edfs_b, lowdust"
+        ],
+        "types": [
+          "str"
+        ]
+      }
+    },
+    "id_prefix_counts": {
+      "lsst": 16
+    },
+    "property_union": [
+      "ant_dec",
+      "ant_mag",
+      "ant_magerr",
+      "ant_maglim",
+      "ant_mjd",
+      "ant_passband",
+      "ant_ra",
+      "ant_survey",
+      "ant_time_received",
+      "lsst_diaObject_dec",
+      "lsst_diaObject_decErr",
+      "lsst_diaObject_diaObjectId",
+      "lsst_diaObject_g_psfFluxErrMean",
+      "lsst_diaObject_g_psfFluxMax",
+      "lsst_diaObject_g_psfFluxMaxSlope",
+      "lsst_diaObject_g_psfFluxMean",
+      "lsst_diaObject_g_psfFluxMeanErr",
+      "lsst_diaObject_g_psfFluxMin",
+      "lsst_diaObject_g_psfFluxNdata",
+      "lsst_diaObject_g_psfFluxSigma",
+      "lsst_diaObject_g_scienceFluxMean",
+      "lsst_diaObject_g_scienceFluxMeanErr",
+      "lsst_diaObject_i_psfFluxErrMean",
+      "lsst_diaObject_i_psfFluxMax",
+      "lsst_diaObject_i_psfFluxMaxSlope",
+      "lsst_diaObject_i_psfFluxMean",
+      "lsst_diaObject_i_psfFluxMeanErr",
+      "lsst_diaObject_i_psfFluxMin",
+      "lsst_diaObject_i_psfFluxNdata",
+      "lsst_diaObject_i_psfFluxSigma",
+      "lsst_diaObject_i_scienceFluxMean",
+      "lsst_diaObject_i_scienceFluxMeanErr",
+      "lsst_diaObject_nDiaSources",
+      "lsst_diaObject_r_psfFluxErrMean",
+      "lsst_diaObject_r_psfFluxMax",
+      "lsst_diaObject_r_psfFluxMaxSlope",
+      "lsst_diaObject_r_psfFluxMean",
+      "lsst_diaObject_r_psfFluxMeanErr",
+      "lsst_diaObject_r_psfFluxMin",
+      "lsst_diaObject_r_psfFluxNdata",
+      "lsst_diaObject_r_psfFluxSigma",
+      "lsst_diaObject_r_scienceFluxMean",
+      "lsst_diaObject_r_scienceFluxMeanErr",
+      "lsst_diaObject_ra",
+      "lsst_diaObject_raErr",
+      "lsst_diaObject_ra_dec_Cov",
+      "lsst_diaObject_u_psfFluxNdata",
+      "lsst_diaObject_validityStartMjdTai",
+      "lsst_diaObject_y_psfFluxNdata",
+      "lsst_diaObject_z_psfFluxErrMean",
+      "lsst_diaObject_z_psfFluxMax",
+      "lsst_diaObject_z_psfFluxMean",
+      "lsst_diaObject_z_psfFluxMeanErr",
+      "lsst_diaObject_z_psfFluxMin",
+      "lsst_diaObject_z_psfFluxNdata",
+      "lsst_diaObject_z_scienceFluxMean",
+      "lsst_diaObject_z_scienceFluxMeanErr",
+      "lsst_diaSource_apFlux",
+      "lsst_diaSource_apFluxErr",
+      "lsst_diaSource_apFlux_flag",
+      "lsst_diaSource_apFlux_flag_apertureTruncated",
+      "lsst_diaSource_band",
+      "lsst_diaSource_bboxSize",
+      "lsst_diaSource_centroid_flag",
+      "lsst_diaSource_dec",
+      "lsst_diaSource_decErr",
+      "lsst_diaSource_detector",
+      "lsst_diaSource_diaObjectId",
+      "lsst_diaSource_diaSourceId",
+      "lsst_diaSource_dipoleFitAttempted",
+      "lsst_diaSource_dipoleNdata",
+      "lsst_diaSource_extendedness",
+      "lsst_diaSource_forced_PsfFlux_flag",
+      "lsst_diaSource_forced_PsfFlux_flag_edge",
+      "lsst_diaSource_forced_PsfFlux_flag_noGoodPixels",
+      "lsst_diaSource_glint_trail",
+      "lsst_diaSource_isDipole",
+      "lsst_diaSource_isNegative",
+      "lsst_diaSource_ixx",
+      "lsst_diaSource_ixxPSF",
+      "lsst_diaSource_ixy",
+      "lsst_diaSource_ixyPSF",
+      "lsst_diaSource_iyy",
+      "lsst_diaSource_iyyPSF",
+      "lsst_diaSource_midpointMjdTai",
+      "lsst_diaSource_parentDiaSourceId",
+      "lsst_diaSource_pixelFlags",
+      "lsst_diaSource_pixelFlags_bad",
+      "lsst_diaSource_pixelFlags_cr",
+      "lsst_diaSource_pixelFlags_crCenter",
+      "lsst_diaSource_pixelFlags_edge",
+      "lsst_diaSource_pixelFlags_injected",
+      "lsst_diaSource_pixelFlags_injectedCenter",
+      "lsst_diaSource_pixelFlags_injected_template",
+      "lsst_diaSource_pixelFlags_injected_templateCenter",
+      "lsst_diaSource_pixelFlags_interpolated",
+      "lsst_diaSource_pixelFlags_interpolatedCenter",
+      "lsst_diaSource_pixelFlags_nodata",
+      "lsst_diaSource_pixelFlags_nodataCenter",
+      "lsst_diaSource_pixelFlags_offimage",
+      "lsst_diaSource_pixelFlags_saturated",
+      "lsst_diaSource_pixelFlags_saturatedCenter",
+      "lsst_diaSource_pixelFlags_streak",
+      "lsst_diaSource_pixelFlags_streakCenter",
+      "lsst_diaSource_pixelFlags_suspect",
+      "lsst_diaSource_pixelFlags_suspectCenter",
+      "lsst_diaSource_psfChi2",
+      "lsst_diaSource_psfFlux",
+      "lsst_diaSource_psfFluxErr",
+      "lsst_diaSource_psfFlux_flag",
+      "lsst_diaSource_psfFlux_flag_edge",
+      "lsst_diaSource_psfFlux_flag_noGoodPixels",
+      "lsst_diaSource_psfNdata",
+      "lsst_diaSource_ra",
+      "lsst_diaSource_raErr",
+      "lsst_diaSource_ra_dec_Cov",
+      "lsst_diaSource_reliability",
+      "lsst_diaSource_reliabilityVersion",
+      "lsst_diaSource_scienceFlux",
+      "lsst_diaSource_scienceFluxErr",
+      "lsst_diaSource_shape_flag",
+      "lsst_diaSource_shape_flag_no_pixels",
+      "lsst_diaSource_shape_flag_not_contained",
+      "lsst_diaSource_shape_flag_parent_source",
+      "lsst_diaSource_snr",
+      "lsst_diaSource_ssObjectId",
+      "lsst_diaSource_templateFlux",
+      "lsst_diaSource_templateFluxErr",
+      "lsst_diaSource_timeProcessedMjdTai",
+      "lsst_diaSource_trailAlgorithm",
+      "lsst_diaSource_trailAngle",
+      "lsst_diaSource_trailAngleErr",
+      "lsst_diaSource_trailDec",
+      "lsst_diaSource_trailFlux",
+      "lsst_diaSource_trailFluxErr",
+      "lsst_diaSource_trailLength",
+      "lsst_diaSource_trailLengthErr",
+      "lsst_diaSource_trailNdata",
+      "lsst_diaSource_trailRa",
+      "lsst_diaSource_trail_flag",
+      "lsst_diaSource_trail_flag_edge",
+      "lsst_diaSource_visit",
+      "lsst_diaSource_x",
+      "lsst_diaSource_xErr",
+      "lsst_diaSource_y",
+      "lsst_diaSource_yErr",
+      "lsst_observation_reason",
+      "lsst_target_name"
+    ],
+    "property_union_count": 148
+  },
+  "captured_at": "2026-08-12T08:38:11.427904+00:00",
+  "catalogs": {},
+  "client": {
+    "package": "antares-client",
+    "version": "1.14.0"
+  },
+  "cone_search_1_arcsec": {
+    "count_saved": 1,
+    "locus_ids": [
+      "ANT2026rq61krn5dipt"
+    ]
+  },
+  "lightcurve": {
+    "columns": [
+      "time",
+      "alert_id",
+      "ant_mjd",
+      "ant_survey",
+      "ant_ra",
+      "ant_dec",
+      "ant_passband",
+      "ant_mag",
+      "ant_magerr",
+      "ant_maglim",
+      "ant_mag_corrected",
+      "ant_magerr_corrected",
+      "ant_magulim_corrected",
+      "ant_magllim_corrected"
+    ],
+    "non_null": {
+      "alert_id": 16,
+      "ant_dec": 16,
+      "ant_mag": 16,
+      "ant_mag_corrected": 16,
+      "ant_magerr": 16,
+      "ant_magerr_corrected": 16,
+      "ant_maglim": 16,
+      "ant_magllim_corrected": 0,
+      "ant_magulim_corrected": 0,
+      "ant_mjd": 16,
+      "ant_passband": 16,
+      "ant_ra": 16,
+      "ant_survey": 16,
+      "time": 16
+    },
+    "rows": 16
+  },
+  "locus": {
+    "property_count": 144,
+    "property_keys": [
+      "brightest_alert_id",
+      "brightest_alert_magnitude",
+      "brightest_alert_observation_time",
+      "feature_amplitude_magn_i",
+      "feature_amplitude_magn_r",
+      "feature_amplitude_magn_z",
+      "feature_anderson_darling_normal_flux_i",
+      "feature_anderson_darling_normal_flux_r",
+      "feature_anderson_darling_normal_magn_i",
+      "feature_anderson_darling_normal_magn_r",
+      "feature_beyond_1_std_magn_i",
+      "feature_beyond_1_std_magn_r",
+      "feature_beyond_2_std_magn_i",
+      "feature_beyond_2_std_magn_r",
+      "feature_bins_window1.0_offset0.0_eta_e_magn_i",
+      "feature_bins_window1.0_offset0.0_linear_trend_magn_i",
+      "feature_bins_window1.0_offset0.0_linear_trend_noise_magn_i",
+      "feature_bins_window1.0_offset0.0_linear_trend_sigma_magn_i",
+      "feature_bins_window1.0_offset0.0_maximum_slope_magn_i",
+      "feature_chi2_flux_i",
+      "feature_chi2_flux_r",
+      "feature_chi2_magn_i",
+      "feature_chi2_magn_r",
+      "feature_cusum_flux_i",
+      "feature_cusum_flux_r",
+      "feature_cusum_magn_i",
+      "feature_cusum_magn_r",
+      "feature_duration_magn_i",
+      "feature_duration_magn_r",
+      "feature_duration_magn_z",
+      "feature_eta_e_flux_i",
+      "feature_eta_e_flux_r",
+      "feature_eta_e_magn_i",
+      "feature_eta_e_magn_r",
+      "feature_inter_percentile_range_10_magn_i",
+      "feature_inter_percentile_range_10_magn_r",
+      "feature_inter_percentile_range_10_magn_z",
+      "feature_inter_percentile_range_25_magn_i",
+      "feature_inter_percentile_range_25_magn_r",
+      "feature_inter_percentile_range_25_magn_z",
+      "feature_inter_percentile_range_2_magn_i",
+      "feature_inter_percentile_range_2_magn_r",
+      "feature_inter_percentile_range_2_magn_z",
+      "feature_kurtosis_flux_i",
+      "feature_kurtosis_flux_r",
+      "feature_kurtosis_magn_i",
+      "feature_kurtosis_magn_r",
+      "feature_linear_fit_reduced_chi2_magn_i",
+      "feature_linear_fit_reduced_chi2_magn_r",
+      "feature_linear_fit_slope_magn_i",
+      "feature_linear_fit_slope_magn_r",
+      "feature_linear_fit_slope_sigma_magn_i",
+      "feature_linear_fit_slope_sigma_magn_r",
+      "feature_linear_trend_magn_i",
+      "feature_linear_trend_noise_magn_i",
+      "feature_linear_trend_noise_magn_r",
+      "feature_linear_trend_sigma_magn_i",
+      "feature_linear_trend_sigma_magn_r",
+      "feature_magnitude_percentage_ratio_20_5_magn_i",
+      "feature_magnitude_percentage_ratio_20_5_magn_r",
+      "feature_magnitude_percentage_ratio_40_5_magn_i",
+      "feature_magnitude_percentage_ratio_40_5_magn_r",
+      "feature_maximum_slope_magn_i",
+      "feature_maximum_slope_magn_r",
+      "feature_mean_magn_i",
+      "feature_mean_magn_r",
+      "feature_mean_magn_z",
+      "feature_mean_variance_flux_i",
+      "feature_mean_variance_flux_r",
+      "feature_median_absolute_deviation_magn_i",
+      "feature_median_absolute_deviation_magn_r",
+      "feature_median_absolute_deviation_magn_z",
+      "feature_median_buffer_range_percentage_10_magn_i",
+      "feature_median_buffer_range_percentage_10_magn_r",
+      "feature_median_buffer_range_percentage_10_magn_z",
+      "feature_median_buffer_range_percentage_20_magn_i",
+      "feature_median_buffer_range_percentage_20_magn_r",
+      "feature_median_buffer_range_percentage_20_magn_z",
+      "feature_otsu_lower_to_all_ratio_magn_i",
+      "feature_otsu_lower_to_all_ratio_magn_r",
+      "feature_otsu_mean_diff_magn_i",
+      "feature_otsu_mean_diff_magn_r",
+      "feature_otsu_std_lower_magn_i",
+      "feature_otsu_std_lower_magn_r",
+      "feature_otsu_std_upper_magn_i",
+      "feature_otsu_std_upper_magn_r",
+      "feature_percent_amplitude_magn_i",
+      "feature_percent_amplitude_magn_r",
+      "feature_percent_amplitude_magn_z",
+      "feature_percent_difference_magnitude_percentile_10_magn_i",
+      "feature_percent_difference_magnitude_percentile_10_magn_r",
+      "feature_percent_difference_magnitude_percentile_10_magn_z",
+      "feature_percent_difference_magnitude_percentile_5_magn_i",
+      "feature_percent_difference_magnitude_percentile_5_magn_r",
+      "feature_percent_difference_magnitude_percentile_5_magn_z",
+      "feature_period_0_magn_i",
+      "feature_period_0_magn_r",
+      "feature_period_1_magn_i",
+      "feature_period_1_magn_r",
+      "feature_period_2_magn_i",
+      "feature_period_2_magn_r",
+      "feature_period_3_magn_i",
+      "feature_period_3_magn_r",
+      "feature_period_4_magn_i",
+      "feature_period_4_magn_r",
+      "feature_period_s_to_n_0_magn_i",
+      "feature_period_s_to_n_0_magn_r",
+      "feature_period_s_to_n_1_magn_i",
+      "feature_period_s_to_n_1_magn_r",
+      "feature_period_s_to_n_2_magn_i",
+      "feature_period_s_to_n_2_magn_r",
+      "feature_period_s_to_n_3_magn_i",
+      "feature_period_s_to_n_3_magn_r",
+      "feature_period_s_to_n_4_magn_i",
+      "feature_period_s_to_n_4_magn_r",
+      "feature_periodogram_amplitude_magn_i",
+      "feature_periodogram_amplitude_magn_r",
+      "feature_periodogram_beyond_2_std_magn_i",
+      "feature_periodogram_beyond_2_std_magn_r",
+      "feature_periodogram_beyond_3_std_magn_i",
+      "feature_periodogram_beyond_3_std_magn_r",
+      "feature_periodogram_standard_deviation_magn_i",
+      "feature_periodogram_standard_deviation_magn_r",
+      "feature_skew_magn_i",
+      "feature_skew_magn_r",
+      "feature_standard_deviation_magn_i",
+      "feature_standard_deviation_magn_r",
+      "feature_stetson_k_flux_i",
+      "feature_stetson_k_flux_r",
+      "feature_stetson_k_magn_i",
+      "feature_stetson_k_magn_r",
+      "feature_weighted_mean_magn_i",
+      "feature_weighted_mean_magn_r",
+      "feature_weighted_mean_magn_z",
+      "is_corrected",
+      "newest_alert_id",
+      "newest_alert_magnitude",
+      "newest_alert_observation_time",
+      "num_alerts",
+      "num_mag_values",
+      "oldest_alert_id",
+      "oldest_alert_magnitude",
+      "oldest_alert_observation_time",
+      "survey"
+    ],
+    "tags": [
+      "SN_candies",
+      "lsst_scimma_quality_transient",
+      "in_LSSTDDF",
+      "lc_feature_extractor",
+      "young_rubin_transients"
+    ]
+  },
+  "search": {
+    "count_saved": 1,
+    "locus_ids": [
+      "ANT2026rq61krn5dipt"
+    ]
+  },
+  "target": {
+    "dec": -48.4814921664055,
+    "locus_id": "ANT2026rq61krn5dipt",
+    "lsst_dia_object_id": "170587117485817955",
+    "ra": 62.457633838393754
+  },
+  "timeseries": {
+    "columns": [
+      "time",
+      "lsst_observation_reason",
+      "lsst_target_name",
+      "lsst_diaSource_diaSourceId",
+      "lsst_diaSource_visit",
+      "lsst_diaSource_detector",
+      "lsst_diaSource_diaObjectId",
+      "lsst_diaSource_ssObjectId",
+      "lsst_diaSource_parentDiaSourceId",
+      "lsst_diaSource_midpointMjdTai",
+      "lsst_diaSource_ra",
+      "lsst_diaSource_raErr",
+      "lsst_diaSource_dec",
+      "lsst_diaSource_decErr",
+      "lsst_diaSource_ra_dec_Cov",
+      "lsst_diaSource_x",
+      "lsst_diaSource_xErr",
+      "lsst_diaSource_y",
+      "lsst_diaSource_yErr",
+      "lsst_diaSource_centroid_flag",
+      "lsst_diaSource_apFlux",
+      "lsst_diaSource_apFluxErr",
+      "lsst_diaSource_apFlux_flag",
+      "lsst_diaSource_apFlux_flag_apertureTruncated",
+      "lsst_diaSource_isNegative",
+      "lsst_diaSource_snr",
+      "lsst_diaSource_psfFlux",
+      "lsst_diaSource_psfFluxErr",
+      "lsst_diaSource_psfChi2",
+      "lsst_diaSource_psfNdata",
+      "lsst_diaSource_psfFlux_flag",
+      "lsst_diaSource_psfFlux_flag_edge",
+      "lsst_diaSource_psfFlux_flag_noGoodPixels",
+      "lsst_diaSource_trailFlux",
+      "lsst_diaSource_trailFluxErr",
+      "lsst_diaSource_trailRa",
+      "lsst_diaSource_trailDec",
+      "lsst_diaSource_trailLength",
+      "lsst_diaSource_trailLengthErr",
+      "lsst_diaSource_trailAngle",
+      "lsst_diaSource_trailAngleErr",
+      "lsst_diaSource_trailNdata",
+      "lsst_diaSource_trail_flag_edge",
+      "lsst_diaSource_dipoleNdata",
+      "lsst_diaSource_scienceFlux",
+      "lsst_diaSource_scienceFluxErr",
+      "lsst_diaSource_forced_PsfFlux_flag",
+      "lsst_diaSource_forced_PsfFlux_flag_edge",
+      "lsst_diaSource_forced_PsfFlux_flag_noGoodPixels",
+      "lsst_diaSource_templateFlux",
+      "lsst_diaSource_templateFluxErr",
+      "lsst_diaSource_ixx",
+      "lsst_diaSource_iyy",
+      "lsst_diaSource_ixy",
+      "lsst_diaSource_ixxPSF",
+      "lsst_diaSource_iyyPSF",
+      "lsst_diaSource_ixyPSF",
+      "lsst_diaSource_shape_flag",
+      "lsst_diaSource_shape_flag_no_pixels",
+      "lsst_diaSource_shape_flag_not_contained",
+      "lsst_diaSource_shape_flag_parent_source",
+      "lsst_diaSource_extendedness",
+      "lsst_diaSource_reliability",
+      "lsst_diaSource_band",
+      "lsst_diaSource_isDipole",
+      "lsst_diaSource_dipoleFitAttempted",
+      "lsst_diaSource_timeProcessedMjdTai",
+      "lsst_diaSource_bboxSize",
+      "lsst_diaSource_pixelFlags",
+      "lsst_diaSource_pixelFlags_bad",
+      "lsst_diaSource_pixelFlags_cr",
+      "lsst_diaSource_pixelFlags_crCenter",
+      "lsst_diaSource_pixelFlags_edge",
+      "lsst_diaSource_pixelFlags_nodata",
+      "lsst_diaSource_pixelFlags_nodataCenter",
+      "lsst_diaSource_pixelFlags_interpolated",
+      "lsst_diaSource_pixelFlags_interpolatedCenter",
+      "lsst_diaSource_pixelFlags_offimage",
+      "lsst_diaSource_pixelFlags_saturated",
+      "lsst_diaSource_pixelFlags_saturatedCenter",
+      "lsst_diaSource_pixelFlags_suspect",
+      "lsst_diaSource_pixelFlags_suspectCenter",
+      "lsst_diaSource_pixelFlags_streak",
+      "lsst_diaSource_pixelFlags_streakCenter",
+      "lsst_diaSource_pixelFlags_injected",
+      "lsst_diaSource_pixelFlags_injectedCenter",
+      "lsst_diaSource_pixelFlags_injected_template",
+      "lsst_diaSource_pixelFlags_injected_templateCenter",
+      "lsst_diaSource_glint_trail",
+      "lsst_diaObject_diaObjectId",
+      "lsst_diaObject_validityStartMjdTai",
+      "lsst_diaObject_ra",
+      "lsst_diaObject_raErr",
+      "lsst_diaObject_dec",
+      "lsst_diaObject_decErr",
+      "lsst_diaObject_ra_dec_Cov",
+      "lsst_diaObject_u_psfFluxNdata",
+      "lsst_diaObject_g_psfFluxMean",
+      "lsst_diaObject_g_psfFluxMeanErr",
+      "lsst_diaObject_g_psfFluxNdata",
+      "lsst_diaObject_r_psfFluxNdata",
+      "lsst_diaObject_i_psfFluxNdata",
+      "lsst_diaObject_z_psfFluxNdata",
+      "lsst_diaObject_y_psfFluxNdata",
+      "lsst_diaObject_g_scienceFluxMean",
+      "lsst_diaObject_g_scienceFluxMeanErr",
+      "lsst_diaObject_g_psfFluxMin",
+      "lsst_diaObject_g_psfFluxMax",
+      "lsst_diaObject_g_psfFluxErrMean",
+      "lsst_diaObject_nDiaSources",
+      "ant_ra",
+      "ant_dec",
+      "ant_mjd",
+      "ant_time_received",
+      "ant_survey",
+      "ant_mag",
+      "ant_maglim",
+      "ant_magerr",
+      "ant_passband",
+      "lsst_diaObject_i_psfFluxMean",
+      "lsst_diaObject_i_psfFluxMeanErr",
+      "lsst_diaObject_i_scienceFluxMean",
+      "lsst_diaObject_i_scienceFluxMeanErr",
+      "lsst_diaObject_i_psfFluxMin",
+      "lsst_diaObject_i_psfFluxMax",
+      "lsst_diaObject_i_psfFluxErrMean",
+      "lsst_diaObject_g_psfFluxSigma",
+      "lsst_diaObject_i_psfFluxSigma",
+      "lsst_diaObject_g_psfFluxMaxSlope",
+      "lsst_diaObject_i_psfFluxMaxSlope",
+      "lsst_diaSource_trailAlgorithm",
+      "lsst_diaSource_trail_flag",
+      "lsst_diaSource_reliabilityVersion",
+      "lsst_diaObject_r_psfFluxMean",
+      "lsst_diaObject_r_psfFluxMeanErr",
+      "lsst_diaObject_r_scienceFluxMean",
+      "lsst_diaObject_r_scienceFluxMeanErr",
+      "lsst_diaObject_r_psfFluxMin",
+      "lsst_diaObject_r_psfFluxMax",
+      "lsst_diaObject_r_psfFluxErrMean",
+      "lsst_diaObject_z_psfFluxMean",
+      "lsst_diaObject_z_psfFluxMeanErr",
+      "lsst_diaObject_z_scienceFluxMean",
+      "lsst_diaObject_z_scienceFluxMeanErr",
+      "lsst_diaObject_z_psfFluxMin",
+      "lsst_diaObject_z_psfFluxMax",
+      "lsst_diaObject_z_psfFluxErrMean",
+      "lsst_diaObject_r_psfFluxSigma",
+      "lsst_diaObject_r_psfFluxMaxSlope"
+    ],
+    "rows": 16
+  }
+}
