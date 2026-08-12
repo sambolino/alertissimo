@@ -18,8 +18,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", nargs="?", help="empty output directory (default: /tmp/alerce-lsst-capture-TIMESTAMP)")
     args = parser.parse_args()
+    raw_oid = os.environ.get(ENV_OID, DEFAULT_OID)
+    try:
+        oid = int(raw_oid)
+    except ValueError:
+        raise SystemExit(f"ERROR: {ENV_OID} must be an integer LSST object ID: {raw_oid!r}")
     out, captured_at = prepare_output(args.output_dir, "alerce-lsst")
-    oid = os.environ.get(ENV_OID, DEFAULT_OID)
     try:
         from alerce.core import Alerce
     except ImportError as exc:

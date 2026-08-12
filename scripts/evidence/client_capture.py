@@ -39,11 +39,15 @@ def git_value(*args: str) -> str:
 
 
 def jsonable(value: Any) -> Any:
-    """Represent client-visible values in JSON without changing provider field names."""
+    """Represent client-visible values losslessly in capture-safe JSON."""
     if value is None or isinstance(value, (str, bool, int)):
         return value
     if isinstance(value, float):
-        return value if math.isfinite(value) else None
+        if math.isfinite(value):
+            return value
+        if math.isnan(value):
+            return {"__capture_float__": "nan"}
+        return {"__capture_float__": "+inf" if value > 0 else "-inf"}
     if isinstance(value, (datetime, date)):
         return value.isoformat()
     if dataclasses.is_dataclass(value):
