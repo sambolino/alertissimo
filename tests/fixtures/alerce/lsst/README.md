@@ -26,7 +26,7 @@ Counts are distinct observed scalar leaf paths after homogeneous list rows are c
 
 | Fixture/branch | Observed | Mapped | Intentionally unmapped | Delegated/structural | Unaccounted |
 |---|---:|---:|---:|---:|---:|
-| `query_objects` | 19 | 4 | 15 | 0 | 0 |
+| `query_objects` | 19 | 5 | 14 | 0 | 0 |
 | `query_object` | 15 | 9 | 6 | 0 | 0 |
 | `query_detections` | 102 | 88 | 14 | 0 | 0 |
 | `query_non_detections` | 0 | 0 | 0 | 0 | 0 |
@@ -36,6 +36,6 @@ Counts are distinct observed scalar leaf paths after homogeneous list rows are c
 
 ## Semantic audit boundary
 
-The audit covers the captured core object, detection, forced-photometry, light-curve, and classification payloads. `query_objects` is classification-bearing: the two same-OID rows are not interpreted as two astronomical objects. To avoid duplicate identical summaries, its repeated object-statistic columns are explicit semantic debt, while each captured rank-1 row produces its named classifier's selected classification. Full probability rows remain assessments rather than synthesized winners.
+The audit covers the captured core object, detection, forced-photometry, light-curve, and classification payloads. `query_objects` is classification-bearing: one OID can occur in multiple rows because separate classifiers contribute selected results. Each captured rank-1 result remains an independent `classification@{producer}:alerce` record, with the classifier/model as producer and ALeRCE as channel. The row `oid` is also emitted as a minimal `summary@lsst:alerce` so the classifier result retains its object association through the shared internal payload key/index. Repeated same-OID rows can therefore produce duplicate minimal summaries; generic summary deduplication is intentionally outside this corrective patch. The remaining repeated object-statistic columns stay intentionally unmapped rather than duplicating the full summary for every classifier row. Full probability rows remain assessments rather than synthesized winners.
 
 No authoritative active payload is claimed for unsupported `query_magstats` or `query_features`, for a non-empty non-detection row, or for uncaptured `query_feature`, classifier/class vocabulary, stamp, AVRO, or catsHTM methods.

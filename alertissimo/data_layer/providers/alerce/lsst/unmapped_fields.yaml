@@ -22,50 +22,47 @@ unmapped:
     reason: unsupported_semantic_concept
     candidate_meaning: Provider row update timestamp is distinct from the object observation time.
 - query_objects#deltamjd:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#firstmjd:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#lastmjd:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#meandec:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#meanra:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#n_det:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#n_forced:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#n_non_det:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
-- query_objects#oid:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#ranking:
     reason: unsupported_semantic_concept
     candidate_meaning: Captured query_objects row is provider-ranked; rank is used only as evidence that its supplied class is selected, not emitted as a field.
 - query_objects#sid:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#sigmadec:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#sigmara:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#stellar:
     reason: unsupported_semantic_concept
     candidate_meaning: Nullable stellar indicator is not a transient class and has no same-meaning stable ontology field.
 - query_objects#tid:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Object-statistic column is repeated once per classification result; it is intentionally not emitted to avoid duplicate summary records.
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_detections#band:
     reason: unsupported_semantic_concept
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.

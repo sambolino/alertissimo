@@ -81,3 +81,9 @@ def test_endpoints_remain_physical_contracts(origin):
                 stack.extend(value.values())
             elif isinstance(value, list):
                 stack.extend(value)
+
+
+def test_lsst_query_probabilities_excludes_unsupported_classifier_argument():
+    endpoint = load("lsst", "endpoints.yaml")["endpoints"]["query_probabilities"]
+    assert "classifier" not in endpoint["params"]
+    assert "classifier" not in endpoint["server_filters"]
