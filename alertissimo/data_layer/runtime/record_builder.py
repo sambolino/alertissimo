@@ -235,6 +235,7 @@ def build_portfolio_from_execution(
         )
         for item in items:
             fields_by_type: dict[str, dict[str, Any]] = {}
+            assignment_modes: dict[tuple[str, str], str] = {}
             for semantic_path, references in mappings.items():
                 semantic_type, relative_field = split_semantic_path(semantic_path)
                 for raw_reference in references:
@@ -258,9 +259,32 @@ def build_portfolio_from_execution(
                         "skip_null", False
                     ):
                         continue
-                    fields_by_type.setdefault(semantic_type, {})[relative_field] = (
-                        value
-                    )
+                    fields = fields_by_type.setdefault(semantic_type, {})
+                    object_key = specification.get("object_key") if specification else None
+                    field_key = (semantic_type, relative_field)
+                    mode = "composition" if object_key is not None else "ordinary"
+                    previous_mode = assignment_modes.get(field_key)
+                    if previous_mode is not None and previous_mode != mode:
+                        raise PortfolioBuildError(
+                            f"mixed ordinary assignment and object composition for "
+                            f"{semantic_type}.{relative_field}"
+                        )
+                    assignment_modes[field_key] = mode
+                    if object_key is not None:
+                        composed = fields.setdefault(relative_field, {})
+                        if not isinstance(composed, dict):
+                            raise PortfolioBuildError(
+                                f"cannot compose object field {semantic_type}.{relative_field}"
+                            )
+                        if object_key in composed and composed[object_key] != value:
+                            raise PortfolioBuildError(
+                                f"conflicting values for object key {object_key!r} in "
+                                f"{semantic_type}.{relative_field}: "
+                                f"{composed[object_key]!r} vs {value!r}"
+                            )
+                        composed[object_key] = value
+                        continue
+                    fields[relative_field] = value
                     break
 
             for semantic_type, fields in fields_by_type.items():
