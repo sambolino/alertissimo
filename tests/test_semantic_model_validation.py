@@ -1,3 +1,4 @@
+from pathlib import Path
 from itertools import count
 
 import pytest
@@ -117,3 +118,12 @@ def test_record_builder_rejects_ontology_invalid_mapping(tmp_path):
         build_portfolio_from_execution(
             _execution(), mappings_path=_mapping(tmp_path, "banana@ztf:lasair")
         )
+
+def test_semantic_enrichment_paths_and_summary_canonical_declaration():
+ from alertissimo.data_layer.semantic_model.semantic_paths import SemanticPathModel
+ model=SemanticPathModel.from_ontology()
+ for path in ('summary@lsst:antares.time.snapshot_mjd','summary@antares.photometry.i.magnitude.mean','summary@antares.photometry.i.magnitude.chi2','summary@antares.photometry.i.flux.chi2','summary@antares.photometry.i.flux.kurtosis','detection@lsst:antares.photometry.i.flux'):
+  assert model.is_valid(path),path
+ ontology=(Path(__file__).parents[1]/'alertissimo/data_layer/semantic_model/ontology.yaml').read_text()
+ summary=ontology.split('<summary>:',1)[1].split('\n<reference_image>:',1)[0]
+ assert '--canonical_for--> <summary>@{producer}:{channel}' in summary

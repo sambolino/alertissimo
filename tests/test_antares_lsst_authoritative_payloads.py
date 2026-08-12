@@ -44,3 +44,29 @@ def test_catalog_probe_direct_rows_zero_unaccounted_and_no_edges():
  p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'detection@lsst:antares'))==16 and p.edges==()
 def test_search_cone_and_by_id_summaries():
  for name,endpoint in [('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')]:assert len(records(build(endpoint,fixture(name)), 'summary@lsst:antares'))==1
+
+def test_historical_diaobject_snapshots_and_antares_feature_producer():
+ alerts=fixture('alerts.json');p=build('get_by_lsst_dia_object_id',rich_locus())
+ snapshots=[dict(r.fields) for r in records(p,'summary@lsst:antares') if 'time.snapshot_mjd' in dict(r.fields)]
+ assert len(records(p,'detection@lsst:antares'))==len(snapshots)==16
+ expected=['identity.object_id','time.snapshot_mjd','position.ra','position.dec','position.ra_error','position.dec_error','position.ra_dec_covariance','detection_count']
+ for raw,snapshot in zip(alerts,snapshots,strict=True):
+  props=raw['properties'];assert all(k in snapshot for k in expected)
+  assert snapshot['identity.object_id']==int(props['lsst_diaObject_diaObjectId'])
+  assert snapshot['time.snapshot_mjd']==props['lsst_diaObject_validityStartMjdTai']
+  assert snapshot['detection_count']==props['lsst_diaObject_nDiaSources']
+  for semantic,raw_name in [('position.ra','ra'),('position.dec','dec'),('position.ra_error','raErr'),('position.dec_error','decErr'),('position.ra_dec_covariance','ra_dec_Cov')]:assert snapshot[semantic]==props['lsst_diaObject_'+raw_name]
+ assert [s['detection_count'] for s in snapshots]==[a['properties']['lsst_diaObject_nDiaSources'] for a in alerts]
+ assert all(isinstance(s['identity.object_id'],int) for s in snapshots) and p.edges==()
+ antares=dict(records(p,'summary@antares')[0].fields)
+ assert {'photometry.i.magnitude.mean','photometry.i.magnitude.amplitude','photometry.r.magnitude.kurtosis','photometry.i.flux.chi2'}<=antares.keys()
+ assert not any('magnitude.' in k or '.flux.chi2' in k for s in snapshots for k in s)
+
+def test_diaobject_psf_aggregates_follow_frozen_alert_values():
+ alerts=fixture('alerts.json');snapshots=[dict(r.fields) for r in records(build('get_by_lsst_dia_object_id',rich_locus()),'summary@lsst:antares') if 'time.snapshot_mjd' in dict(r.fields)]
+ suffix={'psfFluxMean':'mean','psfFluxMeanErr':'mean_error','psfFluxErrMean':'flux_error_mean','psfFluxMax':'maximum','psfFluxMin':'minimum','psfFluxSigma':'sigma','psfFluxNdata':'measurement_count','psfFluxMaxSlope':'maximum_slope'}
+ for raw,snapshot in zip(alerts,snapshots,strict=True):
+  for key,value in raw['properties'].items():
+   for band in 'ugrizy':
+    prefix=f'lsst_diaObject_{band}_'
+    if key.startswith(prefix) and key[len(prefix):] in suffix:assert snapshot[f'photometry.{band}.psf.{suffix[key[len(prefix):]]}']==value

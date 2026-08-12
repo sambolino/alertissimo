@@ -905,6 +905,9 @@ levels:
   [timespan_days]:
     description: "Days between first and last detection"
     unit: days
+  [snapshot_mjd]:
+    description: "MJD at which the represented object or aggregate snapshot becomes valid"
+    unit: mjd
   [discovery_date]:
     description: "Discovery date reported by a catalog, resolver, archive, or source system"
     unit: datetime
@@ -1138,6 +1141,58 @@ levels:
       unit: mag
     [flux]:
       description: "Generic calibrated flux"
+      level: L0, L4
+      [chi2]:
+        description: "Chi-square statistic of the flux time series"
+      [kurtosis]:
+        description: "Kurtosis of the flux time series"
+      [eta_e]:
+        description: "Eta-e variability statistic of the flux time series"
+      [cusum]:
+        description: "Cumulative-sum variability statistic of the flux time series"
+      [anderson_darling_normal]:
+        description: "Anderson-Darling normality statistic of the flux time series"
+      [mean_variance]:
+        description: "Mean-variance statistic of the flux time series"
+    [magnitude]:
+      description: "Statistics derived from a magnitude time series"
+      level: L0, L4
+      [mean]:
+        description: "Mean magnitude"
+        unit: mag
+      [amplitude]:
+        description: "Magnitude-series amplitude"
+        unit: mag
+      [percent_amplitude]:
+        description: "Percent-amplitude statistic of the magnitude time series"
+      [median_absolute_deviation]:
+        description: "Median absolute deviation of magnitudes"
+        unit: mag
+      [chi2]:
+        description: "Chi-square statistic of the magnitude time series"
+      [kurtosis]:
+        description: "Kurtosis of the magnitude time series"
+      [eta_e]:
+        description: "Eta-e variability statistic of the magnitude time series"
+      [cusum]:
+        description: "Cumulative-sum variability statistic of the magnitude time series"
+      [anderson_darling_normal]:
+        description: "Anderson-Darling normality statistic of the magnitude time series"
+      [beyond_1_std]:
+        description: "Fraction of magnitudes beyond one standard deviation"
+      [beyond_2_std]:
+        description: "Fraction of magnitudes beyond two standard deviations"
+      [maximum_slope]:
+        description: "Maximum time-ordered magnitude slope"
+        unit: mag/day
+      [duration]:
+        description: "Duration of the magnitude time series"
+        unit: days
+      [linear_fit_slope]:
+        description: "Slope of a linear fit to magnitude versus time"
+        unit: mag/day
+      [linear_fit_reduced_chi2]:
+        description: "Reduced chi-square of a linear fit to magnitude versus time"
     [flux_error]:
       description: "Generic calibrated flux uncertainty"
     [mag_minus_psf]:
@@ -1956,6 +2011,8 @@ levels:
   $ref: <forced_photometry>(L0)
   $ref: <color>(L0)
   $ref: <flags>(L0)
+  $edges:
+    --canonical_for--> <summary>@{producer}:{channel}
   [detection_count]:
     description: "Total number of detections for this object"
     type: integer
