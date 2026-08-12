@@ -7,9 +7,9 @@ This directory freezes the raw evidence captured at **2026-08-12T15:54:10Z** for
 | `objects.json` | `/api/v1/objects?diaObjectId=170587117485817955&output-format=json` | 1 | None (all columns) |
 | `sources.json` | `/api/v1/sources?diaObjectId=170587117485817955&output-format=json` | 16 | None (all columns) |
 | `fp.json` | `/api/v1/fp?diaObjectId=170587117485817955&output-format=json` | 20 | None (all columns) |
-| `conesearch.json` | `/api/v1/conesearch?ra=62.4576309407&dec=-48.4814920556&radius=1&n=1000&columns=r:band,r:dec,r:diaObjectId,r:diaSourceId,r:isNegative,r:midpointMjdTai,r:psfFlux,r:psfFluxErr,r:ra,v:separation_degree&output-format=json` | 1 | Explicit ten-column projection from the capture command |
+| `conesearch.json` | `/api/v1/conesearch?ra=62.45763123249455&dec=-48.481492749718534&radius=1&n=100&columns=r:diaSourceId,r:diaObjectId,r:midpointMjdTai,r:ra,r:dec,r:band,r:psfFlux,r:psfFluxErr,r:isNegative&output-format=json` | 1 | Nine explicit Rubin fields requested; the returned payload has those nine fields plus `v:separation_degree` |
 
-The cone-request URL in the table is reconstructed from the capture command; the preserved response headers do not record the originating request URL. The cone center was RA `62.4576309407` degrees, Dec `-48.4814920556` degrees; `radius=1` is the request radius in arcseconds. The response's `v:separation_degree` is instead the measured result-to-center separation. Header files beside each response preserve the HTTP status and response metadata.
+The actual capture command is the authoritative source for the cone-request parameters shown in the table. The cone center was RA `62.45763123249455` degrees, Dec `-48.481492749718534` degrees, with `n=100`; `radius=1` is the request radius in arcseconds. The requested `columns` projection contained nine explicit Rubin fields and did not include `v:separation_degree`. Fink additionally returned `v:separation_degree`, so the response has ten fields. That additional field is the measured result-to-search-center separation, expressed in degrees. Header files beside each response preserve the HTTP status and response metadata.
 
 ## Immutable JSON checksums
 
