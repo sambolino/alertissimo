@@ -1139,6 +1139,15 @@ levels:
       [error]:
         description: "Uncertainty of the calibrated magnitude"
         unit: mag
+      [corrected]:
+        description: "Producer-corrected magnitude derived from the represented photometric measurement"
+        unit: mag
+        [error]:
+          description: "Uncertainty of the corrected magnitude under the producer's default correction assumption"
+          unit: mag
+        [extended_component_error]:
+          description: "Uncertainty of the corrected magnitude assuming a contribution from an extended component"
+          unit: mag
       level: L0, L4
       [mean]:
         description: "Mean of the magnitude time series"
@@ -1316,6 +1325,15 @@ levels:
         [error]:
           description: "PSF-fit magnitude uncertainty"
           unit: mag
+        [corrected]:
+          description: "Producer-corrected magnitude derived from the represented photometric measurement"
+          unit: mag
+          [error]:
+            description: "Uncertainty of the corrected magnitude under the producer's default correction assumption"
+            unit: mag
+          [extended_component_error]:
+            description: "Uncertainty of the corrected magnitude assuming a contribution from an extended component"
+            unit: mag
       [fit_chi2]:
         description: "Chi-square statistic of the PSF fit"
       [fit_log_likelihood]:
