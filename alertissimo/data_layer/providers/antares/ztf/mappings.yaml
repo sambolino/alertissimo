@@ -7,9 +7,6 @@ payloads:
   locus_alerts:
     endpoint: get_by_ztf_object_id
     path: alerts[]
-  locus_lightcurve:
-    endpoint: get_by_ztf_object_id
-    path: lightcurve[]
   locus_catalog_2mass:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.2mass_psc[]
