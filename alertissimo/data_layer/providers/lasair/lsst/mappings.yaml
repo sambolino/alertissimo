@@ -51,7 +51,7 @@ mappings:
   - diaSourcesList#band
   detection@lsst:lasair.photometry.{filter}.psf.flux:
   - diaSourcesList#psfFlux
-  detection@lsst:lasair.photometry.{filter}.psf.flux_error:
+  detection@lsst:lasair.photometry.{filter}.psf.flux.error:
   - diaSourcesList#psfFluxErr
   detection@lsst:lasair.quality.reliability:
   - diaSourcesList#reliability
@@ -176,55 +176,55 @@ mappings:
   crossmatch@{producer}:lasair.photometry.J.mag:
   - sherlock_position_crossmatches#J
   - sherlock_object_crossmatches#J
-  crossmatch@{producer}:lasair.photometry.J.mag_error:
+  crossmatch@{producer}:lasair.photometry.J.mag.error:
   - sherlock_position_crossmatches#JErr
   - sherlock_object_crossmatches#JErr
   crossmatch@{producer}:lasair.photometry.H.mag:
   - sherlock_position_crossmatches#H
   - sherlock_object_crossmatches#H
-  crossmatch@{producer}:lasair.photometry.H.mag_error:
+  crossmatch@{producer}:lasair.photometry.H.mag.error:
   - sherlock_position_crossmatches#HErr
   - sherlock_object_crossmatches#HErr
   crossmatch@{producer}:lasair.photometry.K.mag:
   - sherlock_position_crossmatches#K
   - sherlock_object_crossmatches#K
-  crossmatch@{producer}:lasair.photometry.K.mag_error:
+  crossmatch@{producer}:lasair.photometry.K.mag.error:
   - sherlock_position_crossmatches#KErr
   - sherlock_object_crossmatches#KErr
   crossmatch@{producer}:lasair.photometry.u.mag:
   - sherlock_position_crossmatches#_u
   - sherlock_object_crossmatches#_u
-  crossmatch@{producer}:lasair.photometry.u.mag_error:
+  crossmatch@{producer}:lasair.photometry.u.mag.error:
   - sherlock_position_crossmatches#_uErr
   - sherlock_object_crossmatches#_uErr
   crossmatch@{producer}:lasair.photometry.g.mag:
   - sherlock_position_crossmatches#_g
   - sherlock_object_crossmatches#_g
-  crossmatch@{producer}:lasair.photometry.g.mag_error:
+  crossmatch@{producer}:lasair.photometry.g.mag.error:
   - sherlock_position_crossmatches#_gErr
   - sherlock_object_crossmatches#_gErr
   crossmatch@{producer}:lasair.photometry.r.mag:
   - sherlock_position_crossmatches#_r
   - sherlock_object_crossmatches#_r
-  crossmatch@{producer}:lasair.photometry.r.mag_error:
+  crossmatch@{producer}:lasair.photometry.r.mag.error:
   - sherlock_position_crossmatches#_rErr
   - sherlock_object_crossmatches#_rErr
   crossmatch@{producer}:lasair.photometry.i.mag:
   - sherlock_position_crossmatches#_i
   - sherlock_object_crossmatches#_i
-  crossmatch@{producer}:lasair.photometry.i.mag_error:
+  crossmatch@{producer}:lasair.photometry.i.mag.error:
   - sherlock_position_crossmatches#_iErr
   - sherlock_object_crossmatches#_iErr
   crossmatch@{producer}:lasair.photometry.z.mag:
   - sherlock_position_crossmatches#_z
   - sherlock_object_crossmatches#_z
-  crossmatch@{producer}:lasair.photometry.z.mag_error:
+  crossmatch@{producer}:lasair.photometry.z.mag.error:
   - sherlock_position_crossmatches#_zErr
   - sherlock_object_crossmatches#_zErr
   crossmatch@{producer}:lasair.photometry.y.mag:
   - sherlock_position_crossmatches#_y
   - sherlock_object_crossmatches#_y
-  crossmatch@{producer}:lasair.photometry.y.mag_error:
+  crossmatch@{producer}:lasair.photometry.y.mag.error:
   - sherlock_position_crossmatches#_yErr
   - sherlock_object_crossmatches#_yErr
 transforms:

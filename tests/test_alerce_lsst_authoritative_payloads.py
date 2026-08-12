@@ -84,7 +84,7 @@ def test_real_detection_maps_safe_identity_astrometry_photometry_and_provenance(
     row=fixture("query_detections")[0]; f=dict(build("query_detections",[row]).records[0].fields)
     assert f["identity.object_id"]==170587117485817955 and f["identity.source_id"]==170587117485817955
     assert f["time.mjd"]==61217.42118006405 and f["position.ra"]==62.45761131986638 and f["position.dec"]==-48.48149141631282
-    assert f["photometry.g.psf.flux"]==2665.0413 and f["photometry.g.psf.flux_error"]==139.14035
+    assert f["photometry.g.psf.flux"]==2665.0413 and f["photometry.g.psf.flux.error"]==139.14035
     assert f["photometry.g.aperture.flux"]==3038.6384 and f["quality.signal_to_noise"]==18.848682
     assert f["identity.visit_id"]==2026062500651 and f["identity.detector_id"]==160 and f["provenance.producer.name"]=="lsst"
     assert f["image_metrics.is_positive"] is True
@@ -132,7 +132,7 @@ def test_unsupported_psf_flag_value_is_omitted_instead_of_coerced_to_false(endpo
 def test_real_forced_row_maps_canonical_forced_photometry_branch():
     row=fixture("query_forced_photometry")[0]; p=build("query_forced_photometry",[row]); f=dict(p.records[0].fields)
     assert p.records[0].semantic_type=="detection@lsst:alerce"
-    assert f["forced_photometry.i.psf.flux"]==3118.2173 and f["forced_photometry.i.psf.flux_error"]==256.24115
+    assert f["forced_photometry.i.psf.flux"]==3118.2173 and f["forced_photometry.i.psf.flux.error"]==256.24115
     assert f["time.mjd"]==61217.425639118446 and f["identity.visit_id"]==2026062500656 and p.edges==()
 
 def test_probability_row_is_classifier_produced_assessment_not_computed_best():
