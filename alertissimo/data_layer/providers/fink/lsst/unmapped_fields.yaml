@@ -1,3 +1,4 @@
+---
 broker: fink
 origin: lsst
 notes: Only audited fields without a stable semantic feature catalog path are retained here.
@@ -5,3 +6,139 @@ unmapped:
 - schema#schema:
     reason: no_stable_feature_catalog_path
     note: Raw field has no stable feature catalog semantic path.
+- objects#f:firstDiaSourceMjdTaiFink:
+    reason: ambiguous_provider_computation
+    note: Fink-computed first-source time equals the captured earliest source, but precedence relative to native firstDiaSourceMjdTai is not established.
+- objects#r:salt:
+    reason: provider_internal_metadata
+    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
+- sources#r:parentDiaSourceId:
+    reason: sentinel_relationship_identifier
+    note: 'Captured ordinary transient rows contain zero: a relationship sentinel, not this record identity.'
+- conesearch#r:parentDiaSourceId:
+    reason: sentinel_relationship_identifier
+    note: 'Captured ordinary transient rows contain zero: a relationship sentinel, not this record identity.'
+- sources#r:ssObjectId:
+    reason: sentinel_absence
+    note: Captured ordinary transient rows contain zero, denoting no Solar-System identity.
+- conesearch#r:ssObjectId:
+    reason: sentinel_absence
+    note: Captured ordinary transient rows contain zero, denoting no Solar-System identity.
+- sources#r:timeProcessedMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- conesearch#r:timeProcessedMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- fp#r:timeProcessedMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- sources#r:timeWithdrawnMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- conesearch#r:timeWithdrawnMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- fp#r:timeWithdrawnMjdTai:
+    reason: lifecycle_timestamp
+    note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
+- sources#r:scienceFlux:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- conesearch#r:scienceFlux:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- sso#r:scienceFlux:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- fp#r:scienceFlux:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- sources#r:scienceFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- conesearch#r:scienceFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- sso#r:scienceFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- fp#r:scienceFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+- sources#r:templateFlux:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- conesearch#r:templateFlux:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- sso#r:templateFlux:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- sources#r:templateFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- conesearch#r:templateFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- sso#r:templateFluxErr:
+    reason: unresolved_measurement_semantics
+    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
+- sources#r:forced_PsfFlux_flag:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- conesearch#r:forced_PsfFlux_flag:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- sources#r:forced_PsfFlux_flag_edge:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- conesearch#r:forced_PsfFlux_flag_edge:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- sources#r:forced_PsfFlux_flag_noGoodPixels:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- conesearch#r:forced_PsfFlux_flag_noGoodPixels:
+    reason: orphan_measurement_qualifier
+    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+- sources#r:reliabilityVersion:
+    reason: unstable_provider_representation
+    note: Observed historical values are strings "nan" and "0.3"; no stable quality-version concept is established.
+- conesearch#r:reliabilityVersion:
+    reason: unstable_provider_representation
+    note: Observed historical values are strings "nan" and "0.3"; no stable quality-version concept is established.
+- sources#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Observed null/integer algorithm code has no canonical concept in this pass.
+- conesearch#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Observed null/integer algorithm code has no canonical concept in this pass.
+- sources#r:trail_flag:
+    reason: mixed_historical_representation
+    note: Observed values mix string "nan" and boolean false; exact failed-flag meaning is not established.
+- conesearch#r:trail_flag:
+    reason: mixed_historical_representation
+    note: Observed values mix string "nan" and boolean false; exact failed-flag meaning is not established.
+- sources#r:salt:
+    reason: provider_internal_metadata
+    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
+- fp#r:salt:
+    reason: provider_internal_metadata
+    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
+- conesearch#v:separation_degree:
+    reason: incompatible_ontology_unit
+    note: Measured angular separation from cone-search center is in degrees; no generic numeric-scale transform is available for canonical arcsec.
+    candidate_meaning: Measured angular separation from cone-search center, in degrees.
+- conesearch#f:firstDiaSourceMjdTaiFink:
+    reason: ambiguous_provider_computation
+    note: Fink-computed first-source time has no established precedence relative to native firstDiaSourceMjdTai.
+- sso#r:reliabilityVersion:
+    reason: unstable_provider_representation
+    note: No stable canonical quality-version concept is established.
+- sso#r:trailAlgorithm:
+    reason: no_stable_feature_catalog_path
+    note: Algorithm code has no canonical concept in this pass.
+- sso#r:trail_flag:
+    reason: mixed_historical_representation
+    note: Exact failed-flag meaning and representation are not established.
