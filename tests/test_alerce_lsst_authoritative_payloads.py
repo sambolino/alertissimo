@@ -4,6 +4,7 @@ from itertools import count
 import json
 from pathlib import Path
 import pytest
+import yaml
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance, InternalPortfolioId, InternalRecordId
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
@@ -89,6 +90,33 @@ def test_real_detection_maps_safe_identity_astrometry_photometry_and_provenance(
     assert f["identity.visit_id"]==2026062500651 and f["identity.detector_id"]==160 and f["provenance.producer.name"]=="lsst"
     assert f["image_metrics.is_positive"] is True
 
+def test_later_detection_proves_object_and_measurement_id_are_distinct_integers():
+    row = fixture("query_detections")[1]
+    assert row["oid"] == 170587117485817955
+    assert row["measurement_id"] == 170587117719126124
+    fields = dict(build("query_detections", [row]).records[0].fields)
+    assert fields["identity.object_id"] == row["oid"]
+    assert fields["identity.source_id"] == row["measurement_id"]
+    assert fields["identity.object_id"] != fields["identity.source_id"]
+    assert type(fields["identity.object_id"]) is type(fields["identity.source_id"]) is int
+
+def test_detection_aliases_and_absent_relationship_ids_hold_across_full_capture():
+    for rows in (
+        fixture("query_detections"),
+        fixture("query_lightcurve")["detections"],
+    ):
+        assert all(row["diaObjectId"] == row["oid"] for row in rows)
+        assert all(row["ssObjectId"] == 0 for row in rows)
+        assert all(row["parentDiaSourceId"] == 0 for row in rows)
+
+def test_is_negative_is_inverted_for_both_boolean_values_without_mutating_fixture():
+    original = fixture("query_detections")[0]
+    for raw_value, semantic_value in ((False, True), (True, False)):
+        row = dict(original)
+        row["isNegative"] = raw_value
+        fields = dict(build("query_detections", [row]).records[0].fields)
+        assert fields["image_metrics.is_positive"] is semantic_value
+
 def test_raw_psf_flags_are_numeric_but_semantic_flags_are_strict_booleans():
     flag_fields = (
         "psfFlux_flag",
@@ -134,6 +162,53 @@ def test_real_forced_row_maps_canonical_forced_photometry_branch():
     assert p.records[0].semantic_type=="detection@lsst:alerce"
     assert f["forced_photometry.i.psf.flux"]==3118.2173 and f["forced_photometry.i.psf.flux.error"]==256.24115
     assert f["time.mjd"]==61217.425639118446 and f["identity.visit_id"]==2026062500656 and p.edges==()
+
+def test_forced_row_proves_object_and_measurement_id_are_distinct_integers():
+    row = fixture("query_forced_photometry")[0]
+    fields = dict(build("query_forced_photometry", [row]).records[0].fields)
+    assert fields["identity.object_id"] == row["oid"] == 170587117485817955
+    assert fields["identity.source_id"] == row["measurement_id"] == 170587118144323588
+    assert fields["identity.object_id"] != fields["identity.source_id"]
+    assert type(fields["identity.object_id"]) is type(fields["identity.source_id"]) is int
+
+def test_shared_rubin_detection_fields_converge_with_antares_semantic_paths():
+    antares_path = Path(__file__).parents[1] / "alertissimo/data_layer/providers/antares/lsst/mappings.yaml"
+    registries = {
+        "alerce": yaml.safe_load(MAPPINGS.read_text())["mappings"],
+        "antares": yaml.safe_load(antares_path.read_text())["mappings"],
+    }
+
+    def relative_target(provider, raw):
+        matches = [
+            target.split(f"@lsst:{provider}.", 1)[1]
+            for target, sources in registries[provider].items()
+            if raw in sources and target.startswith(f"detection@lsst:{provider}.")
+        ]
+        assert len(matches) == 1
+        return matches[0]
+
+    shared_fields = {
+        "oid": "diaObjectId",
+        "measurement_id": "diaSourceId",
+        "visit": "visit",
+        "detector": "detector",
+        "mjd": "midpointMjdTai",
+        "ra": "ra",
+        "dec": "dec",
+        "x": "x",
+        "y": "y",
+        "reliability": "reliability",
+        "snr": "snr",
+        "psfFlux": "psfFlux",
+        "psfFluxErr": "psfFluxErr",
+        "apFlux": "apFlux",
+        "apFluxErr": "apFluxErr",
+        "isNegative": "isNegative",
+    }
+    for alerce_raw, antares_raw in shared_fields.items():
+        assert relative_target("alerce", f"query_detections#{alerce_raw}") == relative_target(
+            "antares", f"locus_alerts#properties.lsst_diaSource_{antares_raw}"
+        )
 
 def test_probability_row_is_classifier_produced_assessment_not_computed_best():
     row=fixture("query_probabilities")[0]; r=build("query_probabilities",[row]).records[0]
