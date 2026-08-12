@@ -357,13 +357,11 @@ def test_dynamic_filter_binding_is_scoped_to_each_payload_item(tmp_path):
     ]
 
 
-def test_missing_dynamic_binder_leaves_placeholder_inspectable(tmp_path):
+def test_missing_dynamic_binder_omits_dependent_fields(tmp_path):
     portfolio = _build(
         tmp_path, {"candidates": [{"magpsf": 18.2}]}, _dynamic_mapping()
     )
-    assert dict(portfolio.records[0].fields) == {
-        "photometry.{filter}.psf.mag": 18.2
-    }
+    assert portfolio.records == ()
 
 
 def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):

@@ -95,14 +95,20 @@ def _resolve_dynamic_field_paths(fields: dict[str, Any]) -> dict[str, Any]:
             continue
         segments = path.split(".")
         rewritten = []
+        unresolved = False
         for segment in segments:
             name = _placeholder_name(segment)
-            if name not in bindings:
+            if name is not None and name not in bindings:
+                unresolved = True
+                break
+            if name is None:
                 rewritten.append(segment)
             elif name in SEMANTIC_IDENTIFIER_PLACEHOLDERS:
                 rewritten.append(_semantic_identifier(bindings[name]))
             else:
                 rewritten.append(str(bindings[name]))
+        if unresolved:
+            continue
         resolved[".".join(rewritten)] = value
     return resolved
 

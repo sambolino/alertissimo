@@ -7,6 +7,9 @@ payloads:
   locus_alerts:
     endpoint: get_by_ztf_object_id
     path: alerts[]
+  locus_lightcurve:
+    endpoint: get_by_ztf_object_id
+    path: lightcurve[]
   locus_catalog_2mass:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.2mass_psc[]
@@ -77,6 +80,36 @@ mappings:
   - locus_alerts#properties.ant_maglim
   detection@ztf:antares.photometry.{filter}.limit.upper_limit:
   - locus_alerts#properties.ant_survey
+  detection@ztf:antares.photometry.{filter}.aperture.mag:
+  - locus_alerts#properties.ztf_magap
+  detection@ztf:antares.photometry.{filter}.aperture.mag_error:
+  - locus_alerts#properties.ztf_sigmagap
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag:
+  - locus_alerts#properties.ztf_magapbig
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag_error:
+  - locus_alerts#properties.ztf_sigmagapbig
+  detection@ztf:antares.time.exposure:
+  - locus_alerts#properties.ztf_exptime
+  detection@ztf:antares.calibration.{filter}.zero_point:
+  - locus_alerts#properties.ztf_magzpsci
+  detection@ztf:antares.calibration.{filter}.zero_point_uncertainty:
+  - locus_alerts#properties.ztf_magzpsciunc
+  detection@ztf:antares.calibration.{filter}.zero_point_rms:
+  - locus_alerts#properties.ztf_magzpscirms
+  detection@ztf:antares.calibration.{filter}.color_coefficient:
+  - locus_alerts#properties.ztf_clrcoeff
+  detection@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
+  - locus_alerts#properties.ztf_clrcounc
+  detection@ztf:antares.provenance.processing_id:
+  - locus_alerts#properties.ztf_pid
+  detection@ztf:antares.provenance.night_id:
+  - locus_alerts#properties.ztf_nid
+  detection@ztf:antares.provenance.reference_image_id:
+  - locus_alerts#properties.ztf_rfid
+  detection@ztf:antares.provenance.producer.program.field:
+  - locus_alerts#properties.ztf_field
+  detection@ztf:antares.provenance.producer.program.id:
+  - locus_alerts#properties.ztf_programid
   detection@ztf:antares.quality.rf_real_bogus:
   - locus_alerts#properties.ztf_rb
   detection@ztf:antares.quality.rf_real_bogus.version:
@@ -97,6 +130,10 @@ mappings:
   - locus_alerts#properties.ztf_magnr
   detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag_error:
   - locus_alerts#properties.ztf_sigmagnr
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
+  - locus_alerts#properties.ztf_chinr
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
+  - locus_alerts#properties.ztf_sharpnr
   crossmatch@twomass:antares.identity.object_id:
   - locus_catalog_2mass#designation
   crossmatch@twomass:antares.position.ra:

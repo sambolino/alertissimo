@@ -10,11 +10,11 @@ To serialize client-visible Python values, datetime/Timestamp values became ISO 
 
 | Evidence branch | Mapped | Intentionally unmapped | Delegated / structural | Unaccounted |
 |---|---:|---:|---:|---:|
-| rich `get_by_ztf_object_id` composite | 68 | 834 | 712 | 0 |
+| rich `get_by_ztf_object_id` composite | 85 | 817 | 712 | 0 |
 | `get_by_id` locus core | 4 | 187 | 0 | 0 |
 | `search` locus rows | 4 | 186 | 0 | 0 |
 | `cone_search` locus rows | 4 | 186 | 0 | 0 |
-| Alert rows | 21 | 96 | 0 | 0 |
+| Alert rows | 38 | 79 | 0 | 0 |
 | 2MASS PSC | 9 | 58 | 0 | 0 |
 | AllWISE | 11 | 288 | 0 | 0 |
 | Bright Guide Star Catalog | 3 | 58 | 0 | 0 |
@@ -24,3 +24,9 @@ To serialize client-visible Python values, datetime/Timestamp values became ISO 
 | lightcurve secondary representation | 0 | 14 | 0 | 0 |
 
 The rich audit separately selects the locus core, 316 Alert rows, and each of the six direct-row catalog branches. Lightcurve fields—including ANTARES corrected magnitudes—are explicit secondary-representation debt and do not emit duplicate detections. **Unaccounted leaves: 0.**
+
+## Follow-up convergence audit
+
+The Alert audit now converges 17 additional established ZTF fields: aperture photometry (`ztf_magap`, `ztf_sigmagap`, `ztf_magapbig`, `ztf_sigmagapbig`), exposure (`ztf_exptime`), calibration (`ztf_magzpsci`, `ztf_magzpsciunc`, `ztf_magzpscirms`, `ztf_clrcoeff`, `ztf_clrcounc`), reference-source image metrics (`ztf_chinr`, `ztf_sharpnr`), and provenance (`ztf_pid`, `ztf_nid`, `ztf_rfid`, `ztf_field`, `ztf_programid`). All observed values of these mapped fields were inspected; none uses a missing-value sentinel in this fixture, so no sentinel transform is justified for them. Sentinel-bearing provider fields remain explicit debt rather than being cleaned generically.
+
+The fixture-driven lightcurve audit mechanically unions every row's keys and confirms exactly 14 observed columns, 0 mapped columns, 14 intentionally secondary columns, and 0 unaccounted columns. It produces 0 semantic records and therefore does not duplicate the 316 Alert-derived detections.

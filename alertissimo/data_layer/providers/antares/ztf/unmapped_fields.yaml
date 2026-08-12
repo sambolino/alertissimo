@@ -2261,19 +2261,10 @@ unmapped:
 - locus_alerts#properties.ztf_bimagerat:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_chinr:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_chipsf:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_classtar:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_clrcoeff:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_clrcounc:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_clrmed:
@@ -2283,11 +2274,11 @@ unmapped:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_dec:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
+    reason: redundant_raw_ztf_alias
+    candidate_meaning: redundant raw ZTF alias of emitted ANTARES normalized value
 - locus_alerts#properties.ztf_diffmaglim:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
+    reason: redundant_raw_ztf_alias
+    candidate_meaning: redundant raw ZTF alias of emitted ANTARES normalized value
 - locus_alerts#properties.ztf_distpsnr1:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
@@ -2306,13 +2297,7 @@ unmapped:
 - locus_alerts#properties.ztf_elong:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_exptime:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_fid:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_field:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_fwhm:
@@ -2333,12 +2318,6 @@ unmapped:
 - locus_alerts#properties.ztf_jdstartref:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_magap:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_magapbig:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_magdiff:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
@@ -2352,17 +2331,8 @@ unmapped:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_magpsf:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_magzpsci:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_magzpscirms:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_magzpsciunc:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
+    reason: redundant_raw_ztf_alias
+    candidate_meaning: redundant raw ZTF alias of emitted ANTARES normalized value
 - locus_alerts#properties.ztf_mindtoedge:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
@@ -2382,9 +2352,6 @@ unmapped:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_nframesref:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_nid:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_nmatches:
@@ -2408,22 +2375,13 @@ unmapped:
 - locus_alerts#properties.ztf_pdiffimfilename:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_pid:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_programid:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_programpi:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_ra:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
+    reason: redundant_raw_ztf_alias
+    candidate_meaning: redundant raw ZTF alias of emitted ANTARES normalized value
 - locus_alerts#properties.ztf_rcid:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_rfid:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_scorr:
@@ -2450,18 +2408,9 @@ unmapped:
 - locus_alerts#properties.ztf_sgscore3:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_sharpnr:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_sigmagap:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
-- locus_alerts#properties.ztf_sigmagapbig:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
 - locus_alerts#properties.ztf_sigmapsf:
-    reason: unsupported_or_ambiguous_semantics
-    candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
+    reason: redundant_raw_ztf_alias
+    candidate_meaning: redundant raw ZTF alias of emitted ANTARES normalized value
 - locus_alerts#properties.ztf_simag1:
     reason: unsupported_or_ambiguous_semantics
     candidate_meaning: Observed provider field intentionally retained as semantic debt; no exact same-meaning ontology mapping is established.
@@ -4181,3 +4130,47 @@ unmapped:
 - locus_catalog_bailer_jones#rpgeo:
     reason: catalog_specific_quantity
     candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
+
+# The client lightcurve is audited as a secondary fixture surface, not a runtime payload.
+- locus_lightcurve#time:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#alert_id:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_mjd:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_survey:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_ra:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_dec:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_passband:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_mag:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_magerr:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_maglim:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_mag_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_magerr_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_magulim_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+- locus_lightcurve#ant_magllim_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
