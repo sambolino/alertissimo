@@ -15,7 +15,8 @@ def test_payload_roots_match_endpoint_output_types():
         mappings = load(origin, "mappings.yaml")
         endpoints = load(origin, "endpoints.yaml")["endpoints"]
         for name, payload in mappings["payloads"].items():
-            expected = "[]" if endpoints[name]["output"]["type"] == "array" else "."
+            assert payload["endpoint"] in endpoints
+            expected = "[]" if endpoints[payload["endpoint"]]["output"]["type"] == "array" else "."
             assert payload["path"] == expected
             assert payload["path"] != "$"
 
