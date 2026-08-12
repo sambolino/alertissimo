@@ -16,7 +16,8 @@ endpoints:
       withupperlim:
         required: false
         type: boolean
-        description: 'If True, retrieve also upper limit measurements, and bad quality measurements. Use the column `d:tag` in your results: valid, upperlim, badquality.'
+        description: 'If True, retrieve also upper limit measurements, and bad quality measurements. Use the column `d:tag`
+          in your results: valid, upperlim, badquality.'
       withcutouts:
         required: false
         type: boolean
@@ -86,17 +87,21 @@ endpoints:
         required: false
         type: integer
         default: 1000
-        description: Maximal number of alerts to return.
+        description: Maximum HBase candidates scanned before the exact angular-separation filter is applied. A smaller n can
+          therefore return no row even when a larger n finds an exact central match; it is not solely a post-filter result
+          cap.
       startdate:
         required: false
         type: string
         default: '2019-11-01 00:00:00'
-        description: Starting date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+        description: Starting date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within
+          the specified range of dates.
       stopdate:
         required: false
         type: string
         default: now
-        description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+        description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within
+          the specified range of dates.
       window:
         required: false
         type: number
@@ -154,7 +159,8 @@ endpoints:
         - fading
         - low_state
         - new_low_state
-        description: 'Desired trend among: rising, fading. For `class=(CTA) Blazar`, two specific trends are available: low_state, new_low_state.'
+        description: 'Desired trend among: rising, fading. For `class=(CTA) Blazar`, two specific trends are available: low_state,
+          new_low_state.'
       n:
         required: false
         type: integer
@@ -279,7 +285,8 @@ endpoints:
         - Difference
         - All
         default: Science
-        description: 'Science, Template, or Difference. For output-format=array, you can also specify `kind: All` to get the 3 cutouts.'
+        description: 'Science, Template, or Difference. For output-format=array, you can also specify `kind: All` to get the
+          3 cutouts.'
       output-format:
         required: false
         type: string
@@ -292,7 +299,8 @@ endpoints:
       candid:
         required: false
         type: string
-        description: Candidate ID (long integer) of the alert belonging to the object with `objectId`. If not filled, the cutouts of the latest alert is returned
+        description: Candidate ID (long integer) of the alert belonging to the object with `objectId`. If not filled, the
+          cutouts of the latest alert is returned
       stretch:
         required: false
         type: string
@@ -313,12 +321,14 @@ endpoints:
         required: false
         type: number
         default: 0.5
-        description: The percentile value used to determine the pixel value of minimum cut level. Default is 0.5. No effect for sigmoid.
+        description: The percentile value used to determine the pixel value of minimum cut level. Default is 0.5. No effect
+          for sigmoid.
       pmax:
         required: false
         type: number
         default: 99.5
-        description: The percentile value used to determine the pixel value of maximum cut level. Default is 99.5. No effect for sigmoid.
+        description: The percentile value used to determine the pixel value of maximum cut level. Default is 99.5. No effect
+          for sigmoid.
       convolution_kernel:
         required: false
         type: string
@@ -354,15 +364,19 @@ endpoints:
       n_or_d:
         required: true
         type: string
-        description: 'IAU number of the object, or designation of the object IF the number does not exist yet. Example for numbers: 8467 (asteroid) or 10P (comet). Example for designations: 2010JO69 (asteroid) or C/2020V2 (comet). You can also give a list of object names (comma-separated).'
+        description: 'IAU number of the object, or designation of the object IF the number does not exist yet. Example for
+          numbers: 8467 (asteroid) or 10P (comet). Example for designations: 2010JO69 (asteroid) or C/2020V2 (comet). You
+          can also give a list of object names (comma-separated).'
       withEphem:
         required: false
         type: boolean
-        description: Attach ephemerides provided by the Miriade service (https://ssp.imcce.fr/webservices/miriade/api/ephemcc/), as extra columns in the results.
+        description: Attach ephemerides provided by the Miriade service (https://ssp.imcce.fr/webservices/miriade/api/ephemcc/),
+          as extra columns in the results.
       withResiduals:
         required: false
         type: boolean
-        description: Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object query (`n_or_d` cannot be a list).
+        description: Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object
+          query (`n_or_d` cannot be a list).
       withCutouts:
         required: false
         type: boolean
@@ -416,7 +430,8 @@ endpoints:
       date:
         required: true
         type: string
-        description: Observing date. This can be either a given night (YYYYMMDD), month (YYYYMM), year (YYYY), or everything (empty string).
+        description: Observing date. This can be either a given night (YYYYMMDD), month (YYYYMM), year (YYYY), or everything
+          (empty string).
       schema:
         required: false
         type: boolean
@@ -424,7 +439,8 @@ endpoints:
       columns:
         required: false
         type: string
-        description: Comma-separated data columns to transfer, e.g. 'basic:sci,basic:date'. If not specified, transfer all columns.
+        description: Comma-separated data columns to transfer, e.g. 'basic:sci,basic:date'. If not specified, transfer all
+          columns.
         role: projection
       output-format:
         required: false

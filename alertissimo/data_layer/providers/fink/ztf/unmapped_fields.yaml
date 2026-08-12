@@ -1,49 +1,1834 @@
 broker: fink
 origin: ztf
-notes: Only audited fields without a stable semantic feature catalog path are retained here.
+notes: Authoritative 2026-08-12 frozen-payload accounting. Mapped and debt references are disjoint; debt is preferred over
+  plausible but lossy semantics.
 unmapped:
-- resolver#d:source:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#name:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#d:ra:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
+- anomaly#d:DR3Name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:anomaly_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_instantness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_instantness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_m0:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_m1:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_m2:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_robustness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:blazar_stats_robustness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:cdsxmatch:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:delta_time:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:e_Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:from_upper:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:gaiaClass:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:gaiaVarFlag:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:gcvs:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:is_transient:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:jd_first_real_det:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:jdstarthist_dt:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:lc_features_g:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- anomaly#d:lc_features_r:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- anomaly#d:lower_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:mag_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:mangrove_2MASS_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:mangrove_HyperLEDA_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:mangrove_ang_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:mangrove_lum_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:mulens:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:nalerthist:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:rf_kn_vs_nonkn:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:rf_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:roid:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:sigma_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:slsn_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:snn_sn_vs_all:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:snn_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#d:spicy_class:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:spicy_id:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:tns:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:tracklet:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:upper_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- anomaly#d:vsx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:x3hsp:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#d:x4lac:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:classtar:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:clrmed:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:clrrms:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:distpsnr1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:distpsnr2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:distpsnr3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:jdendhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- anomaly#i:jdstarthist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- anomaly#i:maggaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:maggaiabright:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:ncovhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- anomaly#i:ndethist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- anomaly#i:neargaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:neargaiabright:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:nmatches:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:nmtchps:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:objectidps1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:objectidps2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:objectidps3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:sgmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:sgmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:sgmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:sgscore1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:sgscore2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:sgscore3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:simag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:simag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:simag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:srmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:srmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:srmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:ssdistnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:ssmagnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:ssnamenr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:szmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- anomaly#i:szmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:szmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- anomaly#i:tblid:
+    reason: provider_internal
+    note: Implementation or delivery metadata is explicit debt unless an exact producer/channel semantic leaf is mapped.
+- anomaly#i:zpclrcov:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#i:zpmed:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#v:classification:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- anomaly#v:constellation:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#v:firstdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#v:lapse:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- anomaly#v:lastdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- conesearch#d:cdsxmatch:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- conesearch#d:classification:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- conesearch#d:nalerthist:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- conesearch#i:jdstarthist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- conesearch#i:ndethist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- cutouts#b:cutoutDifference_stampData:
+    reason: uncaptured_optional_mode
+    note: Documented optional image plane was not present in the frozen core response; current data-product ontology cannot
+      preserve science/template/difference context without collision.
+- cutouts#b:cutoutScience_stampData:
+    reason: uncaptured_optional_mode
+    note: Documented optional image plane was not present in the frozen core response; current data-product ontology cannot
+      preserve science/template/difference context without collision.
+- cutouts#b:cutoutTemplate_stampData:
+    reason: uncaptured_optional_mode
+    note: Documented optional image plane was not present in the frozen core response; current data-product ontology cannot
+      preserve science/template/difference context without collision.
+- latests#d:DR3Name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:anomaly_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_instantness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_instantness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_m0:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_m1:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_m2:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_robustness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:blazar_stats_robustness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:cdsxmatch:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:delta_time:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:e_Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:from_upper:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:gaiaClass:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:gaiaVarFlag:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:gcvs:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:is_transient:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:jd_first_real_det:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:jdstarthist_dt:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:lc_features_g:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- latests#d:lc_features_r:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- latests#d:lower_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:mag_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:mangrove_2MASS_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:mangrove_HyperLEDA_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:mangrove_ang_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:mangrove_lum_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:mulens:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:nalerthist:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:rf_kn_vs_nonkn:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:rf_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:roid:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:sigma_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:slsn_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:snn_sn_vs_all:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:snn_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#d:spicy_class:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:spicy_id:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:tns:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:tracklet:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:upper_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- latests#d:vsx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:x3hsp:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#d:x4lac:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:classtar:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:distpsnr1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:jdendhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- latests#i:jdstarthist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- latests#i:maggaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:ndethist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- latests#i:neargaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:nmtchps:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:objectidps1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:sgmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:sgscore1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:simag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:srmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#i:ssdistnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:ssmagnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:ssnamenr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#i:szmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- latests#v:classification:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- latests#v:constellation:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:firstdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:g-r:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:lapse:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:lastdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:rate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:rate(g-r):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:sigma(g-r):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:sigma(rate(g-r)):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- latests#v:sigma(rate):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:blazar_stats_instantness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_instantness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_m0:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_m1:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_m2:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_robustness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:blazar_stats_robustness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:cdsxmatch:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:lc_features_r:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- objects#d:lower_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- objects#d:mag_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- objects#d:mangrove_2MASS_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:mangrove_HyperLEDA_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:mangrove_ang_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:mangrove_lum_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:mulens:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:nalerthist:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- objects#d:rf_kn_vs_nonkn:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:rf_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:roid:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:sigma_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- objects#d:slsn_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:snn_sn_vs_all:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:snn_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#d:tns:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:tracklet:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#d:upper_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- objects#i:classtar:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:clrmed:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:clrrms:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:distpsnr1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:distpsnr2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:distpsnr3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:jdendhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- objects#i:jdendref:
+    reason: ambiguous_upstream_semantics
+    note: Nullable reference-image JD is explicit debt because the current JD transform cannot safely omit null placeholders
+      before arithmetic.
+- objects#i:jdstarthist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- objects#i:jdstartref:
+    reason: ambiguous_upstream_semantics
+    note: Nullable reference-image JD is explicit debt because the current JD transform cannot safely omit null placeholders
+      before arithmetic.
+- objects#i:maggaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:maggaiabright:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:ncovhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- objects#i:ndethist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- objects#i:neargaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:neargaiabright:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:nmatches:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:nmtchps:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:objectidps1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:objectidps2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:objectidps3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:sgmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:sgmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:sgmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:sgscore1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:sgscore2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:sgscore3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:simag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:simag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:simag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:srmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:srmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:srmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:ssdistnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:ssmagnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:ssnamenr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:szmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- objects#i:szmag2:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:szmag3:
+    reason: structural_multiplicity
+    note: Pan-STARRS ranked counterpart 2/3 cannot be represented without collapsing rank and overwriting another counterpart.
+- objects#i:tblid:
+    reason: provider_internal
+    note: Implementation or delivery metadata is explicit debt unless an exact producer/channel semantic leaf is mapped.
+- objects#i:zpclrcov:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#i:zpmed:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:classification:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- objects#v:constellation:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:firstdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:g-r:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:lapse:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:lastdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:rate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:rate(g-r):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:sigma(g-r):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:sigma(rate(g-r)):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- objects#v:sigma(rate):
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- resolver#MType:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
 - resolver#d:declination:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#oid:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#d:internalname:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#otype:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#d:type:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#jpos:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#oname:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#d:fullname:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#z:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#d:redshift:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- resolver#nrefs:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
 - resolver#d:discoverydate:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#d:fullname:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#d:internalname:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#d:ra:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#d:redshift:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#d:type:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#i:name:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#i:number:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#i:ssnamenr:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#jdedeg:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#jpos:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#jradeg:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#name:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#nrefs:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#oid:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#oname:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#otype:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#refPos:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- resolver#z:
+    reason: query_context
+    note: Resolver schemas depend on the resolver parameter, but payload dispatch is endpoint-only; mapping this leaf would
+      conflate TNS, SIMBAD, and SSODNet records.
+- sso#d:DR3Name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:anomaly_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_instantness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_instantness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_m0:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_m1:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_m2:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_robustness_high:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:blazar_stats_robustness_low:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:cdsxmatch:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:delta_time:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:e_Plx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:from_upper:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:gaiaClass:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:gaiaVarFlag:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:gcvs:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:is_transient:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:jd_first_real_det:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:jdstarthist_dt:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:lc_features_g:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- sso#d:lc_features_r:
+    reason: opaque_feature_vector
+    note: Serialized Fink light-curve feature vector is not an ontology scalar and its internal dimensions are not exposed
+      by this payload.
+- sso#d:lower_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:mag_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:mangrove_2MASS_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:mangrove_HyperLEDA_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:mangrove_ang_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:mangrove_lum_dist:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:mulens:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:nalerthist:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:rf_kn_vs_nonkn:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:rf_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:roid:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:sigma_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:slsn_score:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:snn_sn_vs_all:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:snn_snia_vs_nonia:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#d:spicy_class:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:spicy_id:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:tns:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:tracklet:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:upper_rate:
+    reason: ontology_gap
+    note: Fink-derived history/rate datum has no exact current generic ontology leaf with its documented time-window semantics.
+- sso#d:vsx:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:x3hsp:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#d:x4lac:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:classtar:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:distpsnr1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:jdendhist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- sso#i:jdstarthist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- sso#i:maggaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:ndethist:
+    reason: ambiguous_upstream_semantics
+    note: ZTF alert-history window metadata is not promoted to an object-wide total or time until its previous-candidate semantics
+      can be represented exactly.
+- sso#i:neargaia:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:nmtchps:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:objectidps1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:sgmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:sgscore1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:simag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:srmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#i:ssdistnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:ssmagnr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:ssnamenr:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#i:szmag1:
+    reason: structural_multiplicity
+    note: Pan-STARRS counterpart rank and per-counterpart quantities cannot be represented losslessly by the current single-counterpart
+      structure.
+- sso#sso_name:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#sso_number:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#v:classification:
+    reason: ambiguous_upstream_semantics
+    note: Classifier output is intentionally withheld until model range, producer, and not-computed sentinel are representable
+      without treating sentinel values as science scores.
+- sso#v:constellation:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#v:firstdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#v:lapse:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- sso#v:lastdate:
+    reason: ontology_gap
+    note: Documented or observed payload leaf has no exact, currently validated semantic destination in this conservative
+      correction pass.
+- statistics#basic:exposures:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#basic:fields:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#basic:n_g:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#basic:n_r:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#basic:raw:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#basic:sci:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:**:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:AGB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:AGN:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:AGN_Candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Ae*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Ambiguous:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BClG:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BLLac:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BLLac_Candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BYDra:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Be*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Blazar:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Blazar_Candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Blue:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BlueSG*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:BlueStraggler:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Bubble:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:C*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_AGB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_Ae*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_Be*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_C*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_CV*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_EB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_HB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_Hsd:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_LP*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_Mi*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_RRLyr:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_RSG*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_S*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_SN*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_TTau*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_WD*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Candidate_YSO:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:CataclyV*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Cepheid:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:ClG:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:EB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Early SN Ia candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:EllipVar:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Em*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:EmG:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:EmObj:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Erupt*RCrB:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Eruptive*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:FIR:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Galaxy:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:GinCl:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:GinGroup:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:GinPair:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:GlCl:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:GravLensSystem:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:HB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:HH:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:HII:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:HMXB:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:HotSubdwarf:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:IR:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:LINER:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:LMXB:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:LPV*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:LensedQ:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:MIR:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Mira:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:NIR:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Nova:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:OH/IR:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Orion_V*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PM*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PN:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PN?:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PartofG:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Pec*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Planet:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Planet?:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PulsV*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PulsV*RVTau:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PulsV*WVir:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:PulsV*delSct:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:QSO:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:QSO_Candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RGB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RRLyr:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RSCVn:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Radio:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Radio(cm):
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RadioG:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RedSG*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RotV*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:RotV*alf2CVn:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:S*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:SB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:SG*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:SN:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:SN candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Seyfert:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Seyfert_1:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Seyfert_2:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Solar System MPC:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Solar System candidate:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Star:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Symbiotic*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:TTau*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Tracklet:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:UV:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:Unknown:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:V*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:V*?:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:WD*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:WR*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:X:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:XB:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:YSO:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:deltaCep:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:gammaBurst:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:gammaDor:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:low-mass*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:multiple_object:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:post-AGB*:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:pulsV*SX:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:simbad_gal:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#class:simbad_tot:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#key:key:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.
+- statistics#key:time:
+    reason: ontology_gap
+    note: Frozen stream-level statistic has no exact current survey leaf; it must not create a detection record.
+    candidate_meaning: Fink/ZTF daily stream aggregate.

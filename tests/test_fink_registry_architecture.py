@@ -42,7 +42,10 @@ def test_mapped_and_unmapped_are_disjoint_and_unmapped_is_real():
 
 def test_colons_in_raw_field_names_are_preserved():
     assert "objects#r:diaObjectId" in load("lsst", "mappings.yaml")["mappings"]["summary@lsst:fink.identity.object_id"]
-    assert "statistics#basic:sci" in {ref for refs in load("ztf", "mappings.yaml")["mappings"].values() for ref in refs}
+    ztf_debt = {
+        next(iter(entry)) for entry in load("ztf", "unmapped_fields.yaml")["unmapped"]
+    }
+    assert "statistics#basic:sci" in ztf_debt
 
 
 def test_cutout_mappings_are_data_products():

@@ -130,11 +130,6 @@ mappings:
   - sso#i:chipsf
   - latests#i:chipsf
   - anomaly#i:chipsf
-  classification@fink.assessment.star_galaxy.score:
-  - objects#i:classtar
-  - sso#i:classtar
-  - latests#i:classtar
-  - anomaly#i:classtar
   detection@ztf:fink.image_metrics.fwhm:
   - objects#i:fwhm
   - anomaly#i:fwhm
@@ -201,9 +196,6 @@ mappings:
   detection@ztf:fink.provenance.channel.version:
   - objects#i:fink_broker_version
   - anomaly#i:fink_broker_version
-  detection@ztf:fink.provenance.producer.science_version:
-  - objects#i:fink_science_version
-  - anomaly#i:fink_science_version
   detection@ztf:fink.provenance.producer.schema_version:
   - objects#i:schemavsn
   - anomaly#i:schemavsn
@@ -260,26 +252,6 @@ mappings:
   detection@ztf:fink.image_metrics.sky_background:
   - objects#i:sky
   - anomaly#i:sky
-  detection@ztf:fink.provenance.channel.table_id:
-  - objects#i:tblid
-  - anomaly#i:tblid
-  summary@ztf:fink.detection_count:
-  - objects#i:ndethist
-  - conesearch#i:ndethist
-  - sso#i:ndethist
-  - latests#i:ndethist
-  - anomaly#i:ndethist
-  summary@ztf:fink.time.first_mjd:
-  - objects#i:jdstarthist
-  - conesearch#i:jdstarthist
-  - sso#i:jdstarthist
-  - latests#i:jdstarthist
-  - anomaly#i:jdstarthist
-  summary@ztf:fink.time.last_mjd:
-  - objects#i:jdendhist
-  - sso#i:jdendhist
-  - latests#i:jdendhist
-  - anomaly#i:jdendhist
   detection@ztf:fink.reference_image.nearest_source.separation.total:
   - objects#i:distnr
   - sso#i:distnr
@@ -303,407 +275,1075 @@ mappings:
   - objects#i:decnr
   - anomaly#i:decnr
   detection@ztf:fink.reference_image.time.first_mjd:
-  - objects#i:jdstartref
   - anomaly#i:jdstartref
   detection@ztf:fink.reference_image.time.last_mjd:
-  - objects#i:jdendref
   - anomaly#i:jdendref
   detection@ztf:fink.reference_image.nframes:
   - objects#i:nframesref
   - anomaly#i:nframesref
-  summary@ztf:fink.coverage_count:
-  - objects#i:ncovhist
-  - anomaly#i:ncovhist
   detection@ztf:fink.calibration.{filter}.color_coefficient:
   - objects#i:clrcoeff
   - anomaly#i:clrcoeff
   detection@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
   - objects#i:clrcounc
   - anomaly#i:clrcounc
-  detection@ztf:fink.calibration.nmatches:
-  - objects#i:nmatches
-  - anomaly#i:nmatches
-  detection@ztf:fink.calibration.color_median:
-  - objects#i:clrmed
-  - anomaly#i:clrmed
-  detection@ztf:fink.calibration.color_rms:
-  - objects#i:clrrms
-  - anomaly#i:clrrms
-  detection@ztf:fink.calibration.{filter}.zero_point_covariance:
-  - objects#i:zpclrcov
-  - anomaly#i:zpclrcov
-  detection@ztf:fink.calibration.zp_median:
-  - objects#i:zpmed
-  - anomaly#i:zpmed
-  summary@ztf:fink.time.first_detection:
-  - objects#v:firstdate
-  - latests#v:firstdate
-  - sso#v:firstdate
-  - anomaly#v:firstdate
-  summary@ztf:fink.time.last_detection:
-  - objects#v:lastdate
-  - latests#v:lastdate
-  - sso#v:lastdate
-  - anomaly#v:lastdate
-  summary@ztf:fink.time.timespan_days:
-  - objects#v:lapse
-  - latests#v:lapse
-  - sso#v:lapse
-  - anomaly#v:lapse
-  summary@ztf:fink.position.constellation:
-  - objects#v:constellation
-  - latests#v:constellation
-  - sso#v:constellation
-  - anomaly#v:constellation
-  summary@ztf:fink.photometry.{filter}.mag.rate:
-  - objects#v:rate
-  - latests#v:rate
-  summary@ztf:fink.photometry.{filter}.mag.rate_error:
-  - objects#v:sigma(rate)
-  - latests#v:sigma(rate)
-  summary@ztf:fink.color.{filter1-filter2}.diff:
-  - objects#v:g-r
-  - latests#v:g-r
-  summary@ztf:fink.color.{filter1-filter2}.error:
-  - objects#v:sigma(g-r)
-  - latests#v:sigma(g-r)
-  summary@ztf:fink.color.{filter1-filter2}.rate:
-  - objects#v:rate(g-r)
-  - latests#v:rate(g-r)
-  summary@ztf:fink.color.{filter1-filter2}.rate_error:
-  - objects#v:sigma(rate(g-r))
-  - latests#v:sigma(rate(g-r))
-  classification@fink.best.class:
-  - objects#v:classification
-  - latests#v:classification
-  - sso#v:classification
-  - anomaly#v:classification
-  classification@fink.assessment.derived.class:
-  - conesearch#d:classification
-  classification@fink.assessment.rf_snia_vs_nonia.probability:
-  - objects#d:rf_snia_vs_nonia
-  - sso#d:rf_snia_vs_nonia
-  - latests#d:rf_snia_vs_nonia
-  - anomaly#d:rf_snia_vs_nonia
-  classification@fink.assessment.sn_vs_all.probability:
-  - objects#d:snn_sn_vs_all
-  - sso#d:snn_sn_vs_all
-  - latests#d:snn_sn_vs_all
-  - anomaly#d:snn_sn_vs_all
-  classification@fink.assessment.snn_snia_vs_nonia.probability:
-  - objects#d:snn_snia_vs_nonia
-  - sso#d:snn_snia_vs_nonia
-  - latests#d:snn_snia_vs_nonia
-  - anomaly#d:snn_snia_vs_nonia
-  classification@fink.assessment.kn_vs_nonkn.probability:
-  - objects#d:rf_kn_vs_nonkn
-  - sso#d:rf_kn_vs_nonkn
-  - latests#d:rf_kn_vs_nonkn
-  - anomaly#d:rf_kn_vs_nonkn
-  classification@fink.assessment.microlensing.score:
-  - objects#d:mulens
-  - sso#d:mulens
-  - latests#d:mulens
-  - anomaly#d:mulens
-  classification@fink.assessment.slsn.score:
-  - objects#d:slsn_score
-  - sso#d:slsn_score
-  - latests#d:slsn_score
-  - anomaly#d:slsn_score
-  classification@fink.assessment.anomaly.score:
-  - sso#d:anomaly_score
-  - latests#d:anomaly_score
-  - anomaly#d:anomaly_score
-  classification@fink.assessment.blazar_m0.value:
-  - objects#d:blazar_stats_m0
-  - sso#d:blazar_stats_m0
-  - latests#d:blazar_stats_m0
-  - anomaly#d:blazar_stats_m0
-  classification@fink.assessment.blazar_m1.value:
-  - objects#d:blazar_stats_m1
-  - sso#d:blazar_stats_m1
-  - latests#d:blazar_stats_m1
-  - anomaly#d:blazar_stats_m1
-  classification@fink.assessment.blazar_m2.value:
-  - objects#d:blazar_stats_m2
-  - sso#d:blazar_stats_m2
-  - latests#d:blazar_stats_m2
-  - anomaly#d:blazar_stats_m2
-  classification@fink.assessment.blazar_instantness_high.score:
-  - objects#d:blazar_stats_instantness_high
-  - sso#d:blazar_stats_instantness_high
-  - latests#d:blazar_stats_instantness_high
-  - anomaly#d:blazar_stats_instantness_high
-  classification@fink.assessment.blazar_instantness_low.score:
-  - objects#d:blazar_stats_instantness_low
-  - sso#d:blazar_stats_instantness_low
-  - latests#d:blazar_stats_instantness_low
-  - anomaly#d:blazar_stats_instantness_low
-  classification@fink.assessment.blazar_robustness_high.score:
-  - objects#d:blazar_stats_robustness_high
-  - sso#d:blazar_stats_robustness_high
-  - latests#d:blazar_stats_robustness_high
-  - anomaly#d:blazar_stats_robustness_high
-  classification@fink.assessment.blazar_robustness_low.score:
-  - objects#d:blazar_stats_robustness_low
-  - sso#d:blazar_stats_robustness_low
-  - latests#d:blazar_stats_robustness_low
-  - anomaly#d:blazar_stats_robustness_low
-  classification@fink.assessment.transient.value:
-  - sso#d:is_transient
-  - latests#d:is_transient
-  - anomaly#d:is_transient
-  detection@ztf:fink.solar_system.roid:
-  - objects#d:roid
-  - sso#d:roid
-  - latests#d:roid
-  - anomaly#d:roid
-  detection@ztf:fink.solar_system.mpc_match.name:
-  - objects#i:ssnamenr
-  - sso#i:ssnamenr
-  - latests#i:ssnamenr
-  - anomaly#i:ssnamenr
-  detection@ztf:fink.solar_system.mpc_match.separation.total:
-  - objects#i:ssdistnr
-  - sso#i:ssdistnr
-  - latests#i:ssdistnr
-  - anomaly#i:ssdistnr
-  detection@ztf:fink.solar_system.mpc_match.magnitude:
-  - objects#i:ssmagnr
-  - sso#i:ssmagnr
-  - latests#i:ssmagnr
-  - anomaly#i:ssmagnr
-  detection@ztf:fink.solar_system.iau_name:
-  - sso#sso_name
-  detection@ztf:fink.solar_system.iau_number:
-  - sso#sso_number
-  crossmatch@tns:fink.identity.object_id:
-  - objects#d:tns
-  - sso#d:tns
-  - latests#d:tns
-  - anomaly#d:tns
-  detection@ztf:fink.satellite.tracklet_id:
-  - objects#d:tracklet
-  - sso#d:tracklet
-  - latests#d:tracklet
-  - anomaly#d:tracklet
-  crossmatch@gaia:fink.classification.assessment.variability.flag:
-  - sso#d:gaiaVarFlag
-  - latests#d:gaiaVarFlag
-  - anomaly#d:gaiaVarFlag
-  crossmatch@gaia:fink.classification.assessment.variability.class:
-  - sso#d:gaiaClass
-  - latests#d:gaiaClass
-  - anomaly#d:gaiaClass
-  crossmatch@gaia:fink.separation.total:
-  - objects#i:neargaia
-  - sso#i:neargaia
-  - latests#i:neargaia
-  - anomaly#i:neargaia
-  crossmatch@gaia_bright:fink.separation.total:
-  - objects#i:neargaiabright
-  - anomaly#i:neargaiabright
-  crossmatch@gaia:fink.photometry.gaia_g.mag:
-  - objects#i:maggaia
-  - sso#i:maggaia
-  - latests#i:maggaia
-  - anomaly#i:maggaia
-  crossmatch@gaia_bright:fink.photometry.gaia_g.mag:
-  - objects#i:maggaiabright
-  - anomaly#i:maggaiabright
-  crossmatch@simbad:fink.classification.best.class:
-  - objects#d:cdsxmatch
-  - conesearch#d:cdsxmatch
-  - sso#d:cdsxmatch
-  - latests#d:cdsxmatch
-  - anomaly#d:cdsxmatch
-  crossmatch@gaia:fink.identity.object_id:
-  - sso#d:DR3Name
-  - latests#d:DR3Name
-  - anomaly#d:DR3Name
-  crossmatch@gaia:fink.astrometric_solution.parallax:
-  - sso#d:Plx
-  - latests#d:Plx
-  - anomaly#d:Plx
-  crossmatch@gaia:fink.astrometric_solution.parallax_error:
-  - sso#d:e_Plx
-  - latests#d:e_Plx
-  - anomaly#d:e_Plx
-  crossmatch@gcvs:fink.classification.best.class:
-  - sso#d:gcvs
-  - latests#d:gcvs
-  - anomaly#d:gcvs
-  crossmatch@vsx:fink.classification.best.class:
-  - sso#d:vsx
-  - latests#d:vsx
-  - anomaly#d:vsx
-  crossmatch@spicy:fink.identity.object_id:
-  - sso#d:spicy_id
-  - latests#d:spicy_id
-  - anomaly#d:spicy_id
-  crossmatch@spicy:fink.classification.best.class:
-  - sso#d:spicy_class
-  - latests#d:spicy_class
-  - anomaly#d:spicy_class
-  crossmatch@3hsp:fink.identity.object_id:
-  - sso#d:x3hsp
-  - latests#d:x3hsp
-  - anomaly#d:x3hsp
-  crossmatch@4lac:fink.identity.object_id:
-  - sso#d:x4lac
-  - latests#d:x4lac
-  - anomaly#d:x4lac
-  crossmatch@mangrove:fink.identity.object_id:
-  - objects#d:mangrove_2MASS_name
-  - sso#d:mangrove_2MASS_name
-  - latests#d:mangrove_2MASS_name
-  - anomaly#d:mangrove_2MASS_name
-  crossmatch@mangrove:fink.identity.hyperleda_id:
-  - objects#d:mangrove_HyperLEDA_name
-  - sso#d:mangrove_HyperLEDA_name
-  - latests#d:mangrove_HyperLEDA_name
-  - anomaly#d:mangrove_HyperLEDA_name
-  crossmatch@mangrove:fink.separation.total:
-  - objects#d:mangrove_ang_dist
-  - sso#d:mangrove_ang_dist
-  - latests#d:mangrove_ang_dist
-  - anomaly#d:mangrove_ang_dist
-  crossmatch@mangrove:fink.luminosity_distance:
-  - objects#d:mangrove_lum_dist
-  - sso#d:mangrove_lum_dist
-  - latests#d:mangrove_lum_dist
-  - anomaly#d:mangrove_lum_dist
-  crossmatch@panstarrs:fink.match_count:
-  - objects#i:nmtchps
-  - sso#i:nmtchps
-  - latests#i:nmtchps
-  - anomaly#i:nmtchps
-  crossmatch@panstarrs:fink:
-  - objects#i:objectidps1
-  - sso#i:objectidps1
-  - latests#i:objectidps1
-  - anomaly#i:objectidps1
-  - objects#i:distpsnr1
-  - sso#i:distpsnr1
-  - latests#i:distpsnr1
-  - anomaly#i:distpsnr1
-  - objects#i:sgmag1
-  - sso#i:sgmag1
-  - latests#i:sgmag1
-  - anomaly#i:sgmag1
-  - objects#i:srmag1
-  - sso#i:srmag1
-  - latests#i:srmag1
-  - anomaly#i:srmag1
-  - objects#i:simag1
-  - sso#i:simag1
-  - latests#i:simag1
-  - anomaly#i:simag1
-  - objects#i:szmag1
-  - sso#i:szmag1
-  - latests#i:szmag1
-  - anomaly#i:szmag1
-  - objects#i:sgscore1
-  - sso#i:sgscore1
-  - latests#i:sgscore1
-  - anomaly#i:sgscore1
-  - objects#i:objectidps2
-  - anomaly#i:objectidps2
-  - objects#i:distpsnr2
-  - anomaly#i:distpsnr2
-  - objects#i:sgmag2
-  - anomaly#i:sgmag2
-  - objects#i:srmag2
-  - anomaly#i:srmag2
-  - objects#i:simag2
-  - anomaly#i:simag2
-  - objects#i:szmag2
-  - anomaly#i:szmag2
-  - objects#i:sgscore2
-  - anomaly#i:sgscore2
-  - objects#i:objectidps3
-  - anomaly#i:objectidps3
-  - objects#i:distpsnr3
-  - anomaly#i:distpsnr3
-  - objects#i:sgmag3
-  - anomaly#i:sgmag3
-  - objects#i:srmag3
-  - anomaly#i:srmag3
-  - objects#i:simag3
-  - anomaly#i:simag3
-  - objects#i:szmag3
-  - anomaly#i:szmag3
-  - objects#i:sgscore3
-  - anomaly#i:sgscore3
-  lightcurve@ztf:fink.g.feature_vector:
-  - sso#d:lc_features_g
-  - latests#d:lc_features_g
-  - anomaly#d:lc_features_g
-  lightcurve@ztf:fink.r.feature_vector:
-  - objects#d:lc_features_r
-  - sso#d:lc_features_r
-  - latests#d:lc_features_r
-  - anomaly#d:lc_features_r
-  summary@ztf:fink.time.first_real_detection_5sigma_mjd:
-  - sso#d:jd_first_real_det
-  - latests#d:jd_first_real_det
-  - anomaly#d:jd_first_real_det
-  summary@ztf:fink.time.delta_from_first_detection:
-  - sso#d:jdstarthist_dt
-  - latests#d:jdstarthist_dt
-  - anomaly#d:jdstarthist_dt
-  summary@ztf:fink.magnitude_rate:
-  - objects#d:mag_rate
-  - sso#d:mag_rate
-  - latests#d:mag_rate
-  - anomaly#d:mag_rate
-  summary@ztf:fink.magnitude_rate_error:
-  - objects#d:sigma_rate
-  - sso#d:sigma_rate
-  - latests#d:sigma_rate
-  - anomaly#d:sigma_rate
-  summary@ztf:fink.rate_lower_percentile:
-  - objects#d:lower_rate
-  - sso#d:lower_rate
-  - latests#d:lower_rate
-  - anomaly#d:lower_rate
-  summary@ztf:fink.rate_upper_percentile:
-  - objects#d:upper_rate
-  - sso#d:upper_rate
-  - latests#d:upper_rate
-  - anomaly#d:upper_rate
-  summary@ztf:fink.delta_time_rate:
-  - sso#d:delta_time
-  - latests#d:delta_time
-  - anomaly#d:delta_time
-  summary@ztf:fink.from_upper_limit:
-  - sso#d:from_upper
-  - latests#d:from_upper
-  - anomaly#d:from_upper
-  summary@ztf:fink.lightcurve_detection_count:
-  - objects#d:nalerthist
-  - conesearch#d:nalerthist
-  - sso#d:nalerthist
-  - latests#d:nalerthist
-  - anomaly#d:nalerthist
-  data_product@ztf:fink.payload:
-  - cutouts#b:cutoutScience_stampData
-  - cutouts#b:cutoutTemplate_stampData
-  - cutouts#b:cutoutDifference_stampData
-  portfolio.survey@ztf:fink.exposure_count:
-  - statistics#basic:exposures
-  portfolio.survey@ztf:fink.field_count:
-  - statistics#basic:fields
-  portfolio.survey@ztf:fink.raw_alerts:
-  - statistics#basic:raw
-  portfolio.survey@ztf:fink.science_alerts:
-  - statistics#basic:sci
-  portfolio.survey@ztf:fink.filter_counts:
-  - statistics#basic:n_g
-  - statistics#basic:n_r
-  portfolio.survey@ztf:fink.class_distribution:
-  - statistics#class:*
-  portfolio.survey@ztf:fink.snapshot_key:
-  - statistics#key:key
-  portfolio.survey@ztf:fink.time.snapshot_datetime:
-  - statistics#key:time
+  detection@ztf:fink.provenance.channel.science_version:
+  - objects#i:fink_science_version
+  - anomaly#i:fink_science_version
+transforms:
+  detection@ztf:fink.photometry.{filter}:
+    objects#i:fid:
+      type: value_map
+      map: &id001
+        1: g
+        2: r
+        3: i
+        '1': g
+        '2': r
+        '3': i
+      default: null
+      skip_null: true
+      note: 'ZTF fid convention: 1=g, 2=r, 3=i; unknown IDs are not semantic passbands.'
+    conesearch#i:fid:
+      type: value_map
+      map: *id001
+      default: null
+      skip_null: true
+      note: 'ZTF fid convention: 1=g, 2=r, 3=i; unknown IDs are not semantic passbands.'
+    latests#i:fid:
+      type: value_map
+      map: *id001
+      default: null
+      skip_null: true
+      note: 'ZTF fid convention: 1=g, 2=r, 3=i; unknown IDs are not semantic passbands.'
+    sso#i:fid:
+      type: value_map
+      map: *id001
+      default: null
+      skip_null: true
+      note: 'ZTF fid convention: 1=g, 2=r, 3=i; unknown IDs are not semantic passbands.'
+    anomaly#i:fid:
+      type: value_map
+      map: *id001
+      default: null
+      skip_null: true
+      note: 'ZTF fid convention: 1=g, 2=r, 3=i; unknown IDs are not semantic passbands.'
+  detection@ztf:fink.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
+      note: Native ZTF candidate jd is Julian Date; ontology leaf is MJD.
+    conesearch#i:jd:
+      type: jd_to_mjd
+      note: Native ZTF candidate jd is Julian Date; ontology leaf is MJD.
+    latests#i:jd:
+      type: jd_to_mjd
+      note: Native ZTF candidate jd is Julian Date; ontology leaf is MJD.
+    sso#i:jd:
+      type: jd_to_mjd
+      note: Native ZTF candidate jd is Julian Date; ontology leaf is MJD.
+    anomaly#i:jd:
+      type: jd_to_mjd
+      note: Native ZTF candidate jd is Julian Date; ontology leaf is MJD.
+  detection@ztf:fink.image_metrics.is_positive:
+    objects#i:isdiffpos:
+      type: value_map
+      map: &id002
+        t: true
+        f: false
+        '1': true
+        '0': false
+        1: true
+        0: false
+      default: null
+      skip_null: true
+      note: Strict normalization of documented ZTF Avro boolean encodings; no truthiness fallback.
+    sso#i:isdiffpos:
+      type: value_map
+      map: *id002
+      default: null
+      skip_null: true
+      note: Strict normalization of documented ZTF Avro boolean encodings; no truthiness fallback.
+    latests#i:isdiffpos:
+      type: value_map
+      map: *id002
+      default: null
+      skip_null: true
+      note: Strict normalization of documented ZTF Avro boolean encodings; no truthiness fallback.
+    anomaly#i:isdiffpos:
+      type: value_map
+      map: *id002
+      default: null
+      skip_null: true
+      note: Strict normalization of documented ZTF Avro boolean encodings; no truthiness fallback.
+  detection@ztf:fink.photometry.{filter}.limit.upper_limit:
+    objects#d:tag:
+      type: value_map
+      map:
+        upperlim: true
+        valid: null
+        badquality: null
+      default: null
+      skip_null: true
+      note: Fink history tag is categorical; only upperlim asserts an upper limit.
+  detection@ztf:fink.separation.from_search_center:
+    conesearch#v:separation_degree:
+      type: scale
+      factor: 3600
+      note: Fink conesearch v:separation_degree is degrees; ontology unit is arcsec.
+  detection@ztf:fink.reference_image.time.first_mjd:
+    anomaly#i:jdstartref:
+      type: jd_to_mjd
+      note: Native ZTF reference-image time is JD; ontology leaf is MJD.
+  detection@ztf:fink.reference_image.time.last_mjd:
+    anomaly#i:jdendref:
+      type: jd_to_mjd
+      note: Native ZTF reference-image time is JD; ontology leaf is MJD.
+  detection@ztf:fink.position.ra:
+    objects#i:ra:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:ra:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:ra:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:ra:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:ra:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.position.dec:
+    objects#i:dec:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:dec:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:dec:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:dec:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:dec:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.position.image_x:
+    objects#i:xpos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:xpos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:xpos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:xpos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.position.image_y:
+    objects#i:ypos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:ypos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:ypos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:ypos:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.position.distance_to_edge:
+    objects#i:mindtoedge:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:mindtoedge:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.psf.mag:
+    objects#i:magpsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:magpsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:magpsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:magpsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magpsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.psf.mag.error:
+    objects#i:sigmapsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:sigmapsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:sigmapsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:sigmapsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sigmapsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.limit.mag:
+    objects#i:diffmaglim:
+      type: to_float
+      skip_null: true
+      note: Normalize JSON string magnitudes in upper-limit rows to ontology numeric magnitude.
+    sso#i:diffmaglim:
+      type: to_float
+      skip_null: true
+      note: Normalize JSON string magnitudes in upper-limit rows to ontology numeric magnitude.
+    latests#i:diffmaglim:
+      type: to_float
+      skip_null: true
+      note: Normalize JSON string magnitudes in upper-limit rows to ontology numeric magnitude.
+    anomaly#i:diffmaglim:
+      type: to_float
+      skip_null: true
+      note: Normalize JSON string magnitudes in upper-limit rows to ontology numeric magnitude.
+  detection@ztf:fink.photometry.{filter}.limit.mag_offset_from_limit:
+    objects#i:magfromlim:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magfromlim:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.calibration.{filter}.zero_point:
+    objects#i:magzpsci:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:magzpsci:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:magzpsci:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magzpsci:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.calibration.{filter}.zero_point_rms:
+    objects#i:magzpscirms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magzpscirms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.calibration.{filter}.zero_point_uncertainty:
+    objects#i:magzpsciunc:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magzpsciunc:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.time.exposure:
+    objects#i:exptime:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:exptime:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.aperture.mag:
+    objects#i:magap:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magap:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag:
+    objects#i:magapbig:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magapbig:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.aperture.mag.error:
+    objects#i:sigmagap:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sigmagap:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag.error:
+    objects#i:sigmagapbig:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sigmagapbig:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.mag_minus_psf:
+    objects#i:magdiff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magdiff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.quality.real_bogus:
+    objects#i:drb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:drb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:drb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:drb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:drb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.quality.rf_real_bogus:
+    objects#i:rb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:rb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:rb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:rb:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.photometry.{filter}.psf.fit_chi2:
+    objects#i:chipsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:chipsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:chipsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:chipsf:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.fwhm:
+    objects#i:fwhm:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:fwhm:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.elongation:
+    objects#i:elong:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:elong:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.aimage:
+    objects#i:aimage:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:aimage:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.bimage:
+    objects#i:bimage:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:bimage:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.aimage_ratio:
+    objects#i:aimagerat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:aimagerat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.bimage_ratio:
+    objects#i:bimagerat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:bimagerat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
+    objects#i:chinr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:chinr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.image_metrics.sharpness:
+    objects#i:sharpnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sharpnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.quality.real_bogus.version:
+    objects#i:drbversion:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:drbversion:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.quality.rf_real_bogus.version:
+    objects#i:rbversion:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:rbversion:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  summary@ztf:fink.identity.object_id:
+    objects#i:objectId:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:objectId:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:objectId:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:objectId:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:objectId:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.identity.alert_id:
+    objects#i:candid:
+      type: value_map
+      map:
+        -1: null
+        '-1': null
+      skip_null: true
+      note: Fink upper-limit rows use -1 because no alert candidate exists.
+    conesearch#i:candid:
+      type: value_map
+      map:
+        -1: null
+        '-1': null
+      skip_null: true
+      note: Fink upper-limit rows use -1 because no alert candidate exists.
+    sso#i:candid:
+      type: value_map
+      map:
+        -1: null
+        '-1': null
+      skip_null: true
+      note: Fink upper-limit rows use -1 because no alert candidate exists.
+    latests#i:candid:
+      type: value_map
+      map:
+        -1: null
+        '-1': null
+      skip_null: true
+      note: Fink upper-limit rows use -1 because no alert candidate exists.
+    anomaly#i:candid:
+      type: value_map
+      map:
+        -1: null
+        '-1': null
+      skip_null: true
+      note: Fink upper-limit rows use -1 because no alert candidate exists.
+  detection@ztf:fink.identity.field_id:
+    objects#i:field:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:field:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:field:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:field:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.identity.night_id:
+    objects#i:nid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:nid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:nid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:nid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.program_id:
+    objects#i:programid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:programid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.program_pi:
+    objects#i:programpi:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:programpi:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.channel.name:
+    objects#i:publisher:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:publisher:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:publisher:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:publisher:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.channel.version:
+    objects#i:fink_broker_version:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:fink_broker_version:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.schema_version:
+    objects#i:schemavsn:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:schemavsn:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.pipeline_id:
+    objects#i:pid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:pid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.reference_image_id:
+    objects#i:rfid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:rfid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.diffim_filename:
+    objects#i:pdiffimfilename:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:pdiffimfilename:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.too_flag:
+    objects#i:tooflag:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:tooflag:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:tooflag:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:tooflag:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.producer.rcid:
+    objects#i:rcid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:rcid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:rcid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:rcid:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.nbad_pixels:
+    objects#i:nbad:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:nbad:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.nneg_pixels:
+    objects#i:nneg:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:nneg:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.pixel_sum_ratio:
+    objects#i:sumrat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sumrat:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.scorr:
+    objects#i:scorr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:scorr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.ssnrms:
+    objects#i:ssnrms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:ssnrms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.dsnrms:
+    objects#i:dsnrms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:dsnrms:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.dsdiff:
+    objects#i:dsdiff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:dsdiff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.seeratio:
+    objects#i:seeratio:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:seeratio:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.image_metrics.sky_background:
+    objects#i:sky:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sky:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.separation.total:
+    objects#i:distnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:distnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:distnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:distnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    conesearch#i:distnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag:
+    objects#i:magnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:magnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:magnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:magnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
+    objects#i:sigmagnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    sso#i:sigmagnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    latests#i:sigmagnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:sigmagnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.position.ra:
+    objects#i:ranr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:ranr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nearest_source.position.dec:
+    objects#i:decnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:decnr:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.reference_image.nframes:
+    objects#i:nframesref:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:nframesref:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.calibration.{filter}.color_coefficient:
+    objects#i:clrcoeff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:clrcoeff:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
+    objects#i:clrcounc:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:clrcounc:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+  detection@ztf:fink.provenance.channel.science_version:
+    objects#i:fink_science_version:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
+    anomaly#i:fink_science_version:
+      type: value_map
+      map: {}
+      skip_null: true
+      note: Omit null placeholders while preserving non-null authoritative values.
