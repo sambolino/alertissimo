@@ -364,100 +364,253 @@ mappings:
   - locus_alerts#properties.lsst_diaObject_z_psfFluxMin
   summary@lsst:antares.photometry.z.psf.measurement_count:
   - locus_alerts#properties.lsst_diaObject_z_psfFluxNdata
-  summary@antares.photometry.i.magnitude.amplitude:
+  summary@antares.photometry.i.magnitude.half_amplitude:
   - locus#properties.feature_amplitude_magn_i
-  summary@antares.photometry.r.magnitude.amplitude:
+  - locus_by_id#properties.feature_amplitude_magn_i
+  - search_loci#properties.feature_amplitude_magn_i
+  - cone_loci#properties.feature_amplitude_magn_i
+  summary@antares.photometry.r.magnitude.half_amplitude:
   - locus#properties.feature_amplitude_magn_r
-  summary@antares.photometry.z.magnitude.amplitude:
+  - locus_by_id#properties.feature_amplitude_magn_r
+  - search_loci#properties.feature_amplitude_magn_r
+  - cone_loci#properties.feature_amplitude_magn_r
+  summary@antares.photometry.z.magnitude.half_amplitude:
   - locus#properties.feature_amplitude_magn_z
+  - locus_by_id#properties.feature_amplitude_magn_z
+  - search_loci#properties.feature_amplitude_magn_z
+  - cone_loci#properties.feature_amplitude_magn_z
   summary@antares.photometry.i.flux.anderson_darling_normal:
   - locus#properties.feature_anderson_darling_normal_flux_i
+  - locus_by_id#properties.feature_anderson_darling_normal_flux_i
+  - search_loci#properties.feature_anderson_darling_normal_flux_i
+  - cone_loci#properties.feature_anderson_darling_normal_flux_i
   summary@antares.photometry.r.flux.anderson_darling_normal:
   - locus#properties.feature_anderson_darling_normal_flux_r
+  - locus_by_id#properties.feature_anderson_darling_normal_flux_r
+  - search_loci#properties.feature_anderson_darling_normal_flux_r
+  - cone_loci#properties.feature_anderson_darling_normal_flux_r
   summary@antares.photometry.i.magnitude.anderson_darling_normal:
   - locus#properties.feature_anderson_darling_normal_magn_i
+  - locus_by_id#properties.feature_anderson_darling_normal_magn_i
+  - search_loci#properties.feature_anderson_darling_normal_magn_i
+  - cone_loci#properties.feature_anderson_darling_normal_magn_i
   summary@antares.photometry.r.magnitude.anderson_darling_normal:
   - locus#properties.feature_anderson_darling_normal_magn_r
+  - locus_by_id#properties.feature_anderson_darling_normal_magn_r
+  - search_loci#properties.feature_anderson_darling_normal_magn_r
+  - cone_loci#properties.feature_anderson_darling_normal_magn_r
   summary@antares.photometry.i.magnitude.beyond_1_std:
   - locus#properties.feature_beyond_1_std_magn_i
+  - locus_by_id#properties.feature_beyond_1_std_magn_i
+  - search_loci#properties.feature_beyond_1_std_magn_i
+  - cone_loci#properties.feature_beyond_1_std_magn_i
   summary@antares.photometry.r.magnitude.beyond_1_std:
   - locus#properties.feature_beyond_1_std_magn_r
+  - locus_by_id#properties.feature_beyond_1_std_magn_r
+  - search_loci#properties.feature_beyond_1_std_magn_r
+  - cone_loci#properties.feature_beyond_1_std_magn_r
   summary@antares.photometry.i.magnitude.beyond_2_std:
   - locus#properties.feature_beyond_2_std_magn_i
+  - locus_by_id#properties.feature_beyond_2_std_magn_i
+  - search_loci#properties.feature_beyond_2_std_magn_i
+  - cone_loci#properties.feature_beyond_2_std_magn_i
   summary@antares.photometry.r.magnitude.beyond_2_std:
   - locus#properties.feature_beyond_2_std_magn_r
+  - locus_by_id#properties.feature_beyond_2_std_magn_r
+  - search_loci#properties.feature_beyond_2_std_magn_r
+  - cone_loci#properties.feature_beyond_2_std_magn_r
   summary@antares.photometry.i.flux.chi2:
   - locus#properties.feature_chi2_flux_i
+  - locus_by_id#properties.feature_chi2_flux_i
+  - search_loci#properties.feature_chi2_flux_i
+  - cone_loci#properties.feature_chi2_flux_i
   summary@antares.photometry.r.flux.chi2:
   - locus#properties.feature_chi2_flux_r
+  - locus_by_id#properties.feature_chi2_flux_r
+  - search_loci#properties.feature_chi2_flux_r
+  - cone_loci#properties.feature_chi2_flux_r
   summary@antares.photometry.i.magnitude.chi2:
   - locus#properties.feature_chi2_magn_i
+  - locus_by_id#properties.feature_chi2_magn_i
+  - search_loci#properties.feature_chi2_magn_i
+  - cone_loci#properties.feature_chi2_magn_i
   summary@antares.photometry.r.magnitude.chi2:
   - locus#properties.feature_chi2_magn_r
+  - locus_by_id#properties.feature_chi2_magn_r
+  - search_loci#properties.feature_chi2_magn_r
+  - cone_loci#properties.feature_chi2_magn_r
   summary@antares.photometry.i.flux.cusum:
   - locus#properties.feature_cusum_flux_i
+  - locus_by_id#properties.feature_cusum_flux_i
+  - search_loci#properties.feature_cusum_flux_i
+  - cone_loci#properties.feature_cusum_flux_i
   summary@antares.photometry.r.flux.cusum:
   - locus#properties.feature_cusum_flux_r
+  - locus_by_id#properties.feature_cusum_flux_r
+  - search_loci#properties.feature_cusum_flux_r
+  - cone_loci#properties.feature_cusum_flux_r
   summary@antares.photometry.i.magnitude.cusum:
   - locus#properties.feature_cusum_magn_i
+  - locus_by_id#properties.feature_cusum_magn_i
+  - search_loci#properties.feature_cusum_magn_i
+  - cone_loci#properties.feature_cusum_magn_i
   summary@antares.photometry.r.magnitude.cusum:
   - locus#properties.feature_cusum_magn_r
+  - locus_by_id#properties.feature_cusum_magn_r
+  - search_loci#properties.feature_cusum_magn_r
+  - cone_loci#properties.feature_cusum_magn_r
   summary@antares.photometry.i.magnitude.duration:
   - locus#properties.feature_duration_magn_i
+  - locus_by_id#properties.feature_duration_magn_i
+  - search_loci#properties.feature_duration_magn_i
+  - cone_loci#properties.feature_duration_magn_i
   summary@antares.photometry.r.magnitude.duration:
   - locus#properties.feature_duration_magn_r
+  - locus_by_id#properties.feature_duration_magn_r
+  - search_loci#properties.feature_duration_magn_r
+  - cone_loci#properties.feature_duration_magn_r
   summary@antares.photometry.z.magnitude.duration:
   - locus#properties.feature_duration_magn_z
+  - locus_by_id#properties.feature_duration_magn_z
+  - search_loci#properties.feature_duration_magn_z
+  - cone_loci#properties.feature_duration_magn_z
   summary@antares.photometry.i.flux.eta_e:
   - locus#properties.feature_eta_e_flux_i
+  - locus_by_id#properties.feature_eta_e_flux_i
+  - search_loci#properties.feature_eta_e_flux_i
+  - cone_loci#properties.feature_eta_e_flux_i
   summary@antares.photometry.r.flux.eta_e:
   - locus#properties.feature_eta_e_flux_r
+  - locus_by_id#properties.feature_eta_e_flux_r
+  - search_loci#properties.feature_eta_e_flux_r
+  - cone_loci#properties.feature_eta_e_flux_r
   summary@antares.photometry.i.magnitude.eta_e:
   - locus#properties.feature_eta_e_magn_i
+  - locus_by_id#properties.feature_eta_e_magn_i
+  - search_loci#properties.feature_eta_e_magn_i
+  - cone_loci#properties.feature_eta_e_magn_i
   summary@antares.photometry.r.magnitude.eta_e:
   - locus#properties.feature_eta_e_magn_r
-  summary@antares.photometry.i.flux.kurtosis:
+  - locus_by_id#properties.feature_eta_e_magn_r
+  - search_loci#properties.feature_eta_e_magn_r
+  - cone_loci#properties.feature_eta_e_magn_r
+  summary@antares.photometry.i.flux.excess_kurtosis:
   - locus#properties.feature_kurtosis_flux_i
-  summary@antares.photometry.r.flux.kurtosis:
+  - locus_by_id#properties.feature_kurtosis_flux_i
+  - search_loci#properties.feature_kurtosis_flux_i
+  - cone_loci#properties.feature_kurtosis_flux_i
+  summary@antares.photometry.r.flux.excess_kurtosis:
   - locus#properties.feature_kurtosis_flux_r
-  summary@antares.photometry.i.magnitude.kurtosis:
+  - locus_by_id#properties.feature_kurtosis_flux_r
+  - search_loci#properties.feature_kurtosis_flux_r
+  - cone_loci#properties.feature_kurtosis_flux_r
+  summary@antares.photometry.i.magnitude.excess_kurtosis:
   - locus#properties.feature_kurtosis_magn_i
-  summary@antares.photometry.r.magnitude.kurtosis:
+  - locus_by_id#properties.feature_kurtosis_magn_i
+  - search_loci#properties.feature_kurtosis_magn_i
+  - cone_loci#properties.feature_kurtosis_magn_i
+  summary@antares.photometry.r.magnitude.excess_kurtosis:
   - locus#properties.feature_kurtosis_magn_r
+  - locus_by_id#properties.feature_kurtosis_magn_r
+  - search_loci#properties.feature_kurtosis_magn_r
+  - cone_loci#properties.feature_kurtosis_magn_r
   summary@antares.photometry.i.magnitude.linear_fit_reduced_chi2:
   - locus#properties.feature_linear_fit_reduced_chi2_magn_i
+  - locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_i
+  - search_loci#properties.feature_linear_fit_reduced_chi2_magn_i
+  - cone_loci#properties.feature_linear_fit_reduced_chi2_magn_i
   summary@antares.photometry.r.magnitude.linear_fit_reduced_chi2:
   - locus#properties.feature_linear_fit_reduced_chi2_magn_r
+  - locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_r
+  - search_loci#properties.feature_linear_fit_reduced_chi2_magn_r
+  - cone_loci#properties.feature_linear_fit_reduced_chi2_magn_r
   summary@antares.photometry.i.magnitude.linear_fit_slope:
   - locus#properties.feature_linear_fit_slope_magn_i
+  - locus_by_id#properties.feature_linear_fit_slope_magn_i
+  - search_loci#properties.feature_linear_fit_slope_magn_i
+  - cone_loci#properties.feature_linear_fit_slope_magn_i
   summary@antares.photometry.r.magnitude.linear_fit_slope:
   - locus#properties.feature_linear_fit_slope_magn_r
+  - locus_by_id#properties.feature_linear_fit_slope_magn_r
+  - search_loci#properties.feature_linear_fit_slope_magn_r
+  - cone_loci#properties.feature_linear_fit_slope_magn_r
   summary@antares.photometry.i.magnitude.maximum_slope:
   - locus#properties.feature_maximum_slope_magn_i
+  - locus_by_id#properties.feature_maximum_slope_magn_i
+  - search_loci#properties.feature_maximum_slope_magn_i
+  - cone_loci#properties.feature_maximum_slope_magn_i
   summary@antares.photometry.r.magnitude.maximum_slope:
   - locus#properties.feature_maximum_slope_magn_r
+  - locus_by_id#properties.feature_maximum_slope_magn_r
+  - search_loci#properties.feature_maximum_slope_magn_r
+  - cone_loci#properties.feature_maximum_slope_magn_r
   summary@antares.photometry.i.magnitude.mean:
   - locus#properties.feature_mean_magn_i
+  - locus_by_id#properties.feature_mean_magn_i
+  - search_loci#properties.feature_mean_magn_i
+  - cone_loci#properties.feature_mean_magn_i
   summary@antares.photometry.r.magnitude.mean:
   - locus#properties.feature_mean_magn_r
+  - locus_by_id#properties.feature_mean_magn_r
+  - search_loci#properties.feature_mean_magn_r
+  - cone_loci#properties.feature_mean_magn_r
   summary@antares.photometry.z.magnitude.mean:
   - locus#properties.feature_mean_magn_z
-  summary@antares.photometry.i.flux.mean_variance:
+  - locus_by_id#properties.feature_mean_magn_z
+  - search_loci#properties.feature_mean_magn_z
+  - cone_loci#properties.feature_mean_magn_z
+  summary@antares.photometry.i.flux.coefficient_of_variation:
   - locus#properties.feature_mean_variance_flux_i
-  summary@antares.photometry.r.flux.mean_variance:
+  - locus_by_id#properties.feature_mean_variance_flux_i
+  - search_loci#properties.feature_mean_variance_flux_i
+  - cone_loci#properties.feature_mean_variance_flux_i
+  summary@antares.photometry.r.flux.coefficient_of_variation:
   - locus#properties.feature_mean_variance_flux_r
+  - locus_by_id#properties.feature_mean_variance_flux_r
+  - search_loci#properties.feature_mean_variance_flux_r
+  - cone_loci#properties.feature_mean_variance_flux_r
   summary@antares.photometry.i.magnitude.median_absolute_deviation:
   - locus#properties.feature_median_absolute_deviation_magn_i
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_i
+  - search_loci#properties.feature_median_absolute_deviation_magn_i
+  - cone_loci#properties.feature_median_absolute_deviation_magn_i
   summary@antares.photometry.r.magnitude.median_absolute_deviation:
   - locus#properties.feature_median_absolute_deviation_magn_r
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_r
+  - search_loci#properties.feature_median_absolute_deviation_magn_r
+  - cone_loci#properties.feature_median_absolute_deviation_magn_r
   summary@antares.photometry.z.magnitude.median_absolute_deviation:
   - locus#properties.feature_median_absolute_deviation_magn_z
-  summary@antares.photometry.i.magnitude.percent_amplitude:
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_z
+  - search_loci#properties.feature_median_absolute_deviation_magn_z
+  - cone_loci#properties.feature_median_absolute_deviation_magn_z
+  summary@antares.photometry.i.magnitude.maximum_deviation_from_median:
   - locus#properties.feature_percent_amplitude_magn_i
-  summary@antares.photometry.r.magnitude.percent_amplitude:
+  - locus_by_id#properties.feature_percent_amplitude_magn_i
+  - search_loci#properties.feature_percent_amplitude_magn_i
+  - cone_loci#properties.feature_percent_amplitude_magn_i
+  summary@antares.photometry.r.magnitude.maximum_deviation_from_median:
   - locus#properties.feature_percent_amplitude_magn_r
-  summary@antares.photometry.z.magnitude.percent_amplitude:
+  - locus_by_id#properties.feature_percent_amplitude_magn_r
+  - search_loci#properties.feature_percent_amplitude_magn_r
+  - cone_loci#properties.feature_percent_amplitude_magn_r
+  summary@antares.photometry.z.magnitude.maximum_deviation_from_median:
   - locus#properties.feature_percent_amplitude_magn_z
+  - locus_by_id#properties.feature_percent_amplitude_magn_z
+  - search_loci#properties.feature_percent_amplitude_magn_z
+  - cone_loci#properties.feature_percent_amplitude_magn_z
+  crossmatch@gaia:antares.color.BP-RP.diff:
+  - locus_catalog_gaia#bp_rp
+  crossmatch@gaia:antares.color.BP-G.diff:
+  - locus_catalog_gaia#bp_g
+  crossmatch@gaia:antares.color.G-RP.diff:
+  - locus_catalog_gaia#g_rp
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_galaxy.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_galaxy
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_quasar.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_quasar
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_star.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_star
   crossmatch@gaia:antares.position.ra_error:
   - locus_catalog_gaia#ra_error
   crossmatch@gaia:antares.position.dec_error:
