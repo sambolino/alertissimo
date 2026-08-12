@@ -42,66 +42,12 @@ unmapped:
 - fp#r:timeWithdrawnMjdTai:
     reason: lifecycle_timestamp
     note: Processing/withdrawal lifecycle time is not observation time and has no same-meaning stable ontology field.
-- sources#r:scienceFlux:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- conesearch#r:scienceFlux:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- sso#r:scienceFlux:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
 - fp#r:scienceFlux:
     reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- sources#r:scienceFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- conesearch#r:scienceFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- sso#r:scienceFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
+    note: DiaForcedSource contains both psfFlux and scienceFlux as distinct Rubin-defined measurements. psfFlux is already canonically represented as the forced-source PSF measurement across brokers; scienceFlux is separately defined as forced photometry on the visit image. The current ontology/convergence model needs a dedicated decision before both can coexist without semantic collision.
 - fp#r:scienceFluxErr:
     reason: unresolved_measurement_semantics
-    note: Science flux is a distinct measurement from source PSF flux; no stable canonical branch is established.
-- sources#r:templateFlux:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- conesearch#r:templateFlux:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- sso#r:templateFlux:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- sources#r:templateFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- conesearch#r:templateFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- sso#r:templateFluxErr:
-    reason: unresolved_measurement_semantics
-    note: Template-image flux is distinct from source photometry; no stable canonical branch is established.
-- sources#r:forced_PsfFlux_flag:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
-- conesearch#r:forced_PsfFlux_flag:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
-- sources#r:forced_PsfFlux_flag_edge:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
-- conesearch#r:forced_PsfFlux_flag_edge:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
-- sources#r:forced_PsfFlux_flag_noGoodPixels:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
-- conesearch#r:forced_PsfFlux_flag_noGoodPixels:
-    reason: orphan_measurement_qualifier
-    note: Ordinary source row has this forced-measurement flag without the forced measurement it qualifies.
+    note: DiaForcedSource contains both psfFlux and scienceFlux as distinct Rubin-defined measurements. psfFlux is already canonically represented as the forced-source PSF measurement across brokers; scienceFlux is separately defined as forced photometry on the visit image. The current ontology/convergence model needs a dedicated decision before both can coexist without semantic collision.
 - sources#r:reliabilityVersion:
     reason: unstable_provider_representation
     note: Observed historical values are strings "nan" and "0.3"; no stable quality-version concept is established.

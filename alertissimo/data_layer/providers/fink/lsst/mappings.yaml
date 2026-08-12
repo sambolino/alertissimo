@@ -410,12 +410,34 @@ mappings:
   - sources#r:apFlux_flag_apertureTruncated
   - conesearch#r:apFlux_flag_apertureTruncated
   - sso#r:apFlux_flag_apertureTruncated
+  detection@lsst:fink.forced_photometry.{filter}.psf.flux:
+  - sources#r:scienceFlux
+  - conesearch#r:scienceFlux
+  - sso#r:scienceFlux
+  detection@lsst:fink.forced_photometry.{filter}.psf.flux.error:
+  - sources#r:scienceFluxErr
+  - conesearch#r:scienceFluxErr
+  - sso#r:scienceFluxErr
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.failed:
+  - sources#r:forced_PsfFlux_flag
+  - conesearch#r:forced_PsfFlux_flag
   - sso#r:forced_PsfFlux_flag
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.edge:
+  - sources#r:forced_PsfFlux_flag_edge
+  - conesearch#r:forced_PsfFlux_flag_edge
   - sso#r:forced_PsfFlux_flag_edge
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - sources#r:forced_PsfFlux_flag_noGoodPixels
+  - conesearch#r:forced_PsfFlux_flag_noGoodPixels
   - sso#r:forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:fink.reference_image.forced_photometry.{filter}.psf.flux:
+  - sources#r:templateFlux
+  - conesearch#r:templateFlux
+  - sso#r:templateFlux
+  detection@lsst:fink.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - sources#r:templateFluxErr
+  - conesearch#r:templateFluxErr
+  - sso#r:templateFluxErr
   detection@lsst:fink.quality.signal_to_noise:
   - sources#r:snr
   - conesearch#r:snr
