@@ -4,6 +4,7 @@ import copy, hashlib, json
 from itertools import count
 from pathlib import Path
 import pytest
+import yaml
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance, InternalPortfolioId, InternalRecordId
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
@@ -18,6 +19,10 @@ def rich_locus():
     value=copy.deepcopy(fixture('get_by_ztf_object_id.json'))
     value['alerts']=fixture('alerts.json'); value['catalog_objects']=fixture('catalog_objects.json')
     return value
+class LazyLightcurveLocus(dict):
+    @property
+    def lightcurve(self):
+        raise AssertionError('production normalization accessed lazy Locus.lightcurve')
 def build(endpoint,payload):
     ids=count()
     return build_portfolio_from_execution(ExecutionResult(payload=payload,execution_provenance=InternalExecutionProvenance(internal_execution_id=InternalExecutionId('execution:fixture'),broker='antares',origin='ztf',endpoint=endpoint)),mappings_path=MAPPINGS,internal_portfolio_id=InternalPortfolioId('portfolio:fixture'),record_id_factory=lambda:InternalRecordId(f'record:{next(ids)}'),validate_semantic_model=True)
@@ -72,17 +77,28 @@ def test_alert_aliases_and_lightcurve_secondary_evidence():
     observed_columns={key for row in light for key in row}
     expected_columns={'time','alert_id','ant_mjd','ant_survey','ant_ra','ant_dec','ant_passband','ant_mag','ant_magerr','ant_maglim','ant_mag_corrected','ant_magerr_corrected','ant_magulim_corrected','ant_magllim_corrected'}
     assert observed_columns==expected_columns and len(observed_columns)==14
-    debt=(MAPPINGS.parent/'unmapped_fields.yaml').read_text()
-    secondary={line.removeprefix('- locus_lightcurve#').removesuffix(':') for line in debt.splitlines() if line.startswith('- locus_lightcurve#')}
-    assert debt.count('reason: secondary_duplicate_representation')==14
+    debt=yaml.safe_load((FIXTURES/'lightcurve_secondary_debt.yaml').read_text())['lightcurve_secondary']
+    secondary=set(debt)
+    registry=yaml.safe_load(MAPPINGS.read_text())
+    raw_references={raw for references in registry['mappings'].values() for raw in references}
+    mapped={raw.split('#',1)[1] for raw in raw_references if raw.startswith('lightcurve_secondary#')}
+    assert all(details['reason']=='secondary_duplicate_representation' for details in debt.values())
     assert secondary==observed_columns
-    assert {'observed':len(observed_columns),'mapped':0,'intentionally_secondary':len(secondary),'unaccounted':len(observed_columns-secondary)}=={'observed':14,'mapped':0,'intentionally_secondary':14,'unaccounted':0}
+    assert {'observed':len(observed_columns),'mapped':len(mapped),'intentionally_secondary':len(secondary),'unaccounted':len(observed_columns-mapped-secondary)}=={'observed':14,'mapped':0,'intentionally_secondary':14,'unaccounted':0}
     alert_ids={r['alert_id'] for r in alerts}; assert {r['alert_id'] for r in light}<=alert_ids
     assert len(alert_ids-{r['alert_id'] for r in light})==36
     assert sum(r['alert_id'].startswith('ztf_candidate:') for r in light)==56
     portfolio=build('get_by_ztf_object_id',rich_locus())
     assert len(records(portfolio,'detection@ztf:antares'))==316
     assert not any(r.semantic_type=='lightcurve' for r in portfolio.records)
+
+def test_lightcurve_is_not_registered_as_a_runtime_payload():
+    registry=yaml.safe_load(MAPPINGS.read_text())
+    assert all('lightcurve' not in payload['path'] for payload in registry['payloads'].values())
+    raw_references={raw for references in registry['mappings'].values() for raw in references}
+    assert not any(raw.startswith('lightcurve_secondary#') for raw in raw_references)
+    portfolio=build('get_by_ztf_object_id',LazyLightcurveLocus(rich_locus()))
+    assert len(records(portfolio,'detection@ztf:antares'))==316
 
 def test_direct_catalog_rows_build_six_crossmatches():
     portfolio=build('get_by_ztf_object_id',rich_locus())
