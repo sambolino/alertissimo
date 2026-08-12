@@ -34,6 +34,9 @@ class PortfolioBuildError(ValueError):
     """Raised when a portfolio cannot be built from registry resources."""
 
 
+_MISSING = object()
+
+
 SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
     "producer": "unknown",
 }
@@ -235,18 +238,24 @@ def build_portfolio_from_execution(
         )
         for item in items:
             fields_by_type: dict[str, dict[str, Any]] = {}
-            assignment_modes: dict[tuple[str, str], str] = {}
             for semantic_path, references in mappings.items():
                 semantic_type, relative_field = split_semantic_path(semantic_path)
+                ordinary_value: Any = _MISSING
+                composed_entries: dict[str, Any] = {}
                 for raw_reference in references:
                     ref_payload_key, raw_field = raw_reference.split("#", 1)
                     if ref_payload_key != payload_key:
+                        continue
+                    specification = transforms.get(semantic_path, {}).get(raw_reference)
+                    object_key = specification.get("object_key") if specification else None
+                    # Once an ordinary fallback succeeds, only composition
+                    # references still need evaluation for conflict detection.
+                    if object_key is None and ordinary_value is not _MISSING:
                         continue
                     try:
                         value = extract_raw_field(item.value, raw_field)
                     except RawFieldMissing:
                         continue
-                    specification = transforms.get(semantic_path, {}).get(raw_reference)
                     # Some delivery surfaces include explicit nulls for fields that
                     # are not measurements (notably Fink upper-limit history rows).
                     # Skip those before arithmetic transforms such as JD-to-MJD.
@@ -259,33 +268,26 @@ def build_portfolio_from_execution(
                         "skip_null", False
                     ):
                         continue
-                    fields = fields_by_type.setdefault(semantic_type, {})
-                    object_key = specification.get("object_key") if specification else None
-                    field_key = (semantic_type, relative_field)
-                    mode = "composition" if object_key is not None else "ordinary"
-                    previous_mode = assignment_modes.get(field_key)
-                    if previous_mode is not None and previous_mode != mode:
-                        raise PortfolioBuildError(
-                            f"mixed ordinary assignment and object composition for "
-                            f"{semantic_type}.{relative_field}"
-                        )
-                    assignment_modes[field_key] = mode
                     if object_key is not None:
-                        composed = fields.setdefault(relative_field, {})
-                        if not isinstance(composed, dict):
-                            raise PortfolioBuildError(
-                                f"cannot compose object field {semantic_type}.{relative_field}"
-                            )
-                        if object_key in composed and composed[object_key] != value:
+                        if object_key in composed_entries and composed_entries[object_key] != value:
                             raise PortfolioBuildError(
                                 f"conflicting values for object key {object_key!r} in "
                                 f"{semantic_type}.{relative_field}: "
-                                f"{composed[object_key]!r} vs {value!r}"
+                                f"{composed_entries[object_key]!r} vs {value!r}"
                             )
-                        composed[object_key] = value
+                        composed_entries[object_key] = value
                         continue
-                    fields[relative_field] = value
-                    break
+                    ordinary_value = value
+
+                if ordinary_value is not _MISSING and composed_entries:
+                    raise PortfolioBuildError(
+                        f"mixed ordinary assignment and object composition for "
+                        f"{semantic_type}.{relative_field}"
+                    )
+                if composed_entries:
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = composed_entries
+                elif ordinary_value is not _MISSING:
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = ordinary_value
 
             for semantic_type, fields in fields_by_type.items():
                 if not fields:

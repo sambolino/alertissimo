@@ -70,6 +70,14 @@ def test_classtar_and_fink_final_classification_are_positive_products():
     assert not _records(_build("objects", [{"i:classtar": None}]), "classification@sextractor:fink")
 
 
+def test_current_blazar_cdf_quantile_contract_maps_value_and_omits_sentinel():
+    # This optional column is supported by the current official Fink object-API
+    # and Fink Science sources, but is not present in the frozen capture.
+    present = _records(_build("objects", [{"d:blazar_stats_cdf_quantile": 0.73}]), "classification@fink")[0]
+    assert present.fields["assessment.blazar_extreme_state_cdf_quantile.value"] == 0.73
+    assert not _records(_build("objects", [{"d:blazar_stats_cdf_quantile": -1.0}]), "classification@fink")
+
+
 def test_candid_history_reference_times_calibration_and_fixed_color():
     portfolio = _build("objects")
     detection = _records(portfolio, "detection@ztf:fink")[0]

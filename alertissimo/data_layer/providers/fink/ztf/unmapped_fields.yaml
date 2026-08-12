@@ -4,16 +4,13 @@ notes: Explicit debt after the corrective semantic pass; mapped and debt referen
 unmapped:
 - anomaly#d:blazar_stats_m0:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - anomaly#d:blazar_stats_m1:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - anomaly#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - anomaly#i:distnr:
     reason: unit_mismatch
     note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
@@ -86,16 +83,13 @@ unmapped:
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - latests#d:blazar_stats_m0:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - latests#d:blazar_stats_m1:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - latests#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - latests#i:distnr:
     reason: unit_mismatch
     note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
@@ -105,16 +99,13 @@ unmapped:
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - objects#d:blazar_stats_m0:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - objects#d:blazar_stats_m1:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - objects#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
-    note: The frozen field is a scalar diagnostic, but primary evidence available to this
-      registry does not establish a stable target/range/sentinel contract.
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
 - objects#i:distnr:
     reason: unit_mismatch
     note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
