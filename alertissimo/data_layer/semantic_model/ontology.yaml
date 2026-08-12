@@ -1136,11 +1136,59 @@ levels:
     [mag]:
       description: "Generic calibrated magnitude"
       unit: mag
-    [mag_error]:
-      description: "Generic calibrated magnitude uncertainty"
-      unit: mag
+      [error]:
+        description: "Uncertainty of the calibrated magnitude"
+        unit: mag
+      level: L0, L4
+      [mean]:
+        description: "Mean of the magnitude time series"
+        unit: mag
+      [half_amplitude]:
+        description: "Half the peak-to-peak magnitude range of the time series"
+        unit: mag
+      [maximum_deviation_from_median]:
+        description: "Maximum absolute deviation from the median of the magnitude time series"
+        unit: mag
+      [median_absolute_deviation]:
+        description: "Median absolute deviation of the magnitude time series"
+        unit: mag
+      [chi2]:
+        description: "Chi-square statistic of the magnitude time series"
+      [excess_kurtosis]:
+        description: "Excess kurtosis of the magnitude time series"
+      [eta_e]:
+        description: "Eta-e variability statistic of the magnitude time series"
+      [cusum]:
+        description: "Cumulative-sum variability statistic of the magnitude time series"
+      [anderson_darling_normal]:
+        description: "Anderson-Darling normality statistic of the magnitude time series"
+      [beyond_1_std]:
+        description: "Fraction of the magnitude time series beyond one standard deviation"
+      [beyond_2_std]:
+        description: "Fraction of the magnitude time series beyond two standard deviations"
+      [maximum_slope]:
+        description: "Maximum time-ordered slope of the magnitude time series"
+        unit: mag/day
+      [duration]:
+        description: "Duration of the magnitude time series"
+        unit: days
+      [linear_fit_slope]:
+        description: "Slope of a linear fit to the magnitude time series versus time"
+        unit: mag/day
+      [linear_fit_reduced_chi2]:
+        description: "Reduced chi-square of a linear fit to the magnitude time series versus time"
+      [rate]:
+        description: "Rate of change of magnitude"
+        unit: mag/day
+      [rate_error]:
+        description: "Uncertainty of the magnitude-change rate"
+        unit: mag/day
     [flux]:
-      description: "Generic calibrated flux"
+      description: "Generic calibrated flux density"
+      unit: nJy
+      [error]:
+        description: "Uncertainty of the calibrated flux density"
+        unit: nJy
       level: L0, L4
       [chi2]:
         description: "Chi-square statistic of the flux time series"
@@ -1154,71 +1202,31 @@ levels:
         description: "Anderson-Darling normality statistic of the flux time series"
       [coefficient_of_variation]:
         description: "Ratio of the flux time-series standard deviation to its mean"
-    [magnitude]:
-      description: "Statistics derived from a magnitude time series"
-      level: L0, L4
-      [mean]:
-        description: "Mean magnitude"
-        unit: mag
-      [half_amplitude]:
-        description: "Half the peak-to-peak magnitude range of the time series"
-        unit: mag
-      [maximum_deviation_from_median]:
-        description: "Maximum absolute magnitude deviation from the median magnitude of the time series"
-        unit: mag
-      [median_absolute_deviation]:
-        description: "Median absolute deviation of magnitudes"
-        unit: mag
-      [chi2]:
-        description: "Chi-square statistic of the magnitude time series"
-      [excess_kurtosis]:
-        description: "Excess kurtosis of the magnitude time series"
-      [eta_e]:
-        description: "Eta-e variability statistic of the magnitude time series"
-      [cusum]:
-        description: "Cumulative-sum variability statistic of the magnitude time series"
-      [anderson_darling_normal]:
-        description: "Anderson-Darling normality statistic of the magnitude time series"
-      [beyond_1_std]:
-        description: "Fraction of magnitudes beyond one standard deviation"
-      [beyond_2_std]:
-        description: "Fraction of magnitudes beyond two standard deviations"
-      [maximum_slope]:
-        description: "Maximum time-ordered magnitude slope"
-        unit: mag/day
-      [duration]:
-        description: "Duration of the magnitude time series"
-        unit: days
-      [linear_fit_slope]:
-        description: "Slope of a linear fit to magnitude versus time"
-        unit: mag/day
-      [linear_fit_reduced_chi2]:
-        description: "Reduced chi-square of a linear fit to magnitude versus time"
-    [flux_error]:
-      description: "Generic calibrated flux uncertainty"
     [mag_minus_psf]:
       description: "Standard-aperture magnitude minus PSF-fit magnitude"
       unit: mag
     <aperture>:
-      description: "Photometry measured by integrating flux within an aperture"
+      description: "Photometry measured by integrating flux within a provider-defined aperture"
       [flux]:
-        description: "Aperture flux"
-      [flux_error]:
-        description: "Aperture flux uncertainty"
+        description: "Aperture flux density"
+        unit: nJy
+        [error]:
+          description: "Aperture flux-density uncertainty"
+          unit: nJy
       [mag]:
-        description: "Aperture magnitude measured with the standard aperture (14-pixel diameter)"
+        description: "Aperture magnitude"
         unit: mag
-      [mag_error]:
-        description: "Standard-aperture magnitude uncertainty"
-        unit: mag
+        [error]:
+          description: "Aperture magnitude uncertainty"
+          unit: mag
       <large>:
-        description: "Photometry measured with the larger aperture (18-pixel diameter)"
+        description: "Photometry measured using the provider-defined larger aperture"
         [mag]:
           description: "Large-aperture magnitude"
           unit: mag
-        [mag_error]:
-          description: "Large-aperture magnitude uncertainty"
-          unit: mag
+          [error]:
+            description: "Large-aperture magnitude uncertainty"
+            unit: mag
       <flags>:
         description: "Flags affecting the aperture-flux measurement"
         [failed]:
@@ -1230,7 +1238,7 @@ levels:
     <limit>:
       description: "Photometric detection-limit information"
       [mag]:
-        description: "Detection limiting magnitude, commonly defined at five sigma"
+        description: "Reported detection limiting magnitude; the significance threshold and construction are defined by the producer"
         unit: mag
       [mag_minus_aperture]:
         description: "Limiting magnitude minus the measured aperture magnitude"
@@ -1244,15 +1252,72 @@ levels:
     <psf>:
       description: "Photometry obtained by fitting the point-spread function"
       [flux]:
-        description: "PSF-fit flux"
-      [flux_error]:
-        description: "PSF-fit flux uncertainty"
+        description: "PSF-fit flux density"
+        unit: nJy
+        [error]:
+          description: "PSF-fit flux-density uncertainty"
+          unit: nJy
+        level: L0
+        [scatter_chi2]:
+          description: "Chi-square statistic for the scatter of PSF flux around its weighted mean"
+        [error_mean]:
+          description: "Mean of the uncertainties of the individual PSF-flux measurements"
+          unit: nJy
+        [linear_intercept]:
+          description: "Y-intercept of a linear model fitted to PSF flux as a function of time"
+          unit: nJy
+        [linear_slope]:
+          description: "Slope of a linear model fitted to PSF flux as a function of time"
+          unit: nJy/day
+        [mad]:
+          description: "Median absolute deviation of PSF flux without the scale factor for comparison to sigma"
+          unit: nJy
+        [maximum]:
+          description: "Maximum PSF flux"
+          unit: nJy
+        [maximum_slope]:
+          description: "Maximum ratio of a time-ordered PSF-flux difference to the elapsed time"
+          unit: nJy/day
+        [mean]:
+          description: "Weighted mean PSF flux"
+          unit: nJy
+        [mean_error]:
+          description: "Uncertainty (standard error) of the aggregate weighted mean PSF flux"
+          unit: nJy
+        [minimum]:
+          description: "Minimum PSF flux"
+          unit: nJy
+        [measurement_count]:
+          description: "Number of PSF-flux measurements used to compute the aggregate statistics"
+          type: integer
+        [percentile_05]:
+          description: "5th percentile of PSF flux"
+          unit: nJy
+        [percentile_25]:
+          description: "25th percentile of PSF flux"
+          unit: nJy
+        [percentile_50]:
+          description: "Median PSF flux"
+          unit: nJy
+        [percentile_75]:
+          description: "75th percentile of PSF flux"
+          unit: nJy
+        [percentile_95]:
+          description: "95th percentile of PSF flux"
+          unit: nJy
+        [sigma]:
+          description: "Standard deviation of the PSF-flux distribution"
+          unit: nJy
+        [skew]:
+          description: "Skewness of the PSF-flux distribution"
+        [stetson_j]:
+          description: "Stetson J statistic of the PSF-flux measurements"
       [mag]:
         description: "PSF-fit magnitude"
         unit: mag
-      [mag_error]:
-        description: "PSF-fit magnitude uncertainty"
-        unit: mag
+        [error]:
+          description: "PSF-fit magnitude uncertainty"
+          unit: mag
       [fit_chi2]:
         description: "Chi-square statistic of the PSF fit"
       [fit_log_likelihood]:
@@ -1273,71 +1338,6 @@ levels:
         [no_good_pixels]:
           description: "True if no usable pixels were available for the PSF-flux measurement"
           type: boolean
-      level: L0
-      [scatter_chi2]:
-        description: "Chi-square statistic for the scatter of PSF flux around its weighted mean"
-      [flux_error_mean]:
-        description: "Mean of the individual PSF-flux uncertainties"
-        unit: nJy
-      [linear_intercept]:
-        description: "Y-intercept of a linear model fitted to PSF flux as a function of time"
-        unit: nJy
-      [linear_slope]:
-        description: "Slope of a linear model fitted to PSF flux as a function of time"
-        unit: nJy/day
-      [mad]:
-        description: "Median absolute deviation of PSF flux without the scale factor for comparison to sigma"
-        unit: nJy
-      [maximum]:
-        description: "Maximum PSF flux"
-        unit: nJy
-      [maximum_slope]:
-        description: "Maximum ratio of a time-ordered PSF-flux difference to the elapsed time"
-        unit: nJy/day
-      [mean]:
-        description: "Weighted mean PSF flux"
-        unit: nJy
-      [mean_error]:
-        description: "Standard error of the weighted mean PSF flux"
-        unit: nJy
-      [minimum]:
-        description: "Minimum PSF flux"
-        unit: nJy
-      [measurement_count]:
-        description: "Number of PSF-flux measurements used to compute the aggregate statistics"
-        type: integer
-      [percentile_05]:
-        description: "5th percentile of PSF flux"
-        unit: nJy
-      [percentile_25]:
-        description: "25th percentile of PSF flux"
-        unit: nJy
-      [percentile_50]:
-        description: "Median PSF flux"
-        unit: nJy
-      [percentile_75]:
-        description: "75th percentile of PSF flux"
-        unit: nJy
-      [percentile_95]:
-        description: "95th percentile of PSF flux"
-        unit: nJy
-      [sigma]:
-        description: "Standard deviation of the PSF-flux distribution"
-        unit: nJy
-      [skew]:
-        description: "Skewness of the PSF-flux distribution"
-      [stetson_j]:
-        description: "Stetson J statistic of the PSF-flux measurements"
-    level: L0, L4
-    [magnitude_rate]:
-      description: "Rate of change of brightness"
-      unit: mag/day
-    [magnitude_rate_error]:
-      description: "Uncertainty of the brightness-change rate"
-      unit: mag/day
-    [{field}]:
-      description: "Other filter-specific photometric field"
-
 <forced_photometry>:
   $ref: <_photometry>
 
