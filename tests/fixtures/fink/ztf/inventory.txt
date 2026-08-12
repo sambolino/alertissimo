@@ -1,0 +1,51 @@
+================ RESPONSE INVENTORY ================
+
+===== objects_core =====
+json_type=array
+rows=14
+union_columns=136
+
+===== objects_withupperlim =====
+json_type=array
+rows=33
+union_columns=137
+
+===== conesearch =====
+json_type=array
+rows=1
+union_columns=15
+
+===== latests =====
+json_type=array
+rows=10
+union_columns=57
+
+===== anomaly =====
+json_type=array
+rows=10
+union_columns=142
+
+===== sso_core =====
+json_type=array
+rows=327
+union_columns=88
+
+===== resolver_tns =====
+json_type=array
+rows=1
+union_columns=7
+
+===== resolver_simbad =====
+json_type=array
+rows=1
+union_columns=11
+
+===== resolver_ssodnet =====
+json_type=array
+rows=4
+union_columns=3
+
+===== statistics_day =====
+json_type=array
+rows=1
+union_columns=131

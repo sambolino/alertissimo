@@ -1,0 +1,7 @@
+{
+  "resolver": "tns",
+  "name": "ZTF23aaaahln",
+  "reverse": true,
+  "nmax": 10,
+  "output-format": "json"
+}

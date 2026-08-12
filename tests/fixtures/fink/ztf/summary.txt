@@ -1,0 +1,25 @@
+================ OBJECT TAG COUNTS =================
+upperlim	19
+valid	14
+
+================ OBJECT PREFIX COUNTS ==============
+d	18
+i	108
+v	11
+
+================ FILTER VALUES =====================
+1
+2
+
+================ isdiffpos VALUES ==================
+t
+
+================ CANDID TYPES ======================
+number	14
+
+================ METHOD PROBES =====================
+===== objects GET =====
+HTTP 200
+
+===== conesearch GET =====
+HTTP 200
