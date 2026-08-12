@@ -30,8 +30,8 @@ def test_core_fixtures_have_zero_unaccounted(name,endpoint):
 
 def test_rich_composite_has_zero_unaccounted():
     report=audit_payload(rich_locus(),broker='antares',origin='ztf',endpoint='get_by_ztf_object_id')
-    assert 'Mapped leaves: 68' in report
-    assert 'Intentionally unmapped leaves: 834' in report
+    assert 'Mapped leaves: 85' in report
+    assert 'Intentionally unmapped leaves: 817' in report
     assert 'Delegated / structural leaves: 712' in report
     assert 'Unaccounted leaves: 0' in report
 
@@ -56,21 +56,33 @@ def test_locus_and_complete_alert_semantics():
 
 def test_strict_unknown_encodings_are_omitted():
     alert=copy.deepcopy(next(x for x in fixture('alerts.json') if 'ztf_isdiffpos' in x['properties']))
-    alert['properties']['ztf_isdiffpos']='unknown'; alert['properties']['ant_survey']=99
+    alert['properties']['ztf_isdiffpos']='unknown'; alert['properties']['ant_survey']=99; alert['properties']['ant_passband']='X'
     payload=copy.deepcopy(fixture('get_by_ztf_object_id.json')); payload['alerts']=[alert]
     fields=dict(records(build('get_by_ztf_object_id',payload),'detection@ztf:antares')[0].fields)
     assert 'image_metrics.is_positive' not in fields
     assert not any(k.endswith('upper_limit') for k in fields)
+    assert not any('photometry.X' in k or '{filter}' in k for k in fields)
+    assert not any(k.startswith(('photometry.', 'calibration.')) for k in fields)
 
 def test_alert_aliases_and_lightcurve_secondary_evidence():
     alerts=fixture('alerts.json'); candidates=[a for a in alerts if a['alert_id'].startswith('ztf_candidate:')]
     for row in candidates:
         p=row['properties']; assert p['ant_mag']==p['ztf_magpsf']; assert p['ant_magerr']==p['ztf_sigmapsf']; assert p['ant_ra']==p['ztf_ra']; assert p['ant_dec']==p['ztf_dec']; assert p['ant_maglim']==p['ztf_diffmaglim']
     light=fixture('lightcurve.json'); assert len(light)==len({r['alert_id'] for r in light})==280
+    observed_columns={key for row in light for key in row}
+    expected_columns={'time','alert_id','ant_mjd','ant_survey','ant_ra','ant_dec','ant_passband','ant_mag','ant_magerr','ant_maglim','ant_mag_corrected','ant_magerr_corrected','ant_magulim_corrected','ant_magllim_corrected'}
+    assert observed_columns==expected_columns and len(observed_columns)==14
+    debt=(MAPPINGS.parent/'unmapped_fields.yaml').read_text()
+    secondary={line.removeprefix('- locus_lightcurve#').removesuffix(':') for line in debt.splitlines() if line.startswith('- locus_lightcurve#')}
+    assert debt.count('reason: secondary_duplicate_representation')==14
+    assert secondary==observed_columns
+    assert {'observed':len(observed_columns),'mapped':0,'intentionally_secondary':len(secondary),'unaccounted':len(observed_columns-secondary)}=={'observed':14,'mapped':0,'intentionally_secondary':14,'unaccounted':0}
     alert_ids={r['alert_id'] for r in alerts}; assert {r['alert_id'] for r in light}<=alert_ids
     assert len(alert_ids-{r['alert_id'] for r in light})==36
     assert sum(r['alert_id'].startswith('ztf_candidate:') for r in light)==56
-    assert len(records(build('get_by_ztf_object_id',rich_locus()),'detection@ztf:antares'))==316
+    portfolio=build('get_by_ztf_object_id',rich_locus())
+    assert len(records(portfolio,'detection@ztf:antares'))==316
+    assert not any(r.semantic_type=='lightcurve' for r in portfolio.records)
 
 def test_direct_catalog_rows_build_six_crossmatches():
     portfolio=build('get_by_ztf_object_id',rich_locus())
