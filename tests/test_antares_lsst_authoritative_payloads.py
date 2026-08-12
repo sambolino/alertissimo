@@ -31,7 +31,8 @@ def test_authoritative_alert_semantics_and_aliases():
  assert all(a['properties']['ant_ra']==a['properties']['lsst_diaSource_ra'] and a['properties']['ant_dec']==a['properties']['lsst_diaSource_dec'] for a in alerts)
  assert all(a['properties']['ant_maglim']==a['properties']['ant_mag'] for a in alerts)
  p=build('get_by_lsst_dia_object_id',rich_locus());ds=records(p,'detection@lsst:antares');assert len(ds)==16
- sf=dict(records(p,'summary@lsst:antares')[0].fields);assert sf['identity.object_id']=='170587117485817955' and sf['identity.antares_locus_id']=='ANT2026rq61krn5dipt';assert 'detection_count' not in sf and not any(k.startswith('time.') for k in sf)
+ sf=dict(records(p,'summary@lsst:antares')[0].fields);assert sf['identity.object_id']==170587117485817955 and isinstance(sf['identity.object_id'],int) and sf['identity.antares_locus_id']=='ANT2026rq61krn5dipt';assert 'detection_count' not in sf and not any(k.startswith('time.') for k in sf)
+ assert all(dict(d.fields)['identity.object_id']==170587117485817955 and isinstance(dict(d.fields)['identity.object_id'],int) for d in ds)
  f=dict(ds[0].fields);assert {'identity.alert_id','identity.source_id','identity.object_id','identity.visit_id','identity.detector_id'}<=f.keys();assert f['quality.signal_to_noise']==alerts[0]['properties']['lsst_diaSource_snr'];assert isinstance(f['image_metrics.is_positive'],bool);assert p.edges==()
 def test_strict_unknown_band_is_omitted():
  x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
