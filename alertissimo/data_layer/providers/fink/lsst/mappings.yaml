@@ -2,26 +2,37 @@ broker: fink
 origin: lsst
 payloads:
   sources:
+    endpoint: sources
     path: '[]'
   objects:
+    endpoint: objects
     path: '[]'
   fp:
+    endpoint: fp
     path: '[]'
   conesearch:
+    endpoint: conesearch
     path: '[]'
   cutouts:
+    endpoint: cutouts
     path: .
   schema:
+    endpoint: schema
     path: .
   sso:
+    endpoint: sso
     path: '[]'
   resolver:
+    endpoint: resolver
     path: '[]'
   skymap:
+    endpoint: skymap
     path: '[]'
   statistics:
+    endpoint: statistics
     path: '[]'
   tags:
+    endpoint: tags
     path: '[]'
 mappings:
   summary@lsst:fink.identity.object_id:

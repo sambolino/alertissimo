@@ -2,20 +2,28 @@ broker: fink
 origin: ztf
 payloads:
   objects:
+    endpoint: objects
     path: '[]'
   conesearch:
+    endpoint: conesearch
     path: '[]'
   latests:
+    endpoint: latests
     path: '[]'
   anomaly:
+    endpoint: anomaly
     path: '[]'
   cutouts:
+    endpoint: cutouts
     path: .
   sso:
+    endpoint: sso
     path: '[]'
   statistics:
+    endpoint: statistics
     path: '[]'
   resolver:
+    endpoint: resolver
     path: '[]'
 mappings:
   detection@ztf:fink.position.ra:
