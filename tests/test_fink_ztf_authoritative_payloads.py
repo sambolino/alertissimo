@@ -215,6 +215,41 @@ def test_fast_transient_fields_use_lightcurve_semantics():
     assert record.fields["r.from_upper_limit"] is True
 
 
+def test_exact_fast_transient_rates_and_alert_history_detection_count():
+    payload = [{"i:fid": 1, "i:ndethist": 99, "d:nalerthist": 7,
+                "d:mag_rate": -0.25, "d:sigma_rate": 0.04}]
+    portfolio = _build("objects", payload)
+    lightcurve = _records(portfolio, "lightcurve@ztf:fink")[0]
+    summary = _records(portfolio, "summary@ztf:fink")[0]
+    assert lightcurve.fields == {
+        "detection_count": 7,
+        "g.magnitude_rate": -0.25,
+        "g.magnitude_rate_error": 0.04,
+    }
+    assert summary.fields["detection_count"] == 99
+    absent = _records(_build("objects", [{"i:fid": 1, "d:mag_rate": None,
+                                           "d:sigma_rate": None}]), "lightcurve@ztf:fink")
+    assert not absent
+
+
+def test_blazar_diagnostics_are_values_and_unavailable_sentinel_is_absent():
+    values = _records(_build("objects", [{
+        "d:blazar_stats_instantness_low": 1.2,
+        "d:blazar_stats_robustness_low": 2.3,
+        "d:blazar_stats_instantness_high": 3.4,
+        "d:blazar_stats_robustness_high": 4.5,
+    }]), "classification@fink")[0].fields
+    assert values["assessment.instantness_low.value"] == 1.2
+    assert values["assessment.robustness_low.value"] == 2.3
+    assert values["assessment.instantness_high.value"] == 3.4
+    assert values["assessment.robustness_high.value"] == 4.5
+    assert not any(key.endswith((".probability", ".class")) for key in values)
+    assert not _records(_build("objects", [{
+        "d:blazar_stats_instantness_low": -1.0,
+        "d:blazar_stats_robustness_low": -1,
+    }]), "classification@fink")
+
+
 def test_frozen_service_failures_are_never_scientific_values():
     payload = _payload("sso")
     observed = {
@@ -233,13 +268,21 @@ def test_statistics_emit_only_first_level_survey_records():
     assert not _records(portfolio, "detection@ztf:fink")
     survey = _records(portfolio, "survey@ztf:fink")
     assert len(survey) == 1
-    assert dict(survey[0].fields) == {
+    fields = dict(survey[0].fields)
+    assert {key: fields[key] for key in (
+        "exposure_count", "field_count", "raw_alerts", "science_alerts", "snapshot_key"
+    )} == {
         "exposure_count": 460,
         "field_count": 236,
         "raw_alerts": 346644,
         "science_alerts": 246843,
         "snapshot_key": "ztf_20211103",
     }
+    assert fields["filter_counts"] == {"g": "112699", "r": "134144"}
+    assert fields["class_distribution"]["**"] == "17"
+    assert fields["class_distribution"]["Early SN Ia candidate"] == "6"
+    assert fields["class_distribution"]["OH/IR"] == 0
+    assert fields["class_distribution"]["Radio(cm)"] == 0
 
 
 def test_frozen_scalar_accounting_and_positive_record_counts():

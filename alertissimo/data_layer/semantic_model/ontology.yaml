@@ -2108,6 +2108,9 @@ levels:
   level: L4
   description: "Time-series of photometric points"
   $ref: <provenance>
+  [detection_count]:
+    description: "Number of detected points represented by this light curve; upper-limit points are excluded"
+    type: integer
   <{filter}>:
     <points>:
       type: array
@@ -2120,6 +2123,12 @@ levels:
       unit: days
     [from_upper_limit]:
       type: boolean
+    [magnitude_rate]:
+      description: "Rate of change of magnitude in this filter"
+      unit: mag/day
+    [magnitude_rate_error]:
+      description: "Uncertainty of the magnitude rate in this filter"
+      unit: mag/day
     [feature_vector]:
       description: "Serialized feature vector (e.g. lc_features_g)"
 

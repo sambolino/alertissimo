@@ -237,6 +237,7 @@ def build_portfolio_from_execution(
             fields_by_type: dict[str, dict[str, Any]] = {}
             for semantic_path, references in mappings.items():
                 semantic_type, relative_field = split_semantic_path(semantic_path)
+                composed_entries: dict[str, Any] = {}
                 for raw_reference in references:
                     ref_payload_key, raw_field = raw_reference.split("#", 1)
                     if ref_payload_key != payload_key:
@@ -258,10 +259,19 @@ def build_portfolio_from_execution(
                         "skip_null", False
                     ):
                         continue
-                    fields_by_type.setdefault(semantic_type, {})[relative_field] = (
-                        value
-                    )
+                    if specification and specification.get("type") == "object_entry":
+                        key = specification["key"]
+                        if key in composed_entries and composed_entries[key] != value:
+                            raise PortfolioBuildError(
+                                f"conflicting object_entry values for {semantic_path!r} "
+                                f"key {key!r}: {composed_entries[key]!r} vs {value!r}"
+                            )
+                        composed_entries[key] = value
+                        continue
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = value
                     break
+                if composed_entries:
+                    fields_by_type.setdefault(semantic_type, {})[relative_field] = composed_entries
 
             for semantic_type, fields in fields_by_type.items():
                 if not fields:

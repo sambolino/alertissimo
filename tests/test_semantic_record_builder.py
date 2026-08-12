@@ -250,6 +250,52 @@ def test_skip_null_only_specification_does_not_require_type(tmp_path):
     assert portfolio.records[0].fields["value"] == "present"
 
 
+def _object_entry_document(keys):
+    path = "survey@ztf:lasair.class_distribution"
+    references = [f"object#{name}" for name in keys]
+    return {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {path: references},
+        "transforms": {path: {
+            reference: {"type": "object_entry", "key": key, "skip_null": True}
+            for reference, key in zip(references, keys.values(), strict=True)
+        }},
+    }
+
+
+def test_object_entries_compose_three_scalars_and_preserve_special_keys(tmp_path):
+    keys = {"a": "**", "b": "Early SN Ia candidate", "c": "Radio(cm)"}
+    portfolio = _build(tmp_path, {"a": 2, "b": 3, "c": 4}, _object_entry_document(keys))
+    assert portfolio.records[0].fields["class_distribution"] == {
+        "**": 2, "Early SN Ia candidate": 3, "Radio(cm)": 4,
+    }
+
+
+def test_object_entry_skip_null_omits_only_that_entry(tmp_path):
+    keys = {"a": "AGN", "b": "AGB*", "c": "OH/IR"}
+    portfolio = _build(tmp_path, {"a": 1, "b": None, "c": 3}, _object_entry_document(keys))
+    assert portfolio.records[0].fields["class_distribution"] == {"AGN": 1, "OH/IR": 3}
+
+
+def test_conflicting_duplicate_object_entry_key_raises(tmp_path):
+    document = _object_entry_document({"a": "AGN", "b": "AGN"})
+    with pytest.raises(PortfolioBuildError, match="conflicting object_entry.*AGN"):
+        _build(tmp_path, {"a": 1, "b": 2}, document)
+
+
+def test_ordinary_mapping_still_uses_first_successful_reference(tmp_path):
+    document = {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {"survey@ztf:lasair.exposure_count": [
+            "object#primary", "object#fallback",
+        ]},
+    }
+    portfolio = _build(tmp_path, {"primary": 1, "fallback": 2}, document)
+    assert portfolio.records[0].fields["exposure_count"] == 1
+
+
 def test_discovers_mapping_from_execution_provenance(tmp_path):
     root = tmp_path / "providers"
     path = root / "lasair" / "ztf" / "mappings.yaml"

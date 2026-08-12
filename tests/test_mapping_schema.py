@@ -254,6 +254,18 @@ def test_skip_null_boolean_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_object_entry_transform_requires_explicit_string_key(tmp_path, valid_mapping):
+    semantic = "survey@ztf:example.class_distribution"
+    valid_mapping["mappings"] = {semantic: ["objects#count"]}
+    valid_mapping["transforms"] = {
+        semantic: {"objects#count": {"type": "object_entry", "key": "AGN", "skip_null": True}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+    del valid_mapping["transforms"][semantic]["objects#count"]["key"]
+    with pytest.raises(MappingSchemaError, match="requires 'key'"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 def test_scale_transform_with_numeric_factor_passes(tmp_path, valid_mapping):
     semantic = "detection@ztf:example.identity.source_id"
     valid_mapping["transforms"] = {
