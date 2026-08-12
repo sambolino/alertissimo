@@ -363,7 +363,7 @@ endpoints:
         required: false
         type: boolean
         description: Return the residuals `obs - model` using the sHG1G2 phase curve model. Work only for a single object query (`n_or_d` cannot be a list).
-      withCutouts:
+      withcutouts:
         required: false
         type: boolean
         description: If True, retrieve also cutout data as 2D array. See also `cutout-kind`.
@@ -400,7 +400,7 @@ endpoints:
     - n_or_d
     - withEphem
     - withResiduals
-    - withCutouts
+    - withcutouts
     - cutout-kind
     post_filter: true
     projection:
