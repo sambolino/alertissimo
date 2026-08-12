@@ -50,7 +50,7 @@ def test_search_cone_and_by_id_summaries():
 
 def test_promoted_antares_features_have_locus_surface_parity():
  expected=None
- paths={'photometry.i.magnitude.mean','photometry.i.magnitude.half_amplitude','photometry.i.flux.chi2'}
+ paths={'photometry.i.mag.mean','photometry.i.mag.half_amplitude','photometry.i.flux.chi2'}
  debt=(MAPPINGS.parent/'unmapped_fields.yaml').read_text()
  for name,endpoint in [('get_by_lsst_dia_object_id.json','get_by_lsst_dia_object_id'),('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')]:
   values=dict(records(build(endpoint,fixture(name)),'summary@antares')[0].fields)
@@ -74,7 +74,7 @@ def test_historical_diaobject_snapshots_and_antares_feature_producer():
  assert [s['detection_count'] for s in snapshots]==[a['properties']['lsst_diaObject_nDiaSources'] for a in alerts]
  assert all(isinstance(s['identity.object_id'],int) for s in snapshots) and p.edges==()
  antares=dict(records(p,'summary@antares')[0].fields)
- assert {'photometry.i.magnitude.mean','photometry.i.magnitude.half_amplitude','photometry.r.magnitude.excess_kurtosis','photometry.i.flux.chi2'}<=antares.keys()
+ assert {'photometry.i.mag.mean','photometry.i.mag.half_amplitude','photometry.r.mag.excess_kurtosis','photometry.i.flux.chi2'}<=antares.keys()
  assert not any('magnitude.' in k or '.flux.chi2' in k for s in snapshots for k in s)
 
 def test_diaobject_psf_aggregates_follow_frozen_alert_values():
@@ -84,4 +84,4 @@ def test_diaobject_psf_aggregates_follow_frozen_alert_values():
   for key,value in raw['properties'].items():
    for band in 'ugrizy':
     prefix=f'lsst_diaObject_{band}_'
-    if key.startswith(prefix) and key[len(prefix):] in suffix:assert snapshot[f'photometry.{band}.psf.{suffix[key[len(prefix):]]}']==value
+    if key.startswith(prefix) and key[len(prefix):] in suffix:assert snapshot[f'photometry.{band}.psf.flux.{suffix[key[len(prefix):]]}']==value

@@ -209,3 +209,18 @@ unmapped:
 - query_magstats#step_id_corr:
     reason: provider_native_processing_identifier
     candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
+- query_forced_photometry#mag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- query_forced_photometry#e_mag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- query_forced_photometry#mag_corr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- query_forced_photometry#e_mag_corr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- query_forced_photometry#e_mag_corr_ext:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_extended_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.

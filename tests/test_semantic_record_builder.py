@@ -238,7 +238,7 @@ def _dynamic_mapping():
         "mappings": {
             "detection@ztf:lasair.photometry.{filter}": ["candidate#fid"],
             "detection@ztf:lasair.photometry.{filter}.psf.mag": ["candidate#magpsf"],
-            "detection@ztf:lasair.photometry.{filter}.psf.mag_error": ["candidate#sigmapsf"],
+            "detection@ztf:lasair.photometry.{filter}.psf.mag.error": ["candidate#sigmapsf"],
         },
         "transforms": {
             "detection@ztf:lasair.photometry.{filter}": {
@@ -255,7 +255,7 @@ def test_dynamic_filter_binds_sibling_field_paths(tmp_path):
     fields = dict(portfolio.records[0].fields)
     assert fields == {
         "photometry.g.psf.mag": 18.2,
-        "photometry.g.psf.mag_error": 0.1,
+        "photometry.g.psf.mag.error": 0.1,
     }
     assert "photometry.{filter}" not in fields
     assert "photometry.{filter}.psf.mag" not in fields

@@ -112,7 +112,7 @@ def test_real_detection_and_non_detection_photometry():
     portfolio = _build("query_detections", [detection])
     fields = dict(portfolio.records[0].fields)
     assert fields["photometry.g.psf.mag"] == 17.579912
-    assert fields["photometry.g.psf.mag_error"] == 0.025473464
+    assert fields["photometry.g.psf.mag.error"] == 0.025473464
     assert fields["photometry.g.aperture.mag"] == 17.6296
     assert fields["image_metrics.is_positive"] is True
 
@@ -133,15 +133,15 @@ def test_real_forced_photometry_astrometry_calibration_and_reference_source():
     assert fields["position.dec"] == 39.0979821
     assert fields["time.mjd"] == 60911.23585649999
     assert fields["time.exposure"] == 30.0
-    assert fields["forced_photometry.g.forced_magnitude"] == 17.28768539428711
-    assert fields["forced_photometry.g.forced_magnitude_error"] == 0.010026260279119015
+    assert "forced_photometry.g.forced_magnitude" not in fields
+    assert "forced_photometry.g.forced_magnitude_error" not in fields
     assert fields["calibration.g.zero_point"] == 26.351499557495117
     assert fields["calibration.g.zero_point_uncertainty"] == 5.07220011058962e-06
     assert fields["calibration.g.zero_point_rms"] == 0.023729000240564346
     assert fields["reference_image.nearest_source.position.ra"] == 313.7733154296875
     assert fields["reference_image.nearest_source.position.dec"] == 39.098026275634766
     assert fields["reference_image.nearest_source.photometry.g.mag"] == 15.606999397277832
-    assert fields["reference_image.nearest_source.photometry.g.mag_error"] == 0.01899999938905239
+    assert fields["reference_image.nearest_source.photometry.g.mag.error"] == 0.01899999938905239
     assert fields["image_metrics.is_positive"] is True
     assert portfolio.edges == ()
 

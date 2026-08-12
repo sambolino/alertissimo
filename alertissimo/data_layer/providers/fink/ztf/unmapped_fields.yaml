@@ -47,3 +47,240 @@ unmapped:
 - resolver#d:discoverydate:
     reason: no_stable_feature_catalog_path
     note: Raw field has no stable feature catalog semantic path.
+- objects#i:ssnamenr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:ssnamenr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:ssnamenr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:ssnamenr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:ssmagnr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.magnitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:ssmagnr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.magnitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:ssmagnr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.magnitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:ssmagnr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@ztf:fink.solar_system.mpc_match.magnitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:objectidps1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:objectidps1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:objectidps1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:objectidps1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:distpsnr1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:distpsnr1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:distpsnr1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:distpsnr1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:sgmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:sgmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:srmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:srmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:srmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:srmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:simag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:simag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:simag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:simag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:szmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:szmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:szmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:szmag1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgscore1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#i:sgscore1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#i:sgscore1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgscore1:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:objectidps2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:objectidps2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:distpsnr2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:distpsnr2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:srmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:srmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:simag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:simag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:szmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:szmag2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgscore2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgscore2:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:objectidps3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:objectidps3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:distpsnr3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:distpsnr3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:srmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:srmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:simag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:simag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:szmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:szmag3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#i:sgscore3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#i:sgscore3:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@panstarrs:fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#d:jd_first_real_det:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.first_real_detection_5sigma_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#d:jd_first_real_det:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.first_real_detection_5sigma_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#d:jd_first_real_det:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.first_real_detection_5sigma_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#d:jdstarthist_dt:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.delta_from_first_detection` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- latests#d:jdstarthist_dt:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.delta_from_first_detection` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- anomaly#d:jdstarthist_dt:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@ztf:fink.time.delta_from_first_detection` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:exposures:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.exposure_count` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:fields:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.field_count` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:raw:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.raw_alerts` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:sci:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.science_alerts` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:n_g:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.filter_counts` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#basic:n_r:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.filter_counts` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#class:*:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.class_distribution` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#key:key:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.snapshot_key` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#key:time:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@ztf:fink.time.snapshot_datetime` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.

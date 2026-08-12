@@ -49,12 +49,6 @@ mappings:
   summary@lsst:fink.time.last_mjd:
   - objects#r:lastDiaSourceMjdTai
   - conesearch#r:lastDiaSourceMjdTai
-  summary@lsst:fink.time.first_mjd_fink:
-  - objects#f:firstDiaSourceMjdTaiFink
-  - conesearch#f:firstDiaSourceMjdTaiFink
-  summary@lsst:fink.time.validity_start_mjd:
-  - objects#r:validityStartMjdTai
-  - conesearch#r:validityStartMjdTai
   summary@lsst:fink.position.ra:
   - objects#r:ra
   summary@lsst:fink.position.dec:
@@ -74,21 +68,6 @@ mappings:
   summary@lsst:fink.flags.is_solar_system:
   - objects#f:is_sso
   - conesearch#f:is_sso
-  summary@lsst:fink.provenance.producer.program.id:
-  - objects#r:observation_reason
-  summary@lsst:fink.provenance.producer.program.type:
-  - objects#r:observation_reason
-  summary@lsst:fink.provenance.producer.program.field:
-  - objects#r:observation_reason
-  summary@lsst:fink.provenance.producer.program.pointing.id:
-  - objects#r:observation_reason
-  summary@lsst:fink.provenance.producer.program.target_name:
-  - objects#r:target_name
-  summary@lsst:fink.provenance.producer.program.tags:
-  - objects#r:target_name
-  summary@lsst:fink.crossmatch.best.class:
-  - objects#f:main_label_crossmatch
-  - conesearch#f:main_label_crossmatch
   summary@lsst:fink.photometry.u.psf.flux.error_mean:
   - objects#r:u_psfFluxErrMean
   - conesearch#r:u_psfFluxErrMean
@@ -107,7 +86,7 @@ mappings:
   summary@lsst:fink.photometry.u.psf.flux.minimum:
   - objects#r:u_psfFluxMin
   - conesearch#r:u_psfFluxMin
-  summary@lsst:fink.photometry.u.psf.measurement_count:
+  summary@lsst:fink.photometry.u.psf.flux.measurement_count:
   - objects#r:u_psfFluxNdata
   - conesearch#r:u_psfFluxNdata
   summary@lsst:fink.photometry.u.psf.flux.sigma:
@@ -119,12 +98,6 @@ mappings:
   summary@lsst:fink.forced_photometry.u.psf.flux.mean_error:
   - objects#r:u_fpFluxMeanErr
   - conesearch#r:u_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.u.science.flux.mean:
-  - objects#r:u_scienceFluxMean
-  - conesearch#r:u_scienceFluxMean
-  summary@lsst:fink.forced_photometry.u.science.flux.mean_error:
-  - objects#r:u_scienceFluxMeanErr
-  - conesearch#r:u_scienceFluxMeanErr
   summary@lsst:fink.photometry.g.psf.flux.error_mean:
   - objects#r:g_psfFluxErrMean
   - conesearch#r:g_psfFluxErrMean
@@ -143,7 +116,7 @@ mappings:
   summary@lsst:fink.photometry.g.psf.flux.minimum:
   - objects#r:g_psfFluxMin
   - conesearch#r:g_psfFluxMin
-  summary@lsst:fink.photometry.g.psf.measurement_count:
+  summary@lsst:fink.photometry.g.psf.flux.measurement_count:
   - objects#r:g_psfFluxNdata
   - conesearch#r:g_psfFluxNdata
   summary@lsst:fink.photometry.g.psf.flux.sigma:
@@ -155,12 +128,6 @@ mappings:
   summary@lsst:fink.forced_photometry.g.psf.flux.mean_error:
   - objects#r:g_fpFluxMeanErr
   - conesearch#r:g_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.g.science.flux.mean:
-  - objects#r:g_scienceFluxMean
-  - conesearch#r:g_scienceFluxMean
-  summary@lsst:fink.forced_photometry.g.science.flux.mean_error:
-  - objects#r:g_scienceFluxMeanErr
-  - conesearch#r:g_scienceFluxMeanErr
   summary@lsst:fink.photometry.r.psf.flux.error_mean:
   - objects#r:r_psfFluxErrMean
   - conesearch#r:r_psfFluxErrMean
@@ -179,7 +146,7 @@ mappings:
   summary@lsst:fink.photometry.r.psf.flux.minimum:
   - objects#r:r_psfFluxMin
   - conesearch#r:r_psfFluxMin
-  summary@lsst:fink.photometry.r.psf.measurement_count:
+  summary@lsst:fink.photometry.r.psf.flux.measurement_count:
   - objects#r:r_psfFluxNdata
   - conesearch#r:r_psfFluxNdata
   summary@lsst:fink.photometry.r.psf.flux.sigma:
@@ -191,12 +158,6 @@ mappings:
   summary@lsst:fink.forced_photometry.r.psf.flux.mean_error:
   - objects#r:r_fpFluxMeanErr
   - conesearch#r:r_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.r.science.flux.mean:
-  - objects#r:r_scienceFluxMean
-  - conesearch#r:r_scienceFluxMean
-  summary@lsst:fink.forced_photometry.r.science.flux.mean_error:
-  - objects#r:r_scienceFluxMeanErr
-  - conesearch#r:r_scienceFluxMeanErr
   summary@lsst:fink.photometry.i.psf.flux.error_mean:
   - objects#r:i_psfFluxErrMean
   - conesearch#r:i_psfFluxErrMean
@@ -215,7 +176,7 @@ mappings:
   summary@lsst:fink.photometry.i.psf.flux.minimum:
   - objects#r:i_psfFluxMin
   - conesearch#r:i_psfFluxMin
-  summary@lsst:fink.photometry.i.psf.measurement_count:
+  summary@lsst:fink.photometry.i.psf.flux.measurement_count:
   - objects#r:i_psfFluxNdata
   - conesearch#r:i_psfFluxNdata
   summary@lsst:fink.photometry.i.psf.flux.sigma:
@@ -227,12 +188,6 @@ mappings:
   summary@lsst:fink.forced_photometry.i.psf.flux.mean_error:
   - objects#r:i_fpFluxMeanErr
   - conesearch#r:i_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.i.science.flux.mean:
-  - objects#r:i_scienceFluxMean
-  - conesearch#r:i_scienceFluxMean
-  summary@lsst:fink.forced_photometry.i.science.flux.mean_error:
-  - objects#r:i_scienceFluxMeanErr
-  - conesearch#r:i_scienceFluxMeanErr
   summary@lsst:fink.photometry.z.psf.flux.error_mean:
   - objects#r:z_psfFluxErrMean
   - conesearch#r:z_psfFluxErrMean
@@ -251,7 +206,7 @@ mappings:
   summary@lsst:fink.photometry.z.psf.flux.minimum:
   - objects#r:z_psfFluxMin
   - conesearch#r:z_psfFluxMin
-  summary@lsst:fink.photometry.z.psf.measurement_count:
+  summary@lsst:fink.photometry.z.psf.flux.measurement_count:
   - objects#r:z_psfFluxNdata
   - conesearch#r:z_psfFluxNdata
   summary@lsst:fink.photometry.z.psf.flux.sigma:
@@ -263,12 +218,6 @@ mappings:
   summary@lsst:fink.forced_photometry.z.psf.flux.mean_error:
   - objects#r:z_fpFluxMeanErr
   - conesearch#r:z_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.z.science.flux.mean:
-  - objects#r:z_scienceFluxMean
-  - conesearch#r:z_scienceFluxMean
-  summary@lsst:fink.forced_photometry.z.science.flux.mean_error:
-  - objects#r:z_scienceFluxMeanErr
-  - conesearch#r:z_scienceFluxMeanErr
   summary@lsst:fink.photometry.y.psf.flux.error_mean:
   - objects#r:y_psfFluxErrMean
   - conesearch#r:y_psfFluxErrMean
@@ -287,7 +236,7 @@ mappings:
   summary@lsst:fink.photometry.y.psf.flux.minimum:
   - objects#r:y_psfFluxMin
   - conesearch#r:y_psfFluxMin
-  summary@lsst:fink.photometry.y.psf.measurement_count:
+  summary@lsst:fink.photometry.y.psf.flux.measurement_count:
   - objects#r:y_psfFluxNdata
   - conesearch#r:y_psfFluxNdata
   summary@lsst:fink.photometry.y.psf.flux.sigma:
@@ -299,12 +248,6 @@ mappings:
   summary@lsst:fink.forced_photometry.y.psf.flux.mean_error:
   - objects#r:y_fpFluxMeanErr
   - conesearch#r:y_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.y.science.flux.mean:
-  - objects#r:y_scienceFluxMean
-  - conesearch#r:y_scienceFluxMean
-  summary@lsst:fink.forced_photometry.y.science.flux.mean_error:
-  - objects#r:y_scienceFluxMeanErr
-  - conesearch#r:y_scienceFluxMeanErr
   detection@lsst:fink.identity.source_id:
   - sources#r:diaSourceId
   - conesearch#r:diaSourceId
@@ -329,14 +272,6 @@ mappings:
   - sources#r:midpointMjdTai
   - conesearch#r:midpointMjdTai
   - sso#r:midpointMjdTai
-  detection@lsst:fink.time.processed_mjd:
-  - sources#r:timeProcessedMjdTai
-  - conesearch#r:timeProcessedMjdTai
-  - sso#r:timeProcessedMjdTai
-  detection@lsst:fink.time.withdrawn_mjd:
-  - sources#r:timeWithdrawnMjdTai
-  - conesearch#r:timeWithdrawnMjdTai
-  - sso#r:timeWithdrawnMjdTai
   detection@lsst:fink.position.ra:
   - sources#r:ra
   - conesearch#r:ra
@@ -357,22 +292,6 @@ mappings:
   - sources#r:ra_dec_Cov
   - conesearch#r:ra_dec_Cov
   - sso#r:ra_dec_Cov
-  detection@lsst:fink.position.pixel.x:
-  - sources#r:x
-  - conesearch#r:x
-  - sso#r:x
-  detection@lsst:fink.position.pixel.x_error:
-  - sources#r:xErr
-  - conesearch#r:xErr
-  - sso#r:xErr
-  detection@lsst:fink.position.pixel.y:
-  - sources#r:y
-  - conesearch#r:y
-  - sso#r:y
-  detection@lsst:fink.position.pixel.y_error:
-  - sources#r:yErr
-  - conesearch#r:yErr
-  - sso#r:yErr
   detection@lsst:fink.exposure_time:
   - sources#r:exposureTime
   - conesearch#r:exposureTime
@@ -418,7 +337,7 @@ mappings:
   - sources#r:psfFlux
   - conesearch#r:psfFlux
   - sso#r:psfFlux
-  detection@lsst:fink.photometry.{filter}.psf.flux_error:
+  detection@lsst:fink.photometry.{filter}.psf.flux.error:
   - sources#r:psfFluxErr
   - conesearch#r:psfFluxErr
   - sso#r:psfFluxErr
@@ -426,10 +345,6 @@ mappings:
   - sources#r:psfChi2
   - conesearch#r:psfChi2
   - sso#r:psfChi2
-  detection@lsst:fink.photometry.{filter}.psf.log_likelihood:
-  - sources#r:psfLnL
-  - conesearch#r:psfLnL
-  - sso#r:psfLnL
   detection@lsst:fink.photometry.{filter}.psf.fit_ndata:
   - sources#r:psfNdata
   - conesearch#r:psfNdata
@@ -450,7 +365,7 @@ mappings:
   - sources#r:apFlux
   - conesearch#r:apFlux
   - sso#r:apFlux
-  detection@lsst:fink.photometry.{filter}.aperture.flux_error:
+  detection@lsst:fink.photometry.{filter}.aperture.flux.error:
   - sources#r:apFluxErr
   - conesearch#r:apFluxErr
   - sso#r:apFluxErr
@@ -462,14 +377,6 @@ mappings:
   - sources#r:apFlux_flag_apertureTruncated
   - conesearch#r:apFlux_flag_apertureTruncated
   - sso#r:apFlux_flag_apertureTruncated
-  detection@lsst:fink.forced_photometry.{filter}.science.flux:
-  - sources#r:scienceFlux
-  - conesearch#r:scienceFlux
-  - sso#r:scienceFlux
-  detection@lsst:fink.forced_photometry.{filter}.science.flux_error:
-  - sources#r:scienceFluxErr
-  - conesearch#r:scienceFluxErr
-  - sso#r:scienceFluxErr
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.failed:
   - sources#r:forced_PsfFlux_flag
   - conesearch#r:forced_PsfFlux_flag
@@ -482,14 +389,6 @@ mappings:
   - sources#r:forced_PsfFlux_flag_noGoodPixels
   - conesearch#r:forced_PsfFlux_flag_noGoodPixels
   - sso#r:forced_PsfFlux_flag_noGoodPixels
-  detection@lsst:fink.reference_image.photometry.{filter}.flux:
-  - sources#r:templateFlux
-  - conesearch#r:templateFlux
-  - sso#r:templateFlux
-  detection@lsst:fink.reference_image.photometry.{filter}.flux_error:
-  - sources#r:templateFluxErr
-  - conesearch#r:templateFluxErr
-  - sso#r:templateFluxErr
   detection@lsst:fink.quality.signal_to_noise:
   - sources#r:snr
   - conesearch#r:snr
@@ -502,10 +401,6 @@ mappings:
   - sources#r:reliabilityVersion
   - conesearch#r:reliabilityVersion
   - sso#r:reliabilityVersion
-  detection@lsst:fink.image_metrics.is_negative:
-  - sources#r:isNegative
-  - conesearch#r:isNegative
-  - sso#r:isNegative
   detection@lsst:fink.image_metrics.is_positive:
   - sources#r:isNegative
   - conesearch#r:isNegative
@@ -518,14 +413,6 @@ mappings:
   - sources#r:extendedness
   - conesearch#r:extendedness
   - sso#r:extendedness
-  detection@lsst:fink.image_metrics.centroid.flag:
-  - sources#r:centroid_flag
-  - conesearch#r:centroid_flag
-  - sso#r:centroid_flag
-  detection@lsst:fink.image_metrics.flags.glint_trail:
-  - sources#r:glint_trail
-  - conesearch#r:glint_trail
-  - sso#r:glint_trail
   detection@lsst:fink.image_metrics.shape.ixx:
   - sources#r:ixx
   - conesearch#r:ixx
@@ -550,26 +437,6 @@ mappings:
   - sources#r:ixyPSF
   - conesearch#r:ixyPSF
   - sso#r:ixyPSF
-  detection@lsst:fink.image_metrics.shape.flags.failed:
-  - sources#r:shape_flag
-  - conesearch#r:shape_flag
-  - sso#r:shape_flag
-  detection@lsst:fink.image_metrics.shape.flags.no_pixels:
-  - sources#r:shape_flag_no_pixels
-  - conesearch#r:shape_flag_no_pixels
-  - sso#r:shape_flag_no_pixels
-  detection@lsst:fink.image_metrics.shape.flags.not_contained:
-  - sources#r:shape_flag_not_contained
-  - conesearch#r:shape_flag_not_contained
-  - sso#r:shape_flag_not_contained
-  detection@lsst:fink.image_metrics.shape.flags.parent_source:
-  - sources#r:shape_flag_parent_source
-  - conesearch#r:shape_flag_parent_source
-  - sso#r:shape_flag_parent_source
-  detection@lsst:fink.image_metrics.pixel_flags.failed:
-  - sources#r:pixelFlags
-  - conesearch#r:pixelFlags
-  - sso#r:pixelFlags
   detection@lsst:fink.image_metrics.pixel_flags.bad:
   - sources#r:pixelFlags_bad
   - conesearch#r:pixelFlags_bad
@@ -682,14 +549,6 @@ mappings:
   - sources#r:dipoleMeanFluxErr
   - conesearch#r:dipoleMeanFluxErr
   - sso#r:dipoleMeanFluxErr
-  detection@lsst:fink.image_metrics.dipole.fit_ndata:
-  - sources#r:dipoleNdata
-  - conesearch#r:dipoleNdata
-  - sso#r:dipoleNdata
-  detection@lsst:fink.image_metrics.trail.algorithm:
-  - sources#r:trailAlgorithm
-  - conesearch#r:trailAlgorithm
-  - sso#r:trailAlgorithm
   detection@lsst:fink.image_metrics.trail.angle:
   - sources#r:trailAngle
   - conesearch#r:trailAngle
@@ -726,10 +585,6 @@ mappings:
   - sources#r:trailLengthErr
   - conesearch#r:trailLengthErr
   - sso#r:trailLengthErr
-  detection@lsst:fink.image_metrics.trail.fit_ndata:
-  - sources#r:trailNdata
-  - conesearch#r:trailNdata
-  - sso#r:trailNdata
   detection@lsst:fink.image_metrics.trail.ra:
   - sources#r:trailRa
   - conesearch#r:trailRa
@@ -738,126 +593,10 @@ mappings:
   - sources#r:trailRaErr
   - conesearch#r:trailRaErr
   - sso#r:trailRaErr
-  detection@lsst:fink.image_metrics.trail.flags.failed:
-  - sources#r:trail_flag
-  - conesearch#r:trail_flag
-  - sso#r:trail_flag
-  detection@lsst:fink.image_metrics.trail.flags.edge:
-  - sources#r:trail_flag_edge
-  - conesearch#r:trail_flag_edge
-  - sso#r:trail_flag_edge
-  detection@lsst:fink.solar_system.object.identity.object_id:
-  - sources#r:ssObjectId
-  - conesearch#r:ssObjectId
-  - sso#r:ssObjectId
-  detection@lsst:fink.solar_system.object.designation:
-  - sso#r:designation
-  detection@lsst:fink.solar_system.object.name:
-  - sso#f:sso_name
-  detection@lsst:fink.solar_system.match.rank:
-  - sso#r:diaDistanceRank
-  detection@lsst:fink.position.galactic.longitude:
-  - sso#r:galLon
-  detection@lsst:fink.position.galactic.latitude:
-  - sso#r:galLat
-  detection@lsst:fink.solar_system.ecliptic.longitude:
-  - sso#r:eclLambda
-  detection@lsst:fink.solar_system.ecliptic.latitude:
-  - sso#r:eclBeta
-  detection@lsst:fink.solar_system.phase_angle:
-  - sso#r:phaseAngle
-  detection@lsst:fink.solar_system.elongation:
-  - sso#r:elongation
-  detection@lsst:fink.solar_system.ephemeris.ra:
-  - sso#r:ephRa
-  detection@lsst:fink.solar_system.ephemeris.dec:
-  - sso#r:ephDec
-  detection@lsst:fink.solar_system.ephemeris.vmag:
-  - sso#r:ephVmag
-  detection@lsst:fink.solar_system.ephemeris.offset.total:
-  - sso#r:ephOffset
-  detection@lsst:fink.solar_system.ephemeris.offset.ra:
-  - sso#r:ephOffsetRa
-  detection@lsst:fink.solar_system.ephemeris.offset.dec:
-  - sso#r:ephOffsetDec
-  detection@lsst:fink.solar_system.ephemeris.offset.along_track:
-  - sso#r:ephOffsetAlongTrack
-  detection@lsst:fink.solar_system.ephemeris.offset.cross_track:
-  - sso#r:ephOffsetCrossTrack
-  detection@lsst:fink.solar_system.ephemeris.rate.total:
-  - sso#r:ephRate
-  detection@lsst:fink.solar_system.ephemeris.rate.ra:
-  - sso#r:ephRateRa
-  detection@lsst:fink.solar_system.ephemeris.rate.dec:
-  - sso#r:ephRateDec
-  detection@lsst:fink.solar_system.heliocentric.range:
-  - sso#r:helioRange
-  detection@lsst:fink.solar_system.heliocentric.range_rate:
-  - sso#r:helioRangeRate
-  detection@lsst:fink.solar_system.heliocentric.position.x:
-  - sso#r:helio_x
-  detection@lsst:fink.solar_system.heliocentric.position.y:
-  - sso#r:helio_y
-  detection@lsst:fink.solar_system.heliocentric.position.z:
-  - sso#r:helio_z
-  detection@lsst:fink.solar_system.heliocentric.velocity.x:
-  - sso#r:helio_vx
-  detection@lsst:fink.solar_system.heliocentric.velocity.y:
-  - sso#r:helio_vy
-  detection@lsst:fink.solar_system.heliocentric.velocity.z:
-  - sso#r:helio_vz
-  detection@lsst:fink.solar_system.heliocentric.velocity.total:
-  - sso#r:helio_vtot
-  detection@lsst:fink.solar_system.topocentric.range:
-  - sso#r:topoRange
-  detection@lsst:fink.solar_system.topocentric.range_rate:
-  - sso#r:topoRangeRate
-  detection@lsst:fink.solar_system.topocentric.position.x:
-  - sso#r:topo_x
-  detection@lsst:fink.solar_system.topocentric.position.y:
-  - sso#r:topo_y
-  detection@lsst:fink.solar_system.topocentric.position.z:
-  - sso#r:topo_z
-  detection@lsst:fink.solar_system.topocentric.velocity.x:
-  - sso#r:topo_vx
-  detection@lsst:fink.solar_system.topocentric.velocity.y:
-  - sso#r:topo_vy
-  detection@lsst:fink.solar_system.topocentric.velocity.z:
-  - sso#r:topo_vz
-  detection@lsst:fink.solar_system.topocentric.velocity.total:
-  - sso#r:topo_vtot
   data_product@lsst:fink.payload:
   - cutouts#b:cutoutScience
   - cutouts#b:cutoutTemplate
   - cutouts#b:cutoutDifference
-  lightcurve@lsst:fink.identity.object_id:
-  - fp#r:diaObjectId
-  lightcurve@lsst:fink.identity.forced_source_id:
-  - fp#r:diaForcedSourceId
-  lightcurve@lsst:fink.identity.visit_id:
-  - fp#r:visit
-  lightcurve@lsst:fink.identity.detector_id:
-  - fp#r:detector
-  lightcurve@lsst:fink.time.mjd:
-  - fp#r:midpointMjdTai
-  lightcurve@lsst:fink.time.processed_mjd:
-  - fp#r:timeProcessedMjdTai
-  lightcurve@lsst:fink.time.withdrawn_mjd:
-  - fp#r:timeWithdrawnMjdTai
-  lightcurve@lsst:fink.position.ra:
-  - fp#r:ra
-  lightcurve@lsst:fink.position.dec:
-  - fp#r:dec
-  lightcurve@lsst:fink.forced_photometry.{filter}:
-  - fp#r:band
-  lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux:
-  - fp#r:psfFlux
-  lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux_error:
-  - fp#r:psfFluxErr
-  lightcurve@lsst:fink.forced_photometry.{filter}.science.flux:
-  - fp#r:scienceFlux
-  lightcurve@lsst:fink.forced_photometry.{filter}.science.flux_error:
-  - fp#r:scienceFluxErr
   classification@fink.best.class:
   - objects#f:main_label_classifier
   - conesearch#f:main_label_classifier
@@ -891,15 +630,6 @@ mappings:
   crossmatch@gaia:fink.identity.object_id:
   - sources#f:xm_gaiadr3_DR3Name
   - conesearch#f:xm_gaiadr3_DR3Name
-  crossmatch@gaia:fink.parallax.value:
-  - sources#f:xm_gaiadr3_Plx
-  - conesearch#f:xm_gaiadr3_Plx
-  crossmatch@gaia:fink.parallax.error:
-  - sources#f:xm_gaiadr3_e_Plx
-  - conesearch#f:xm_gaiadr3_e_Plx
-  crossmatch@gaia:fink.classification.variability_flag:
-  - sources#f:xm_gaiadr3_VarFlag
-  - conesearch#f:xm_gaiadr3_VarFlag
   crossmatch@gcvs:fink.classification.best.class:
   - sources#f:xm_gcvs_type
   - conesearch#f:xm_gcvs_type
@@ -933,12 +663,6 @@ mappings:
   crossmatch@legacydr8:fink.redshift.error:
   - sources#f:xm_legacydr8_e_zphot
   - conesearch#f:xm_legacydr8_e_zphot
-  crossmatch@legacydr8:fink.quality.photoz_flag:
-  - sources#f:xm_legacydr8_fqual
-  - conesearch#f:xm_legacydr8_fqual
-  crossmatch@legacydr8:fink.classification.star_probability:
-  - sources#f:xm_legacydr8_pstar
-  - conesearch#f:xm_legacydr8_pstar
   crossmatch@mangrove:fink.identity.twomass_id:
   - sources#f:xm_mangrove_2MASS_name
   - conesearch#f:xm_mangrove_2MASS_name
@@ -951,45 +675,3 @@ mappings:
   crossmatch@mangrove:fink.luminosity_distance:
   - sources#f:xm_mangrove_lum_dist
   - conesearch#f:xm_mangrove_lum_dist
-  portfolio.survey@lsst:fink.time.night:
-  - statistics#f:night
-  portfolio.survey@lsst:fink.alert_count:
-  - statistics#f:alerts
-  portfolio.survey@lsst:fink.object_count:
-  - statistics#f:objects
-  portfolio.survey@lsst:fink.visit_count:
-  - statistics#f:visits
-  portfolio.survey@lsst:fink.filter_counts.u:
-  - statistics#f:alerts_u
-  portfolio.survey@lsst:fink.filter_counts.g:
-  - statistics#f:alerts_g
-  portfolio.survey@lsst:fink.filter_counts.r:
-  - statistics#f:alerts_r
-  portfolio.survey@lsst:fink.filter_counts.i:
-  - statistics#f:alerts_i
-  portfolio.survey@lsst:fink.filter_counts.z:
-  - statistics#f:alerts_z
-  portfolio.survey@lsst:fink.filter_counts.y:
-  - statistics#f:alerts_y
-  portfolio.survey@lsst:fink.flag_counts.is_cataloged:
-  - statistics#f:is_cataloged
-  portfolio.survey@lsst:fink.flag_counts.is_first_detection:
-  - statistics#f:is_first
-  portfolio.survey@lsst:fink.flag_counts.is_solar_system:
-  - statistics#f:is_sso
-  portfolio.survey@lsst:fink.flag_counts.is_dipole:
-  - statistics#f:isDipole
-  portfolio.survey@lsst:fink.flag_counts.glint_trail:
-  - statistics#f:glint_trail
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray:
-  - statistics#f:pixelFlags_cr
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.saturated:
-  - statistics#f:pixelFlags_saturated
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.streak:
-  - statistics#f:pixelFlags_streak
-  portfolio.survey@lsst:fink.flag_counts.in_tns:
-  - statistics#f:in_tns
-  portfolio.survey@lsst:fink.provenance.channel.version:
-  - statistics#f:fink_broker_version
-  portfolio.survey@lsst:fink.provenance.channel.science_version:
-  - statistics#f:fink_science_version

@@ -55,7 +55,7 @@ mappings:
   detection@ztf:lasair.photometry.{filter}.psf.mag:
     - candidates#magpsf
     - lightcurve_candidates#magpsf
-  detection@ztf:lasair.photometry.{filter}.psf.mag_error:
+  detection@ztf:lasair.photometry.{filter}.psf.mag.error:
     - candidates#sigmapsf
     - lightcurve_candidates#sigmapsf
   detection@ztf:lasair.photometry.{filter}.limit.mag:
@@ -63,7 +63,7 @@ mappings:
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
     - candidates#magnr
     - lightcurve_candidates#magnr
-  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag_error:
+  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag.error:
     - candidates#sigmagnr
     - lightcurve_candidates#sigmagnr
   detection@ztf:lasair.calibration.{filter}.zero_point:
@@ -205,55 +205,55 @@ mappings:
   crossmatch@{producer}:lasair.photometry.J.mag:
     - sherlock_position_crossmatches#J
     - sherlock_objects_crossmatches#J
-  crossmatch@{producer}:lasair.photometry.J.mag_error:
+  crossmatch@{producer}:lasair.photometry.J.mag.error:
     - sherlock_position_crossmatches#JErr
     - sherlock_objects_crossmatches#JErr
   crossmatch@{producer}:lasair.photometry.H.mag:
     - sherlock_position_crossmatches#H
     - sherlock_objects_crossmatches#H
-  crossmatch@{producer}:lasair.photometry.H.mag_error:
+  crossmatch@{producer}:lasair.photometry.H.mag.error:
     - sherlock_position_crossmatches#HErr
     - sherlock_objects_crossmatches#HErr
   crossmatch@{producer}:lasair.photometry.K.mag:
     - sherlock_position_crossmatches#K
     - sherlock_objects_crossmatches#K
-  crossmatch@{producer}:lasair.photometry.K.mag_error:
+  crossmatch@{producer}:lasair.photometry.K.mag.error:
     - sherlock_position_crossmatches#KErr
     - sherlock_objects_crossmatches#KErr
   crossmatch@{producer}:lasair.photometry.u.mag:
     - sherlock_position_crossmatches#_u
     - sherlock_objects_crossmatches#_u
-  crossmatch@{producer}:lasair.photometry.u.mag_error:
+  crossmatch@{producer}:lasair.photometry.u.mag.error:
     - sherlock_position_crossmatches#_uErr
     - sherlock_objects_crossmatches#_uErr
   crossmatch@{producer}:lasair.photometry.g.mag:
     - sherlock_position_crossmatches#_g
     - sherlock_objects_crossmatches#_g
-  crossmatch@{producer}:lasair.photometry.g.mag_error:
+  crossmatch@{producer}:lasair.photometry.g.mag.error:
     - sherlock_position_crossmatches#_gErr
     - sherlock_objects_crossmatches#_gErr
   crossmatch@{producer}:lasair.photometry.r.mag:
     - sherlock_position_crossmatches#_r
     - sherlock_objects_crossmatches#_r
-  crossmatch@{producer}:lasair.photometry.r.mag_error:
+  crossmatch@{producer}:lasair.photometry.r.mag.error:
     - sherlock_position_crossmatches#_rErr
     - sherlock_objects_crossmatches#_rErr
   crossmatch@{producer}:lasair.photometry.i.mag:
     - sherlock_position_crossmatches#_i
     - sherlock_objects_crossmatches#_i
-  crossmatch@{producer}:lasair.photometry.i.mag_error:
+  crossmatch@{producer}:lasair.photometry.i.mag.error:
     - sherlock_position_crossmatches#_iErr
     - sherlock_objects_crossmatches#_iErr
   crossmatch@{producer}:lasair.photometry.z.mag:
     - sherlock_position_crossmatches#_z
     - sherlock_objects_crossmatches#_z
-  crossmatch@{producer}:lasair.photometry.z.mag_error:
+  crossmatch@{producer}:lasair.photometry.z.mag.error:
     - sherlock_position_crossmatches#_zErr
     - sherlock_objects_crossmatches#_zErr
   crossmatch@{producer}:lasair.photometry.y.mag:
     - sherlock_position_crossmatches#_y
     - sherlock_objects_crossmatches#_y
-  crossmatch@{producer}:lasair.photometry.y.mag_error:
+  crossmatch@{producer}:lasair.photometry.y.mag.error:
     - sherlock_position_crossmatches#_yErr
     - sherlock_objects_crossmatches#_yErr
   crossmatch@tns:lasair.identity.object_id:

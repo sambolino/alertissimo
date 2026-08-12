@@ -151,7 +151,7 @@ mappings:
   detection@lsst:alerce.photometry.{filter}.psf.flux:
   - query_detections#psfFlux
   - query_lightcurve.detections#psfFlux
-  detection@lsst:alerce.photometry.{filter}.psf.flux_error:
+  detection@lsst:alerce.photometry.{filter}.psf.flux.error:
   - query_detections#psfFluxErr
   - query_lightcurve.detections#psfFluxErr
   detection@lsst:alerce.photometry.{filter}.psf.fit_chi2:
@@ -175,7 +175,7 @@ mappings:
   detection@lsst:alerce.photometry.{filter}.aperture.flux:
   - query_detections#apFlux
   - query_lightcurve.detections#apFlux
-  detection@lsst:alerce.photometry.{filter}.aperture.flux_error:
+  detection@lsst:alerce.photometry.{filter}.aperture.flux.error:
   - query_detections#apFluxErr
   - query_lightcurve.detections#apFluxErr
   detection@lsst:alerce.photometry.{filter}.aperture.flags.failed:
@@ -364,7 +364,7 @@ mappings:
   detection@lsst:alerce.forced_photometry.{filter}.psf.flux:
   - query_forced_photometry#psfFlux
   - query_lightcurve.forced_photometry#psfFlux
-  detection@lsst:alerce.forced_photometry.{filter}.psf.flux_error:
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flux.error:
   - query_forced_photometry#psfFluxErr
   - query_lightcurve.forced_photometry#psfFluxErr
 transforms:

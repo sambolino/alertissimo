@@ -290,6 +290,39 @@ def test_unknown_transform_type_fails(tmp_path, valid_mapping):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_all_production_provider_mappings_use_current_photometry_ontology():
+    providers = Path(__file__).parents[1] / "alertissimo" / "data_layer" / "providers"
+    mapping_files = sorted(providers.glob("*/*/mappings.yaml"))
+    registries = {path.parent.relative_to(providers).as_posix() for path in mapping_files}
+    assert registries == {
+        f"{broker}/{origin}"
+        for broker in ("alerce", "antares", "fink", "lasair")
+        for origin in ("lsst", "ztf")
+    }
+
+    obsolete = (
+        ".mag_error", ".flux_error", ".magnitude.", ".magnitude_rate",
+        ".psf.mag_error", ".psf.flux_error", ".aperture.mag_error",
+        ".aperture.flux_error", ".aperture.large.mag_error",
+    )
+    obsolete_psf_aggregates = {
+        "scatter_chi2", "linear_intercept", "linear_slope", "mad", "maximum",
+        "maximum_slope", "mean", "mean_error", "minimum", "measurement_count",
+        "percentile_05", "percentile_25", "percentile_50", "percentile_75",
+        "percentile_95", "sigma", "skew", "stetson_j", "flux_error_mean",
+    }
+    for path in mapping_files:
+        document = yaml.safe_load(path.read_text(encoding="utf-8"))
+        semantic_keys = tuple(document["mappings"])
+        photometry_keys = tuple(key for key in semantic_keys if "photometry." in key)
+        assert not [key for key in photometry_keys if any(old in key for old in obsolete)]
+        assert not [
+            key for key in photometry_keys
+            if any(f".psf.{stat}" in key for stat in obsolete_psf_aggregates)
+        ]
+        validate_mapping_file(path)
+
+
 @pytest.mark.parametrize(("transforms", "match"), [
     ({"detection@ztf:example.identity.missing": {"objects#oid": {"type": "boolean_not"}}}, "not in mappings"),
     ({"detection@ztf:example.identity.source_id": {"objects#other": {"type": "boolean_not"}}}, "not mapped under"),

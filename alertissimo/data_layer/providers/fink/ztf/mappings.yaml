@@ -65,7 +65,7 @@ mappings:
   - latests#i:magpsf
   - sso#i:magpsf
   - anomaly#i:magpsf
-  detection@ztf:fink.photometry.{filter}.psf.mag_error:
+  detection@ztf:fink.photometry.{filter}.psf.mag.error:
   - objects#i:sigmapsf
   - conesearch#i:sigmapsf
   - sso#i:sigmapsf
@@ -105,10 +105,10 @@ mappings:
   detection@ztf:fink.photometry.{filter}.aperture.large.mag:
   - objects#i:magapbig
   - anomaly#i:magapbig
-  detection@ztf:fink.photometry.{filter}.aperture.mag_error:
+  detection@ztf:fink.photometry.{filter}.aperture.mag.error:
   - objects#i:sigmagap
   - anomaly#i:sigmagap
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag_error:
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag.error:
   - objects#i:sigmagapbig
   - anomaly#i:sigmagapbig
   detection@ztf:fink.photometry.{filter}.mag_minus_psf:
@@ -291,7 +291,7 @@ mappings:
   - sso#i:magnr
   - latests#i:magnr
   - anomaly#i:magnr
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag_error:
+  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
   - objects#i:sigmagnr
   - sso#i:sigmagnr
   - latests#i:sigmagnr
@@ -355,10 +355,10 @@ mappings:
   - latests#v:constellation
   - sso#v:constellation
   - anomaly#v:constellation
-  summary@ztf:fink.photometry.{filter}.magnitude_rate:
+  summary@ztf:fink.photometry.{filter}.mag.rate:
   - objects#v:rate
   - latests#v:rate
-  summary@ztf:fink.photometry.{filter}.magnitude_rate_error:
+  summary@ztf:fink.photometry.{filter}.mag.rate_error:
   - objects#v:sigma(rate)
   - latests#v:sigma(rate)
   summary@ztf:fink.color.{filter1-filter2}.diff:
@@ -458,21 +458,11 @@ mappings:
   - sso#d:roid
   - latests#d:roid
   - anomaly#d:roid
-  detection@ztf:fink.solar_system.mpc_match.name:
-  - objects#i:ssnamenr
-  - sso#i:ssnamenr
-  - latests#i:ssnamenr
-  - anomaly#i:ssnamenr
   detection@ztf:fink.solar_system.mpc_match.separation.total:
   - objects#i:ssdistnr
   - sso#i:ssdistnr
   - latests#i:ssdistnr
   - anomaly#i:ssdistnr
-  detection@ztf:fink.solar_system.mpc_match.magnitude:
-  - objects#i:ssmagnr
-  - sso#i:ssmagnr
-  - latests#i:ssmagnr
-  - anomaly#i:ssmagnr
   detection@ztf:fink.solar_system.iau_name:
   - sso#sso_name
   detection@ztf:fink.solar_system.iau_number:
@@ -578,63 +568,6 @@ mappings:
   - sso#i:nmtchps
   - latests#i:nmtchps
   - anomaly#i:nmtchps
-  crossmatch@panstarrs:fink:
-  - objects#i:objectidps1
-  - sso#i:objectidps1
-  - latests#i:objectidps1
-  - anomaly#i:objectidps1
-  - objects#i:distpsnr1
-  - sso#i:distpsnr1
-  - latests#i:distpsnr1
-  - anomaly#i:distpsnr1
-  - objects#i:sgmag1
-  - sso#i:sgmag1
-  - latests#i:sgmag1
-  - anomaly#i:sgmag1
-  - objects#i:srmag1
-  - sso#i:srmag1
-  - latests#i:srmag1
-  - anomaly#i:srmag1
-  - objects#i:simag1
-  - sso#i:simag1
-  - latests#i:simag1
-  - anomaly#i:simag1
-  - objects#i:szmag1
-  - sso#i:szmag1
-  - latests#i:szmag1
-  - anomaly#i:szmag1
-  - objects#i:sgscore1
-  - sso#i:sgscore1
-  - latests#i:sgscore1
-  - anomaly#i:sgscore1
-  - objects#i:objectidps2
-  - anomaly#i:objectidps2
-  - objects#i:distpsnr2
-  - anomaly#i:distpsnr2
-  - objects#i:sgmag2
-  - anomaly#i:sgmag2
-  - objects#i:srmag2
-  - anomaly#i:srmag2
-  - objects#i:simag2
-  - anomaly#i:simag2
-  - objects#i:szmag2
-  - anomaly#i:szmag2
-  - objects#i:sgscore2
-  - anomaly#i:sgscore2
-  - objects#i:objectidps3
-  - anomaly#i:objectidps3
-  - objects#i:distpsnr3
-  - anomaly#i:distpsnr3
-  - objects#i:sgmag3
-  - anomaly#i:sgmag3
-  - objects#i:srmag3
-  - anomaly#i:srmag3
-  - objects#i:simag3
-  - anomaly#i:simag3
-  - objects#i:szmag3
-  - anomaly#i:szmag3
-  - objects#i:sgscore3
-  - anomaly#i:sgscore3
   lightcurve@ztf:fink.g.feature_vector:
   - sso#d:lc_features_g
   - latests#d:lc_features_g
@@ -644,14 +577,6 @@ mappings:
   - sso#d:lc_features_r
   - latests#d:lc_features_r
   - anomaly#d:lc_features_r
-  summary@ztf:fink.time.first_real_detection_5sigma_mjd:
-  - sso#d:jd_first_real_det
-  - latests#d:jd_first_real_det
-  - anomaly#d:jd_first_real_det
-  summary@ztf:fink.time.delta_from_first_detection:
-  - sso#d:jdstarthist_dt
-  - latests#d:jdstarthist_dt
-  - anomaly#d:jdstarthist_dt
   summary@ztf:fink.magnitude_rate:
   - objects#d:mag_rate
   - sso#d:mag_rate
@@ -690,20 +615,3 @@ mappings:
   - cutouts#b:cutoutScience_stampData
   - cutouts#b:cutoutTemplate_stampData
   - cutouts#b:cutoutDifference_stampData
-  portfolio.survey@ztf:fink.exposure_count:
-  - statistics#basic:exposures
-  portfolio.survey@ztf:fink.field_count:
-  - statistics#basic:fields
-  portfolio.survey@ztf:fink.raw_alerts:
-  - statistics#basic:raw
-  portfolio.survey@ztf:fink.science_alerts:
-  - statistics#basic:sci
-  portfolio.survey@ztf:fink.filter_counts:
-  - statistics#basic:n_g
-  - statistics#basic:n_r
-  portfolio.survey@ztf:fink.class_distribution:
-  - statistics#class:*
-  portfolio.survey@ztf:fink.snapshot_key:
-  - statistics#key:key
-  portfolio.survey@ztf:fink.time.snapshot_datetime:
-  - statistics#key:time

@@ -5,3 +5,558 @@ unmapped:
 - schema#schema:
     reason: no_stable_feature_catalog_path
     note: Raw field has no stable feature catalog semantic path.
+- objects#f:firstDiaSourceMjdTaiFink:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.time.first_mjd_fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:firstDiaSourceMjdTaiFink:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.time.first_mjd_fink` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:validityStartMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.time.validity_start_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:validityStartMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.time.validity_start_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:observation_reason:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.provenance.producer.program.id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:target_name:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.provenance.producer.program.target_name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:u_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.u.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:u_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.u.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:u_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.u.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:u_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.u.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:g_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.g.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:g_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.g.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:g_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.g.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:g_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.g.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:r_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.r.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:r_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.r.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:r_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.r.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:r_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.r.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:i_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.i.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:i_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.i.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:i_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.i.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:i_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.i.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:z_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.z.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:z_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.z.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:z_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.z.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:z_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.z.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:y_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.y.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:y_scienceFluxMean:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.y.science.flux.mean` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- objects#r:y_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.y.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:y_scienceFluxMeanErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `summary@lsst:fink.forced_photometry.y.science.flux.mean_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:timeProcessedMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.processed_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:timeProcessedMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.processed_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:timeProcessedMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.processed_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:timeWithdrawnMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.withdrawn_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:timeWithdrawnMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.withdrawn_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:timeWithdrawnMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.time.withdrawn_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:x:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:x:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:x:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:xErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:xErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:xErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.x_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:yErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:yErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:yErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.pixel.y_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:psfLnL:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.photometry.{filter}.psf.log_likelihood` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:psfLnL:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.photometry.{filter}.psf.log_likelihood` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:psfLnL:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.photometry.{filter}.psf.log_likelihood` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:scienceFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:scienceFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:scienceFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:scienceFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:scienceFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:scienceFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.forced_photometry.{filter}.science.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:templateFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:templateFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:templateFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:templateFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:templateFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:templateFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.reference_image.photometry.{filter}.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:centroid_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.centroid.flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:centroid_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.centroid.flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:centroid_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.centroid.flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:glint_trail:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.flags.glint_trail` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:glint_trail:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.flags.glint_trail` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:glint_trail:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.flags.glint_trail` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:shape_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:shape_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:shape_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:shape_flag_no_pixels:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.no_pixels` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:shape_flag_no_pixels:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.no_pixels` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:shape_flag_no_pixels:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.no_pixels` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:shape_flag_not_contained:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.not_contained` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:shape_flag_not_contained:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.not_contained` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:shape_flag_not_contained:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.not_contained` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:shape_flag_parent_source:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.parent_source` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:shape_flag_parent_source:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.parent_source` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:shape_flag_parent_source:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.shape.flags.parent_source` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:pixelFlags:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.pixel_flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:pixelFlags:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.pixel_flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:pixelFlags:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.pixel_flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:dipoleNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.dipole.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:dipoleNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.dipole.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:dipoleNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.dipole.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:trailAlgorithm:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.algorithm` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:trailAlgorithm:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.algorithm` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:trailAlgorithm:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.algorithm` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:trailNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:trailNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:trailNdata:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.fit_ndata` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:trail_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:trail_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:trail_flag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.failed` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:trail_flag_edge:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.edge` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:trail_flag_edge:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.edge` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:trail_flag_edge:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.image_metrics.trail.flags.edge` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#r:ssObjectId:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.object.identity.object_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#r:ssObjectId:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.object.identity.object_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ssObjectId:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.object.identity.object_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:designation:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.object.designation` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#f:sso_name:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.object.name` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:diaDistanceRank:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.match.rank` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:galLon:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.galactic.longitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:galLat:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.position.galactic.latitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:eclLambda:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ecliptic.longitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:eclBeta:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ecliptic.latitude` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:phaseAngle:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.phase_angle` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:elongation:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.elongation` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephRa:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.ra` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephDec:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.dec` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephVmag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.vmag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephOffset:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.offset.total` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephOffsetRa:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.offset.ra` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephOffsetDec:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.offset.dec` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephOffsetAlongTrack:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.offset.along_track` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephOffsetCrossTrack:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.offset.cross_track` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephRate:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.rate.total` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephRateRa:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.rate.ra` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:ephRateDec:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.ephemeris.rate.dec` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helioRange:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.range` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helioRangeRate:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.range_rate` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_x:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.position.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.position.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_z:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.position.z` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_vx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.velocity.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_vy:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.velocity.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_vz:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.velocity.z` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:helio_vtot:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.heliocentric.velocity.total` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topoRange:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.range` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topoRangeRate:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.range_rate` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_x:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.position.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.position.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_z:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.position.z` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_vx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.velocity.x` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_vy:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.velocity.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_vz:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.velocity.z` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sso#r:topo_vtot:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `detection@lsst:fink.solar_system.topocentric.velocity.total` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:diaObjectId:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.identity.object_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:diaForcedSourceId:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.identity.forced_source_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:visit:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.identity.visit_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:detector:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.identity.detector_id` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:midpointMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.time.mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:timeProcessedMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.time.processed_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:timeWithdrawnMjdTai:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.time.withdrawn_mjd` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:ra:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.position.ra` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:dec:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.position.dec` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:band:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.forced_photometry.{filter}` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:psfFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:psfFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:scienceFlux:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.forced_photometry.{filter}.science.flux` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- fp#r:scienceFluxErr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `lightcurve@lsst:fink.forced_photometry.{filter}.science.flux_error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#f:xm_gaiadr3_Plx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.parallax.value` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:xm_gaiadr3_Plx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.parallax.value` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#f:xm_gaiadr3_e_Plx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.parallax.error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:xm_gaiadr3_e_Plx:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.parallax.error` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#f:xm_gaiadr3_VarFlag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.classification.variability_flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:xm_gaiadr3_VarFlag:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@gaia:fink.classification.variability_flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#f:xm_legacydr8_fqual:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@legacydr8:fink.quality.photoz_flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:xm_legacydr8_fqual:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@legacydr8:fink.quality.photoz_flag` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- sources#f:xm_legacydr8_pstar:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@legacydr8:fink.classification.star_probability` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- conesearch#f:xm_legacydr8_pstar:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `crossmatch@legacydr8:fink.classification.star_probability` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:night:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.time.night` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.alert_count` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:objects:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.object_count` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:visits:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.visit_count` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_u:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.u` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_g:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.g` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_r:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.r` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_i:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.i` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_z:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.z` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:alerts_y:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.filter_counts.y` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:is_cataloged:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.is_cataloged` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:is_first:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.is_first_detection` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:is_sso:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.is_solar_system` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:isDipole:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.is_dipole` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:glint_trail:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.glint_trail` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:pixelFlags_cr:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:pixelFlags_saturated:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.pixel_flags.saturated` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:pixelFlags_streak:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.pixel_flags.streak` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:in_tns:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.flag_counts.in_tns` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:fink_broker_version:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.provenance.channel.version` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.
+- statistics#f:fink_science_version:
+    reason: ontology_migration_pending_semantics
+    note: The former semantic path `portfolio.survey@lsst:fink.provenance.channel.science_version` is absent from the tightened ontology, and Phase 1 has no exact mechanical same-meaning replacement.

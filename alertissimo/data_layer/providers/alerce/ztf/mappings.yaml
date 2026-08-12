@@ -160,19 +160,19 @@ mappings:
   detection@ztf:alerce.photometry.{filter}.psf.mag:
   - query_detections#magpsf
   - query_lightcurve.detections#magpsf
-  detection@ztf:alerce.photometry.{filter}.psf.mag_error:
+  detection@ztf:alerce.photometry.{filter}.psf.mag.error:
   - query_detections#sigmapsf
   - query_lightcurve.detections#sigmapsf
   detection@ztf:alerce.photometry.{filter}.aperture.mag:
   - query_detections#magap
   - query_lightcurve.detections#magap
-  detection@ztf:alerce.photometry.{filter}.aperture.mag_error:
+  detection@ztf:alerce.photometry.{filter}.aperture.mag.error:
   - query_detections#sigmagap
   - query_lightcurve.detections#sigmagap
   detection@ztf:alerce.photometry.{filter}.aperture.large.mag:
   - query_detections#magapbig
   - query_lightcurve.detections#magapbig
-  detection@ztf:alerce.photometry.{filter}.aperture.large.mag_error:
+  detection@ztf:alerce.photometry.{filter}.aperture.large.mag.error:
   - query_detections#sigmagapbig
   - query_lightcurve.detections#sigmagapbig
   detection@ztf:alerce.provenance.producer.program.field:
@@ -187,16 +187,6 @@ mappings:
   - query_forced_photometry#procstatus
   detection@ztf:alerce.forced_photometry.{filter}.limit.mag:
   - query_forced_photometry#diffmaglim
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude:
-  - query_forced_photometry#mag
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_error:
-  - query_forced_photometry#e_mag
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected:
-  - query_forced_photometry#mag_corr
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_error:
-  - query_forced_photometry#e_mag_corr
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_extended_error:
-  - query_forced_photometry#e_mag_corr_ext
   summary@ztf:alerce.photometry.{filter}:
   - query_magstats#fid
   summary@ztf:alerce.position.ra_error:
@@ -243,7 +233,7 @@ mappings:
   detection@ztf:alerce.reference_image.nearest_source.photometry.{filter}.mag:
   - query_lightcurve.detections#magnr
   - query_forced_photometry#magnr
-  detection@ztf:alerce.reference_image.nearest_source.photometry.{filter}.mag_error:
+  detection@ztf:alerce.reference_image.nearest_source.photometry.{filter}.mag.error:
   - query_lightcurve.detections#sigmagnr
   - query_forced_photometry#sigmagnr
   detection@ztf:alerce.reference_image.nearest_source.image_metrics.fit_chi:
