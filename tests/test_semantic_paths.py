@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from alertissimo.data_layer.semantic_model import SemanticPathModel
@@ -76,6 +78,27 @@ def test_photometric_quantities_and_their_children_are_materializable(semantic_p
     model = SemanticPathModel.from_ontology()
 
     assert model.is_valid(semantic_path)
+
+
+def test_generic_photometric_flux_is_materializable_and_unit_neutral():
+    model = SemanticPathModel.from_ontology()
+
+    assert model.is_valid("detection@lsst:test.photometry.g.flux")
+    assert model.is_valid("detection@lsst:test.photometry.g.flux.error")
+
+    ontology_path = (
+        Path(__file__).parents[1]
+        / "alertissimo"
+        / "data_layer"
+        / "semantic_model"
+        / "ontology.yaml"
+    )
+    ontology = ontology_path.read_text(encoding="utf-8")
+    generic_flux = ontology.split("    [flux]:", 1)[1].split(
+        "    [mag_minus_psf]:", 1
+    )[0]
+
+    assert "      unit:" not in generic_flux
 
 
 @pytest.mark.parametrize(
