@@ -314,39 +314,6 @@ unmapped:
 - locus_by_id#properties.brightest_alert_observation_time:
     reason: processing_metadata
     note: Client-visible locus bookkeeping or provider metadata without an exact ontology concept.
-- locus_by_id#properties.feature_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_amplitude_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_anderson_darling_normal_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_anderson_darling_normal_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_anderson_darling_normal_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_anderson_darling_normal_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_beyond_1_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_beyond_1_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_beyond_2_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_beyond_2_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_bins_window1.0_offset0.0_eta_e_magn_i:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
@@ -360,51 +327,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_bins_window1.0_offset0.0_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_chi2_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_chi2_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_cusum_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_cusum_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_cusum_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_cusum_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_duration_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_duration_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_duration_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_eta_e_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_eta_e_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_eta_e_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_eta_e_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_inter_percentile_range_10_magn_i:
@@ -432,30 +354,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_inter_percentile_range_2_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_kurtosis_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_kurtosis_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_kurtosis_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_kurtosis_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_linear_fit_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_linear_fit_slope_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_linear_fit_slope_sigma_magn_i:
@@ -489,36 +387,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_magnitude_percentage_ratio_40_5_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_maximum_slope_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_mean_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_mean_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_mean_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_mean_variance_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_mean_variance_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_median_absolute_deviation_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_median_absolute_deviation_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_median_absolute_deviation_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_median_buffer_range_percentage_10_magn_i:
@@ -561,15 +429,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_otsu_std_upper_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_percent_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_percent_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- locus_by_id#properties.feature_percent_amplitude_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - locus_by_id#properties.feature_percent_difference_magnitude_percentile_10_magn_i:
@@ -758,39 +617,6 @@ unmapped:
 - search_loci#properties.brightest_alert_observation_time:
     reason: processing_metadata
     note: Client-visible locus bookkeeping or provider metadata without an exact ontology concept.
-- search_loci#properties.feature_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_amplitude_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_anderson_darling_normal_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_anderson_darling_normal_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_anderson_darling_normal_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_anderson_darling_normal_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_beyond_1_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_beyond_1_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_beyond_2_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_beyond_2_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_bins_window1.0_offset0.0_eta_e_magn_i:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
@@ -804,51 +630,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_bins_window1.0_offset0.0_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_chi2_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_chi2_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_cusum_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_cusum_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_cusum_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_cusum_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_duration_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_duration_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_duration_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_eta_e_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_eta_e_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_eta_e_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_eta_e_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_inter_percentile_range_10_magn_i:
@@ -876,30 +657,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_inter_percentile_range_2_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_kurtosis_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_kurtosis_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_kurtosis_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_kurtosis_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_linear_fit_reduced_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_linear_fit_reduced_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_linear_fit_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_linear_fit_slope_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_linear_fit_slope_sigma_magn_i:
@@ -933,36 +690,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_magnitude_percentage_ratio_40_5_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_maximum_slope_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_mean_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_mean_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_mean_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_mean_variance_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_mean_variance_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_median_absolute_deviation_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_median_absolute_deviation_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_median_absolute_deviation_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_median_buffer_range_percentage_10_magn_i:
@@ -1005,15 +732,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_otsu_std_upper_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_percent_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_percent_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- search_loci#properties.feature_percent_amplitude_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - search_loci#properties.feature_percent_difference_magnitude_percentile_10_magn_i:
@@ -1202,39 +920,6 @@ unmapped:
 - cone_loci#properties.brightest_alert_observation_time:
     reason: processing_metadata
     note: Client-visible locus bookkeeping or provider metadata without an exact ontology concept.
-- cone_loci#properties.feature_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_amplitude_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_anderson_darling_normal_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_anderson_darling_normal_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_anderson_darling_normal_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_anderson_darling_normal_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_beyond_1_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_beyond_1_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_beyond_2_std_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_beyond_2_std_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_bins_window1.0_offset0.0_eta_e_magn_i:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
@@ -1248,51 +933,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_bins_window1.0_offset0.0_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_chi2_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_chi2_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_cusum_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_cusum_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_cusum_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_cusum_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_duration_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_duration_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_duration_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_eta_e_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_eta_e_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_eta_e_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_eta_e_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_inter_percentile_range_10_magn_i:
@@ -1320,30 +960,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_inter_percentile_range_2_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_kurtosis_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_kurtosis_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_kurtosis_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_kurtosis_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_linear_fit_reduced_chi2_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_linear_fit_reduced_chi2_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_linear_fit_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_linear_fit_slope_magn_r:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_linear_fit_slope_sigma_magn_i:
@@ -1377,36 +993,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_magnitude_percentage_ratio_40_5_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_maximum_slope_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_maximum_slope_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_mean_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_mean_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_mean_magn_z:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_mean_variance_flux_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_mean_variance_flux_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_median_absolute_deviation_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_median_absolute_deviation_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_median_absolute_deviation_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_median_buffer_range_percentage_10_magn_i:
@@ -1449,15 +1035,6 @@ unmapped:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_otsu_std_upper_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_percent_amplitude_magn_i:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_percent_amplitude_magn_r:
-    reason: provider_derived_feature
-    note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
-- cone_loci#properties.feature_percent_amplitude_magn_z:
     reason: provider_derived_feature
     note: Scientifically meaningful ANTARES-derived time-series statistic for which no stable reusable ontology field is yet defined.
 - cone_loci#properties.feature_percent_difference_magnitude_percentile_10_magn_i:
@@ -2828,15 +2405,6 @@ unmapped:
 - locus_catalog_gaia#b:
     reason: catalog_specific_quantity
     note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
-- locus_catalog_gaia#classprob_dsc_combmod_galaxy:
-    reason: catalog_specific_quantity
-    note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
-- locus_catalog_gaia#classprob_dsc_combmod_quasar:
-    reason: catalog_specific_quantity
-    note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
-- locus_catalog_gaia#classprob_dsc_combmod_star:
-    reason: catalog_specific_quantity
-    note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
 - locus_catalog_gaia#dec_parallax_corr:
     reason: catalog_specific_quantity
     note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
@@ -3587,12 +3155,3 @@ unmapped:
 - locus_catalog_ned#virgo_infall_velocity:
     reason: catalog_specific_quantity
     note: Catalog-specific direct-row quantity without a conservatively established exact ontology mapping.
-- locus_catalog_gaia#bp_rp:
-    reason: catalog_specific_quantity
-    note: Catalog color quantity has no exact path in the current crossmatch ontology.
-- locus_catalog_gaia#bp_g:
-    reason: catalog_specific_quantity
-    note: Catalog color quantity has no exact path in the current crossmatch ontology.
-- locus_catalog_gaia#g_rp:
-    reason: catalog_specific_quantity
-    note: Catalog color quantity has no exact path in the current crossmatch ontology.

@@ -42,8 +42,23 @@ def test_lightcurve_is_fixture_only_and_lazy_untouched():
 def test_catalog_probe_direct_rows_zero_unaccounted_and_no_edges():
  x=rich_locus(True);report=audit_payload(x,broker='antares',origin='lsst',endpoint='get_by_lsst_dia_object_id');assert 'Unaccounted leaves: 0' in report
  p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'detection@lsst:antares'))==16 and p.edges==()
+ gaia=[dict(r.fields) for r in records(p,'crossmatch@gaia:antares')]
+ expected={'color.BP-RP.diff':0.6110668,'color.BP-G.diff':0.053186417,'color.G-RP.diff':0.5578804,'classification.assessment.gaia_dsc_galaxy.probability':1.3322759e-08,'classification.assessment.gaia_dsc_quasar.probability':0.97776324,'classification.assessment.gaia_dsc_star.probability':0.022236746}
+ assert any(all(row.get(key)==value for key,value in expected.items()) for row in gaia)
 def test_search_cone_and_by_id_summaries():
  for name,endpoint in [('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')]:assert len(records(build(endpoint,fixture(name)), 'summary@lsst:antares'))==1
+
+def test_promoted_antares_features_have_locus_surface_parity():
+ expected=None
+ paths={'photometry.i.magnitude.mean','photometry.i.magnitude.half_amplitude','photometry.i.flux.chi2'}
+ debt=(MAPPINGS.parent/'unmapped_fields.yaml').read_text()
+ for name,endpoint in [('get_by_lsst_dia_object_id.json','get_by_lsst_dia_object_id'),('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')]:
+  values=dict(records(build(endpoint,fixture(name)),'summary@antares')[0].fields)
+  current={path:values[path] for path in paths}
+  expected=current if expected is None else expected
+  assert current==expected
+  prefix={'get_by_lsst_dia_object_id':'locus','get_by_id':'locus_by_id','search':'search_loci','cone_search':'cone_loci'}[endpoint]
+  assert all(f'{prefix}#properties.feature_{raw}:' not in debt for raw in ('mean_magn_i','amplitude_magn_i','chi2_flux_i'))
 
 def test_historical_diaobject_snapshots_and_antares_feature_producer():
  alerts=fixture('alerts.json');p=build('get_by_lsst_dia_object_id',rich_locus())
@@ -59,7 +74,7 @@ def test_historical_diaobject_snapshots_and_antares_feature_producer():
  assert [s['detection_count'] for s in snapshots]==[a['properties']['lsst_diaObject_nDiaSources'] for a in alerts]
  assert all(isinstance(s['identity.object_id'],int) for s in snapshots) and p.edges==()
  antares=dict(records(p,'summary@antares')[0].fields)
- assert {'photometry.i.magnitude.mean','photometry.i.magnitude.amplitude','photometry.r.magnitude.kurtosis','photometry.i.flux.chi2'}<=antares.keys()
+ assert {'photometry.i.magnitude.mean','photometry.i.magnitude.half_amplitude','photometry.r.magnitude.excess_kurtosis','photometry.i.flux.chi2'}<=antares.keys()
  assert not any('magnitude.' in k or '.flux.chi2' in k for s in snapshots for k in s)
 
 def test_diaobject_psf_aggregates_follow_frozen_alert_values():

@@ -122,8 +122,10 @@ def test_record_builder_rejects_ontology_invalid_mapping(tmp_path):
 def test_semantic_enrichment_paths_and_summary_canonical_declaration():
  from alertissimo.data_layer.semantic_model.semantic_paths import SemanticPathModel
  model=SemanticPathModel.from_ontology()
- for path in ('summary@lsst:antares.time.snapshot_mjd','summary@antares.photometry.i.magnitude.mean','summary@antares.photometry.i.magnitude.chi2','summary@antares.photometry.i.flux.chi2','summary@antares.photometry.i.flux.kurtosis','detection@lsst:antares.photometry.i.flux'):
+ for path in ('summary@lsst:antares.time.snapshot_mjd','summary@antares.photometry.i.magnitude.mean','summary@antares.photometry.i.magnitude.chi2','summary@antares.photometry.i.magnitude.half_amplitude','summary@antares.photometry.i.magnitude.maximum_deviation_from_median','summary@antares.photometry.i.magnitude.excess_kurtosis','summary@antares.photometry.i.flux.chi2','summary@antares.photometry.i.flux.excess_kurtosis','summary@antares.photometry.i.flux.coefficient_of_variation','detection@lsst:antares.photometry.i.flux'):
   assert model.is_valid(path),path
+ for path in ('summary@antares.photometry.i.magnitude.amplitude','summary@antares.photometry.i.magnitude.percent_amplitude','summary@antares.photometry.i.magnitude.kurtosis','summary@antares.photometry.i.flux.kurtosis','summary@antares.photometry.i.flux.mean_variance'):
+  assert not model.is_valid(path),path
  ontology=(Path(__file__).parents[1]/'alertissimo/data_layer/semantic_model/ontology.yaml').read_text()
  summary=ontology.split('<summary>:',1)[1].split('\n<reference_image>:',1)[0]
  assert '--canonical_for--> <summary>@{producer}:{channel}' in summary

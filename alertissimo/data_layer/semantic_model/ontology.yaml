@@ -1144,34 +1144,35 @@ levels:
       level: L0, L4
       [chi2]:
         description: "Chi-square statistic of the flux time series"
-      [kurtosis]:
-        description: "Kurtosis of the flux time series"
+      [excess_kurtosis]:
+        description: "Excess kurtosis of the flux time series"
       [eta_e]:
         description: "Eta-e variability statistic of the flux time series"
       [cusum]:
         description: "Cumulative-sum variability statistic of the flux time series"
       [anderson_darling_normal]:
         description: "Anderson-Darling normality statistic of the flux time series"
-      [mean_variance]:
-        description: "Mean-variance statistic of the flux time series"
+      [coefficient_of_variation]:
+        description: "Ratio of the flux time-series standard deviation to its mean"
     [magnitude]:
       description: "Statistics derived from a magnitude time series"
       level: L0, L4
       [mean]:
         description: "Mean magnitude"
         unit: mag
-      [amplitude]:
-        description: "Magnitude-series amplitude"
+      [half_amplitude]:
+        description: "Half the peak-to-peak magnitude range of the time series"
         unit: mag
-      [percent_amplitude]:
-        description: "Percent-amplitude statistic of the magnitude time series"
+      [maximum_deviation_from_median]:
+        description: "Maximum absolute magnitude deviation from the median magnitude of the time series"
+        unit: mag
       [median_absolute_deviation]:
         description: "Median absolute deviation of magnitudes"
         unit: mag
       [chi2]:
         description: "Chi-square statistic of the magnitude time series"
-      [kurtosis]:
-        description: "Kurtosis of the magnitude time series"
+      [excess_kurtosis]:
+        description: "Excess kurtosis of the magnitude time series"
       [eta_e]:
         description: "Eta-e variability statistic of the magnitude time series"
       [cusum]:
@@ -2052,6 +2053,7 @@ levels:
   $ref: <distance>
   $ref: <redshift>
   $ref: <photometry>
+  $ref: <color>
   $ref: <classification>
   $ref: <provenance>
   $ref: <astrometric_solution>
