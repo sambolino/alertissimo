@@ -95,24 +95,6 @@ unmapped:
 - query_lightcurve.detections#phase:
     reason: unsupported_semantic_concept
     candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.time.phase` is not an available canonical field.
-- query_detections#magpsf_corr:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected` is not an available canonical field.
-- query_lightcurve.detections#magpsf_corr:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected` is not an available canonical field.
-- query_detections#sigmapsf_corr:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_error` is not an available canonical field.
-- query_lightcurve.detections#sigmapsf_corr:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_error` is not an available canonical field.
-- query_detections#sigmapsf_corr_ext:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_error` is not an available canonical field.
-- query_lightcurve.detections#sigmapsf_corr_ext:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_error` is not an available canonical field.
 - query_lightcurve.detections#magpsf_corr_ext:
     reason: unsupported_semantic_concept
     candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_component` is not an available canonical field.

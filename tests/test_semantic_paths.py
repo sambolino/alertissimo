@@ -80,6 +80,41 @@ def test_photometric_quantities_and_their_children_are_materializable(semantic_p
     assert model.is_valid(semantic_path)
 
 
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        "forced_photometry.g.mag",
+        "forced_photometry.g.mag.error",
+        "forced_photometry.g.mag.corrected",
+        "forced_photometry.g.mag.corrected.error",
+        "forced_photometry.g.mag.corrected.extended_component_error",
+        "photometry.g.psf.mag.corrected",
+        "photometry.g.psf.mag.corrected.error",
+        "photometry.g.psf.mag.corrected.extended_component_error",
+    ],
+)
+def test_corrected_magnitude_paths_are_materializable(relative_path):
+    model = SemanticPathModel.from_ontology()
+
+    assert model.is_valid(f"detection@ztf:alerce.{relative_path}")
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        "forced_photometry.g.forced_magnitude",
+        "forced_photometry.g.forced_magnitude_error",
+        "forced_photometry.g.forced_magnitude_corrected",
+        "forced_photometry.g.forced_magnitude_corrected_error",
+        "forced_photometry.g.forced_magnitude_corrected_extended_error",
+    ],
+)
+def test_provider_shaped_forced_magnitude_paths_are_invalid(relative_path):
+    model = SemanticPathModel.from_ontology()
+
+    assert not model.is_valid(f"detection@ztf:alerce.{relative_path}")
+
+
 def test_generic_photometric_flux_is_materializable_and_unit_neutral():
     model = SemanticPathModel.from_ontology()
 

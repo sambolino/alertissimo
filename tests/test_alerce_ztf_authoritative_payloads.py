@@ -113,6 +113,9 @@ def test_real_detection_and_non_detection_photometry():
     fields = dict(portfolio.records[0].fields)
     assert fields["photometry.g.psf.mag"] == 17.579912
     assert fields["photometry.g.psf.mag.error"] == 0.025473464
+    assert fields["photometry.g.psf.mag.corrected"] == 15.443523
+    assert fields["photometry.g.psf.mag.corrected.error"] == 100.0
+    assert fields["photometry.g.psf.mag.corrected.extended_component_error"] == 0.0035606765
     assert fields["photometry.g.aperture.mag"] == 17.6296
     assert fields["image_metrics.is_positive"] is True
 
@@ -133,8 +136,11 @@ def test_real_forced_photometry_astrometry_calibration_and_reference_source():
     assert fields["position.dec"] == 39.0979821
     assert fields["time.mjd"] == 60911.23585649999
     assert fields["time.exposure"] == 30.0
-    assert fields["forced_photometry.g.forced_magnitude"] == 17.28768539428711
-    assert fields["forced_photometry.g.forced_magnitude_error"] == 0.010026260279119015
+    assert fields["forced_photometry.g.mag"] == 17.28768539428711
+    assert fields["forced_photometry.g.mag.error"] == 0.010026260279119015
+    assert fields["forced_photometry.g.mag.corrected"] == 15.397634320165597
+    assert fields["forced_photometry.g.mag.corrected.error"] == 100.0
+    assert fields["forced_photometry.g.mag.corrected.extended_component_error"] == 0.0017584035219804597
     assert fields["calibration.g.zero_point"] == 26.351499557495117
     assert fields["calibration.g.zero_point_uncertainty"] == 5.07220011058962e-06
     assert fields["calibration.g.zero_point_rms"] == 0.023729000240564346

@@ -163,6 +163,15 @@ mappings:
   detection@ztf:alerce.photometry.{filter}.psf.mag.error:
   - query_detections#sigmapsf
   - query_lightcurve.detections#sigmapsf
+  detection@ztf:alerce.photometry.{filter}.psf.mag.corrected:
+  - query_detections#magpsf_corr
+  - query_lightcurve.detections#magpsf_corr
+  detection@ztf:alerce.photometry.{filter}.psf.mag.corrected.error:
+  - query_detections#sigmapsf_corr
+  - query_lightcurve.detections#sigmapsf_corr
+  detection@ztf:alerce.photometry.{filter}.psf.mag.corrected.extended_component_error:
+  - query_detections#sigmapsf_corr_ext
+  - query_lightcurve.detections#sigmapsf_corr_ext
   detection@ztf:alerce.photometry.{filter}.aperture.mag:
   - query_detections#magap
   - query_lightcurve.detections#magap
@@ -187,15 +196,15 @@ mappings:
   - query_forced_photometry#procstatus
   detection@ztf:alerce.forced_photometry.{filter}.limit.mag:
   - query_forced_photometry#diffmaglim
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude:
+  detection@ztf:alerce.forced_photometry.{filter}.mag:
   - query_forced_photometry#mag
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_error:
+  detection@ztf:alerce.forced_photometry.{filter}.mag.error:
   - query_forced_photometry#e_mag
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected:
+  detection@ztf:alerce.forced_photometry.{filter}.mag.corrected:
   - query_forced_photometry#mag_corr
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_error:
+  detection@ztf:alerce.forced_photometry.{filter}.mag.corrected.error:
   - query_forced_photometry#e_mag_corr
-  detection@ztf:alerce.forced_photometry.{filter}.forced_magnitude_corrected_extended_error:
+  detection@ztf:alerce.forced_photometry.{filter}.mag.corrected.extended_component_error:
   - query_forced_photometry#e_mag_corr_ext
   summary@ztf:alerce.photometry.{filter}:
   - query_magstats#fid
