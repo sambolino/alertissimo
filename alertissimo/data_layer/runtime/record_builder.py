@@ -246,6 +246,13 @@ def build_portfolio_from_execution(
                     except RawFieldMissing:
                         continue
                     specification = transforms.get(semantic_path, {}).get(raw_reference)
+                    # Some delivery surfaces include explicit nulls for fields that
+                    # are not measurements (notably Fink upper-limit history rows).
+                    # Skip those before arithmetic transforms such as JD-to-MJD.
+                    if value is None and specification and specification.get(
+                        "skip_null", False
+                    ):
+                        continue
                     value = _apply_transform(value, specification)
                     if value is None and specification and specification.get(
                         "skip_null", False
