@@ -24,7 +24,8 @@ def test_payload_roots_match_endpoint_output_types():
 def test_mappings_are_minimal_raw_reference_lists():
     for origin in ORIGINS:
         document = load(origin, "mappings.yaml")
-        assert set(document) == {"broker", "origin", "payloads", "mappings"}
+        assert {"broker", "origin", "payloads", "mappings"} <= set(document)
+        assert set(document) <= {"broker", "origin", "payloads", "mappings", "transforms"}
         for refs in document["mappings"].values():
             assert isinstance(refs, list) and refs
             assert all(isinstance(ref, str) and ref.count("#") == 1 for ref in refs)
