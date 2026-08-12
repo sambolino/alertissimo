@@ -881,6 +881,12 @@ levels:
   [mjd]:
     description: "Modified Julian Date associated with the enclosing record"
     unit: mjd
+  [processed_mjd]:
+    description: "MJD when processing produced or generated the represented record"
+    unit: mjd
+  [invalidated_mjd]:
+    description: "MJD when the represented record was marked invalid, withdrawn, or superseded as an active record"
+    unit: mjd
   [datetime]:
     description: "Date/time associated with the enclosing record"
     unit: datetime
@@ -1389,6 +1395,8 @@ levels:
     description: "Reliability score, with higher values representing greater reliability"
     type: float
     range: [0, 1]
+    [version]:
+      description: "Version of the model or method that produced the reliability score"
   [score]:
     description: "Generic quality, significance, or usability score when the source does not expose a more specific semantic meaning"
   [{field}]:
@@ -1513,6 +1521,11 @@ levels:
     [ndata]:
       type: integer
   <trail>:
+    [algorithm]:
+      description: "Algorithm used to measure or fit the trailed-source model"
+    [fit_failed]:
+      description: "True if the trailed-source fitting algorithm failed"
+      type: boolean
     [is_glint]:
       type: boolean
     [angle]:

@@ -33,7 +33,20 @@ def test_authoritative_alert_semantics_and_aliases():
  p=build('get_by_lsst_dia_object_id',rich_locus());ds=records(p,'detection@lsst:antares');assert len(ds)==16
  sf=dict(records(p,'summary@lsst:antares')[0].fields);assert sf['identity.object_id']==170587117485817955 and isinstance(sf['identity.object_id'],int) and sf['identity.antares_locus_id']=='ANT2026rq61krn5dipt';assert 'detection_count' not in sf and not any(k.startswith('time.') for k in sf)
  assert all(dict(d.fields)['identity.object_id']==170587117485817955 and isinstance(dict(d.fields)['identity.object_id'],int) for d in ds)
- f=dict(ds[0].fields);assert {'identity.alert_id','identity.source_id','identity.object_id','identity.visit_id','identity.detector_id'}<=f.keys();assert f['quality.signal_to_noise']==alerts[0]['properties']['lsst_diaSource_snr'];assert isinstance(f['image_metrics.is_positive'],bool);assert p.edges==()
+ index=next(i for i,a in enumerate(alerts) if a['properties'].get('lsst_diaSource_reliabilityVersion') is not None and a['properties'].get('lsst_diaSource_trailAlgorithm') is not None)
+ f=dict(ds[index].fields);assert {'identity.alert_id','identity.source_id','identity.object_id','identity.visit_id','identity.detector_id'}<=f.keys();assert f['quality.signal_to_noise']==alerts[index]['properties']['lsst_diaSource_snr'];assert isinstance(f['image_metrics.is_positive'],bool);assert p.edges==()
+ props=alerts[index]['properties'];band=props['lsst_diaSource_band']
+ assert f['time.processed_mjd']==props['lsst_diaSource_timeProcessedMjdTai']
+ assert f['quality.reliability.version']==props['lsst_diaSource_reliabilityVersion']
+ assert f['image_metrics.trail.algorithm']=={1:'sdss_shape',2:'hsm_shape'}[props['lsst_diaSource_trailAlgorithm']]
+ assert f['image_metrics.trail.fit_failed'] is props['lsst_diaSource_trail_flag'] is False
+ assert f[f'forced_photometry.{band}.psf.flux']==props['lsst_diaSource_scienceFlux']
+ assert f[f'forced_photometry.{band}.psf.flux.error']==props['lsst_diaSource_scienceFluxErr']
+ assert f[f'reference_image.forced_photometry.{band}.psf.flux']==props['lsst_diaSource_templateFlux']
+ assert f[f'reference_image.forced_photometry.{band}.psf.flux.error']==props['lsst_diaSource_templateFluxErr']
+ assert f[f'forced_photometry.{band}.psf.flags.failed'] is props['lsst_diaSource_forced_PsfFlux_flag']
+ assert f[f'forced_photometry.{band}.psf.flags.edge'] is props['lsst_diaSource_forced_PsfFlux_flag_edge']
+ assert f[f'forced_photometry.{band}.psf.flags.no_good_pixels'] is props['lsst_diaSource_forced_PsfFlux_flag_noGoodPixels']
 def test_strict_unknown_band_is_omitted():
  x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
 def test_lightcurve_is_fixture_only_and_lazy_untouched():

@@ -70,6 +70,8 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_detector
   detection@lsst:antares.time.mjd:
   - locus_alerts#properties.lsst_diaSource_midpointMjdTai
+  detection@lsst:antares.time.processed_mjd:
+  - locus_alerts#properties.lsst_diaSource_timeProcessedMjdTai
   detection@lsst:antares.photometry.{filter}:
   - locus_alerts#properties.lsst_diaSource_band
   detection@lsst:antares.photometry.{filter}.psf.mag:
@@ -96,6 +98,8 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_yErr
   detection@lsst:antares.quality.reliability:
   - locus_alerts#properties.lsst_diaSource_reliability
+  detection@lsst:antares.quality.reliability.version:
+  - locus_alerts#properties.lsst_diaSource_reliabilityVersion
   detection@lsst:antares.quality.signal_to_noise:
   - locus_alerts#properties.lsst_diaSource_snr
   detection@lsst:antares.photometry.{filter}.psf.flux:
@@ -120,6 +124,20 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag
   detection@lsst:antares.photometry.{filter}.aperture.flags.aperture_truncated:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
+  detection@lsst:antares.forced_photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_scienceFlux
+  detection@lsst:antares.forced_photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_scienceFluxErr
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.edge:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag_edge
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:antares.reference_image.forced_photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_templateFlux
+  detection@lsst:antares.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_templateFluxErr
   detection@lsst:antares.image_metrics.bbox_size:
   - locus_alerts#properties.lsst_diaSource_bboxSize
   detection@lsst:antares.image_metrics.centroid_flag:
@@ -194,6 +212,10 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_dipoleNdata
   detection@lsst:antares.image_metrics.trail.is_glint:
   - locus_alerts#properties.lsst_diaSource_glint_trail
+  detection@lsst:antares.image_metrics.trail.algorithm:
+  - locus_alerts#properties.lsst_diaSource_trailAlgorithm
+  detection@lsst:antares.image_metrics.trail.fit_failed:
+  - locus_alerts#properties.lsst_diaSource_trail_flag
   detection@lsst:antares.image_metrics.trail.angle:
   - locus_alerts#properties.lsst_diaSource_trailAngle
   detection@lsst:antares.image_metrics.trail.angle_error:
@@ -640,6 +662,18 @@ mappings:
   crossmatch@ned:antares.classification.assessment.catalogue.class:
   - locus_catalog_ned#Type
 transforms:
+  detection@lsst:antares.image_metrics.trail.algorithm:
+    locus_alerts#properties.lsst_diaSource_trailAlgorithm:
+      type: value_map
+      map: {1: sdss_shape, 2: hsm_shape}
+      default: null
+      skip_null: true
+  detection@lsst:antares.image_metrics.trail.fit_failed:
+    locus_alerts#properties.lsst_diaSource_trail_flag:
+      type: value_map
+      map: {false: false, true: true}
+      default: null
+      skip_null: true
   summary@lsst:antares.identity.object_id:
     locus#properties.survey.lsst.dia_object_id.0:
       type: to_int
