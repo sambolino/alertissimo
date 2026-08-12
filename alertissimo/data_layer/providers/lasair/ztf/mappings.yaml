@@ -125,15 +125,8 @@ mappings:
     - sherlock_objects_crossmatches#physical_separation_kpc
   crossmatch@{producer}:lasair.redshift.value:
     - object#sherlock.z
-    - object#sherlock.photoZ
     - sherlock_position_crossmatches#z
-    - sherlock_position_crossmatches#photoZ
     - sherlock_objects_crossmatches#z
-    - sherlock_objects_crossmatches#photoZ
-  crossmatch@{producer}:lasair.redshift.error:
-    - object#sherlock.photoZErr
-    - sherlock_position_crossmatches#photoZErr
-    - sherlock_objects_crossmatches#photoZErr
   crossmatch@{producer}:lasair.distance.estimate.best.value:
     - sherlock_position_crossmatches#best_distance
     - sherlock_objects_crossmatches#best_distance
@@ -182,8 +175,6 @@ mappings:
   crossmatch@{producer}:lasair.rank:
     - sherlock_position_crossmatches#rank
     - sherlock_objects_crossmatches#rank
-    - sherlock_position_crossmatches#merged_rank
-    - sherlock_objects_crossmatches#merged_rank
   crossmatch@{producer}:lasair.classification.assessment.catalogue.class:
     - object#sherlock.catalogue_object_type
     - sherlock_position_crossmatches#catalogue_object_type
@@ -318,6 +309,7 @@ transforms:
     object#sherlock.catalogue_table_name: &producer_map
       type: value_map
       map:
+        SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
         2MASS PSC: twomass
         PanSTARRS DR1: panstarrs
@@ -326,7 +318,6 @@ transforms:
         Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
         Gaia DR3: gaia
         DESI Legacy Survey DR10: desi_legacy_survey
-      default: unknown
     sherlock_position_crossmatches#catalogue_table_name:
       <<: *producer_map
     sherlock_objects_crossmatches#catalogue_table_name:
@@ -357,15 +348,8 @@ transforms:
     sherlock_objects_crossmatches#physical_separation_kpc: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.redshift.value:
     object#sherlock.z: {type: to_float, skip_null: true}
-    object#sherlock.photoZ: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#z: {type: to_float, skip_null: true}
-    sherlock_position_crossmatches#photoZ: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#z: {type: to_float, skip_null: true}
-    sherlock_objects_crossmatches#photoZ: {type: to_float, skip_null: true}
-  crossmatch@{producer}:lasair.redshift.error:
-    object#sherlock.photoZErr: {type: to_float, skip_null: true}
-    sherlock_position_crossmatches#photoZErr: {type: to_float, skip_null: true}
-    sherlock_objects_crossmatches#photoZErr: {type: to_float, skip_null: true}
   crossmatch@{producer}:lasair.distance.estimate.best.value:
     sherlock_position_crossmatches#best_distance: {type: to_float, skip_null: true}
     sherlock_objects_crossmatches#best_distance: {type: to_float, skip_null: true}
@@ -399,8 +383,6 @@ transforms:
   crossmatch@{producer}:lasair.rank:
     sherlock_position_crossmatches#rank: {type: to_int, skip_null: true}
     sherlock_objects_crossmatches#rank: {type: to_int, skip_null: true}
-    sherlock_position_crossmatches#merged_rank: {type: to_int, skip_null: true}
-    sherlock_objects_crossmatches#merged_rank: {type: to_int, skip_null: true}
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
     object#sherlock.classificationReliability: {type: to_float, skip_null: true}
     sherlock_position_crossmatches#classificationReliability: {type: to_float, skip_null: true}
