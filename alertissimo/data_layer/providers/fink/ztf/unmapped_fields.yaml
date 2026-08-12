@@ -928,3 +928,19 @@ unmapped:
     reason: provider_internal
     note: HBase cell/row storage timing exposed by the API; not the observing-night semantic
       snapshot datetime.
+- objects#i:neargaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- anomaly#i:neargaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- objects#i:maggaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- anomaly#i:maggaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
