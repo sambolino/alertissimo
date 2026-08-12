@@ -46,7 +46,9 @@ mappings:
   - conesearch#r:nDiaSources
   summary@lsst:fink.time.first_mjd:
   - objects#r:firstDiaSourceMjdTai
+  - objects#f:firstDiaSourceMjdTaiFink
   - conesearch#r:firstDiaSourceMjdTai
+  - conesearch#f:firstDiaSourceMjdTaiFink
   summary@lsst:fink.time.last_mjd:
   - objects#r:lastDiaSourceMjdTai
   - conesearch#r:lastDiaSourceMjdTai
@@ -664,7 +666,11 @@ mappings:
   - conesearch#r:trailRaErr
   - sso#r:trailRaErr
   detection@lsst:fink.solar_system.object.identity.object_id:
+  - sources#r:ssObjectId
+  - conesearch#r:ssObjectId
   - sso#r:ssObjectId
+  detection@lsst:fink.separation.from_search_center:
+  - conesearch#v:separation_degree
   detection@lsst:fink.solar_system.object.designation:
   - sso#r:designation
   detection@lsst:fink.solar_system.object.name:
@@ -948,6 +954,21 @@ mappings:
   - conesearch#r:trail_flag_edge
   - sso#r:trail_flag_edge
 transforms:
+  summary@lsst:fink.time.first_mjd:
+    objects#r:firstDiaSourceMjdTai:
+      skip_null: true
+    conesearch#r:firstDiaSourceMjdTai:
+      skip_null: true
+  detection@lsst:fink.separation.from_search_center:
+    conesearch#v:separation_degree:
+      type: scale
+      factor: 3600
+  detection@lsst:fink.solar_system.object.identity.object_id:
+    sources#r:ssObjectId: &optional_ss_object_id
+      type: value_map
+      map: {0: null}
+      skip_null: true
+    conesearch#r:ssObjectId: *optional_ss_object_id
   detection@lsst:fink.quality.reliability.version:
     sources#r:reliabilityVersion: &fink_reliability_version
       type: value_map

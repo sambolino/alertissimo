@@ -349,6 +349,9 @@ mappings:
   detection@lsst:alerce.image_metrics.trail.ra:
   - query_detections#trailRa
   - query_lightcurve.detections#trailRa
+  detection@lsst:alerce.solar_system.object.identity.object_id:
+  - query_detections#ssObjectId
+  - query_lightcurve.detections#ssObjectId
   detection@lsst:alerce.image_metrics.trail.ra_error:
   - query_detections#trailRaErr
   - query_lightcurve.detections#trailRaErr
@@ -395,6 +398,12 @@ mappings:
   - query_detections#templateFluxErr
   - query_lightcurve.detections#templateFluxErr
 transforms:
+  detection@lsst:alerce.solar_system.object.identity.object_id:
+    query_detections#ssObjectId: &optional_ss_object_id
+      type: value_map
+      map: {0: null}
+      skip_null: true
+    query_lightcurve.detections#ssObjectId: *optional_ss_object_id
   detection@lsst:alerce.forced_photometry.{filter}.psf.flags.failed:
     query_detections#forced_PsfFlux_flag: &strict_forced_psf_flag
       type: value_map

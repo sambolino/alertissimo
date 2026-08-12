@@ -1266,11 +1266,8 @@ unmapped:
     reason: diaobject_snapshot_quantity
     note: Rubin DiaObject snapshot quantity without an exact reusable ontology concept.
 - locus_alerts#properties.lsst_diaSource_parentDiaSourceId:
-    reason: processing_metadata
-    note: Provider field lacks an exact existing semantic concept or is a redundant/schema-specific quantity.
-- locus_alerts#properties.lsst_diaSource_ssObjectId:
-    reason: processing_metadata
-    note: Provider field lacks an exact existing semantic concept or is a redundant/schema-specific quantity.
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
 - locus_alerts#properties.lsst_observation_reason:
     reason: processing_metadata
     note: Provider field lacks an exact existing semantic concept or is a redundant/schema-specific quantity.

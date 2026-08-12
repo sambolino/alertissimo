@@ -254,6 +254,28 @@ def test_skip_null_boolean_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_scale_transform_with_numeric_factor_passes(tmp_path, valid_mapping):
+    semantic = "detection@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"type": "scale", "factor": 3600}}
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("specification", [
+    {"type": "scale"},
+    {"type": "scale", "factor": True},
+    {"type": "scale", "factor": "3600"},
+])
+def test_scale_transform_requires_non_boolean_numeric_factor(
+    tmp_path, valid_mapping, specification
+):
+    semantic = "detection@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": specification}}
+    with pytest.raises(MappingSchemaError, match="factor"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 def test_skip_null_non_boolean_fails(tmp_path, valid_mapping):
     semantic = "detection@ztf:example.identity.source_id"
     valid_mapping["transforms"] = {

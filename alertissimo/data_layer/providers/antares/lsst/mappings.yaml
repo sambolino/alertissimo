@@ -124,6 +124,8 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag
   detection@lsst:antares.photometry.{filter}.aperture.flags.aperture_truncated:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
+  detection@lsst:antares.solar_system.object.identity.object_id:
+  - locus_alerts#properties.lsst_diaSource_ssObjectId
   detection@lsst:antares.forced_photometry.{filter}.psf.flux:
   - locus_alerts#properties.lsst_diaSource_scienceFlux
   detection@lsst:antares.forced_photometry.{filter}.psf.flux.error:
@@ -662,6 +664,11 @@ mappings:
   crossmatch@ned:antares.classification.assessment.catalogue.class:
   - locus_catalog_ned#Type
 transforms:
+  detection@lsst:antares.solar_system.object.identity.object_id:
+    locus_alerts#properties.lsst_diaSource_ssObjectId:
+      type: value_map
+      map: {0: null}
+      skip_null: true
   detection@lsst:antares.image_metrics.trail.algorithm:
     locus_alerts#properties.lsst_diaSource_trailAlgorithm:
       type: value_map
