@@ -288,6 +288,15 @@ mappings:
   crossmatch@ned:antares.position.dec:
   - locus_catalog_ned#DEC_deg
 transforms:
+  summary@lsst:antares.identity.object_id:
+    locus#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    locus_by_id#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    search_loci#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    cone_loci#properties.survey.lsst.dia_object_id.0:
+      type: to_int
   detection@lsst:antares.photometry.{filter}:
     locus_alerts#properties.lsst_diaSource_band:
       type: value_map
