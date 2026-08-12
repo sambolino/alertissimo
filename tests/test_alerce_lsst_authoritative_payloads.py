@@ -89,6 +89,15 @@ def test_real_detection_maps_safe_identity_astrometry_photometry_and_provenance(
     assert f["photometry.g.aperture.flux"]==3038.6384 and f["quality.signal_to_noise"]==18.848682
     assert f["identity.visit_id"]==2026062500651 and f["identity.detector_id"]==160 and f["provenance.producer.name"]=="lsst"
     assert f["image_metrics.is_positive"] is True
+    assert f["time.processed_mjd"] == row["timeProcessedMjdTai"] == 61217.42270213738
+    assert f["time.invalidated_mjd"] is None
+    assert f["forced_photometry.g.psf.flux"] == row["scienceFlux"] == 4041.9963
+    assert f["forced_photometry.g.psf.flux.error"] == row["scienceFluxErr"] == 136.00594
+    assert f["reference_image.forced_photometry.g.psf.flux"] == row["templateFlux"] == 1294.5573
+    assert f["reference_image.forced_photometry.g.psf.flux.error"] == row["templateFluxErr"] == 37.687428
+    assert f["forced_photometry.g.psf.flags.failed"] is False
+    assert f["forced_photometry.g.psf.flags.edge"] is False
+    assert f["forced_photometry.g.psf.flags.no_good_pixels"] is False
 
 def test_later_detection_proves_object_and_measurement_id_are_distinct_integers():
     row = fixture("query_detections")[1]
@@ -204,6 +213,14 @@ def test_shared_rubin_detection_fields_converge_with_antares_semantic_paths():
         "apFlux": "apFlux",
         "apFluxErr": "apFluxErr",
         "isNegative": "isNegative",
+        "timeProcessedMjdTai": "timeProcessedMjdTai",
+        "scienceFlux": "scienceFlux",
+        "scienceFluxErr": "scienceFluxErr",
+        "forced_PsfFlux_flag": "forced_PsfFlux_flag",
+        "forced_PsfFlux_flag_edge": "forced_PsfFlux_flag_edge",
+        "forced_PsfFlux_flag_noGoodPixels": "forced_PsfFlux_flag_noGoodPixels",
+        "templateFlux": "templateFlux",
+        "templateFluxErr": "templateFluxErr",
     }
     for alerce_raw, antares_raw in shared_fields.items():
         assert relative_target("alerce", f"query_detections#{alerce_raw}") == relative_target(

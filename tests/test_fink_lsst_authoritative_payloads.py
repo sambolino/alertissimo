@@ -165,6 +165,30 @@ def test_real_source_and_boolean_not_end_to_end(tmp_path):
     assert first["image_metrics.is_positive"] is True and second["image_metrics.is_positive"] is False
 
 
+def test_lifecycle_reliability_and_trail_debt_converges_end_to_end(tmp_path):
+    paths = [
+        "detection@lsst:fink.time.processed_mjd",
+        "detection@lsst:fink.time.invalidated_mjd",
+        "detection@lsst:fink.quality.reliability.version",
+        "detection@lsst:fink.image_metrics.trail.algorithm",
+        "detection@lsst:fink.image_metrics.trail.fit_failed",
+    ]
+    rows = fixture("sources")
+    recent = next(row for row in rows if row["r:reliabilityVersion"] == "0.3")
+    historical = next(row for row in rows if row["r:reliabilityVersion"] == "nan")
+    portfolio = _build_filtered(tmp_path, "sources", [recent, historical], paths)
+    recent_fields, historical_fields = (dict(record.fields) for record in portfolio.records)
+    assert recent_fields["time.processed_mjd"] == recent["r:timeProcessedMjdTai"]
+    assert recent_fields["quality.reliability.version"] == "0.3"
+    assert recent_fields["image_metrics.trail.algorithm"] == "sdss_shape"
+    assert recent_fields["image_metrics.trail.fit_failed"] is False
+    assert recent_fields["time.invalidated_mjd"] is None
+    assert "quality.reliability.version" not in historical_fields
+    assert "image_metrics.trail.algorithm" not in historical_fields
+    assert "image_metrics.trail.fit_failed" not in historical_fields
+    assert historical_fields["time.invalidated_mjd"] is None
+
+
 def test_fp_endpoint_emits_twenty_detection_records(tmp_path):
     paths = [path for path, refs in registry()["mappings"].items() if any(ref.startswith("fp#") for ref in refs)]
     portfolio = _build_filtered(tmp_path, "fp", fixture("fp"), paths)
@@ -177,6 +201,6 @@ def test_fp_endpoint_emits_twenty_detection_records(tmp_path):
 
 def test_rubin_native_destinations_converge_with_alerce_and_antares():
     providers = {name: yaml.safe_load((ROOT / f"alertissimo/data_layer/providers/{name}/lsst/mappings.yaml").read_text())["mappings"] for name in ("fink", "alerce", "antares")}
-    suffixes = ("identity.object_id", "identity.source_id", "identity.visit_id", "identity.detector_id", "time.mjd", "position.ra", "position.dec", "position.ra_error", "position.dec_error", "position.ra_dec_covariance", "position.image_x", "position.image_x_error", "position.image_y", "position.image_y_error", "photometry.{filter}.psf.flux", "photometry.{filter}.psf.flux.error", "photometry.{filter}.psf.fit_chi2", "photometry.{filter}.psf.fit_log_likelihood", "photometry.{filter}.psf.fit_ndata", "photometry.{filter}.aperture.flux", "photometry.{filter}.aperture.flux.error", "quality.signal_to_noise", "quality.reliability", "image_metrics.bbox_size", "image_metrics.centroid_flag", "image_metrics.dipole.ndata", "image_metrics.trail.ndata", "image_metrics.trail.is_glint", "image_metrics.is_positive")
+    suffixes = ("identity.object_id", "identity.source_id", "identity.visit_id", "identity.detector_id", "time.mjd", "position.ra", "position.dec", "position.ra_error", "position.dec_error", "position.ra_dec_covariance", "position.image_x", "position.image_x_error", "position.image_y", "position.image_y_error", "photometry.{filter}.psf.flux", "photometry.{filter}.psf.flux.error", "photometry.{filter}.psf.fit_chi2", "photometry.{filter}.psf.fit_ndata", "photometry.{filter}.aperture.flux", "photometry.{filter}.aperture.flux.error", "quality.signal_to_noise", "quality.reliability", "image_metrics.bbox_size", "image_metrics.centroid_flag", "image_metrics.dipole.ndata", "image_metrics.trail.ndata", "image_metrics.trail.is_glint", "image_metrics.is_positive")
     for suffix in suffixes:
         assert all(any(path.endswith(suffix) for path in mappings) for mappings in providers.values()), suffix

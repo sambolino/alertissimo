@@ -320,9 +320,15 @@ mappings:
   - sso#r:midpointMjdTai
   - fp#r:midpointMjdTai
   detection@lsst:fink.time.processed_mjd:
+  - sources#r:timeProcessedMjdTai
+  - conesearch#r:timeProcessedMjdTai
   - sso#r:timeProcessedMjdTai
-  detection@lsst:fink.time.withdrawn_mjd:
+  - fp#r:timeProcessedMjdTai
+  detection@lsst:fink.time.invalidated_mjd:
+  - sources#r:timeWithdrawnMjdTai
+  - conesearch#r:timeWithdrawnMjdTai
   - sso#r:timeWithdrawnMjdTai
+  - fp#r:timeWithdrawnMjdTai
   detection@lsst:fink.position.ra:
   - sources#r:ra
   - conesearch#r:ra
@@ -410,14 +416,21 @@ mappings:
   - sources#r:apFlux_flag_apertureTruncated
   - conesearch#r:apFlux_flag_apertureTruncated
   - sso#r:apFlux_flag_apertureTruncated
+  detection@lsst:fink.forced_photometry.{filter}:
+  - sources#r:band
+  - conesearch#r:band
+  - sso#r:band
+  - fp#r:band
   detection@lsst:fink.forced_photometry.{filter}.psf.flux:
   - sources#r:scienceFlux
   - conesearch#r:scienceFlux
   - sso#r:scienceFlux
+  - fp#r:psfFlux
   detection@lsst:fink.forced_photometry.{filter}.psf.flux.error:
   - sources#r:scienceFluxErr
   - conesearch#r:scienceFluxErr
   - sso#r:scienceFluxErr
+  - fp#r:psfFluxErr
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.failed:
   - sources#r:forced_PsfFlux_flag
   - conesearch#r:forced_PsfFlux_flag
@@ -446,6 +459,18 @@ mappings:
   - sources#r:reliability
   - conesearch#r:reliability
   - sso#r:reliability
+  detection@lsst:fink.quality.reliability.version:
+  - sources#r:reliabilityVersion
+  - conesearch#r:reliabilityVersion
+  - sso#r:reliabilityVersion
+  detection@lsst:fink.image_metrics.trail.algorithm:
+  - sources#r:trailAlgorithm
+  - conesearch#r:trailAlgorithm
+  - sso#r:trailAlgorithm
+  detection@lsst:fink.image_metrics.trail.fit_failed:
+  - sources#r:trail_flag
+  - conesearch#r:trail_flag
+  - sso#r:trail_flag
   detection@lsst:fink.image_metrics.is_positive:
   - sources#r:isNegative
   - conesearch#r:isNegative
@@ -922,13 +947,30 @@ mappings:
   - sources#r:trail_flag_edge
   - conesearch#r:trail_flag_edge
   - sso#r:trail_flag_edge
-  detection@lsst:fink.forced_photometry.{filter}:
-  - fp#r:band
-  detection@lsst:fink.forced_photometry.{filter}.psf.flux:
-  - fp#r:psfFlux
-  detection@lsst:fink.forced_photometry.{filter}.psf.flux.error:
-  - fp#r:psfFluxErr
 transforms:
+  detection@lsst:fink.quality.reliability.version:
+    sources#r:reliabilityVersion: &fink_reliability_version
+      type: value_map
+      map: {"nan": null}
+      skip_null: true
+    conesearch#r:reliabilityVersion: *fink_reliability_version
+    sso#r:reliabilityVersion: *fink_reliability_version
+  detection@lsst:fink.image_metrics.trail.algorithm:
+    sources#r:trailAlgorithm: &fink_trail_algorithm
+      type: value_map
+      map: {1: sdss_shape, 2: hsm_shape}
+      default: null
+      skip_null: true
+    conesearch#r:trailAlgorithm: *fink_trail_algorithm
+    sso#r:trailAlgorithm: *fink_trail_algorithm
+  detection@lsst:fink.image_metrics.trail.fit_failed:
+    sources#r:trail_flag: &fink_trail_failed
+      type: value_map
+      map: {false: false, true: true, "nan": null}
+      default: null
+      skip_null: true
+    conesearch#r:trail_flag: *fink_trail_failed
+    sso#r:trail_flag: *fink_trail_failed
   detection@lsst:fink.image_metrics.is_positive:
     sources#r:isNegative:
       type: boolean_not

@@ -106,6 +106,12 @@ mappings:
   - query_lightcurve.detections#mjd
   - query_forced_photometry#mjd
   - query_lightcurve.forced_photometry#mjd
+  detection@lsst:alerce.time.processed_mjd:
+  - query_detections#timeProcessedMjdTai
+  - query_lightcurve.detections#timeProcessedMjdTai
+  detection@lsst:alerce.time.invalidated_mjd:
+  - query_detections#timeWithdrawnMjdTai
+  - query_lightcurve.detections#timeWithdrawnMjdTai
   detection@lsst:alerce.position.ra:
   - query_detections#ra
   - query_lightcurve.detections#ra
@@ -359,15 +365,49 @@ mappings:
   - query_detections#isNegative
   - query_lightcurve.detections#isNegative
   detection@lsst:alerce.forced_photometry.{filter}:
+  - query_detections#band_name
+  - query_lightcurve.detections#band_name
   - query_forced_photometry#band_name
   - query_lightcurve.forced_photometry#band_name
   detection@lsst:alerce.forced_photometry.{filter}.psf.flux:
+  - query_detections#scienceFlux
+  - query_lightcurve.detections#scienceFlux
   - query_forced_photometry#psfFlux
   - query_lightcurve.forced_photometry#psfFlux
   detection@lsst:alerce.forced_photometry.{filter}.psf.flux.error:
+  - query_detections#scienceFluxErr
+  - query_lightcurve.detections#scienceFluxErr
   - query_forced_photometry#psfFluxErr
   - query_lightcurve.forced_photometry#psfFluxErr
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.failed:
+  - query_detections#forced_PsfFlux_flag
+  - query_lightcurve.detections#forced_PsfFlux_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.edge:
+  - query_detections#forced_PsfFlux_flag_edge
+  - query_lightcurve.detections#forced_PsfFlux_flag_edge
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - query_detections#forced_PsfFlux_flag_noGoodPixels
+  - query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:alerce.reference_image.forced_photometry.{filter}.psf.flux:
+  - query_detections#templateFlux
+  - query_lightcurve.detections#templateFlux
+  detection@lsst:alerce.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - query_detections#templateFluxErr
+  - query_lightcurve.detections#templateFluxErr
 transforms:
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.failed:
+    query_detections#forced_PsfFlux_flag: &strict_forced_psf_flag
+      type: value_map
+      map: {0: false, 1: true}
+      default: null
+      skip_null: true
+    query_lightcurve.detections#forced_PsfFlux_flag: *strict_forced_psf_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.edge:
+    query_detections#forced_PsfFlux_flag_edge: *strict_forced_psf_flag
+    query_lightcurve.detections#forced_PsfFlux_flag_edge: *strict_forced_psf_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.no_good_pixels:
+    query_detections#forced_PsfFlux_flag_noGoodPixels: *strict_forced_psf_flag
+    query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels: *strict_forced_psf_flag
   detection@lsst:alerce.photometry.{filter}.psf.flags.failed:
     query_detections#psfFlux_flag: &strict_psf_flag
       type: value_map
