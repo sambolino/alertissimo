@@ -23,7 +23,7 @@ setup(
     cmdclass={"install": CustomInstall},
     install_requires=[
         "setuptools>=69.5.1",
-        "antares-client==1.8.0",
+        "antares-client==1.14.0",
         "lark==1.2.2",
         "marshmallow==3.21.1",
         "marshmallow-jsonapi==0.24.0",
