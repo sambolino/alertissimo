@@ -31,6 +31,17 @@ def _mapping_path(value: Any, path: str) -> Any:
             if index < len(current):
                 current = current[index]
                 continue
+        # Provider client models commonly expose payload data as attributes.
+        # Resolve only the explicitly requested public name, and never call it.
+        if key and not key.startswith("_"):
+            try:
+                candidate = getattr(current, key)
+            except AttributeError:
+                pass
+            else:
+                if not callable(candidate):
+                    current = candidate
+                    continue
         if not key:
             raise RawFieldMissing(path)
         raise RawFieldMissing(path)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Callable
@@ -207,13 +207,19 @@ def build_portfolio_from_execution(
     records: list[SemanticRecord] = []
     make_record_id = record_id_factory or new_internal_record_id
 
+    # Search endpoints may return one-shot iterators.  Materialize once so all
+    # payload definitions in this build see the identical finite result set.
+    payload = execution.payload
+    if isinstance(payload, Iterator):
+        payload = tuple(payload)
+
     for payload_key, payload_definition in payload_definitions.items():
         endpoint = payload_definition.get("endpoint", payload_key)
         if endpoint != execution.execution_provenance.endpoint:
             continue
         payload_path = payload_definition["path"]
         items = resolve_payload_items(
-            execution.payload,
+            payload,
             payload_key=payload_key,
             payload_path=payload_path,
         )

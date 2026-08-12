@@ -74,39 +74,26 @@ def test_client_model_mapping_corrections_and_transforms():
 
 class FakeAlert:
     def __init__(self, alert_id, mjd, properties):
-        self.alert_id = alert_id
-        self.mjd = mjd
-        self.properties = properties
-
+        self.alert_id, self.mjd, self.properties = alert_id, mjd, properties
 
 class FakeLocus:
     def __init__(self):
-        self.locus_id = "ANT2026abc"
-        self.ra = 123.4
-        self.dec = -12.3
-        self.properties = {"ztf_object_id": "ZTF20abc", "num_alerts": 2}
-        self.tags = []
-        self.alerts = [FakeAlert("alert1", 60000.0, {"ant_mag": 19.2, "ant_magerr": 0.1, "ztf_drb": 0.98, "ztf_isdiffpos": "t"})]
-        self.catalog_objects = {
-            "gaia_dr3_gaia_source": [{"object_id": "Gaia DR3 123", "properties": {"parallax": 1.2}}],
-            "allwise": [{"object_id": "WISE 123", "properties": {"w1mpro": 15.1}}],
-        }
-
-
-def _field(value, path):
-    for part in path.split("."):
-        value = value[part] if isinstance(value, dict) else getattr(value, part)
-    return value
-
+        self.locus_id, self.ra, self.dec = "ANT2020nb5h6", 50.8, 37.4
+        self.properties = {"ztf_object_id": "ZTF20aafqubg"}
+        self.alerts = [FakeAlert("ztf_candidate:1", 60000.0, {"ztf_candid": 1})]
+        self.catalog_objects = {"gaia_dr3_gaia_source": [{"source_id": 123, "parallax": 1.2}]}
 
 def test_python_client_model_payload_refs_resolve():
-    locus = FakeLocus()
-    assert _field(locus, "properties.ztf_object_id") == "ZTF20abc"
-    alert = locus.alerts[0]
-    assert _field(alert, "mjd") == 60000.0
-    assert _field(alert, "alert_id") == "alert1"
-    assert _field(alert, "properties.ant_mag") == 19.2
-    gaia = locus.catalog_objects["gaia_dr3_gaia_source"][0]
-    allwise = locus.catalog_objects["allwise"][0]
-    assert _field(gaia, "properties.parallax") == 1.2
-    assert _field(allwise, "properties.w1mpro") == 15.1
+    from alertissimo.data_layer.runtime.payload_paths import extract_raw_field, resolve_payload_items
+    locus=FakeLocus()
+    assert extract_raw_field(locus, "properties.ztf_object_id") == "ZTF20aafqubg"
+    alerts=resolve_payload_items(locus,payload_key="alerts",payload_path="alerts[]")
+    assert extract_raw_field(alerts[0].value,"properties.ztf_candid")==1
+    gaia=resolve_payload_items(locus,payload_key="gaia",payload_path="catalog_objects.gaia_dr3_gaia_source[]")
+    assert extract_raw_field(gaia[0].value,"parallax")==1.2
+
+def test_private_or_callable_attributes_are_not_payload_data():
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+    locus=FakeLocus()
+    with pytest.raises(RawFieldMissing): extract_raw_field(locus,"__dict__")
+    with pytest.raises(RawFieldMissing): extract_raw_field(locus,"alerts.append")
