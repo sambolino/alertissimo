@@ -139,6 +139,34 @@ def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
     assert not default.records
 
 
+def test_gaia_catalog_queries_and_variability_sentinels_stay_separate():
+    positive = _build("anomaly", [{
+        "d:DR3Name": "Gaia DR3 123",
+        "d:gaiaVarFlag": 1,
+        "d:gaiaClass": "RR",
+    }])
+    dr3 = _records(positive, "crossmatch@gaia_dr3:fink")[0]
+    variability = _records(positive, "crossmatch@gaia_variability:fink")[0]
+    assert dr3.fields == {
+        "identity.object_id": "Gaia DR3 123",
+        "classification.assessment.variability.flag": True,
+    }
+    assert variability.fields["classification.assessment.variability.class"] == "RR"
+
+    unavailable = _build("anomaly", [{"d:DR3Name": "Unknown", "d:gaiaVarFlag": 0}])
+    assert not _records(unavailable, "crossmatch@gaia_dr3:fink")
+    frozen = _build("sso")
+    assert not any(
+        record.fields.get("classification.assessment.variability.flag") is False
+        for record in frozen.records
+    )
+
+
+def test_nearest_bright_gaia_dr1_selection_is_structural_debt():
+    document = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
+    assert not any(path.startswith("crossmatch@gaia_dr1_bright") for path in document["mappings"])
+
+
 def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
     payload = _payload("objects_withupperlim")
     tags = Counter(row["d:tag"] for row in payload)
@@ -173,13 +201,31 @@ def test_object_and_cone_final_classification_converge():
 
 
 def test_fast_transient_fields_use_lightcurve_semantics():
-    payload = [{"i:fid": "1", "d:lower_rate": -0.2, "d:upper_rate": 0.4, "d:delta_time": 0.5, "d:from_upper": False}]
-    record = _records(_build("anomaly", payload), "lightcurve@ztf:fink")[0]
-    band = "g"
-    assert record.fields[f"{band}.rate_lower_percentile"] is not None
-    assert record.fields[f"{band}.rate_upper_percentile"] is not None
-    assert record.fields[f"{band}.delta_time_rate"] is not None
-    assert isinstance(record.fields[f"{band}.from_upper_limit"], bool)
+    no_rate = [{"i:fid": 1, "d:lower_rate": None, "d:upper_rate": None,
+                "d:delta_time": None, "d:from_upper": False}]
+    records = _records(_build("anomaly", no_rate), "lightcurve@ztf:fink")
+    assert not records or "g.from_upper_limit" not in records[0].fields
+
+    upper = [{"i:fid": 2, "d:lower_rate": -0.2, "d:upper_rate": 0.4,
+              "d:delta_time": 0.5, "d:from_upper": True}]
+    record = _records(_build("anomaly", upper), "lightcurve@ztf:fink")[0]
+    assert record.fields["r.rate_lower_percentile"] == -0.2
+    assert record.fields["r.rate_upper_percentile"] == 0.4
+    assert record.fields["r.delta_time_rate"] == 0.5
+    assert record.fields["r.from_upper_limit"] is True
+
+
+def test_frozen_service_failures_are_never_scientific_values():
+    payload = _payload("sso")
+    observed = {
+        value
+        for row in payload
+        for value in row.values()
+        if isinstance(value, str) and value in {"Fail", "Fail 500", "Fail 503"}
+    }
+    assert observed == {"Fail", "Fail 500", "Fail 503"}
+    portfolio = _build("sso")
+    assert not any(value in observed for record in portfolio.records for value in record.fields.values())
 
 
 def test_statistics_emit_only_first_level_survey_records():

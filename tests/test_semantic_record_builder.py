@@ -212,6 +212,26 @@ def test_skip_null_omits_null_field_when_no_fallback_exists(tmp_path):
     assert portfolio.records == ()
 
 
+def test_skip_null_precedes_jd_arithmetic_and_preserves_real_transform(tmp_path):
+    path = "detection@ztf:lasair.time.mjd"
+    document = {
+        "broker": "lasair", "origin": "ztf",
+        "payloads": {"object": {"path": "."}},
+        "mappings": {path: ["object#value"]},
+        "transforms": {path: {"object#value": {
+            "type": "jd_to_mjd", "skip_null": True,
+        }}},
+    }
+    assert _build(tmp_path, {"value": None}, document).records == ()
+    portfolio = _build(tmp_path, {"value": 2459396.7497338}, document)
+    assert portfolio.records[0].fields["time.mjd"] == pytest.approx(59396.2497338)
+
+    without_skip = dict(document)
+    without_skip["transforms"] = {path: {"object#value": {"type": "jd_to_mjd"}}}
+    with pytest.raises(TypeError):
+        _build(tmp_path, {"value": None}, without_skip)
+
+
 def test_skip_null_continues_to_fallback_reference(tmp_path):
     document = _transform_document(
         {

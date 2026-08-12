@@ -562,7 +562,8 @@ mappings:
   - sso#d:gaiaVarFlag
   - latests#d:gaiaVarFlag
   - anomaly#d:gaiaVarFlag
-  crossmatch@gaia_dr3:fink.classification.assessment.variability.class:
+  # Separate VizieR I/358/vclassre query; it is not the I/355 Gaia DR3 row.
+  crossmatch@gaia_variability:fink.classification.assessment.variability.class:
   - sso#d:gaiaClass
   - latests#d:gaiaClass
   - anomaly#d:gaiaClass
@@ -571,9 +572,6 @@ mappings:
   - sso#i:neargaia
   - latests#i:neargaia
   - anomaly#i:neargaia
-  crossmatch@gaia_dr1_bright:fink.separation.total:
-  - objects#i:neargaiabright
-  - anomaly#i:neargaiabright
   crossmatch@gaia_dr3:fink.identity.object_id:
   - sso#d:DR3Name
   - latests#d:DR3Name
@@ -583,9 +581,6 @@ mappings:
   - sso#i:maggaia
   - latests#i:maggaia
   - anomaly#i:maggaia
-  crossmatch@gaia_dr1_bright:fink.photometry.G.mag:
-  - objects#i:maggaiabright
-  - anomaly#i:maggaiabright
   lightcurve@ztf:fink.{filter}.rate_lower_percentile:
   - objects#d:lower_rate
   - sso#d:lower_rate
@@ -926,6 +921,7 @@ transforms:
       type: value_map
       map:
         Unknown: null
+        Fail: null
         ? ''
         : null
       skip_null: true
@@ -988,6 +984,7 @@ transforms:
         None: null
         -999: null
         -1: null
+        Fail 503: null
       skip_null: true
     latests#d:vsx:
       type: value_map
@@ -2474,37 +2471,32 @@ transforms:
     sso#d:gaiaVarFlag:
       type: value_map
       map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
+        1: true
+        '1': true
+        0: null
+        '0': null
+      default: null
       skip_null: true
     latests#d:gaiaVarFlag:
       type: value_map
       map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
+        1: true
+        '1': true
+        0: null
+        '0': null
+      default: null
       skip_null: true
     anomaly#d:gaiaVarFlag:
       type: value_map
       map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
+        1: true
+        '1': true
+        0: null
+        '0': null
+      default: null
       skip_null: true
-  crossmatch@gaia_dr3:fink.classification.assessment.variability.class:
+  # VizieR I/358/vclassre variability classification is a distinct catalog query.
+  crossmatch@gaia_variability:fink.classification.assessment.variability.class:
     sso#d:gaiaClass:
       type: value_map
       map:
@@ -2515,6 +2507,7 @@ transforms:
         None: null
         -999: null
         -1: null
+        Fail 503: null
       skip_null: true
     latests#d:gaiaClass:
       type: value_map
@@ -2583,29 +2576,6 @@ transforms:
         -999: null
         -1: null
       skip_null: true
-  crossmatch@gaia_dr1_bright:fink.separation.total:
-    objects#i:neargaiabright:
-      type: value_map
-      map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
-      skip_null: true
-    anomaly#i:neargaiabright:
-      type: value_map
-      map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
-      skip_null: true
   crossmatch@gaia_dr3:fink.identity.object_id:
     sso#d:DR3Name:
       type: value_map
@@ -2616,6 +2586,7 @@ transforms:
         ? ''
         : null
         'null': null
+        Fail 500: null
       skip_null: true
     latests#d:DR3Name:
       type: value_map
@@ -2682,29 +2653,6 @@ transforms:
         -999: null
         -1: null
       skip_null: true
-  crossmatch@gaia_dr1_bright:fink.photometry.G.mag:
-    objects#i:maggaiabright:
-      type: value_map
-      map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
-      skip_null: true
-    anomaly#i:maggaiabright:
-      type: value_map
-      map:
-        ? ''
-        : null
-        Unknown: null
-        nan: null
-        None: null
-        -999: null
-        -1: null
-      skip_null: true
   lightcurve@ztf:fink.{filter}.rate_lower_percentile:
     objects#d:lower_rate:
       skip_null: true
@@ -2732,10 +2680,25 @@ transforms:
       skip_null: true
   lightcurve@ztf:fink.{filter}.from_upper_limit:
     sso#d:from_upper:
+      type: value_map
+      map:
+        true: true
+        false: null
+      default: null
       skip_null: true
     latests#d:from_upper:
+      type: value_map
+      map:
+        true: true
+        false: null
+      default: null
       skip_null: true
     anomaly#d:from_upper:
+      type: value_map
+      map:
+        true: true
+        false: null
+      default: null
       skip_null: true
   lightcurve@ztf:fink.{filter}:
     objects#i:fid:
