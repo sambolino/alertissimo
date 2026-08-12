@@ -68,22 +68,22 @@ unmapped:
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
 - query_detections#diaObjectId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Rubin diaObject identifier duplicates a distinct provider object identity column; the registry cannot preserve two object identifiers without an established qualifier.
+    candidate_meaning: In every authoritative detection, diaObjectId equals the documented ALeRCE oid object identifier; oid is emitted and this duplicate provider alias is intentionally not emitted a second time.
 - query_detections#forced_PsfFlux_flag:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF failure flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_detections#forced_PsfFlux_flag_edge:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF edge flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_detections#forced_PsfFlux_flag_noGoodPixels:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF no-good-pixels flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_detections#has_stamp:
     reason: unsupported_semantic_concept
     candidate_meaning: Stamp availability metadata has no same-meaning detection field.
 - query_detections#parentDiaSourceId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Parent diaSource relationship has no current noun-plane ontology path; edges are out of scope.
+    candidate_meaning: The documented parent diaSource identifier is zero throughout the authoritative capture, representing no actual parent relationship; no edge to sentinel identifier 0 is emitted.
 - query_detections#scienceFlux:
     reason: unsupported_semantic_concept
     candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
@@ -92,7 +92,7 @@ unmapped:
     candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
 - query_detections#ssObjectId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Rubin Solar System object identifier has no stable same-meaning field without using a dynamic escape path.
+    candidate_meaning: Zero acts as absence of an associated Solar-System identity throughout the authoritative capture; the sentinel is intentionally not emitted as a real identifier.
 - query_detections#templateFlux:
     reason: unsupported_semantic_concept
     candidate_meaning: Template-image flux is not a source photometry measurement in the ontology contract.
@@ -122,22 +122,22 @@ unmapped:
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
 - query_lightcurve.detections#diaObjectId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Rubin diaObject identifier duplicates a distinct provider object identity column; the registry cannot preserve two object identifiers without an established qualifier.
+    candidate_meaning: In every authoritative lightcurve detection, diaObjectId equals the documented ALeRCE oid object identifier; oid is emitted and this duplicate provider alias is intentionally not emitted a second time.
 - query_lightcurve.detections#forced_PsfFlux_flag:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF failure flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_lightcurve.detections#forced_PsfFlux_flag_edge:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF edge flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels:
     reason: unsupported_semantic_concept
-    candidate_meaning: Forced-PSF no-good-pixels flag carried on a detection row has no flag location under the canonical forced-photometry branch.
+    candidate_meaning: The ontology has a forced-PSF flag location, but this isolated detection-row flag lacks an authoritative association with a represented forced-photometry measurement.
 - query_lightcurve.detections#has_stamp:
     reason: unsupported_semantic_concept
     candidate_meaning: Stamp availability metadata has no same-meaning detection field.
 - query_lightcurve.detections#parentDiaSourceId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Parent diaSource relationship has no current noun-plane ontology path; edges are out of scope.
+    candidate_meaning: The documented parent diaSource identifier is zero throughout the authoritative capture, representing no actual parent relationship; no edge to sentinel identifier 0 is emitted.
 - query_lightcurve.detections#scienceFlux:
     reason: unsupported_semantic_concept
     candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
@@ -146,7 +146,7 @@ unmapped:
     candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
 - query_lightcurve.detections#ssObjectId:
     reason: unsupported_semantic_concept
-    candidate_meaning: Rubin Solar System object identifier has no stable same-meaning field without using a dynamic escape path.
+    candidate_meaning: Zero acts as absence of an associated Solar-System identity throughout the authoritative capture; the sentinel is intentionally not emitted as a real identifier.
 - query_lightcurve.detections#templateFlux:
     reason: unsupported_semantic_concept
     candidate_meaning: Template-image flux is not a source photometry measurement in the ontology contract.
