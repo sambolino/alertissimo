@@ -1184,11 +1184,9 @@ levels:
         description: "Uncertainty of the magnitude-change rate"
         unit: mag/day
     [flux]:
-      description: "Generic calibrated flux density"
-      unit: nJy
+      description: "Generic calibrated photometric flux quantity"
       [error]:
-        description: "Uncertainty of the calibrated flux density"
-        unit: nJy
+        description: "Uncertainty of the calibrated photometric flux quantity"
       level: L0, L4
       [chi2]:
         description: "Chi-square statistic of the flux time series"
