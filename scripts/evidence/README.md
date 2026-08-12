@@ -6,6 +6,11 @@ fixture directory is an explicit user action, and every script refuses to overwr
 non-empty directory. Raw captures are observations, not semantic truth until audited.
 Credentials are used only for transport and are never persisted.
 
+Capture JSON preserves non-finite Python floats with explicit capture-only tags:
+`{"__capture_float__": "nan"}`, `{"__capture_float__": "+inf"}`, and
+`{"__capture_float__": "-inf"}`. These tags retain provider/client evidence and are
+serialization metadata, not semantic normalization; Python `None` remains JSON `null`.
+
 | Broker | ZTF | LSST | Transport |
 | --- | --- | --- | --- |
 | ALeRCE | [`capture_alerce_ztf.py`](capture_alerce_ztf.py) | [`capture_alerce_lsst.py`](capture_alerce_lsst.py) | Python client |
