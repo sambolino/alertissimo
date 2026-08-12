@@ -73,11 +73,8 @@ unmapped:
     reason: unsupported_semantic_concept
     candidate_meaning: Stamp availability metadata has no same-meaning detection field.
 - query_detections#parentDiaSourceId:
-    reason: unsupported_semantic_concept
-    candidate_meaning: The documented parent diaSource identifier is zero throughout the authoritative capture, representing no actual parent relationship; no edge to sentinel identifier 0 is emitted.
-- query_detections#ssObjectId:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Zero acts as absence of an associated Solar-System identity throughout the authoritative capture; the sentinel is intentionally not emitted as a real identifier.
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
 - query_forced_photometry#band:
     reason: unsupported_semantic_concept
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
@@ -100,11 +97,8 @@ unmapped:
     reason: unsupported_semantic_concept
     candidate_meaning: Stamp availability metadata has no same-meaning detection field.
 - query_lightcurve.detections#parentDiaSourceId:
-    reason: unsupported_semantic_concept
-    candidate_meaning: The documented parent diaSource identifier is zero throughout the authoritative capture, representing no actual parent relationship; no edge to sentinel identifier 0 is emitted.
-- query_lightcurve.detections#ssObjectId:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Zero acts as absence of an associated Solar-System identity throughout the authoritative capture; the sentinel is intentionally not emitted as a real identifier.
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
 - query_lightcurve.forced_photometry#band:
     reason: unsupported_semantic_concept
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.

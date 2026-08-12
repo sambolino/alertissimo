@@ -171,6 +171,23 @@ def test_to_int_rejects_non_integral_values(tmp_path, value):
         _build(tmp_path, {"value": value}, document)
 
 
+@pytest.mark.parametrize(("value", "expected"), [(None, None), (2, 7200), (0.5, 1800.0)])
+def test_scale_multiplies_numeric_values_without_coercion(tmp_path, value, expected):
+    document = _transform_document(
+        {"object#value": {"type": "scale", "factor": 3600}}
+    )
+    portfolio = _build(tmp_path, {"value": value}, document)
+    assert portfolio.records[0].fields["value"] == expected
+
+
+def test_scale_does_not_coerce_strings(tmp_path):
+    document = _transform_document(
+        {"object#value": {"type": "scale", "factor": 2}}
+    )
+    with pytest.raises(TypeError, match="cannot scale non-numeric value"):
+        _build(tmp_path, {"value": "2"}, document)
+
+
 def test_value_map_default_maps_unknown_to_default(tmp_path):
     document = _transform_document(
         {"object#value": {"type": "value_map", "map": {"A": "star"}, "default": "unknown"}}

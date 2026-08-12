@@ -137,6 +137,43 @@ def test_all_authoritative_scalar_refs_are_accounted():
         assert observed <= mapped | debt, sorted(observed - mapped - debt)
 
 
+def test_first_mjd_native_precedence_and_documented_fallback(tmp_path):
+    path = "summary@lsst:fink.time.first_mjd"
+    row = fixture("objects")[0]
+    fields = dict(_build_filtered(tmp_path, "objects", [row], [path]).records[0].fields)
+    assert fields["time.first_mjd"] == 61217.421180064
+
+    native = copy.deepcopy(row)
+    native["r:firstDiaSourceMjdTai"] = 61200.25
+    native["f:firstDiaSourceMjdTaiFink"] = 61199.5
+    fields = dict(_build_filtered(tmp_path, "objects", [native], [path]).records[0].fields)
+    assert fields["time.first_mjd"] == 61200.25
+
+
+def test_cone_separation_is_scaled_to_arcseconds(tmp_path):
+    row = fixture("conesearch")[0]
+    portfolio = _build_filtered(
+        tmp_path, "conesearch", [row],
+        ["detection@lsst:fink.separation.from_search_center"],
+    )
+    assert portfolio.records[0].fields["separation.from_search_center"] == pytest.approx(
+        0.13504932
+    )
+
+
+@pytest.mark.parametrize("endpoint", ("sources", "conesearch"))
+def test_optional_ss_object_id_suppresses_zero_and_preserves_integer(tmp_path, endpoint):
+    row = copy.deepcopy(fixture(endpoint)[0])
+    path = "detection@lsst:fink.solar_system.object.identity.object_id"
+    paths = [path, "detection@lsst:fink.identity.source_id"]
+    fields = dict(_build_filtered(tmp_path, endpoint, [row], paths).records[0].fields)
+    assert "solar_system.object.identity.object_id" not in fields
+    row["r:ssObjectId"] = 123456789
+    fields = dict(_build_filtered(tmp_path, endpoint, [row], paths).records[0].fields)
+    assert fields["solar_system.object.identity.object_id"] == 123456789
+    assert type(fields["solar_system.object.identity.object_id"]) is int
+
+
 def _build_filtered(tmp_path, endpoint, payload, semantic_paths):
     source = registry()
     mappings = {path: [ref for ref in source["mappings"][path] if ref.startswith(endpoint + "#")] for path in semantic_paths}

@@ -155,6 +155,10 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
         return value - 2400000.5
     if value is None:
         return None
+    if transform_type == "scale":
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise TypeError(f"cannot scale non-numeric value {value!r}")
+        return value * specification["factor"]
     if transform_type == "to_string_strip":
         return str(value).strip()
     if transform_type == "to_float":

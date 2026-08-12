@@ -4,26 +4,17 @@ origin: lsst
 notes: Only audited fields without a stable semantic feature catalog path are retained here.
 unmapped:
 - schema#schema:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.
-- objects#f:firstDiaSourceMjdTaiFink:
-    reason: ambiguous_provider_computation
-    note: Fink-computed first-source time equals the captured earliest source, but precedence relative to native firstDiaSourceMjdTai is not established.
+    reason: service_metadata
+    note: Service/data schema reconstructed from Rubin alert schemas and Fink-added field definitions; it is endpoint metadata rather than an astronomical semantic record.
 - objects#r:salt:
-    reason: provider_internal_metadata
-    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
+    reason: storage_partition_key
+    note: Fink-internal HBase salting value added at ingestion for row-key/storage distribution; not part of the Rubin science payload and intentionally not exposed in the semantic portfolio.
 - sources#r:parentDiaSourceId:
-    reason: sentinel_relationship_identifier
-    note: 'Captured ordinary transient rows contain zero: a relationship sentinel, not this record identity.'
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
 - conesearch#r:parentDiaSourceId:
-    reason: sentinel_relationship_identifier
-    note: 'Captured ordinary transient rows contain zero: a relationship sentinel, not this record identity.'
-- sources#r:ssObjectId:
-    reason: sentinel_absence
-    note: Captured ordinary transient rows contain zero, denoting no Solar-System identity.
-- conesearch#r:ssObjectId:
-    reason: sentinel_absence
-    note: Captured ordinary transient rows contain zero, denoting no Solar-System identity.
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
 - fp#r:scienceFlux:
     reason: unresolved_measurement_semantics
     note: DiaForcedSource contains both psfFlux and scienceFlux as distinct Rubin-defined measurements. psfFlux is already canonically represented as the forced-source PSF measurement across brokers; scienceFlux is separately defined as forced photometry on the visit image. The current ontology/convergence model needs a dedicated decision before both can coexist without semantic collision.
@@ -31,15 +22,8 @@ unmapped:
     reason: unresolved_measurement_semantics
     note: DiaForcedSource contains both psfFlux and scienceFlux as distinct Rubin-defined measurements. psfFlux is already canonically represented as the forced-source PSF measurement across brokers; scienceFlux is separately defined as forced photometry on the visit image. The current ontology/convergence model needs a dedicated decision before both can coexist without semantic collision.
 - sources#r:salt:
-    reason: provider_internal_metadata
-    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
+    reason: storage_partition_key
+    note: Fink-internal HBase salting value added at ingestion for row-key/storage distribution; not part of the Rubin science payload and intentionally not exposed in the semantic portfolio.
 - fp#r:salt:
-    reason: provider_internal_metadata
-    note: Fink internal salt is explicitly non-semantic in the authoritative capture.
-- conesearch#v:separation_degree:
-    reason: incompatible_ontology_unit
-    note: Measured angular separation from cone-search center is in degrees; no generic numeric-scale transform is available for canonical arcsec.
-    candidate_meaning: Measured angular separation from cone-search center, in degrees.
-- conesearch#f:firstDiaSourceMjdTaiFink:
-    reason: ambiguous_provider_computation
-    note: Fink-computed first-source time has no established precedence relative to native firstDiaSourceMjdTai.
+    reason: storage_partition_key
+    note: Fink-internal HBase salting value added at ingestion for row-key/storage distribution; not part of the Rubin science payload and intentionally not exposed in the semantic portfolio.

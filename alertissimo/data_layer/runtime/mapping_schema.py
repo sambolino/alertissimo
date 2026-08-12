@@ -23,7 +23,7 @@ MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
-TRANSFORM_KEYS = {"type", "map", "default", "skip_null", "note"}
+TRANSFORM_KEYS = {"type", "map", "default", "factor", "skip_null", "note"}
 TRANSFORM_TYPES = {
     "boolean_not",
     "value_map",
@@ -31,6 +31,7 @@ TRANSFORM_TYPES = {
     "to_string_strip",
     "to_float",
     "to_int",
+    "scale",
 }
 UNMAPPED_KEYS = {"broker", "origin", "unmapped", "notes"}
 UNMAPPED_VALUE_KEYS = {"reason", "note", "candidate_meaning"}
@@ -253,6 +254,13 @@ def validate_mapping_file(path: str | Path) -> None:
                 )
             if transform_type == "value_map" and "map" not in specification:
                 raise MappingSchemaError(f"{path}: value_map transform requires 'map'")
+            if transform_type == "scale" and "factor" not in specification:
+                raise MappingSchemaError(f"{path}: scale transform requires 'factor'")
+            if "factor" in specification and (
+                isinstance(specification["factor"], bool)
+                or not isinstance(specification["factor"], (int, float))
+            ):
+                raise MappingSchemaError(f"{path}: transform factor must be numeric")
             if "map" in specification and not isinstance(specification["map"], dict):
                 raise MappingSchemaError(f"{path}: transform map must be a mapping")
             if "default" in specification and not (
