@@ -65,7 +65,7 @@ mappings:
   - latests#i:magpsf
   - sso#i:magpsf
   - anomaly#i:magpsf
-  detection@ztf:fink.photometry.{filter}.psf.mag_error:
+  detection@ztf:fink.photometry.{filter}.psf.mag.error:
   - objects#i:sigmapsf
   - conesearch#i:sigmapsf
   - sso#i:sigmapsf
@@ -105,10 +105,10 @@ mappings:
   detection@ztf:fink.photometry.{filter}.aperture.large.mag:
   - objects#i:magapbig
   - anomaly#i:magapbig
-  detection@ztf:fink.photometry.{filter}.aperture.mag_error:
+  detection@ztf:fink.photometry.{filter}.aperture.mag.error:
   - objects#i:sigmagap
   - anomaly#i:sigmagap
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag_error:
+  detection@ztf:fink.photometry.{filter}.aperture.large.mag.error:
   - objects#i:sigmagapbig
   - anomaly#i:sigmagapbig
   detection@ztf:fink.photometry.{filter}.mag_minus_psf:
@@ -291,7 +291,7 @@ mappings:
   - sso#i:magnr
   - latests#i:magnr
   - anomaly#i:magnr
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag_error:
+  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
   - objects#i:sigmagnr
   - sso#i:sigmagnr
   - latests#i:sigmagnr
@@ -355,10 +355,10 @@ mappings:
   - latests#v:constellation
   - sso#v:constellation
   - anomaly#v:constellation
-  summary@ztf:fink.photometry.{filter}.magnitude_rate:
+  summary@ztf:fink.photometry.{filter}.mag.rate:
   - objects#v:rate
   - latests#v:rate
-  summary@ztf:fink.photometry.{filter}.magnitude_rate_error:
+  summary@ztf:fink.photometry.{filter}.mag.rate_error:
   - objects#v:sigma(rate)
   - latests#v:sigma(rate)
   summary@ztf:fink.color.{filter1-filter2}.diff:

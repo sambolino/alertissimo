@@ -112,7 +112,7 @@ def test_real_detection_and_non_detection_photometry():
     portfolio = _build("query_detections", [detection])
     fields = dict(portfolio.records[0].fields)
     assert fields["photometry.g.psf.mag"] == 17.579912
-    assert fields["photometry.g.psf.mag_error"] == 0.025473464
+    assert fields["photometry.g.psf.mag.error"] == 0.025473464
     assert fields["photometry.g.aperture.mag"] == 17.6296
     assert fields["image_metrics.is_positive"] is True
 
@@ -141,7 +141,7 @@ def test_real_forced_photometry_astrometry_calibration_and_reference_source():
     assert fields["reference_image.nearest_source.position.ra"] == 313.7733154296875
     assert fields["reference_image.nearest_source.position.dec"] == 39.098026275634766
     assert fields["reference_image.nearest_source.photometry.g.mag"] == 15.606999397277832
-    assert fields["reference_image.nearest_source.photometry.g.mag_error"] == 0.01899999938905239
+    assert fields["reference_image.nearest_source.photometry.g.mag.error"] == 0.01899999938905239
     assert fields["image_metrics.is_positive"] is True
     assert portfolio.edges == ()
 

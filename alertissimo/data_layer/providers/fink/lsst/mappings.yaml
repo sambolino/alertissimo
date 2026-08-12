@@ -107,7 +107,7 @@ mappings:
   summary@lsst:fink.photometry.u.psf.flux.minimum:
   - objects#r:u_psfFluxMin
   - conesearch#r:u_psfFluxMin
-  summary@lsst:fink.photometry.u.psf.measurement_count:
+  summary@lsst:fink.photometry.u.psf.flux.measurement_count:
   - objects#r:u_psfFluxNdata
   - conesearch#r:u_psfFluxNdata
   summary@lsst:fink.photometry.u.psf.flux.sigma:
@@ -143,7 +143,7 @@ mappings:
   summary@lsst:fink.photometry.g.psf.flux.minimum:
   - objects#r:g_psfFluxMin
   - conesearch#r:g_psfFluxMin
-  summary@lsst:fink.photometry.g.psf.measurement_count:
+  summary@lsst:fink.photometry.g.psf.flux.measurement_count:
   - objects#r:g_psfFluxNdata
   - conesearch#r:g_psfFluxNdata
   summary@lsst:fink.photometry.g.psf.flux.sigma:
@@ -179,7 +179,7 @@ mappings:
   summary@lsst:fink.photometry.r.psf.flux.minimum:
   - objects#r:r_psfFluxMin
   - conesearch#r:r_psfFluxMin
-  summary@lsst:fink.photometry.r.psf.measurement_count:
+  summary@lsst:fink.photometry.r.psf.flux.measurement_count:
   - objects#r:r_psfFluxNdata
   - conesearch#r:r_psfFluxNdata
   summary@lsst:fink.photometry.r.psf.flux.sigma:
@@ -215,7 +215,7 @@ mappings:
   summary@lsst:fink.photometry.i.psf.flux.minimum:
   - objects#r:i_psfFluxMin
   - conesearch#r:i_psfFluxMin
-  summary@lsst:fink.photometry.i.psf.measurement_count:
+  summary@lsst:fink.photometry.i.psf.flux.measurement_count:
   - objects#r:i_psfFluxNdata
   - conesearch#r:i_psfFluxNdata
   summary@lsst:fink.photometry.i.psf.flux.sigma:
@@ -251,7 +251,7 @@ mappings:
   summary@lsst:fink.photometry.z.psf.flux.minimum:
   - objects#r:z_psfFluxMin
   - conesearch#r:z_psfFluxMin
-  summary@lsst:fink.photometry.z.psf.measurement_count:
+  summary@lsst:fink.photometry.z.psf.flux.measurement_count:
   - objects#r:z_psfFluxNdata
   - conesearch#r:z_psfFluxNdata
   summary@lsst:fink.photometry.z.psf.flux.sigma:
@@ -287,7 +287,7 @@ mappings:
   summary@lsst:fink.photometry.y.psf.flux.minimum:
   - objects#r:y_psfFluxMin
   - conesearch#r:y_psfFluxMin
-  summary@lsst:fink.photometry.y.psf.measurement_count:
+  summary@lsst:fink.photometry.y.psf.flux.measurement_count:
   - objects#r:y_psfFluxNdata
   - conesearch#r:y_psfFluxNdata
   summary@lsst:fink.photometry.y.psf.flux.sigma:
@@ -418,7 +418,7 @@ mappings:
   - sources#r:psfFlux
   - conesearch#r:psfFlux
   - sso#r:psfFlux
-  detection@lsst:fink.photometry.{filter}.psf.flux_error:
+  detection@lsst:fink.photometry.{filter}.psf.flux.error:
   - sources#r:psfFluxErr
   - conesearch#r:psfFluxErr
   - sso#r:psfFluxErr
@@ -450,7 +450,7 @@ mappings:
   - sources#r:apFlux
   - conesearch#r:apFlux
   - sso#r:apFlux
-  detection@lsst:fink.photometry.{filter}.aperture.flux_error:
+  detection@lsst:fink.photometry.{filter}.aperture.flux.error:
   - sources#r:apFluxErr
   - conesearch#r:apFluxErr
   - sso#r:apFluxErr
