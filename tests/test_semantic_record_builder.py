@@ -468,7 +468,20 @@ def test_ordinary_mapping_keeps_first_success(tmp_path):
     assert dict(portfolio.records[0].fields)["class_distribution"] == 1
 
 
-def test_mixed_ordinary_and_composed_assignment_raises(tmp_path):
+@pytest.mark.parametrize("references", [["a", "b"], ["b", "a"]])
+def test_mixed_ordinary_and_composed_assignment_raises_in_either_order(tmp_path, references):
     transforms = {"a": {"object_key": "AGN"}}
     with pytest.raises(PortfolioBuildError, match="mixed ordinary assignment and object composition"):
-        _build(tmp_path, {"a": 1, "b": 2}, _composition_document(["a", "b"], transforms))
+        _build(tmp_path, {"a": 1, "b": 2}, _composition_document(references, transforms))
+
+
+def test_mixed_mapping_uses_successful_ordinary_when_composition_is_missing(tmp_path):
+    transforms = {"a": {"object_key": "AGN", "skip_null": True}}
+    portfolio = _build(tmp_path, {"a": None, "b": 2}, _composition_document(["b", "a"], transforms))
+    assert dict(portfolio.records[0].fields)["class_distribution"] == 2
+
+
+def test_mixed_mapping_composes_when_ordinary_is_missing(tmp_path):
+    transforms = {"a": {"object_key": "AGN"}}
+    portfolio = _build(tmp_path, {"a": 1}, _composition_document(["b", "a"], transforms))
+    assert dict(portfolio.records[0].fields)["class_distribution"] == {"AGN": 1}

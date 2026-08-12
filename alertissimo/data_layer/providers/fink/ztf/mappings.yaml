@@ -749,6 +749,11 @@ mappings:
   - sso#d:sigma_rate
   - latests#d:sigma_rate
   - anomaly#d:sigma_rate
+  classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
+  - objects#d:blazar_stats_cdf_quantile
+  - sso#d:blazar_stats_cdf_quantile
+  - latests#d:blazar_stats_cdf_quantile
+  - anomaly#d:blazar_stats_cdf_quantile
   classification@fink.assessment.blazar_extreme_state_instantness_low.value:
   - objects#d:blazar_stats_instantness_low
   - sso#d:blazar_stats_instantness_low
@@ -1305,6 +1310,25 @@ transforms:
     latests#d:sigma_rate:
       skip_null: true
     anomaly#d:sigma_rate:
+      skip_null: true
+  classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
+    objects#d:blazar_stats_cdf_quantile:
+      type: value_map
+      map: &blazar_cdf_unavailable
+        -1: null
+        -1.0: null
+      skip_null: true
+    sso#d:blazar_stats_cdf_quantile:
+      type: value_map
+      map: *blazar_cdf_unavailable
+      skip_null: true
+    latests#d:blazar_stats_cdf_quantile:
+      type: value_map
+      map: *blazar_cdf_unavailable
+      skip_null: true
+    anomaly#d:blazar_stats_cdf_quantile:
+      type: value_map
+      map: *blazar_cdf_unavailable
       skip_null: true
   classification@fink.assessment.blazar_extreme_state_instantness_low.value:
     objects#d:blazar_stats_instantness_low:

@@ -2115,7 +2115,11 @@ levels:
         $ref: <_lightcurve_point>
     $ref: <photometry>(L4)    
     [rate_lower_percentile]:
+      description: "Lower percentile of the magnitude rate in this filter"
+      unit: mag/day
     [rate_upper_percentile]:
+      description: "Upper percentile of the magnitude rate in this filter"
+      unit: mag/day
     [delta_time_rate]:
       unit: days
     [from_upper_limit]:
@@ -2123,11 +2127,13 @@ levels:
     [feature_vector]:
       description: "Serialized feature vector (e.g. lc_features_g)"
     [magnitude_rate]:
-      description: "Fink-derived rate of change in magnitude"
+      description: "Rate of change of magnitude in this filter"
+      unit: mag/day
     [magnitude_rate_error]:
-      description: "Uncertainty of the Fink-derived magnitude rate"
+      description: "Uncertainty of the magnitude rate in this filter"
+      unit: mag/day
   [detection_count]:
-    description: "Number of detections represented by the lightcurve history"
+    description: "Number of detection points represented by this light curve; upper-limit or non-detection points are excluded"
     type: integer
 
 <survey>:
