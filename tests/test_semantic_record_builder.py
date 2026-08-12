@@ -13,6 +13,10 @@ from alertissimo.data_layer.representations import (
 from alertissimo.data_layer.runtime.record_builder import PortfolioBuildError, build_portfolio_from_execution
 
 
+_TRANSFORM_SEMANTIC_PATH = "detection@ztf:lasair.quality.test_value"
+_TRANSFORM_FIELD = "quality.test_value"
+
+
 def _execution(payload):
     provenance = InternalExecutionProvenance(
         internal_execution_id=InternalExecutionId("execution:test"),
@@ -84,7 +88,7 @@ def test_jd_transform_and_missing_fields(tmp_path):
         "mappings": {
             "detection@ztf:lasair.time.mjd": ["candidate#jd"],
             "detection@ztf:lasair.position.ra": ["candidate#ra"],
-            "object@ztf:lasair.identity.source_id": ["candidate#missing"],
+            "summary@ztf:lasair.identity.object_id": ["candidate#missing"],
         },
         "transforms": {"detection@ztf:lasair.time.mjd": {
             "candidate#jd": {"type": "jd_to_mjd"},
@@ -99,30 +103,32 @@ def test_boolean_not_and_value_map(tmp_path):
         "broker": "lasair", "origin": "ztf",
         "payloads": {"row": {"path": "rows[]"}},
         "mappings": {
-            "object@ztf:lasair.flags.active": ["row#flag"],
-            "object@ztf:lasair.classification.label": ["row#code"],
+            "detection@ztf:lasair.image_metrics.is_positive": ["row#flag"],
+            "detection@ztf:lasair.quality.test_label": ["row#code"],
         },
         "transforms": {
-            "object@ztf:lasair.flags.active": {"row#flag": {"type": "boolean_not"}},
-            "object@ztf:lasair.classification.label": {
+            "detection@ztf:lasair.image_metrics.is_positive": {
+                "row#flag": {"type": "boolean_not"}
+            },
+            "detection@ztf:lasair.quality.test_label": {
                 "row#code": {"type": "value_map", "map": {"A": "star"}}
             },
         },
     })
     assert dict(portfolio.records[0].fields) == {
-        "flags.active": True, "classification.label": "star",
+        "image_metrics.is_positive": True,
+        "quality.test_label": "star",
     }
 
 
 def _transform_document(transform, references=None):
-    semantic_path = "object@ztf:lasair.value"
     references = references or ["object#value"]
     return {
         "broker": "lasair",
         "origin": "ztf",
         "payloads": {"object": {"path": "."}},
-        "mappings": {semantic_path: references},
-        "transforms": {semantic_path: transform},
+        "mappings": {_TRANSFORM_SEMANTIC_PATH: references},
+        "transforms": {_TRANSFORM_SEMANTIC_PATH: transform},
     }
 
 
@@ -137,7 +143,7 @@ def test_to_string_strip_strips_strings_and_converts_scalars(
         {"object#value": {"type": "to_string_strip"}}
     )
     portfolio = _build(tmp_path, {"value": value}, document)
-    assert portfolio.records[0].fields["value"] == expected
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == expected
 
 
 @pytest.mark.parametrize(
@@ -146,7 +152,7 @@ def test_to_string_strip_strips_strings_and_converts_scalars(
 def test_to_float_converts_numeric_strings_and_numbers(tmp_path, value, expected):
     document = _transform_document({"object#value": {"type": "to_float"}})
     portfolio = _build(tmp_path, {"value": value}, document)
-    assert portfolio.records[0].fields["value"] == expected
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == expected
 
 
 def test_to_float_rejects_invalid_values(tmp_path):
@@ -161,7 +167,7 @@ def test_to_float_rejects_invalid_values(tmp_path):
 def test_to_int_converts_integral_values_only(tmp_path, value, expected):
     document = _transform_document({"object#value": {"type": "to_int"}})
     portfolio = _build(tmp_path, {"value": value}, document)
-    assert portfolio.records[0].fields["value"] == expected
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == expected
 
 
 @pytest.mark.parametrize("value", [1.5, "2.5", "abc"])
@@ -177,7 +183,7 @@ def test_scale_multiplies_numeric_values_without_coercion(tmp_path, value, expec
         {"object#value": {"type": "scale", "factor": 3600}}
     )
     portfolio = _build(tmp_path, {"value": value}, document)
-    assert portfolio.records[0].fields["value"] == expected
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == expected
 
 
 def test_scale_does_not_coerce_strings(tmp_path):
@@ -193,7 +199,7 @@ def test_value_map_default_maps_unknown_to_default(tmp_path):
         {"object#value": {"type": "value_map", "map": {"A": "star"}, "default": "unknown"}}
     )
     portfolio = _build(tmp_path, {"value": "B"}, document)
-    assert portfolio.records[0].fields["value"] == "unknown"
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == "unknown"
 
 
 def test_value_map_without_default_preserves_old_behavior(tmp_path):
@@ -201,7 +207,7 @@ def test_value_map_without_default_preserves_old_behavior(tmp_path):
         {"object#value": {"type": "value_map", "map": {"A": "star"}}}
     )
     portfolio = _build(tmp_path, {"value": "B"}, document)
-    assert portfolio.records[0].fields["value"] == "B"
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == "B"
 
 
 def test_skip_null_omits_null_field_when_no_fallback_exists(tmp_path):
@@ -241,13 +247,13 @@ def test_skip_null_continues_to_fallback_reference(tmp_path):
         ["object#primary", "object#fallback"],
     )
     portfolio = _build(tmp_path, {"primary": None, "fallback": "2.5"}, document)
-    assert portfolio.records[0].fields["value"] == 2.5
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == 2.5
 
 
 def test_skip_null_only_specification_does_not_require_type(tmp_path):
     document = _transform_document({"object#value": {"skip_null": True}})
     portfolio = _build(tmp_path, {"value": "present"}, document)
-    assert portfolio.records[0].fields["value"] == "present"
+    assert portfolio.records[0].fields[_TRANSFORM_FIELD] == "present"
 
 
 def test_discovers_mapping_from_execution_provenance(tmp_path):
