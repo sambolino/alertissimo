@@ -1,0 +1,15 @@
+lightcurve_secondary:
+  time: {reason: secondary_duplicate_representation, note: Secondary lightcurve index/time representation.}
+  alert_id: {reason: secondary_duplicate_representation, note: Alert identity already represented by authoritative Alert objects.}
+  ant_mjd: {reason: secondary_duplicate_representation, note: Observation time duplicated from authoritative Alert objects.}
+  ant_survey: {reason: secondary_duplicate_representation, note: Provider discriminator duplicated from authoritative Alert objects.}
+  ant_ra: {reason: secondary_duplicate_representation, note: Position duplicated from authoritative Alert objects.}
+  ant_dec: {reason: secondary_duplicate_representation, note: Position duplicated from authoritative Alert objects.}
+  ant_passband: {reason: secondary_duplicate_representation, note: Passband duplicated from authoritative Alert objects.}
+  ant_mag: {reason: secondary_duplicate_representation, note: Magnitude duplicated from authoritative Alert objects.}
+  ant_magerr: {reason: secondary_duplicate_representation, note: Magnitude error duplicated from authoritative Alert objects.}
+  ant_maglim: {reason: secondary_duplicate_representation, note: Ambiguous normalized magnitude duplicated from authoritative Alert objects.}
+  ant_mag_corrected: {reason: secondary_duplicate_representation, note: Secondary corrected magnitude representation.}
+  ant_magerr_corrected: {reason: secondary_duplicate_representation, note: Secondary corrected magnitude-error representation.}
+  ant_magulim_corrected: {reason: secondary_duplicate_representation, note: Secondary corrected upper-bound representation.}
+  ant_magllim_corrected: {reason: secondary_duplicate_representation, note: Secondary corrected lower-bound representation.}

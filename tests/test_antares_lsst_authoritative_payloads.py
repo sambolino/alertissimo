@@ -1,0 +1,45 @@
+"""Authoritative audit of frozen antares-client 1.14.0 LSST evidence."""
+from __future__ import annotations
+import copy,json
+from itertools import count
+from pathlib import Path
+import pytest,yaml
+from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.representations import InternalExecutionId,InternalExecutionProvenance,InternalPortfolioId,InternalRecordId
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from tools.audit_payload_mapping_coverage import audit_payload
+FIXTURES=Path(__file__).parent/'fixtures/antares/lsst'
+MAPPINGS=Path(__file__).parents[1]/'alertissimo/data_layer/providers/antares/lsst/mappings.yaml'
+def fixture(n):return json.loads((FIXTURES/n).read_text())
+def rich_locus(catalogs=False):
+ x=copy.deepcopy(fixture('get_by_lsst_dia_object_id.json'));x['alerts']=fixture('alerts.json');x['catalog_objects']={}
+ if catalogs:
+  for match in fixture('catalog_crossmatch_probe.json')['matches']:
+   for family,rows in match['catalog_objects'].items():x['catalog_objects'].setdefault(family,[]).extend(rows)
+ return x
+class LazyLocus(dict):
+ @property
+ def lightcurve(self):raise AssertionError('production normalization accessed lazy Locus.lightcurve')
+def build(endpoint,payload):
+ ids=count();return build_portfolio_from_execution(ExecutionResult(payload=payload,execution_provenance=InternalExecutionProvenance(internal_execution_id=InternalExecutionId('execution:fixture'),broker='antares',origin='lsst',endpoint=endpoint)),mappings_path=MAPPINGS,internal_portfolio_id=InternalPortfolioId('portfolio:fixture'),record_id_factory=lambda:InternalRecordId(f'record:{next(ids)}'),validate_semantic_model=True)
+def records(p,k):return [r for r in p.records if r.semantic_type==k]
+@pytest.mark.parametrize(('name','endpoint'),[('get_by_lsst_dia_object_id.json','get_by_lsst_dia_object_id'),('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')])
+def test_locus_surfaces_zero_unaccounted(name,endpoint):assert 'Unaccounted leaves: 0' in audit_payload(fixture(name),broker='antares',origin='lsst',endpoint=endpoint)
+def test_authoritative_alert_semantics_and_aliases():
+ alerts=fixture('alerts.json');assert len(alerts)==16 and all(a['alert_id'].startswith('lsst:') for a in alerts)
+ assert all(a['mjd']==a['properties']['ant_mjd']==a['properties']['lsst_diaSource_midpointMjdTai'] for a in alerts)
+ assert all(a['properties']['ant_ra']==a['properties']['lsst_diaSource_ra'] and a['properties']['ant_dec']==a['properties']['lsst_diaSource_dec'] for a in alerts)
+ assert all(a['properties']['ant_maglim']==a['properties']['ant_mag'] for a in alerts)
+ p=build('get_by_lsst_dia_object_id',rich_locus());ds=records(p,'detection@lsst:antares');assert len(ds)==16
+ sf=dict(records(p,'summary@lsst:antares')[0].fields);assert sf['identity.object_id']=='170587117485817955' and sf['identity.antares_locus_id']=='ANT2026rq61krn5dipt';assert 'detection_count' not in sf and not any(k.startswith('time.') for k in sf)
+ f=dict(ds[0].fields);assert {'identity.alert_id','identity.source_id','identity.object_id','identity.visit_id','identity.detector_id'}<=f.keys();assert f['quality.signal_to_noise']==alerts[0]['properties']['lsst_diaSource_snr'];assert isinstance(f['image_metrics.is_positive'],bool);assert p.edges==()
+def test_strict_unknown_band_is_omitted():
+ x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
+def test_lightcurve_is_fixture_only_and_lazy_untouched():
+ light=fixture('lightcurve.json');cols={k for r in light for k in r};debt=yaml.safe_load((FIXTURES/'lightcurve_secondary_debt.yaml').read_text())['lightcurve_secondary'];assert len(light)==16 and len(cols)==14 and cols==set(debt);assert all(v['reason']=='secondary_duplicate_representation' for v in debt.values())
+ registry=yaml.safe_load(MAPPINGS.read_text());assert all('lightcurve' not in d['path'] for d in registry['payloads'].values());assert len(records(build('get_by_lsst_dia_object_id',LazyLocus(rich_locus())),'detection@lsst:antares'))==16
+def test_catalog_probe_direct_rows_zero_unaccounted_and_no_edges():
+ x=rich_locus(True);report=audit_payload(x,broker='antares',origin='lsst',endpoint='get_by_lsst_dia_object_id');assert 'Unaccounted leaves: 0' in report
+ p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'detection@lsst:antares'))==16 and p.edges==()
+def test_search_cone_and_by_id_summaries():
+ for name,endpoint in [('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')]:assert len(records(build(endpoint,fixture(name)), 'summary@lsst:antares'))==1

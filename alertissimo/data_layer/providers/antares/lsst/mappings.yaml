@@ -4,44 +4,75 @@ payloads:
   locus:
     endpoint: get_by_lsst_dia_object_id
     path: .
-  loci:
+  locus_by_id:
+    endpoint: get_by_id
+    path: .
+  search_loci:
     endpoint: search
+    path: '[]'
+  cone_loci:
+    endpoint: cone_search
     path: '[]'
   locus_alerts:
     endpoint: get_by_lsst_dia_object_id
     path: alerts[]
-  catalog_matches.allwise:
+  locus_catalog_allwise:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.allwise[]
+  locus_catalog_bright:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.bright_guide_star_cat[]
+  locus_catalog_gaia:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
+  locus_catalog_gaia_variability:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.gaia_dr3_variability[]
+  locus_catalog_milliquas:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.milliquas[]
+  locus_catalog_ned:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.ned[]
 mappings:
   summary@lsst:antares.identity.object_id:
-  - loci#properties.survey.lsst.dia_object_id
-  - locus#properties.survey.lsst.dia_object_id
-  summary@lsst:antares.detection_count:
-  - loci#properties.num_alerts
-  - locus#properties.num_alerts
-  summary@lsst:antares.time.first_mjd:
-  - loci#properties.oldest_alert_observation_time
-  - locus#properties.oldest_alert_observation_time
-  summary@lsst:antares.time.last_mjd:
-  - loci#properties.newest_alert_observation_time
-  - locus#properties.newest_alert_observation_time
+  - locus#properties.survey.lsst.dia_object_id.0
+  - locus_by_id#properties.survey.lsst.dia_object_id.0
+  - search_loci#properties.survey.lsst.dia_object_id.0
+  - cone_loci#properties.survey.lsst.dia_object_id.0
+  summary@lsst:antares.identity.antares_locus_id:
+  - locus#locus_id
+  - locus_by_id#locus_id
+  - search_loci#locus_id
+  - cone_loci#locus_id
   summary@lsst:antares.position.ra:
-  - loci#ra
   - locus#ra
+  - locus_by_id#ra
+  - search_loci#ra
+  - cone_loci#ra
   summary@lsst:antares.position.dec:
-  - loci#dec
   - locus#dec
-  detection@lsst:antares.identity.source_id:
-  - locus_alerts#properties.lsst_diaSource_diaSourceId
+  - locus_by_id#dec
+  - search_loci#dec
+  - cone_loci#dec
   detection@lsst:antares.identity.alert_id:
   - locus_alerts#alert_id
+  detection@lsst:antares.identity.source_id:
+  - locus_alerts#properties.lsst_diaSource_diaSourceId
+  detection@lsst:antares.identity.object_id:
+  - locus_alerts#properties.lsst_diaSource_diaObjectId
   detection@lsst:antares.identity.visit_id:
   - locus_alerts#properties.lsst_diaSource_visit
   detection@lsst:antares.identity.detector_id:
   - locus_alerts#properties.lsst_diaSource_detector
   detection@lsst:antares.time.mjd:
-  - locus_alerts#mjd
+  - locus_alerts#properties.lsst_diaSource_midpointMjdTai
+  detection@lsst:antares.photometry.{filter}:
+  - locus_alerts#properties.lsst_diaSource_band
+  detection@lsst:antares.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  detection@lsst:antares.photometry.{filter}.psf.mag_error:
+  - locus_alerts#properties.ant_magerr
   detection@lsst:antares.position.ra:
   - locus_alerts#properties.lsst_diaSource_ra
   detection@lsst:antares.position.dec:
@@ -52,14 +83,18 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_decErr
   detection@lsst:antares.position.ra_dec_covariance:
   - locus_alerts#properties.lsst_diaSource_ra_dec_Cov
-  detection@lsst:antares.photometry.{filter}:
-  - locus_alerts#properties.lsst_diaSource_band
-  detection@lsst:antares.photometry.{filter}.mag:
-  - locus_alerts#properties.ant_mag
-  detection@lsst:antares.photometry.{filter}.mag_error:
-  - locus_alerts#properties.ant_magerr
-  detection@lsst:antares.photometry.{filter}.limit.mag:
-  - locus_alerts#properties.ant_maglim
+  detection@lsst:antares.position.image_x:
+  - locus_alerts#properties.lsst_diaSource_x
+  detection@lsst:antares.position.image_y:
+  - locus_alerts#properties.lsst_diaSource_y
+  detection@lsst:antares.position.image_x_error:
+  - locus_alerts#properties.lsst_diaSource_xErr
+  detection@lsst:antares.position.image_y_error:
+  - locus_alerts#properties.lsst_diaSource_yErr
+  detection@lsst:antares.quality.reliability:
+  - locus_alerts#properties.lsst_diaSource_reliability
+  detection@lsst:antares.quality.signal_to_noise:
+  - locus_alerts#properties.lsst_diaSource_snr
   detection@lsst:antares.photometry.{filter}.psf.flux:
   - locus_alerts#properties.lsst_diaSource_psfFlux
   detection@lsst:antares.photometry.{filter}.psf.flux_error:
@@ -68,8 +103,6 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_psfChi2
   detection@lsst:antares.photometry.{filter}.psf.fit_ndata:
   - locus_alerts#properties.lsst_diaSource_psfNdata
-  detection@lsst:antares.photometry.{filter}.psf.snr:
-  - locus_alerts#properties.lsst_diaSource_snr
   detection@lsst:antares.photometry.{filter}.psf.flags.failed:
   - locus_alerts#properties.lsst_diaSource_psfFlux_flag
   detection@lsst:antares.photometry.{filter}.psf.flags.edge:
@@ -84,16 +117,12 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag
   detection@lsst:antares.photometry.{filter}.aperture.flags.aperture_truncated:
   - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
-  detection@lsst:antares.quality.reliability:
-  - locus_alerts#properties.lsst_diaSource_reliability
-  detection@lsst:antares.image_metrics.is_positive:
-  - locus_alerts#properties.lsst_diaSource_isNegative
   detection@lsst:antares.image_metrics.bbox_size:
   - locus_alerts#properties.lsst_diaSource_bboxSize
-  detection@lsst:antares.image_metrics.extendedness:
-  - locus_alerts#properties.lsst_diaSource_extendedness
   detection@lsst:antares.image_metrics.centroid_flag:
   - locus_alerts#properties.lsst_diaSource_centroid_flag
+  detection@lsst:antares.image_metrics.extendedness:
+  - locus_alerts#properties.lsst_diaSource_extendedness
   detection@lsst:antares.image_metrics.shape.ixx:
   - locus_alerts#properties.lsst_diaSource_ixx
   detection@lsst:antares.image_metrics.shape.iyy:
@@ -108,20 +137,169 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_ixyPSF
   detection@lsst:antares.image_metrics.shape.flag:
   - locus_alerts#properties.lsst_diaSource_shape_flag
+  detection@lsst:antares.image_metrics.shape.flag_no_pixels:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_no_pixels
+  detection@lsst:antares.image_metrics.shape.flag_not_contained:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_not_contained
+  detection@lsst:antares.image_metrics.shape.flag_parent_source:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_parent_source
+  detection@lsst:antares.image_metrics.pixel_flags.any:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags
+  detection@lsst:antares.image_metrics.pixel_flags.bad:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_bad
+  detection@lsst:antares.image_metrics.pixel_flags.cosmic_ray:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_cr
+  detection@lsst:antares.image_metrics.pixel_flags.cosmic_ray_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_crCenter
+  detection@lsst:antares.image_metrics.pixel_flags.edge:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_edge
+  detection@lsst:antares.image_metrics.pixel_flags.injected:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected
+  detection@lsst:antares.image_metrics.pixel_flags.injected_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injectedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.injected_template:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected_template
+  detection@lsst:antares.image_metrics.pixel_flags.injected_template_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected_templateCenter
+  detection@lsst:antares.image_metrics.pixel_flags.interpolated:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_interpolated
+  detection@lsst:antares.image_metrics.pixel_flags.interpolated_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_interpolatedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.no_data:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_nodata
+  detection@lsst:antares.image_metrics.pixel_flags.no_data_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_nodataCenter
+  detection@lsst:antares.image_metrics.pixel_flags.off_image:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_offimage
+  detection@lsst:antares.image_metrics.pixel_flags.saturated:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_saturated
+  detection@lsst:antares.image_metrics.pixel_flags.saturated_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_saturatedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.streak:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_streak
+  detection@lsst:antares.image_metrics.pixel_flags.streak_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_streakCenter
+  detection@lsst:antares.image_metrics.pixel_flags.suspect:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_suspect
+  detection@lsst:antares.image_metrics.pixel_flags.suspect_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_suspectCenter
+  detection@lsst:antares.image_metrics.dipole.is_dipole:
+  - locus_alerts#properties.lsst_diaSource_isDipole
+  detection@lsst:antares.image_metrics.dipole.fit_attempted:
+  - locus_alerts#properties.lsst_diaSource_dipoleFitAttempted
+  detection@lsst:antares.image_metrics.dipole.ndata:
+  - locus_alerts#properties.lsst_diaSource_dipoleNdata
+  detection@lsst:antares.image_metrics.trail.is_glint:
+  - locus_alerts#properties.lsst_diaSource_glint_trail
+  detection@lsst:antares.image_metrics.trail.angle:
+  - locus_alerts#properties.lsst_diaSource_trailAngle
+  detection@lsst:antares.image_metrics.trail.angle_error:
+  - locus_alerts#properties.lsst_diaSource_trailAngleErr
+  detection@lsst:antares.image_metrics.trail.length:
+  - locus_alerts#properties.lsst_diaSource_trailLength
+  detection@lsst:antares.image_metrics.trail.length_error:
+  - locus_alerts#properties.lsst_diaSource_trailLengthErr
+  detection@lsst:antares.image_metrics.trail.flux:
+  - locus_alerts#properties.lsst_diaSource_trailFlux
+  detection@lsst:antares.image_metrics.trail.flux_error:
+  - locus_alerts#properties.lsst_diaSource_trailFluxErr
+  detection@lsst:antares.image_metrics.trail.ndata:
+  - locus_alerts#properties.lsst_diaSource_trailNdata
+  detection@lsst:antares.image_metrics.trail.ra:
+  - locus_alerts#properties.lsst_diaSource_trailRa
+  detection@lsst:antares.image_metrics.trail.dec:
+  - locus_alerts#properties.lsst_diaSource_trailDec
+  detection@lsst:antares.image_metrics.trail.flag_edge:
+  - locus_alerts#properties.lsst_diaSource_trail_flag_edge
+  detection@lsst:antares.image_metrics.is_positive:
+  - locus_alerts#properties.lsst_diaSource_isNegative
   crossmatch@allwise:antares.identity.object_id:
-  - catalog_matches.allwise#object_id
+  - locus_catalog_allwise#source_id
   crossmatch@allwise:antares.position.ra:
-  - catalog_matches.allwise#ra
+  - locus_catalog_allwise#ra
   crossmatch@allwise:antares.position.dec:
-  - catalog_matches.allwise#dec
-  crossmatch@allwise:antares.separation.total:
-  - catalog_matches.allwise#meta.separation
+  - locus_catalog_allwise#decl
+  crossmatch@gsc:antares.identity.object_id:
+  - locus_catalog_bright#gscID2
+  crossmatch@gsc:antares.position.ra:
+  - locus_catalog_bright#RightAsc_deg
+  crossmatch@gsc:antares.position.dec:
+  - locus_catalog_bright#Declination_deg
+  crossmatch@gaia:antares.identity.object_id:
+  - locus_catalog_gaia#source_id
+  crossmatch@gaia:antares.position.ra:
+  - locus_catalog_gaia#ra
+  crossmatch@gaia:antares.position.dec:
+  - locus_catalog_gaia#dec
+  crossmatch@gaia_variability:antares.identity.object_id:
+  - locus_catalog_gaia_variability#source
+  crossmatch@gaia_variability:antares.position.ra:
+  - locus_catalog_gaia_variability#ra_icrs
+  crossmatch@gaia_variability:antares.position.dec:
+  - locus_catalog_gaia_variability#de_icrs
+  crossmatch@gaia:antares.astrometric_solution.parallax:
+  - locus_catalog_gaia#parallax
+  crossmatch@gaia:antares.astrometric_solution.parallax_error:
+  - locus_catalog_gaia#parallax_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
+  - locus_catalog_gaia#pmra
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
+  - locus_catalog_gaia#pmdec
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra_error:
+  - locus_catalog_gaia#pmra_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec_error:
+  - locus_catalog_gaia#pmdec_error
+  crossmatch@gaia:antares.astrometric_solution.epoch:
+  - locus_catalog_gaia#ref_epoch
+  crossmatch@gaia:antares.astrometric_solution.ruwe:
+  - locus_catalog_gaia#ruwe
+  crossmatch@gaia:antares.photometry.G.mag:
+  - locus_catalog_gaia#phot_g_mean_mag
+  crossmatch@gaia:antares.photometry.BP.mag:
+  - locus_catalog_gaia#phot_bp_mean_mag
+  crossmatch@gaia:antares.photometry.RP.mag:
+  - locus_catalog_gaia#phot_rp_mean_mag
   crossmatch@allwise:antares.photometry.W1.mag:
-  - catalog_matches.allwise#properties.w1mpro
+  - locus_catalog_allwise#w1mpro
+  crossmatch@allwise:antares.photometry.W1.mag_error:
+  - locus_catalog_allwise#w1sigmpro
   crossmatch@allwise:antares.photometry.W2.mag:
-  - catalog_matches.allwise#properties.w2mpro
+  - locus_catalog_allwise#w2mpro
+  crossmatch@allwise:antares.photometry.W2.mag_error:
+  - locus_catalog_allwise#w2sigmpro
+  crossmatch@allwise:antares.photometry.W3.mag:
+  - locus_catalog_allwise#w3mpro
+  crossmatch@allwise:antares.photometry.W3.mag_error:
+  - locus_catalog_allwise#w3sigmpro
+  crossmatch@allwise:antares.photometry.W4.mag:
+  - locus_catalog_allwise#w4mpro
+  crossmatch@allwise:antares.photometry.W4.mag_error:
+  - locus_catalog_allwise#w4sigmpro
+  crossmatch@milliquas:antares.identity.object_id:
+  - locus_catalog_milliquas#name
+  crossmatch@milliquas:antares.position.ra:
+  - locus_catalog_milliquas#ra
+  crossmatch@milliquas:antares.position.dec:
+  - locus_catalog_milliquas#dec
+  crossmatch@ned:antares.identity.object_id:
+  - locus_catalog_ned#Object_Name
+  crossmatch@ned:antares.position.ra:
+  - locus_catalog_ned#RA_deg
+  crossmatch@ned:antares.position.dec:
+  - locus_catalog_ned#DEC_deg
 transforms:
+  detection@lsst:antares.photometry.{filter}:
+    locus_alerts#properties.lsst_diaSource_band:
+      type: value_map
+      map:
+        g: g
+        r: r
+        i: i
+        z: z
+      default: null
+      skip_null: true
+      note: Strict observed LSST band binding.
   detection@lsst:antares.image_metrics.is_positive:
     locus_alerts#properties.lsst_diaSource_isNegative:
       type: boolean_not
-      note: ANTARES raw field isNegative is inverted to the semantic is_positive field.
+      note: Invert the authoritative Python boolean only.
