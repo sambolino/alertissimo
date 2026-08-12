@@ -66,7 +66,7 @@ def test_minimal_mappings_and_payload_shapes(origin):
 def test_client_model_mapping_corrections_and_transforms():
     lsst = load("lsst", "mappings.yaml")
     assert lsst["mappings"]["detection@lsst:antares.identity.alert_id"] == ["locus_alerts#alert_id"]
-    assert lsst["mappings"]["detection@lsst:antares.time.mjd"] == ["locus_alerts#mjd"]
+    assert lsst["mappings"]["detection@lsst:antares.time.mjd"] == ["locus_alerts#properties.lsst_diaSource_midpointMjdTai"]
     assert lsst["transforms"]["detection@lsst:antares.image_metrics.is_positive"]["locus_alerts#properties.lsst_diaSource_isNegative"]["type"] == "boolean_not"
     ztf = load("ztf", "mappings.yaml")
     assert ztf["transforms"]["detection@ztf:antares.image_metrics.is_positive"]["locus_alerts#properties.ztf_isdiffpos"]["type"] == "value_map"
