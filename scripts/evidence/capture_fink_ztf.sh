@@ -14,12 +14,20 @@ OID="${FINK_ZTF_OID:-ZTF21abfmbix}"
 STAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 OUT="${1:-/tmp/fink-ztf-capture-${STAMP}}"
 
+if [[ -d "$OUT" ]] && [[ -n "$(find "$OUT" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+    echo "ERROR: destination exists and is non-empty: $OUT" >&2
+    exit 1
+fi
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 
 date -u '+%Y-%m-%dT%H:%M:%SZ' > "$OUT/capture_date.txt"
 
 cat > "$OUT/capture_metadata.txt" <<META
+broker=fink
+survey=ztf
+capture_utc=$(cat "$OUT/capture_date.txt")
+transport=rest
 base_url=$BASE
 primary_object_id=$OID
 capture_script=$0
@@ -30,6 +38,8 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "git_commit=$(git rev-parse HEAD)"
         echo "git_branch=$(git branch --show-current)"
     } >> "$OUT/capture_metadata.txt"
+else
+    printf 'git_commit=unavailable\ngit_branch=unavailable\n' >> "$OUT/capture_metadata.txt"
 fi
 
 sha256sum "$0" > "$OUT/capture_script.sha256"
@@ -117,6 +127,8 @@ echo "Cone anchor: RA=$RA Dec=$DEC"
 
 # ============================================================
 # 3. Cone search — deliberately full response
+# Fink ZTF cone n is an upstream scan cap before exact cone filtering; an
+# unnecessarily small n may therefore return empty around a known object.
 # ============================================================
 
 cat <<JSON | post_capture conesearch /api/v1/conesearch
