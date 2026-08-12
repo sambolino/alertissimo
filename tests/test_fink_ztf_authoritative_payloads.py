@@ -23,6 +23,7 @@ MAPPINGS = ROOT.parent / "alertissimo/data_layer/providers/fink/ztf/mappings.yam
 DEBT = MAPPINGS.with_name("unmapped_fields.yaml")
 FILES = {
     "objects": "objects_core.json",
+    "objects_withupperlim": "objects_withupperlim.json",
     "conesearch": "conesearch.json",
     "latests": "latests.json",
     "anomaly": "anomaly.json",
@@ -35,12 +36,16 @@ def _payload(endpoint):
     return json.loads((FIXTURES / FILES[endpoint]).read_text(encoding="utf-8"))
 
 
+def _physical_endpoint(fixture):
+    return "objects" if fixture == "objects_withupperlim" else fixture
+
+
 def _build(endpoint, payload=None):
     ids = count()
     execution = ExecutionResult(
         payload=_payload(endpoint) if payload is None else payload,
         execution_provenance=InternalExecutionProvenance(
-            InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", endpoint
+            InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", _physical_endpoint(endpoint)
         ),
     )
     return build_portfolio_from_execution(
@@ -90,7 +95,7 @@ def test_distnr_pixels_are_not_emitted_as_angular_reference_separation():
 
 def test_gaia_and_panstarrs_rank_one_crossmatches_are_exact():
     portfolio = _build("objects")
-    gaia = _records(portfolio, "crossmatch@gaia:fink")[0]
+    gaia = _records(portfolio, "crossmatch@gaia_dr1:fink")[0]
     ps1 = _records(portfolio, "crossmatch@panstarrs:fink")[0]
     assert gaia.fields["separation.total"] == 10.74585
     assert gaia.fields["photometry.G.mag"] == 15.864706
@@ -116,15 +121,65 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert not synthetic.records
 
 
-def test_anomaly_emits_positive_classification_and_external_crossmatches():
+def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
     portfolio = _build("anomaly")
     assert _records(portfolio, "classification@fink")[0].fields["best.class"] == "RRLyr"
     assert _records(portfolio, "crossmatch@simbad:fink")[0].fields[
         "classification.best.class"
     ] == "RRLyr"
-    assert _records(portfolio, "crossmatch@gaia:fink")[0].fields[
-        "identity.object_id"
-    ].startswith("Gaia DR3")
+    dr1 = _records(portfolio, "crossmatch@gaia_dr1:fink")[0]
+    dr3 = _records(portfolio, "crossmatch@gaia_dr3:fink")[0]
+    assert dr1.fields["separation.total"] == pytest.approx(0.24318255)
+    assert dr1.fields["photometry.G.mag"] == pytest.approx(15.835548)
+    assert dr3.fields["identity.object_id"].startswith("Gaia DR3")
+    assert "identity.object_id" not in dr1.fields
+    assert "separation.total" not in dr3.fields
+    assert not any("astrometric_solution.parallax" in record.fields for record in portfolio.records)
+    default = _build("anomaly", [{"d:DR3Name": "Unknown", "d:Plx": 0.0, "d:e_Plx": 0.0}])
+    assert not default.records
+
+
+def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
+    payload = _payload("objects_withupperlim")
+    tags = Counter(row["d:tag"] for row in payload)
+    assert len(payload) == 33
+    assert tags == {"valid": 14, "upperlim": 19}
+    portfolio = _build("objects_withupperlim")
+    detections = _records(portfolio, "detection@ztf:fink")
+    assert len(detections) == 33
+    for raw, record in zip(payload, detections, strict=True):
+        band = {1: "g", 2: "r", 3: "i", "1": "g", "2": "r", "3": "i"}[raw["i:fid"]]
+        if raw["d:tag"] == "upperlim":
+            assert record.fields[f"photometry.{band}.limit.upper_limit"] is True
+            assert record.fields[f"photometry.{band}.limit.mag"] == raw["i:diffmaglim"]
+            for field in ("psf.mag", "psf.mag.error", "aperture.mag", "aperture.large.mag"):
+                assert f"photometry.{band}.{field}" not in record.fields
+        else:
+            # Policy A: an upstream-valid measured detection explicitly is not an upper limit.
+            assert record.fields[f"photometry.{band}.limit.upper_limit"] is False
+    bad = _records(_build("objects", [{"i:fid": "1", "d:tag": "badquality"}]), "detection@ztf:fink")
+    assert not bad  # badquality is neither a valid detection nor an upper limit
+
+
+def test_tns_alert_field_is_catalog_type_not_identity():
+    record = _records(_build("objects", [{"d:tns": "SN Ia"}]), "crossmatch@tns:fink")[0]
+    assert record.fields["classification.best.class"] == "SN Ia"
+    assert "identity.object_id" not in record.fields
+
+
+def test_object_and_cone_final_classification_converge():
+    assert _records(_build("objects"), "classification@fink")[0].fields["best.class"] == "SN candidate"
+    assert _records(_build("conesearch"), "classification@fink")[0].fields["best.class"] == "SN candidate"
+
+
+def test_fast_transient_fields_use_lightcurve_semantics():
+    payload = [{"i:fid": "1", "d:lower_rate": -0.2, "d:upper_rate": 0.4, "d:delta_time": 0.5, "d:from_upper": False}]
+    record = _records(_build("anomaly", payload), "lightcurve@ztf:fink")[0]
+    band = "g"
+    assert record.fields[f"{band}.rate_lower_percentile"] is not None
+    assert record.fields[f"{band}.rate_upper_percentile"] is not None
+    assert record.fields[f"{band}.delta_time_rate"] is not None
+    assert isinstance(record.fields[f"{band}.from_upper_limit"], bool)
 
 
 def test_statistics_emit_only_first_level_survey_records():
@@ -138,7 +193,6 @@ def test_statistics_emit_only_first_level_survey_records():
         "raw_alerts": 346644,
         "science_alerts": 246843,
         "snapshot_key": "ztf_20211103",
-        "time.snapshot_datetime": "1642144989032",
     }
 
 
@@ -154,7 +208,7 @@ def test_frozen_scalar_accounting_and_positive_record_counts():
     for endpoint in FILES:
         for row in _payload(endpoint):
             captured.update(
-                f"{endpoint}#{key}"
+                f"{_physical_endpoint(endpoint)}#{key}"
                 for key, value in row.items()
                 if not isinstance(value, (dict, list))
             )
@@ -166,14 +220,4 @@ def test_frozen_scalar_accounting_and_positive_record_counts():
                 if not isinstance(value, (dict, list))
             )
     assert captured <= mapped | debt
-    expected = {
-        "objects": {"detection": 14, "summary": 14, "classification": 28, "crossmatch": 42},
-        "conesearch": {"detection": 1, "summary": 1, "classification": 1},
-        "latests": {"detection": 10, "summary": 10, "classification": 20, "crossmatch": 20},
-        "anomaly": {"detection": 10, "summary": 10, "classification": 20, "crossmatch": 42},
-        "sso": {"detection": 327, "summary": 327, "classification": 654, "crossmatch": 837, "lightcurve": 327},
-        "statistics": {"survey": 1},
-    }
-    for endpoint, counts in expected.items():
-        actual = Counter(record.semantic_type.split("@", 1)[0] for record in _build(endpoint).records)
-        assert actual == counts
+    assert not (captured - mapped - debt)

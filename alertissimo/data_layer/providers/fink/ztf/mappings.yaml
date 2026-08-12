@@ -3,28 +3,28 @@ origin: ztf
 payloads:
   objects:
     endpoint: objects
-    path: "[]"
+    path: '[]'
   conesearch:
     endpoint: conesearch
-    path: "[]"
+    path: '[]'
   latests:
     endpoint: latests
-    path: "[]"
+    path: '[]'
   anomaly:
     endpoint: anomaly
-    path: "[]"
+    path: '[]'
   cutouts:
     endpoint: cutouts
-    path: "."
+    path: .
   sso:
     endpoint: sso
-    path: "[]"
+    path: '[]'
   statistics:
     endpoint: statistics
-    path: "[]"
+    path: '[]'
   resolver:
     endpoint: resolver
-    path: "[]"
+    path: '[]'
 mappings:
   detection@ztf:fink.position.ra:
   - objects#i:ra
@@ -343,7 +343,6 @@ mappings:
   - latests#v:classification
   - sso#v:classification
   - anomaly#v:classification
-  classification@fink.assessment.derived.class:
   - conesearch#d:classification
   classification@fink.assessment.rf_snia_vs_nonia.probability:
   - objects#d:rf_snia_vs_nonia
@@ -397,50 +396,17 @@ mappings:
   - sso#sso_name
   detection@ztf:fink.solar_system.iau_number:
   - sso#sso_number
-  crossmatch@tns:fink.identity.object_id:
-  - objects#d:tns
-  - sso#d:tns
-  - latests#d:tns
-  - anomaly#d:tns
   detection@ztf:fink.satellite.tracklet_id:
   - objects#d:tracklet
   - sso#d:tracklet
   - latests#d:tracklet
   - anomaly#d:tracklet
-  crossmatch@gaia:fink.classification.assessment.variability.flag:
-  - sso#d:gaiaVarFlag
-  - latests#d:gaiaVarFlag
-  - anomaly#d:gaiaVarFlag
-  crossmatch@gaia:fink.classification.assessment.variability.class:
-  - sso#d:gaiaClass
-  - latests#d:gaiaClass
-  - anomaly#d:gaiaClass
-  crossmatch@gaia:fink.separation.total:
-  - objects#i:neargaia
-  - sso#i:neargaia
-  - latests#i:neargaia
-  - anomaly#i:neargaia
-  crossmatch@gaia_bright:fink.separation.total:
-  - objects#i:neargaiabright
-  - anomaly#i:neargaiabright
   crossmatch@simbad:fink.classification.best.class:
   - objects#d:cdsxmatch
   - conesearch#d:cdsxmatch
   - sso#d:cdsxmatch
   - latests#d:cdsxmatch
   - anomaly#d:cdsxmatch
-  crossmatch@gaia:fink.identity.object_id:
-  - sso#d:DR3Name
-  - latests#d:DR3Name
-  - anomaly#d:DR3Name
-  crossmatch@gaia:fink.astrometric_solution.parallax:
-  - sso#d:Plx
-  - latests#d:Plx
-  - anomaly#d:Plx
-  crossmatch@gaia:fink.astrometric_solution.parallax_error:
-  - sso#d:e_Plx
-  - latests#d:e_Plx
-  - anomaly#d:e_Plx
   crossmatch@gcvs:fink.classification.best.class:
   - sso#d:gcvs
   - latests#d:gcvs
@@ -499,40 +465,6 @@ mappings:
   - sso#d:lc_features_r
   - latests#d:lc_features_r
   - anomaly#d:lc_features_r
-  summary@ztf:fink.magnitude_rate:
-  - objects#d:mag_rate
-  - sso#d:mag_rate
-  - latests#d:mag_rate
-  - anomaly#d:mag_rate
-  summary@ztf:fink.magnitude_rate_error:
-  - objects#d:sigma_rate
-  - sso#d:sigma_rate
-  - latests#d:sigma_rate
-  - anomaly#d:sigma_rate
-  summary@ztf:fink.rate_lower_percentile:
-  - objects#d:lower_rate
-  - sso#d:lower_rate
-  - latests#d:lower_rate
-  - anomaly#d:lower_rate
-  summary@ztf:fink.rate_upper_percentile:
-  - objects#d:upper_rate
-  - sso#d:upper_rate
-  - latests#d:upper_rate
-  - anomaly#d:upper_rate
-  summary@ztf:fink.delta_time_rate:
-  - sso#d:delta_time
-  - latests#d:delta_time
-  - anomaly#d:delta_time
-  summary@ztf:fink.from_upper_limit:
-  - sso#d:from_upper
-  - latests#d:from_upper
-  - anomaly#d:from_upper
-  summary@ztf:fink.lightcurve_detection_count:
-  - objects#d:nalerthist
-  - conesearch#d:nalerthist
-  - sso#d:nalerthist
-  - latests#d:nalerthist
-  - anomaly#d:nalerthist
   data_product@ztf:fink.payload:
   - cutouts#b:cutoutScience_stampData
   - cutouts#b:cutoutTemplate_stampData
@@ -561,14 +493,6 @@ mappings:
   - sso#i:ssmagnr
   - latests#i:ssmagnr
   - anomaly#i:ssmagnr
-  crossmatch@gaia:fink.photometry.G.mag:
-  - objects#i:maggaia
-  - sso#i:maggaia
-  - latests#i:maggaia
-  - anomaly#i:maggaia
-  crossmatch@gaia_bright:fink.photometry.G.mag:
-  - objects#i:maggaiabright
-  - anomaly#i:maggaiabright
   summary@ztf:fink.color.g-r.diff:
   - objects#v:g-r
   - latests#v:g-r
@@ -591,8 +515,6 @@ mappings:
   - statistics#basic:sci
   survey@ztf:fink.snapshot_key:
   - statistics#key:key
-  survey@ztf:fink.time.snapshot_datetime:
-  - statistics#key:time
   crossmatch@panstarrs:fink.identity.object_id:
   - objects#i:objectidps1
   - sso#i:objectidps1
@@ -631,64 +553,141 @@ mappings:
   summary@ztf:fink.photometry.{filter}:
   - objects#i:fid
   - latests#i:fid
+  crossmatch@tns:fink.classification.best.class:
+  - objects#d:tns
+  - sso#d:tns
+  - latests#d:tns
+  - anomaly#d:tns
+  crossmatch@gaia_dr3:fink.classification.assessment.variability.flag:
+  - sso#d:gaiaVarFlag
+  - latests#d:gaiaVarFlag
+  - anomaly#d:gaiaVarFlag
+  crossmatch@gaia_dr3:fink.classification.assessment.variability.class:
+  - sso#d:gaiaClass
+  - latests#d:gaiaClass
+  - anomaly#d:gaiaClass
+  crossmatch@gaia_dr1:fink.separation.total:
+  - objects#i:neargaia
+  - sso#i:neargaia
+  - latests#i:neargaia
+  - anomaly#i:neargaia
+  crossmatch@gaia_dr1_bright:fink.separation.total:
+  - objects#i:neargaiabright
+  - anomaly#i:neargaiabright
+  crossmatch@gaia_dr3:fink.identity.object_id:
+  - sso#d:DR3Name
+  - latests#d:DR3Name
+  - anomaly#d:DR3Name
+  crossmatch@gaia_dr1:fink.photometry.G.mag:
+  - objects#i:maggaia
+  - sso#i:maggaia
+  - latests#i:maggaia
+  - anomaly#i:maggaia
+  crossmatch@gaia_dr1_bright:fink.photometry.G.mag:
+  - objects#i:maggaiabright
+  - anomaly#i:maggaiabright
+  lightcurve@ztf:fink.{filter}.rate_lower_percentile:
+  - objects#d:lower_rate
+  - sso#d:lower_rate
+  - latests#d:lower_rate
+  - anomaly#d:lower_rate
+  lightcurve@ztf:fink.{filter}.rate_upper_percentile:
+  - objects#d:upper_rate
+  - sso#d:upper_rate
+  - latests#d:upper_rate
+  - anomaly#d:upper_rate
+  lightcurve@ztf:fink.{filter}.delta_time_rate:
+  - sso#d:delta_time
+  - latests#d:delta_time
+  - anomaly#d:delta_time
+  lightcurve@ztf:fink.{filter}.from_upper_limit:
+  - sso#d:from_upper
+  - latests#d:from_upper
+  - anomaly#d:from_upper
+  lightcurve@ztf:fink.{filter}:
+  - objects#i:fid
+  - sso#i:fid
+  - latests#i:fid
+  - anomaly#i:fid
 transforms:
   detection@ztf:fink.photometry.{filter}:
     objects#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
     conesearch#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
     latests#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
     sso#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
     anomaly#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
   summary@ztf:fink.photometry.{filter}:
     objects#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
     latests#i:fid:
       type: value_map
       map:
+        1: g
+        2: r
+        3: i
         '1': g
         '2': r
         '3': i
-      default:
+      default: null
       skip_null: true
   detection@ztf:fink.time.mjd:
     objects#i:jd:
@@ -764,1303 +763,1087 @@ transforms:
     anomaly#i:classtar:
       skip_null: true
   classification@fink.best.class:
-    objects#v:classification: &1
+    objects#v:classification: &id001
       type: value_map
       map:
-        Unknown:
-        '':
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
-    latests#v:classification: *1
-    sso#v:classification: *1
-    anomaly#v:classification: *1
+    latests#v:classification: *id001
+    sso#v:classification: *id001
+    anomaly#v:classification: *id001
+    conesearch#d:classification:
+      type: value_map
+      map:
+        -1: null
+        Unknown: null
+        ? ''
+        : null
+      skip_null: true
   detection@ztf:fink.identity.source_id:
     objects#i:candid:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     conesearch#i:candid:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#i:candid:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#i:candid:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#i:candid:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   detection@ztf:fink.solar_system.mpc_match.identity.object_id:
     objects#i:ssnamenr:
       type: value_map
       map:
-        '':
-        'null':
-        Unknown:
+        ? ''
+        : null
+        'null': null
+        Unknown: null
       skip_null: true
     sso#i:ssnamenr:
       type: value_map
       map:
-        '':
-        'null':
-        Unknown:
+        ? ''
+        : null
+        'null': null
+        Unknown: null
       skip_null: true
     latests#i:ssnamenr:
       type: value_map
       map:
-        '':
-        'null':
-        Unknown:
+        ? ''
+        : null
+        'null': null
+        Unknown: null
       skip_null: true
     anomaly#i:ssnamenr:
       type: value_map
       map:
-        '':
-        'null':
-        Unknown:
+        ? ''
+        : null
+        'null': null
+        Unknown: null
       skip_null: true
   detection@ztf:fink.solar_system.mpc_match.separation.total:
     objects#i:ssdistnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     sso#i:ssdistnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     latests#i:ssdistnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     anomaly#i:ssdistnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
   detection@ztf:fink.solar_system.mpc_magnitude:
     objects#i:ssmagnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     sso#i:ssmagnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     latests#i:ssmagnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
     anomaly#i:ssmagnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
   detection@ztf:fink.satellite.tracklet_id:
     objects#d:tracklet:
       type: value_map
       map:
-        '':
+        ? ''
+        : null
       skip_null: true
     sso#d:tracklet:
       type: value_map
       map:
-        '':
+        ? ''
+        : null
       skip_null: true
     latests#d:tracklet:
       type: value_map
       map:
-        '':
+        ? ''
+        : null
       skip_null: true
     anomaly#d:tracklet:
       type: value_map
       map:
-        '':
-      skip_null: true
-  crossmatch@tns:fink.identity.object_id:
-    objects#d:tns:
-      type: value_map
-      map:
-        '':
-        Unknown:
-      skip_null: true
-    sso#d:tns:
-      type: value_map
-      map:
-        '':
-        Unknown:
-      skip_null: true
-    latests#d:tns:
-      type: value_map
-      map:
-        '':
-        Unknown:
-      skip_null: true
-    anomaly#d:tns:
-      type: value_map
-      map:
-        '':
-        Unknown:
+        ? ''
+        : null
       skip_null: true
   crossmatch@simbad:fink.classification.best.class:
     objects#d:cdsxmatch:
       type: value_map
       map:
-        Unknown:
-        '':
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
     conesearch#d:cdsxmatch:
       type: value_map
       map:
-        Unknown:
-        '':
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
     sso#d:cdsxmatch:
       type: value_map
       map:
-        Unknown:
-        '':
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
     latests#d:cdsxmatch:
       type: value_map
       map:
-        Unknown:
-        '':
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
     anomaly#d:cdsxmatch:
       type: value_map
       map:
-        Unknown:
-        '':
-      skip_null: true
-  crossmatch@gaia:fink.identity.object_id:
-    sso#d:DR3Name:
-      type: value_map
-      map:
-        nan:
-        None:
-        '':
-        'null':
-      skip_null: true
-    latests#d:DR3Name:
-      type: value_map
-      map:
-        nan:
-        None:
-        '':
-        'null':
-      skip_null: true
-    anomaly#d:DR3Name:
-      type: value_map
-      map:
-        nan:
-        None:
-        '':
-        'null':
-      skip_null: true
-  crossmatch@gaia:fink.classification.assessment.variability.flag:
-    sso#d:gaiaVarFlag:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#d:gaiaVarFlag:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#d:gaiaVarFlag:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia:fink.classification.assessment.variability.class:
-    sso#d:gaiaClass:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#d:gaiaClass:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#d:gaiaClass:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia:fink.separation.total:
-    objects#i:neargaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    sso#i:neargaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#i:neargaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#i:neargaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia_bright:fink.separation.total:
-    objects#i:neargaiabright:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#i:neargaiabright:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia:fink.astrometric_solution.parallax:
-    sso#d:Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#d:Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#d:Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia:fink.astrometric_solution.parallax_error:
-    sso#d:e_Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#d:e_Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#d:e_Plx:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        Unknown: null
+        ? ''
+        : null
       skip_null: true
   crossmatch@gcvs:fink.classification.best.class:
     sso#d:gcvs:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:gcvs:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:gcvs:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@vsx:fink.classification.best.class:
     sso#d:vsx:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:vsx:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:vsx:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@spicy:fink.identity.object_id:
     sso#d:spicy_id:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:spicy_id:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:spicy_id:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@spicy:fink.classification.best.class:
     sso#d:spicy_class:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:spicy_class:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:spicy_class:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@3hsp:fink.identity.object_id:
     sso#d:x3hsp:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:x3hsp:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:x3hsp:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@4lac:fink.identity.object_id:
     sso#d:x4lac:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:x4lac:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:x4lac:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@mangrove:fink.identity.object_id:
     objects#d:mangrove_2MASS_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#d:mangrove_2MASS_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:mangrove_2MASS_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:mangrove_2MASS_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@mangrove:fink.identity.hyperleda_id:
     objects#d:mangrove_HyperLEDA_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#d:mangrove_HyperLEDA_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:mangrove_HyperLEDA_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:mangrove_HyperLEDA_name:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@mangrove:fink.separation.total:
     objects#d:mangrove_ang_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#d:mangrove_ang_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:mangrove_ang_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:mangrove_ang_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@mangrove:fink.luminosity_distance:
     objects#d:mangrove_lum_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#d:mangrove_lum_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#d:mangrove_lum_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#d:mangrove_lum_dist:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.match_count:
     objects#i:nmtchps:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:nmtchps:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:nmtchps:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:nmtchps:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia:fink.photometry.G.mag:
-    objects#i:maggaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    sso#i:maggaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    latests#i:maggaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#i:maggaia:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  crossmatch@gaia_bright:fink.photometry.G.mag:
-    objects#i:maggaiabright:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-    anomaly#i:maggaiabright:
-      type: value_map
-      map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.identity.object_id:
     objects#i:objectidps1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:objectidps1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:objectidps1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:objectidps1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.separation.total:
     objects#i:distpsnr1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:distpsnr1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:distpsnr1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:distpsnr1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.photometry.g.psf.mag:
     objects#i:sgmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:sgmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:sgmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:sgmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.photometry.r.psf.mag:
     objects#i:srmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:srmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:srmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:srmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.photometry.i.psf.mag:
     objects#i:simag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:simag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:simag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:simag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.photometry.z.psf.mag:
     objects#i:szmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:szmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:szmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:szmag1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   crossmatch@panstarrs:fink.classification.assessment.star_galaxy.score:
     objects#i:sgscore1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     sso#i:sgscore1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     latests#i:sgscore1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
     anomaly#i:sgscore1:
       type: value_map
       map:
-        '':
-        Unknown:
-        nan:
-        None:
-        -999:
-        -1:
-      skip_null: true
-  classification@fink.assessment.derived.class:
-    conesearch#d:classification:
-      type: value_map
-      map:
-        -1:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
       skip_null: true
   classification@fink.assessment.rf_snia_vs_nonia.probability:
     objects#d:rf_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:rf_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:rf_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:rf_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.sn_vs_all.probability:
     objects#d:snn_sn_vs_all:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:snn_sn_vs_all:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:snn_sn_vs_all:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:snn_sn_vs_all:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.snn_snia_vs_nonia.probability:
     objects#d:snn_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:snn_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:snn_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:snn_snia_vs_nonia:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.kn_vs_nonkn.probability:
     objects#d:rf_kn_vs_nonkn:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:rf_kn_vs_nonkn:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:rf_kn_vs_nonkn:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:rf_kn_vs_nonkn:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.microlensing.score:
     objects#d:mulens:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:mulens:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:mulens:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:mulens:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.slsn.score:
     objects#d:slsn_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     sso#d:slsn_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:slsn_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:slsn_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.anomaly.score:
     sso#d:anomaly_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:anomaly_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:anomaly_score:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   classification@fink.assessment.transient.value:
     sso#d:is_transient:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     latests#d:is_transient:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
     anomaly#d:is_transient:
       type: value_map
       map:
-        -1:
+        -1: null
       skip_null: true
   detection@ztf:fink.position.ra:
     objects#i:ra:
@@ -2370,7 +2153,7 @@ transforms:
         '1': true
         f: false
         '0': false
-      default:
+      default: null
       skip_null: true
     sso#i:isdiffpos:
       type: value_map
@@ -2379,7 +2162,7 @@ transforms:
         '1': true
         f: false
         '0': false
-      default:
+      default: null
       skip_null: true
     latests#i:isdiffpos:
       type: value_map
@@ -2388,7 +2171,7 @@ transforms:
         '1': true
         f: false
         '0': false
-      default:
+      default: null
       skip_null: true
     anomaly#i:isdiffpos:
       type: value_map
@@ -2397,7 +2180,7 @@ transforms:
         '1': true
         f: false
         '0': false
-      default:
+      default: null
       skip_null: true
   detection@ztf:fink.photometry.{filter}.limit.upper_limit:
     objects#d:tag:
@@ -2405,7 +2188,7 @@ transforms:
       map:
         upperlim: true
         valid: false
-      default:
+      default: null
       skip_null: true
   detection@ztf:fink.image_metrics.nbad_pixels:
     objects#i:nbad:
@@ -2614,67 +2397,6 @@ transforms:
       skip_null: true
     anomaly#d:lc_features_r:
       skip_null: true
-  summary@ztf:fink.magnitude_rate:
-    objects#d:mag_rate:
-      skip_null: true
-    sso#d:mag_rate:
-      skip_null: true
-    latests#d:mag_rate:
-      skip_null: true
-    anomaly#d:mag_rate:
-      skip_null: true
-  summary@ztf:fink.magnitude_rate_error:
-    objects#d:sigma_rate:
-      skip_null: true
-    sso#d:sigma_rate:
-      skip_null: true
-    latests#d:sigma_rate:
-      skip_null: true
-    anomaly#d:sigma_rate:
-      skip_null: true
-  summary@ztf:fink.rate_lower_percentile:
-    objects#d:lower_rate:
-      skip_null: true
-    sso#d:lower_rate:
-      skip_null: true
-    latests#d:lower_rate:
-      skip_null: true
-    anomaly#d:lower_rate:
-      skip_null: true
-  summary@ztf:fink.rate_upper_percentile:
-    objects#d:upper_rate:
-      skip_null: true
-    sso#d:upper_rate:
-      skip_null: true
-    latests#d:upper_rate:
-      skip_null: true
-    anomaly#d:upper_rate:
-      skip_null: true
-  summary@ztf:fink.delta_time_rate:
-    sso#d:delta_time:
-      skip_null: true
-    latests#d:delta_time:
-      skip_null: true
-    anomaly#d:delta_time:
-      skip_null: true
-  summary@ztf:fink.from_upper_limit:
-    sso#d:from_upper:
-      skip_null: true
-    latests#d:from_upper:
-      skip_null: true
-    anomaly#d:from_upper:
-      skip_null: true
-  summary@ztf:fink.lightcurve_detection_count:
-    objects#d:nalerthist:
-      skip_null: true
-    conesearch#d:nalerthist:
-      skip_null: true
-    sso#d:nalerthist:
-      skip_null: true
-    latests#d:nalerthist:
-      skip_null: true
-    anomaly#d:nalerthist:
-      skip_null: true
   detection@ztf:fink.provenance.channel.science_version:
     objects#i:fink_science_version:
       skip_null: true
@@ -2719,6 +2441,344 @@ transforms:
   survey@ztf:fink.snapshot_key:
     statistics#key:key:
       skip_null: true
-  survey@ztf:fink.time.snapshot_datetime:
-    statistics#key:time:
+  crossmatch@tns:fink.classification.best.class:
+    objects#d:tns:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+      skip_null: true
+    sso#d:tns:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+      skip_null: true
+    latests#d:tns:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+      skip_null: true
+    anomaly#d:tns:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+      skip_null: true
+  crossmatch@gaia_dr3:fink.classification.assessment.variability.flag:
+    sso#d:gaiaVarFlag:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    latests#d:gaiaVarFlag:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#d:gaiaVarFlag:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  crossmatch@gaia_dr3:fink.classification.assessment.variability.class:
+    sso#d:gaiaClass:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    latests#d:gaiaClass:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#d:gaiaClass:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  crossmatch@gaia_dr1:fink.separation.total:
+    objects#i:neargaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    sso#i:neargaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    latests#i:neargaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#i:neargaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  crossmatch@gaia_dr1_bright:fink.separation.total:
+    objects#i:neargaiabright:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#i:neargaiabright:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  crossmatch@gaia_dr3:fink.identity.object_id:
+    sso#d:DR3Name:
+      type: value_map
+      map:
+        Unknown: null
+        nan: null
+        None: null
+        ? ''
+        : null
+        'null': null
+      skip_null: true
+    latests#d:DR3Name:
+      type: value_map
+      map:
+        Unknown: null
+        nan: null
+        None: null
+        ? ''
+        : null
+        'null': null
+      skip_null: true
+    anomaly#d:DR3Name:
+      type: value_map
+      map:
+        Unknown: null
+        nan: null
+        None: null
+        ? ''
+        : null
+        'null': null
+      skip_null: true
+  crossmatch@gaia_dr1:fink.photometry.G.mag:
+    objects#i:maggaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    sso#i:maggaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    latests#i:maggaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#i:maggaia:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  crossmatch@gaia_dr1_bright:fink.photometry.G.mag:
+    objects#i:maggaiabright:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+    anomaly#i:maggaiabright:
+      type: value_map
+      map:
+        ? ''
+        : null
+        Unknown: null
+        nan: null
+        None: null
+        -999: null
+        -1: null
+      skip_null: true
+  lightcurve@ztf:fink.{filter}.rate_lower_percentile:
+    objects#d:lower_rate:
+      skip_null: true
+    sso#d:lower_rate:
+      skip_null: true
+    latests#d:lower_rate:
+      skip_null: true
+    anomaly#d:lower_rate:
+      skip_null: true
+  lightcurve@ztf:fink.{filter}.rate_upper_percentile:
+    objects#d:upper_rate:
+      skip_null: true
+    sso#d:upper_rate:
+      skip_null: true
+    latests#d:upper_rate:
+      skip_null: true
+    anomaly#d:upper_rate:
+      skip_null: true
+  lightcurve@ztf:fink.{filter}.delta_time_rate:
+    sso#d:delta_time:
+      skip_null: true
+    latests#d:delta_time:
+      skip_null: true
+    anomaly#d:delta_time:
+      skip_null: true
+  lightcurve@ztf:fink.{filter}.from_upper_limit:
+    sso#d:from_upper:
+      skip_null: true
+    latests#d:from_upper:
+      skip_null: true
+    anomaly#d:from_upper:
+      skip_null: true
+  lightcurve@ztf:fink.{filter}:
+    objects#i:fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
+        '1': g
+        '2': r
+        '3': i
+      default: null
+      skip_null: true
+    sso#i:fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
+        '1': g
+        '2': r
+        '3': i
+      default: null
+      skip_null: true
+    latests#i:fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
+        '1': g
+        '2': r
+        '3': i
+      default: null
+      skip_null: true
+    anomaly#i:fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
+        '1': g
+        '2': r
+        '3': i
+      default: null
       skip_null: true

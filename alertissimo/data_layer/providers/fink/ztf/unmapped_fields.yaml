@@ -1,889 +1,930 @@
 broker: fink
 origin: ztf
-notes: Explicit debt after the corrective semantic pass; mapped and debt references
-  are disjoint.
+notes: Explicit debt after the corrective semantic pass; mapped and debt references are disjoint.
 unmapped:
 - anomaly#d:blazar_stats_instantness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_instantness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_m0:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_m1:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_m2:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_robustness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#d:blazar_stats_robustness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - anomaly#i:distnr:
     reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic
-      leaf is angular arcsec. No lossless generic conversion is represented.
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
 - anomaly#i:distpsnr2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:distpsnr3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:objectidps2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:objectidps3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:sgmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:sgmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:sgscore2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:sgscore3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:simag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:simag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:srmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:srmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:szmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:szmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - anomaly#i:tblid:
     reason: provider_internal
-    note: ZTF internal pipeline/table extraction identifier is a storage implementation
-      detail.
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - conesearch#i:distnr:
     reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic
-      leaf is angular arcsec. No lossless generic conversion is represented.
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
 - conesearch#i:tblid:
     reason: provider_internal
-    note: ZTF internal pipeline/table extraction identifier is a storage implementation
-      detail.
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - latests#d:blazar_stats_instantness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_instantness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_m0:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_m1:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_m2:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_robustness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#d:blazar_stats_robustness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - latests#i:distnr:
     reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic
-      leaf is angular arcsec. No lossless generic conversion is represented.
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
 - latests#i:tblid:
     reason: provider_internal
-    note: ZTF internal pipeline/table extraction identifier is a storage implementation
-      detail.
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - objects#d:blazar_stats_instantness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_instantness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_m0:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_m1:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_m2:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_robustness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#d:blazar_stats_robustness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - objects#i:distnr:
     reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic
-      leaf is angular arcsec. No lossless generic conversion is represented.
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
 - objects#i:distpsnr2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:distpsnr3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:objectidps2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:objectidps3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:sgmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:sgmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:sgscore2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:sgscore3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:simag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:simag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:srmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:srmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:szmag2:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:szmag3:
     reason: structural_multiplicity
-    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS
-      records with separate ranked identities; rank 1 is mapped and ranks 2/3 require
-      structural support.
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
 - objects#i:tblid:
     reason: provider_internal
-    note: ZTF internal pipeline/table extraction identifier is a storage implementation
-      detail.
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - resolver#MType:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:declination:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:discoverydate:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:fullname:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:internalname:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:ra:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:redshift:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#d:type:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#i:name:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#i:number:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#i:ssnamenr:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#jdedeg:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#jpos:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#jradeg:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#name:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#nrefs:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#oid:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#oname:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#otype:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#refPos:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - resolver#z:
     reason: structural_ontology_gap
-    note: Resolver vocabulary exists, but resolver is not a first-level portfolio
-      record; mapping as detection or crossmatch would change semantics.
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
 - sso#d:blazar_stats_instantness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_instantness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_m0:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_m1:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_m2:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_robustness_high:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:blazar_stats_robustness_low:
     reason: ambiguous_classifier
-    note: The frozen field is a scalar diagnostic, but primary evidence available
-      to this registry does not establish a stable target/range/sentinel contract.
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
 - sso#d:jd_first_real_det:
     reason: ontology_gap
-    note: Captured field has no exact, lossless current semantic leaf or established
-      representation contract.
+    note: Captured field has no exact, lossless current semantic leaf or established representation
+      contract.
 - sso#d:jdstarthist_dt:
     reason: ontology_gap
-    note: Captured field has no exact, lossless current semantic leaf or established
-      representation contract.
+    note: Captured field has no exact, lossless current semantic leaf or established representation
+      contract.
 - sso#i:distnr:
     reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic
-      leaf is angular arcsec. No lossless generic conversion is represented.
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
 - sso#i:tblid:
     reason: provider_internal
-    note: ZTF internal pipeline/table extraction identifier is a storage implementation
-      detail.
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
 - statistics#basic:n_g:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#basic:n_r:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:**:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:AGB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:AGN:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:AGN_Candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Ae*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Ambiguous:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BClG:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BLLac:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BLLac_Candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BYDra:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Be*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Blazar:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Blazar_Candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Blue:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BlueSG*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:BlueStraggler:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Bubble:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:C*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_AGB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_Ae*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_Be*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_C*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_CV*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_EB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_HB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_Hsd:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_LP*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_Mi*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_RRLyr:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_RSG*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_S*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_SN*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_TTau*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_WD*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Candidate_YSO:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:CataclyV*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Cepheid:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:ClG:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:EB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Early SN Ia candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:EllipVar:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Em*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:EmG:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:EmObj:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Erupt*RCrB:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Eruptive*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:FIR:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Galaxy:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:GinCl:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:GinGroup:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:GinPair:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:GlCl:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:GravLensSystem:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:HB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:HH:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:HII:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:HMXB:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:HotSubdwarf:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:IR:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:LINER:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:LMXB:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:LPV*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:LensedQ:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:MIR:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Mira:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:NIR:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Nova:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:OH/IR:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Orion_V*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PM*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PN:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PN?:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PartofG:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Pec*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Planet:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Planet?:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PulsV*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PulsV*RVTau:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PulsV*WVir:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:PulsV*delSct:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:QSO:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:QSO_Candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RGB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RRLyr:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RSCVn:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Radio:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Radio(cm):
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RadioG:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RedSG*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RotV*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:RotV*alf2CVn:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:S*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:SB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:SG*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:SN:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:SN candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Seyfert:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Seyfert_1:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Seyfert_2:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Solar System MPC:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Solar System candidate:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Star:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Symbiotic*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:TTau*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Tracklet:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:UV:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:Unknown:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:V*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:V*?:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:WD*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:WR*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:X:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:XB:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:YSO:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:deltaCep:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:gammaBurst:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:gammaDor:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:low-mass*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:multiple_object:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:post-AGB*:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:pulsV*SX:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:simbad_gal:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
 - statistics#class:simbad_tot:
     reason: flattened_object_composition
-    note: The ontology expects an object-valued distribution/count map; ordinary scalar
-      mappings cannot compose flattened columns.
+    note: The ontology expects an object-valued distribution/count map; ordinary scalar mappings
+      cannot compose flattened columns.
+- sso#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- latests#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- anomaly#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- sso#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- latests#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- anomaly#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- objects#d:mag_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- sso#d:mag_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- latests#d:mag_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- anomaly#d:mag_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- objects#d:sigma_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- sso#d:sigma_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- latests#d:sigma_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- anomaly#d:sigma_rate:
+    reason: ontology_gap
+    note: The ontology only composes L4 magnitude rate beneath a second filter container;
+      duplicating the Fink fid would misrepresent structure.
+- objects#d:nalerthist:
+    reason: ontology_gap
+    note: No exact stable lightcurve concept represents Fink nalerthist in the current ontology.
+- conesearch#d:nalerthist:
+    reason: ontology_gap
+    note: No exact stable lightcurve concept represents Fink nalerthist in the current ontology.
+- sso#d:nalerthist:
+    reason: ontology_gap
+    note: No exact stable lightcurve concept represents Fink nalerthist in the current ontology.
+- latests#d:nalerthist:
+    reason: ontology_gap
+    note: No exact stable lightcurve concept represents Fink nalerthist in the current ontology.
+- anomaly#d:nalerthist:
+    reason: ontology_gap
+    note: No exact stable lightcurve concept represents Fink nalerthist in the current ontology.
+- statistics#key:time:
+    reason: provider_internal
+    note: HBase cell/row storage timing exposed by the API; not the observing-night semantic
+      snapshot datetime.
