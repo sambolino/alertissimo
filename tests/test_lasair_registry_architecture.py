@@ -151,16 +151,18 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     transforms = document["transforms"]
     payloads = document["payloads"]
 
-    assert mappings["classification@sherlock:lasair.best.class"] == [
+    assert set(mappings["classification@sherlock:lasair.best.class"]) == {
         "object#sherlock.classification",
+        "objects#sherlock.classification",
         "sherlock_position_classifications#_value.0",
         "sherlock_objects_classifications#_value.0",
-    ]
-    assert mappings["classification@sherlock:lasair.best.description"] == [
+    }
+    assert set(mappings["classification@sherlock:lasair.best.description"]) == {
         "object#sherlock.description",
+        "objects#sherlock.description",
         "sherlock_position_classifications#_value.1",
         "sherlock_objects_classifications#_value.1",
-    ]
+    }
     assert payloads["sherlock_objects_classifications"] == {
         "endpoint": "sherlock_objects",
         "path": "classifications{}",
@@ -181,8 +183,20 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         for ref in refs
     )
     assert "classification@sherlock:lasair.description" not in mappings
-    assert mappings["classification@tns:lasair.best.class"] == ["object#TNS.type"]
-    assert mappings["crossmatch@tns:lasair.identity.object_id"] == ["object#TNS.name"]
+    assert set(mappings["classification@tns:lasair.best.class"]) == {
+        "object#TNS.type",
+        "objects#TNS.type",
+    }
+    assert set(mappings["crossmatch@tns:lasair.identity.object_id"]) == {
+        "object#TNS.name",
+        "object#TNS.tns_name",
+        "objects#TNS.name",
+        "objects#TNS.tns_name",
+    }
+    assert payloads["objects_candidates"] == {
+        "endpoint": "objects",
+        "path": "[].candidates[]",
+    }
     assert "lightcurve@ztf:lasair.{filter}.points" not in mappings
     assert transforms["detection@ztf:lasair.time.mjd"]["candidates#jd"][
         "type"
