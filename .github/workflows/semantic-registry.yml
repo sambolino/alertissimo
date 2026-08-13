@@ -1,0 +1,37 @@
+name: Semantic registry
+
+on:
+  pull_request:
+    paths:
+      - 'alertissimo/data_layer/**'
+      - 'tests/test_mapping_schema.py'
+      - 'tests/test_semantic_paths.py'
+      - 'tests/test_semantic_model_validation.py'
+      - 'tests/test_semantic_record_builder.py'
+      - 'tests/test_lasair_registry_architecture.py'
+      - 'tests/test_lasair_ztf_live_capture.py'
+      - 'tests/fixtures/lasair/ztf/**'
+      - '.github/workflows/semantic-registry.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install focused test dependencies
+        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7'
+      - name: Run semantic core and Lasair live-capture tests
+        run: |
+          PYTHONPATH=. pytest -q \
+            tests/test_mapping_schema.py \
+            tests/test_semantic_paths.py \
+            tests/test_semantic_model_validation.py \
+            tests/test_semantic_record_builder.py \
+            tests/test_lasair_registry_architecture.py \
+            tests/test_lasair_ztf_live_capture.py
+      - name: Validate every provider mapping
+        run: PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all

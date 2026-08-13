@@ -1,0 +1,110 @@
+broker: alerce
+origin: lsst
+notes: >-
+  Semantic debt for observed authoritative ALeRCE 2.3.1 LSST leaves that cannot be represented faithfully.
+unmapped:
+- query_object#created_date:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider row creation timestamp is distinct from the object observation time.
+- query_object#n_forced:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider count of forced measurements has no same-meaning current summary field.
+- query_object#n_non_det:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider count of non-detections has no same-meaning current summary field.
+- query_object#sid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric survey identifier is not established as a semantic producer identifier.
+- query_object#tid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric transport/survey type identifier is not established as a semantic producer identifier.
+- query_object#updated_date:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider row update timestamp is distinct from the object observation time.
+- query_objects#deltamjd:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#firstmjd:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#lastmjd:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#meandec:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#meanra:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#n_det:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#n_forced:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#n_non_det:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#ranking:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Captured query_objects row is provider-ranked; rank is used only as evidence that its supplied class is selected, not emitted as a field.
+- query_objects#sid:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#sigmadec:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#sigmara:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_objects#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Nullable stellar indicator is not a transient class and has no same-meaning stable ontology field.
+- query_objects#tid:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
+- query_detections#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_detections#diaObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: In every authoritative detection, diaObjectId equals the documented ALeRCE oid object identifier; oid is emitted and this duplicate provider alias is intentionally not emitted a second time.
+- query_detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Stamp availability metadata has no same-meaning detection field.
+- query_detections#parentDiaSourceId:
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
+- query_forced_photometry#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_forced_photometry#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_forced_photometry#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
+- query_probabilities#ranking:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Classifier-dependent ordering is neither a class assessment nor a selected-best assertion for the full probability response.
+- query_lightcurve.detections#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_lightcurve.detections#diaObjectId:
+    reason: unsupported_semantic_concept
+    candidate_meaning: In every authoritative lightcurve detection, diaObjectId equals the documented ALeRCE oid object identifier; oid is emitted and this duplicate provider alias is intentionally not emitted a second time.
+- query_lightcurve.detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Stamp availability metadata has no same-meaning detection field.
+- query_lightcurve.detections#parentDiaSourceId:
+    reason: relationship_requires_edge
+    note: Native Rubin identifier of the parent DiaSource from which this DiaSource was deblended. The authoritative transient capture contains zero/absence, and the semantic model represents such parent relationships on the edge plane rather than as intrinsic record identity. Promote when mapping-driven edge construction and non-sentinel authoritative evidence are available.
+- query_lightcurve.forced_photometry#band:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.
+- query_lightcurve.forced_photometry#scienceFlux:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Science-image flux is not a source photometry measurement in the ontology contract.
+- query_lightcurve.forced_photometry#scienceFluxErr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.

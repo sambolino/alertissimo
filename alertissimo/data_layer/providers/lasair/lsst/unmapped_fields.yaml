@@ -1,0 +1,826 @@
+broker: lasair
+origin: lsst
+notes: Authoritative semantic-debt registry for the authenticated 2026-08-13 Lasair/LSST capture. Existing ontology concepts
+  are used where exact; remaining fields are explicit debt.
+unmapped:
+- sherlock_object_crossmatches#photoZ:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- sherlock_object_crossmatches#photoZErr:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- sherlock_object_crossmatches#merged_rank:
+    reason: distinct_rank_semantics
+    candidate_meaning: Sherlock merged_rank is distinct from ordinal rank and is not a fallback for rank.
+- sherlock_object_crossmatches#rankScore:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock rankScore is distinct from ordinal rank; no same-meaning canonical crossmatch path is available.
+- sherlock_object_crossmatches#catalogue_object_subtype:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue object subtype is more specific than the existing crossmatch catalogue classification slot.
+- sherlock_object_crossmatches#catalogue_table_id:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_object_crossmatches#catalogue_view_id:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_object_crossmatches#catalogue_view_name:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_object_crossmatches#original_search_radius_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock search-radius configuration is query context rather than matched-source separation.
+- sherlock_object_crossmatches#sm_axis_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
+- sherlock_object_crossmatches#transient_object_id:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Sherlock transient identifier identifies the queried transient rather than the matched catalogue object.
+- sherlock_position_crossmatches#photoZ:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- sherlock_position_crossmatches#photoZErr:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- sherlock_position_crossmatches#merged_rank:
+    reason: distinct_rank_semantics
+    candidate_meaning: Sherlock merged_rank is distinct from ordinal rank and is not a fallback for rank.
+- sherlock_position_crossmatches#rankScore:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock rankScore is distinct from ordinal rank; no same-meaning canonical crossmatch path is available.
+- sherlock_position_crossmatches#catalogue_object_subtype:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue object subtype is more specific than the existing crossmatch catalogue classification slot.
+- sherlock_position_crossmatches#catalogue_table_id:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_position_crossmatches#catalogue_view_id:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_position_crossmatches#catalogue_view_name:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Sherlock catalogue table/view implementation metadata is not scientific crossmatch identity.
+- sherlock_position_crossmatches#original_search_radius_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock search-radius configuration is query context rather than matched-source separation.
+- sherlock_position_crossmatches#sm_axis_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
+- sherlock_position_crossmatches#transient_object_id:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Sherlock transient identifier identifies the queried transient rather than the matched catalogue object.
+- object#lasairData.sherlock.photoZ:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- object#lasairData.sherlock.photoZErr:
+    reason: structural_multi_redshift_semantics
+    candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
+      redshift slot.
+- object#lasairData.sherlock.major_axis_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
+- diaForcedSourcesList#scienceFlux:
+    reason: unresolved_measurement_semantics
+    candidate_meaning: DiaForcedSource contains distinct psfFlux and scienceFlux measurements; psfFlux is canonical today
+      and scienceFlux needs a separate image-plane decision.
+- diaForcedSourcesList#scienceFluxErr:
+    reason: unresolved_measurement_semantics
+    candidate_meaning: DiaForcedSource contains distinct psfFlux and scienceFlux measurements; psfFlux is canonical today
+      and scienceFlux needs a separate image-plane decision.
+- cone_objects#separation:
+    reason: ambiguous_meaning
+    candidate_meaning: Provider cone-result separation is preserved as debt until its unit/reference-position contract is
+      encoded explicitly.
+- sherlock_object_classifications#_key:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Sherlock classification dictionary key identifies the queried transient; execution/portfolio context
+      already carries that identity.
+- sherlock_position_classifications#_key:
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Sherlock classification dictionary key identifies the queried transient; execution/portfolio context
+      already carries that identity.
+- object#diaObject.u_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.u_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.g_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.g_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.r_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.r_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.i_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.i_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.z_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.z_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.y_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#diaObject.y_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.u_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.u_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.g_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.g_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.r_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.r_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.i_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.i_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.z_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.z_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.y_scienceFluxMean:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- object#lasairData.y_scienceFluxMeanErr:
+    reason: structural_measurement_semantics
+    candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
+      debt until aggregate image-plane structure is modeled without collision.
+- diaSourcesList#exposureTime:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- diaSourcesList#parentDiaSourceId:
+    reason: relationship_requires_edge
+    candidate_meaning: Rubin parent DiaSource identity is a relationship and belongs on the edge plane rather than intrinsic
+      detection identity.
+- diaSourcesList#reliabilityVersion:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- diaSourcesList#trailAlgorithm:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- diaSourcesList#trail_flag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBFallRate:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBPeakAbsMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBPeakFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBPeakMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBRiseRate:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.BBBTemp:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.absMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.absMagMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.annotations.annotationID:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.classdict:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.classification:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.explanation:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.timestamp:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.topic:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.url:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.annotations.version:
+    reason: provider_annotation_structure_deferred
+    candidate_meaning: Lasair annotation records require producer/topic-aware repeated-record treatment; preserve raw evidence
+      without inventing a flat semantic slot.
+- object#lasairData.decsex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.discFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.discMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.ebv:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.ec_lat:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.ec_lon:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.g_lat:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.g_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.g_lon:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.g_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.glat:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.htm16:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.i_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.i_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.imageUrls.Difference:
+    reason: role_qualified_data_product_deferred
+    candidate_meaning: Science/template/difference cutout URLs require role-qualified repeated data-product records linked
+      to their DiaSource.
+- object#lasairData.imageUrls.Science:
+    reason: role_qualified_data_product_deferred
+    candidate_meaning: Science/template/difference cutout URLs require role-qualified repeated data-product records linked
+      to their DiaSource.
+- object#lasairData.imageUrls.Template:
+    reason: role_qualified_data_product_deferred
+    candidate_meaning: Science/template/difference cutout URLs require role-qualified repeated data-product records linked
+      to their DiaSource.
+- object#lasairData.imageUrls.diaSourceId:
+    reason: role_qualified_data_product_deferred
+    candidate_meaning: Science/template/difference cutout URLs require role-qualified repeated data-product records linked
+      to their DiaSource.
+- object#lasairData.jump1:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.jump2:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestPairColourBands:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestPairColourMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestPairColourTemp:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestPairMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latestR:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.latest_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.medianR:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.mjdmax_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.mjdmin_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nPosDiaSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nPosDiaSourcesNights:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nSourcesGood:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.ngSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.niSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.now_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nrSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nuSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nySources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.nzSources:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.peakFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.peakMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.peakMjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.peakUtc:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.penultimatePairColourBands:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.penultimatePairColourMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.penultimatePairColourTemp:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.penultimatePairMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.r_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.r_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.rasex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.additional_output:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.annotator:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.best_distance:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.best_distance_flag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.best_distance_source:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.diaObjectId:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.distance:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.sherlock.summary:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.timestamp:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.tns_name:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.u_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.u_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.y_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.y_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.z_latestMJD:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#lasairData.z_psfFlux:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.g_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.i_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.r_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.u_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.validityStartMjdTai:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.y_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_fpFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_fpFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxErrMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxMax:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxMaxSlope:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxMean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxMeanErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxMin:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxNdata:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- object#diaObject.z_psfFluxSigma:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_object_crossmatches#Mag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_object_crossmatches#MagErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_object_crossmatches#MagFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_position_crossmatches#Mag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_position_crossmatches#MagErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.
+- sherlock_position_crossmatches#MagFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
+      path was selected; no ontology extension is introduced here.

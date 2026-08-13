@@ -1,7 +1,0 @@
-broker: fink
-origin: lsst
-notes: Only audited fields without a stable semantic feature catalog path are retained here.
-unmapped:
-- schema#schema:
-    reason: no_stable_feature_catalog_path
-    note: Raw field has no stable feature catalog semantic path.

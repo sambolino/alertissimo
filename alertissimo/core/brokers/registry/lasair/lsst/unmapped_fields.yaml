@@ -1,4 +1,0 @@
-broker: lasair
-origin: lsst
-notes: Only audited fields without a stable semantic feature catalog path are retained here; forced-source rows remain deliberately out of scope.
-unmapped: []

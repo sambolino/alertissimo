@@ -1,0 +1,74 @@
+[
+  {
+    "objectId": "ZTF20acpwljl",
+    "classifications": {
+      "ZTF20acpwljl": [
+        "SN",
+        "Sherlock preserved <b>description</b>"
+      ]
+    },
+    "crossmatches": [
+      {
+        "catalogue_table_name": "SDSS/2MASS/PS1",
+        "catalogue_table_id": 1,
+        "catalogue_object_id": "gal-1",
+        "catalogue_object_type": "galaxy",
+        "association_type": "SN",
+        "classification": "fallback",
+        "classificationReliability": 0.93,
+        "search_name": "synonym",
+        "raDeg": 124.88,
+        "decDeg": -6.02,
+        "separationArcsec": 1.57,
+        "northSeparationArcsec": -1.15,
+        "eastSeparationArcsec": 1.07,
+        "physical_separation_kpc": 2.1,
+        "photoZ": 0.123,
+        "photoZErr": 0.004,
+        "z": null,
+        "rank": 1,
+        "merged_rank": 9,
+        "J": 16.1,
+        "JErr": 0.1,
+        "H": 15.8,
+        "HErr": 0.1,
+        "K": 15.6,
+        "KErr": 0.1,
+        "_g": 18.2,
+        "_gErr": 0.03,
+        "best_distance": 540.0,
+        "best_distance_source": "photo-z",
+        "best_distance_flag": "pz",
+        "pz_distance": 540.0,
+        "pz_distance_modulus": 38.66,
+        "pz_distance_scale": 2.2,
+        "pz_distance_cat": "SDSS",
+        "direct_distance": null,
+        "direct_distance_modulus": null,
+        "direct_distance_scale": null,
+        "direct_distance_cat": null,
+        "z_distance": null,
+        "z_distance_modulus": null,
+        "z_distance_scale": null,
+        "z_distance_cat": null,
+        "major_axis_arcsec": 0.7,
+        "transient_object_id": "ZTF20acpwljl"
+      },
+      {
+        "catalogue_table_name": "2MASS PSC",
+        "catalogue_table_id": 2,
+        "catalogue_object_id": "star-1",
+        "catalogue_object_type": "star",
+        "association_type": "VS",
+        "classificationReliability": 0.88,
+        "search_name": "association",
+        "raDeg": 124.881,
+        "decDeg": -6.021,
+        "separationArcsec": 0.4,
+        "rank": 2,
+        "J": 13.2,
+        "JErr": 0.02
+      }
+    ]
+  }
+]

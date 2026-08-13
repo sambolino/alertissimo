@@ -1,0 +1,22 @@
+{
+  "corrected": true,
+  "deltajd": 2745.665694399737,
+  "firstmjd": 58286.42961810017,
+  "g_r_max": null,
+  "g_r_max_corr": null,
+  "g_r_mean": null,
+  "g_r_mean_corr": null,
+  "lastmjd": 61032.09531249991,
+  "meandec": 39.09800386874637,
+  "meanra": 313.7733232785203,
+  "mjdendhist": 61032.09531249991,
+  "mjdstarthist": 58105.083240699954,
+  "ncovhist": 2335,
+  "ndet": 1044,
+  "ndethist": "1462",
+  "oid": "ZTF18abbuksn",
+  "sigmadec": 0.002176833848998794,
+  "sigmara": 0.002804951162654439,
+  "stellar": false,
+  "step_id_corr": "27.5.7a32.dev1"
+}

@@ -1,0 +1,5 @@
+count
+nearest.object
+nearest.separation
+objects.[].object
+objects.[].separation

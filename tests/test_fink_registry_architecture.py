@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).parents[1] / "alertissimo/core/brokers/registry/fink"
+ROOT = Path(__file__).parents[1] / "alertissimo/data_layer/providers/fink"
 ORIGINS = ("lsst", "ztf")
 
 
@@ -15,7 +15,8 @@ def test_payload_roots_match_endpoint_output_types():
         mappings = load(origin, "mappings.yaml")
         endpoints = load(origin, "endpoints.yaml")["endpoints"]
         for name, payload in mappings["payloads"].items():
-            expected = "[]" if endpoints[name]["output"]["type"] == "array" else "."
+            assert payload["endpoint"] in endpoints
+            expected = "[]" if endpoints[payload["endpoint"]]["output"]["type"] == "array" else "."
             assert payload["path"] == expected
             assert payload["path"] != "$"
 
@@ -23,7 +24,8 @@ def test_payload_roots_match_endpoint_output_types():
 def test_mappings_are_minimal_raw_reference_lists():
     for origin in ORIGINS:
         document = load(origin, "mappings.yaml")
-        assert set(document) == {"broker", "origin", "payloads", "mappings"}
+        assert {"broker", "origin", "payloads", "mappings"} <= set(document)
+        assert set(document) <= {"broker", "origin", "payloads", "mappings", "transforms"}
         for refs in document["mappings"].values():
             assert isinstance(refs, list) and refs
             assert all(isinstance(ref, str) and ref.count("#") == 1 for ref in refs)

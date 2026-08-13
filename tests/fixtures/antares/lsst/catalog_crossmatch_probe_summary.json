@@ -1,0 +1,146 @@
+{
+  "captured_at": "2026-08-12T08:59:38.575049+00:00",
+  "catalog_frequency": {
+    "allwise": 4,
+    "bright_guide_star_cat": 5,
+    "gaia_dr3_gaia_source": 5,
+    "gaia_dr3_variability": 2,
+    "milliquas": 3,
+    "ned": 1
+  },
+  "client": {
+    "package": "antares-client",
+    "version": "1.14.0"
+  },
+  "input_unique_ids": 500,
+  "matches": [
+    {
+      "catalogs": {
+        "bright_guide_star_cat": {
+          "field_count": 61,
+          "rows": 1
+        },
+        "gaia_dr3_gaia_source": {
+          "field_count": 152,
+          "rows": 1
+        },
+        "gaia_dr3_variability": {
+          "field_count": 6,
+          "rows": 1
+        }
+      },
+      "dec": -48.59298844234212,
+      "diaObjectId": "314051321181766377",
+      "locus_id": "ANT2026hx1rzkq5byi8",
+      "ra": 65.78585212383389
+    },
+    {
+      "catalogs": {
+        "allwise": {
+          "field_count": 299,
+          "rows": 1
+        },
+        "bright_guide_star_cat": {
+          "field_count": 61,
+          "rows": 1
+        },
+        "gaia_dr3_gaia_source": {
+          "field_count": 152,
+          "rows": 1
+        },
+        "milliquas": {
+          "field_count": 18,
+          "rows": 1
+        },
+        "ned": {
+          "field_count": 136,
+          "rows": 1
+        }
+      },
+      "dec": -46.3736980046387,
+      "diaObjectId": "314007345909203041",
+      "locus_id": "ANT2026lffb8p8axxif",
+      "ra": 62.903096837903384
+    },
+    {
+      "catalogs": {
+        "allwise": {
+          "field_count": 299,
+          "rows": 1
+        },
+        "bright_guide_star_cat": {
+          "field_count": 61,
+          "rows": 1
+        },
+        "gaia_dr3_gaia_source": {
+          "field_count": 152,
+          "rows": 1
+        }
+      },
+      "dec": -48.08321636619226,
+      "diaObjectId": "314007345857822758",
+      "locus_id": "ANT2026l0opa4mc9rz8",
+      "ra": 64.8259119252364
+    },
+    {
+      "catalogs": {
+        "allwise": {
+          "field_count": 299,
+          "rows": 1
+        },
+        "bright_guide_star_cat": {
+          "field_count": 61,
+          "rows": 1
+        },
+        "gaia_dr3_gaia_source": {
+          "field_count": 152,
+          "rows": 1
+        },
+        "gaia_dr3_variability": {
+          "field_count": 6,
+          "rows": 1
+        },
+        "milliquas": {
+          "field_count": 18,
+          "rows": 1
+        }
+      },
+      "dec": -48.36435295866863,
+      "diaObjectId": "314007345856249976",
+      "locus_id": "ANT2026kjcc6q52begy",
+      "ra": 64.61329589974939
+    },
+    {
+      "catalogs": {
+        "allwise": {
+          "field_count": 299,
+          "rows": 1
+        },
+        "bright_guide_star_cat": {
+          "field_count": 61,
+          "rows": 1
+        },
+        "gaia_dr3_gaia_source": {
+          "field_count": 152,
+          "rows": 1
+        },
+        "milliquas": {
+          "field_count": 18,
+          "rows": 1
+        }
+      },
+      "dec": -48.1266398415971,
+      "diaObjectId": "314007345846812735",
+      "locus_id": "ANT2026n0xwjmq6filz",
+      "ra": 61.5043490745509
+    }
+  ],
+  "matches_found": 5,
+  "stats": {
+    "attempted": 5,
+    "empty_catalogs": 0,
+    "errors": 0,
+    "not_in_antares": 0,
+    "resolved_in_antares": 5
+  }
+}

@@ -6,4 +6,6 @@ alertissimo.egg-info/
 *bak
 *bak2
 .idea
+.venv/
+.python-version
 

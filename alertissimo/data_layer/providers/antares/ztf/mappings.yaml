@@ -1,0 +1,247 @@
+broker: antares
+origin: ztf
+payloads:
+  locus:
+    endpoint: get_by_ztf_object_id
+    path: .
+  locus_alerts:
+    endpoint: get_by_ztf_object_id
+    path: alerts[]
+  locus_catalog_2mass:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.2mass_psc[]
+  locus_catalog_allwise:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.allwise[]
+  locus_catalog_bright:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.bright_guide_star_cat[]
+  locus_catalog_gaia:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
+  locus_catalog_gaia_variability:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_dr3_variability[]
+  locus_catalog_bailer_jones:
+    endpoint: get_by_ztf_object_id
+    path: catalog_objects.gaia_edr3_distances_bailer_jones[]
+  locus_by_id:
+    endpoint: get_by_id
+    path: .
+  search_loci:
+    endpoint: search
+    path: '[]'
+  cone_loci:
+    endpoint: cone_search
+    path: '[]'
+mappings:
+  summary@ztf:antares.identity.object_id:
+  - locus#properties.ztf_object_id
+  - locus_by_id#properties.ztf_object_id
+  - search_loci#properties.ztf_object_id
+  - cone_loci#properties.ztf_object_id
+  summary@ztf:antares.identity.antares_locus_id:
+  - locus#locus_id
+  - locus_by_id#locus_id
+  - search_loci#locus_id
+  - cone_loci#locus_id
+  summary@ztf:antares.position.ra:
+  - locus#ra
+  - locus_by_id#ra
+  - search_loci#ra
+  - cone_loci#ra
+  summary@ztf:antares.position.dec:
+  - locus#dec
+  - locus_by_id#dec
+  - search_loci#dec
+  - cone_loci#dec
+  detection@ztf:antares.identity.alert_id:
+  - locus_alerts#alert_id
+  detection@ztf:antares.identity.source_id:
+  - locus_alerts#properties.ztf_candid
+  detection@ztf:antares.identity.object_id:
+  - locus_alerts#properties.ztf_object_id
+  detection@ztf:antares.time.mjd:
+  - locus_alerts#mjd
+  detection@ztf:antares.position.ra:
+  - locus_alerts#properties.ant_ra
+  detection@ztf:antares.position.dec:
+  - locus_alerts#properties.ant_dec
+  detection@ztf:antares.photometry.{filter}:
+  - locus_alerts#properties.ant_passband
+  detection@ztf:antares.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  detection@ztf:antares.photometry.{filter}.psf.mag.error:
+  - locus_alerts#properties.ant_magerr
+  detection@ztf:antares.photometry.{filter}.limit.mag:
+  - locus_alerts#properties.ant_maglim
+  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+  - locus_alerts#properties.ant_survey
+  detection@ztf:antares.photometry.{filter}.aperture.mag:
+  - locus_alerts#properties.ztf_magap
+  detection@ztf:antares.photometry.{filter}.aperture.mag.error:
+  - locus_alerts#properties.ztf_sigmagap
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag:
+  - locus_alerts#properties.ztf_magapbig
+  detection@ztf:antares.photometry.{filter}.aperture.large.mag.error:
+  - locus_alerts#properties.ztf_sigmagapbig
+  detection@ztf:antares.time.exposure:
+  - locus_alerts#properties.ztf_exptime
+  detection@ztf:antares.calibration.{filter}.zero_point:
+  - locus_alerts#properties.ztf_magzpsci
+  detection@ztf:antares.calibration.{filter}.zero_point_uncertainty:
+  - locus_alerts#properties.ztf_magzpsciunc
+  detection@ztf:antares.calibration.{filter}.zero_point_rms:
+  - locus_alerts#properties.ztf_magzpscirms
+  detection@ztf:antares.calibration.{filter}.color_coefficient:
+  - locus_alerts#properties.ztf_clrcoeff
+  detection@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
+  - locus_alerts#properties.ztf_clrcounc
+  detection@ztf:antares.provenance.processing_id:
+  - locus_alerts#properties.ztf_pid
+  detection@ztf:antares.provenance.night_id:
+  - locus_alerts#properties.ztf_nid
+  detection@ztf:antares.provenance.reference_image_id:
+  - locus_alerts#properties.ztf_rfid
+  detection@ztf:antares.provenance.producer.program.field:
+  - locus_alerts#properties.ztf_field
+  detection@ztf:antares.provenance.producer.program.id:
+  - locus_alerts#properties.ztf_programid
+  detection@ztf:antares.quality.rf_real_bogus:
+  - locus_alerts#properties.ztf_rb
+  detection@ztf:antares.quality.rf_real_bogus.version:
+  - locus_alerts#properties.ztf_rbversion
+  detection@ztf:antares.quality.real_bogus:
+  - locus_alerts#properties.ztf_drb
+  detection@ztf:antares.quality.real_bogus.version:
+  - locus_alerts#properties.ztf_drbversion
+  detection@ztf:antares.image_metrics.is_positive:
+  - locus_alerts#properties.ztf_isdiffpos
+  detection@ztf:antares.reference_image.nearest_source.separation.total:
+  - locus_alerts#properties.ztf_distnr
+  detection@ztf:antares.reference_image.nearest_source.position.ra:
+  - locus_alerts#properties.ztf_ranr
+  detection@ztf:antares.reference_image.nearest_source.position.dec:
+  - locus_alerts#properties.ztf_decnr
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
+  - locus_alerts#properties.ztf_magnr
+  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag.error:
+  - locus_alerts#properties.ztf_sigmagnr
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
+  - locus_alerts#properties.ztf_chinr
+  detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
+  - locus_alerts#properties.ztf_sharpnr
+  crossmatch@twomass:antares.identity.object_id:
+  - locus_catalog_2mass#designation
+  crossmatch@twomass:antares.position.ra:
+  - locus_catalog_2mass#ra
+  crossmatch@twomass:antares.position.dec:
+  - locus_catalog_2mass#decl
+  crossmatch@allwise:antares.identity.object_id:
+  - locus_catalog_allwise#source_id
+  crossmatch@allwise:antares.position.ra:
+  - locus_catalog_allwise#ra
+  crossmatch@allwise:antares.position.dec:
+  - locus_catalog_allwise#decl
+  crossmatch@gsc:antares.identity.object_id:
+  - locus_catalog_bright#gscID2
+  crossmatch@gsc:antares.position.ra:
+  - locus_catalog_bright#RightAsc_deg
+  crossmatch@gsc:antares.position.dec:
+  - locus_catalog_bright#Declination_deg
+  crossmatch@gaia:antares.identity.object_id:
+  - locus_catalog_gaia#source_id
+  crossmatch@gaia:antares.position.ra:
+  - locus_catalog_gaia#ra
+  crossmatch@gaia:antares.position.dec:
+  - locus_catalog_gaia#dec
+  crossmatch@gaia_variability:antares.identity.object_id:
+  - locus_catalog_gaia_variability#source
+  crossmatch@gaia_variability:antares.position.ra:
+  - locus_catalog_gaia_variability#ra_icrs
+  crossmatch@gaia_variability:antares.position.dec:
+  - locus_catalog_gaia_variability#de_icrs
+  crossmatch@bailer_jones:antares.identity.object_id:
+  - locus_catalog_bailer_jones#source
+  crossmatch@bailer_jones:antares.position.ra:
+  - locus_catalog_bailer_jones#ra_icrs
+  crossmatch@bailer_jones:antares.position.dec:
+  - locus_catalog_bailer_jones#de_icrs
+  crossmatch@gaia:antares.astrometric_solution.parallax:
+  - locus_catalog_gaia#parallax
+  crossmatch@gaia:antares.astrometric_solution.parallax_error:
+  - locus_catalog_gaia#parallax_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
+  - locus_catalog_gaia#pmra
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
+  - locus_catalog_gaia#pmdec
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra_error:
+  - locus_catalog_gaia#pmra_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec_error:
+  - locus_catalog_gaia#pmdec_error
+  crossmatch@gaia:antares.astrometric_solution.epoch:
+  - locus_catalog_gaia#ref_epoch
+  crossmatch@gaia:antares.astrometric_solution.ruwe:
+  - locus_catalog_gaia#ruwe
+  crossmatch@gaia:antares.photometry.G.mag:
+  - locus_catalog_gaia#phot_g_mean_mag
+  crossmatch@gaia:antares.photometry.BP.mag:
+  - locus_catalog_gaia#phot_bp_mean_mag
+  crossmatch@gaia:antares.photometry.RP.mag:
+  - locus_catalog_gaia#phot_rp_mean_mag
+  crossmatch@allwise:antares.photometry.W1.mag:
+  - locus_catalog_allwise#w1mpro
+  crossmatch@allwise:antares.photometry.W1.mag.error:
+  - locus_catalog_allwise#w1sigmpro
+  crossmatch@allwise:antares.photometry.W2.mag:
+  - locus_catalog_allwise#w2mpro
+  crossmatch@allwise:antares.photometry.W2.mag.error:
+  - locus_catalog_allwise#w2sigmpro
+  crossmatch@allwise:antares.photometry.W3.mag:
+  - locus_catalog_allwise#w3mpro
+  crossmatch@allwise:antares.photometry.W3.mag.error:
+  - locus_catalog_allwise#w3sigmpro
+  crossmatch@allwise:antares.photometry.W4.mag:
+  - locus_catalog_allwise#w4mpro
+  crossmatch@allwise:antares.photometry.W4.mag.error:
+  - locus_catalog_allwise#w4sigmpro
+  crossmatch@twomass:antares.photometry.J.mag:
+  - locus_catalog_2mass#j_m
+  crossmatch@twomass:antares.photometry.J.mag.error:
+  - locus_catalog_2mass#j_cmsig
+  crossmatch@twomass:antares.photometry.H.mag:
+  - locus_catalog_2mass#h_m
+  crossmatch@twomass:antares.photometry.H.mag.error:
+  - locus_catalog_2mass#h_cmsig
+  crossmatch@twomass:antares.photometry.K.mag:
+  - locus_catalog_2mass#k_m
+  crossmatch@twomass:antares.photometry.K.mag.error:
+  - locus_catalog_2mass#k_cmsig
+transforms:
+  detection@ztf:antares.photometry.{filter}:
+    locus_alerts#properties.ant_passband:
+      type: value_map
+      map:
+        R: r
+        g: g
+      default: null
+      skip_null: true
+      note: Strict authoritative ANTARES passband normalization.
+  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+    locus_alerts#properties.ant_survey:
+      type: value_map
+      map:
+        1: false
+        2: true
+      default: null
+      skip_null: true
+      note: 'ANTARES survey discriminator: candidate=1, upper limit=2.'
+  detection@ztf:antares.image_metrics.is_positive:
+    locus_alerts#properties.ztf_isdiffpos:
+      type: value_map
+      map:
+        f: false
+        '0': false
+      default: null
+      skip_null: true
+      note: Only negative encodings observed in frozen 1.14.0 evidence; unknown tokens omitted.

@@ -1,0 +1,5 @@
+base_url=https://api.ztf.fink-portal.org
+primary_object_id=ZTF21abfmbix
+capture_script=./scripts/evidence/capture_fink_ztf.sh
+git_commit=31ddad43040a4e2396ac6d39b1731018a84a5280
+git_branch=feature/semantic-registry

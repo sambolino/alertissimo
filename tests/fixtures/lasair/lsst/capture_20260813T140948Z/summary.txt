@@ -1,0 +1,37 @@
+object_id=313761042336317573
+ra=62.7316607972814
+dec=-49.27644298014233
+successful_json_responses=12
+
+[HTTP status]
+label	mode	http	json	path
+object_default	optional	200	yes	/api/object/
+object_with_context	required	200	yes	/api/object/
+object_raw	optional	200	yes	/api/object/
+objects_plural	optional	404	no	/api/objects/
+lightcurves	optional	404	no	/api/lightcurves/
+cone_all	required	200	yes	/api/cone/
+cone_nearest	optional	200	yes	/api/cone/
+cone_count	optional	200	yes	/api/cone/
+query_object	optional	200	yes	/api/query/
+query_object_qualified	optional	200	yes	/api/query/
+sherlock_object_lite	required	200	yes	/api/sherlock/object/
+sherlock_object_full	required	200	yes	/api/sherlock/object/
+sherlock_position_lite	required	200	yes	/api/sherlock/position/
+sherlock_position_full	required	200	yes	/api/sherlock/position/
+sherlock_objects_lite	optional	404	no	/api/sherlock/objects/
+sherlock_objects_full	optional	404	no	/api/sherlock/objects/
+
+[Inventory]
+object_default: json_type=object rows=1 top_or_union_field_count=5
+object_with_context: json_type=object rows=1 top_or_union_field_count=5
+object_raw: json_type=object rows=1 top_or_union_field_count=4
+cone_all: json_type=object rows=1 top_or_union_field_count=3
+cone_nearest: json_type=object rows=1 top_or_union_field_count=1
+cone_count: json_type=object rows=1 top_or_union_field_count=1
+query_object: json_type=array rows=1 top_or_union_field_count=1
+query_object_qualified: json_type=array rows=1 top_or_union_field_count=1
+sherlock_object_lite: json_type=object rows=1 top_or_union_field_count=2
+sherlock_object_full: json_type=object rows=1 top_or_union_field_count=2
+sherlock_position_lite: json_type=object rows=1 top_or_union_field_count=2
+sherlock_position_full: json_type=object rows=1 top_or_union_field_count=2

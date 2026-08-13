@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 
-REGISTRY = Path("alertissimo/core/brokers/registry/lasair")
+REGISTRY = Path("alertissimo/data_layer/providers/lasair")
 ENDPOINT_KEYS = {
     "path", "method", "description", "headers", "params", "output",
     "operation_types", "server_filters", "post_filter", "projection",
@@ -36,7 +36,7 @@ def test_endpoint_contracts_are_physical_rest_operations() -> None:
         },
         "ztf": {
             "object", "objects", "lightcurves", "cone", "query",
-            "sherlock_objects", "sherlock_position",
+            "sherlock_object", "sherlock_objects", "sherlock_position",
         },
     }
     expected_baseurl = {
@@ -91,9 +91,10 @@ def test_mappings_use_minimal_payload_references() -> None:
 
         for payload in payloads.values():
             assert payload["endpoint"] in endpoints
-            assert payload["path"] == "." or payload["path"].endswith("[]")
+            assert payload["path"] == "." or payload["path"].endswith(("[]", "{}"))
         for refs in mappings.values():
             assert isinstance(refs, list) and refs
+            assert len(refs) == len(set(refs))
             for ref in refs:
                 assert isinstance(ref, str) and ref.count("#") == 1
                 assert ref.split("#", 1)[0] in payloads
@@ -135,9 +136,9 @@ def test_singleton_context_is_rooted_in_object_payload() -> None:
 
 def test_lsst_context_and_collection_mappings() -> None:
     mappings = load("lsst", "mappings.yaml")["mappings"]
-    assert mappings["classification@lasair.assessment.sherlock.class"] == [
+    assert mappings["classification@sherlock:lasair.best.class"][0] == (
         "object#lasairData.sherlock.classification"
-    ]
+    )
     assert mappings["crossmatch@tns:lasair.identity.object_id"] == [
         "object#lasairData.TNS.name"
     ]
@@ -148,11 +149,54 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     document = load("ztf", "mappings.yaml")
     mappings = document["mappings"]
     transforms = document["transforms"]
-    assert mappings["classification@lasair.assessment.sherlock.class"] == [
-        "object#sherlock.classification"
-    ]
-    assert mappings["classification@tns:lasair.best.class"] == ["object#TNS.type"]
-    assert mappings["crossmatch@tns:lasair.identity.object_id"] == ["object#TNS.name"]
+    payloads = document["payloads"]
+
+    assert set(mappings["classification@sherlock:lasair.best.class"]) == {
+        "object#sherlock.classification",
+        "objects#sherlock.classification",
+        "sherlock_position_classifications#_value.0",
+        "sherlock_objects_classifications#_value.0",
+    }
+    assert set(mappings["classification@sherlock:lasair.best.description"]) == {
+        "object#sherlock.description",
+        "objects#sherlock.description",
+        "sherlock_position_classifications#_value.1",
+        "sherlock_objects_classifications#_value.1",
+    }
+    assert payloads["sherlock_objects_classifications"] == {
+        "endpoint": "sherlock_objects",
+        "path": "classifications{}",
+    }
+    assert payloads["sherlock_objects_crossmatches"] == {
+        "endpoint": "sherlock_objects",
+        "path": "crossmatches[]",
+    }
+    assert not any(
+        key.startswith("classification@sherlock:lasair.")
+        and key.endswith(("identity.object_id", "subject.object_id", "target.object_id"))
+        for key in mappings
+    )
+    assert not any(
+        ref.endswith("#_key")
+        for key, refs in mappings.items()
+        if key.startswith("classification@sherlock:lasair.")
+        for ref in refs
+    )
+    assert "classification@sherlock:lasair.description" not in mappings
+    assert set(mappings["classification@tns:lasair.best.class"]) == {
+        "object#TNS.type",
+        "objects#TNS.type",
+    }
+    assert set(mappings["crossmatch@tns:lasair.identity.object_id"]) == {
+        "object#TNS.name",
+        "object#TNS.tns_name",
+        "objects#TNS.name",
+        "objects#TNS.tns_name",
+    }
+    assert payloads["objects_candidates"] == {
+        "endpoint": "objects",
+        "path": "[].candidates[]",
+    }
     assert "lightcurve@ztf:lasair.{filter}.points" not in mappings
     assert transforms["detection@ztf:lasair.time.mjd"]["candidates#jd"][
         "type"

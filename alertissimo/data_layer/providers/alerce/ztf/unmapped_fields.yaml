@@ -1,0 +1,193 @@
+broker: alerce
+origin: ztf
+notes: Audited fields are retained only when their current provider semantics cannot be represented faithfully.
+unmapped:
+- query_detections#step_id_corr:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
+- query_lightcurve.detections#step_id_corr:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
+- query_object#step_id_corr:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
+- query_objects#step_id_corr:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
+- query_probabilities#ranking:
+    reason: ambiguous_provider_semantics
+    candidate_meaning: Classifier-dependent result ordering/rank; it is neither a class assessment nor a selected best-class assertion.
+- query_object#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Start MJD of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; this is not necessarily the first accepted object detection.
+- query_objects#mjdstarthist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Start MJD of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; this is not necessarily the first accepted object detection.
+- query_object#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: End MJD of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; this is not necessarily the last accepted object detection.
+- query_objects#mjdendhist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: End MJD of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; this is not necessarily the last accepted object detection.
+- query_object#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Count of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; it is distinct from the total accepted object detection count (`ndet`).
+- query_objects#ndethist:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Count of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; it is distinct from the total accepted object detection count (`ndet`).
+- query_object#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Whether ALeRCE correction processing applies to the object summary; the ontology has correction state for measurements but no equivalent object-summary assertion.
+- query_objects#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Whether ALeRCE correction processing applies to the object summary; the ontology has correction state for measurements but no equivalent object-summary assertion.
+- query_object#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE indicator that the object is likely stellar-like; representing it as a transient class would change its meaning.
+- query_objects#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE indicator that the object is likely stellar-like; representing it as a transient class would change its meaning.
+- query_object#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Maximum observed uncorrected g-r colour statistic; no same-meaning object-summary colour statistic exists.
+- query_objects#g_r_max:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Maximum observed uncorrected g-r colour statistic; no same-meaning object-summary colour statistic exists.
+- query_object#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Maximum ALeRCE-corrected g-r colour statistic; correction state and aggregation cannot both be represented faithfully.
+- query_objects#g_r_max_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Maximum ALeRCE-corrected g-r colour statistic; correction state and aggregation cannot both be represented faithfully.
+- query_object#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Mean observed uncorrected g-r colour statistic; no same-meaning object-summary colour statistic exists.
+- query_objects#g_r_mean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Mean observed uncorrected g-r colour statistic; no same-meaning object-summary colour statistic exists.
+- query_object#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Mean ALeRCE-corrected g-r colour statistic; correction state and aggregation cannot both be represented faithfully.
+- query_objects#g_r_mean_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Mean ALeRCE-corrected g-r colour statistic; correction state and aggregation cannot both be represented faithfully.
+- query_detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.relationship.parent_alert_id` is not an available canonical field.
+- query_lightcurve.detections#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.relationship.parent_alert_id` is not an available canonical field.
+- query_forced_photometry#parent_candid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.relationship.parent_alert_id` is not an available canonical field.
+- query_detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.data_product.stamp.available` is not an available canonical field.
+- query_lightcurve.detections#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.data_product.stamp.available` is not an available canonical field.
+- query_forced_photometry#has_stamp:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.data_product.stamp.available` is not an available canonical field.
+- query_detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.time.phase` is not an available canonical field.
+- query_lightcurve.detections#phase:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.time.phase` is not an available canonical field.
+- query_lightcurve.detections#magpsf_corr_ext:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.psf.mag_corrected_extended_component` is not an available canonical field.
+- query_lightcurve.detections#magap_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.aperture.mag_corrected` is not an available canonical field.
+- query_lightcurve.detections#sigmagap_corr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.photometry.{filter}.aperture.mag_corrected_error` is not an available canonical field.
+- query_forced_photometry#rcid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.provenance.instrument.readout_channel_id` is not an available canonical field.
+- query_forced_photometry#sciinpseeing:
+    reason: incompatible_ontology_unit
+    candidate_meaning: ALeRCE reports science-image seeing/FWHM in arcseconds; current image_metrics.fwhm is pixels and the payload provides no valid conversion context.
+- query_forced_photometry#scibckgnd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.image.science.background` is not an available canonical field.
+- query_forced_photometry#scisigpix:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.image.science.sigma_per_pixel` is not an available canonical field.
+- query_forced_photometry#adpctdif1:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.astrometry.rms.ra` is not an available canonical field.
+- query_forced_photometry#adpctdif2:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `detection@ztf:alerce.astrometry.rms.dec` is not an available canonical field.
+- query_magstats#stellar:
+    reason: unsupported_semantic_concept
+    candidate_meaning: ALeRCE indicator that the object is likely stellar-like; representing it as a transient class would change its meaning.
+- query_magstats#corrected:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Whether ALeRCE correction processing applies to the object summary; the ontology has correction state for measurements but no equivalent object-summary assertion.
+- query_magstats#ndet:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.detection_count` is not an available canonical field.
+- query_magstats#ndubious:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.dubious_count` is not an available canonical field.
+- query_magstats#magmean:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.mean_magnitude` is not an available canonical field.
+- query_magstats#magmedian:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.median_magnitude` is not an available canonical field.
+- query_magstats#magmax:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.max_magnitude` is not an available canonical field.
+- query_magstats#magmin:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.min_magnitude` is not an available canonical field.
+- query_magstats#magsigma:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.magnitude_stddev` is not an available canonical field.
+- query_magstats#maglast:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.last_magnitude` is not an available canonical field.
+- query_magstats#magfirst:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.first_magnitude` is not an available canonical field.
+- query_magstats#firstmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.first_mjd` is not an available canonical field.
+- query_magstats#lastmjd:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.photometry.{filter}.statistics.last_mjd` is not an available canonical field.
+- query_features#name:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.features.{name}` is not an available canonical field.
+- query_features#value:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.features.{name}.value` is not an available canonical field.
+- query_features#fid:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.features.{name}.filter_id` is not an available canonical field.
+- query_features#version:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `summary@ztf:alerce.features.{name}.version` is not an available canonical field.
+- get_stamps#[0]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `data_product@ztf:alerce.cutout.science` is not an available canonical field.
+- get_stamps#[1]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `data_product@ztf:alerce.cutout.template` is not an available canonical field.
+- get_stamps#[2]:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `data_product@ztf:alerce.cutout.difference` is not an available canonical field.
+- get_avro#bytes:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider field semantics are not represented by a same-meaning current ontology field; `data_product@ztf:alerce.avro.bytes` is not an available canonical field.
+- query_lightcurve.detections#candid_alert:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE alert-candidate identifier carried only by the light-curve detection response; no distinct same-meaning canonical identity field is established.
+- query_magstats#step_id_corr:
+    reason: provider_native_processing_identifier
+    candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.

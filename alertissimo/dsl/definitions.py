@@ -40,7 +40,7 @@ from alertissimo.core.schema import (
     Source,
 )
 
-from alertissimo.core.brokers.registry.load import ALL_BROKERS
+from alertissimo.data_layer.runtime.load import ALL_BROKERS
 
 
 # ============================================================================
@@ -320,7 +320,7 @@ def validate_step_against_capabilities(step: ExecutableModel) -> List[str]:
         return errors
     
     # Import here to avoid circular imports
-    from alertissimo.core.brokers.registry.load import BROKER_REGISTRY
+    from alertissimo.data_layer.runtime.load import BROKER_REGISTRY
     
     for source in sources:
         broker_name = source.broker

@@ -1,0 +1,709 @@
+broker: antares
+origin: lsst
+payloads:
+  locus:
+    endpoint: get_by_lsst_dia_object_id
+    path: .
+  locus_by_id:
+    endpoint: get_by_id
+    path: .
+  search_loci:
+    endpoint: search
+    path: '[]'
+  cone_loci:
+    endpoint: cone_search
+    path: '[]'
+  locus_alerts:
+    endpoint: get_by_lsst_dia_object_id
+    path: alerts[]
+  locus_catalog_allwise:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.allwise[]
+  locus_catalog_bright:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.bright_guide_star_cat[]
+  locus_catalog_gaia:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.gaia_dr3_gaia_source[]
+  locus_catalog_gaia_variability:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.gaia_dr3_variability[]
+  locus_catalog_milliquas:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.milliquas[]
+  locus_catalog_ned:
+    endpoint: get_by_lsst_dia_object_id
+    path: catalog_objects.ned[]
+mappings:
+  summary@lsst:antares.identity.object_id:
+  - locus#properties.survey.lsst.dia_object_id.0
+  - locus_by_id#properties.survey.lsst.dia_object_id.0
+  - search_loci#properties.survey.lsst.dia_object_id.0
+  - cone_loci#properties.survey.lsst.dia_object_id.0
+  - locus_alerts#properties.lsst_diaObject_diaObjectId
+  summary@lsst:antares.identity.antares_locus_id:
+  - locus#locus_id
+  - locus_by_id#locus_id
+  - search_loci#locus_id
+  - cone_loci#locus_id
+  summary@lsst:antares.position.ra:
+  - locus#ra
+  - locus_by_id#ra
+  - search_loci#ra
+  - cone_loci#ra
+  - locus_alerts#properties.lsst_diaObject_ra
+  summary@lsst:antares.position.dec:
+  - locus#dec
+  - locus_by_id#dec
+  - search_loci#dec
+  - cone_loci#dec
+  - locus_alerts#properties.lsst_diaObject_dec
+  detection@lsst:antares.identity.alert_id:
+  - locus_alerts#alert_id
+  detection@lsst:antares.identity.source_id:
+  - locus_alerts#properties.lsst_diaSource_diaSourceId
+  detection@lsst:antares.identity.object_id:
+  - locus_alerts#properties.lsst_diaSource_diaObjectId
+  detection@lsst:antares.identity.visit_id:
+  - locus_alerts#properties.lsst_diaSource_visit
+  detection@lsst:antares.identity.detector_id:
+  - locus_alerts#properties.lsst_diaSource_detector
+  detection@lsst:antares.time.mjd:
+  - locus_alerts#properties.lsst_diaSource_midpointMjdTai
+  detection@lsst:antares.time.processed_mjd:
+  - locus_alerts#properties.lsst_diaSource_timeProcessedMjdTai
+  detection@lsst:antares.photometry.{filter}:
+  - locus_alerts#properties.lsst_diaSource_band
+  detection@lsst:antares.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  detection@lsst:antares.photometry.{filter}.psf.mag.error:
+  - locus_alerts#properties.ant_magerr
+  detection@lsst:antares.position.ra:
+  - locus_alerts#properties.lsst_diaSource_ra
+  detection@lsst:antares.position.dec:
+  - locus_alerts#properties.lsst_diaSource_dec
+  detection@lsst:antares.position.ra_error:
+  - locus_alerts#properties.lsst_diaSource_raErr
+  detection@lsst:antares.position.dec_error:
+  - locus_alerts#properties.lsst_diaSource_decErr
+  detection@lsst:antares.position.ra_dec_covariance:
+  - locus_alerts#properties.lsst_diaSource_ra_dec_Cov
+  detection@lsst:antares.position.image_x:
+  - locus_alerts#properties.lsst_diaSource_x
+  detection@lsst:antares.position.image_y:
+  - locus_alerts#properties.lsst_diaSource_y
+  detection@lsst:antares.position.image_x_error:
+  - locus_alerts#properties.lsst_diaSource_xErr
+  detection@lsst:antares.position.image_y_error:
+  - locus_alerts#properties.lsst_diaSource_yErr
+  detection@lsst:antares.quality.reliability:
+  - locus_alerts#properties.lsst_diaSource_reliability
+  detection@lsst:antares.quality.reliability.version:
+  - locus_alerts#properties.lsst_diaSource_reliabilityVersion
+  detection@lsst:antares.quality.signal_to_noise:
+  - locus_alerts#properties.lsst_diaSource_snr
+  detection@lsst:antares.photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_psfFlux
+  detection@lsst:antares.photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_psfFluxErr
+  detection@lsst:antares.photometry.{filter}.psf.fit_chi2:
+  - locus_alerts#properties.lsst_diaSource_psfChi2
+  detection@lsst:antares.photometry.{filter}.psf.fit_ndata:
+  - locus_alerts#properties.lsst_diaSource_psfNdata
+  detection@lsst:antares.photometry.{filter}.psf.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag
+  detection@lsst:antares.photometry.{filter}.psf.flags.edge:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_edge
+  detection@lsst:antares.photometry.{filter}.psf.flags.no_good_pixels:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_noGoodPixels
+  detection@lsst:antares.photometry.{filter}.aperture.flux:
+  - locus_alerts#properties.lsst_diaSource_apFlux
+  detection@lsst:antares.photometry.{filter}.aperture.flux.error:
+  - locus_alerts#properties.lsst_diaSource_apFluxErr
+  detection@lsst:antares.photometry.{filter}.aperture.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag
+  detection@lsst:antares.photometry.{filter}.aperture.flags.aperture_truncated:
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
+  detection@lsst:antares.solar_system.identity.object_id:
+  - locus_alerts#properties.lsst_diaSource_ssObjectId
+  detection@lsst:antares.forced_photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_scienceFlux
+  detection@lsst:antares.forced_photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_scienceFluxErr
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.edge:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag_edge
+  detection@lsst:antares.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - locus_alerts#properties.lsst_diaSource_forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:antares.reference_image.forced_photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_templateFlux
+  detection@lsst:antares.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_templateFluxErr
+  detection@lsst:antares.image_metrics.bbox_size:
+  - locus_alerts#properties.lsst_diaSource_bboxSize
+  detection@lsst:antares.image_metrics.centroid_flag:
+  - locus_alerts#properties.lsst_diaSource_centroid_flag
+  detection@lsst:antares.image_metrics.extendedness:
+  - locus_alerts#properties.lsst_diaSource_extendedness
+  detection@lsst:antares.image_metrics.shape.ixx:
+  - locus_alerts#properties.lsst_diaSource_ixx
+  detection@lsst:antares.image_metrics.shape.iyy:
+  - locus_alerts#properties.lsst_diaSource_iyy
+  detection@lsst:antares.image_metrics.shape.ixy:
+  - locus_alerts#properties.lsst_diaSource_ixy
+  detection@lsst:antares.image_metrics.shape.psf_ixx:
+  - locus_alerts#properties.lsst_diaSource_ixxPSF
+  detection@lsst:antares.image_metrics.shape.psf_iyy:
+  - locus_alerts#properties.lsst_diaSource_iyyPSF
+  detection@lsst:antares.image_metrics.shape.psf_ixy:
+  - locus_alerts#properties.lsst_diaSource_ixyPSF
+  detection@lsst:antares.image_metrics.shape.flag:
+  - locus_alerts#properties.lsst_diaSource_shape_flag
+  detection@lsst:antares.image_metrics.shape.flag_no_pixels:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_no_pixels
+  detection@lsst:antares.image_metrics.shape.flag_not_contained:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_not_contained
+  detection@lsst:antares.image_metrics.shape.flag_parent_source:
+  - locus_alerts#properties.lsst_diaSource_shape_flag_parent_source
+  detection@lsst:antares.image_metrics.pixel_flags.any:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags
+  detection@lsst:antares.image_metrics.pixel_flags.bad:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_bad
+  detection@lsst:antares.image_metrics.pixel_flags.cosmic_ray:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_cr
+  detection@lsst:antares.image_metrics.pixel_flags.cosmic_ray_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_crCenter
+  detection@lsst:antares.image_metrics.pixel_flags.edge:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_edge
+  detection@lsst:antares.image_metrics.pixel_flags.injected:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected
+  detection@lsst:antares.image_metrics.pixel_flags.injected_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injectedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.injected_template:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected_template
+  detection@lsst:antares.image_metrics.pixel_flags.injected_template_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_injected_templateCenter
+  detection@lsst:antares.image_metrics.pixel_flags.interpolated:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_interpolated
+  detection@lsst:antares.image_metrics.pixel_flags.interpolated_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_interpolatedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.no_data:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_nodata
+  detection@lsst:antares.image_metrics.pixel_flags.no_data_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_nodataCenter
+  detection@lsst:antares.image_metrics.pixel_flags.off_image:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_offimage
+  detection@lsst:antares.image_metrics.pixel_flags.saturated:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_saturated
+  detection@lsst:antares.image_metrics.pixel_flags.saturated_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_saturatedCenter
+  detection@lsst:antares.image_metrics.pixel_flags.streak:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_streak
+  detection@lsst:antares.image_metrics.pixel_flags.streak_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_streakCenter
+  detection@lsst:antares.image_metrics.pixel_flags.suspect:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_suspect
+  detection@lsst:antares.image_metrics.pixel_flags.suspect_center:
+  - locus_alerts#properties.lsst_diaSource_pixelFlags_suspectCenter
+  detection@lsst:antares.image_metrics.dipole.is_dipole:
+  - locus_alerts#properties.lsst_diaSource_isDipole
+  detection@lsst:antares.image_metrics.dipole.fit_attempted:
+  - locus_alerts#properties.lsst_diaSource_dipoleFitAttempted
+  detection@lsst:antares.image_metrics.dipole.ndata:
+  - locus_alerts#properties.lsst_diaSource_dipoleNdata
+  detection@lsst:antares.image_metrics.trail.is_glint:
+  - locus_alerts#properties.lsst_diaSource_glint_trail
+  detection@lsst:antares.image_metrics.trail.algorithm:
+  - locus_alerts#properties.lsst_diaSource_trailAlgorithm
+  detection@lsst:antares.image_metrics.trail.fit_failed:
+  - locus_alerts#properties.lsst_diaSource_trail_flag
+  detection@lsst:antares.image_metrics.trail.angle:
+  - locus_alerts#properties.lsst_diaSource_trailAngle
+  detection@lsst:antares.image_metrics.trail.angle_error:
+  - locus_alerts#properties.lsst_diaSource_trailAngleErr
+  detection@lsst:antares.image_metrics.trail.length:
+  - locus_alerts#properties.lsst_diaSource_trailLength
+  detection@lsst:antares.image_metrics.trail.length_error:
+  - locus_alerts#properties.lsst_diaSource_trailLengthErr
+  detection@lsst:antares.image_metrics.trail.flux:
+  - locus_alerts#properties.lsst_diaSource_trailFlux
+  detection@lsst:antares.image_metrics.trail.flux_error:
+  - locus_alerts#properties.lsst_diaSource_trailFluxErr
+  detection@lsst:antares.image_metrics.trail.ndata:
+  - locus_alerts#properties.lsst_diaSource_trailNdata
+  detection@lsst:antares.image_metrics.trail.ra:
+  - locus_alerts#properties.lsst_diaSource_trailRa
+  detection@lsst:antares.image_metrics.trail.dec:
+  - locus_alerts#properties.lsst_diaSource_trailDec
+  detection@lsst:antares.image_metrics.trail.flag_edge:
+  - locus_alerts#properties.lsst_diaSource_trail_flag_edge
+  detection@lsst:antares.image_metrics.is_positive:
+  - locus_alerts#properties.lsst_diaSource_isNegative
+  crossmatch@allwise:antares.identity.object_id:
+  - locus_catalog_allwise#source_id
+  crossmatch@allwise:antares.position.ra:
+  - locus_catalog_allwise#ra
+  crossmatch@allwise:antares.position.dec:
+  - locus_catalog_allwise#decl
+  crossmatch@gsc:antares.identity.object_id:
+  - locus_catalog_bright#gscID2
+  crossmatch@gsc:antares.position.ra:
+  - locus_catalog_bright#RightAsc_deg
+  crossmatch@gsc:antares.position.dec:
+  - locus_catalog_bright#Declination_deg
+  crossmatch@gaia:antares.identity.object_id:
+  - locus_catalog_gaia#source_id
+  crossmatch@gaia:antares.position.ra:
+  - locus_catalog_gaia#ra
+  crossmatch@gaia:antares.position.dec:
+  - locus_catalog_gaia#dec
+  crossmatch@gaia_variability:antares.identity.object_id:
+  - locus_catalog_gaia_variability#source
+  crossmatch@gaia_variability:antares.position.ra:
+  - locus_catalog_gaia_variability#ra_icrs
+  crossmatch@gaia_variability:antares.position.dec:
+  - locus_catalog_gaia_variability#de_icrs
+  crossmatch@gaia:antares.astrometric_solution.parallax:
+  - locus_catalog_gaia#parallax
+  crossmatch@gaia:antares.astrometric_solution.parallax_error:
+  - locus_catalog_gaia#parallax_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra:
+  - locus_catalog_gaia#pmra
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec:
+  - locus_catalog_gaia#pmdec
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_ra_error:
+  - locus_catalog_gaia#pmra_error
+  crossmatch@gaia:antares.astrometric_solution.proper_motion_dec_error:
+  - locus_catalog_gaia#pmdec_error
+  crossmatch@gaia:antares.astrometric_solution.epoch:
+  - locus_catalog_gaia#ref_epoch
+  crossmatch@gaia:antares.astrometric_solution.ruwe:
+  - locus_catalog_gaia#ruwe
+  crossmatch@gaia:antares.photometry.G.mag:
+  - locus_catalog_gaia#phot_g_mean_mag
+  crossmatch@gaia:antares.photometry.BP.mag:
+  - locus_catalog_gaia#phot_bp_mean_mag
+  crossmatch@gaia:antares.photometry.RP.mag:
+  - locus_catalog_gaia#phot_rp_mean_mag
+  crossmatch@allwise:antares.photometry.W1.mag:
+  - locus_catalog_allwise#w1mpro
+  crossmatch@allwise:antares.photometry.W1.mag.error:
+  - locus_catalog_allwise#w1sigmpro
+  crossmatch@allwise:antares.photometry.W2.mag:
+  - locus_catalog_allwise#w2mpro
+  crossmatch@allwise:antares.photometry.W2.mag.error:
+  - locus_catalog_allwise#w2sigmpro
+  crossmatch@allwise:antares.photometry.W3.mag:
+  - locus_catalog_allwise#w3mpro
+  crossmatch@allwise:antares.photometry.W3.mag.error:
+  - locus_catalog_allwise#w3sigmpro
+  crossmatch@allwise:antares.photometry.W4.mag:
+  - locus_catalog_allwise#w4mpro
+  crossmatch@allwise:antares.photometry.W4.mag.error:
+  - locus_catalog_allwise#w4sigmpro
+  crossmatch@milliquas:antares.identity.object_id:
+  - locus_catalog_milliquas#name
+  crossmatch@milliquas:antares.position.ra:
+  - locus_catalog_milliquas#ra
+  crossmatch@milliquas:antares.position.dec:
+  - locus_catalog_milliquas#dec
+  crossmatch@ned:antares.identity.object_id:
+  - locus_catalog_ned#Object_Name
+  crossmatch@ned:antares.position.ra:
+  - locus_catalog_ned#RA_deg
+  crossmatch@ned:antares.position.dec:
+  - locus_catalog_ned#DEC_deg
+  summary@lsst:antares.time.snapshot_mjd:
+  - locus_alerts#properties.lsst_diaObject_validityStartMjdTai
+  summary@lsst:antares.position.ra_error:
+  - locus_alerts#properties.lsst_diaObject_raErr
+  summary@lsst:antares.position.dec_error:
+  - locus_alerts#properties.lsst_diaObject_decErr
+  summary@lsst:antares.position.ra_dec_covariance:
+  - locus_alerts#properties.lsst_diaObject_ra_dec_Cov
+  summary@lsst:antares.detection_count:
+  - locus_alerts#properties.lsst_diaObject_nDiaSources
+  summary@lsst:antares.photometry.g.psf.flux.error_mean:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxErrMean
+  summary@lsst:antares.photometry.g.psf.flux.maximum:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxMax
+  summary@lsst:antares.photometry.g.psf.flux.maximum_slope:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxMaxSlope
+  summary@lsst:antares.photometry.g.psf.flux.mean:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxMean
+  summary@lsst:antares.photometry.g.psf.flux.mean_error:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxMeanErr
+  summary@lsst:antares.photometry.g.psf.flux.minimum:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxMin
+  summary@lsst:antares.photometry.g.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxNdata
+  summary@lsst:antares.photometry.g.psf.flux.sigma:
+  - locus_alerts#properties.lsst_diaObject_g_psfFluxSigma
+  summary@lsst:antares.photometry.i.psf.flux.error_mean:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxErrMean
+  summary@lsst:antares.photometry.i.psf.flux.maximum:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxMax
+  summary@lsst:antares.photometry.i.psf.flux.maximum_slope:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxMaxSlope
+  summary@lsst:antares.photometry.i.psf.flux.mean:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxMean
+  summary@lsst:antares.photometry.i.psf.flux.mean_error:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxMeanErr
+  summary@lsst:antares.photometry.i.psf.flux.minimum:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxMin
+  summary@lsst:antares.photometry.i.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxNdata
+  summary@lsst:antares.photometry.i.psf.flux.sigma:
+  - locus_alerts#properties.lsst_diaObject_i_psfFluxSigma
+  summary@lsst:antares.photometry.r.psf.flux.error_mean:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxErrMean
+  summary@lsst:antares.photometry.r.psf.flux.maximum:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxMax
+  summary@lsst:antares.photometry.r.psf.flux.maximum_slope:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxMaxSlope
+  summary@lsst:antares.photometry.r.psf.flux.mean:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxMean
+  summary@lsst:antares.photometry.r.psf.flux.mean_error:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxMeanErr
+  summary@lsst:antares.photometry.r.psf.flux.minimum:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxMin
+  summary@lsst:antares.photometry.r.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxNdata
+  summary@lsst:antares.photometry.r.psf.flux.sigma:
+  - locus_alerts#properties.lsst_diaObject_r_psfFluxSigma
+  summary@lsst:antares.photometry.u.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_u_psfFluxNdata
+  summary@lsst:antares.photometry.y.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_y_psfFluxNdata
+  summary@lsst:antares.photometry.z.psf.flux.error_mean:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxErrMean
+  summary@lsst:antares.photometry.z.psf.flux.maximum:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxMax
+  summary@lsst:antares.photometry.z.psf.flux.mean:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxMean
+  summary@lsst:antares.photometry.z.psf.flux.mean_error:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxMeanErr
+  summary@lsst:antares.photometry.z.psf.flux.minimum:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxMin
+  summary@lsst:antares.photometry.z.psf.flux.measurement_count:
+  - locus_alerts#properties.lsst_diaObject_z_psfFluxNdata
+  summary@antares.photometry.i.mag.half_amplitude:
+  - locus#properties.feature_amplitude_magn_i
+  - locus_by_id#properties.feature_amplitude_magn_i
+  - search_loci#properties.feature_amplitude_magn_i
+  - cone_loci#properties.feature_amplitude_magn_i
+  summary@antares.photometry.r.mag.half_amplitude:
+  - locus#properties.feature_amplitude_magn_r
+  - locus_by_id#properties.feature_amplitude_magn_r
+  - search_loci#properties.feature_amplitude_magn_r
+  - cone_loci#properties.feature_amplitude_magn_r
+  summary@antares.photometry.z.mag.half_amplitude:
+  - locus#properties.feature_amplitude_magn_z
+  - locus_by_id#properties.feature_amplitude_magn_z
+  - search_loci#properties.feature_amplitude_magn_z
+  - cone_loci#properties.feature_amplitude_magn_z
+  summary@antares.photometry.i.flux.anderson_darling_normal:
+  - locus#properties.feature_anderson_darling_normal_flux_i
+  - locus_by_id#properties.feature_anderson_darling_normal_flux_i
+  - search_loci#properties.feature_anderson_darling_normal_flux_i
+  - cone_loci#properties.feature_anderson_darling_normal_flux_i
+  summary@antares.photometry.r.flux.anderson_darling_normal:
+  - locus#properties.feature_anderson_darling_normal_flux_r
+  - locus_by_id#properties.feature_anderson_darling_normal_flux_r
+  - search_loci#properties.feature_anderson_darling_normal_flux_r
+  - cone_loci#properties.feature_anderson_darling_normal_flux_r
+  summary@antares.photometry.i.mag.anderson_darling_normal:
+  - locus#properties.feature_anderson_darling_normal_magn_i
+  - locus_by_id#properties.feature_anderson_darling_normal_magn_i
+  - search_loci#properties.feature_anderson_darling_normal_magn_i
+  - cone_loci#properties.feature_anderson_darling_normal_magn_i
+  summary@antares.photometry.r.mag.anderson_darling_normal:
+  - locus#properties.feature_anderson_darling_normal_magn_r
+  - locus_by_id#properties.feature_anderson_darling_normal_magn_r
+  - search_loci#properties.feature_anderson_darling_normal_magn_r
+  - cone_loci#properties.feature_anderson_darling_normal_magn_r
+  summary@antares.photometry.i.mag.beyond_1_std:
+  - locus#properties.feature_beyond_1_std_magn_i
+  - locus_by_id#properties.feature_beyond_1_std_magn_i
+  - search_loci#properties.feature_beyond_1_std_magn_i
+  - cone_loci#properties.feature_beyond_1_std_magn_i
+  summary@antares.photometry.r.mag.beyond_1_std:
+  - locus#properties.feature_beyond_1_std_magn_r
+  - locus_by_id#properties.feature_beyond_1_std_magn_r
+  - search_loci#properties.feature_beyond_1_std_magn_r
+  - cone_loci#properties.feature_beyond_1_std_magn_r
+  summary@antares.photometry.i.mag.beyond_2_std:
+  - locus#properties.feature_beyond_2_std_magn_i
+  - locus_by_id#properties.feature_beyond_2_std_magn_i
+  - search_loci#properties.feature_beyond_2_std_magn_i
+  - cone_loci#properties.feature_beyond_2_std_magn_i
+  summary@antares.photometry.r.mag.beyond_2_std:
+  - locus#properties.feature_beyond_2_std_magn_r
+  - locus_by_id#properties.feature_beyond_2_std_magn_r
+  - search_loci#properties.feature_beyond_2_std_magn_r
+  - cone_loci#properties.feature_beyond_2_std_magn_r
+  summary@antares.photometry.i.flux.chi2:
+  - locus#properties.feature_chi2_flux_i
+  - locus_by_id#properties.feature_chi2_flux_i
+  - search_loci#properties.feature_chi2_flux_i
+  - cone_loci#properties.feature_chi2_flux_i
+  summary@antares.photometry.r.flux.chi2:
+  - locus#properties.feature_chi2_flux_r
+  - locus_by_id#properties.feature_chi2_flux_r
+  - search_loci#properties.feature_chi2_flux_r
+  - cone_loci#properties.feature_chi2_flux_r
+  summary@antares.photometry.i.mag.chi2:
+  - locus#properties.feature_chi2_magn_i
+  - locus_by_id#properties.feature_chi2_magn_i
+  - search_loci#properties.feature_chi2_magn_i
+  - cone_loci#properties.feature_chi2_magn_i
+  summary@antares.photometry.r.mag.chi2:
+  - locus#properties.feature_chi2_magn_r
+  - locus_by_id#properties.feature_chi2_magn_r
+  - search_loci#properties.feature_chi2_magn_r
+  - cone_loci#properties.feature_chi2_magn_r
+  summary@antares.photometry.i.flux.cusum:
+  - locus#properties.feature_cusum_flux_i
+  - locus_by_id#properties.feature_cusum_flux_i
+  - search_loci#properties.feature_cusum_flux_i
+  - cone_loci#properties.feature_cusum_flux_i
+  summary@antares.photometry.r.flux.cusum:
+  - locus#properties.feature_cusum_flux_r
+  - locus_by_id#properties.feature_cusum_flux_r
+  - search_loci#properties.feature_cusum_flux_r
+  - cone_loci#properties.feature_cusum_flux_r
+  summary@antares.photometry.i.mag.cusum:
+  - locus#properties.feature_cusum_magn_i
+  - locus_by_id#properties.feature_cusum_magn_i
+  - search_loci#properties.feature_cusum_magn_i
+  - cone_loci#properties.feature_cusum_magn_i
+  summary@antares.photometry.r.mag.cusum:
+  - locus#properties.feature_cusum_magn_r
+  - locus_by_id#properties.feature_cusum_magn_r
+  - search_loci#properties.feature_cusum_magn_r
+  - cone_loci#properties.feature_cusum_magn_r
+  summary@antares.photometry.i.mag.duration:
+  - locus#properties.feature_duration_magn_i
+  - locus_by_id#properties.feature_duration_magn_i
+  - search_loci#properties.feature_duration_magn_i
+  - cone_loci#properties.feature_duration_magn_i
+  summary@antares.photometry.r.mag.duration:
+  - locus#properties.feature_duration_magn_r
+  - locus_by_id#properties.feature_duration_magn_r
+  - search_loci#properties.feature_duration_magn_r
+  - cone_loci#properties.feature_duration_magn_r
+  summary@antares.photometry.z.mag.duration:
+  - locus#properties.feature_duration_magn_z
+  - locus_by_id#properties.feature_duration_magn_z
+  - search_loci#properties.feature_duration_magn_z
+  - cone_loci#properties.feature_duration_magn_z
+  summary@antares.photometry.i.flux.eta_e:
+  - locus#properties.feature_eta_e_flux_i
+  - locus_by_id#properties.feature_eta_e_flux_i
+  - search_loci#properties.feature_eta_e_flux_i
+  - cone_loci#properties.feature_eta_e_flux_i
+  summary@antares.photometry.r.flux.eta_e:
+  - locus#properties.feature_eta_e_flux_r
+  - locus_by_id#properties.feature_eta_e_flux_r
+  - search_loci#properties.feature_eta_e_flux_r
+  - cone_loci#properties.feature_eta_e_flux_r
+  summary@antares.photometry.i.mag.eta_e:
+  - locus#properties.feature_eta_e_magn_i
+  - locus_by_id#properties.feature_eta_e_magn_i
+  - search_loci#properties.feature_eta_e_magn_i
+  - cone_loci#properties.feature_eta_e_magn_i
+  summary@antares.photometry.r.mag.eta_e:
+  - locus#properties.feature_eta_e_magn_r
+  - locus_by_id#properties.feature_eta_e_magn_r
+  - search_loci#properties.feature_eta_e_magn_r
+  - cone_loci#properties.feature_eta_e_magn_r
+  summary@antares.photometry.i.flux.excess_kurtosis:
+  - locus#properties.feature_kurtosis_flux_i
+  - locus_by_id#properties.feature_kurtosis_flux_i
+  - search_loci#properties.feature_kurtosis_flux_i
+  - cone_loci#properties.feature_kurtosis_flux_i
+  summary@antares.photometry.r.flux.excess_kurtosis:
+  - locus#properties.feature_kurtosis_flux_r
+  - locus_by_id#properties.feature_kurtosis_flux_r
+  - search_loci#properties.feature_kurtosis_flux_r
+  - cone_loci#properties.feature_kurtosis_flux_r
+  summary@antares.photometry.i.mag.excess_kurtosis:
+  - locus#properties.feature_kurtosis_magn_i
+  - locus_by_id#properties.feature_kurtosis_magn_i
+  - search_loci#properties.feature_kurtosis_magn_i
+  - cone_loci#properties.feature_kurtosis_magn_i
+  summary@antares.photometry.r.mag.excess_kurtosis:
+  - locus#properties.feature_kurtosis_magn_r
+  - locus_by_id#properties.feature_kurtosis_magn_r
+  - search_loci#properties.feature_kurtosis_magn_r
+  - cone_loci#properties.feature_kurtosis_magn_r
+  summary@antares.photometry.i.mag.linear_fit_reduced_chi2:
+  - locus#properties.feature_linear_fit_reduced_chi2_magn_i
+  - locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_i
+  - search_loci#properties.feature_linear_fit_reduced_chi2_magn_i
+  - cone_loci#properties.feature_linear_fit_reduced_chi2_magn_i
+  summary@antares.photometry.r.mag.linear_fit_reduced_chi2:
+  - locus#properties.feature_linear_fit_reduced_chi2_magn_r
+  - locus_by_id#properties.feature_linear_fit_reduced_chi2_magn_r
+  - search_loci#properties.feature_linear_fit_reduced_chi2_magn_r
+  - cone_loci#properties.feature_linear_fit_reduced_chi2_magn_r
+  summary@antares.photometry.i.mag.linear_fit_slope:
+  - locus#properties.feature_linear_fit_slope_magn_i
+  - locus_by_id#properties.feature_linear_fit_slope_magn_i
+  - search_loci#properties.feature_linear_fit_slope_magn_i
+  - cone_loci#properties.feature_linear_fit_slope_magn_i
+  summary@antares.photometry.r.mag.linear_fit_slope:
+  - locus#properties.feature_linear_fit_slope_magn_r
+  - locus_by_id#properties.feature_linear_fit_slope_magn_r
+  - search_loci#properties.feature_linear_fit_slope_magn_r
+  - cone_loci#properties.feature_linear_fit_slope_magn_r
+  summary@antares.photometry.i.mag.maximum_slope:
+  - locus#properties.feature_maximum_slope_magn_i
+  - locus_by_id#properties.feature_maximum_slope_magn_i
+  - search_loci#properties.feature_maximum_slope_magn_i
+  - cone_loci#properties.feature_maximum_slope_magn_i
+  summary@antares.photometry.r.mag.maximum_slope:
+  - locus#properties.feature_maximum_slope_magn_r
+  - locus_by_id#properties.feature_maximum_slope_magn_r
+  - search_loci#properties.feature_maximum_slope_magn_r
+  - cone_loci#properties.feature_maximum_slope_magn_r
+  summary@antares.photometry.i.mag.mean:
+  - locus#properties.feature_mean_magn_i
+  - locus_by_id#properties.feature_mean_magn_i
+  - search_loci#properties.feature_mean_magn_i
+  - cone_loci#properties.feature_mean_magn_i
+  summary@antares.photometry.r.mag.mean:
+  - locus#properties.feature_mean_magn_r
+  - locus_by_id#properties.feature_mean_magn_r
+  - search_loci#properties.feature_mean_magn_r
+  - cone_loci#properties.feature_mean_magn_r
+  summary@antares.photometry.z.mag.mean:
+  - locus#properties.feature_mean_magn_z
+  - locus_by_id#properties.feature_mean_magn_z
+  - search_loci#properties.feature_mean_magn_z
+  - cone_loci#properties.feature_mean_magn_z
+  summary@antares.photometry.i.flux.coefficient_of_variation:
+  - locus#properties.feature_mean_variance_flux_i
+  - locus_by_id#properties.feature_mean_variance_flux_i
+  - search_loci#properties.feature_mean_variance_flux_i
+  - cone_loci#properties.feature_mean_variance_flux_i
+  summary@antares.photometry.r.flux.coefficient_of_variation:
+  - locus#properties.feature_mean_variance_flux_r
+  - locus_by_id#properties.feature_mean_variance_flux_r
+  - search_loci#properties.feature_mean_variance_flux_r
+  - cone_loci#properties.feature_mean_variance_flux_r
+  summary@antares.photometry.i.mag.median_absolute_deviation:
+  - locus#properties.feature_median_absolute_deviation_magn_i
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_i
+  - search_loci#properties.feature_median_absolute_deviation_magn_i
+  - cone_loci#properties.feature_median_absolute_deviation_magn_i
+  summary@antares.photometry.r.mag.median_absolute_deviation:
+  - locus#properties.feature_median_absolute_deviation_magn_r
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_r
+  - search_loci#properties.feature_median_absolute_deviation_magn_r
+  - cone_loci#properties.feature_median_absolute_deviation_magn_r
+  summary@antares.photometry.z.mag.median_absolute_deviation:
+  - locus#properties.feature_median_absolute_deviation_magn_z
+  - locus_by_id#properties.feature_median_absolute_deviation_magn_z
+  - search_loci#properties.feature_median_absolute_deviation_magn_z
+  - cone_loci#properties.feature_median_absolute_deviation_magn_z
+  summary@antares.photometry.i.mag.maximum_deviation_from_median:
+  - locus#properties.feature_percent_amplitude_magn_i
+  - locus_by_id#properties.feature_percent_amplitude_magn_i
+  - search_loci#properties.feature_percent_amplitude_magn_i
+  - cone_loci#properties.feature_percent_amplitude_magn_i
+  summary@antares.photometry.r.mag.maximum_deviation_from_median:
+  - locus#properties.feature_percent_amplitude_magn_r
+  - locus_by_id#properties.feature_percent_amplitude_magn_r
+  - search_loci#properties.feature_percent_amplitude_magn_r
+  - cone_loci#properties.feature_percent_amplitude_magn_r
+  summary@antares.photometry.z.mag.maximum_deviation_from_median:
+  - locus#properties.feature_percent_amplitude_magn_z
+  - locus_by_id#properties.feature_percent_amplitude_magn_z
+  - search_loci#properties.feature_percent_amplitude_magn_z
+  - cone_loci#properties.feature_percent_amplitude_magn_z
+  crossmatch@gaia:antares.color.BP-RP.diff:
+  - locus_catalog_gaia#bp_rp
+  crossmatch@gaia:antares.color.BP-G.diff:
+  - locus_catalog_gaia#bp_g
+  crossmatch@gaia:antares.color.G-RP.diff:
+  - locus_catalog_gaia#g_rp
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_galaxy.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_galaxy
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_quasar.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_quasar
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_star.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_star
+  crossmatch@gaia:antares.position.ra_error:
+  - locus_catalog_gaia#ra_error
+  crossmatch@gaia:antares.position.dec_error:
+  - locus_catalog_gaia#dec_error
+  crossmatch@gaia:antares.photometry.G.flux:
+  - locus_catalog_gaia#phot_g_mean_flux
+  crossmatch@gaia:antares.photometry.G.flux.error:
+  - locus_catalog_gaia#phot_g_mean_flux_error
+  crossmatch@gaia:antares.photometry.BP.flux:
+  - locus_catalog_gaia#phot_bp_mean_flux
+  crossmatch@gaia:antares.photometry.BP.flux.error:
+  - locus_catalog_gaia#phot_bp_mean_flux_error
+  crossmatch@gaia:antares.photometry.RP.flux:
+  - locus_catalog_gaia#phot_rp_mean_flux
+  crossmatch@gaia:antares.photometry.RP.flux.error:
+  - locus_catalog_gaia#phot_rp_mean_flux_error
+  crossmatch@milliquas:antares.redshift.value:
+  - locus_catalog_milliquas#z
+  crossmatch@ned:antares.redshift.value:
+  - locus_catalog_ned#Redshift_1
+  crossmatch@gaia_variability:antares.classification.assessment.gaia_variability.class:
+  - locus_catalog_gaia_variability#class
+  crossmatch@gaia_variability:antares.classification.assessment.gaia_variability.method:
+  - locus_catalog_gaia_variability#classifier
+  crossmatch@milliquas:antares.classification.assessment.catalogue.class:
+  - locus_catalog_milliquas#type
+  crossmatch@ned:antares.classification.assessment.catalogue.class:
+  - locus_catalog_ned#Type
+transforms:
+  detection@lsst:antares.solar_system.identity.object_id:
+    locus_alerts#properties.lsst_diaSource_ssObjectId:
+      type: value_map
+      map: {0: null}
+      skip_null: true
+  detection@lsst:antares.image_metrics.trail.algorithm:
+    locus_alerts#properties.lsst_diaSource_trailAlgorithm:
+      type: value_map
+      map: {1: sdss_shape, 2: hsm_shape}
+      default: null
+      skip_null: true
+  detection@lsst:antares.image_metrics.trail.fit_failed:
+    locus_alerts#properties.lsst_diaSource_trail_flag:
+      type: value_map
+      map: {false: false, true: true}
+      default: null
+      skip_null: true
+  summary@lsst:antares.identity.object_id:
+    locus#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    locus_by_id#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    search_loci#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    cone_loci#properties.survey.lsst.dia_object_id.0:
+      type: to_int
+    locus_alerts#properties.lsst_diaObject_diaObjectId:
+      type: to_int
+  detection@lsst:antares.photometry.{filter}:
+    locus_alerts#properties.lsst_diaSource_band:
+      type: value_map
+      map:
+        g: g
+        r: r
+        i: i
+        z: z
+      default: null
+      skip_null: true
+      note: Strict observed LSST band binding.
+  detection@lsst:antares.image_metrics.is_positive:
+    locus_alerts#properties.lsst_diaSource_isNegative:
+      type: boolean_not
+      note: Invert the authoritative Python boolean only.

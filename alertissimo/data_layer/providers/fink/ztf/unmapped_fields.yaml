@@ -1,0 +1,326 @@
+broker: fink
+origin: ztf
+notes: Explicit debt after the corrective semantic pass; mapped and debt references are disjoint.
+unmapped:
+- anomaly#d:blazar_stats_m0:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- anomaly#d:blazar_stats_m1:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- anomaly#d:blazar_stats_m2:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- anomaly#i:distnr:
+    reason: unit_mismatch
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
+- anomaly#i:distpsnr2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:distpsnr3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:objectidps2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:objectidps3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:sgmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:sgmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:sgscore2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:sgscore3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:simag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:simag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:srmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:srmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:szmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:szmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- anomaly#i:tblid:
+    reason: provider_internal
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
+- conesearch#i:distnr:
+    reason: unit_mismatch
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
+- conesearch#i:tblid:
+    reason: provider_internal
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
+- latests#d:blazar_stats_m0:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- latests#d:blazar_stats_m1:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- latests#d:blazar_stats_m2:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- latests#i:distnr:
+    reason: unit_mismatch
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
+- latests#i:tblid:
+    reason: provider_internal
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
+- objects#d:blazar_stats_m0:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- objects#d:blazar_stats_m1:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state robustness. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- objects#d:blazar_stats_m2:
+    reason: upstream_legacy_semantics
+    note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
+- objects#i:distnr:
+    reason: unit_mismatch
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
+- objects#i:distpsnr2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:distpsnr3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:objectidps2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:objectidps3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:sgmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:sgmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:sgscore2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:sgscore3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:simag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:simag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:srmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:srmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:szmag2:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:szmag3:
+    reason: structural_multiplicity
+    note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
+      with separate ranked identities; rank 1 is mapped and ranks 2/3 require structural support.
+- objects#i:tblid:
+    reason: provider_internal
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
+- resolver#MType:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:declination:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:discoverydate:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:fullname:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:internalname:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:ra:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:redshift:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#d:type:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#i:name:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#i:number:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#i:ssnamenr:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#jdedeg:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#jpos:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#jradeg:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#name:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#nrefs:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#oid:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#oname:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#otype:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#refPos:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- resolver#z:
+    reason: structural_ontology_gap
+    note: Resolver vocabulary exists, but resolver is not a first-level portfolio record;
+      mapping as detection or crossmatch would change semantics.
+- sso#d:blazar_stats_m0:
+    reason: upstream_legacy_semantics
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
+- sso#d:blazar_stats_m1:
+    reason: upstream_legacy_semantics
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
+- sso#d:blazar_stats_m2:
+    reason: upstream_legacy_semantics
+    note: The frozen field is a scalar diagnostic, but primary evidence available to this
+      registry does not establish a stable target/range/sentinel contract.
+- sso#d:jd_first_real_det:
+    reason: ontology_gap
+    note: Captured field has no exact, lossless current semantic leaf or established representation
+      contract.
+- sso#d:jdstarthist_dt:
+    reason: ontology_gap
+    note: Captured field has no exact, lossless current semantic leaf or established representation
+      contract.
+- sso#i:distnr:
+    reason: unit_mismatch
+    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
+      is angular arcsec. No lossless generic conversion is represented.
+- sso#i:tblid:
+    reason: provider_internal
+    note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
+- sso#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- latests#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- anomaly#d:Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- sso#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- latests#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- anomaly#d:e_Plx:
+    reason: conditional_presence_required
+    note: Fink HBase compatibility defaults use 0.0 when Gaia DR3 columns are absent; zero
+      is physically possible and requires valid companion-identity gating.
+- statistics#key:time:
+    reason: provider_internal
+    note: HBase cell/row storage timing exposed by the API; not the observing-night semantic
+      snapshot datetime.
+- objects#i:neargaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- anomaly#i:neargaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- objects#i:maggaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.
+- anomaly#i:maggaiabright:
+    reason: structural_selection_multiplicity
+    note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
+      cannot emit an independent same-producer match, and "bright" is not a producer.

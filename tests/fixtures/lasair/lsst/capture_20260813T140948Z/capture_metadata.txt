@@ -1,0 +1,9 @@
+broker=lasair
+survey=lsst
+capture_utc=2026-08-13T14:09:52Z
+script=scripts/evidence/capture_lasair_lsst.sh
+transport=authenticated-rest
+base_url=https://api.lasair.lsst.ac.uk
+primary_object_identifier=313761042336317573
+git_commit=8a70bb1d920c753ae569293cbf90360b7d550538
+git_branch=feature/semantic-registry

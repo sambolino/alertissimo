@@ -1,0 +1,6 @@
+{
+  "resolver": "simbad",
+  "name": "Markarian 2",
+  "nmax": 10,
+  "output-format": "json"
+}

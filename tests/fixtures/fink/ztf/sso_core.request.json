@@ -1,0 +1,8 @@
+{
+  "n_or_d": "8467",
+  "withEphem": false,
+  "withResiduals": false,
+  "withcutouts": false,
+  "columns": "*",
+  "output-format": "json"
+}

@@ -4,12 +4,11 @@ import pytest
 import yaml
 
 
-ROOT = Path(__file__).parents[1] / "alertissimo/core/brokers/registry/alerce"
+ROOT = Path(__file__).parents[1] / "alertissimo/data_layer/providers/alerce"
 ORIGINS = ("lsst", "ztf")
 ROW_PAYLOADS = {
     "query_lightcurve.detections": "detections[]",
     "query_lightcurve.non_detections": "non_detections[]",
-    "query_lightcurve.forced_photometry": "forced_photometry[]",
 }
 
 
@@ -21,12 +20,18 @@ def load(origin, filename):
 def test_payload_shapes_and_semantic_paths(origin):
     document = load(origin, "mappings.yaml")
     payloads = document["payloads"]
-    assert payloads["query_objects"]["path"] == "[]"
+    assert payloads["query_objects"]["path"] == (
+        "items[]" if origin == "ztf" else "[]"
+    )
     assert payloads["query_object"]["path"] == "."
     assert payloads["query_lightcurve"]["path"] == "."
     for payload, path in ROW_PAYLOADS.items():
         assert payloads[payload]["path"] == path
         assert payloads[payload]["endpoint"] == "query_lightcurve"
+    if origin == "lsst":
+        assert payloads["query_lightcurve.forced_photometry"]["path"] == "forced_photometry[]"
+    else:
+        assert "query_lightcurve.forced_photometry" not in payloads
 
     for semantic_path, references in document["mappings"].items():
         assert ".raw." not in semantic_path
@@ -48,7 +53,10 @@ def test_unmapped_is_disjoint_and_excludes_lightcurve_containers(origin):
         "query_lightcurve#forced_photometry",
     } & unmapped_refs
     assert "query_probabilities#ranking" in unmapped_refs
-    assert any("step_id_corr" in ref for ref in unmapped_refs)
+    if origin == "ztf":
+        assert any("step_id_corr" in ref for ref in unmapped_refs)
+    else:
+        assert not any("step_id_corr" in ref for ref in unmapped_refs)
     assert not any("step_id_corr" in ref for ref in mapped_refs)
 
 
@@ -73,3 +81,9 @@ def test_endpoints_remain_physical_contracts(origin):
                 stack.extend(value.values())
             elif isinstance(value, list):
                 stack.extend(value)
+
+
+def test_lsst_query_probabilities_excludes_unsupported_classifier_argument():
+    endpoint = load("lsst", "endpoints.yaml")["endpoints"]["query_probabilities"]
+    assert "classifier" not in endpoint["params"]
+    assert "classifier" not in endpoint["server_filters"]

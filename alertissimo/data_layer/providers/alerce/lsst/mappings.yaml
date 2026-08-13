@@ -1,0 +1,437 @@
+broker: alerce
+origin: lsst
+description: Authoritative semantic mappings for captured ALeRCE 2.3.1 LSST payloads.
+payloads:
+  query_objects:
+    path: '[]'
+    endpoint: query_objects
+    description: Classification-bearing object-search rows; each row emits minimal object identity alongside its independent classifier result.
+  query_object:
+    path: '.'
+    endpoint: query_object
+    description: Single object-summary response.
+  query_detections:
+    path: '[]'
+    endpoint: query_detections
+    description: Detection rows.
+  query_non_detections:
+    path: '[]'
+    endpoint: query_non_detections
+    description: Non-detection rows; the authoritative capture is empty.
+  query_forced_photometry:
+    path: '[]'
+    endpoint: query_forced_photometry
+    description: Forced-photometry rows represented as generic detections.
+  query_lightcurve:
+    path: '.'
+    endpoint: query_lightcurve
+    description: Light-curve bundle container.
+  query_probabilities:
+    path: '[]'
+    endpoint: query_probabilities
+    description: Classifier probability rows.
+  query_lightcurve.detections:
+    path: 'detections[]'
+    endpoint: query_lightcurve
+    description: Detection rows delegated from the light-curve bundle.
+  query_lightcurve.non_detections:
+    path: 'non_detections[]'
+    endpoint: query_lightcurve
+    description: Non-detection rows delegated from the light-curve bundle.
+  query_lightcurve.forced_photometry:
+    path: 'forced_photometry[]'
+    endpoint: query_lightcurve
+    description: Forced-photometry rows delegated from the light-curve bundle.
+mappings:
+  summary@lsst:alerce.identity.object_id:
+  - query_objects#oid
+  - query_object#oid
+  summary@lsst:alerce.position.ra:
+  - query_object#meanra
+  summary@lsst:alerce.position.dec:
+  - query_object#meandec
+  summary@lsst:alerce.position.ra_error:
+  - query_object#sigmara
+  summary@lsst:alerce.position.dec_error:
+  - query_object#sigmadec
+  summary@lsst:alerce.time.first_mjd:
+  - query_object#firstmjd
+  summary@lsst:alerce.time.last_mjd:
+  - query_object#lastmjd
+  summary@lsst:alerce.time.timespan_days:
+  - query_object#deltamjd
+  summary@lsst:alerce.detection_count:
+  - query_object#n_det
+  classification@{producer}:alerce.provenance.producer.name:
+  - query_objects#classifier_name
+  - query_probabilities#classifier_name
+  classification@{producer}:alerce.provenance.producer.version:
+  - query_objects#classifier_version
+  - query_probabilities#classifier_version
+  classification@{producer}:alerce.best.class:
+  - query_objects#class_name
+  classification@{producer}:alerce.best.probability:
+  - query_objects#probability
+  classification@{producer}:alerce.assessment.{output}:
+  - query_probabilities#class_name
+  classification@{producer}:alerce.assessment.{output}.class:
+  - query_probabilities#class_name
+  classification@{producer}:alerce.assessment.{output}.probability:
+  - query_probabilities#probability
+  detection@lsst:alerce.photometry.{filter}:
+  - query_detections#band_name
+  - query_lightcurve.detections#band_name
+  detection@lsst:alerce.identity.object_id:
+  - query_detections#oid
+  - query_lightcurve.detections#oid
+  - query_forced_photometry#oid
+  - query_lightcurve.forced_photometry#oid
+  detection@lsst:alerce.identity.source_id:
+  - query_detections#measurement_id
+  - query_lightcurve.detections#measurement_id
+  - query_forced_photometry#measurement_id
+  - query_lightcurve.forced_photometry#measurement_id
+  detection@lsst:alerce.identity.visit_id:
+  - query_detections#visit
+  - query_lightcurve.detections#visit
+  - query_forced_photometry#visit
+  - query_lightcurve.forced_photometry#visit
+  detection@lsst:alerce.identity.detector_id:
+  - query_detections#detector
+  - query_lightcurve.detections#detector
+  - query_forced_photometry#detector
+  - query_lightcurve.forced_photometry#detector
+  detection@lsst:alerce.time.mjd:
+  - query_detections#mjd
+  - query_lightcurve.detections#mjd
+  - query_forced_photometry#mjd
+  - query_lightcurve.forced_photometry#mjd
+  detection@lsst:alerce.time.processed_mjd:
+  - query_detections#timeProcessedMjdTai
+  - query_lightcurve.detections#timeProcessedMjdTai
+  detection@lsst:alerce.time.invalidated_mjd:
+  - query_detections#timeWithdrawnMjdTai
+  - query_lightcurve.detections#timeWithdrawnMjdTai
+  detection@lsst:alerce.position.ra:
+  - query_detections#ra
+  - query_lightcurve.detections#ra
+  - query_forced_photometry#ra
+  - query_lightcurve.forced_photometry#ra
+  detection@lsst:alerce.position.dec:
+  - query_detections#dec
+  - query_lightcurve.detections#dec
+  - query_forced_photometry#dec
+  - query_lightcurve.forced_photometry#dec
+  detection@lsst:alerce.position.ra_error:
+  - query_detections#raErr
+  - query_lightcurve.detections#raErr
+  detection@lsst:alerce.position.dec_error:
+  - query_detections#decErr
+  - query_lightcurve.detections#decErr
+  detection@lsst:alerce.position.ra_dec_covariance:
+  - query_detections#ra_dec_Cov
+  - query_lightcurve.detections#ra_dec_Cov
+  detection@lsst:alerce.position.image_x:
+  - query_detections#x
+  - query_lightcurve.detections#x
+  detection@lsst:alerce.position.image_y:
+  - query_detections#y
+  - query_lightcurve.detections#y
+  detection@lsst:alerce.position.image_x_error:
+  - query_detections#xErr
+  - query_lightcurve.detections#xErr
+  detection@lsst:alerce.position.image_y_error:
+  - query_detections#yErr
+  - query_lightcurve.detections#yErr
+  detection@lsst:alerce.provenance.producer.name:
+  - query_detections#survey_id
+  - query_lightcurve.detections#survey_id
+  - query_forced_photometry#survey_id
+  - query_lightcurve.forced_photometry#survey_id
+  detection@lsst:alerce.quality.reliability:
+  - query_detections#reliability
+  - query_lightcurve.detections#reliability
+  detection@lsst:alerce.quality.signal_to_noise:
+  - query_detections#snr
+  - query_lightcurve.detections#snr
+  detection@lsst:alerce.photometry.{filter}.psf.flux:
+  - query_detections#psfFlux
+  - query_lightcurve.detections#psfFlux
+  detection@lsst:alerce.photometry.{filter}.psf.flux.error:
+  - query_detections#psfFluxErr
+  - query_lightcurve.detections#psfFluxErr
+  detection@lsst:alerce.photometry.{filter}.psf.fit_chi2:
+  - query_detections#psfChi2
+  - query_lightcurve.detections#psfChi2
+  detection@lsst:alerce.photometry.{filter}.psf.fit_log_likelihood:
+  - query_detections#psfLnL
+  - query_lightcurve.detections#psfLnL
+  detection@lsst:alerce.photometry.{filter}.psf.fit_ndata:
+  - query_detections#psfNdata
+  - query_lightcurve.detections#psfNdata
+  detection@lsst:alerce.photometry.{filter}.psf.flags.failed:
+  - query_detections#psfFlux_flag
+  - query_lightcurve.detections#psfFlux_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.edge:
+  - query_detections#psfFlux_flag_edge
+  - query_lightcurve.detections#psfFlux_flag_edge
+  detection@lsst:alerce.photometry.{filter}.psf.flags.no_good_pixels:
+  - query_detections#psfFlux_flag_noGoodPixels
+  - query_lightcurve.detections#psfFlux_flag_noGoodPixels
+  detection@lsst:alerce.photometry.{filter}.aperture.flux:
+  - query_detections#apFlux
+  - query_lightcurve.detections#apFlux
+  detection@lsst:alerce.photometry.{filter}.aperture.flux.error:
+  - query_detections#apFluxErr
+  - query_lightcurve.detections#apFluxErr
+  detection@lsst:alerce.photometry.{filter}.aperture.flags.failed:
+  - query_detections#apFlux_flag
+  - query_lightcurve.detections#apFlux_flag
+  detection@lsst:alerce.photometry.{filter}.aperture.flags.aperture_truncated:
+  - query_detections#apFlux_flag_apertureTruncated
+  - query_lightcurve.detections#apFlux_flag_apertureTruncated
+  detection@lsst:alerce.image_metrics.bbox_size:
+  - query_detections#bboxSize
+  - query_lightcurve.detections#bboxSize
+  detection@lsst:alerce.image_metrics.centroid_flag:
+  - query_detections#centroid_flag
+  - query_lightcurve.detections#centroid_flag
+  detection@lsst:alerce.image_metrics.extendedness:
+  - query_detections#extendedness
+  - query_lightcurve.detections#extendedness
+  detection@lsst:alerce.image_metrics.shape.ixx:
+  - query_detections#ixx
+  - query_lightcurve.detections#ixx
+  detection@lsst:alerce.image_metrics.shape.iyy:
+  - query_detections#iyy
+  - query_lightcurve.detections#iyy
+  detection@lsst:alerce.image_metrics.shape.ixy:
+  - query_detections#ixy
+  - query_lightcurve.detections#ixy
+  detection@lsst:alerce.image_metrics.shape.psf_ixx:
+  - query_detections#ixxPSF
+  - query_lightcurve.detections#ixxPSF
+  detection@lsst:alerce.image_metrics.shape.psf_iyy:
+  - query_detections#iyyPSF
+  - query_lightcurve.detections#iyyPSF
+  detection@lsst:alerce.image_metrics.shape.psf_ixy:
+  - query_detections#ixyPSF
+  - query_lightcurve.detections#ixyPSF
+  detection@lsst:alerce.image_metrics.shape.flag:
+  - query_detections#shape_flag
+  - query_lightcurve.detections#shape_flag
+  detection@lsst:alerce.image_metrics.shape.flag_no_pixels:
+  - query_detections#shape_flag_no_pixels
+  - query_lightcurve.detections#shape_flag_no_pixels
+  detection@lsst:alerce.image_metrics.shape.flag_not_contained:
+  - query_detections#shape_flag_not_contained
+  - query_lightcurve.detections#shape_flag_not_contained
+  detection@lsst:alerce.image_metrics.shape.flag_parent_source:
+  - query_detections#shape_flag_parent_source
+  - query_lightcurve.detections#shape_flag_parent_source
+  detection@lsst:alerce.image_metrics.pixel_flags.any:
+  - query_detections#pixelFlags
+  - query_lightcurve.detections#pixelFlags
+  detection@lsst:alerce.image_metrics.pixel_flags.bad:
+  - query_detections#pixelFlags_bad
+  - query_lightcurve.detections#pixelFlags_bad
+  detection@lsst:alerce.image_metrics.pixel_flags.cosmic_ray:
+  - query_detections#pixelFlags_cr
+  - query_lightcurve.detections#pixelFlags_cr
+  detection@lsst:alerce.image_metrics.pixel_flags.cosmic_ray_center:
+  - query_detections#pixelFlags_crCenter
+  - query_lightcurve.detections#pixelFlags_crCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.edge:
+  - query_detections#pixelFlags_edge
+  - query_lightcurve.detections#pixelFlags_edge
+  detection@lsst:alerce.image_metrics.pixel_flags.injected:
+  - query_detections#pixelFlags_injected
+  - query_lightcurve.detections#pixelFlags_injected
+  detection@lsst:alerce.image_metrics.pixel_flags.injected_center:
+  - query_detections#pixelFlags_injectedCenter
+  - query_lightcurve.detections#pixelFlags_injectedCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.injected_template:
+  - query_detections#pixelFlags_injected_template
+  - query_lightcurve.detections#pixelFlags_injected_template
+  detection@lsst:alerce.image_metrics.pixel_flags.injected_template_center:
+  - query_detections#pixelFlags_injected_templateCenter
+  - query_lightcurve.detections#pixelFlags_injected_templateCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.interpolated:
+  - query_detections#pixelFlags_interpolated
+  - query_lightcurve.detections#pixelFlags_interpolated
+  detection@lsst:alerce.image_metrics.pixel_flags.interpolated_center:
+  - query_detections#pixelFlags_interpolatedCenter
+  - query_lightcurve.detections#pixelFlags_interpolatedCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.no_data:
+  - query_detections#pixelFlags_nodata
+  - query_lightcurve.detections#pixelFlags_nodata
+  detection@lsst:alerce.image_metrics.pixel_flags.no_data_center:
+  - query_detections#pixelFlags_nodataCenter
+  - query_lightcurve.detections#pixelFlags_nodataCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.off_image:
+  - query_detections#pixelFlags_offimage
+  - query_lightcurve.detections#pixelFlags_offimage
+  detection@lsst:alerce.image_metrics.pixel_flags.saturated:
+  - query_detections#pixelFlags_saturated
+  - query_lightcurve.detections#pixelFlags_saturated
+  detection@lsst:alerce.image_metrics.pixel_flags.saturated_center:
+  - query_detections#pixelFlags_saturatedCenter
+  - query_lightcurve.detections#pixelFlags_saturatedCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.streak:
+  - query_detections#pixelFlags_streak
+  - query_lightcurve.detections#pixelFlags_streak
+  detection@lsst:alerce.image_metrics.pixel_flags.streak_center:
+  - query_detections#pixelFlags_streakCenter
+  - query_lightcurve.detections#pixelFlags_streakCenter
+  detection@lsst:alerce.image_metrics.pixel_flags.suspect:
+  - query_detections#pixelFlags_suspect
+  - query_lightcurve.detections#pixelFlags_suspect
+  detection@lsst:alerce.image_metrics.pixel_flags.suspect_center:
+  - query_detections#pixelFlags_suspectCenter
+  - query_lightcurve.detections#pixelFlags_suspectCenter
+  detection@lsst:alerce.image_metrics.dipole.is_dipole:
+  - query_detections#isDipole
+  - query_lightcurve.detections#isDipole
+  detection@lsst:alerce.image_metrics.dipole.fit_attempted:
+  - query_detections#dipoleFitAttempted
+  - query_lightcurve.detections#dipoleFitAttempted
+  detection@lsst:alerce.image_metrics.dipole.angle:
+  - query_detections#dipoleAngle
+  - query_lightcurve.detections#dipoleAngle
+  detection@lsst:alerce.image_metrics.dipole.chi2:
+  - query_detections#dipoleChi2
+  - query_lightcurve.detections#dipoleChi2
+  detection@lsst:alerce.image_metrics.dipole.flux_difference:
+  - query_detections#dipoleFluxDiff
+  - query_lightcurve.detections#dipoleFluxDiff
+  detection@lsst:alerce.image_metrics.dipole.flux_difference_error:
+  - query_detections#dipoleFluxDiffErr
+  - query_lightcurve.detections#dipoleFluxDiffErr
+  detection@lsst:alerce.image_metrics.dipole.length:
+  - query_detections#dipoleLength
+  - query_lightcurve.detections#dipoleLength
+  detection@lsst:alerce.image_metrics.dipole.mean_flux:
+  - query_detections#dipoleMeanFlux
+  - query_lightcurve.detections#dipoleMeanFlux
+  detection@lsst:alerce.image_metrics.dipole.mean_flux_error:
+  - query_detections#dipoleMeanFluxErr
+  - query_lightcurve.detections#dipoleMeanFluxErr
+  detection@lsst:alerce.image_metrics.dipole.ndata:
+  - query_detections#dipoleNdata
+  - query_lightcurve.detections#dipoleNdata
+  detection@lsst:alerce.image_metrics.trail.is_glint:
+  - query_detections#glint_trail
+  - query_lightcurve.detections#glint_trail
+  detection@lsst:alerce.image_metrics.trail.angle:
+  - query_detections#trailAngle
+  - query_lightcurve.detections#trailAngle
+  detection@lsst:alerce.image_metrics.trail.angle_error:
+  - query_detections#trailAngleErr
+  - query_lightcurve.detections#trailAngleErr
+  detection@lsst:alerce.image_metrics.trail.chi2:
+  - query_detections#trailChi2
+  - query_lightcurve.detections#trailChi2
+  detection@lsst:alerce.image_metrics.trail.length:
+  - query_detections#trailLength
+  - query_lightcurve.detections#trailLength
+  detection@lsst:alerce.image_metrics.trail.length_error:
+  - query_detections#trailLengthErr
+  - query_lightcurve.detections#trailLengthErr
+  detection@lsst:alerce.image_metrics.trail.flux:
+  - query_detections#trailFlux
+  - query_lightcurve.detections#trailFlux
+  detection@lsst:alerce.image_metrics.trail.flux_error:
+  - query_detections#trailFluxErr
+  - query_lightcurve.detections#trailFluxErr
+  detection@lsst:alerce.image_metrics.trail.ndata:
+  - query_detections#trailNdata
+  - query_lightcurve.detections#trailNdata
+  detection@lsst:alerce.image_metrics.trail.ra:
+  - query_detections#trailRa
+  - query_lightcurve.detections#trailRa
+  detection@lsst:alerce.solar_system.identity.object_id:
+  - query_detections#ssObjectId
+  - query_lightcurve.detections#ssObjectId
+  detection@lsst:alerce.image_metrics.trail.ra_error:
+  - query_detections#trailRaErr
+  - query_lightcurve.detections#trailRaErr
+  detection@lsst:alerce.image_metrics.trail.dec:
+  - query_detections#trailDec
+  - query_lightcurve.detections#trailDec
+  detection@lsst:alerce.image_metrics.trail.dec_error:
+  - query_detections#trailDecErr
+  - query_lightcurve.detections#trailDecErr
+  detection@lsst:alerce.image_metrics.trail.flag_edge:
+  - query_detections#trail_flag_edge
+  - query_lightcurve.detections#trail_flag_edge
+  detection@lsst:alerce.image_metrics.is_positive:
+  - query_detections#isNegative
+  - query_lightcurve.detections#isNegative
+  detection@lsst:alerce.forced_photometry.{filter}:
+  - query_detections#band_name
+  - query_lightcurve.detections#band_name
+  - query_forced_photometry#band_name
+  - query_lightcurve.forced_photometry#band_name
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flux:
+  - query_detections#scienceFlux
+  - query_lightcurve.detections#scienceFlux
+  - query_forced_photometry#psfFlux
+  - query_lightcurve.forced_photometry#psfFlux
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flux.error:
+  - query_detections#scienceFluxErr
+  - query_lightcurve.detections#scienceFluxErr
+  - query_forced_photometry#psfFluxErr
+  - query_lightcurve.forced_photometry#psfFluxErr
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.failed:
+  - query_detections#forced_PsfFlux_flag
+  - query_lightcurve.detections#forced_PsfFlux_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.edge:
+  - query_detections#forced_PsfFlux_flag_edge
+  - query_lightcurve.detections#forced_PsfFlux_flag_edge
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - query_detections#forced_PsfFlux_flag_noGoodPixels
+  - query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:alerce.reference_image.forced_photometry.{filter}.psf.flux:
+  - query_detections#templateFlux
+  - query_lightcurve.detections#templateFlux
+  detection@lsst:alerce.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - query_detections#templateFluxErr
+  - query_lightcurve.detections#templateFluxErr
+transforms:
+  detection@lsst:alerce.solar_system.identity.object_id:
+    query_detections#ssObjectId: &optional_ss_object_id
+      type: value_map
+      map: {0: null}
+      skip_null: true
+    query_lightcurve.detections#ssObjectId: *optional_ss_object_id
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.failed:
+    query_detections#forced_PsfFlux_flag: &strict_forced_psf_flag
+      type: value_map
+      map: {0: false, 1: true}
+      default: null
+      skip_null: true
+    query_lightcurve.detections#forced_PsfFlux_flag: *strict_forced_psf_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.edge:
+    query_detections#forced_PsfFlux_flag_edge: *strict_forced_psf_flag
+    query_lightcurve.detections#forced_PsfFlux_flag_edge: *strict_forced_psf_flag
+  detection@lsst:alerce.forced_photometry.{filter}.psf.flags.no_good_pixels:
+    query_detections#forced_PsfFlux_flag_noGoodPixels: *strict_forced_psf_flag
+    query_lightcurve.detections#forced_PsfFlux_flag_noGoodPixels: *strict_forced_psf_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.failed:
+    query_detections#psfFlux_flag: &strict_psf_flag
+      type: value_map
+      map: {0: false, 1: true}
+      default: null
+      skip_null: true
+    query_lightcurve.detections#psfFlux_flag: *strict_psf_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.edge:
+    query_detections#psfFlux_flag_edge: *strict_psf_flag
+    query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
+  detection@lsst:alerce.photometry.{filter}.psf.flags.no_good_pixels:
+    query_detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
+    query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
+  detection@lsst:alerce.image_metrics.is_positive:
+    query_detections#isNegative:
+      type: boolean_not
+    query_lightcurve.detections#isNegative:
+      type: boolean_not

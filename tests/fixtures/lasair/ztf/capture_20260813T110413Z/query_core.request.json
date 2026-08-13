@@ -1,0 +1,7 @@
+{
+  "selected": "objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax",
+  "tables": "objects",
+  "conditions": "objects.objectId='ZTF20acpwljl'",
+  "limit": 10,
+  "offset": 0
+}

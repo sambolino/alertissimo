@@ -1,0 +1,45 @@
+# Audit-only bookkeeping for the captured secondary lightcurve fixture.
+# This namespace is deliberately absent from the production payload registry.
+lightcurve_secondary:
+  time:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  alert_id:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_mjd:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_survey:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_ra:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_dec:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_passband:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_mag:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_magerr:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_maglim:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_mag_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_magerr_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_magulim_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history
+  ant_magllim_corrected:
+    reason: secondary_duplicate_representation
+    candidate_meaning: secondary/duplicate representation of authoritative Alert history

@@ -1,0 +1,22 @@
+[
+  {
+    "objectId": "ZTF20acpwljl",
+    "candidates": [
+      {
+        "candid": 1,
+        "fid": 1,
+        "jd": 2459000.5,
+        "ra": 124.88,
+        "dec": -6.02,
+        "magpsf": 18.2,
+        "sigmapsf": 0.1,
+        "magnr": 19.1,
+        "sigmagnr": 0.2,
+        "magzpsci": 26.1,
+        "isdiffpos": "t",
+        "drb": 0.99,
+        "programid": 1
+      }
+    ]
+  }
+]

@@ -1,0 +1,102 @@
+{
+  "calls": {
+    "query_detections": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[1044]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_detections.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[1044]",
+      "status": "ok"
+    },
+    "query_features": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[3290]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_features.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[3290]",
+      "status": "ok"
+    },
+    "query_forced_photometry": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[286]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_forced_photometry.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[286]",
+      "status": "ok"
+    },
+    "query_lightcurve": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "dict keys=['detections', 'non_detections']",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_lightcurve.json",
+      "object": "ZTF18abbuksn",
+      "shape": "dict keys=['detections', 'non_detections']",
+      "status": "ok"
+    },
+    "query_magstats": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[2]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_magstats.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[2]",
+      "status": "ok"
+    },
+    "query_non_detections": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[319]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_non_detections.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[319]",
+      "status": "ok"
+    },
+    "query_probabilities": {
+      "attempts": [
+        {
+          "oid": "ZTF18abbuksn",
+          "shape": "list[344]",
+          "status": "ok"
+        }
+      ],
+      "fixture": "query_probabilities.json",
+      "object": "ZTF18abbuksn",
+      "shape": "list[344]",
+      "status": "ok"
+    }
+  },
+  "captured_at": "2026-08-11T21:16:53.473784+00:00",
+  "client": "alerce.core.Alerce",
+  "client_package": "alerce",
+  "client_version": "2.3.1",
+  "format": "json",
+  "http_timeout_seconds": 20,
+  "survey": "ztf"
+}

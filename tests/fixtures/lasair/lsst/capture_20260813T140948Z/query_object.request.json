@@ -1,0 +1,7 @@
+{
+  "selected": "diaObjectId",
+  "tables": "objects",
+  "conditions": "diaObjectId=313761042336317573",
+  "limit": 10,
+  "offset": 0
+}

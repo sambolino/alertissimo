@@ -1,0 +1,193 @@
+broker: lasair
+origin: ztf
+baseurl: https://lasair-ztf.lsst.ac.uk
+
+endpoints:
+  object:
+    path: /api/object/
+    method: POST
+    description: Retrieve one ZTF object and its optional Lasair context.
+    headers: &token_header
+      Authorization:
+        required: true
+        type: string
+        description: Lasair API token, formatted as 'Token <token>'.
+    params:
+      objectId:
+        required: true
+        type: string
+        description: ZTF objectId.
+      lasair_added:
+        required: false
+        type: boolean
+        default: true
+        description: Include Lasair-added context such as Sherlock, TNS, and image URLs.
+      lite:
+        required: false
+        type: boolean
+        description: Optional Lasair response-mode flag; both true and false are accepted by the observed ZTF endpoint.
+    output: {type: object}
+    operation_types: [object_lookup]
+    server_filters: [objectId, lasair_added, lite]
+    projection: {supports_columns: false}
+
+  objects:
+    path: /api/objects/
+    method: POST
+    description: Retrieve records for multiple ZTF objects.
+    headers: *token_header
+    params:
+      objectIds:
+        required: true
+        type: string
+        description: Comma-separated ZTF objectIds.
+    output: {type: array}
+    operation_types: [object_lookup]
+    server_filters: [objectIds]
+    projection: {supports_columns: false}
+
+  lightcurves:
+    path: /api/lightcurves/
+    method: POST
+    description: Retrieve candidate light curves for multiple ZTF objects.
+    headers: *token_header
+    params:
+      objectIds:
+        required: true
+        type: string
+        description: Comma-separated ZTF objectIds; at most 50 object IDs are accepted.
+    output: {type: array}
+    operation_types: [lightcurve_lookup]
+    server_filters: [objectIds]
+    projection: {supports_columns: false}
+
+  cone:
+    path: /api/cone/
+    method: POST
+    description: Search ZTF objects around a sky position. The normalized mapping currently targets requestType=all; authoritative evidence also records the object-shaped nearest and count responses.
+    headers: *token_header
+    params:
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
+      radius:
+        required: true
+        type: number
+        unit: arcsec
+        description: Angular cone radius in arcseconds; maximum 1000 arcseconds.
+      requestType:
+        required: true
+        type: string
+        enum: [nearest, all, count]
+        default: all
+        description: 'Cone request type: nearest, all, or count; observed response shape depends on this parameter.'
+    output: {type: array}
+    operation_types: [cone_search]
+    server_filters: [ra, dec, radius, requestType]
+    projection: {supports_columns: false}
+
+  query:
+    path: /api/query/
+    method: POST
+    description: Run a physical SQL-like query over Lasair ZTF tables.
+    headers: *token_header
+    params:
+      selected:
+        required: true
+        type: string
+        description: Comma-separated list of attributes to return.
+      tables:
+        required: true
+        type: string
+        description: Comma-separated or joined Lasair table expression.
+      conditions:
+        required: true
+        type: string
+        description: SQL WHERE criteria without the WHERE keyword.
+      limit:
+        required: false
+        type: integer
+        default: 1000
+        description: Maximum number of records to return.
+      offset:
+        required: false
+        type: integer
+        default: 0
+        description: Offset of the first returned record.
+    output: {type: array}
+    operation_types: [sql_query]
+    server_filters: [selected, tables, conditions, limit, offset]
+    projection: {supports_columns: true, param: selected}
+
+  sherlock_object:
+    path: /api/sherlock/object/
+    method: POST
+    description: Retrieve Sherlock context for one ZTF object.
+    headers: *token_header
+    params:
+      objectId:
+        required: true
+        type: string
+        description: ZTF objectId.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return reduced Sherlock context when true; false exposes the fuller crossmatch surface.
+    output: {type: object}
+    operation_types: [context_lookup]
+    server_filters: [objectId, lite]
+    projection: {supports_columns: false}
+
+  sherlock_objects:
+    path: /api/sherlock/objects/
+    method: POST
+    description: Retrieve Sherlock context for one or more ZTF object identifiers. The authoritative one-object request is serialized as an object, not a one-element array.
+    headers: *token_header
+    params:
+      objectIds:
+        required: true
+        type: string
+        description: Comma-separated ZTF objectIds.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return reduced Sherlock context when true; false exposes the fuller crossmatch surface.
+    output: {type: object}
+    operation_types: [context_lookup]
+    server_filters: [objectIds, lite]
+    projection: {supports_columns: false}
+
+  sherlock_position:
+    path: /api/sherlock/position/
+    method: POST
+    description: Retrieve Sherlock context at a ZTF sky position.
+    headers: *token_header
+    params:
+      ra:
+        required: true
+        type: number
+        unit: deg
+        description: Right ascension in decimal degrees.
+      dec:
+        required: true
+        type: number
+        unit: deg
+        description: Declination in decimal degrees.
+      lite:
+        required: false
+        type: boolean
+        default: true
+        description: Return reduced Sherlock context when true; false exposes the fuller crossmatch surface.
+    output: {type: object}
+    operation_types: [context_lookup]
+    server_filters: [ra, dec, lite]
+    projection: {supports_columns: false}

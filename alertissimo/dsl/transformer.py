@@ -4,7 +4,7 @@ from lark import Transformer
 from typing import Any, Dict, List
 
 from alertissimo.core.schema import Source
-from alertissimo.core.brokers.registry.load import ALL_BROKERS
+from alertissimo.data_layer.runtime.load import ALL_BROKERS
 from alertissimo.dsl.definitions import (
     get_step_class,
     FIELD_ALIASES,
