@@ -164,14 +164,14 @@ def test_cone_separation_is_scaled_to_arcseconds(tmp_path):
 @pytest.mark.parametrize("endpoint", ("sources", "conesearch"))
 def test_optional_ss_object_id_suppresses_zero_and_preserves_integer(tmp_path, endpoint):
     row = copy.deepcopy(fixture(endpoint)[0])
-    path = "detection@lsst:fink.solar_system.object.identity.object_id"
+    path = "detection@lsst:fink.solar_system.identity.object_id"
     paths = [path, "detection@lsst:fink.identity.source_id"]
     fields = dict(_build_filtered(tmp_path, endpoint, [row], paths).records[0].fields)
-    assert "solar_system.object.identity.object_id" not in fields
+    assert "solar_system.identity.object_id" not in fields
     row["r:ssObjectId"] = 123456789
     fields = dict(_build_filtered(tmp_path, endpoint, [row], paths).records[0].fields)
-    assert fields["solar_system.object.identity.object_id"] == 123456789
-    assert type(fields["solar_system.object.identity.object_id"]) is int
+    assert fields["solar_system.identity.object_id"] == 123456789
+    assert type(fields["solar_system.identity.object_id"]) is int
 
 
 def _build_filtered(tmp_path, endpoint, payload, semantic_paths):
