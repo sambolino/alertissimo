@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
-TEST=ROOT/'tests/test_lasair_lsst_live_capture.py'
-README=ROOT/'tests/fixtures/lasair/lsst/README.md'
-WF=ROOT/'.github/workflows/semantic-registry.yml'
-TEST.write_text(r'''"""Regression tests against the frozen authenticated Lasair/LSST capture."""
+"""Regression tests against the frozen authenticated Lasair/LSST capture."""
 from __future__ import annotations
 from itertools import count
 import json
@@ -65,12 +59,3 @@ def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  assert all('photoZ' not in r for r in m.get('crossmatch@{producer}:lasair.redshift.value',[]));assert 'crossmatch@{producer}:lasair.redshift.error' not in m
  assert all('merged_rank' not in r for r in m['crossmatch@{producer}:lasair.rank'])
  for spec in t['crossmatch@{producer}:lasair.provenance.producer.id'].values():assert spec.get('default')!='unknown';assert spec['map']['DESI']=='desi_legacy_survey'
-''')
-README.write_text('''# Lasair/LSST authoritative evidence\n\nThe dated `capture_20260813T140948Z/` directory is the authenticated authoritative Lasair/LSST REST capture used by semantic-registry regressions.\n\n- diaObjectId: `313761042336317573`\n- capture date: 2026-08-13\n- the contextual object reports `lasairData.nDiaSources=259`; its returned history contains 245 `diaSourcesList` rows and 345 `diaForcedSourcesList` rows; the raw object carries `diaObject.nDiaSources=259`\n- singular object, cone, query, Sherlock object, and Sherlock position surfaces returned HTTP 200\n- `/api/objects/`, `/api/lightcurves/`, and `/api/sherlock/objects/` returned HTTP 404 and are not registered as LSST endpoints\n- Sherlock lite/full and cone all/nearest/count shapes are preserved\n\nOlder top-level JSON files predate the authenticated capture and remain legacy/synthetic fixtures. New authoritative checks use the dated capture.\n''')
-w=WF.read_text()
-if 'tests/test_lasair_lsst_live_capture.py' not in w:
- w=w.replace("      - 'tests/test_lasair_ztf_live_capture.py'\n","      - 'tests/test_lasair_ztf_live_capture.py'\n      - 'tests/test_lasair_lsst_live_capture.py'\n",1)
- w=w.replace("      - 'tests/fixtures/lasair/ztf/**'\n","      - 'tests/fixtures/lasair/ztf/**'\n      - 'tests/fixtures/lasair/lsst/**'\n",1)
- w=w.replace("            tests/test_lasair_ztf_live_capture.py\n","            tests/test_lasair_ztf_live_capture.py \\\n            tests/test_lasair_lsst_live_capture.py\n",1)
-WF.write_text(w)
-print('tests/readme/workflow generated')

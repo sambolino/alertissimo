@@ -1,13 +1,12 @@
 broker: lasair
 origin: lsst
 baseurl: https://api.lasair.lsst.ac.uk
-
 endpoints:
   object:
     path: /api/object/
     method: POST
     description: Retrieve one Rubin/LSST diaObject and its optional Lasair context.
-    headers: &token_header
+    headers: &id001
       Authorization:
         required: true
         type: string
@@ -24,17 +23,20 @@ endpoints:
         description: Include Lasair-added Sherlock, TNS, annotation, and image-url context.
     output:
       type: object
-    operation_types: [object_lookup]
-    server_filters: [objectId, lasair_added]
+    operation_types:
+    - object_lookup
+    server_filters:
+    - objectId
+    - lasair_added
     projection:
       supports_columns: false
-
   cone:
     path: /api/cone/
     method: POST
-    description: Search LSST diaObjects around a sky position.
-    headers: *token_header
-    params: &cone_params
+    description: Search LSST diaObjects around a sky position. The live service returns an object wrapper whose keys depend
+      on requestType (objects, nearest, and/or count).
+    headers: *id001
+    params:
       ra:
         required: true
         type: number
@@ -53,22 +55,29 @@ endpoints:
       requestType:
         required: true
         type: string
-        enum: [nearest, all, count]
+        enum:
+        - nearest
+        - all
+        - count
         default: all
         description: 'Cone request type: nearest, all, or count.'
     output:
-      type: array
-    operation_types: [cone_search]
-    server_filters: [ra, dec, radius, requestType]
+      type: object
+    operation_types:
+    - cone_search
+    server_filters:
+    - ra
+    - dec
+    - radius
+    - requestType
     projection:
       supports_columns: false
-
   query:
     path: /api/query/
     method: POST
     description: Run a physical SQL-like query over Lasair LSST tables.
-    headers: *token_header
-    params: &query_params
+    headers: *id001
+    params:
       selected:
         required: true
         type: string
@@ -93,17 +102,22 @@ endpoints:
         description: Offset of the first returned record.
     output:
       type: array
-    operation_types: [sql_query]
-    server_filters: [selected, tables, conditions, limit, offset]
+    operation_types:
+    - sql_query
+    server_filters:
+    - selected
+    - tables
+    - conditions
+    - limit
+    - offset
     projection:
       supports_columns: true
       param: selected
-
   sherlock_object:
     path: /api/sherlock/object/
     method: POST
     description: Retrieve Sherlock context for one LSST diaObject.
-    headers: *token_header
+    headers: *id001
     params:
       objectId:
         required: true
@@ -116,16 +130,18 @@ endpoints:
         description: Return lite Sherlock context when true.
     output:
       type: object
-    operation_types: [context_lookup]
-    server_filters: [objectId, lite]
+    operation_types:
+    - context_lookup
+    server_filters:
+    - objectId
+    - lite
     projection:
       supports_columns: false
-
   sherlock_position:
     path: /api/sherlock/position/
     method: POST
     description: Retrieve Sherlock context at an LSST sky position.
-    headers: *token_header
+    headers: *id001
     params:
       ra:
         required: true
@@ -144,7 +160,11 @@ endpoints:
         description: Return lite Sherlock context when true.
     output:
       type: object
-    operation_types: [context_lookup]
-    server_filters: [ra, dec, lite]
+    operation_types:
+    - context_lookup
+    server_filters:
+    - ra
+    - dec
+    - lite
     projection:
       supports_columns: false

@@ -1,6 +1,6 @@
 broker: lasair
 origin: lsst
-description: Minimal semantic mappings for fields returned by the Lasair LSST REST API.
+description: Authoritative semantic mappings for fields returned by the Lasair LSST REST API.
 payloads:
   object:
     endpoint: object
@@ -8,12 +8,15 @@ payloads:
   query:
     endpoint: query
     path: '[]'
-  cone:
+  cone_objects:
     endpoint: cone
-    path: '[]'
+    path: objects[]
   diaSourcesList:
     endpoint: object
     path: diaSourcesList[]
+  diaForcedSourcesList:
+    endpoint: object
+    path: diaForcedSourcesList[]
   sherlock_object_classifications:
     endpoint: sherlock_object
     path: classifications{}
@@ -29,36 +32,396 @@ payloads:
 mappings:
   summary@lsst:lasair.identity.object_id:
   - object#diaObjectId
+  - object#diaObject.diaObjectId
+  - object#lasairData.diaObjectId
   - query#diaObjectId
-  - cone#diaObjectId
+  - cone_objects#object
   summary@lsst:lasair.detection_count:
+  - object#diaObject.nDiaSources
   - object#lasairData.nDiaSources
   summary@lsst:lasair.time.first_mjd:
   - object#diaObject.firstDiaSourceMjdTai
+  - object#lasairData.firstDiaSourceMjdTai
+  - object#lasairData.discMjd
   summary@lsst:lasair.time.last_mjd:
   - object#diaObject.lastDiaSourceMjdTai
+  - object#lasairData.lastDiaSourceMjdTai
+  - object#lasairData.latestMjd
+  summary@lsst:lasair.time.first_detection:
+  - object#lasairData.discUtc
+  summary@lsst:lasair.time.last_detection:
+  - object#lasairData.latestUtc
   summary@lsst:lasair.position.ra:
   - object#diaObject.ra
-  - cone#ra
   summary@lsst:lasair.position.dec:
   - object#diaObject.decl
-  - cone#decl
-  detection@lsst:lasair.identity.source_id:
-  - diaSourcesList#diaSourceId
-  detection@lsst:lasair.time.mjd:
-  - diaSourcesList#midpointMjdTai
-  detection@lsst:lasair.photometry.{filter}:
-  - diaSourcesList#band
+  summary@lsst:lasair.position.ra_error:
+  - object#diaObject.raErr
+  - object#lasairData.raErr
+  summary@lsst:lasair.position.dec_error:
+  - object#diaObject.decErr
+  - object#lasairData.decErr
+  summary@lsst:lasair.position.ra_dec_covariance:
+  - object#diaObject.ra_dec_Cov
+  - object#lasairData.ra_dec_Cov
+  summary@lsst:lasair.photometry.u.psf.flux.error_mean:
+  - object#lasairData.u_psfFluxErrMean
+  summary@lsst:lasair.photometry.u.psf.flux.maximum:
+  - object#lasairData.u_psfFluxMax
+  summary@lsst:lasair.photometry.u.psf.flux.maximum_slope:
+  - object#lasairData.u_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.u.psf.flux.mean:
+  - object#lasairData.u_psfFluxMean
+  summary@lsst:lasair.photometry.u.psf.flux.mean_error:
+  - object#lasairData.u_psfFluxMeanErr
+  summary@lsst:lasair.photometry.u.psf.flux.minimum:
+  - object#lasairData.u_psfFluxMin
+  summary@lsst:lasair.photometry.u.psf.flux.measurement_count:
+  - object#lasairData.u_psfFluxNdata
+  summary@lsst:lasair.photometry.u.psf.flux.sigma:
+  - object#lasairData.u_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.u.psf.flux.mean:
+  - object#lasairData.u_fpFluxMean
+  summary@lsst:lasair.forced_photometry.u.psf.flux.mean_error:
+  - object#lasairData.u_fpFluxMeanErr
+  summary@lsst:lasair.photometry.g.psf.flux.error_mean:
+  - object#lasairData.g_psfFluxErrMean
+  summary@lsst:lasair.photometry.g.psf.flux.maximum:
+  - object#lasairData.g_psfFluxMax
+  summary@lsst:lasair.photometry.g.psf.flux.maximum_slope:
+  - object#lasairData.g_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.g.psf.flux.mean:
+  - object#lasairData.g_psfFluxMean
+  summary@lsst:lasair.photometry.g.psf.flux.mean_error:
+  - object#lasairData.g_psfFluxMeanErr
+  summary@lsst:lasair.photometry.g.psf.flux.minimum:
+  - object#lasairData.g_psfFluxMin
+  summary@lsst:lasair.photometry.g.psf.flux.measurement_count:
+  - object#lasairData.g_psfFluxNdata
+  summary@lsst:lasair.photometry.g.psf.flux.sigma:
+  - object#lasairData.g_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.g.psf.flux.mean:
+  - object#lasairData.g_fpFluxMean
+  summary@lsst:lasair.forced_photometry.g.psf.flux.mean_error:
+  - object#lasairData.g_fpFluxMeanErr
+  summary@lsst:lasair.photometry.r.psf.flux.error_mean:
+  - object#lasairData.r_psfFluxErrMean
+  summary@lsst:lasair.photometry.r.psf.flux.maximum:
+  - object#lasairData.r_psfFluxMax
+  summary@lsst:lasair.photometry.r.psf.flux.maximum_slope:
+  - object#lasairData.r_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.r.psf.flux.mean:
+  - object#lasairData.r_psfFluxMean
+  summary@lsst:lasair.photometry.r.psf.flux.mean_error:
+  - object#lasairData.r_psfFluxMeanErr
+  summary@lsst:lasair.photometry.r.psf.flux.minimum:
+  - object#lasairData.r_psfFluxMin
+  summary@lsst:lasair.photometry.r.psf.flux.measurement_count:
+  - object#lasairData.r_psfFluxNdata
+  summary@lsst:lasair.photometry.r.psf.flux.sigma:
+  - object#lasairData.r_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.r.psf.flux.mean:
+  - object#lasairData.r_fpFluxMean
+  summary@lsst:lasair.forced_photometry.r.psf.flux.mean_error:
+  - object#lasairData.r_fpFluxMeanErr
+  summary@lsst:lasair.photometry.i.psf.flux.error_mean:
+  - object#lasairData.i_psfFluxErrMean
+  summary@lsst:lasair.photometry.i.psf.flux.maximum:
+  - object#lasairData.i_psfFluxMax
+  summary@lsst:lasair.photometry.i.psf.flux.maximum_slope:
+  - object#lasairData.i_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.i.psf.flux.mean:
+  - object#lasairData.i_psfFluxMean
+  summary@lsst:lasair.photometry.i.psf.flux.mean_error:
+  - object#lasairData.i_psfFluxMeanErr
+  summary@lsst:lasair.photometry.i.psf.flux.minimum:
+  - object#lasairData.i_psfFluxMin
+  summary@lsst:lasair.photometry.i.psf.flux.measurement_count:
+  - object#lasairData.i_psfFluxNdata
+  summary@lsst:lasair.photometry.i.psf.flux.sigma:
+  - object#lasairData.i_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.i.psf.flux.mean:
+  - object#lasairData.i_fpFluxMean
+  summary@lsst:lasair.forced_photometry.i.psf.flux.mean_error:
+  - object#lasairData.i_fpFluxMeanErr
+  summary@lsst:lasair.photometry.z.psf.flux.error_mean:
+  - object#lasairData.z_psfFluxErrMean
+  summary@lsst:lasair.photometry.z.psf.flux.maximum:
+  - object#lasairData.z_psfFluxMax
+  summary@lsst:lasair.photometry.z.psf.flux.maximum_slope:
+  - object#lasairData.z_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.z.psf.flux.mean:
+  - object#lasairData.z_psfFluxMean
+  summary@lsst:lasair.photometry.z.psf.flux.mean_error:
+  - object#lasairData.z_psfFluxMeanErr
+  summary@lsst:lasair.photometry.z.psf.flux.minimum:
+  - object#lasairData.z_psfFluxMin
+  summary@lsst:lasair.photometry.z.psf.flux.measurement_count:
+  - object#lasairData.z_psfFluxNdata
+  summary@lsst:lasair.photometry.z.psf.flux.sigma:
+  - object#lasairData.z_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.z.psf.flux.mean:
+  - object#lasairData.z_fpFluxMean
+  summary@lsst:lasair.forced_photometry.z.psf.flux.mean_error:
+  - object#lasairData.z_fpFluxMeanErr
+  summary@lsst:lasair.photometry.y.psf.flux.error_mean:
+  - object#lasairData.y_psfFluxErrMean
+  summary@lsst:lasair.photometry.y.psf.flux.maximum:
+  - object#lasairData.y_psfFluxMax
+  summary@lsst:lasair.photometry.y.psf.flux.maximum_slope:
+  - object#lasairData.y_psfFluxMaxSlope
+  summary@lsst:lasair.photometry.y.psf.flux.mean:
+  - object#lasairData.y_psfFluxMean
+  summary@lsst:lasair.photometry.y.psf.flux.mean_error:
+  - object#lasairData.y_psfFluxMeanErr
+  summary@lsst:lasair.photometry.y.psf.flux.minimum:
+  - object#lasairData.y_psfFluxMin
+  summary@lsst:lasair.photometry.y.psf.flux.measurement_count:
+  - object#lasairData.y_psfFluxNdata
+  summary@lsst:lasair.photometry.y.psf.flux.sigma:
+  - object#lasairData.y_psfFluxSigma
+  summary@lsst:lasair.forced_photometry.y.psf.flux.mean:
+  - object#lasairData.y_fpFluxMean
+  summary@lsst:lasair.forced_photometry.y.psf.flux.mean_error:
+  - object#lasairData.y_fpFluxMeanErr
+  summary@lsst:lasair.time.snapshot_mjd:
+  - object#lasairData.validityStartMjdTai
+  detection@lsst:lasair.identity.visit_id:
+  - diaSourcesList#visit
+  - diaForcedSourcesList#visit
+  detection@lsst:lasair.identity.detector_id:
+  - diaSourcesList#detector
+  - diaForcedSourcesList#detector
+  detection@lsst:lasair.time.processed_mjd:
+  - diaSourcesList#timeProcessedMjdTai
+  - diaForcedSourcesList#timeProcessedMjdTai
+  detection@lsst:lasair.time.invalidated_mjd:
+  - diaSourcesList#timeWithdrawnMjdTai
+  - diaForcedSourcesList#timeWithdrawnMjdTai
+  detection@lsst:lasair.position.ra:
+  - diaSourcesList#ra
+  - diaForcedSourcesList#ra
+  detection@lsst:lasair.position.ra_error:
+  - diaSourcesList#raErr
+  detection@lsst:lasair.position.dec_error:
+  - diaSourcesList#decErr
+  detection@lsst:lasair.position.ra_dec_covariance:
+  - diaSourcesList#ra_dec_Cov
+  detection@lsst:lasair.position.image_x:
+  - diaSourcesList#x
+  detection@lsst:lasair.position.image_y:
+  - diaSourcesList#y
+  detection@lsst:lasair.position.image_x_error:
+  - diaSourcesList#xErr
+  detection@lsst:lasair.position.image_y_error:
+  - diaSourcesList#yErr
+  detection@lsst:lasair.quality.reliability:
+  - diaSourcesList#reliability
+  detection@lsst:lasair.quality.signal_to_noise:
+  - diaSourcesList#snr
   detection@lsst:lasair.photometry.{filter}.psf.flux:
   - diaSourcesList#psfFlux
   detection@lsst:lasair.photometry.{filter}.psf.flux.error:
   - diaSourcesList#psfFluxErr
-  detection@lsst:lasair.quality.reliability:
-  - diaSourcesList#reliability
+  detection@lsst:lasair.photometry.{filter}.psf.fit_chi2:
+  - diaSourcesList#psfChi2
+  detection@lsst:lasair.photometry.{filter}.psf.fit_log_likelihood:
+  - diaSourcesList#psfLnL
+  detection@lsst:lasair.photometry.{filter}.psf.fit_ndata:
+  - diaSourcesList#psfNdata
+  detection@lsst:lasair.photometry.{filter}.psf.flags.failed:
+  - diaSourcesList#psfFlux_flag
+  detection@lsst:lasair.photometry.{filter}.psf.flags.edge:
+  - diaSourcesList#psfFlux_flag_edge
+  detection@lsst:lasair.photometry.{filter}.psf.flags.no_good_pixels:
+  - diaSourcesList#psfFlux_flag_noGoodPixels
+  detection@lsst:lasair.photometry.{filter}.aperture.flux:
+  - diaSourcesList#apFlux
+  detection@lsst:lasair.photometry.{filter}.aperture.flux.error:
+  - diaSourcesList#apFluxErr
+  detection@lsst:lasair.photometry.{filter}.aperture.flags.failed:
+  - diaSourcesList#apFlux_flag
+  detection@lsst:lasair.photometry.{filter}.aperture.flags.aperture_truncated:
+  - diaSourcesList#apFlux_flag_apertureTruncated
+  detection@lsst:lasair.image_metrics.bbox_size:
+  - diaSourcesList#bboxSize
+  detection@lsst:lasair.image_metrics.centroid_flag:
+  - diaSourcesList#centroid_flag
+  detection@lsst:lasair.image_metrics.extendedness:
+  - diaSourcesList#extendedness
+  detection@lsst:lasair.image_metrics.shape.ixx:
+  - diaSourcesList#ixx
+  detection@lsst:lasair.image_metrics.shape.iyy:
+  - diaSourcesList#iyy
+  detection@lsst:lasair.image_metrics.shape.ixy:
+  - diaSourcesList#ixy
+  detection@lsst:lasair.image_metrics.shape.psf_ixx:
+  - diaSourcesList#ixxPSF
+  detection@lsst:lasair.image_metrics.shape.psf_iyy:
+  - diaSourcesList#iyyPSF
+  detection@lsst:lasair.image_metrics.shape.psf_ixy:
+  - diaSourcesList#ixyPSF
+  detection@lsst:lasair.image_metrics.shape.flag:
+  - diaSourcesList#shape_flag
+  detection@lsst:lasair.image_metrics.shape.flag_no_pixels:
+  - diaSourcesList#shape_flag_no_pixels
+  detection@lsst:lasair.image_metrics.shape.flag_not_contained:
+  - diaSourcesList#shape_flag_not_contained
+  detection@lsst:lasair.image_metrics.shape.flag_parent_source:
+  - diaSourcesList#shape_flag_parent_source
+  detection@lsst:lasair.image_metrics.pixel_flags.any:
+  - diaSourcesList#pixelFlags
+  detection@lsst:lasair.image_metrics.pixel_flags.bad:
+  - diaSourcesList#pixelFlags_bad
+  detection@lsst:lasair.image_metrics.pixel_flags.cosmic_ray:
+  - diaSourcesList#pixelFlags_cr
+  detection@lsst:lasair.image_metrics.pixel_flags.cosmic_ray_center:
+  - diaSourcesList#pixelFlags_crCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.edge:
+  - diaSourcesList#pixelFlags_edge
+  detection@lsst:lasair.image_metrics.pixel_flags.injected:
+  - diaSourcesList#pixelFlags_injected
+  detection@lsst:lasair.image_metrics.pixel_flags.injected_center:
+  - diaSourcesList#pixelFlags_injectedCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.injected_template:
+  - diaSourcesList#pixelFlags_injected_template
+  detection@lsst:lasair.image_metrics.pixel_flags.injected_template_center:
+  - diaSourcesList#pixelFlags_injected_templateCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.interpolated:
+  - diaSourcesList#pixelFlags_interpolated
+  detection@lsst:lasair.image_metrics.pixel_flags.interpolated_center:
+  - diaSourcesList#pixelFlags_interpolatedCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.no_data:
+  - diaSourcesList#pixelFlags_nodata
+  detection@lsst:lasair.image_metrics.pixel_flags.no_data_center:
+  - diaSourcesList#pixelFlags_nodataCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.off_image:
+  - diaSourcesList#pixelFlags_offimage
+  detection@lsst:lasair.image_metrics.pixel_flags.saturated:
+  - diaSourcesList#pixelFlags_saturated
+  detection@lsst:lasair.image_metrics.pixel_flags.saturated_center:
+  - diaSourcesList#pixelFlags_saturatedCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.streak:
+  - diaSourcesList#pixelFlags_streak
+  detection@lsst:lasair.image_metrics.pixel_flags.streak_center:
+  - diaSourcesList#pixelFlags_streakCenter
+  detection@lsst:lasair.image_metrics.pixel_flags.suspect:
+  - diaSourcesList#pixelFlags_suspect
+  detection@lsst:lasair.image_metrics.pixel_flags.suspect_center:
+  - diaSourcesList#pixelFlags_suspectCenter
+  detection@lsst:lasair.image_metrics.dipole.is_dipole:
+  - diaSourcesList#isDipole
+  detection@lsst:lasair.image_metrics.dipole.fit_attempted:
+  - diaSourcesList#dipoleFitAttempted
+  detection@lsst:lasair.image_metrics.dipole.angle:
+  - diaSourcesList#dipoleAngle
+  detection@lsst:lasair.image_metrics.dipole.chi2:
+  - diaSourcesList#dipoleChi2
+  detection@lsst:lasair.image_metrics.dipole.flux_difference:
+  - diaSourcesList#dipoleFluxDiff
+  detection@lsst:lasair.image_metrics.dipole.flux_difference_error:
+  - diaSourcesList#dipoleFluxDiffErr
+  detection@lsst:lasair.image_metrics.dipole.length:
+  - diaSourcesList#dipoleLength
+  detection@lsst:lasair.image_metrics.dipole.mean_flux:
+  - diaSourcesList#dipoleMeanFlux
+  detection@lsst:lasair.image_metrics.dipole.mean_flux_error:
+  - diaSourcesList#dipoleMeanFluxErr
+  detection@lsst:lasair.image_metrics.dipole.ndata:
+  - diaSourcesList#dipoleNdata
+  detection@lsst:lasair.image_metrics.trail.is_glint:
+  - diaSourcesList#glint_trail
+  detection@lsst:lasair.image_metrics.trail.angle:
+  - diaSourcesList#trailAngle
+  detection@lsst:lasair.image_metrics.trail.angle_error:
+  - diaSourcesList#trailAngleErr
+  detection@lsst:lasair.image_metrics.trail.chi2:
+  - diaSourcesList#trailChi2
+  detection@lsst:lasair.image_metrics.trail.length:
+  - diaSourcesList#trailLength
+  detection@lsst:lasair.image_metrics.trail.length_error:
+  - diaSourcesList#trailLengthErr
+  detection@lsst:lasair.image_metrics.trail.flux:
+  - diaSourcesList#trailFlux
+  detection@lsst:lasair.image_metrics.trail.flux_error:
+  - diaSourcesList#trailFluxErr
+  detection@lsst:lasair.image_metrics.trail.ndata:
+  - diaSourcesList#trailNdata
+  detection@lsst:lasair.image_metrics.trail.ra:
+  - diaSourcesList#trailRa
+  detection@lsst:lasair.solar_system.identity.object_id:
+  - diaSourcesList#ssObjectId
+  detection@lsst:lasair.image_metrics.trail.ra_error:
+  - diaSourcesList#trailRaErr
+  detection@lsst:lasair.image_metrics.trail.dec:
+  - diaSourcesList#trailDec
+  detection@lsst:lasair.image_metrics.trail.dec_error:
+  - diaSourcesList#trailDecErr
+  detection@lsst:lasair.image_metrics.trail.flag_edge:
+  - diaSourcesList#trail_flag_edge
+  detection@lsst:lasair.image_metrics.is_positive:
+  - diaSourcesList#isNegative
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flux:
+  - diaSourcesList#scienceFlux
+  - diaForcedSourcesList#psfFlux
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flux.error:
+  - diaSourcesList#scienceFluxErr
+  - diaForcedSourcesList#psfFluxErr
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.failed:
+  - diaSourcesList#forced_PsfFlux_flag
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.edge:
+  - diaSourcesList#forced_PsfFlux_flag_edge
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.no_good_pixels:
+  - diaSourcesList#forced_PsfFlux_flag_noGoodPixels
+  detection@lsst:lasair.reference_image.forced_photometry.{filter}.psf.flux:
+  - diaSourcesList#templateFlux
+  detection@lsst:lasair.reference_image.forced_photometry.{filter}.psf.flux.error:
+  - diaSourcesList#templateFluxErr
+  detection@lsst:lasair.identity.object_id:
+  - diaSourcesList#diaObjectId
+  - diaForcedSourcesList#diaObjectId
+  detection@lsst:lasair.identity.source_id:
+  - diaSourcesList#diaSourceId
+  - diaForcedSourcesList#diaForcedSourceId
+  detection@lsst:lasair.time.mjd:
+  - diaSourcesList#midpointMjdTai
+  - diaForcedSourcesList#midpointMjdTai
+  detection@lsst:lasair.position.dec:
+  - diaSourcesList#decl
+  - diaForcedSourcesList#decl
+  detection@lsst:lasair.photometry.{filter}:
+  - diaSourcesList#band
+  detection@lsst:lasair.forced_photometry.{filter}:
+  - diaSourcesList#band
+  - diaForcedSourcesList#band
+  crossmatch@tns:lasair.identity.object_id:
+  - object#lasairData.TNS.name
+  crossmatch@tns:lasair.position.ra:
+  - object#lasairData.TNS.ra
+  crossmatch@tns:lasair.position.dec:
+  - object#lasairData.TNS.decl
+  classification@sherlock:lasair.best.class:
+  - object#lasairData.sherlock.classification
+  - sherlock_position_classifications#_value.0
+  - sherlock_object_classifications#_value.0
+  classification@sherlock:lasair.best.score:
+  - object#lasairData.sherlock.classificationReliability
+  classification@sherlock:lasair.best.description:
+  - object#lasairData.sherlock.description
+  - sherlock_position_classifications#_value.1
+  - sherlock_object_classifications#_value.1
   crossmatch@{producer}:lasair.identity.object_id:
   - object#lasairData.sherlock.catalogue_object_id
   - sherlock_position_crossmatches#catalogue_object_id
   - sherlock_object_crossmatches#catalogue_object_id
+  crossmatch@{producer}:lasair.provenance.producer.name:
+  - object#lasairData.sherlock.catalogue_table_name
+  - sherlock_position_crossmatches#catalogue_table_name
+  - sherlock_object_crossmatches#catalogue_table_name
+  crossmatch@{producer}:lasair.provenance.producer.id:
+  - object#lasairData.sherlock.catalogue_table_name
+  - sherlock_position_crossmatches#catalogue_table_name
+  - sherlock_object_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.position.ra:
   - object#lasairData.sherlock.raDeg
   - sherlock_position_crossmatches#raDeg
@@ -71,44 +434,22 @@ mappings:
   - object#lasairData.sherlock.separationArcsec
   - sherlock_position_crossmatches#separationArcsec
   - sherlock_object_crossmatches#separationArcsec
-  crossmatch@tns:lasair.identity.object_id:
-  - object#lasairData.TNS.name
-  crossmatch@tns:lasair.position.ra:
-  - object#lasairData.TNS.ra
-  crossmatch@tns:lasair.position.dec:
-  - object#lasairData.TNS.decl
-  classification@sherlock:lasair.best.class:
-  - object#lasairData.sherlock.classification
-  - sherlock_object_classifications#_value.0
-  - sherlock_position_classifications#_value.0
-  classification@sherlock:lasair.best.score:
-  - object#lasairData.sherlock.classificationReliability
-  classification@sherlock:lasair.best.description:
-  - sherlock_object_classifications#_value.1
-  - sherlock_position_classifications#_value.1
-  crossmatch@{producer}:lasair.provenance.producer.name:
-  - sherlock_position_crossmatches#catalogue_table_name
-  - sherlock_object_crossmatches#catalogue_table_name
-  crossmatch@{producer}:lasair.provenance.producer.id:
-  - sherlock_position_crossmatches#catalogue_table_name
-  - sherlock_object_crossmatches#catalogue_table_name
   crossmatch@{producer}:lasair.separation.north:
+  - object#lasairData.sherlock.northSeparationArcsec
   - sherlock_position_crossmatches#northSeparationArcsec
   - sherlock_object_crossmatches#northSeparationArcsec
   crossmatch@{producer}:lasair.separation.east:
+  - object#lasairData.sherlock.eastSeparationArcsec
   - sherlock_position_crossmatches#eastSeparationArcsec
   - sherlock_object_crossmatches#eastSeparationArcsec
   crossmatch@{producer}:lasair.separation.projected:
+  - object#lasairData.sherlock.physical_separation_kpc
   - sherlock_position_crossmatches#physical_separation_kpc
   - sherlock_object_crossmatches#physical_separation_kpc
   crossmatch@{producer}:lasair.redshift.value:
+  - object#lasairData.sherlock.z
   - sherlock_position_crossmatches#z
-  - sherlock_position_crossmatches#photoZ
   - sherlock_object_crossmatches#z
-  - sherlock_object_crossmatches#photoZ
-  crossmatch@{producer}:lasair.redshift.error:
-  - sherlock_position_crossmatches#photoZErr
-  - sherlock_object_crossmatches#photoZErr
   crossmatch@{producer}:lasair.distance.estimate.best.value:
   - sherlock_position_crossmatches#best_distance
   - sherlock_object_crossmatches#best_distance
@@ -143,6 +484,7 @@ mappings:
   - sherlock_position_crossmatches#pz_distance_cat
   - sherlock_object_crossmatches#pz_distance_cat
   crossmatch@{producer}:lasair.distance.estimate.direct.value:
+  - object#lasairData.sherlock.direct_distance
   - sherlock_position_crossmatches#direct_distance
   - sherlock_object_crossmatches#direct_distance
   crossmatch@{producer}:lasair.distance.estimate.direct.modulus:
@@ -157,46 +499,21 @@ mappings:
   crossmatch@{producer}:lasair.rank:
   - sherlock_position_crossmatches#rank
   - sherlock_object_crossmatches#rank
-  - sherlock_position_crossmatches#merged_rank
-  - sherlock_object_crossmatches#merged_rank
   crossmatch@{producer}:lasair.classification.assessment.catalogue.class:
+  - object#lasairData.sherlock.catalogue_object_type
   - sherlock_position_crossmatches#catalogue_object_type
   - sherlock_object_crossmatches#catalogue_object_type
   crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
+  - object#lasairData.sherlock.association_type
   - sherlock_position_crossmatches#association_type
   - sherlock_object_crossmatches#association_type
-  - sherlock_position_crossmatches#classification
-  - sherlock_object_crossmatches#classification
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+  - object#lasairData.sherlock.classificationReliability
   - sherlock_position_crossmatches#classificationReliability
   - sherlock_object_crossmatches#classificationReliability
   crossmatch@{producer}:lasair.classification.assessment.sherlock.method:
   - sherlock_position_crossmatches#search_name
   - sherlock_object_crossmatches#search_name
-  crossmatch@{producer}:lasair.photometry.J.mag:
-  - sherlock_position_crossmatches#J
-  - sherlock_object_crossmatches#J
-  crossmatch@{producer}:lasair.photometry.J.mag.error:
-  - sherlock_position_crossmatches#JErr
-  - sherlock_object_crossmatches#JErr
-  crossmatch@{producer}:lasair.photometry.H.mag:
-  - sherlock_position_crossmatches#H
-  - sherlock_object_crossmatches#H
-  crossmatch@{producer}:lasair.photometry.H.mag.error:
-  - sherlock_position_crossmatches#HErr
-  - sherlock_object_crossmatches#HErr
-  crossmatch@{producer}:lasair.photometry.K.mag:
-  - sherlock_position_crossmatches#K
-  - sherlock_object_crossmatches#K
-  crossmatch@{producer}:lasair.photometry.K.mag.error:
-  - sherlock_position_crossmatches#KErr
-  - sherlock_object_crossmatches#KErr
-  crossmatch@{producer}:lasair.photometry.u.mag:
-  - sherlock_position_crossmatches#_u
-  - sherlock_object_crossmatches#_u
-  crossmatch@{producer}:lasair.photometry.u.mag.error:
-  - sherlock_position_crossmatches#_uErr
-  - sherlock_object_crossmatches#_uErr
   crossmatch@{producer}:lasair.photometry.g.mag:
   - sherlock_position_crossmatches#_g
   - sherlock_object_crossmatches#_g
@@ -221,22 +538,123 @@ mappings:
   crossmatch@{producer}:lasair.photometry.z.mag.error:
   - sherlock_position_crossmatches#_zErr
   - sherlock_object_crossmatches#_zErr
-  crossmatch@{producer}:lasair.photometry.y.mag:
-  - sherlock_position_crossmatches#_y
-  - sherlock_object_crossmatches#_y
-  crossmatch@{producer}:lasair.photometry.y.mag.error:
-  - sherlock_position_crossmatches#_yErr
-  - sherlock_object_crossmatches#_yErr
+  crossmatch@{producer}:lasair.photometry.{filter}:
+  - object#lasairData.sherlock.MagFilter
+  crossmatch@{producer}:lasair.photometry.{filter}.mag:
+  - object#lasairData.sherlock.Mag
+  crossmatch@{producer}:lasair.photometry.{filter}.mag.error:
+  - object#lasairData.sherlock.MagErr
+  crossmatch@{producer}:lasair.photometry.W1.mag:
+  - sherlock_object_crossmatches#W1
+  - sherlock_position_crossmatches#W1
+  crossmatch@{producer}:lasair.photometry.W1.mag.error:
+  - sherlock_object_crossmatches#W1Err
+  - sherlock_position_crossmatches#W1Err
+  crossmatch@{producer}:lasair.photometry.W2.mag:
+  - sherlock_object_crossmatches#W2
+  - sherlock_position_crossmatches#W2
+  crossmatch@{producer}:lasair.photometry.W2.mag.error:
+  - sherlock_object_crossmatches#W2Err
+  - sherlock_position_crossmatches#W2Err
+  crossmatch@{producer}:lasair.photometry.W3.mag:
+  - sherlock_object_crossmatches#W3
+  - sherlock_position_crossmatches#W3
+  crossmatch@{producer}:lasair.photometry.W3.mag.error:
+  - sherlock_object_crossmatches#W3Err
+  - sherlock_position_crossmatches#W3Err
+  crossmatch@{producer}:lasair.photometry.W4.mag:
+  - sherlock_object_crossmatches#W4
+  - sherlock_position_crossmatches#W4
+  crossmatch@{producer}:lasair.photometry.W4.mag.error:
+  - sherlock_object_crossmatches#W4Err
+  - sherlock_position_crossmatches#W4Err
 transforms:
+  detection@lsst:lasair.solar_system.identity.object_id:
+    diaSourcesList#ssObjectId:
+      type: value_map
+      map:
+        0: null
+      skip_null: true
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.failed:
+    diaSourcesList#forced_PsfFlux_flag:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.edge:
+    diaSourcesList#forced_PsfFlux_flag_edge:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.forced_photometry.{filter}.psf.flags.no_good_pixels:
+    diaSourcesList#forced_PsfFlux_flag_noGoodPixels:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.photometry.{filter}.psf.flags.failed:
+    diaSourcesList#psfFlux_flag:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.photometry.{filter}.psf.flags.edge:
+    diaSourcesList#psfFlux_flag_edge:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.photometry.{filter}.psf.flags.no_good_pixels:
+    diaSourcesList#psfFlux_flag_noGoodPixels:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  detection@lsst:lasair.image_metrics.is_positive:
+    diaSourcesList#isNegative:
+      type: boolean_not
+  classification@sherlock:lasair.best.score:
+    object#lasairData.sherlock.classificationReliability:
+      type: to_float
+      skip_null: true
   crossmatch@{producer}:lasair.identity.object_id:
+    object#lasairData.sherlock.catalogue_object_id:
+      type: to_string_strip
     sherlock_position_crossmatches#catalogue_object_id:
       type: to_string_strip
     sherlock_object_crossmatches#catalogue_object_id:
       type: to_string_strip
   crossmatch@{producer}:lasair.provenance.producer.id:
+    object#lasairData.sherlock.catalogue_table_name:
+      type: value_map
+      map:
+        SDSS: sdss
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
+        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
+        Gaia DR3: gaia
+        DESI Legacy Survey DR10: desi_legacy_survey
+        DESI: desi_legacy_survey
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
       map:
+        SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
         2MASS PSC: twomass
         PanSTARRS DR1: panstarrs
@@ -245,10 +663,11 @@ transforms:
         Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
         Gaia DR3: gaia
         DESI Legacy Survey DR10: desi_legacy_survey
-      default: unknown
+        DESI: desi_legacy_survey
     sherlock_object_crossmatches#catalogue_table_name:
       type: value_map
       map:
+        SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
         2MASS PSC: twomass
         PanSTARRS DR1: panstarrs
@@ -257,24 +676,21 @@ transforms:
         Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
         Gaia DR3: gaia
         DESI Legacy Survey DR10: desi_legacy_survey
-      default: unknown
+        DESI: desi_legacy_survey
   crossmatch@{producer}:lasair.position.ra:
+    object#lasairData.sherlock.raDeg:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#raDeg:
       type: to_float
       skip_null: true
     sherlock_object_crossmatches#raDeg:
       type: to_float
       skip_null: true
-  crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
-    sherlock_position_crossmatches#association_type:
-      skip_null: true
-    sherlock_object_crossmatches#association_type:
-      skip_null: true
-    sherlock_position_crossmatches#classification:
-      skip_null: true
-    sherlock_object_crossmatches#classification:
-      skip_null: true
   crossmatch@{producer}:lasair.position.dec:
+    object#lasairData.sherlock.decDeg:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#decDeg:
       type: to_float
       skip_null: true
@@ -282,6 +698,9 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.separation.total:
+    object#lasairData.sherlock.separationArcsec:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#separationArcsec:
       type: to_float
       skip_null: true
@@ -289,6 +708,9 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.separation.north:
+    object#lasairData.sherlock.northSeparationArcsec:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#northSeparationArcsec:
       type: to_float
       skip_null: true
@@ -296,6 +718,9 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.separation.east:
+    object#lasairData.sherlock.eastSeparationArcsec:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#eastSeparationArcsec:
       type: to_float
       skip_null: true
@@ -303,6 +728,9 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.separation.projected:
+    object#lasairData.sherlock.physical_separation_kpc:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#physical_separation_kpc:
       type: to_float
       skip_null: true
@@ -310,23 +738,13 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.redshift.value:
+    object#lasairData.sherlock.z:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#z:
       type: to_float
       skip_null: true
-    sherlock_position_crossmatches#photoZ:
-      type: to_float
-      skip_null: true
     sherlock_object_crossmatches#z:
-      type: to_float
-      skip_null: true
-    sherlock_object_crossmatches#photoZ:
-      type: to_float
-      skip_null: true
-  crossmatch@{producer}:lasair.redshift.error:
-    sherlock_position_crossmatches#photoZErr:
-      type: to_float
-      skip_null: true
-    sherlock_object_crossmatches#photoZErr:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.distance.estimate.best.value:
@@ -379,6 +797,9 @@ transforms:
       type: to_float
       skip_null: true
   crossmatch@{producer}:lasair.distance.estimate.direct.value:
+    object#lasairData.sherlock.direct_distance:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#direct_distance:
       type: to_float
       skip_null: true
@@ -406,16 +827,20 @@ transforms:
     sherlock_object_crossmatches#rank:
       type: to_int
       skip_null: true
-    sherlock_position_crossmatches#merged_rank:
-      type: to_int
-      skip_null: true
-    sherlock_object_crossmatches#merged_rank:
-      type: to_int
-      skip_null: true
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
+    object#lasairData.sherlock.classificationReliability:
+      type: to_float
+      skip_null: true
     sherlock_position_crossmatches#classificationReliability:
       type: to_float
       skip_null: true
     sherlock_object_crossmatches#classificationReliability:
       type: to_float
+      skip_null: true
+  crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
+    object#lasairData.sherlock.association_type:
+      skip_null: true
+    sherlock_position_crossmatches#association_type:
+      skip_null: true
+    sherlock_object_crossmatches#association_type:
       skip_null: true
