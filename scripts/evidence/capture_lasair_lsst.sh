@@ -23,7 +23,9 @@ META
 sha256sum "$0" | awk '{print $1 "  " $2}' > "$OUT/capture_script.sha256"
 post() { local label="$1" path="$2"; shift 2; jq -n "$@" > "$OUT/${label}.request.json"; local form=(); while IFS=$'\t' read -r key value; do form+=(--data-urlencode "$key=$value"); done < <(jq -r 'to_entries[] | [.key, (.value|tostring)] | @tsv' "$OUT/${label}.request.json"); echo "POST $path"; curl --fail-with-body --compressed -sS -D "$OUT/${label}.headers" -H "Authorization: Token $LASAIR_TOKEN" "${form[@]}" "$BASE$path" -o "$OUT/${label}.json"; jq -e . "$OUT/${label}.json" >/dev/null; }
 post object /api/object/ --arg oid "$OID" '{objectId:$oid,lasair_added:true}'
-RA="$(jq -r '.ra // .meanra // .ramean' "$OUT/object.json")"; DEC="$(jq -r '.dec // .meandec // .decmean' "$OUT/object.json")"; if [[ "$RA" == null || "$DEC" == null || -z "$RA" || -z "$DEC" ]]; then echo "ERROR: primary object response has no usable RA/Dec" >&2; exit 1; fi
+RA="$(jq -r '(if type=="array" then .[0] else . end) | .objectData.ramean // .ra // .meanra // .ramean' "$OUT/object.json")"
+DEC="$(jq -r '(if type=="array" then .[0] else . end) | .objectData.decmean // .dec // .meandec // .decmean' "$OUT/object.json")"
+if [[ "$RA" == null || "$DEC" == null || -z "$RA" || -z "$DEC" ]]; then echo "ERROR: primary object response has no usable RA/Dec" >&2; exit 1; fi
 post cone /api/cone/ --argjson ra "$RA" --argjson dec "$DEC" '{ra:$ra,dec:$dec,radius:5,requestType:"all"}'
 post sherlock_object /api/sherlock/object/ --arg oid "$OID" '{objectId:$oid,lite:true}'
 post sherlock_position /api/sherlock/position/ --argjson ra "$RA" --argjson dec "$DEC" '{ra:$ra,dec:$dec,lite:true}'
