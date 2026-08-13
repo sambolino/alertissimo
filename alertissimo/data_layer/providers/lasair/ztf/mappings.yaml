@@ -32,6 +32,9 @@ payloads:
   sherlock_objects_crossmatches:
     endpoint: sherlock_objects
     path: crossmatches[]
+  objects_candidates:
+    endpoint: objects
+    path: '[].candidates[]'
 mappings:
   summary@ztf:lasair.identity.object_id:
   - object#objectId
@@ -42,14 +45,20 @@ mappings:
   - object#objectData.ncand
   - objects#objectData.ncand
   - query#ncand
+  - object#count_all_candidates
+  - objects#count_all_candidates
   summary@ztf:lasair.time.first_mjd:
   - object#objectData.jdmin
   - objects#objectData.jdmin
   - query#jdmin
+  - object#objectData.discMjd
+  - objects#objectData.discMjd
   summary@ztf:lasair.time.last_mjd:
   - object#objectData.jdmax
   - objects#objectData.jdmax
   - query#jdmax
+  - object#objectData.latestMjd
+  - objects#objectData.latestMjd
   summary@ztf:lasair.position.ra:
   - object#objectData.ramean
   - objects#objectData.ramean
@@ -61,21 +70,29 @@ mappings:
   detection@ztf:lasair.identity.source_id:
   - candidates#candid
   - lightcurve_candidates#candid
+  - objects_candidates#candid
   detection@ztf:lasair.identity.night_id:
   - candidates#nid
   - lightcurve_candidates#nid
+  - objects_candidates#nid
   detection@ztf:lasair.time.mjd:
   - candidates#jd
   - lightcurve_candidates#jd
+  - candidates#mjd
+  - objects_candidates#jd
+  - objects_candidates#mjd
   detection@ztf:lasair.position.ra:
   - candidates#ra
   - lightcurve_candidates#ra
+  - objects_candidates#ra
   detection@ztf:lasair.position.dec:
   - candidates#dec
   - lightcurve_candidates#dec
+  - objects_candidates#dec
   detection@ztf:lasair.photometry.{filter}:
   - candidates#fid
   - lightcurve_candidates#fid
+  - objects_candidates#fid
   detection@ztf:lasair.photometry.{filter}.psf.mag:
   - lightcurve_candidates#magpsf
   detection@ztf:lasair.photometry.{filter}.psf.mag.error:
@@ -83,82 +100,105 @@ mappings:
   detection@ztf:lasair.photometry.{filter}.limit.mag:
   - candidates#diffmaglim
   - lightcurve_candidates#diffmaglim
+  - objects_candidates#diffmaglim
   detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
   - candidates#diffmaglim
   - lightcurve_candidates#diffmaglim
+  - objects_candidates#diffmaglim
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
   - candidates#magnr
   - lightcurve_candidates#magnr
+  - objects_candidates#magnr
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag.error:
   - candidates#sigmagnr
   - lightcurve_candidates#sigmagnr
+  - objects_candidates#sigmagnr
   detection@ztf:lasair.calibration.{filter}.zero_point:
   - candidates#magzpsci
   - lightcurve_candidates#magzpsci
+  - objects_candidates#magzpsci
   detection@ztf:lasair.quality.real_bogus:
   - candidates#drb
   - lightcurve_candidates#drb
+  - objects_candidates#drb
   detection@ztf:lasair.image_metrics.is_positive:
   - candidates#isdiffpos
   - lightcurve_candidates#isdiffpos
+  - objects_candidates#isdiffpos
   detection@ztf:lasair.solar_system.mpc_match.identity.object_id:
   - candidates#ssnamenr
   - lightcurve_candidates#ssnamenr
+  - objects_candidates#ssnamenr
   detection@ztf:lasair.solar_system.mpc_match.separation.total:
   - candidates#ssdistnr
   - lightcurve_candidates#ssdistnr
+  - objects_candidates#ssdistnr
   classification@sherlock:lasair.best.class:
   - object#sherlock.classification
   - sherlock_position_classifications#_value.0
   - sherlock_objects_classifications#_value.0
+  - objects#sherlock.classification
   classification@sherlock:lasair.best.score:
   - object#sherlock.classificationReliability
+  - objects#sherlock.classificationReliability
   classification@tns:lasair.best.class:
   - object#TNS.type
+  - objects#TNS.type
   classification@sherlock:lasair.best.description:
   - object#sherlock.description
   - sherlock_position_classifications#_value.1
   - sherlock_objects_classifications#_value.1
+  - objects#sherlock.description
   crossmatch@{producer}:lasair.identity.object_id:
   - object#sherlock.catalogue_object_id
   - sherlock_position_crossmatches#catalogue_object_id
   - sherlock_objects_crossmatches#catalogue_object_id
+  - objects#sherlock.catalogue_object_id
   crossmatch@{producer}:lasair.provenance.producer.name:
   - object#sherlock.catalogue_table_name
   - sherlock_position_crossmatches#catalogue_table_name
   - sherlock_objects_crossmatches#catalogue_table_name
+  - objects#sherlock.catalogue_table_name
   crossmatch@{producer}:lasair.provenance.producer.id:
   - object#sherlock.catalogue_table_name
   - sherlock_position_crossmatches#catalogue_table_name
   - sherlock_objects_crossmatches#catalogue_table_name
+  - objects#sherlock.catalogue_table_name
   crossmatch@{producer}:lasair.position.ra:
   - object#sherlock.raDeg
   - sherlock_position_crossmatches#raDeg
   - sherlock_objects_crossmatches#raDeg
+  - objects#sherlock.raDeg
   crossmatch@{producer}:lasair.position.dec:
   - object#sherlock.decDeg
   - sherlock_position_crossmatches#decDeg
   - sherlock_objects_crossmatches#decDeg
+  - objects#sherlock.decDeg
   crossmatch@{producer}:lasair.separation.total:
   - object#sherlock.separationArcsec
   - sherlock_position_crossmatches#separationArcsec
   - sherlock_objects_crossmatches#separationArcsec
+  - objects#sherlock.separationArcsec
   crossmatch@{producer}:lasair.separation.north:
   - object#sherlock.northSeparationArcsec
   - sherlock_position_crossmatches#northSeparationArcsec
   - sherlock_objects_crossmatches#northSeparationArcsec
+  - objects#sherlock.northSeparationArcsec
   crossmatch@{producer}:lasair.separation.east:
   - object#sherlock.eastSeparationArcsec
   - sherlock_position_crossmatches#eastSeparationArcsec
   - sherlock_objects_crossmatches#eastSeparationArcsec
+  - objects#sherlock.eastSeparationArcsec
   crossmatch@{producer}:lasair.separation.projected:
   - object#sherlock.physical_separation_kpc
   - sherlock_position_crossmatches#physical_separation_kpc
   - sherlock_objects_crossmatches#physical_separation_kpc
+  - objects#sherlock.physical_separation_kpc
   crossmatch@{producer}:lasair.redshift.value:
   - object#sherlock.z
   - sherlock_position_crossmatches#z
   - sherlock_objects_crossmatches#z
+  - objects#sherlock.z
   crossmatch@{producer}:lasair.distance.estimate.best.value:
   - sherlock_position_crossmatches#best_distance
   - sherlock_objects_crossmatches#best_distance
@@ -196,6 +236,7 @@ mappings:
   - object#sherlock.direct_distance
   - sherlock_position_crossmatches#direct_distance
   - sherlock_objects_crossmatches#direct_distance
+  - objects#sherlock.direct_distance
   crossmatch@{producer}:lasair.distance.estimate.direct.modulus:
   - sherlock_position_crossmatches#direct_distance_modulus
   - sherlock_objects_crossmatches#direct_distance_modulus
@@ -212,20 +253,24 @@ mappings:
   - object#sherlock.catalogue_object_type
   - sherlock_position_crossmatches#catalogue_object_type
   - sherlock_objects_crossmatches#catalogue_object_type
+  - objects#sherlock.catalogue_object_type
   crossmatch@{producer}:lasair.classification.assessment.sherlock.class:
   - object#sherlock.association_type
   - sherlock_position_crossmatches#association_type
   - sherlock_objects_crossmatches#association_type
   - sherlock_position_crossmatches#classification
   - sherlock_objects_crossmatches#classification
+  - objects#sherlock.association_type
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
   - object#sherlock.classificationReliability
   - sherlock_position_crossmatches#classificationReliability
   - sherlock_objects_crossmatches#classificationReliability
+  - objects#sherlock.classificationReliability
   crossmatch@{producer}:lasair.classification.assessment.sherlock.method:
   - object#sherlock.search_name
   - sherlock_position_crossmatches#search_name
   - sherlock_objects_crossmatches#search_name
+  - objects#sherlock.search_name
   crossmatch@{producer}:lasair.photometry.J.mag:
   - sherlock_position_crossmatches#J
   - sherlock_objects_crossmatches#J
@@ -282,12 +327,45 @@ mappings:
   - sherlock_objects_crossmatches#_yErr
   crossmatch@tns:lasair.identity.object_id:
   - object#TNS.name
+  - object#TNS.tns_name
+  - objects#TNS.name
+  - objects#TNS.tns_name
   crossmatch@tns:lasair.position.ra:
   - object#TNS.ra
+  - objects#TNS.ra
   crossmatch@tns:lasair.position.dec:
   - object#TNS.decl
+  - objects#TNS.decl
   crossmatch@tns:lasair.redshift.value:
   - object#TNS.z
+  - objects#TNS.z
+  summary@ztf:lasair.time.first_detection:
+  - object#objectData.discUtc
+  - objects#objectData.discUtc
+  summary@ztf:lasair.time.last_detection:
+  - object#objectData.latestUtc
+  - objects#objectData.latestUtc
+  detection@ztf:lasair.time.datetime:
+  - candidates#utc
+  - objects_candidates#utc
+  crossmatch@tns:lasair.separation.total:
+  - object#TNS.arcsec
+  - objects#TNS.arcsec
+  crossmatch@tns:lasair.photometry.{filter}:
+  - object#TNS.disc_mag_filter
+  - objects#TNS.disc_mag_filter
+  crossmatch@tns:lasair.photometry.{filter}.mag:
+  - object#TNS.disc_mag
+  - objects#TNS.disc_mag
+  crossmatch@{producer}:lasair.photometry.{filter}:
+  - object#sherlock.MagFilter
+  - objects#sherlock.MagFilter
+  crossmatch@{producer}:lasair.photometry.{filter}.mag:
+  - object#sherlock.Mag
+  - objects#sherlock.Mag
+  crossmatch@{producer}:lasair.photometry.{filter}.mag.error:
+  - object#sherlock.MagErr
+  - objects#sherlock.MagErr
 transforms:
   classification@sherlock:lasair.best.score:
     object#sherlock.classificationReliability:
@@ -312,6 +390,8 @@ transforms:
       type: jd_to_mjd
     lightcurve_candidates#jd:
       type: jd_to_mjd
+    objects_candidates#jd:
+      type: jd_to_mjd
   detection@ztf:lasair.photometry.{filter}:
     candidates#fid:
       type: value_map
@@ -320,6 +400,12 @@ transforms:
         2: r
         3: i
     lightcurve_candidates#fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
+    objects_candidates#fid:
       type: value_map
       map:
         1: g
@@ -336,6 +422,11 @@ transforms:
       map: *id001
       default: true
       skip_null: true
+    objects_candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+      skip_null: true
   detection@ztf:lasair.image_metrics.is_positive:
     candidates#isdiffpos:
       type: value_map
@@ -343,6 +434,11 @@ transforms:
         t: true
         f: false
     lightcurve_candidates#isdiffpos:
+      type: value_map
+      map:
+        t: true
+        f: false
+    objects_candidates#isdiffpos:
       type: value_map
       map:
         t: true
@@ -362,6 +458,16 @@ transforms:
       type: value_map
       map: *id002
       skip_null: true
+    objects_candidates#ssnamenr:
+      type: value_map
+      map:
+        ? ''
+        : null
+        'null': null
+        '-999': null
+        '-999.0': null
+        Unknown: null
+      skip_null: true
   detection@ztf:lasair.solar_system.mpc_match.separation.total:
     candidates#ssdistnr:
       type: value_map
@@ -371,6 +477,11 @@ transforms:
     lightcurve_candidates#ssdistnr:
       type: value_map
       map: *id003
+      skip_null: true
+    objects_candidates#ssdistnr:
+      type: value_map
+      map:
+        -999: null
       skip_null: true
   crossmatch@{producer}:lasair.identity.object_id:
     object#sherlock.catalogue_object_id:
@@ -398,6 +509,18 @@ transforms:
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
       map: *id004
+    objects#sherlock.catalogue_table_name:
+      type: value_map
+      map:
+        SDSS: sdss
+        SDSS/2MASS/PS1: sdss_2mass_ps1
+        2MASS PSC: twomass
+        PanSTARRS DR1: panstarrs
+        SDSS DR12 PhotoObjAll Table: sdss
+        SDSS/MILLIQUAS/GAIA/DESI/PS1: sdss_milliquas_gaia_desi_ps1
+        Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
+        Gaia DR3: gaia
+        DESI Legacy Survey DR10: desi_legacy_survey
   crossmatch@{producer}:lasair.position.ra:
     object#sherlock.raDeg:
       type: to_float

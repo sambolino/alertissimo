@@ -2,74 +2,388 @@ broker: lasair
 origin: ztf
 notes: Explicit semantic-debt registry produced by the representative saved-payload audit.
 unmapped:
-  - cone#separation:
-      reason: unsupported_semantic_concept
-      candidate_meaning: Query-context angular separation is known in arcsec, but the summary record currently has no ontology-backed separation container/path for this value.
-  - candidates#magpsf: &object_candidate_measurement
-      reason: conditional_detection_presence_required
-      candidate_meaning: Lasair object candidates mix detections and upper-limit rows; current Lasair documentation shows an upper-limit row with magpsf equal to diffmaglim and no candid, so magpsf cannot be treated as a measured PSF magnitude without row-level detection gating.
-  - candidates#sigmapsf: *object_candidate_measurement
-  - lightcurve_candidates#programid:
-      reason: provider_native_implementation_identifier
-      candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.
-  - object#image_urls.cutout:
-      reason: raw_url_ui_only_value
-      candidate_meaning: Lasair UI cutout link rather than scientific payload data.
-  - object#sherlock.photoZ: &photometric_redshift
-      reason: structural_multiple_redshift_estimates
-      candidate_meaning: Sherlock photometric-redshift estimate. It must not be collapsed with the distinct z field into one redshift.value; the current ontology has no multi-estimate redshift structure.
-  - sherlock_position_crossmatches#photoZ: *photometric_redshift
-  - sherlock_objects_crossmatches#photoZ: *photometric_redshift
-  - object#sherlock.photoZErr: &photometric_redshift_error
-      reason: structural_multiple_redshift_estimates
-      candidate_meaning: Uncertainty of Sherlock photoZ. It cannot safely populate redshift.error when redshift.value may come from the distinct z field.
-  - sherlock_position_crossmatches#photoZErr: *photometric_redshift_error
-  - sherlock_objects_crossmatches#photoZErr: *photometric_redshift_error
-  - sherlock_position_classifications#_key: &classification_key
-      reason: duplicate_execution_payload_context
-      candidate_meaning: Native transient identifier used as the key of Sherlock's classification dictionary; portfolio context already identifies the transient.
-  - sherlock_objects_classifications#_key: *classification_key
-  - sherlock_position_crossmatches#catalogue_table_id: &catalogue_table_id
-      reason: provider_native_implementation_identifier
-      candidate_meaning: Internal Sherlock catalogue-table database identifier; producer name supplies the scientific provenance.
-  - sherlock_objects_crossmatches#catalogue_table_id: *catalogue_table_id
-  - sherlock_position_crossmatches#catalogue_view_id: &catalogue_view_id
-      reason: provider_native_implementation_identifier
-      candidate_meaning: Internal Sherlock catalogue-view database identifier.
-  - sherlock_objects_crossmatches#catalogue_view_id: *catalogue_view_id
-  - sherlock_position_crossmatches#catalogue_view_name: &catalogue_view_name
-      reason: provider_native_implementation_metadata
-      candidate_meaning: Sherlock implementation/search-view metadata, distinct from the scientific classification method in search_name.
-  - sherlock_objects_crossmatches#catalogue_view_name: *catalogue_view_name
-  - sherlock_position_crossmatches#major_axis_arcsec: &major_axis
-      reason: unsupported_semantic_concept
-      candidate_meaning: Catalogue-source apparent major axis; no same-meaning crossmatch morphology path exists.
-  - sherlock_objects_crossmatches#major_axis_arcsec: *major_axis
-  - sherlock_position_crossmatches#transient_object_id: &transient_id
-      reason: duplicate_execution_payload_context
-      candidate_meaning: Sherlock's native transient identifier; it is not the identity of the matched catalogue object.
-  - sherlock_objects_crossmatches#transient_object_id: *transient_id
-  - sherlock_position_crossmatches#original_search_radius_arcsec: &search_radius
-      reason: unsupported_semantic_concept
-      candidate_meaning: Sherlock search configuration, not a measured crossmatch separation.
-  - sherlock_objects_crossmatches#original_search_radius_arcsec: *search_radius
-  - sherlock_position_crossmatches#catalogue_object_subtype: &catalogue_subtype
-      reason: unsupported_semantic_concept
-      candidate_meaning: Provider-native catalogue subtype with no same-meaning crossmatch path.
-  - sherlock_objects_crossmatches#catalogue_object_subtype: *catalogue_subtype
-  - sherlock_position_crossmatches#rankScore: &rank_score
-      reason: unsupported_semantic_concept
-      candidate_meaning: Sherlock ranking score, distinct from the ordinal rank field.
-  - sherlock_objects_crossmatches#rankScore: *rank_score
-  - sherlock_position_crossmatches#merged_rank: &merged_rank
-      reason: distinct_provider_rank_semantics
-      candidate_meaning: Sherlock merged-group rank is distinct from the row's ordinal rank and must not be used as a fallback for crossmatch.rank without a documented equivalence.
-  - sherlock_objects_crossmatches#merged_rank: *merged_rank
-  - sherlock_position_crossmatches#scale: &legacy_distance
-      reason: ambiguous_provider_field
-      candidate_meaning: Legacy Sherlock distance metadata whose precise semantics are not established by the observed payload.
-  - sherlock_position_crossmatches#distance: *legacy_distance
-  - sherlock_position_crossmatches#distance_modulus: *legacy_distance
-  - sherlock_objects_crossmatches#scale: *legacy_distance
-  - sherlock_objects_crossmatches#distance: *legacy_distance
-  - sherlock_objects_crossmatches#distance_modulus: *legacy_distance
+- cone#separation:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Query-context angular separation is known in arcsec, but the summary record currently has no ontology-backed
+      separation container/path for this value.
+- candidates#magpsf: &id001
+    reason: conditional_detection_presence_required
+    candidate_meaning: Lasair object candidates mix detections and upper-limit rows; current Lasair documentation shows an
+      upper-limit row with magpsf equal to diffmaglim and no candid, so magpsf cannot be treated as a measured PSF magnitude
+      without row-level detection gating.
+- candidates#sigmapsf: *id001
+- lightcurve_candidates#programid:
+    reason: provider_native_implementation_identifier
+    candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.
+- object#image_urls.cutout:
+    reason: raw_url_ui_only_value
+    candidate_meaning: Lasair UI cutout link rather than scientific payload data.
+- object#sherlock.photoZ: &id002
+    reason: structural_multiple_redshift_estimates
+    candidate_meaning: Sherlock photometric-redshift estimate. It must not be collapsed with the distinct z field into one
+      redshift.value; the current ontology has no multi-estimate redshift structure.
+- sherlock_position_crossmatches#photoZ: *id002
+- sherlock_objects_crossmatches#photoZ: *id002
+- object#sherlock.photoZErr: &id003
+    reason: structural_multiple_redshift_estimates
+    candidate_meaning: Uncertainty of Sherlock photoZ. It cannot safely populate redshift.error when redshift.value may come
+      from the distinct z field.
+- sherlock_position_crossmatches#photoZErr: *id003
+- sherlock_objects_crossmatches#photoZErr: *id003
+- sherlock_position_classifications#_key: &id004
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Native transient identifier used as the key of Sherlock's classification dictionary; portfolio context
+      already identifies the transient.
+- sherlock_objects_classifications#_key: *id004
+- sherlock_position_crossmatches#catalogue_table_id: &id005
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Internal Sherlock catalogue-table database identifier; producer name supplies the scientific provenance.
+- sherlock_objects_crossmatches#catalogue_table_id: *id005
+- sherlock_position_crossmatches#catalogue_view_id: &id006
+    reason: provider_native_implementation_identifier
+    candidate_meaning: Internal Sherlock catalogue-view database identifier.
+- sherlock_objects_crossmatches#catalogue_view_id: *id006
+- sherlock_position_crossmatches#catalogue_view_name: &id007
+    reason: provider_native_implementation_metadata
+    candidate_meaning: Sherlock implementation/search-view metadata, distinct from the scientific classification method in
+      search_name.
+- sherlock_objects_crossmatches#catalogue_view_name: *id007
+- sherlock_position_crossmatches#major_axis_arcsec: &id008
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent major axis; no same-meaning crossmatch morphology path exists.
+- sherlock_objects_crossmatches#major_axis_arcsec: *id008
+- sherlock_position_crossmatches#transient_object_id: &id009
+    reason: duplicate_execution_payload_context
+    candidate_meaning: Sherlock's native transient identifier; it is not the identity of the matched catalogue object.
+- sherlock_objects_crossmatches#transient_object_id: *id009
+- sherlock_position_crossmatches#original_search_radius_arcsec: &id010
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock search configuration, not a measured crossmatch separation.
+- sherlock_objects_crossmatches#original_search_radius_arcsec: *id010
+- sherlock_position_crossmatches#catalogue_object_subtype: &id011
+    reason: unsupported_semantic_concept
+    candidate_meaning: Provider-native catalogue subtype with no same-meaning crossmatch path.
+- sherlock_objects_crossmatches#catalogue_object_subtype: *id011
+- sherlock_position_crossmatches#rankScore: &id012
+    reason: unsupported_semantic_concept
+    candidate_meaning: Sherlock ranking score, distinct from the ordinal rank field.
+- sherlock_objects_crossmatches#rankScore: *id012
+- sherlock_position_crossmatches#merged_rank: &id013
+    reason: distinct_provider_rank_semantics
+    candidate_meaning: Sherlock merged-group rank is distinct from the row's ordinal rank and must not be used as a fallback
+      for crossmatch.rank without a documented equivalence.
+- sherlock_objects_crossmatches#merged_rank: *id013
+- sherlock_position_crossmatches#scale: &id014
+    reason: ambiguous_provider_field
+    candidate_meaning: Legacy Sherlock distance metadata whose precise semantics are not established by the observed payload.
+- sherlock_position_crossmatches#distance: *id014
+- sherlock_position_crossmatches#distance_modulus: *id014
+- sherlock_objects_crossmatches#scale: *id014
+- sherlock_objects_crossmatches#distance: *id014
+- sherlock_objects_crossmatches#distance_modulus: *id014
+- objects_candidates#magpsf:
+    reason: conditional_detection_presence_required
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#sigmapsf:
+    reason: conditional_detection_presence_required
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#image_urls.Science:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#image_urls.Template:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#image_urls.Difference:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#imjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#since_now:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- candidates#json:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#image_urls.Science:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#image_urls.Template:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#image_urls.Difference:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#imjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#since_now:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects_candidates#json:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.glonmean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.glonmean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.glatmean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.glatmean:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.ec_lon:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.ec_lon:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.ec_lat:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.ec_lat:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.rasex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.rasex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.decsex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.decsex:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.now_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.now_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.mjdmin_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.mjdmin_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.mjdmax_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.mjdmax_ago:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.discMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.discMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.discFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.discFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.latestMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.latestMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.latestFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.latestFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.peakMjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.peakMjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.peakUtc:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.peakUtc:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.peakMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.peakMag:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#objectData.peakFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#objectData.peakFilter:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#count_isdiffpos:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#count_isdiffpos:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#count_isdiffneg:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#count_isdiffneg:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#count_noncandidate:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#count_noncandidate:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#message:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#message:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.objectId:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.objectId:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.distance:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.distance:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.photoZ:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.photoZErr:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.major_axis_arcsec:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.major_axis_arcsec:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.annotator:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.annotator:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.additional_output:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.additional_output:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#sherlock.summary:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#sherlock.summary:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.tns_prefix:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.tns_prefix:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.disc_int_name:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.disc_int_name:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.disc_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.disc_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.disc_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.disc_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.lastmodified_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.lastmodified_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.lastmodified_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.lastmodified_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.lasairmodified_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.lasairmodified_date:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.lasairmodified_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.lasairmodified_date_mjd:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.sender:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.sender:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.reporters:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.reporters:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.source_group:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.source_group:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.htm16:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.htm16:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.objectId:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.objectId:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.wl_id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.wl_id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- object#TNS.cone_id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+- objects#TNS.cone_id:
+    reason: authoritative_field_deferred
+    candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.

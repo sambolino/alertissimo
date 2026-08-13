@@ -79,6 +79,23 @@ def test_capture_records_live_parameter_dependent_shapes() -> None:
     assert len(_fixture("sherlock_objects_full")["crossmatches"]) == 4
 
 
+
+def test_live_object_and_plural_object_are_fully_accounted() -> None:
+    obj = _fixture("object_default")
+    objs = _fixture("objects_plural")
+    _assert_zero_unaccounted("object", "object_default")
+    _assert_zero_unaccounted("objects", "objects_plural")
+    assert len(obj["candidates"]) == 92
+    portfolio = _build("object", obj)
+    summary = next(r for r in portfolio.records if r.semantic_type == "summary@ztf:lasair")
+    assert summary.fields["detection_count"] == 35
+    assert summary.fields["time.first_detection"] == "2020-11-12 10:27:04"
+    tns = next(r for r in portfolio.records if r.semantic_type == "crossmatch@tns:lasair")
+    assert tns.fields["separation.total"] == pytest.approx(0.12)
+    assert tns.fields["photometry.r.mag"] == pytest.approx(19.7399)
+    plural = _build("objects", objs)
+    assert len([r for r in plural.records if r.semantic_type == "detection@ztf:lasair"]) == 92
+
 def test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None:
     payload = _fixture("lightcurves")
     rows = payload[0]["candidates"]
