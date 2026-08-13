@@ -1,0 +1,9 @@
+broker=lasair
+survey=ztf
+capture_utc=2026-08-13T11:04:20Z
+script=scripts/evidence/capture_lasair_ztf.sh
+transport=authenticated-rest
+base_url=https://lasair-ztf.lsst.ac.uk
+primary_object_identifier=ZTF20acpwljl
+git_commit=8ee015e77c76d2a25db97f7cc5d178db03ae6207
+git_branch=feature/semantic-registry

@@ -1,0 +1,6 @@
+[].decmean
+[].jdmax
+[].jdmin
+[].ncand
+[].objectId
+[].ramean

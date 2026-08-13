@@ -1,0 +1,17 @@
+classifications.transient_00000.[]
+crossmatches.[].association_type
+crossmatches.[].catalogue_object_id
+crossmatches.[].catalogue_object_type
+crossmatches.[].catalogue_table_name
+crossmatches.[].classificationReliability
+crossmatches.[].decDeg
+crossmatches.[].eastSeparationArcsec
+crossmatches.[].Mag
+crossmatches.[].MagErr
+crossmatches.[].MagFilter
+crossmatches.[].northSeparationArcsec
+crossmatches.[].photoZ
+crossmatches.[].photoZErr
+crossmatches.[].raDeg
+crossmatches.[].separationArcsec
+crossmatches.[].transient_object_id

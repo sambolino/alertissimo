@@ -1,0 +1,17 @@
+[].candidates.[].candid
+[].candidates.[].dec
+[].candidates.[].diffmaglim
+[].candidates.[].drb
+[].candidates.[].fid
+[].candidates.[].isdiffpos
+[].candidates.[].jd
+[].candidates.[].magnr
+[].candidates.[].magpsf
+[].candidates.[].magzpsci
+[].candidates.[].nid
+[].candidates.[].ra
+[].candidates.[].sigmagnr
+[].candidates.[].sigmapsf
+[].candidates.[].ssdistnr
+[].candidates.[].ssnamenr
+[].objectId
