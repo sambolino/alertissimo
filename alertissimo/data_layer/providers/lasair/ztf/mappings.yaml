@@ -53,12 +53,12 @@ mappings:
     - candidates#fid
     - lightcurve_candidates#fid
   detection@ztf:lasair.photometry.{filter}.psf.mag:
-    - candidates#magpsf
     - lightcurve_candidates#magpsf
   detection@ztf:lasair.photometry.{filter}.psf.mag.error:
-    - candidates#sigmapsf
     - lightcurve_candidates#sigmapsf
   detection@ztf:lasair.photometry.{filter}.limit.mag:
+    - candidates#diffmaglim
+  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
     - candidates#diffmaglim
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
     - candidates#magnr
@@ -287,6 +287,12 @@ transforms:
         1: g
         2: r
         3: i
+  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
+    candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+      skip_null: true
   detection@ztf:lasair.image_metrics.is_positive:
     candidates#isdiffpos:
       type: value_map
