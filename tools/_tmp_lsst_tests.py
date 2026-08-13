@@ -29,7 +29,7 @@ def test_live_lsst_surface_shapes_are_frozen():
  c=_fixture('object_with_context');r=_fixture('object_raw')
  assert c['diaObjectId']=='313761042336317573';assert 'lasairData' in c;assert 'lasairData' not in r
  assert len(c['diaSourcesList'])==245;assert len(c['diaForcedSourcesList'])==345
- assert c['diaObject']['nDiaSources']==259;assert c['lasairData']['nDiaSources']==259
+ assert c['lasairData']['nDiaSources']==259;assert r['diaObject']['nDiaSources']==259
  assert _fixture('cone_all')=={'objects':[{'object':313761042336317573,'separation':0.0}],'count':1,'nearest':{'object':313761042336317573,'separation':0.0}}
  assert _fixture('cone_nearest')=={'nearest':{'object':313761042336317573,'separation':0.0}};assert _fixture('cone_count')=={'count':1}
  assert _fixture('query_object')==[{'diaObjectId':313761042336317573}];assert _fixture('query_object_qualified')==[{'diaObjectId':313761042336317573}]
@@ -66,7 +66,7 @@ def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  assert all('merged_rank' not in r for r in m['crossmatch@{producer}:lasair.rank'])
  for spec in t['crossmatch@{producer}:lasair.provenance.producer.id'].values():assert spec.get('default')!='unknown';assert spec['map']['DESI']=='desi_legacy_survey'
 ''')
-README.write_text('''# Lasair/LSST authoritative evidence\n\nThe dated `capture_20260813T140948Z/` directory is the authenticated authoritative Lasair/LSST REST capture used by semantic-registry regressions.\n\n- diaObjectId: `313761042336317573`\n- capture date: 2026-08-13\n- the object reports `nDiaSources=259`; this REST response contains 245 `diaSourcesList` rows and 345 `diaForcedSourcesList` rows\n- singular object, cone, query, Sherlock object, and Sherlock position surfaces returned HTTP 200\n- `/api/objects/`, `/api/lightcurves/`, and `/api/sherlock/objects/` returned HTTP 404 and are not registered as LSST endpoints\n- Sherlock lite/full and cone all/nearest/count shapes are preserved\n\nOlder top-level JSON files predate the authenticated capture and remain legacy/synthetic fixtures. New authoritative checks use the dated capture.\n''')
+README.write_text('''# Lasair/LSST authoritative evidence\n\nThe dated `capture_20260813T140948Z/` directory is the authenticated authoritative Lasair/LSST REST capture used by semantic-registry regressions.\n\n- diaObjectId: `313761042336317573`\n- capture date: 2026-08-13\n- the contextual object reports `lasairData.nDiaSources=259`; its returned history contains 245 `diaSourcesList` rows and 345 `diaForcedSourcesList` rows; the raw object carries `diaObject.nDiaSources=259`\n- singular object, cone, query, Sherlock object, and Sherlock position surfaces returned HTTP 200\n- `/api/objects/`, `/api/lightcurves/`, and `/api/sherlock/objects/` returned HTTP 404 and are not registered as LSST endpoints\n- Sherlock lite/full and cone all/nearest/count shapes are preserved\n\nOlder top-level JSON files predate the authenticated capture and remain legacy/synthetic fixtures. New authoritative checks use the dated capture.\n''')
 w=WF.read_text()
 if 'tests/test_lasair_lsst_live_capture.py' not in w:
  w=w.replace("      - 'tests/test_lasair_ztf_live_capture.py'\n","      - 'tests/test_lasair_ztf_live_capture.py'\n      - 'tests/test_lasair_lsst_live_capture.py'\n",1)
