@@ -1,0 +1,59 @@
+name: Temporary Lasair LSST authoritative close-out
+
+on:
+  push:
+    branches:
+      - audit/lasair-lsst-authoritative-closeout
+    paths:
+      - tools/_tmp_lsst_core.py
+      - tools/_tmp_lsst_sherlock.py
+      - tools/_tmp_lsst_debt.py
+      - tools/_tmp_lsst_tests.py
+      - .github/workflows/tmp-lasair-lsst-closeout.yml
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/lasair-lsst-authoritative-closeout
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7'
+      - name: Generate authoritative registry
+        run: |
+          python tools/_tmp_lsst_core.py
+          python tools/_tmp_lsst_sherlock.py
+          PYTHONPATH=. python tools/_tmp_lsst_debt.py
+          python tools/_tmp_lsst_tests.py
+      - name: Validate semantic registry
+        run: |
+          PYTHONPATH=. pytest -q \
+            tests/test_mapping_schema.py \
+            tests/test_semantic_paths.py \
+            tests/test_semantic_model_validation.py \
+            tests/test_semantic_record_builder.py \
+            tests/test_lasair_registry_architecture.py \
+            tests/test_lasair_ztf_live_capture.py \
+            tests/test_lasair_lsst_live_capture.py
+          PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
+      - name: Commit generated close-out and remove temporary machinery
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm tools/_tmp_lsst_core.py tools/_tmp_lsst_sherlock.py tools/_tmp_lsst_debt.py tools/_tmp_lsst_tests.py .github/workflows/tmp-lasair-lsst-closeout.yml
+          git add alertissimo/data_layer/providers/lasair/lsst/mappings.yaml \
+                  alertissimo/data_layer/providers/lasair/lsst/unmapped_fields.yaml \
+                  alertissimo/data_layer/providers/lasair/lsst/endpoints.yaml \
+                  tests/test_lasair_lsst_live_capture.py \
+                  tests/fixtures/lasair/lsst/README.md \
+                  .github/workflows/semantic-registry.yml
+          git diff --cached --check
+          git commit -m 'Close authoritative Lasair LSST semantic audit'
+          git push origin HEAD:audit/lasair-lsst-authoritative-closeout
