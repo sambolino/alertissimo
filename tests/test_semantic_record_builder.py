@@ -101,7 +101,7 @@ def test_jd_transform_and_missing_fields(tmp_path):
 def test_boolean_not_and_value_map(tmp_path):
     portfolio = _build(tmp_path, {"rows": [{"flag": 0, "code": "A"}]}, {
         "broker": "lasair", "origin": "ztf",
-        "payloads": {"row": {"path": "rows[]"}},
+        "payloads": {"row": {"endpoint": "object", "path": "rows[]"}},
         "mappings": {
             "detection@ztf:lasair.image_metrics.is_positive": ["row#flag"],
             "detection@ztf:lasair.quality.test_label": ["row#code"],

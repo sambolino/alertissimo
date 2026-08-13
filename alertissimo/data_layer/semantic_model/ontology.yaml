@@ -809,6 +809,12 @@ levels:
   [distance_to_edge]:
     description: "Distance to nearest image edge"
     unit: pixels
+  <galactic>:
+    description: "Galactic coordinates of the represented position"
+    [longitude]:
+      unit: deg
+    [latitude]:
+      unit: deg
   level: L1, L6
   [cone_distance]:
     description: "Angular distance from search center"
@@ -922,6 +928,8 @@ levels:
   [snapshot_datetime]:
     description: "Date/time of a survey, stream, statistics, or selection snapshot"
     unit: datetime
+  [night]:
+    description: "Survey or observing-night identifier associated with the snapshot"
 <identity>:
   level: L1
   description: "Identifier(s) of a single observational event in its originating system"
@@ -1689,6 +1697,72 @@ levels:
 <solar_system>:
   level: L2
   description: "Solar System object - specific information"
+  $ref: <identity>(L0)
+  [designation]:
+    description: "Solar System object designation"
+  [name]:
+    description: "Solar System object name"
+  <match>:
+    description: "Association or ranking metadata for a Solar System counterpart"
+    [rank]:
+      description: "Rank of the associated Solar System counterpart"
+      type: integer
+  <ecliptic>:
+    description: "Ecliptic coordinates associated with the Solar System object"
+    [longitude]:
+      unit: deg
+    [latitude]:
+      unit: deg
+  [phase_angle]:
+    description: "Solar phase angle"
+    unit: deg
+  [elongation]:
+    description: "Solar elongation"
+    unit: deg
+  <ephemeris>:
+    description: "Predicted ephemeris quantities associated with the Solar System object"
+    [ra]:
+      unit: deg
+    [dec]:
+      unit: deg
+    [vmag]:
+      unit: mag
+    <offset>:
+      [total]:
+      [ra]:
+      [dec]:
+      [along_track]:
+      [cross_track]:
+    <rate>:
+      [total]:
+      [ra]:
+      [dec]:
+  <heliocentric>:
+    description: "Heliocentric state-vector quantities"
+    [range]:
+    [range_rate]:
+    <position>:
+      [x]:
+      [y]:
+      [z]:
+    <velocity>:
+      [x]:
+      [y]:
+      [z]:
+      [total]:
+  <topocentric>:
+    description: "Topocentric state-vector quantities"
+    [range]:
+    [range_rate]:
+    <position>:
+      [x]:
+      [y]:
+      [z]:
+    <velocity>:
+      [x]:
+      [y]:
+      [z]:
+      [total]:
   [roid]:
     description: "SSO score (0=not, 1=possible, 2=candidate, 3=confirmed)"
     type: integer
@@ -2041,6 +2115,7 @@ levels:
   $ref: <forced_photometry>(L0)
   $ref: <color>(L0)
   $ref: <flags>(L0)
+  $ref: <provenance>
   $edges:
     --canonical_for--> <summary>@{producer}:{channel}
   [detection_count]:
@@ -2084,6 +2159,7 @@ levels:
   $ref: <photometry>
   $ref: <color>
   $ref: <classification>
+  $ref: <quality>(L6)
   $ref: <provenance>
   $ref: <astrometric_solution>
   [rank]:
@@ -2149,6 +2225,25 @@ levels:
   [filter_counts]:
     description: "Alert or record counts per filter"
     type: object
+    [{filter}]:
+      description: "Alert or record count for this filter"
+      type: integer
+  [alert_count]:
+    description: "Number of alerts represented by the survey snapshot"
+    type: integer
+  [object_count]:
+    description: "Number of objects represented by the survey snapshot"
+    type: integer
+  [visit_count]:
+    description: "Number of visits represented by the survey snapshot"
+    type: integer
+  <flag_counts>:
+    description: "Counts grouped by boolean/status flag"
+    [{flag}]:
+      type: integer
+    <pixel_flags>:
+      [{flag}]:
+        type: integer
   [exposure_count]:
     description: "Number of exposures"
     type: integer

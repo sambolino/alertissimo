@@ -349,7 +349,7 @@ mappings:
   detection@lsst:alerce.image_metrics.trail.ra:
   - query_detections#trailRa
   - query_lightcurve.detections#trailRa
-  detection@lsst:alerce.solar_system.object.identity.object_id:
+  detection@lsst:alerce.solar_system.identity.object_id:
   - query_detections#ssObjectId
   - query_lightcurve.detections#ssObjectId
   detection@lsst:alerce.image_metrics.trail.ra_error:
@@ -398,7 +398,7 @@ mappings:
   - query_detections#templateFluxErr
   - query_lightcurve.detections#templateFluxErr
 transforms:
-  detection@lsst:alerce.solar_system.object.identity.object_id:
+  detection@lsst:alerce.solar_system.identity.object_id:
     query_detections#ssObjectId: &optional_ss_object_id
       type: value_map
       map: {0: null}
