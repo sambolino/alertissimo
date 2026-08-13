@@ -36,7 +36,7 @@ def test_endpoint_contracts_are_physical_rest_operations() -> None:
         },
         "ztf": {
             "object", "objects", "lightcurves", "cone", "query",
-            "sherlock_objects", "sherlock_position",
+            "sherlock_object", "sherlock_objects", "sherlock_position",
         },
     }
     expected_baseurl = {
@@ -94,6 +94,7 @@ def test_mappings_use_minimal_payload_references() -> None:
             assert payload["path"] == "." or payload["path"].endswith(("[]", "{}"))
         for refs in mappings.values():
             assert isinstance(refs, list) and refs
+            assert len(refs) == len(set(refs))
             for ref in refs:
                 assert isinstance(ref, str) and ref.count("#") == 1
                 assert ref.split("#", 1)[0] in payloads
@@ -148,6 +149,8 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     document = load("ztf", "mappings.yaml")
     mappings = document["mappings"]
     transforms = document["transforms"]
+    payloads = document["payloads"]
+
     assert mappings["classification@sherlock:lasair.best.class"] == [
         "object#sherlock.classification",
         "sherlock_position_classifications#_value.0",
@@ -158,6 +161,14 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         "sherlock_position_classifications#_value.1",
         "sherlock_objects_classifications#_value.1",
     ]
+    assert payloads["sherlock_objects_classifications"] == {
+        "endpoint": "sherlock_objects",
+        "path": "classifications{}",
+    }
+    assert payloads["sherlock_objects_crossmatches"] == {
+        "endpoint": "sherlock_objects",
+        "path": "crossmatches[]",
+    }
     assert not any(
         key.startswith("classification@sherlock:lasair.")
         and key.endswith(("identity.object_id", "subject.object_id", "target.object_id"))
