@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import subprocess
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 mp = ROOT / 'alertissimo/data_layer/providers/lasair/ztf/mappings.yaml'
 dp = ROOT / 'alertissimo/data_layer/providers/lasair/ztf/unmapped_fields.yaml'
 tp = ROOT / 'tests/test_lasair_ztf_live_capture.py'
+ap = ROOT / 'tests/test_lasair_registry_architecture.py'
 
 m = yaml.safe_load(mp.read_text())
 m['payloads']['objects_candidates'] = {'endpoint': 'objects', 'path': '[].candidates[]'}
@@ -96,6 +98,14 @@ t = tp.read_text()
 if 'test_live_object_and_plural_object_are_fully_accounted' not in t:
     marker='\ndef test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None:\n'
     test='''\n\ndef test_live_object_and_plural_object_are_fully_accounted() -> None:\n    obj = _fixture("object_default")\n    objs = _fixture("objects_plural")\n    _assert_zero_unaccounted("object", "object_default")\n    _assert_zero_unaccounted("objects", "objects_plural")\n    assert len(obj["candidates"]) == 92\n    portfolio = _build("object", obj)\n    summary = next(r for r in portfolio.records if r.semantic_type == "summary@ztf:lasair")\n    assert summary.fields["detection_count"] == 35\n    assert summary.fields["time.first_detection"] == "2020-11-12 10:27:04"\n    tns = next(r for r in portfolio.records if r.semantic_type == "crossmatch@tns:lasair")\n    assert tns.fields["separation.total"] == pytest.approx(0.12)\n    assert tns.fields["photometry.r.mag"] == pytest.approx(19.7399)\n    plural = _build("objects", objs)\n    assert len([r for r in plural.records if r.semantic_type == "detection@ztf:lasair"]) == 92\n'''
-    if marker not in t: raise RuntimeError('test insertion marker missing')
+    if marker not in t:
+        raise RuntimeError('test insertion marker missing')
     t=t.replace(marker,test+marker,1)
     tp.write_text(t)
+
+a = ap.read_text()
+a = a.replace('''    assert mappings["classification@sherlock:lasair.best.class"] == [\n        "object#sherlock.classification",\n        "sherlock_position_classifications#_value.0",\n        "sherlock_objects_classifications#_value.0",\n    ]\n''', '''    assert set(mappings["classification@sherlock:lasair.best.class"]) == {\n        "object#sherlock.classification",\n        "objects#sherlock.classification",\n        "sherlock_position_classifications#_value.0",\n        "sherlock_objects_classifications#_value.0",\n    }\n''', 1)
+a = a.replace('''    assert mappings["classification@sherlock:lasair.best.description"] == [\n        "object#sherlock.description",\n        "sherlock_position_classifications#_value.1",\n        "sherlock_objects_classifications#_value.1",\n    ]\n''', '''    assert set(mappings["classification@sherlock:lasair.best.description"]) == {\n        "object#sherlock.description",\n        "objects#sherlock.description",\n        "sherlock_position_classifications#_value.1",\n        "sherlock_objects_classifications#_value.1",\n    }\n''', 1)
+a = a.replace('''    assert mappings["classification@tns:lasair.best.class"] == ["object#TNS.type"]\n    assert mappings["crossmatch@tns:lasair.identity.object_id"] == ["object#TNS.name"]\n''', '''    assert set(mappings["classification@tns:lasair.best.class"]) == {\n        "object#TNS.type",\n        "objects#TNS.type",\n    }\n    assert set(mappings["crossmatch@tns:lasair.identity.object_id"]) == {\n        "object#TNS.name",\n        "object#TNS.tns_name",\n        "objects#TNS.name",\n        "objects#TNS.tns_name",\n    }\n    assert payloads["objects_candidates"] == {\n        "endpoint": "objects",\n        "path": "[].candidates[]",\n    }\n''', 1)
+ap.write_text(a)
+subprocess.run(['git', 'add', '--', 'tests/test_lasair_registry_architecture.py'], cwd=ROOT, check=True)
