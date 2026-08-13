@@ -5,6 +5,10 @@ unmapped:
   - cone#separation:
       reason: unsupported_semantic_concept
       candidate_meaning: Query-context angular separation is known in arcsec, but the summary record currently has no ontology-backed separation container/path for this value.
+  - candidates#magpsf: &object_candidate_measurement
+      reason: conditional_detection_presence_required
+      candidate_meaning: Lasair object candidates mix detections and upper-limit rows; current Lasair documentation shows an upper-limit row with magpsf equal to diffmaglim and no candid, so magpsf cannot be treated as a measured PSF magnitude without row-level detection gating.
+  - candidates#sigmapsf: *object_candidate_measurement
   - lightcurve_candidates#programid:
       reason: provider_native_implementation_identifier
       candidate_meaning: ZTF observing-program identifier, for which the ontology has no equivalent field.
