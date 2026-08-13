@@ -70,3 +70,6 @@ unmapped:
       candidate_meaning: Legacy Sherlock distance metadata whose precise semantics are not established by the observed payload.
   - sherlock_position_crossmatches#distance: *legacy_distance
   - sherlock_position_crossmatches#distance_modulus: *legacy_distance
+  - sherlock_objects_crossmatches#scale: *legacy_distance
+  - sherlock_objects_crossmatches#distance: *legacy_distance
+  - sherlock_objects_crossmatches#distance_modulus: *legacy_distance
