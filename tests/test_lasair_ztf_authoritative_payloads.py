@@ -1,4 +1,4 @@
-"""Authoritative checks for the observed Lasair/ZTF cone and Sherlock payloads."""
+"""Authoritative checks for observed and documented Lasair/ZTF payload semantics."""
 
 from __future__ import annotations
 
@@ -92,7 +92,11 @@ def test_authoritative_sherlock_position_is_fully_accounted_and_normalized():
     assert len(classifications) == 1
     assert classifications[0].fields["best.class"] == "SN"
 
-    by_type = {r.semantic_type: r for r in portfolio.records if r.semantic_type.startswith("crossmatch@")}
+    by_type = {
+        r.semantic_type: r
+        for r in portfolio.records
+        if r.semantic_type.startswith("crossmatch@")
+    }
     assert {
         "crossmatch@sdss_2mass_ps1:lasair",
         "crossmatch@twomass:lasair",
@@ -125,7 +129,9 @@ def test_sherlock_z_and_photoz_are_not_collapsed_into_one_redshift_measurement()
         ],
     }
     portfolio = _build("sherlock_position", payload)
-    record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@sdss:lasair")
+    record = next(
+        r for r in portfolio.records if r.semantic_type == "crossmatch@sdss:lasair"
+    )
     fields = dict(record.fields)
     assert fields["redshift.value"] == 0.03
     assert "redshift.error" not in fields
@@ -158,3 +164,55 @@ def test_unknown_catalogue_names_are_not_collapsed_to_unknown_producer():
     ]
     assert spec["map"]["SDSS"] == "sdss"
     assert "default" not in spec
+
+
+def test_documented_object_upper_limit_does_not_fabricate_measured_psf_mag():
+    # Current Lasair API documentation shows object candidates containing
+    # non-detections with no candid, diffmaglim set, and magpsf equal to the
+    # limiting magnitude. The overloaded magpsf must not become a measurement.
+    payload = {
+        "objectId": "ZTF23aabplmy",
+        "objectData": {},
+        "candidates": [
+            {
+                "jd": 2459994.851794,
+                "fid": 2,
+                "diffmaglim": 20.46820068359375,
+                "magpsf": 20.46820068359375,
+            }
+        ],
+    }
+    portfolio = _build("object", payload)
+    detection = next(
+        r for r in portfolio.records if r.semantic_type == "detection@ztf:lasair"
+    )
+    fields = dict(detection.fields)
+    assert fields["time.mjd"] == 59994.351793999784
+    assert fields["photometry.r.limit.mag"] == 20.46820068359375
+    assert fields["photometry.r.limit.upper_limit"] is True
+    assert "photometry.r.psf.mag" not in fields
+    assert "photometry.r.psf.mag.error" not in fields
+
+
+def test_lightcurve_surface_keeps_measured_difference_photometry():
+    payload = _fixture("lightcurves")
+    portfolio = _build("lightcurves", payload)
+    detection = next(
+        r for r in portfolio.records if r.semantic_type == "detection@ztf:lasair"
+    )
+    fields = dict(detection.fields)
+    assert fields["identity.source_id"] == 1
+    assert fields["photometry.g.psf.mag"] == 18.2
+    assert fields["photometry.g.psf.mag.error"] == 0.1
+    assert "photometry.g.limit.upper_limit" not in fields
+
+
+def test_object_candidate_magpsf_is_conditional_debt():
+    mappings = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
+    unmapped = yaml.safe_load(UNMAPPED.read_text(encoding="utf-8"))
+    mapped_refs = {ref for refs in mappings["mappings"].values() for ref in refs}
+    debt_refs = {next(iter(entry)) for entry in unmapped["unmapped"]}
+    assert "candidates#magpsf" not in mapped_refs
+    assert "candidates#sigmapsf" not in mapped_refs
+    assert "candidates#magpsf" in debt_refs
+    assert "candidates#sigmapsf" in debt_refs
