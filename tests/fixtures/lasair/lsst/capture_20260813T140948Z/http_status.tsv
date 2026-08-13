@@ -1,0 +1,17 @@
+label	mode	http	json	path
+object_default	optional	200	yes	/api/object/
+object_with_context	required	200	yes	/api/object/
+object_raw	optional	200	yes	/api/object/
+objects_plural	optional	404	no	/api/objects/
+lightcurves	optional	404	no	/api/lightcurves/
+cone_all	required	200	yes	/api/cone/
+cone_nearest	optional	200	yes	/api/cone/
+cone_count	optional	200	yes	/api/cone/
+query_object	optional	200	yes	/api/query/
+query_object_qualified	optional	200	yes	/api/query/
+sherlock_object_lite	required	200	yes	/api/sherlock/object/
+sherlock_object_full	required	200	yes	/api/sherlock/object/
+sherlock_position_lite	required	200	yes	/api/sherlock/position/
+sherlock_position_full	required	200	yes	/api/sherlock/position/
+sherlock_objects_lite	optional	404	no	/api/sherlock/objects/
+sherlock_objects_full	optional	404	no	/api/sherlock/objects/
