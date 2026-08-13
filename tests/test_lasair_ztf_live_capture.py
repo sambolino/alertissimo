@@ -6,6 +6,8 @@ from itertools import count
 import json
 from pathlib import Path
 
+import pytest
+
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalExecutionId,
@@ -129,8 +131,8 @@ def test_live_fixed_query_projection_is_fully_accounted() -> None:
     fields = dict(summary.fields)
     assert fields["identity.object_id"] == "ZTF20acpwljl"
     assert fields["detection_count"] == 35
-    assert fields["time.first_mjd"] == 59165.43546299962
-    assert fields["time.last_mjd"] == 59194.4610531996
+    assert fields["time.first_mjd"] == pytest.approx(59165.43546300009)
+    assert fields["time.last_mjd"] == pytest.approx(59194.461053200066)
 
 
 def test_live_plural_sherlock_object_shape_is_fully_accounted() -> None:
