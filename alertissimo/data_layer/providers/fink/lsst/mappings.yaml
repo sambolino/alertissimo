@@ -75,7 +75,7 @@ mappings:
   - objects#r:observation_reason
   summary@lsst:fink.provenance.producer.program.target_name:
   - objects#r:target_name
-  summary@lsst:fink.crossmatch.best.class:
+  classification@fink.assessment.crossmatch.class:
   - objects#f:main_label_crossmatch
   - conesearch#f:main_label_crossmatch
   summary@lsst:fink.photometry.u.psf.flux.error_mean:
@@ -108,12 +108,6 @@ mappings:
   summary@lsst:fink.forced_photometry.u.psf.flux.mean_error:
   - objects#r:u_fpFluxMeanErr
   - conesearch#r:u_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.u.science.flux.mean:
-  - objects#r:u_scienceFluxMean
-  - conesearch#r:u_scienceFluxMean
-  summary@lsst:fink.forced_photometry.u.science.flux.mean_error:
-  - objects#r:u_scienceFluxMeanErr
-  - conesearch#r:u_scienceFluxMeanErr
   summary@lsst:fink.photometry.g.psf.flux.error_mean:
   - objects#r:g_psfFluxErrMean
   - conesearch#r:g_psfFluxErrMean
@@ -144,12 +138,6 @@ mappings:
   summary@lsst:fink.forced_photometry.g.psf.flux.mean_error:
   - objects#r:g_fpFluxMeanErr
   - conesearch#r:g_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.g.science.flux.mean:
-  - objects#r:g_scienceFluxMean
-  - conesearch#r:g_scienceFluxMean
-  summary@lsst:fink.forced_photometry.g.science.flux.mean_error:
-  - objects#r:g_scienceFluxMeanErr
-  - conesearch#r:g_scienceFluxMeanErr
   summary@lsst:fink.photometry.r.psf.flux.error_mean:
   - objects#r:r_psfFluxErrMean
   - conesearch#r:r_psfFluxErrMean
@@ -180,12 +168,6 @@ mappings:
   summary@lsst:fink.forced_photometry.r.psf.flux.mean_error:
   - objects#r:r_fpFluxMeanErr
   - conesearch#r:r_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.r.science.flux.mean:
-  - objects#r:r_scienceFluxMean
-  - conesearch#r:r_scienceFluxMean
-  summary@lsst:fink.forced_photometry.r.science.flux.mean_error:
-  - objects#r:r_scienceFluxMeanErr
-  - conesearch#r:r_scienceFluxMeanErr
   summary@lsst:fink.photometry.i.psf.flux.error_mean:
   - objects#r:i_psfFluxErrMean
   - conesearch#r:i_psfFluxErrMean
@@ -216,12 +198,6 @@ mappings:
   summary@lsst:fink.forced_photometry.i.psf.flux.mean_error:
   - objects#r:i_fpFluxMeanErr
   - conesearch#r:i_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.i.science.flux.mean:
-  - objects#r:i_scienceFluxMean
-  - conesearch#r:i_scienceFluxMean
-  summary@lsst:fink.forced_photometry.i.science.flux.mean_error:
-  - objects#r:i_scienceFluxMeanErr
-  - conesearch#r:i_scienceFluxMeanErr
   summary@lsst:fink.photometry.z.psf.flux.error_mean:
   - objects#r:z_psfFluxErrMean
   - conesearch#r:z_psfFluxErrMean
@@ -252,12 +228,6 @@ mappings:
   summary@lsst:fink.forced_photometry.z.psf.flux.mean_error:
   - objects#r:z_fpFluxMeanErr
   - conesearch#r:z_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.z.science.flux.mean:
-  - objects#r:z_scienceFluxMean
-  - conesearch#r:z_scienceFluxMean
-  summary@lsst:fink.forced_photometry.z.science.flux.mean_error:
-  - objects#r:z_scienceFluxMeanErr
-  - conesearch#r:z_scienceFluxMeanErr
   summary@lsst:fink.photometry.y.psf.flux.error_mean:
   - objects#r:y_psfFluxErrMean
   - conesearch#r:y_psfFluxErrMean
@@ -288,12 +258,6 @@ mappings:
   summary@lsst:fink.forced_photometry.y.psf.flux.mean_error:
   - objects#r:y_fpFluxMeanErr
   - conesearch#r:y_fpFluxMeanErr
-  summary@lsst:fink.forced_photometry.y.science.flux.mean:
-  - objects#r:y_scienceFluxMean
-  - conesearch#r:y_scienceFluxMean
-  summary@lsst:fink.forced_photometry.y.science.flux.mean_error:
-  - objects#r:y_scienceFluxMeanErr
-  - conesearch#r:y_scienceFluxMeanErr
   detection@lsst:fink.identity.source_id:
   - sources#r:diaSourceId
   - conesearch#r:diaSourceId
@@ -665,15 +629,15 @@ mappings:
   - sources#r:trailRaErr
   - conesearch#r:trailRaErr
   - sso#r:trailRaErr
-  detection@lsst:fink.solar_system.object.identity.object_id:
+  detection@lsst:fink.solar_system.identity.object_id:
   - sources#r:ssObjectId
   - conesearch#r:ssObjectId
   - sso#r:ssObjectId
   detection@lsst:fink.separation.from_search_center:
   - conesearch#v:separation_degree
-  detection@lsst:fink.solar_system.object.designation:
+  detection@lsst:fink.solar_system.designation:
   - sso#r:designation
-  detection@lsst:fink.solar_system.object.name:
+  detection@lsst:fink.solar_system.name:
   - sso#f:sso_name
   detection@lsst:fink.solar_system.match.rank:
   - sso#r:diaDistanceRank
@@ -784,13 +748,13 @@ mappings:
   crossmatch@gaia:fink.identity.object_id:
   - sources#f:xm_gaiadr3_DR3Name
   - conesearch#f:xm_gaiadr3_DR3Name
-  crossmatch@gaia:fink.parallax.value:
+  crossmatch@gaia:fink.astrometric_solution.parallax:
   - sources#f:xm_gaiadr3_Plx
   - conesearch#f:xm_gaiadr3_Plx
-  crossmatch@gaia:fink.parallax.error:
+  crossmatch@gaia:fink.astrometric_solution.parallax_error:
   - sources#f:xm_gaiadr3_e_Plx
   - conesearch#f:xm_gaiadr3_e_Plx
-  crossmatch@gaia:fink.classification.variability_flag:
+  crossmatch@gaia:fink.classification.assessment.variability.flag:
   - sources#f:xm_gaiadr3_VarFlag
   - conesearch#f:xm_gaiadr3_VarFlag
   crossmatch@gcvs:fink.classification.best.class:
@@ -829,7 +793,7 @@ mappings:
   crossmatch@legacydr8:fink.quality.photoz_flag:
   - sources#f:xm_legacydr8_fqual
   - conesearch#f:xm_legacydr8_fqual
-  crossmatch@legacydr8:fink.classification.star_probability:
+  crossmatch@legacydr8:fink.classification.assessment.star.probability:
   - sources#f:xm_legacydr8_pstar
   - conesearch#f:xm_legacydr8_pstar
   crossmatch@mangrove:fink.identity.twomass_id:
@@ -844,47 +808,47 @@ mappings:
   crossmatch@mangrove:fink.luminosity_distance:
   - sources#f:xm_mangrove_lum_dist
   - conesearch#f:xm_mangrove_lum_dist
-  portfolio.survey@lsst:fink.time.night:
+  survey@lsst:fink.time.night:
   - statistics#f:night
-  portfolio.survey@lsst:fink.alert_count:
+  survey@lsst:fink.alert_count:
   - statistics#f:alerts
-  portfolio.survey@lsst:fink.object_count:
+  survey@lsst:fink.object_count:
   - statistics#f:objects
-  portfolio.survey@lsst:fink.visit_count:
+  survey@lsst:fink.visit_count:
   - statistics#f:visits
-  portfolio.survey@lsst:fink.filter_counts.u:
+  survey@lsst:fink.filter_counts.u:
   - statistics#f:alerts_u
-  portfolio.survey@lsst:fink.filter_counts.g:
+  survey@lsst:fink.filter_counts.g:
   - statistics#f:alerts_g
-  portfolio.survey@lsst:fink.filter_counts.r:
+  survey@lsst:fink.filter_counts.r:
   - statistics#f:alerts_r
-  portfolio.survey@lsst:fink.filter_counts.i:
+  survey@lsst:fink.filter_counts.i:
   - statistics#f:alerts_i
-  portfolio.survey@lsst:fink.filter_counts.z:
+  survey@lsst:fink.filter_counts.z:
   - statistics#f:alerts_z
-  portfolio.survey@lsst:fink.filter_counts.y:
+  survey@lsst:fink.filter_counts.y:
   - statistics#f:alerts_y
-  portfolio.survey@lsst:fink.flag_counts.is_cataloged:
+  survey@lsst:fink.flag_counts.is_cataloged:
   - statistics#f:is_cataloged
-  portfolio.survey@lsst:fink.flag_counts.is_first_detection:
+  survey@lsst:fink.flag_counts.is_first_detection:
   - statistics#f:is_first
-  portfolio.survey@lsst:fink.flag_counts.is_solar_system:
+  survey@lsst:fink.flag_counts.is_solar_system:
   - statistics#f:is_sso
-  portfolio.survey@lsst:fink.flag_counts.is_dipole:
+  survey@lsst:fink.flag_counts.is_dipole:
   - statistics#f:isDipole
-  portfolio.survey@lsst:fink.flag_counts.glint_trail:
+  survey@lsst:fink.flag_counts.glint_trail:
   - statistics#f:glint_trail
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray:
+  survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray:
   - statistics#f:pixelFlags_cr
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.saturated:
+  survey@lsst:fink.flag_counts.pixel_flags.saturated:
   - statistics#f:pixelFlags_saturated
-  portfolio.survey@lsst:fink.flag_counts.pixel_flags.streak:
+  survey@lsst:fink.flag_counts.pixel_flags.streak:
   - statistics#f:pixelFlags_streak
-  portfolio.survey@lsst:fink.flag_counts.in_tns:
+  survey@lsst:fink.flag_counts.in_tns:
   - statistics#f:in_tns
-  portfolio.survey@lsst:fink.provenance.channel.version:
+  survey@lsst:fink.provenance.channel.version:
   - statistics#f:fink_broker_version
-  portfolio.survey@lsst:fink.provenance.channel.science_version:
+  survey@lsst:fink.provenance.channel.science_version:
   - statistics#f:fink_science_version
   summary@lsst:fink.time.snapshot_mjd:
   - objects#r:validityStartMjdTai
@@ -963,7 +927,7 @@ transforms:
     conesearch#v:separation_degree:
       type: scale
       factor: 3600
-  detection@lsst:fink.solar_system.object.identity.object_id:
+  detection@lsst:fink.solar_system.identity.object_id:
     sources#r:ssObjectId: &optional_ss_object_id
       type: value_map
       map: {0: null}
