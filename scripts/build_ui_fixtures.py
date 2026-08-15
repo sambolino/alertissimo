@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import sys
@@ -36,6 +37,7 @@ DEFAULT_OUTPUT = ROOT / ".ui-fixtures" / "portfolios"
 # filename: broker, survey, [(endpoint, frozen payload)]
 SPECS = {
     "lsst_alerce_170587117485817955.json": ("alerce", "lsst", [
+        ("query_objects", FIXTURES / "alerce/lsst/query_objects.json"),
         ("query_object", FIXTURES / "alerce/lsst/query_object.json"),
         ("query_detections", FIXTURES / "alerce/lsst/query_detections.json"),
         ("query_forced_photometry", FIXTURES / "alerce/lsst/query_forced_photometry.json"),
@@ -99,6 +101,17 @@ def _build_real(name: str, broker: str, survey: str, inputs: list[tuple[str, Pat
     components = []
     for component, (endpoint, path) in enumerate(inputs):
         payload = json.loads(path.read_text(encoding="utf-8"))
+        if broker == "antares" and endpoint.startswith("get_by_"):
+            # ANTARES freezes the client-visible locus and its lazy relationships
+            # independently. Recreate that one endpoint result before normalization.
+            payload = copy.deepcopy(payload)
+            fixture_dir = path.parent
+            payload["alerts"] = json.loads(
+                (fixture_dir / "alerts.json").read_text(encoding="utf-8")
+            )
+            payload["catalog_objects"] = json.loads(
+                (fixture_dir / "catalog_objects.json").read_text(encoding="utf-8")
+            )
         execution_id = InternalExecutionId(f"execution:ui:{name}:{component}:{endpoint}")
         ids = count()
         execution = ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
@@ -125,11 +138,55 @@ def portfolio_families() -> tuple[str, ...]:
 def _gallery(real: list[Portfolio]) -> Portfolio:
     grouped = Counter(r.semantic_type.split("@", 1)[0] for p in real for r in p.records)
     missing = [family for family in portfolio_families() if grouped[family] < 2]
+    examples = {
+        "lightcurve": (
+            {"provenance.producer.name": "synthetic UI fixture", "detection_count": 3,
+             "g.points": [{"time.mjd": 61000.1, "photometry.g.psf.mag": 20.1},
+                          {"time.mjd": 61001.2, "photometry.g.psf.mag": 19.7}],
+             "r.points": [{"time.mjd": 61000.5, "photometry.r.psf.mag": 19.4}]},
+            {"provenance.producer.name": "synthetic UI fixture", "detection_count": 3,
+             "i.points": [{"time.mjd": 62010.0, "photometry.i.psf.mag": 18.6},
+                          {"time.mjd": 62011.0, "photometry.i.psf.mag": 18.4},
+                          {"time.mjd": 62012.0, "photometry.i.psf.mag": 18.1}]},
+        ),
+        "spectrum": (
+            {"identity.object_id": "UI-SPECTRUM-1", "identity.source_id": "spec-1",
+             "time.mjd": 61002.25, "provenance.producer.name": "synthetic UI fixture",
+             "instrument_mode": "low-resolution grism", "wavelength_min": 3800.0,
+             "wavelength_max": 9200.0, "signal_to_noise": 18.0},
+            {"identity.object_id": "UI-SPECTRUM-2", "identity.source_id": "spec-2",
+             "time.mjd": 62020.5, "provenance.producer.name": "synthetic UI fixture",
+             "instrument_mode": "fiber spectroscopy", "resolving_power": 2500.0,
+             "wavelength_min": 4500.0, "wavelength_max": 8000.0,
+             "signal_to_noise": 32.0},
+        ),
+        "data_product": (
+            {"identity.object_id": "UI-DATA-PRODUCT-1", "type": "cutout",
+             "role": "science", "format": "fits",
+             "uri": "fixture://ui/cutout-science.fits"},
+            {"identity.object_id": "UI-DATA-PRODUCT-2", "type": "table",
+             "role": "derived", "format": "parquet",
+             "uri": "fixture://ui/measurements.parquet"},
+        ),
+        "survey": (
+            {"identity.object_id": "UI-SURVEY-SNAPSHOT-1", "snapshot_key": "ui-night-1",
+             "time.snapshot_datetime": "2026-01-15T00:00:00Z", "alert_count": 240,
+             "object_count": 75, "filter_counts": {"g": 100, "r": 140}},
+            {"identity.object_id": "UI-SURVEY-SNAPSHOT-2", "snapshot_key": "ui-night-2",
+             "time.snapshot_datetime": "2026-01-16T00:00:00Z", "alert_count": 310,
+             "object_count": 92, "class_distribution": {"SN": 21, "AGN": 14}},
+        ),
+    }
     records = tuple(
         SemanticRecord(
             InternalRecordId(f"record:ui:gallery:{family}:{index}"),
             f"{family}@fixture:ui",
-            {"identity.object_id": f"UI-{family.upper()}-{index + 1}"},
+            examples.get(family, (
+                {"identity.object_id": f"UI-{family.upper()}-1", "provenance.producer.name":
+                 "synthetic UI fixture"},
+                {"identity.object_id": f"UI-{family.upper()}-2", "provenance.producer.name":
+                 "synthetic UI fixture"},
+            ))[index],
         )
         for family in missing for index in range(2)
     )
