@@ -9,11 +9,11 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from alertissimo.app_plot import inject_page_styles, render_lightcurve
 from alertissimo.data_layer.presentation.portfolio_lightcurve import (
     LIGHTCURVE_COLUMNS,
     serialized_portfolio_lightcurve_dataframe,
 )
+from alertissimo.ui.app import inject_page_styles, render_lightcurve
 
 
 def object_lightcurve_groups(data: dict[str, Any]) -> dict[str, pd.DataFrame]:
