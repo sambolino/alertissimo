@@ -1,6 +1,6 @@
 """Public endpoint-planning API."""
 
-from .models import EndpointPlan, ExecutionPlan
+from alertissimo.orchestration.runtime import EndpointPlan, WorkflowRun
 from .planner import (
     PlanningAmbiguityError,
     PlanningDeferredError,
@@ -12,7 +12,13 @@ from .planner import (
 )
 
 __all__ = [
-    "EndpointPlan", "ExecutionPlan", "PlanningAmbiguityError",
-    "PlanningDeferredError", "PlanningError", "PlanningNotApplicableError",
-    "UnsupportedStepError", "plan_step", "plan_workflow",
+    "EndpointPlan",
+    "WorkflowRun",
+    "PlanningAmbiguityError",
+    "PlanningDeferredError",
+    "PlanningError",
+    "PlanningNotApplicableError",
+    "UnsupportedStepError",
+    "plan_step",
+    "plan_workflow",
 ]

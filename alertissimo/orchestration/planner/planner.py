@@ -8,15 +8,22 @@ The later boundaries are therefore: planning -> parameter binding -> execution.
 
 from __future__ import annotations
 
-from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph, EndpointCapability
+from alertissimo.data_layer.runtime.capability_graph import (
+    CapabilityGraph,
+    EndpointCapability,
+)
 from alertissimo.orchestration.ir.models import Source, Step, WorkflowIR
+from alertissimo.orchestration.runtime.models import (
+    EndpointPlan,
+    StepRun,
+    StepRunState,
+    WorkflowRun,
+)
 from alertissimo.orchestration.validation import (
     CapabilityValidationResult,
     SourceCapabilityResult,
     validate_step_capabilities,
 )
-
-from .models import EndpointPlan, ExecutionPlan
 
 
 class PlanningError(ValueError):
@@ -54,7 +61,8 @@ def _candidate_text(candidates: tuple[EndpointCapability, ...]) -> str:
 def _context(result: CapabilityValidationResult) -> str:
     semantic = (
         f", semantic_type={result.semantic_type!r}"
-        if result.semantic_type is not None else ""
+        if result.semantic_type is not None
+        else ""
     )
     return f"operation={result.operation!r}{semantic}"
 
@@ -62,11 +70,11 @@ def _context(result: CapabilityValidationResult) -> str:
 def _unsupported(result: CapabilityValidationResult) -> UnsupportedStepError:
     failures = "; ".join(
         f"{_source_text(item.source)}: {item.reason}"
-        for item in result.source_results if item.status == "unsupported"
+        for item in result.source_results
+        if item.status == "unsupported"
     )
     return UnsupportedStepError(
-        f"unsupported provider step ({_context(result)}): "
-        f"{failures or result.reason}"
+        f"unsupported provider step ({_context(result)}): {failures or result.reason}"
     )
 
 
@@ -105,10 +113,11 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     if validation.status == "unsupported":
         raise _unsupported(validation)
 
-    selected = tuple(_select_one(validation, item) for item in validation.source_results)
+    selected = tuple(
+        _select_one(validation, item) for item in validation.source_results
+    )
     return tuple(
         EndpointPlan(
-            step_op=validation.operation,
             broker=item.broker,
             origin=item.origin,
             endpoint=item.endpoint,
@@ -118,17 +127,30 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     )
 
 
-def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> ExecutionPlan:
-    """Compose ``plan_step`` results in workflow order, failing on any local step."""
-    return ExecutionPlan(tuple(
-        endpoint
-        for step in workflow.steps
-        for endpoint in plan_step(step, graph)
-    ))
+def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
+    """Plan every provider Step while retaining each Step occurrence boundary.
+
+    Planning remains fail-fast: a local, deferred, ambiguous, or unsupported Step
+    raises its existing error rather than returning a partially updated run.
+    """
+    pending_run = WorkflowRun.from_workflow(workflow)
+    planned_steps = tuple(
+        StepRun(
+            step_index=step_run.step_index,
+            state=StepRunState.PLANNED,
+            endpoint_plans=plan_step(pending_run.step_at(step_run.step_index), graph),
+        )
+        for step_run in pending_run.steps
+    )
+    return WorkflowRun(workflow=workflow, steps=planned_steps)
 
 
 __all__ = [
-    "PlanningError", "PlanningAmbiguityError", "UnsupportedStepError",
-    "PlanningDeferredError", "PlanningNotApplicableError", "plan_step",
+    "PlanningError",
+    "PlanningAmbiguityError",
+    "UnsupportedStepError",
+    "PlanningDeferredError",
+    "PlanningNotApplicableError",
+    "plan_step",
     "plan_workflow",
 ]
