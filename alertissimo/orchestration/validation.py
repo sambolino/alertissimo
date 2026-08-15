@@ -81,9 +81,6 @@ class CapabilityValidationResult:
 
 
 _FULL_LIGHTCURVE_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
-_CLASSIFICATION_OPERATIONS = frozenset(
-    {"classification_lookup", "object_classification"}
-)
 _GEOMETRIC_SEARCH_OPERATIONS = frozenset(
     {"cone_search", "spatial_search", "catalog_conesearch", "skymap_search"}
 )
@@ -135,11 +132,9 @@ def _candidates_for_source(
     if isinstance(step, GetForcedPhotometryStep):
         return _query(graph, source, operation="forced_photometry")
     if isinstance(step, GetClassificationStep):
-        semantic = _query(graph, source, noun="classification")
-        return tuple(
-            endpoint for endpoint in semantic
-            if _CLASSIFICATION_OPERATIONS.intersection(endpoint.operation_types)
-        )
+        # Classifications can be embedded in generic object/context responses;
+        # endpoint input suitability is resolved later by the planner.
+        return _query(graph, source, noun="classification")
     if isinstance(step, GetCrossmatchStep):
         # Crossmatches can be embedded in a generically named context endpoint.
         return _query(graph, source, noun="crossmatch")
