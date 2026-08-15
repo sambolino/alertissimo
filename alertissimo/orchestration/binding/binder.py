@@ -18,7 +18,11 @@ from typing import Any, Mapping
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
 from alertissimo.orchestration.ir.models import Step
-from alertissimo.orchestration.runtime.models import EndpointPlan, WorkflowRun
+from alertissimo.orchestration.runtime.models import (
+    EndpointPlan,
+    StepRunState,
+    WorkflowRun,
+)
 
 from .models import BoundEndpointCall, StepBindingResult
 
@@ -50,6 +54,31 @@ def _transform(value: Any, declaration: Mapping[str, Any]) -> Any:
     raise ParameterBindingError(f"unknown binding collection transform {collection!r}")
 
 
+def _coerce_physical_type(
+    value: Any,
+    declaration: Mapping[str, Any],
+    *,
+    plan: EndpointPlan,
+    physical_name: str,
+    role: str,
+) -> Any:
+    """Apply the small physical type vocabulary declared by an endpoint."""
+
+    declared_type = declaration.get("type")
+    coercions = {"integer": int, "number": float, "string": str}
+    coercion = coercions.get(declared_type)
+    if coercion is None:
+        return value
+    try:
+        return coercion(value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ParameterBindingError(
+            f"cannot bind parameter for {_context(plan)}: physical parameter "
+            f"{physical_name!r} declares type {declared_type!r}, but binding role "
+            f"{role!r} has value {value!r}"
+        ) from error
+
+
 def bind_endpoint(
     step: Step, endpoint_plan: EndpointPlan, registry: EndpointRegistry
 ) -> BoundEndpointCall:
@@ -68,7 +97,14 @@ def bind_endpoint(
         declared_roles.append(role)
         value = getattr(step, role, None)
         if value is not None:
-            params[physical_name] = _transform(value, declaration)
+            transformed = _transform(value, declaration)
+            params[physical_name] = _coerce_physical_type(
+                transformed,
+                declaration,
+                plan=endpoint_plan,
+                physical_name=physical_name,
+                role=role,
+            )
 
     # A SQL string cannot safely populate a split selected/tables/conditions
     # contract.  It remains deferred until a generic compiler is introduced.
@@ -101,6 +137,13 @@ def bind_workflow_run(
     run: WorkflowRun, registry: EndpointRegistry
 ) -> tuple[StepBindingResult, ...]:
     """Bind every plan without flattening positional Step occurrence identity."""
+
+    for step_run in run.steps:
+        if step_run.state is not StepRunState.PLANNED:
+            raise ParameterBindingError(
+                f"step_index {step_run.step_index} is {step_run.state.value}; "
+                "binding requires planned state"
+            )
 
     return tuple(
         StepBindingResult(

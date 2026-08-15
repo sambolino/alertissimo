@@ -5,6 +5,7 @@ import pytest
 from alertissimo.data_layer.execution.registry import EndpointRegistry
 from alertissimo.orchestration.binding import (
     MissingBoundParameterError,
+    ParameterBindingError,
     UnsupportedParameterBindingError,
     bind_endpoint,
     bind_workflow_run,
@@ -35,7 +36,7 @@ def test_alerce_lsst_lightcurve_uses_registry_target_binding():
         EndpointRegistry(),
     )
 
-    assert call.params == {"oid": "170587117485817955"}
+    assert call.params == {"oid": 170587117485817955}
     assert call.endpoint_spec.params["oid"]["bind"] == "target_id"
     assert call.endpoint_spec.fixed_params == {"survey": "lsst"}
     assert "format" not in call.params  # Executor retains default ownership.
@@ -61,7 +62,23 @@ def test_alerce_forced_photometry_target_binding():
         plan("alerce", "lsst", "query_forced_photometry"),
         EndpointRegistry(),
     )
-    assert call.params == {"oid": "123"}
+    assert call.params == {"oid": 123}
+
+
+def test_registry_physical_type_rejects_non_integer_target_binding():
+    with pytest.raises(ParameterBindingError) as error:
+        bind_endpoint(
+            GetLightcurveStep(target_id="not-an-integer"),
+            plan("alerce", "lsst", "query_lightcurve"),
+            EndpointRegistry(),
+        )
+
+    message = str(error.value)
+    assert "alerce/lsst/query_lightcurve" in message
+    assert "'oid'" in message
+    assert "'integer'" in message
+    assert "'target_id'" in message
+    assert "'not-an-integer'" in message
 
 
 def test_cone_binding_passes_arcsecond_contract_through():
@@ -98,6 +115,19 @@ def test_repeated_steps_keep_distinct_occurrence_bindings():
         "B",
     ]
     assert all(step.state == StepRunState.PLANNED for step in run.steps)
+
+
+def test_pending_workflow_run_cannot_be_bound_before_planning():
+    workflow = WorkflowIR(steps=[GetLightcurveStep(target_id="ZTF20abc")])
+    run = WorkflowRun.from_workflow(workflow)
+
+    with pytest.raises(
+        ParameterBindingError,
+        match="step_index 0 is pending; binding requires planned state",
+    ):
+        bind_workflow_run(run, EndpointRegistry())
+
+    assert run.steps[0].state is StepRunState.PENDING
 
 
 def test_missing_required_parameter_reports_full_endpoint_context():
