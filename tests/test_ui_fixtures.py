@@ -81,6 +81,41 @@ def test_real_summary_search_coverage(generated):
                    _load(generated / name)["records"]) for name in real_names) >= 8
 
 
+@pytest.mark.parametrize(("name", "families"), [
+    ("lsst_antares_170587117485817955.json", {"summary", "detection"}),
+    ("ztf_antares_ZTF20aafqubg.json", {"summary", "detection", "crossmatch"}),
+    ("lsst_alerce_170587117485817955.json", {"summary", "detection", "classification"}),
+    ("ztf_alerce_ZTF18abbuksn.json", {"summary", "detection", "classification"}),
+])
+def test_real_object_evidence_families(generated, name, families):
+    records = _load(generated / name)["records"]
+    assert families <= {record["semantic_type"].split("@", 1)[0] for record in records}
+
+
+def test_synthetic_gallery_has_useful_family_content(generated):
+    records = _load(generated / "semantic_gallery_synthetic.json")["records"]
+    by_family = {
+        family: [record for record in records
+                 if record["semantic_type"].split("@", 1)[0] == family]
+        for family in portfolio_families()
+    }
+    for family, family_records in by_family.items():
+        if family_records:
+            assert len(family_records) >= 2
+            assert all(len(record["fields"]) >= 2 for record in family_records)
+
+    lightcurves = by_family["lightcurve"]
+    assert all(any(field.endswith(".points") and len(value) >= 2
+                   for field, value in record["fields"].items()) for record in lightcurves)
+    assert all({"identity.object_id", "wavelength_min", "wavelength_max", "signal_to_noise"}
+               <= set(record["fields"]) for record in by_family["spectrum"])
+    assert all({"identity.object_id", "type", "role", "format", "uri"}
+               <= set(record["fields"]) for record in by_family["data_product"])
+    assert all("snapshot_key" in record["fields"] and
+               any(key.endswith("count") or key.endswith("counts")
+                   for key in record["fields"]) for record in by_family["survey"])
+
+
 def test_lightcurve_projection(generated):
     pytest.importorskip("pandas")
     from alertissimo.data_layer.presentation.portfolio_lightcurve import serialized_portfolio_lightcurve_dataframe

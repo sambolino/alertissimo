@@ -18,18 +18,21 @@ No separate Portfolio-search row schema is defined.
 ## Offline data flow
 
 ```text
-existing frozen broker evidence
-            +
-tests/fixtures/ui/sources/fink_pair/
+git pull
             ↓
-scripts/build_ui_fixtures.py
-            ↓
-production mappings + RecordBuilder
+python scripts/build_ui_fixtures.py
             ↓
 .ui-fixtures/portfolios/*.json
             ↓
-            UI
+       UI development
 ```
+
+`tests/fixtures/**` is frozen/raw evidence. UI code must never consume it
+directly. `scripts/build_ui_fixtures.py` deterministically normalizes that
+evidence through the production mappings and RecordBuilder.
+
+`.ui-fixtures/portfolios/**` is generated normalized development data. Every
+file there is a serialized Portfolio.
 
 The trust categories are **REAL / FROZEN** (authoritative existing captures),
 **REAL / UI CAPTURE** (the frozen Fink LSST/ZTF pair), **COMPOSED / REAL
@@ -58,6 +61,3 @@ python scripts/build_ui_fixtures.py
 python scripts/list_ui_fixtures.py
 python -m streamlit run alertissimo/ui/app.py
 ```
-
-The current application entry point is `streamlit run alertissimo/app.py`; it
-does not yet provide a dedicated multi-Portfolio fixture browser.
