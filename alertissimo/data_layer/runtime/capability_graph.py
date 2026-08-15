@@ -334,6 +334,10 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 spec = _dict(raw_spec, f"{mapping_path}: transform {raw_ref!r}")
                 transform_type = spec.get("type")
                 transform_map = spec.get("map")
+                # Metadata-only directives such as skip_null are valid mapping
+                # specifications but do not describe a graph transform capability.
+                if transform_type is None:
+                    continue
                 if not isinstance(transform_type, str):
                     raise CapabilityGraphError(f"{mapping_path}: transform type must be a string")
                 if transform_map is not None and not isinstance(transform_map, dict):
