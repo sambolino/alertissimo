@@ -329,6 +329,7 @@ endpoints:
       oid:
         type: integer
         required: true
+        bind: target_id
         description: Physical oid parameter accepted by query_forced_photometry.
       format:
         type: string
@@ -383,6 +384,7 @@ endpoints:
       oid:
         type: integer
         required: true
+        bind: target_id
         description: Physical oid parameter accepted by query_lightcurve.
       format:
         type: string
@@ -809,16 +811,19 @@ endpoints:
       ra:
         type: number
         required: true
+        bind: ra
         unit: deg
         description: Physical ra parameter accepted by catshtm_conesearch.
       dec:
         type: number
         required: true
+        bind: dec
         unit: deg
         description: Physical dec parameter accepted by catshtm_conesearch.
       radius:
         type: number
         required: true
+        bind: radius
         unit: arcsec
         description: Physical radius parameter accepted by catshtm_conesearch.
       catalog_name:

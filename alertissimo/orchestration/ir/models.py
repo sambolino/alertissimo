@@ -104,7 +104,7 @@ class SemanticSearchStep(SearchStep):
 
 
 class ConeSearchStep(SearchStep):
-    """Discover a declared record family within an astronomical sky cone."""
+    """Discover records in a cone (RA/Dec degrees, radius arcseconds)."""
 
     op: Literal["cone_search"] = "cone_search"
     ra: Annotated[float, Field(ge=0, lt=360)]
