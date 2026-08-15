@@ -1,0 +1,134 @@
+"""Deterministically select registered endpoints for provider-facing IR steps.
+
+Capability validation determines *what can* satisfy an intent; this planner
+chooses endpoint identities from that evidence.  It deliberately does not bind
+generic IR arguments to physical parameter names or invoke an ``EndpointSpec``.
+The later boundaries are therefore: planning -> parameter binding -> execution.
+"""
+
+from __future__ import annotations
+
+from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph, EndpointCapability
+from alertissimo.orchestration.ir.models import Source, Step, WorkflowIR
+from alertissimo.orchestration.validation import (
+    CapabilityValidationResult,
+    SourceCapabilityResult,
+    validate_step_capabilities,
+)
+
+from .models import EndpointPlan, ExecutionPlan
+
+
+class PlanningError(ValueError):
+    """Base class for failures to select a physical endpoint identity."""
+
+
+class PlanningAmbiguityError(PlanningError):
+    """Raised when selection would require an as-yet undefined ranking policy."""
+
+
+class UnsupportedStepError(PlanningError):
+    """Raised when registry capabilities cannot satisfy a provider-facing step."""
+
+
+class PlanningDeferredError(PlanningError):
+    """Raised when safe planning depends on capability semantics not yet modeled."""
+
+
+class PlanningNotApplicableError(PlanningError):
+    """Raised for a local/orchestration step that needs no provider endpoint."""
+
+
+def _source_text(source: Source | None) -> str:
+    if source is None:
+        return "unconstrained"
+    return f"broker={source.broker or '*'}, origin={source.origin or '*'}"
+
+
+def _candidate_text(candidates: tuple[EndpointCapability, ...]) -> str:
+    return ", ".join(
+        f"{item.broker}/{item.origin}/{item.endpoint}" for item in candidates
+    )
+
+
+def _context(result: CapabilityValidationResult) -> str:
+    semantic = (
+        f", semantic_type={result.semantic_type!r}"
+        if result.semantic_type is not None else ""
+    )
+    return f"operation={result.operation!r}{semantic}"
+
+
+def _unsupported(result: CapabilityValidationResult) -> UnsupportedStepError:
+    failures = "; ".join(
+        f"{_source_text(item.source)}: {item.reason}"
+        for item in result.source_results if item.status == "unsupported"
+    )
+    return UnsupportedStepError(
+        f"unsupported provider step ({_context(result)}): "
+        f"{failures or result.reason}"
+    )
+
+
+def _select_one(
+    result: CapabilityValidationResult, source_result: SourceCapabilityResult
+) -> EndpointCapability:
+    candidates = source_result.candidates
+    if len(candidates) != 1:
+        raise PlanningAmbiguityError(
+            f"ambiguous provider endpoint ({_context(result)}, "
+            f"source={_source_text(source_result.source)}); candidates: "
+            f"{_candidate_text(candidates)}"
+        )
+    return candidates[0]
+
+
+def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
+    """Select one endpoint per requested source, without binding or execution.
+
+    With no explicit source, exactly one candidate is required globally.  With
+    explicit sources, validation has checked each independently and exactly one
+    candidate is required within each source constraint.  No ordering-based or
+    provider-specific preference is used to break ties.
+    """
+    validation = validate_step_capabilities(step, graph)
+    if validation.status == "not_applicable":
+        raise PlanningNotApplicableError(
+            f"provider endpoint planning is not applicable ({_context(validation)}): "
+            f"{validation.reason}"
+        )
+    if validation.status == "deferred":
+        raise PlanningDeferredError(
+            f"provider endpoint planning is deferred ({_context(validation)}): "
+            f"{validation.reason}"
+        )
+    if validation.status == "unsupported":
+        raise _unsupported(validation)
+
+    selected = tuple(_select_one(validation, item) for item in validation.source_results)
+    return tuple(
+        EndpointPlan(
+            step_op=validation.operation,
+            broker=item.broker,
+            origin=item.origin,
+            endpoint=item.endpoint,
+            semantic_type=validation.semantic_type,
+        )
+        for item in selected
+    )
+
+
+def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> ExecutionPlan:
+    """Compose ``plan_step`` results in workflow order, failing on any local step."""
+    return ExecutionPlan(tuple(
+        endpoint
+        for step in workflow.steps
+        for endpoint in plan_step(step, graph)
+    ))
+
+
+__all__ = [
+    "PlanningError", "PlanningAmbiguityError", "UnsupportedStepError",
+    "PlanningDeferredError", "PlanningNotApplicableError", "plan_step",
+    "plan_workflow",
+]
