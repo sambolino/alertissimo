@@ -87,18 +87,50 @@ def test_full_lightcurve_does_not_accept_a_component_only_endpoint():
     assert {item.endpoint for item in real.candidates} == {"lightcurves"}
 
 
-def test_retrieval_rules_use_explicit_and_semantic_registry_evidence():
+def test_alerce_lsst_classification_retrieval_is_supported():
+    graph = build_capability_graph()
+    classification = validate_step_capabilities(
+        GetClassificationStep(sources=[Source(broker="alerce", origin="lsst")]), graph
+    )
+    assert classification.status == "supported"
+
+
+def test_lasair_ztf_classification_uses_generic_semantic_endpoints():
+    classification = validate_step_capabilities(
+        GetClassificationStep(sources=[Source(broker="lasair", origin="ztf")]),
+        build_capability_graph(),
+    )
+    assert classification.status == "supported"
+    assert {item.endpoint for item in classification.candidates} >= {
+        "object", "objects", "sherlock_position", "sherlock_objects",
+    }
+    assert all(
+        {"object_lookup", "context_lookup"}.intersection(item.operation_types)
+        for item in classification.candidates
+    )
+
+
+def test_classification_retrieval_requires_semantic_capability():
+    non_classification = EndpointCapability(
+        "test", "ztf", "object", "/object", "GET",
+        ("object_lookup",), (), (), None, False, "object",
+    )
+    graph = CapabilityGraph((non_classification,), (), (), (), ())
+    result = validate_step_capabilities(
+        GetClassificationStep(sources=[Source(broker="test")]), graph
+    )
+    assert result.status == "unsupported"
+
+
+def test_other_retrieval_rules_use_explicit_and_semantic_registry_evidence():
     graph = build_capability_graph()
     forced = validate_step_capabilities(
         GetForcedPhotometryStep(sources=[Source(broker="alerce", origin="lsst")]), graph
     )
-    classification = validate_step_capabilities(
-        GetClassificationStep(sources=[Source(broker="alerce", origin="lsst")]), graph
-    )
     crossmatch = validate_step_capabilities(
         GetCrossmatchStep(sources=[Source(broker="lasair", origin="ztf")]), graph
     )
-    assert forced.status == classification.status == crossmatch.status == "supported"
+    assert forced.status == crossmatch.status == "supported"
     assert all("forced_photometry" in item.operation_types for item in forced.candidates)
     assert any("context_lookup" in item.operation_types for item in crossmatch.candidates)
 
@@ -130,6 +162,11 @@ def test_lookup_and_local_steps_are_not_falsely_rejected():
     assert {
         validate_step_capabilities(step, graph).status for step in local_steps
     } == {"not_applicable"}
+
+
+def test_classify_is_not_applicable_to_provider_capability_validation():
+    result = validate_step_capabilities(ClassifyStep(), build_capability_graph())
+    assert result.status == "not_applicable"
 
 
 def test_workflow_validation_preserves_step_order():
