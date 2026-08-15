@@ -1,30 +1,5 @@
-"""Small, execution-free value objects produced by orchestration planning."""
+"""Compatibility import for the planner's endpoint-selection value object."""
 
-from __future__ import annotations
+from alertissimo.orchestration.runtime.models import EndpointPlan
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class EndpointPlan:
-    """Identity of one registered endpoint selected to implement an IR step.
-
-    Physical transport and parameter details intentionally remain in
-    ``EndpointSpec`` and can be resolved later through ``EndpointRegistry``.
-    """
-
-    step_op: str
-    broker: str
-    origin: str
-    endpoint: str
-    semantic_type: str | None = None
-
-
-@dataclass(frozen=True)
-class ExecutionPlan:
-    """Endpoint selections in the declared order of their workflow steps."""
-
-    endpoints: tuple[EndpointPlan, ...]
-
-
-__all__ = ["EndpointPlan", "ExecutionPlan"]
+__all__ = ["EndpointPlan"]
