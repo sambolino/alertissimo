@@ -8,4 +8,4 @@ alertissimo.egg-info/
 .idea
 .venv/
 .python-version
-
+.ui-fixtures/
