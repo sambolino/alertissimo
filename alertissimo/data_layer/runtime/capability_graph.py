@@ -90,6 +90,60 @@ class CapabilityGraph:
             if item.broker == broker and item.origin == origin
         )
 
+    def query_endpoints(
+        self,
+        *,
+        broker: str | None = None,
+        origin: str | None = None,
+        operation_type: str | None = None,
+        semantic_record_noun: str | None = None,
+    ) -> tuple[EndpointCapability, ...]:
+        """Return endpoints satisfying every supplied registry constraint.
+
+        Semantic matching follows the endpoint links already compiled into the
+        graph; it does not discard the qualified semantic record type.
+        """
+        matches = []
+        for endpoint in self.endpoint_capabilities:
+            if broker is not None and endpoint.broker != broker:
+                continue
+            if origin is not None and endpoint.origin != origin:
+                continue
+            if operation_type is not None and operation_type not in endpoint.operation_types:
+                continue
+            if semantic_record_noun is not None and not any(
+                record.broker == endpoint.broker
+                and record.origin == endpoint.origin
+                and endpoint.endpoint in record.endpoints
+                and semantic_record_noun_matches(
+                    record.semantic_record_type, semantic_record_noun
+                )
+                for record in self.semantic_record_capabilities
+            ):
+                continue
+            matches.append(endpoint)
+        return tuple(matches)
+
+    def query_records(
+        self,
+        *,
+        broker: str | None = None,
+        origin: str | None = None,
+        semantic_record_noun: str | None = None,
+    ) -> tuple[SemanticRecordCapability, ...]:
+        """Return semantic records satisfying every supplied constraint."""
+        return tuple(
+            record for record in self.semantic_record_capabilities
+            if (broker is None or record.broker == broker)
+            and (origin is None or record.origin == origin)
+            and (
+                semantic_record_noun is None
+                or semantic_record_noun_matches(
+                    record.semantic_record_type, semantic_record_noun
+                )
+            )
+        )
+
     def fields_for_record(self, semantic_record_type: str) -> tuple[FieldMappingCapability, ...]:
         return tuple(
             item for item in self.field_mapping_capabilities
@@ -122,6 +176,19 @@ def split_semantic_path(semantic_path: str) -> tuple[str, str]:
     if not record_type:
         raise CapabilityGraphError("semantic path must not be empty")
     return record_type, relative_path if separator else ""
+
+
+def canonical_semantic_noun(semantic_record_type: str) -> str:
+    """Extract the canonical first-level noun while retaining qualifiers elsewhere."""
+    noun = semantic_record_type.partition("@")[0]
+    if not noun:
+        raise CapabilityGraphError("semantic record type must not be empty")
+    return noun
+
+
+def semantic_record_noun_matches(semantic_record_type: str, noun: str) -> bool:
+    """Return whether a qualified registry record type represents ``noun``."""
+    return bool(noun) and canonical_semantic_noun(semantic_record_type) == noun
 
 
 def _load_mapping(path: Path) -> dict[str, Any]:
@@ -303,5 +370,6 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
 __all__ = [
     "CapabilityGraph", "CapabilityGraphError", "EndpointCapability",
     "FieldMappingCapability", "PayloadCapability", "SemanticRecordCapability",
-    "TransformCapability", "build_capability_graph", "split_semantic_path",
+    "TransformCapability", "build_capability_graph", "canonical_semantic_noun",
+    "semantic_record_noun_matches", "split_semantic_path",
 ]

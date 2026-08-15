@@ -3,7 +3,11 @@
 from dataclasses import fields
 
 import alertissimo.data_layer.runtime.capability_graph as capabilities
-from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.data_layer.runtime.capability_graph import (
+    build_capability_graph,
+    canonical_semantic_noun,
+    semantic_record_noun_matches,
+)
 
 
 def test_graph_builds_for_all_normalized_registries():
@@ -108,3 +112,28 @@ def test_capability_graph_does_not_define_portfolio_records():
     ):
         assert "record_id" not in {field.name for field in fields(capability_type)}
     assert not hasattr(graph, "record_id")
+
+
+def test_canonical_semantic_nouns_preserve_qualified_graph_types():
+    assert canonical_semantic_noun("summary@ztf:lasair") == "summary"
+    assert canonical_semantic_noun("detection@lsst:fink") == "detection"
+    assert canonical_semantic_noun("crossmatch@gaia:fink") == "crossmatch"
+    assert semantic_record_noun_matches("crossmatch@gaia:fink", "crossmatch")
+    assert not semantic_record_noun_matches("crossmatch@gaia:fink", "summary")
+
+
+def test_generic_endpoint_query_combines_source_operation_and_semantics():
+    graph = build_capability_graph()
+    unconstrained = graph.query_endpoints(operation_type="cone_search")
+    broker = graph.query_endpoints(broker="lasair", operation_type="cone_search")
+    origin = graph.query_endpoints(origin="lsst", operation_type="cone_search")
+    exact = graph.query_endpoints(
+        broker="lasair", origin="ztf", operation_type="cone_search",
+        semantic_record_noun="summary",
+    )
+    assert unconstrained
+    assert broker and {item.broker for item in broker} == {"lasair"}
+    assert origin and {item.origin for item in origin} == {"lsst"}
+    assert [(item.broker, item.origin, item.endpoint) for item in exact] == [
+        ("lasair", "ztf", "cone")
+    ]
