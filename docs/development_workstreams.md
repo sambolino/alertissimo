@@ -20,7 +20,7 @@ do not.
 
 - Streamlit and application presentation
 - result previews
-- artifact search, detail, and group views
+- SemanticRecord search, detail, and per-Portfolio group views
 - Portfolio views
 - selection and workspace presentation
 
