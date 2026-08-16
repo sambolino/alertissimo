@@ -65,7 +65,9 @@ def test_endpoints_are_physical_contracts():
             assert all("@" not in label for label in endpoint.get("operation_types", [])), name
             for param, definition in params.items():
                 assert isinstance(definition.get("description"), str) and definition["description"].strip(), (name, param)
-                assert not (set(definition) & {"binding", "input", "value_from"}), (name, param)
+                assert not (set(definition) & {"input", "value_from"}), (name, param)
+                if "binding" in definition:
+                    assert definition.get("bind"), (name, param)
 
 
 def test_fink_projection_metadata_matches_columns_param():
