@@ -261,3 +261,98 @@ def test_fink_execution_wrapper_retains_multi_or_zero_portfolios(endpoint, filen
     assert len(result.executions) == 1
     assert result.executions[0].execution_id == f"execution:fink:{endpoint}"
     assert len(result.executions[0].portfolios) == expected
+
+
+def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
+    """Combine untouched rows from two authoritative objects endpoint captures."""
+    from alertissimo.data_layer.execution import EndpointRegistry
+    from alertissimo.orchestration.binding import bind_workflow_run
+    from alertissimo.orchestration.ir import GetLightcurveStep, Source
+    from alertissimo.orchestration.planner import plan_workflow
+    from alertissimo.orchestration.runtime import execute_workflow_run
+    from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+
+    first_rows = json.loads(
+        (FIXTURES / "fink" / "ztf" / "objects_withupperlim.json").read_text(encoding="utf-8")
+    )
+    second_rows = json.loads(
+        (FIXTURES / "ui" / "sources" / "fink_pair" / "ztf_objects.json").read_text(encoding="utf-8")
+    )
+    combined_rows = first_rows + second_rows
+    expected_ids = ("ZTF21abfmbix", "ZTF18acurdih")
+    assert {row["i:objectId"] for row in first_rows} == {expected_ids[0]}
+    assert {row["i:objectId"] for row in second_rows} == {expected_ids[1]}
+    assert len(first_rows) > 1  # repeated rows must stay grouped below
+
+    class FrozenObjectsExecutor:
+        def __init__(self):
+            self.calls = []
+
+        def execute(self, *, broker, origin, endpoint, params):
+            self.calls.append((broker, origin, endpoint, dict(params)))
+            return ExecutionResult(
+                payload=combined_rows,
+                execution_provenance=InternalExecutionProvenance(
+                    internal_execution_id=InternalExecutionId("execution:fink:objects:multi"),
+                    broker=broker,
+                    origin=origin,
+                    endpoint=endpoint,
+                    params=params,
+                ),
+            )
+
+    workflow = WorkflowIR(steps=[GetLightcurveStep(
+        target_ids=list(expected_ids),
+        sources=[Source(broker="fink", origin="ztf")],
+    )])
+    assert len(workflow.steps) == 1 and workflow.steps[0].target_ids == list(expected_ids)
+    run = plan_workflow(workflow, build_capability_graph())
+    assert [(plan.broker, plan.origin, plan.endpoint) for plan in run.steps[0].endpoint_plans] == [
+        ("fink", "ztf", "objects")
+    ]
+    bindings = bind_workflow_run(run, EndpointRegistry())
+    assert len(bindings) == len(bindings[0].bound_calls) == 1
+    assert bindings[0].bound_calls[0].params == {"objectId": ",".join(expected_ids)}
+
+    executor = FrozenObjectsExecutor()
+    execution = execute_workflow_run(run, bindings, executor)
+    assert len(executor.calls) == 1
+    assert len(execution.steps[0].executions) == 1
+    normalized = normalize_workflow_execution(execution)
+    assert len(normalized.steps[0].executions) == 1
+    wrapper = normalized.steps[0].executions[0]
+    assert len(wrapper.portfolios) == 2
+    assert len({p.internal_portfolio_id for p in wrapper.portfolios}) == 2
+
+    portfolio_ids = []
+    for portfolio in wrapper.portfolios:
+        raw_object_ids = {
+            combined_rows[record.internal_source.payload_index]["i:objectId"]
+            for record in portfolio.records
+            if record.internal_source is not None
+        }
+        assert len(raw_object_ids) == 1
+        portfolio_ids.extend(raw_object_ids)
+        primary_identity_ids = {
+            record.fields["identity.object_id"]
+            for record in portfolio.records
+            if record.semantic_type == "summary@ztf:fink"
+            and "identity.object_id" in record.fields
+        }
+        assert primary_identity_ids == raw_object_ids
+        assert portfolio.executions == (
+            execution.steps[0].executions[0].execution_provenance,
+        )
+        assert all(
+            record.internal_source is None
+            or record.internal_source.internal_execution_id.value
+            == "execution:fink:objects:multi"
+            for record in portfolio.records
+        )
+    assert set(portfolio_ids) == set(expected_ids)
+    assert sum(
+        record.internal_source is not None
+        and combined_rows[record.internal_source.payload_index]["i:objectId"] == expected_ids[0]
+        for portfolio in wrapper.portfolios
+        for record in portfolio.records
+    ) > 1

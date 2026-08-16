@@ -234,3 +234,21 @@ def test_collection_limit_is_enforced_before_execution():
     assert bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(50)]), endpoint, registry)
     with pytest.raises(UnsupportedParameterBindingError, match="declared limit 50"):
         bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(51)]), endpoint, registry)
+
+
+def test_multi_target_multiple_provider_binding_is_one_result_with_two_calls():
+    from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+    from alertissimo.orchestration.ir import Source
+    from alertissimo.orchestration.planner import plan_workflow
+
+    workflow = WorkflowIR(steps=[GetLightcurveStep(
+        target_ids=["A", "B"],
+        sources=[Source(broker="fink", origin="ztf"), Source(broker="lasair", origin="ztf")],
+    )])
+    results = bind_workflow_run(plan_workflow(workflow, build_capability_graph()), EndpointRegistry())
+
+    assert len(results) == 1
+    assert [(call.endpoint_plan.broker, call.params) for call in results[0].bound_calls] == [
+        ("fink", {"objectId": "A,B"}),
+        ("lasair", {"objectIds": "A,B"}),
+    ]

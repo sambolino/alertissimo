@@ -1,8 +1,11 @@
 """Tests for the read-only orchestration-to-registry capability bridge."""
 
+import pytest
+
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    SemanticRecordCapability,
     build_capability_graph,
 )
 from alertissimo.orchestration.ir.models import (
@@ -12,6 +15,7 @@ from alertissimo.orchestration.ir.models import (
     GetClassificationStep,
     GetCrossmatchStep,
     GetCutoutStep,
+    GetDataProductStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
@@ -197,3 +201,71 @@ def test_multi_target_requires_explicit_collection_binding_evidence():
     assert {item.endpoint for item in supported.candidates} == {"sources"}
     assert rejected.status == "unsupported"
     assert "multi-target binding" in rejected.source_results[0].reason
+
+
+def test_cardinality_filter_applies_to_cutout_and_data_product():
+    graph = build_capability_graph()
+    one = GetCutoutStep(target_ids=["A"], sources=[Source(broker="fink", origin="ztf")])
+    many = GetCutoutStep(target_ids=["A", "B"], sources=one.sources)
+    assert validate_step_capabilities(one, graph).status == "supported"
+    rejected = validate_step_capabilities(many, graph)
+    assert rejected.status == "unsupported"
+    assert "multi-target binding" in rejected.source_results[0].reason
+
+    singular_product = EndpointCapability(
+        "test", "ztf", "product", "/product", "GET",
+        ("data_product_lookup",), (), (), None, False, "object",
+        ("target_id",), (),
+    )
+    product_graph = CapabilityGraph((singular_product,), (), (), (), ())
+    product = GetDataProductStep(
+        target_ids=["A", "B"], sources=[Source(broker="test", origin="ztf")]
+    )
+    product_result = validate_step_capabilities(product, product_graph)
+    assert product_result.status == "unsupported"
+    assert "multi-target binding" in product_result.source_results[0].reason
+
+
+def _semantic_target_graph(noun):
+    singular = EndpointCapability(
+        "test", "ztf", f"{noun}_one", "/one", "GET",
+        ("context_lookup",), (), (), None, False, "object",
+        ("target_id",), (),
+    )
+    collection = EndpointCapability(
+        "test", "ztf", f"{noun}_many", "/many", "GET",
+        ("context_lookup",), (), (), None, False, "array",
+        ("target_id",), ("target_id",),
+    )
+    records = (SemanticRecordCapability(
+        "test", "ztf", noun, (singular.endpoint, collection.endpoint), (),
+    ),)
+    return CapabilityGraph((singular, collection), (), (), (), records)
+
+
+@pytest.mark.parametrize(("step_type", "noun"), [
+    (GetClassificationStep, "classification"),
+    (GetCrossmatchStep, "crossmatch"),
+])
+def test_semantic_gets_filter_singular_candidates_for_multiple_targets(step_type, noun):
+    graph = _semantic_target_graph(noun)
+    source = [Source(broker="test", origin="ztf")]
+    scalar = validate_step_capabilities(step_type(target_id="A", sources=source), graph)
+    many = validate_step_capabilities(step_type(target_ids=["A", "B"], sources=source), graph)
+    assert {item.endpoint for item in scalar.candidates} == {f"{noun}_one", f"{noun}_many"}
+    assert {item.endpoint for item in many.candidates} == {f"{noun}_many"}
+
+    singular_graph = CapabilityGraph((graph.endpoint_capabilities[0],), (), (), (), (
+        graph.semantic_record_capabilities[0].__class__(
+            "test", "ztf", noun, (f"{noun}_one",), ()
+        ),
+    ))
+    rejected = validate_step_capabilities(step_type(target_ids=["A", "B"], sources=source), singular_graph)
+    assert rejected.status == "unsupported"
+    assert "multi-target binding" in rejected.source_results[0].reason
+
+
+def test_multi_target_spectrum_retains_semantic_absence_reason():
+    result = validate_step_capabilities(GetSpectrumStep(target_ids=["A", "B"]), build_capability_graph())
+    assert result.status == "unsupported"
+    assert result.source_results[0].reason == "no compatible registered endpoint capability found"
