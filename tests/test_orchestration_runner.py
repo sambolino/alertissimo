@@ -204,3 +204,20 @@ def test_failure_preserves_completed_and_partial_results_and_chains_cause():
     assert run.steps[0].state is StepRunState.PLANNED
     restored = WorkflowRun.model_validate_json(error.workflow_run.model_dump_json())
     assert restored == error.workflow_run
+
+
+def test_multi_id_step_remains_one_physical_execution():
+    workflow = WorkflowIR(steps=[GetLightcurveStep(target_ids=["A", "B"])])
+    endpoint = _plan("lasair", "ztf", "lightcurves")
+    run = WorkflowRun(
+        workflow=workflow,
+        steps=(StepRun(step_index=0, state=StepRunState.PLANNED, endpoint_plans=(endpoint,)),),
+    )
+    bindings = bind_workflow_run(run, EndpointRegistry())
+    executor = FakeExecutor()
+
+    result = execute_workflow_run(run, bindings, executor)
+
+    assert len(bindings[0].bound_calls) == 1
+    assert len(result.steps[0].executions) == 1
+    assert executor.calls == [("lasair", "ztf", "lightcurves", {"objectIds": "A,B"})]

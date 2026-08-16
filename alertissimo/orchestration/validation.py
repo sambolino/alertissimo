@@ -110,6 +110,17 @@ def _query(
 def _candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
+    def cardinality_compatible(
+        candidates: tuple[EndpointCapability, ...]
+    ) -> tuple[EndpointCapability, ...]:
+        target_ids = getattr(step, "target_ids", None)
+        if target_ids is None or len(target_ids) <= 1:
+            return candidates
+        return tuple(
+            candidate for candidate in candidates
+            if "target_id" in candidate.collection_binding_roles
+        )
+
     if isinstance(step, ConeSearchStep):
         return _query(graph, source, noun=step.semantic_type, operation="cone_search")
     if isinstance(step, SqlQueryStep):
@@ -125,12 +136,14 @@ def _candidates_for_source(
             )
         )
     if isinstance(step, GetLightcurveStep):
-        return tuple(
+        return cardinality_compatible(tuple(
             endpoint for endpoint in _query(graph, source)
             if _FULL_LIGHTCURVE_OPERATIONS.intersection(endpoint.operation_types)
-        )
+        ))
     if isinstance(step, GetForcedPhotometryStep):
-        return _query(graph, source, operation="forced_photometry")
+        return cardinality_compatible(
+            _query(graph, source, operation="forced_photometry")
+        )
     if isinstance(step, GetClassificationStep):
         # Classifications can be embedded in generic object/context responses;
         # endpoint input suitability is resolved later by the planner.
@@ -205,7 +218,11 @@ def validate_step_capabilities(
         results.append(SourceCapabilityResult(
             source, status, candidates,
             "matching registered endpoint capability found" if candidates
-            else "no compatible registered endpoint capability found",
+            else (
+                "no compatible multi-target binding exists"
+                if len(getattr(step, "target_ids", None) or ()) > 1
+                else "no compatible registered endpoint capability found"
+            ),
         ))
     overall = (
         "supported" if results and all(item.status == "supported" for item in results)

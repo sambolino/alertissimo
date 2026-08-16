@@ -40,6 +40,9 @@ endpoints:
       objectIds:
         required: true
         type: string
+        bind: target_id
+        binding:
+          collection: csv
         description: Comma-separated ZTF objectIds.
     output: {type: array}
     operation_types: [object_lookup]
@@ -58,6 +61,7 @@ endpoints:
         bind: target_id
         binding:
           collection: csv
+          max_items: 50
         description: Comma-separated ZTF objectIds; at most 50 object IDs are accepted.
     output: {type: array}
     operation_types: [lightcurve_lookup]

@@ -10,6 +10,9 @@ endpoints:
       kind: rest
     params:
       objectId:
+        bind: target_id
+        binding:
+          collection: csv
         required: true
         type: string
         description: single ZTF Object ID, or a comma-separated list of object names, e.g. 'ZTF19acmdpyr,ZTF21aaxtctv'

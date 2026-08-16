@@ -69,6 +69,18 @@ class TargetStep(Step):
     """Implementation helper for operations whose target may come from later context."""
 
     target_id: NonEmptyStr | None = None
+    target_ids: list[NonEmptyStr] | None = None
+
+    @model_validator(mode="after")
+    def validate_target_form(self) -> TargetStep:
+        if self.target_id is not None and self.target_ids is not None:
+            raise ValueError("target_id and target_ids are mutually exclusive")
+        if self.target_ids is not None:
+            if not self.target_ids:
+                raise ValueError("target_ids must not be empty")
+            if len(set(self.target_ids)) != len(self.target_ids):
+                raise ValueError("target_ids must not contain duplicates")
+        return self
 
 
 class LookupStep(Step):

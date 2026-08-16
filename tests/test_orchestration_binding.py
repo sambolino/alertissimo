@@ -52,7 +52,8 @@ def test_lasair_ztf_lightcurve_uses_declared_csv_collection():
 
     assert call.params == {"objectIds": "ZTF20abc"}
     assert call.endpoint_spec.params["objectIds"]["binding"] == {
-        "collection": "csv"
+        "collection": "csv",
+        "max_items": 50,
     }
 
 
@@ -198,3 +199,38 @@ def test_production_binder_has_no_provider_dispatch_or_physical_names():
         '"objectids"',
     ):
         assert provider_or_physical_name not in source
+
+
+def test_plural_targets_bind_once_and_preserve_order():
+    registry = EndpointRegistry()
+    cases = [
+        ("fink", "lsst", "sources", "diaObjectId"),
+        ("fink", "lsst", "fp", "diaObjectId"),
+        ("fink", "ztf", "objects", "objectId"),
+        ("lasair", "ztf", "lightcurves", "objectIds"),
+    ]
+    for broker, origin, endpoint, physical in cases:
+        call = bind_endpoint(
+            GetLightcurveStep(target_ids=["A", "B"]),
+            plan(broker, origin, endpoint), registry,
+        )
+        assert call.params == {physical: "A,B"}
+
+
+def test_singular_binding_unwraps_one_and_rejects_many():
+    registry = EndpointRegistry()
+    endpoint = plan("alerce", "lsst", "query_lightcurve")
+    assert bind_endpoint(GetLightcurveStep(target_ids=["123"]), endpoint, registry).params == {"oid": 123}
+    with pytest.raises(UnsupportedParameterBindingError) as error:
+        bind_endpoint(GetLightcurveStep(target_ids=["1", "2"]), endpoint, registry)
+    assert "alerce/lsst/query_lightcurve" in str(error.value)
+    assert "target_id" in str(error.value)
+    assert "cardinality 2" in str(error.value)
+
+
+def test_collection_limit_is_enforced_before_execution():
+    endpoint = plan("lasair", "ztf", "lightcurves")
+    registry = EndpointRegistry()
+    assert bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(50)]), endpoint, registry)
+    with pytest.raises(UnsupportedParameterBindingError, match="declared limit 50"):
+        bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(51)]), endpoint, registry)

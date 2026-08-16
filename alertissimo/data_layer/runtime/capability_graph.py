@@ -32,6 +32,8 @@ class EndpointCapability:
     projection_param: str | None
     supports_projection: bool
     output_type: str | None
+    binding_roles: tuple[str, ...] = ()
+    collection_binding_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -277,6 +279,20 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 tuple(sorted(params)),
                 _strings(spec.get("server_filters"), f"{endpoint_path}: server_filters"),
                 projection_param, supports_projection, output_type,
+                tuple(sorted({
+                    declaration.get("bind")
+                    for declaration in params.values()
+                    if isinstance(declaration, dict)
+                    and isinstance(declaration.get("bind"), str)
+                })),
+                tuple(sorted({
+                    declaration.get("bind")
+                    for declaration in params.values()
+                    if isinstance(declaration, dict)
+                    and isinstance(declaration.get("bind"), str)
+                    and isinstance(declaration.get("binding"), dict)
+                    and declaration["binding"].get("collection") is not None
+                })),
             ))
 
         payload_defs = _dict(mappings_doc.get("payloads"), f"{mapping_path}: payloads")

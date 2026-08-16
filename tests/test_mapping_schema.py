@@ -360,3 +360,16 @@ def test_invalid_transform_fails(tmp_path, valid_mapping, transforms, match):
     valid_mapping["transforms"] = transforms
     with pytest.raises(MappingSchemaError, match=match):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize(("param", "match"), [
+    ({"binding": {"collection": "csv"}}, "explicit canonical bind"),
+    ({"bind": "target_id", "binding": {"collection": "json"}}, "unknown collection transform"),
+    ({"bind": "target_id", "binding": {"max_items": 2}}, "requires a collection binding"),
+    ({"bind": "target_id", "binding": {"collection": "csv", "max_items": 0}}, "positive integer"),
+    ({"bind": "target_id", "binding": {"collection": "csv", "max_items": True}}, "positive integer"),
+])
+def test_invalid_collection_binding_metadata_fails(tmp_path, valid_mapping, param, match):
+    write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {"params": {"ids": param}}}})
+    with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))

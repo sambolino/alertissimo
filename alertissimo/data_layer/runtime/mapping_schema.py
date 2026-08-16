@@ -118,6 +118,25 @@ def _validate_endpoints(path: Path, endpoints_used: list[tuple[str, str]]) -> No
         return
     document = _mapping(_load_yaml(path), str(path))
     endpoints = _mapping(document.get("endpoints"), f"{path}: endpoints")
+    for endpoint_name, raw_endpoint in endpoints.items():
+        endpoint = _mapping(raw_endpoint, f"{path}: endpoint {endpoint_name!r}")
+        params = _mapping(endpoint.get("params", {}), f"{path}: endpoint {endpoint_name!r} params")
+        for param_name, raw_param in params.items():
+            param = _mapping(raw_param or {}, f"{path}: endpoint {endpoint_name!r} param {param_name!r}")
+            binding = param.get("binding")
+            if binding is None:
+                continue
+            binding = _mapping(binding, f"{path}: endpoint {endpoint_name!r} param {param_name!r} binding")
+            if "bind" not in param:
+                raise MappingSchemaError(f"{path}: collection metadata requires an explicit canonical bind")
+            collection = binding.get("collection")
+            if collection is None and "max_items" in binding:
+                raise MappingSchemaError(f"{path}: max_items requires a collection binding")
+            if collection != "csv":
+                raise MappingSchemaError(f"{path}: unknown collection transform {collection!r}")
+            max_items = binding.get("max_items")
+            if max_items is not None and (isinstance(max_items, bool) or not isinstance(max_items, int) or max_items <= 0):
+                raise MappingSchemaError(f"{path}: max_items must be a positive integer")
     for payload_key, endpoint in endpoints_used:
         if endpoint not in endpoints:
             raise MappingSchemaError(
