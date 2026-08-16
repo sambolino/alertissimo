@@ -12,7 +12,7 @@ from alertissimo.data_layer.representations import (
     InternalExecutionId,
     InternalExecutionProvenance,
 )
-from alertissimo.orchestration.ir import GetLightcurveStep, WorkflowIR
+from alertissimo.orchestration.ir import LookupStep, WorkflowIR
 from alertissimo.orchestration.normalization import (
     WorkflowNormalizationAlignmentError,
     normalize_execution,
@@ -20,6 +20,7 @@ from alertissimo.orchestration.normalization import (
     normalize_workflow_execution,
 )
 from alertissimo.orchestration.runtime import (
+    EndpointPlan,
     StepExecutionResult,
     StepRun,
     StepRunState,
@@ -70,7 +71,7 @@ def _workflow_result(
 ) -> WorkflowExecutionResult:
     workflow = WorkflowIR(
         steps=tuple(
-            GetLightcurveStep(target_id=f"target-{index}")
+            LookupStep(id=f"target-{index}")
             for index in range(len(executions_by_step))
         )
     )
@@ -80,6 +81,14 @@ def _workflow_result(
             StepRun(
                 step_index=index,
                 state=StepRunState.SUCCEEDED,
+                endpoint_plans=tuple(
+                    EndpointPlan(
+                        broker=execution.execution_provenance.broker,
+                        origin=execution.execution_provenance.origin,
+                        endpoint=execution.execution_provenance.endpoint,
+                    )
+                    for execution in executions
+                ),
                 execution_ids=tuple(
                     execution.internal_execution_id.value for execution in executions
                 ),
@@ -170,6 +179,63 @@ def test_execution_id_misalignment_is_rejected_before_normalization(monkeypatch)
 
     with pytest.raises(
         WorkflowNormalizationAlignmentError, match="execution IDs do not align"
+    ):
+        normalize_workflow_execution(inconsistent)
+    assert called is False
+
+
+def test_endpoint_plan_count_mismatch_is_rejected_before_normalization(monkeypatch):
+    execution_result = _workflow_result(((_alerce(),),))
+    bad_step = execution_result.run.steps[0].model_copy(
+        update={"endpoint_plans": ()}
+    )
+    bad_run = execution_result.run.model_copy(update={"steps": (bad_step,)})
+    inconsistent = WorkflowExecutionResult(run=bad_run, steps=execution_result.steps)
+    called = False
+
+    def unexpected_normalization(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(
+        "alertissimo.orchestration.normalization.normalize.normalize_execution",
+        unexpected_normalization,
+    )
+
+    with pytest.raises(
+        WorkflowNormalizationAlignmentError, match="endpoint plan count"
+    ):
+        normalize_workflow_execution(inconsistent)
+    assert called is False
+
+
+@pytest.mark.parametrize("field", ["broker", "origin", "endpoint"])
+def test_endpoint_identity_mismatch_is_rejected_before_normalization(
+    monkeypatch, field
+):
+    execution_result = _workflow_result(((_alerce(),),))
+    step = execution_result.run.steps[0]
+    bad_plan = step.endpoint_plans[0].model_copy(update={field: f"wrong-{field}"})
+    bad_step = step.model_copy(update={"endpoint_plans": (bad_plan,)})
+    bad_run = execution_result.run.model_copy(update={"steps": (bad_step,)})
+    inconsistent = WorkflowExecutionResult(run=bad_run, steps=execution_result.steps)
+    called = False
+
+    def unexpected_normalization(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(
+        "alertissimo.orchestration.normalization.normalize.normalize_execution",
+        unexpected_normalization,
+    )
+
+    with pytest.raises(
+        WorkflowNormalizationAlignmentError,
+        match=(
+            r"step_index 0 execution position 0 endpoint identity does not align: "
+            r"planned broker=.*origin=.*endpoint=.*actual broker=.*origin=.*endpoint="
+        ),
     ):
         normalize_workflow_execution(inconsistent)
     assert called is False
