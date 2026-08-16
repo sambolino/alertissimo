@@ -56,6 +56,8 @@ class StepRun(RuntimeModel):
     step_index: int = Field(ge=0)
     state: StepRunState = StepRunState.PENDING
     endpoint_plans: tuple[EndpointPlan, ...] = ()
+    execution_ids: tuple[str, ...] = ()
+    error: str | None = None
 
 
 class WorkflowRun(RuntimeModel):
