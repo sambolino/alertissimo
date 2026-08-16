@@ -34,6 +34,8 @@ def records(portfolio,kind): return [r for r in portfolio.records if r.semantic_
 def test_core_fixtures_have_zero_unaccounted(name,endpoint):
     report=audit_payload(fixture(name),broker='antares',origin='ztf',endpoint=endpoint)
     assert 'Unaccounted leaves: 0' in report
+    if endpoint == 'cone_search':
+        assert 'Portfolios: 4' in report
 
 def test_rich_composite_has_zero_unaccounted():
     report=audit_payload(rich_locus(),broker='antares',origin='ztf',endpoint='get_by_ztf_object_id')
@@ -115,5 +117,5 @@ def test_search_cone_and_one_shot_iterator():
     cone=build_all('cone_search',(x for x in fixture('cone_search.json')))
     assert len(cone)==4 and all(len(records(p,'summary@ztf:antares'))==1 for p in cone)
     assert len({p.internal_portfolio_id for p in cone})==4
-    assert all(p.executions==(cone[0].executions) for p in cone)
+    assert all(p.executions[0].internal_execution_id==InternalExecutionId('execution:fixture') for p in cone)
     assert not any('separation' in key for p in cone for r in p.records for key in r.fields)

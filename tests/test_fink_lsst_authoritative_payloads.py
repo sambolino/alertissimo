@@ -242,23 +242,32 @@ def test_authoritative_detection_payload_cardinality(endpoint, count_expected):
     assert len(rows) == count_expected
     assert {row["r:diaObjectId"] for row in rows} == {170587117485817955}
     execution = ExecutionResult(rows, InternalExecutionProvenance(InternalExecutionId(f"execution:{endpoint}"), "fink", "lsst", endpoint))
-    (portfolio,) = build_portfolios_from_execution(execution, mappings_path=MAPPINGS)
+    (portfolio,) = build_portfolios_from_execution(
+        execution, mappings_path=MAPPINGS, validate_semantic_model=True
+    )
     detections = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
     assert len(detections) == count_expected
     assert {record.fields["identity.object_id"] for record in detections} == {170587117485817955}
+    assert portfolio.executions[0].internal_execution_id == InternalExecutionId(f"execution:{endpoint}")
 
 
 def test_synthetic_sso_partitions_by_physical_solar_system_identity():
     def build(rows):
         execution = ExecutionResult(rows, InternalExecutionProvenance(InternalExecutionId("execution:sso"), "fink", "lsst", "sso"))
-        return build_portfolios_from_execution(execution, mappings_path=MAPPINGS)
+        return build_portfolios_from_execution(
+            execution, mappings_path=MAPPINGS, validate_semantic_model=True
+        )
 
     one = build([
         {"r:ssObjectId": 42, "r:diaObjectId": 1001, "r:diaSourceId": 1},
         {"r:ssObjectId": 42, "r:diaObjectId": 1002, "r:diaSourceId": 2},
     ])
     assert len(one) == 1
-    assert len([r for r in one[0].records if r.semantic_type == "detection@lsst:fink"]) == 2
+    detections = [r for r in one[0].records if r.semantic_type == "detection@lsst:fink"]
+    assert len(detections) == 2
+    assert {r.fields["identity.object_id"] for r in detections} == {1001, 1002}
+    assert {r.fields["solar_system.identity.object_id"] for r in detections} == {42}
+    assert one[0].executions[0].internal_execution_id == InternalExecutionId("execution:sso")
     assert len(build([{"r:ssObjectId": 42, "r:diaObjectId": 1}, {"r:ssObjectId": 43, "r:diaObjectId": 1}])) == 2
 
 
