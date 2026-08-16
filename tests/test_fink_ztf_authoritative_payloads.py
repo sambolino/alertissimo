@@ -16,6 +16,7 @@ from alertissimo.data_layer.representations import (
     InternalRecordId,
 )
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
+from tools.audit_payload_mapping_coverage import audit_payload
 
 ROOT = Path(__file__).parent
 FIXTURES = ROOT / "fixtures/fink/ztf"
@@ -43,10 +44,7 @@ def _physical_endpoint(fixture):
 def _build(endpoint, payload=None):
     ids = count()
     execution = ExecutionResult(
-        payload=_payload(endpoint) if payload is None else (
-            [{**row, "i:objectId": row.get("i:objectId", "ZTF-synthetic")} for row in payload]
-            if endpoint == "anomaly" else payload
-        ),
+        payload=_payload(endpoint) if payload is None else payload,
         execution_provenance=InternalExecutionProvenance(
             InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", _physical_endpoint(endpoint)
         ),
@@ -80,15 +78,15 @@ def test_classtar_and_fink_final_classification_are_positive_products():
     fink = _records(portfolio, "classification@fink")
     assert sextractor[0].fields["assessment.star_galaxy.score"] == 1.0
     assert fink[0].fields["best.class"] == "SN candidate"
-    assert not _records(_build("objects", [{"i:classtar": None}]), "classification@sextractor:fink")
+    assert not _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "i:classtar": None}]), "classification@sextractor:fink")
 
 
 def test_current_blazar_cdf_quantile_contract_maps_value_and_omits_sentinel():
     # This optional column is supported by the current official Fink object-API
     # and Fink Science sources, but is not present in the frozen capture.
-    present = _records(_build("objects", [{"d:blazar_stats_cdf_quantile": 0.73}]), "classification@fink")[0]
+    present = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "d:blazar_stats_cdf_quantile": 0.73}]), "classification@fink")[0]
     assert present.fields["assessment.blazar_extreme_state_cdf_quantile.value"] == 0.73
-    assert not _records(_build("objects", [{"d:blazar_stats_cdf_quantile": -1.0}]), "classification@fink")
+    assert not _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "d:blazar_stats_cdf_quantile": -1.0}]), "classification@fink")
 
 
 def test_candid_history_reference_times_calibration_and_fixed_color():
@@ -138,8 +136,8 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert detection.fields["solar_system.iau_number"] == 8467
     assert detection.fields["solar_system.mpc_match.identity.object_id"] == "8467"
     assert "g.feature_vector" in lightcurve.fields and "r.feature_vector" in lightcurve.fields
-    synthetic = _build("objects", [{"i:ssdistnr": -999.0, "i:ssmagnr": -999.0, "i:candid": -1}])
-    assert not synthetic.records
+    synthetic = _build("objects", [{"i:objectId": "ZTF-synthetic", "i:ssdistnr": -999.0, "i:ssmagnr": -999.0, "i:candid": -1}])
+    assert not _records(synthetic, "detection@ztf:fink")
 
 
 def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
@@ -156,12 +154,12 @@ def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
     assert "identity.object_id" not in dr1.fields
     assert "separation.total" not in dr3.fields
     assert not any("astrometric_solution.parallax" in record.fields for record in portfolio.records)
-    default = _build("anomaly", [{"d:DR3Name": "Unknown", "d:Plx": 0.0, "d:e_Plx": 0.0}])
-    assert not default.records
+    default = _build("anomaly", [{"i:objectId": "ZTF-synthetic", "d:DR3Name": "Unknown", "d:Plx": 0.0, "d:e_Plx": 0.0}])
+    assert not _records(default, "crossmatch@gaia_dr3:fink")
 
 
 def test_gaia_catalog_queries_and_variability_sentinels_stay_separate():
-    positive = _build("anomaly", [{
+    positive = _build("anomaly", [{"i:objectId": "ZTF-synthetic",
         "d:DR3Name": "Gaia DR3 123",
         "d:gaiaVarFlag": 1,
         "d:gaiaClass": "RR",
@@ -174,7 +172,7 @@ def test_gaia_catalog_queries_and_variability_sentinels_stay_separate():
     }
     assert variability.fields["classification.assessment.variability.class"] == "RR"
 
-    unavailable = _build("anomaly", [{"d:DR3Name": "Unknown", "d:gaiaVarFlag": 0}])
+    unavailable = _build("anomaly", [{"i:objectId": "ZTF-synthetic", "d:DR3Name": "Unknown", "d:gaiaVarFlag": 0}])
     assert not _records(unavailable, "crossmatch@gaia_dr3:fink")
     frozen = _build("sso")
     assert not any(
@@ -206,12 +204,12 @@ def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
         else:
             # Policy A: an upstream-valid measured detection explicitly is not an upper limit.
             assert record.fields[f"photometry.{band}.limit.upper_limit"] is False
-    bad = _records(_build("objects", [{"i:fid": "1", "d:tag": "badquality"}]), "detection@ztf:fink")
+    bad = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "i:fid": "1", "d:tag": "badquality"}]), "detection@ztf:fink")
     assert not bad  # badquality is neither a valid detection nor an upper limit
 
 
 def test_tns_alert_field_is_catalog_type_not_identity():
-    record = _records(_build("objects", [{"d:tns": "SN Ia"}]), "crossmatch@tns:fink")[0]
+    record = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "d:tns": "SN Ia"}]), "crossmatch@tns:fink")[0]
     assert record.fields["classification.best.class"] == "SN Ia"
     assert "identity.object_id" not in record.fields
 
@@ -222,12 +220,12 @@ def test_object_and_cone_final_classification_converge():
 
 
 def test_fast_transient_fields_use_lightcurve_semantics():
-    no_rate = [{"i:fid": 1, "d:lower_rate": None, "d:upper_rate": None,
+    no_rate = [{"i:objectId": "ZTF-synthetic", "i:fid": 1, "d:lower_rate": None, "d:upper_rate": None,
                 "d:delta_time": None, "d:from_upper": False}]
     records = _records(_build("anomaly", no_rate), "lightcurve@fink")
     assert not records or "g.from_upper_limit" not in records[0].fields
 
-    upper = [{"i:fid": 2, "d:lower_rate": -0.2, "d:upper_rate": 0.4,
+    upper = [{"i:objectId": "ZTF-synthetic", "i:fid": 2, "d:lower_rate": -0.2, "d:upper_rate": 0.4,
               "d:delta_time": 0.5, "d:from_upper": True}]
     record = _records(_build("anomaly", upper), "lightcurve@fink")[0]
     assert record.fields["r.rate_lower_percentile"] == -0.2
@@ -235,7 +233,7 @@ def test_fast_transient_fields_use_lightcurve_semantics():
     assert record.fields["r.delta_time_rate"] == 0.5
     assert record.fields["r.from_upper_limit"] is True
 
-    derived = _records(_build("anomaly", [{
+    derived = _records(_build("anomaly", [{"i:objectId": "ZTF-synthetic",
         "i:fid": 1, "d:nalerthist": 17, "d:mag_rate": 0.25,
         "d:sigma_rate": 0.05,
     }]), "lightcurve@fink")[0]
@@ -246,7 +244,7 @@ def test_fast_transient_fields_use_lightcurve_semantics():
 
 
 def test_blazar_extreme_state_assessments_are_explicit_and_suppress_minus_one():
-    positive = _records(_build("anomaly", [{
+    positive = _records(_build("anomaly", [{"i:objectId": "ZTF-synthetic",
         "d:blazar_stats_instantness_low": 0.1,
         "d:blazar_stats_robustness_low": 0.2,
         "d:blazar_stats_instantness_high": 0.3,
@@ -258,7 +256,7 @@ def test_blazar_extreme_state_assessments_are_explicit_and_suppress_minus_one():
         "assessment.blazar_extreme_state_instantness_high.value": 0.3,
         "assessment.blazar_extreme_state_robustness_high.value": 0.4,
     }
-    unavailable = _build("anomaly", [{
+    unavailable = _build("anomaly", [{"i:objectId": "ZTF-synthetic",
         "d:blazar_stats_instantness_low": -1,
         "d:blazar_stats_robustness_low": -1.0,
     }])
@@ -282,6 +280,11 @@ def test_statistics_are_mapped_but_not_object_portfolios():
     document = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
     assert document["payloads"]["statistics"]["object_partition"] == {"mode": "none"}
     assert _build_all("statistics") == ()
+    report = audit_payload(
+        _payload("statistics"), broker="fink", origin="ztf", endpoint="statistics"
+    )
+    assert "Portfolios: 0" in report
+    assert "Portfolio records: 0" in report
     assert any(ref.startswith("statistics#") for refs in document["mappings"].values() for ref in refs)
 
 
@@ -290,15 +293,22 @@ def test_authoritative_multi_object_cardinalities_and_provenance():
     assert len(anomaly) == 10
     anomaly_ids = [{r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"} for p in anomaly]
     assert all(len(ids) == 1 for ids in anomaly_ids) and len({next(iter(ids)) for ids in anomaly_ids}) == 10
+    assert all(
+        p.executions[0].internal_execution_id == InternalExecutionId("execution:fixture:anomaly")
+        for p in anomaly
+    )
 
     latest = _build_all("latests")
     raw_counts = Counter(row["i:objectId"] for row in _payload("latests"))
     assert len(latest) == 7
     actual = {next(r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"): len(_records(p, "detection@ztf:fink")) for p in latest}
     assert actual == raw_counts
+    assert all(
+        p.executions[0].internal_execution_id == InternalExecutionId("execution:fixture:latests")
+        for p in latest
+    )
     for portfolios in (anomaly, latest):
         assert len({p.internal_portfolio_id for p in portfolios}) == len(portfolios)
-        assert all(p.executions[0].internal_execution_id.value.endswith(tuple(FILES)) for p in portfolios)
 
 
 def test_authoritative_sso_is_one_solar_system_object():

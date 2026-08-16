@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from itertools import count
 import json
 from pathlib import Path
@@ -15,7 +16,10 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import (
+    build_portfolio_from_execution,
+    build_portfolios_from_execution,
+)
 from tools.audit_payload_mapping_coverage import audit_payload
 
 
@@ -49,6 +53,23 @@ def _build(endpoint: str, payload):
         mappings_path=MAPPINGS,
         internal_portfolio_id=InternalPortfolioId("portfolio:fixture"),
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
+        validate_semantic_model=True,
+    )
+
+
+def _build_all(endpoint: str, payload):
+    execution_id = InternalExecutionId(f"execution:fixture:{endpoint}")
+    return build_portfolios_from_execution(
+        ExecutionResult(
+            payload=payload,
+            execution_provenance=InternalExecutionProvenance(
+                internal_execution_id=execution_id,
+                broker="lasair",
+                origin="ztf",
+                endpoint=endpoint,
+            ),
+        ),
+        mappings_path=MAPPINGS,
         validate_semantic_model=True,
     )
 
@@ -95,6 +116,38 @@ def test_live_object_and_plural_object_are_fully_accounted() -> None:
     assert tns.fields["photometry.r.mag"] == pytest.approx(19.7399)
     plural = _build("objects", objs)
     assert len([r for r in plural.records if r.semantic_type == "detection@ztf:lasair"]) == 92
+
+
+def test_plural_objects_keep_nested_candidates_with_their_root() -> None:
+    first = _fixture("objects_plural")[0]
+    second = copy.deepcopy(first)
+    second["objectId"] = "ZTF-synthetic-second-root"
+    second["candidates"] = second["candidates"][:7]
+
+    portfolios = _build_all("objects", [first, second])
+    assert len(portfolios) == 2
+    by_object_id = {
+        next(
+            record.fields["identity.object_id"]
+            for record in portfolio.records
+            if record.semantic_type == "summary@ztf:lasair"
+        ): portfolio
+        for portfolio in portfolios
+    }
+    assert set(by_object_id) == {first["objectId"], second["objectId"]}
+    assert {
+        object_id: len([
+            record for record in portfolio.records
+            if record.semantic_type == "detection@ztf:lasair"
+        ])
+        for object_id, portfolio in by_object_id.items()
+    } == {first["objectId"]: len(first["candidates"]), second["objectId"]: 7}
+    assert all(
+        portfolio.executions[0].internal_execution_id
+        == InternalExecutionId("execution:fixture:objects")
+        for portfolio in portfolios
+    )
+    assert len({portfolio.internal_portfolio_id for portfolio in portfolios}) == 2
 
 def test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None:
     payload = _fixture("lightcurves")

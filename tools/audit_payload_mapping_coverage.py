@@ -18,7 +18,7 @@ from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.edge_builder import connect_portfolio_records
 from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field, resolve_payload_items
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
 from tools.inspect_payload_shape import inspect_payload_shape
 
 
@@ -144,12 +144,21 @@ def audit_payload(
         internal_execution_id=InternalExecutionId("execution:audit:payload"),
         broker=broker, origin=origin, endpoint=endpoint, params={}, status="success",
     )
-    portfolio = connect_portfolio_records(build_portfolio_from_execution(
-        ExecutionResult(payload=payload, execution_provenance=provenance),
-        mappings_path=mappings_path,
-        validate_semantic_model=True,
-    ))
-    semantic_types = sorted({record.semantic_type for record in portfolio.records})
+    portfolios = tuple(
+        connect_portfolio_records(portfolio)
+        for portfolio in build_portfolios_from_execution(
+            ExecutionResult(payload=payload, execution_provenance=provenance),
+            mappings_path=mappings_path,
+            validate_semantic_model=True,
+        )
+    )
+    record_count = sum(len(portfolio.records) for portfolio in portfolios)
+    edge_count = sum(len(portfolio.edges) for portfolio in portfolios)
+    semantic_types = sorted({
+        record.semantic_type
+        for portfolio in portfolios
+        for record in portfolio.records
+    })
 
     lines = [
         f"Provider: {broker}/{origin}", f"Endpoint: {endpoint}", f"Payload file: {payload_file}",
@@ -163,11 +172,11 @@ def audit_payload(
         f"Intentionally unmapped leaves: {len(intentional_leaves)}",
         f"Delegated / structural leaves: {len(delegated_leaves)}",
         f"Unaccounted leaves: {len(unaccounted_leaves)}",
-        "", f"Portfolio records: {len(portfolio.records)}",
+        "", f"Portfolios: {len(portfolios)}", f"Portfolio records: {record_count}",
         f"Semantic record types: {', '.join(semantic_types)}",
-        f"Edges: {len(portfolio.edges)}",
+        f"Edges: {edge_count}",
     ]
-    if not portfolio.records:
+    if not record_count:
         lines.append("No semantic records were built for this endpoint/payload shape.")
     return "\n".join(lines) + "\n"
 

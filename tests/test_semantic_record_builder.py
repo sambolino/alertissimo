@@ -10,7 +10,11 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import PortfolioBuildError, build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import (
+    PortfolioBuildError,
+    build_portfolio_from_execution,
+    build_portfolios_from_execution,
+)
 
 
 _TRANSFORM_SEMANTIC_PATH = "detection@ztf:lasair.quality.test_value"
@@ -39,6 +43,14 @@ def _build(tmp_path, payload, document):
         internal_portfolio_id=InternalPortfolioId("portfolio:test"),
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
     )
+
+
+def _build_all(tmp_path, payload, document):
+    for definition in document["payloads"].values():
+        definition.setdefault("object_partition", {"mode": "single"})
+    path = tmp_path / "mappings.yaml"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    return build_portfolios_from_execution(_execution(payload), mappings_path=path)
 
 
 def test_root_object_builds_one_record_with_relative_fields(tmp_path):
@@ -216,8 +228,8 @@ def test_skip_null_omits_null_field_when_no_fallback_exists(tmp_path):
     document = _transform_document(
         {"object#value": {"type": "to_float", "skip_null": True}}
     )
-    portfolio = _build(tmp_path, {"value": None}, document)
-    assert portfolio.records == ()
+    portfolios = _build_all(tmp_path, {"value": None}, document)
+    assert portfolios == ()
 
 
 def test_skip_null_precedes_jd_arithmetic_and_preserves_real_transform(tmp_path):
@@ -230,7 +242,7 @@ def test_skip_null_precedes_jd_arithmetic_and_preserves_real_transform(tmp_path)
             "type": "jd_to_mjd", "skip_null": True,
         }}},
     }
-    assert _build(tmp_path, {"value": None}, document).records == ()
+    assert _build_all(tmp_path, {"value": None}, document) == ()
     portfolio = _build(tmp_path, {"value": 2459396.7497338}, document)
     assert portfolio.records[0].fields["time.mjd"] == pytest.approx(59396.2497338)
 
@@ -264,7 +276,7 @@ def test_discovers_mapping_from_execution_provenance(tmp_path):
     path.parent.mkdir(parents=True)
     path.write_text(yaml.safe_dump({
         "broker": "lasair", "origin": "ztf",
-        "payloads": {"object": {"path": "."}},
+        "payloads": {"object": {"path": ".", "object_partition": {"mode": "single"}}},
         "mappings": {"summary@ztf:lasair.identity.object_id": ["object#objectId"]},
     }), encoding="utf-8")
     portfolio = build_portfolio_from_execution(_execution({"objectId": "ZTF-test"}), providers_root=root)
@@ -403,10 +415,10 @@ def test_dynamic_filter_binding_is_scoped_to_each_payload_item(tmp_path):
 
 
 def test_missing_dynamic_binder_omits_dependent_fields(tmp_path):
-    portfolio = _build(
+    portfolios = _build_all(
         tmp_path, {"candidates": [{"magpsf": 18.2}]}, _dynamic_mapping()
     )
-    assert portfolio.records == ()
+    assert portfolios == ()
 
 
 def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):
