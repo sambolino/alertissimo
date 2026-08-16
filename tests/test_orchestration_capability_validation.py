@@ -114,6 +114,47 @@ def test_lasair_ztf_classification_uses_generic_semantic_endpoints():
     )
 
 
+@pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
+def test_lasair_sherlock_candidates_respect_target_cardinality(step_type):
+    graph = build_capability_graph()
+    ztf_source = [Source(broker="lasair", origin="ztf")]
+    scalar = validate_step_capabilities(
+        step_type(target_id="A", sources=ztf_source), graph
+    )
+    many = validate_step_capabilities(
+        step_type(target_ids=["A", "B"], sources=ztf_source), graph
+    )
+    assert "sherlock_object" in {item.endpoint for item in scalar.candidates}
+    assert "sherlock_object" not in {item.endpoint for item in many.candidates}
+    assert {"objects", "sherlock_objects"} <= {
+        item.endpoint for item in many.candidates
+    }
+
+    lsst_many = validate_step_capabilities(
+        step_type(
+            target_ids=["313761042336317573", "313761042336317574"],
+            sources=[Source(broker="lasair", origin="lsst")],
+        ),
+        graph,
+    )
+    assert {item.endpoint for item in lsst_many.candidates} == {"sherlock_object"}
+
+
+def test_lasair_sherlock_compiled_binding_roles():
+    graph = build_capability_graph()
+    capabilities = {
+        (item.origin, item.endpoint): item
+        for item in graph.endpoint_capabilities
+        if item.broker == "lasair" and item.endpoint.startswith("sherlock_object")
+    }
+    assert capabilities[("ztf", "sherlock_object")].binding_roles == ("target_id",)
+    assert capabilities[("ztf", "sherlock_object")].collection_binding_roles == ()
+    assert capabilities[("ztf", "sherlock_objects")].binding_roles == ("target_id",)
+    assert capabilities[("ztf", "sherlock_objects")].collection_binding_roles == ("target_id",)
+    assert capabilities[("lsst", "sherlock_object")].binding_roles == ("target_id",)
+    assert capabilities[("lsst", "sherlock_object")].collection_binding_roles == ("target_id",)
+
+
 def test_classification_retrieval_requires_semantic_capability():
     non_classification = EndpointCapability(
         "test", "ztf", "object", "/object", "GET",

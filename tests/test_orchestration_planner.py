@@ -269,3 +269,24 @@ def test_semantic_target_planning_uses_only_collection_candidate(step_type, noun
     with pytest.raises(PlanningAmbiguityError):
         plan_step(step_type(target_id="A", sources=source), graph)
     assert plan_step(step_type(target_ids=["A", "B"], sources=source), graph)[0].endpoint == f"{noun}_many"
+
+
+@pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
+def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
+    ztf = step_type(
+        target_ids=["A", "B"],
+        sources=[Source(broker="lasair", origin="ztf")],
+    )
+    candidates = validate_step_capabilities(ztf, graph).candidates
+    assert {"objects", "sherlock_objects"} <= {item.endpoint for item in candidates}
+    assert "sherlock_object" not in {item.endpoint for item in candidates}
+    with pytest.raises(PlanningAmbiguityError):
+        plan_step(ztf, graph)
+
+    lsst = step_type(
+        target_ids=["313761042336317573", "313761042336317574"],
+        sources=[Source(broker="lasair", origin="lsst")],
+    )
+    assert plan_step(lsst, graph) == (
+        EndpointPlan(broker="lasair", origin="lsst", endpoint="sherlock_object"),
+    )

@@ -356,3 +356,83 @@ def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
         for portfolio in wrapper.portfolios
         for record in portfolio.records
     ) > 1
+
+
+@pytest.mark.parametrize(
+    ("origin", "endpoint", "physical_name"),
+    [("ztf", "sherlock_objects", "objectIds"),
+     ("lsst", "sherlock_object", "objectId")],
+)
+def test_synthetic_lasair_sherlock_aggregate_keeps_two_objects_separate(
+    origin, endpoint, physical_name
+):
+    """Synthetic contract: no provider capture or entity resolution is involved."""
+    from alertissimo.data_layer.execution import EndpointRegistry
+    from alertissimo.orchestration.binding import bind_endpoint
+    from alertissimo.orchestration.ir import GetCrossmatchStep
+
+    payload = {
+        "classifications": {
+            "A": ["SN", "description A"],
+            "B": ["AGN", "description B"],
+        },
+        "crossmatches": [
+            {"transient_object_id": "A", "catalogue_table_name": "Gaia DR3",
+             "catalogue_object_id": "catalogue-A"},
+            {"transient_object_id": "B", "catalogue_table_name": "Gaia DR3",
+             "catalogue_object_id": "catalogue-B"},
+        ],
+    }
+    plan = EndpointPlan(broker="lasair", origin=origin, endpoint=endpoint)
+    call = bind_endpoint(
+        GetCrossmatchStep(target_ids=["A", "B"]), plan, EndpointRegistry()
+    )
+    assert call.params == {physical_name: "A,B"}  # one bound physical call
+
+    provenance = InternalExecutionProvenance(
+        InternalExecutionId(f"execution:lasair:{origin}:sherlock:synthetic"),
+        "lasair", origin, endpoint, params=call.params,
+    )
+    execution = ExecutionResult(payload=payload, execution_provenance=provenance)
+    executions = (execution,)
+    assert len(executions) == 1
+    normalized = normalize_step_execution(
+        StepExecutionResult(step_index=0, executions=executions)
+    )
+    assert len(normalized.executions) == 1  # one ExecutionPortfolioResult
+    wrapper = normalized.executions[0]
+    assert len(wrapper.portfolios) == 2
+    assert len({p.internal_portfolio_id for p in wrapper.portfolios}) == 2
+
+    raw_ids_by_index = {
+        "sherlock_object_classifications": ("A", "B"),
+        "sherlock_objects_classifications": ("A", "B"),
+        "sherlock_object_crossmatches": ("A", "B"),
+        "sherlock_objects_crossmatches": ("A", "B"),
+    }
+    seen = set()
+    for portfolio in wrapper.portfolios:
+        raw_ids = {
+            raw_ids_by_index[record.internal_source.payload_key][
+                record.internal_source.payload_index
+            ]
+            for record in portfolio.records
+            if record.internal_source is not None
+            and record.internal_source.payload_key in raw_ids_by_index
+        }
+        assert len(raw_ids) == 1
+        (transient_id,) = tuple(raw_ids)
+        seen.add(transient_id)
+        assert {r.internal_source.payload_key.split("_")[-1]
+                for r in portfolio.records if r.internal_source is not None} >= {
+                    "classifications", "crossmatches"
+                }
+        assert portfolio.executions == (provenance,)
+        assert portfolio.edges == ()  # no composition/entity-resolution stage
+        catalogue_ids = {
+            r.fields.get("identity.object_id") for r in portfolio.records
+            if r.semantic_type == "crossmatch@gaia:lasair"
+        }
+        assert catalogue_ids == {f"catalogue-{transient_id}"}
+        assert transient_id not in catalogue_ids
+    assert seen == {"A", "B"}

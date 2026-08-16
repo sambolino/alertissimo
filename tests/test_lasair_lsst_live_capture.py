@@ -7,7 +7,7 @@ import pytest
 import yaml
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance, InternalPortfolioId, InternalRecordId
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 from tools.audit_payload_mapping_coverage import audit_payload
 CAPTURE=Path(__file__).parent/'fixtures/lasair/lsst/capture_20260813T140948Z'
 MAPPINGS=Path(__file__).parents[1]/'alertissimo/data_layer/providers/lasair/lsst/mappings.yaml'
@@ -61,3 +61,13 @@ def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  assert all('photoZ' not in r for r in m.get('crossmatch@{producer}:lasair.redshift.value',[]));assert 'crossmatch@{producer}:lasair.redshift.error' not in m
  assert all('merged_rank' not in r for r in m['crossmatch@{producer}:lasair.rank'])
  for spec in t['crossmatch@{producer}:lasair.provenance.producer.id'].values():assert spec.get('default')=='unknown';assert spec['map']['DESI']=='desi_legacy_survey'
+
+@pytest.mark.parametrize('name',('sherlock_object_lite','sherlock_object_full'))
+def test_authoritative_lsst_object_sherlock_remains_one_portfolio(name):
+ _zero('sherlock_object',name);payload=_fixture(name)
+ provenance=InternalExecutionProvenance(InternalExecutionId(f'execution:{name}'),'lasair','lsst','sherlock_object')
+ (portfolio,)=build_portfolios_from_execution(ExecutionResult(payload,provenance),mappings_path=MAPPINGS,validate_semantic_model=True)
+ assert set(payload['classifications'])=={'313761042336317573'}
+ assert {row['transient_object_id'] for row in payload['crossmatches']}=={'313761042336317573'}
+ assert {r.internal_source.payload_key.rsplit('_',1)[-1] for r in portfolio.records if r.internal_source is not None}>={'classifications','crossmatches'}
+ assert 'sherlock_objects' not in yaml.safe_load(ENDPOINTS.read_text())['endpoints']

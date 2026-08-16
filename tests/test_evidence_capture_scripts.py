@@ -34,6 +34,32 @@ def test_lasair_uses_environment_credential():
   assert "LASAIR_TOKEN" in text
   assert "Authorization: Token $LASAIR_TOKEN" in text
 
+def test_lasair_two_id_capture_contracts_are_offline_and_credential_safe():
+ ztf=(EVIDENCE/'capture_lasair_ztf.sh').read_text()
+ lsst=(EVIDENCE/'capture_lasair_lsst.sh').read_text()
+ for text,variable in ((ztf,'LASAIR_ZTF_OID_2'),(lsst,'LASAIR_LSST_OID_2')):
+  assert variable in text
+  assert f'[[ -n "${{{variable}+x}}" ]]' in text
+  assert 'must be non-empty when supplied' in text
+  assert 'must differ from' in text
+  metadata=text.split('cat > "$OUT/capture_metadata.txt" <<META',1)[1].split('\nMETA',1)[0]
+  assert 'secondary_object_identifier=$OID_2' in metadata
+  assert 'LASAIR_TOKEN' not in metadata
+  assert 'Authorization' not in metadata
+ assert '[[ "$OID_2" =~ ^ZTF[0-9]{2}[a-z]+$ ]]' in ztf
+ assert '[[ "$OID_2" =~ ^[0-9]+$ ]]' in lsst
+ assert 'sherlock_objects_batch_lite /api/sherlock/objects/' in ztf
+ assert 'sherlock_objects_batch_full /api/sherlock/objects/' in ztf
+ assert "'{objectIds:$ids, lite:true}'" in ztf
+ assert 'sherlock_object_batch_lite /api/sherlock/object/' in lsst
+ assert 'sherlock_object_batch_full /api/sherlock/object/' in lsst
+ assert "'{objectId:$ids, lite:true}'" in lsst
+ assert 'sherlock_object_lite /api/sherlock/object/' in ztf
+ assert 'sherlock_object_lite /api/sherlock/object/' in lsst
+ # Empty OID_2 preserves the original scalar path because batch calls are guarded.
+ assert 'if [[ -n "$OID_2" ]]; then' in ztf
+ assert 'if [[ -n "$OID_2" ]]; then' in lsst
+
 def test_readme_indexes_all_pairs():
  text=(EVIDENCE/"README.md").read_text()
  for name in SCRIPTS: assert name in text

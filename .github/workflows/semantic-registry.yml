@@ -22,6 +22,8 @@ on:
       - 'tests/test_lasair_ztf_live_capture.py'
       - 'tests/test_lasair_lsst_live_capture.py'
       - 'tests/test_lasair_payload_example.py'
+      - 'tests/test_lasair_ztf_authoritative_payloads.py'
+      - 'tests/test_evidence_capture_scripts.py'
       - 'tests/test_alerce_classification_mappings.py'
       - 'tests/test_alerce_lsst_authoritative_payloads.py'
       - 'tests/test_alerce_ztf_authoritative_payloads.py'
@@ -29,6 +31,8 @@ on:
       - 'tests/test_ui_fixtures.py'
       - 'examples/build_lasair_portfolio_from_payload.py'
       - 'scripts/build_ui_fixtures.py'
+      - 'scripts/evidence/capture_lasair_ztf.sh'
+      - 'scripts/evidence/capture_lasair_lsst.sh'
       - 'tests/test_antares_ztf_authoritative_payloads.py'
       - 'tests/test_fink_ztf_authoritative_payloads.py'
       - 'tests/test_fink_lsst_authoritative_payloads.py'
@@ -78,6 +82,8 @@ jobs:
             tests/test_alerce_ztf_authoritative_payloads.py \
             tests/test_lasair_lsst_live_capture.py \
             tests/test_lasair_payload_example.py \
+            tests/test_lasair_ztf_authoritative_payloads.py \
+            tests/test_evidence_capture_scripts.py \
             tests/test_payload_mapping_coverage.py \
             tests/test_ui_fixtures.py
       - name: Validate every provider mapping

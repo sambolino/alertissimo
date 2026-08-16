@@ -12,6 +12,8 @@ from alertissimo.orchestration.binding import (
 )
 from alertissimo.orchestration.ir import (
     ConeSearchStep,
+    GetClassificationStep,
+    GetCrossmatchStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
     SqlQueryStep,
@@ -231,19 +233,19 @@ def test_singular_binding_unwraps_one_and_rejects_many():
 def test_lasair_sherlock_physical_bindings_are_registry_driven():
     registry = EndpointRegistry()
     ztf_scalar = bind_endpoint(
-        GetLightcurveStep(target_id="ZTF-A"),
+        GetClassificationStep(target_id="ZTF-A"),
         plan("lasair", "ztf", "sherlock_object"), registry,
     )
     ztf_batch = bind_endpoint(
-        GetLightcurveStep(target_ids=["ZTF-A", "ZTF-B"]),
+        GetCrossmatchStep(target_ids=["ZTF-A", "ZTF-B"]),
         plan("lasair", "ztf", "sherlock_objects"), registry,
     )
     lsst_scalar = bind_endpoint(
-        GetLightcurveStep(target_id="123"),
+        GetClassificationStep(target_id="123"),
         plan("lasair", "lsst", "sherlock_object"), registry,
     )
     lsst_batch = bind_endpoint(
-        GetLightcurveStep(target_ids=["123", "456"]),
+        GetCrossmatchStep(target_ids=["123", "456"]),
         plan("lasair", "lsst", "sherlock_object"), registry,
     )
 
