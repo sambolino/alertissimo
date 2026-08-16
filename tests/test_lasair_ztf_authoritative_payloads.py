@@ -157,13 +157,13 @@ def test_photoz_and_merged_rank_are_explicit_debt_not_semantic_fallbacks():
         assert ref in debt_refs
 
 
-def test_unknown_catalogue_names_are_not_collapsed_to_unknown_producer():
+def test_unknown_catalogue_names_use_explicit_unknown_producer_fallback():
     document = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
     spec = document["transforms"]["crossmatch@{producer}:lasair.provenance.producer.id"][
         "object#sherlock.catalogue_table_name"
     ]
     assert spec["map"]["SDSS"] == "sdss"
-    assert "default" not in spec
+    assert spec["default"] == "unknown"
 
 
 def test_documented_object_upper_limit_does_not_fabricate_measured_psf_mag():
