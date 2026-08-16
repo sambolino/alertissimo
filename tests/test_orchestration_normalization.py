@@ -326,13 +326,20 @@ def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
 
     portfolio_ids = []
     for portfolio in wrapper.portfolios:
-        object_ids = {
+        raw_object_ids = {
+            combined_rows[record.internal_source.payload_index]["i:objectId"]
+            for record in portfolio.records
+            if record.internal_source is not None
+        }
+        assert len(raw_object_ids) == 1
+        portfolio_ids.extend(raw_object_ids)
+        primary_identity_ids = {
             record.fields["identity.object_id"]
             for record in portfolio.records
-            if "identity.object_id" in record.fields
+            if record.semantic_type == "summary@ztf:fink"
+            and "identity.object_id" in record.fields
         }
-        assert len(object_ids) == 1
-        portfolio_ids.extend(object_ids)
+        assert primary_identity_ids == raw_object_ids
         assert portfolio.executions == (
             execution.steps[0].executions[0].execution_provenance,
         )
