@@ -55,7 +55,9 @@ def test_live_sherlock_lite_and_full_are_fully_accounted():
 
 def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  d=yaml.safe_load(MAPPINGS.read_text());m=d['mappings'];t=d['transforms'];p=d['payloads']
- assert p['diaForcedSourcesList']=={'endpoint':'object','path':'diaForcedSourcesList[]'};assert p['cone_objects']=={'endpoint':'cone','path':'objects[]'}
+ assert p['diaSourcesList']=={'endpoint':'object','path':'diaSourcesList[]','object_partition':{'mode':'single'}}
+ assert p['diaForcedSourcesList']=={'endpoint':'object','path':'diaForcedSourcesList[]','object_partition':{'mode':'single'}}
+ assert p['cone_objects']=={'endpoint':'cone','path':'objects[]','object_partition':{'mode':'field','field':'object'}}
  assert all('photoZ' not in r for r in m.get('crossmatch@{producer}:lasair.redshift.value',[]));assert 'crossmatch@{producer}:lasair.redshift.error' not in m
  assert all('merged_rank' not in r for r in m['crossmatch@{producer}:lasair.rank'])
  for spec in t['crossmatch@{producer}:lasair.provenance.producer.id'].values():assert spec.get('default')=='unknown';assert spec['map']['DESI']=='desi_legacy_survey'

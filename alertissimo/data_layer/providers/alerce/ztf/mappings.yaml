@@ -18,22 +18,19 @@ payloads:
   query_detections:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_detections response payload.
     endpoint: query_detections
   query_non_detections:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_non_detections response payload.
     endpoint: query_non_detections
   query_forced_photometry:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_forced_photometry response payload.
     endpoint: query_forced_photometry
   query_lightcurve:
@@ -45,22 +42,19 @@ payloads:
   query_magstats:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_magstats response payload.
     endpoint: query_magstats
   query_probabilities:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_probabilities response payload.
     endpoint: query_probabilities
   query_features:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     description: query_features response payload.
     endpoint: query_features
   query_feature:

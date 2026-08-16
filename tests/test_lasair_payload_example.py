@@ -3,7 +3,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from examples.build_lasair_portfolio_from_payload import build_portfolio_from_payload
+import pytest
+
+from examples.build_lasair_portfolio_from_payload import (
+    build_portfolio_from_payload,
+    build_portfolios_from_payload,
+)
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
@@ -49,6 +54,20 @@ def test_build_portfolio_from_saved_lasair_payload():
     assert portfolio.edges == ()
     assert sum(record.semantic_type == "detection@ztf:lasair" for record in portfolio.records) == 3
     assert portfolio.executions[0].params == {"objectId": "ZTF25realistic"}
+
+
+def test_plural_payload_helper_preserves_strict_singular_compatibility():
+    portfolios = build_portfolios_from_payload(_payload())
+    assert len(portfolios) == 1
+    assert portfolios[0].records
+
+
+def test_singular_payload_helper_rejects_zero_portfolios():
+    with pytest.raises(ValueError, match="normalization produced 0"):
+        build_portfolio_from_payload(
+            {"classifications": [], "crossmatches": []},
+            endpoint="sherlock_position",
+        )
 
 
 def test_compact_object_sherlock_binds_crossmatch_producer():
@@ -125,7 +144,9 @@ def test_payload_script_reports_endpoint_and_zero_record_diagnostic(tmp_path):
     assert "endpoint: sherlock_position" in result.stderr
     assert "payload keys: classifications, crossmatches" in result.stderr
     assert "records built: 0" in result.stderr
+    assert "portfolios built: 0" in result.stderr
     assert "No semantic records were built for this endpoint/payload shape." in result.stderr
+    assert json.loads(result.stdout) == []
 
 
 def test_sherlock_position_classification_dictionary():
