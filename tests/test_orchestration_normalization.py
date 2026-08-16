@@ -248,3 +248,16 @@ def test_standalone_step_normalization_supports_completed_failure_path_output():
 
     assert result.step_index == 4
     assert result.executions[0].execution_id == "execution:alerce"
+
+
+@pytest.mark.parametrize(("endpoint", "filename", "expected"), (("anomaly", "anomaly.json", 10), ("statistics", "statistics_day.json", 0)))
+def test_fink_execution_wrapper_retains_multi_or_zero_portfolios(endpoint, filename, expected):
+    execution = _execution(
+        "fink", "ztf", endpoint,
+        FIXTURES / "fink" / "ztf" / filename,
+        f"execution:fink:{endpoint}",
+    )
+    result = normalize_step_execution(StepExecutionResult(step_index=0, executions=(execution,)))
+    assert len(result.executions) == 1
+    assert result.executions[0].execution_id == f"execution:fink:{endpoint}"
+    assert len(result.executions[0].portfolios) == expected

@@ -61,6 +61,18 @@ def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
         validate_mapping_file(path)
 
 
+def test_mapped_non_object_payload_is_valid_and_rejects_field(tmp_path, valid_mapping):
+    valid_mapping["payloads"]["objects"]["object_partition"] = {"mode": "none"}
+    path = tmp_path / "mappings.yaml"
+    path.write_text(yaml.safe_dump(valid_mapping))
+    validate_mapping_file(path)
+
+    valid_mapping["payloads"]["objects"]["object_partition"]["field"] = "oid"
+    path.write_text(yaml.safe_dump(valid_mapping))
+    with pytest.raises(MappingSchemaError, match="none object_partition must not define field"):
+        validate_mapping_file(path)
+
+
 def test_payload_with_explicit_endpoint_passes(tmp_path, valid_mapping):
     valid_mapping["payloads"] = {
         "query_object.detections": {"path": "detections[]", "endpoint": "query_object", "object_partition": {"mode": "single"}}

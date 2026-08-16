@@ -7,7 +7,7 @@ import pytest
 import yaml
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance, InternalPortfolioId, InternalRecordId
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 from tools.audit_payload_mapping_coverage import audit_payload
 
 FIXTURES=Path(__file__).parent/'fixtures/antares/ztf'
@@ -26,6 +26,8 @@ class LazyLightcurveLocus(dict):
 def build(endpoint,payload):
     ids=count()
     return build_portfolio_from_execution(ExecutionResult(payload=payload,execution_provenance=InternalExecutionProvenance(internal_execution_id=InternalExecutionId('execution:fixture'),broker='antares',origin='ztf',endpoint=endpoint)),mappings_path=MAPPINGS,internal_portfolio_id=InternalPortfolioId('portfolio:fixture'),record_id_factory=lambda:InternalRecordId(f'record:{next(ids)}'),validate_semantic_model=True)
+def build_all(endpoint,payload):
+    return build_portfolios_from_execution(ExecutionResult(payload=payload,execution_provenance=InternalExecutionProvenance(internal_execution_id=InternalExecutionId('execution:fixture'),broker='antares',origin='ztf',endpoint=endpoint)),mappings_path=MAPPINGS,validate_semantic_model=True)
 def records(portfolio,kind): return [r for r in portfolio.records if r.semantic_type==kind]
 
 @pytest.mark.parametrize(('name','endpoint'),[('get_by_id.json','get_by_id'),('search.json','search'),('cone_search.json','cone_search')])
@@ -110,5 +112,8 @@ def test_direct_catalog_rows_build_six_crossmatches():
 
 def test_search_cone_and_one_shot_iterator():
     assert len(records(build('search',(x for x in fixture('search.json'))),'summary@ztf:antares'))==1
-    cone=build('cone_search',(x for x in fixture('cone_search.json'))); assert len(records(cone,'summary@ztf:antares'))==4
-    assert not any('separation' in key for r in cone.records for key in r.fields); assert cone.edges==()
+    cone=build_all('cone_search',(x for x in fixture('cone_search.json')))
+    assert len(cone)==4 and all(len(records(p,'summary@ztf:antares'))==1 for p in cone)
+    assert len({p.internal_portfolio_id for p in cone})==4
+    assert all(p.executions==(cone[0].executions) for p in cone)
+    assert not any('separation' in key for p in cone for r in p.records for key in r.fields)
