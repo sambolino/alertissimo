@@ -3,6 +3,10 @@ origin: lsst
 notes: Authoritative semantic-debt registry for the authenticated 2026-08-13 Lasair/LSST capture. Existing ontology concepts
   are used where exact; remaining fields are explicit debt.
 unmapped:
+- sherlock_object_crossmatches#major_axis_arcsec: &major_axis
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent major axis has no same-meaning canonical crossmatch morphology path.
+- sherlock_position_crossmatches#major_axis_arcsec: *major_axis
 - sherlock_object_crossmatches#photoZ:
     reason: structural_multi_redshift_semantics
     candidate_meaning: Sherlock photoZ/photoZErr are a distinct redshift estimate and must not be collapsed into the native
