@@ -110,26 +110,21 @@ def main():
     for step in normalized.steps:
         print("step:", step.step_index)
 
-        for output in step.portfolios:
-            portfolio = output.portfolio
-
+        for output in step.executions:
             print("\n  execution:", output.execution_id)
-            print("  portfolio:", portfolio.internal_portfolio_id.value)
-            print("  records:", len(portfolio.records))
-            print("  edges:", len(portfolio.edges))
-            print("  semantic types:")
-            for semantic_type in portfolio.semantic_types():
-                count = len(portfolio.records_of_type(semantic_type))
-                print(f"    {semantic_type}: {count}")
+            for portfolio in output.portfolios:
+                print("  portfolio:", portfolio.internal_portfolio_id.value)
+                print("  records:", len(portfolio.records))
+                print("  edges:", len(portfolio.edges))
+                print("  semantic types:")
+                for semantic_type in portfolio.semantic_types():
+                    count = len(portfolio.records_of_type(semantic_type))
+                    print(f"    {semantic_type}: {count}")
 
-            print("\n  first few records:")
-            for record in portfolio.records[:5]:
-                print(
-                    "   ",
-                    record.internal_record_id.value,
-                    record.semantic_type,
-                )
-                pprint(dict(record.fields), indent=6, width=120)
+                print("\n  first few records:")
+                for record in portfolio.records[:5]:
+                    print("   ", record.internal_record_id.value, record.semantic_type)
+                    pprint(dict(record.fields), indent=6, width=120)
 
     print("\n=== SUCCESS: full live orchestration path completed ===")
 

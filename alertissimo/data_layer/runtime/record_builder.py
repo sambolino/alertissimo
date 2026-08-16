@@ -182,7 +182,7 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
     return value  # The mapping schema rejects unknown transform types.
 
 
-def build_portfolio_from_execution(
+def build_portfolios_from_execution(
     execution: ExecutionResult,
     *,
     mappings_path: Path | None = None,
@@ -191,8 +191,8 @@ def build_portfolio_from_execution(
     record_id_factory: Callable[[], InternalRecordId] | None = None,
     validate_semantic_model: bool = False,
     semantic_model: SemanticModelIndex | None = None,
-) -> Portfolio:
-    """Interpret one provider mapping and transform an execution's raw payload."""
+) -> tuple[Portfolio, ...]:
+    """Normalize one physical execution into execution-local object Portfolios."""
     if mappings_path is None:
         provenance = execution.execution_provenance
         root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
@@ -217,7 +217,7 @@ def build_portfolio_from_execution(
     payload_definitions = document["payloads"]
     mappings = document["mappings"]
     transforms = document.get("transforms", {})
-    records: list[SemanticRecord] = []
+    records_by_object: dict[Any, list[SemanticRecord]] = {}
     make_record_id = record_id_factory or new_internal_record_id
 
     # Search endpoints may return one-shot iterators.  Materialize once so all
@@ -231,12 +231,41 @@ def build_portfolio_from_execution(
         if endpoint != execution.execution_provenance.endpoint:
             continue
         payload_path = payload_definition["path"]
+        partition = payload_definition.get("object_partition")
+        # Unmapped payload definitions are deliberately harmless.
+        if partition is None:
+            continue
         items = resolve_payload_items(
             payload,
             payload_key=payload_key,
             payload_path=payload_path,
         )
         for item in items:
+            mode = partition["mode"]
+            if mode == "single":
+                partition_key: Any = ("single",)
+            else:
+                source = item.value if mode == "field" else item.root_value
+                try:
+                    partition_value = extract_raw_field(source, partition["field"])
+                except RawFieldMissing as error:
+                    raise PortfolioBuildError(
+                        f"payload {payload_key!r} object partition field "
+                        f"{partition['field']!r} is missing"
+                    ) from error
+                if partition_value is None or isinstance(partition_value, bool):
+                    raise PortfolioBuildError(
+                        f"payload {payload_key!r} has unusable object partition "
+                        f"value {partition_value!r}"
+                    )
+                try:
+                    hash(partition_value)
+                except TypeError as error:
+                    raise PortfolioBuildError(
+                        f"payload {payload_key!r} has unhashable object partition value"
+                    ) from error
+                # Field and root-field declarations intentionally share identity.
+                partition_key = ("identity", partition_value)
             fields_by_type: dict[str, dict[str, Any]] = {}
             for semantic_path, references in mappings.items():
                 semantic_type, relative_field = split_semantic_path(semantic_path)
@@ -296,7 +325,7 @@ def build_portfolio_from_execution(
                 fields = _resolve_dynamic_field_paths(fields)
                 if not fields:
                     continue
-                records.append(
+                records_by_object.setdefault(partition_key, []).append(
                     SemanticRecord(
                         internal_record_id=make_record_id(),
                         semantic_type=semantic_type,
@@ -310,12 +339,49 @@ def build_portfolio_from_execution(
                     )
                 )
 
-    portfolio = Portfolio(
-        internal_portfolio_id=internal_portfolio_id or new_internal_portfolio_id(),
-        records=tuple(records),
-        edges=(),
-        executions=(execution.execution_provenance,),
+    if internal_portfolio_id is not None and len(records_by_object) != 1:
+        raise PortfolioBuildError(
+            "internal_portfolio_id requires exactly one normalized object; "
+            f"found {len(records_by_object)}"
+        )
+    portfolios = tuple(
+        Portfolio(
+            internal_portfolio_id=internal_portfolio_id or new_internal_portfolio_id(),
+            records=tuple(records),
+            edges=(),
+            executions=(execution.execution_provenance,),
+        )
+        for records in records_by_object.values()
     )
     if validate_semantic_model:
-        validate_portfolio_against_semantic_model(portfolio, semantic_model)
-    return portfolio
+        for portfolio in portfolios:
+            validate_portfolio_against_semantic_model(portfolio, semantic_model)
+    return portfolios
+
+
+def build_portfolio_from_execution(
+    execution: ExecutionResult,
+    *,
+    mappings_path: Path | None = None,
+    providers_root: Path | None = None,
+    internal_portfolio_id: InternalPortfolioId | None = None,
+    record_id_factory: Callable[[], InternalRecordId] | None = None,
+    validate_semantic_model: bool = False,
+    semantic_model: SemanticModelIndex | None = None,
+) -> Portfolio:
+    """Strict compatibility API for endpoints known to return one object."""
+    portfolios = build_portfolios_from_execution(
+        execution,
+        mappings_path=mappings_path,
+        providers_root=providers_root,
+        internal_portfolio_id=internal_portfolio_id,
+        record_id_factory=record_id_factory,
+        validate_semantic_model=validate_semantic_model,
+        semantic_model=semantic_model,
+    )
+    if len(portfolios) != 1:
+        raise PortfolioBuildError(
+            "singular portfolio builder requires exactly one normalized object; "
+            f"found {len(portfolios)}"
+        )
+    return portfolios[0]

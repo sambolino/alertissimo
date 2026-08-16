@@ -25,13 +25,24 @@ def valid_mapping():
         "origin": "ztf",
         "description": "Minimal example",
         "notes": "Human-authored",
-        "payloads": {"objects": {"path": ".", "description": "Rows"}},
+        "payloads": {"objects": {"path": ".", "description": "Rows", "object_partition": {"mode": "single"}}},
         "mappings": {"detection@ztf:example.identity.source_id": ["objects#oid"]},
     }
 
 
 def test_valid_minimal_mapping_and_default_endpoint_pass(tmp_path, valid_mapping):
     write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {}}})
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_mapped_payload_requires_object_partition(tmp_path, valid_mapping):
+    del valid_mapping["payloads"]["objects"]["object_partition"]
+    with pytest.raises(MappingSchemaError, match="missing required key 'object_partition'"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_entirely_unmapped_payload_may_omit_object_partition(tmp_path, valid_mapping):
+    valid_mapping["payloads"]["unused"] = {"path": "."}
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
@@ -52,7 +63,7 @@ def test_reference_cannot_be_both_mapped_and_unmapped(tmp_path, valid_mapping):
 
 def test_payload_with_explicit_endpoint_passes(tmp_path, valid_mapping):
     valid_mapping["payloads"] = {
-        "query_object.detections": {"path": "detections[]", "endpoint": "query_object"}
+        "query_object.detections": {"path": "detections[]", "endpoint": "query_object", "object_partition": {"mode": "single"}}
     }
     valid_mapping["mappings"] = {
         "detection@ztf:example.time.mjd": ["query_object.detections#mjd"]

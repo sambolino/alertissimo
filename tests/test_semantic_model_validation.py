@@ -54,7 +54,7 @@ def _mapping(tmp_path, semantic_type: str):
             {
                 "broker": "lasair",
                 "origin": "ztf",
-                "payloads": {"object": {"endpoint": "object", "path": "."}},
+                "payloads": {"object": {"endpoint": "object", "path": ".", "object_partition": {"mode": "single"}}},
                 "mappings": {
                     f"{semantic_type}.identity.source_id": ["object#objectId"]
                 },

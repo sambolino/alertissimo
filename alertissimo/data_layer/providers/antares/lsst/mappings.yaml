@@ -4,36 +4,60 @@ payloads:
   locus:
     endpoint: get_by_lsst_dia_object_id
     path: .
+    object_partition:
+      mode: single
   locus_by_id:
     endpoint: get_by_id
     path: .
+    object_partition:
+      mode: single
   search_loci:
     endpoint: search
     path: '[]'
+    object_partition:
+      mode: field
+      field: locus_id
   cone_loci:
     endpoint: cone_search
     path: '[]'
+    object_partition:
+      mode: field
+      field: locus_id
   locus_alerts:
     endpoint: get_by_lsst_dia_object_id
     path: alerts[]
+    object_partition:
+      mode: single
   locus_catalog_allwise:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.allwise[]
+    object_partition:
+      mode: single
   locus_catalog_bright:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.bright_guide_star_cat[]
+    object_partition:
+      mode: single
   locus_catalog_gaia:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.gaia_dr3_gaia_source[]
+    object_partition:
+      mode: single
   locus_catalog_gaia_variability:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.gaia_dr3_variability[]
+    object_partition:
+      mode: single
   locus_catalog_milliquas:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.milliquas[]
+    object_partition:
+      mode: single
   locus_catalog_ned:
     endpoint: get_by_lsst_dia_object_id
     path: catalog_objects.ned[]
+    object_partition:
+      mode: single
 mappings:
   summary@lsst:antares.identity.object_id:
   - locus#properties.survey.lsst.dia_object_id.0

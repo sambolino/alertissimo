@@ -5,30 +5,50 @@ payloads:
   object:
     endpoint: object
     path: .
+    object_partition:
+      mode: single
   query:
     endpoint: query
     path: '[]'
+    object_partition:
+      mode: field
+      field: diaObjectId
   cone_objects:
     endpoint: cone
     path: objects[]
+    object_partition:
+      mode: field
+      field: object
   diaSourcesList:
     endpoint: object
     path: diaSourcesList[]
+    object_partition:
+      mode: single
   diaForcedSourcesList:
     endpoint: object
     path: diaForcedSourcesList[]
+    object_partition:
+      mode: single
   sherlock_object_classifications:
     endpoint: sherlock_object
     path: classifications{}
+    object_partition:
+      mode: single
   sherlock_position_classifications:
     endpoint: sherlock_position
     path: classifications{}
+    object_partition:
+      mode: single
   sherlock_object_crossmatches:
     endpoint: sherlock_object
     path: crossmatches[]
+    object_partition:
+      mode: single
   sherlock_position_crossmatches:
     endpoint: sherlock_position
     path: crossmatches[]
+    object_partition:
+      mode: single
 mappings:
   summary@lsst:lasair.identity.object_id:
   - object#diaObjectId

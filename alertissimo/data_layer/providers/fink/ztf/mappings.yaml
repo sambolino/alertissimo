@@ -4,24 +4,43 @@ payloads:
   objects:
     endpoint: objects
     path: '[]'
+    object_partition:
+      mode: field
+      field: i:objectId
   conesearch:
     endpoint: conesearch
     path: '[]'
+    object_partition:
+      mode: field
+      field: i:objectId
   latests:
     endpoint: latests
     path: '[]'
+    object_partition:
+      mode: field
+      field: i:objectId
   anomaly:
     endpoint: anomaly
     path: '[]'
+    object_partition:
+      mode: field
+      field: i:objectId
   cutouts:
     endpoint: cutouts
     path: .
+    object_partition:
+      mode: single
   sso:
     endpoint: sso
     path: '[]'
+    object_partition:
+      mode: field
+      field: i:objectId
   statistics:
     endpoint: statistics
     path: '[]'
+    object_partition:
+      mode: single
   resolver:
     endpoint: resolver
     path: '[]'

@@ -8,6 +8,9 @@ on:
       - 'tests/test_semantic_paths.py'
       - 'tests/test_semantic_model_validation.py'
       - 'tests/test_semantic_record_builder.py'
+      - 'tests/test_normalization_cardinality.py'
+      - 'tests/test_payload_paths.py'
+      - 'tests/test_orchestration_normalization.py'
       - 'tests/test_lasair_registry_architecture.py'
       - 'tests/test_lasair_ztf_live_capture.py'
       - 'tests/fixtures/lasair/ztf/**'
@@ -31,6 +34,9 @@ jobs:
             tests/test_semantic_paths.py \
             tests/test_semantic_model_validation.py \
             tests/test_semantic_record_builder.py \
+            tests/test_normalization_cardinality.py \
+            tests/test_payload_paths.py \
+            tests/test_orchestration_normalization.py \
             tests/test_lasair_registry_architecture.py \
             tests/test_lasair_ztf_live_capture.py
       - name: Validate every provider mapping

@@ -22,7 +22,8 @@ class InvalidSemanticPathError(MappingSchemaError):
 MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
-PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
+PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter", "object_partition"}
+OBJECT_PARTITION_KEYS = {"mode", "field"}
 TRANSFORM_KEYS = {
     "type", "map", "default", "factor", "skip_null", "note", "object_key",
 }
@@ -189,6 +190,18 @@ def validate_mapping_file(path: str | Path) -> None:
         if "path" not in definition:
             raise MappingSchemaError(f"{path}: payload {key!r} is missing required key 'path'")
         _validate_payload_path(definition["path"], f"{path}: payload {key!r} path")
+        if "object_partition" in definition:
+            partition = _mapping(definition["object_partition"], f"{path}: payload {key!r} object_partition")
+            _allowed_keys(partition, OBJECT_PARTITION_KEYS, f"{path}: payload {key!r} object_partition")
+            mode = partition.get("mode")
+            if mode not in {"single", "field", "root_field"}:
+                raise MappingSchemaError(f"{path}: payload {key!r} object_partition mode must be one of ['field', 'root_field', 'single']")
+            if mode == "single" and "field" in partition:
+                raise MappingSchemaError(f"{path}: payload {key!r} single object_partition must not define field")
+            if mode in {"field", "root_field"}:
+                if "field" not in partition:
+                    raise MappingSchemaError(f"{path}: payload {key!r} {mode} object_partition requires field")
+                _nonempty_string(partition["field"], f"{path}: payload {key!r} object_partition field")
         endpoint = definition.get("endpoint", key)
         _nonempty_string(endpoint, f"{path}: payload {key!r} endpoint")
         if "description" in definition and not isinstance(definition["description"], str):
@@ -227,6 +240,13 @@ def validate_mapping_file(path: str | Path) -> None:
         raise InvalidSemanticPathError(
             f"{path}: ontology-invalid semantic path(s): {formatted}"
         )
+
+    mapped_payloads = {reference.split("#", 1)[0] for reference in mapped_references}
+    for payload_key in mapped_payloads:
+        if "object_partition" not in payload_definitions[payload_key]:
+            raise MappingSchemaError(
+                f"{path}: mapped payload {payload_key!r} is missing required key 'object_partition'"
+            )
 
     transforms = document.get("transforms", {})
     transforms = _mapping(transforms, f"{path}: transforms")

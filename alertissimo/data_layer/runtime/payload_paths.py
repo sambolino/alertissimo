@@ -14,6 +14,7 @@ class ResolvedPayloadItem:
     value: Any
     payload_index: int | None = None
     index_path: tuple[int, ...] = ()
+    root_value: Any = None
 
 
 class RawFieldMissing(LookupError):
@@ -56,7 +57,11 @@ def resolve_payload_items(
 ) -> tuple[ResolvedPayloadItem, ...]:
     """Resolve a mapping payload path without implementing general JSONPath."""
     if payload_path == ".":
-        return (ResolvedPayloadItem(payload_key, payload_path, payload),)
+        return (
+            ResolvedPayloadItem(
+                payload_key, payload_path, payload, root_value=payload
+            ),
+        )
 
     root_expansion = payload_path.startswith("[].")
     path = payload_path[3:] if root_expansion else payload_path
@@ -118,6 +123,11 @@ def resolve_payload_items(
             value=value,
             payload_index=index,
             index_path=index_path,
+            root_value=(
+                payload[index_path[0]]
+                if root_expansion and index_path
+                else payload
+            ),
         )
         for index, (value, index_path) in enumerate(resolved)
     )

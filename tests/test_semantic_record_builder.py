@@ -28,6 +28,8 @@ def _execution(payload):
 
 
 def _build(tmp_path, payload, document):
+    for definition in document["payloads"].values():
+        definition.setdefault("object_partition", {"mode": "single"})
     path = tmp_path / "mappings.yaml"
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
     ids = count()
@@ -126,7 +128,7 @@ def _transform_document(transform, references=None):
     return {
         "broker": "lasair",
         "origin": "ztf",
-        "payloads": {"object": {"path": "."}},
+        "payloads": {"object": {"path": ".", "object_partition": {"mode": "single"}}},
         "mappings": {_TRANSFORM_SEMANTIC_PATH: references},
         "transforms": {_TRANSFORM_SEMANTIC_PATH: transform},
     }
