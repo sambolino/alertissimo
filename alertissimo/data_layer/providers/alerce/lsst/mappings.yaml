@@ -18,22 +18,19 @@ payloads:
   query_detections:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     endpoint: query_detections
     description: Detection rows.
   query_non_detections:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     endpoint: query_non_detections
     description: Non-detection rows; the authoritative capture is empty.
   query_forced_photometry:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     endpoint: query_forced_photometry
     description: Forced-photometry rows represented as generic detections.
   query_lightcurve:
@@ -45,8 +42,7 @@ payloads:
   query_probabilities:
     path: '[]'
     object_partition:
-      mode: field
-      field: oid
+      mode: single
     endpoint: query_probabilities
     description: Classifier probability rows.
   query_lightcurve.detections:

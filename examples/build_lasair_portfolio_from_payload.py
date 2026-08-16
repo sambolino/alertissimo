@@ -19,12 +19,14 @@ from alertissimo.data_layer.representations import (
     Portfolio,
 )
 from alertissimo.data_layer.runtime.edge_builder import connect_portfolio_records
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
 from alertissimo.data_layer.runtime.serialization import portfolio_to_json
 
 
-def build_portfolio_from_payload(payload: dict[str, Any], *, endpoint: str = "object") -> Portfolio:
-    """Build a portfolio from one previously saved Lasair object response."""
+def build_portfolios_from_payload(
+    payload: dict[str, Any], *, endpoint: str = "object"
+) -> tuple[Portfolio, ...]:
+    """Build zero or more portfolios from a previously saved Lasair response."""
     object_id = payload.get("objectId")
     params = {"objectId": object_id} if object_id is not None else {}
     provenance = InternalExecutionProvenance(
@@ -39,21 +41,36 @@ def build_portfolio_from_payload(payload: dict[str, Any], *, endpoint: str = "ob
         payload=payload,
         execution_provenance=provenance,
     )
-    portfolio = build_portfolio_from_execution(
+    portfolios = build_portfolios_from_execution(
         execution,
         validate_semantic_model=True,
     )
-    return connect_portfolio_records(portfolio)
+    return tuple(connect_portfolio_records(portfolio) for portfolio in portfolios)
 
 
-def _print_summary(payload: dict[str, Any], portfolio: Portfolio, endpoint: str) -> None:
-    semantic_types = sorted({record.semantic_type for record in portfolio.records})
+def build_portfolio_from_payload(payload: dict[str, Any], *, endpoint: str = "object") -> Portfolio:
+    """Build exactly one portfolio from a saved single-object Lasair response."""
+    portfolios = build_portfolios_from_payload(payload, endpoint=endpoint)
+    if len(portfolios) != 1:
+        raise ValueError(
+            "expected exactly one Portfolio from execution, "
+            f"but normalization produced {len(portfolios)}"
+        )
+    return portfolios[0]
+
+
+def _print_summary(
+    payload: dict[str, Any], portfolios: tuple[Portfolio, ...], endpoint: str
+) -> None:
+    records = tuple(record for portfolio in portfolios for record in portfolio.records)
+    semantic_types = sorted({record.semantic_type for record in records})
     print(f"endpoint: {endpoint}", file=sys.stderr)
     print(f"payload keys: {', '.join(sorted(payload))}", file=sys.stderr)
-    print(f"records built: {len(portfolio.records)}", file=sys.stderr)
+    print(f"portfolios built: {len(portfolios)}", file=sys.stderr)
+    print(f"records built: {len(records)}", file=sys.stderr)
     print(f"semantic types: {', '.join(semantic_types)}", file=sys.stderr)
-    print(f"edges built: {len(portfolio.edges)}", file=sys.stderr)
-    if not portfolio.records:
+    print(f"edges built: {sum(len(portfolio.edges) for portfolio in portfolios)}", file=sys.stderr)
+    if not records:
         print("No semantic records were built for this endpoint/payload shape.", file=sys.stderr)
 
 
@@ -80,14 +97,17 @@ def main() -> int:
 
     try:
         payload = _load_payload(args.payload)
-        portfolio = build_portfolio_from_payload(payload, endpoint=args.endpoint)
+        portfolios = build_portfolios_from_payload(payload, endpoint=args.endpoint)
     except Exception as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
     if args.summary:
-        _print_summary(payload, portfolio, args.endpoint)
-    print(portfolio_to_json(portfolio))
+        _print_summary(payload, portfolios, args.endpoint)
+    if len(portfolios) == 1:
+        print(portfolio_to_json(portfolios[0]))
+    else:
+        print(json.dumps([json.loads(portfolio_to_json(p)) for p in portfolios]))
     return 0
 
 

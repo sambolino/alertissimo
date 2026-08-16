@@ -15,7 +15,10 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import (
+    build_portfolio_from_execution,
+    build_portfolios_from_execution,
+)
 from tools.audit_payload_mapping_coverage import audit_payload
 
 FIXTURES = Path(__file__).parent / "fixtures" / "alerce" / "ztf"
@@ -84,16 +87,46 @@ def test_query_objects_wrapper_is_structural_and_items_are_selected():
         payload, broker="alerce", origin="ztf", endpoint="query_objects"
     )
     assert "Delegated / structural leaves: 6" in report
-    portfolio = _build("query_objects", payload)
-    summaries = [r for r in portfolio.records if r.semantic_type == "summary@ztf:alerce"]
+    execution_id = InternalExecutionId("execution:fixture:query_objects")
+    portfolios = build_portfolios_from_execution(
+        ExecutionResult(
+            payload=payload,
+            execution_provenance=InternalExecutionProvenance(
+                internal_execution_id=execution_id,
+                broker="alerce",
+                origin="ztf",
+                endpoint="query_objects",
+            ),
+        ),
+        mappings_path=MAPPINGS,
+        validate_semantic_model=True,
+    )
+    assert len(portfolios) == 4
+    assert len({portfolio.internal_portfolio_id for portfolio in portfolios}) == 4
+    summaries = [
+        record
+        for portfolio in portfolios
+        for record in portfolio.records
+        if record.semantic_type == "summary@ztf:alerce"
+    ]
     assert len(summaries) == 4
+    expected_oids = {item["oid"] for item in payload["items"]}
+    assert {record.fields["identity.object_id"] for record in summaries} == expected_oids
+    for portfolio in portfolios:
+        object_summaries = [
+            record for record in portfolio.records
+            if record.semantic_type == "summary@ztf:alerce"
+        ]
+        assert len(object_summaries) == 1
+        assert portfolio.executions[0].internal_execution_id == execution_id
+        assert object_summaries[0].fields["identity.object_id"] in expected_oids
+        assert portfolio.edges == ()
     fields = dict(summaries[0].fields)
     assert fields["identity.object_id"] == "ZTF18abbuksn"
     assert fields["position.ra"] == 313.7733232785203
     assert fields["position.dec"] == 39.09800386874637
     assert fields["time.first_mjd"] == 58286.42961810017
     assert fields["time.last_mjd"] == 61032.09531249991
-    assert portfolio.edges == ()
 
 
 def test_query_object_has_real_summary_and_no_fabricated_classification():

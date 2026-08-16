@@ -13,12 +13,24 @@ on:
       - 'tests/test_orchestration_normalization.py'
       - 'tests/test_lasair_registry_architecture.py'
       - 'tests/test_lasair_ztf_live_capture.py'
+      - 'tests/test_lasair_lsst_live_capture.py'
+      - 'tests/test_lasair_payload_example.py'
+      - 'tests/test_alerce_classification_mappings.py'
+      - 'tests/test_alerce_lsst_authoritative_payloads.py'
+      - 'tests/test_alerce_ztf_authoritative_payloads.py'
+      - 'tests/test_payload_mapping_coverage.py'
+      - 'tests/test_ui_fixtures.py'
+      - 'examples/build_lasair_portfolio_from_payload.py'
+      - 'scripts/build_ui_fixtures.py'
       - 'tests/test_antares_ztf_authoritative_payloads.py'
       - 'tests/test_fink_ztf_authoritative_payloads.py'
       - 'tests/test_fink_lsst_authoritative_payloads.py'
       - 'tests/fixtures/fink/**'
       - 'tests/fixtures/antares/**'
       - 'tests/fixtures/lasair/ztf/**'
+      - 'tests/fixtures/lasair/lsst/**'
+      - 'tests/fixtures/alerce/**'
+      - 'tests/fixtures/ui/**'
       - '.github/workflows/semantic-registry.yml'
   workflow_dispatch:
 
@@ -46,6 +58,13 @@ jobs:
             tests/test_fink_ztf_authoritative_payloads.py \
             tests/test_fink_lsst_authoritative_payloads.py \
             tests/test_lasair_registry_architecture.py \
-            tests/test_lasair_ztf_live_capture.py
+            tests/test_lasair_ztf_live_capture.py \
+            tests/test_alerce_classification_mappings.py \
+            tests/test_alerce_lsst_authoritative_payloads.py \
+            tests/test_alerce_ztf_authoritative_payloads.py \
+            tests/test_lasair_lsst_live_capture.py \
+            tests/test_lasair_payload_example.py \
+            tests/test_payload_mapping_coverage.py \
+            tests/test_ui_fixtures.py
       - name: Validate every provider mapping
         run: PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
