@@ -167,3 +167,19 @@ def test_confirmation_validates_required_agreement():
     with pytest.raises(ValidationError, match="source count"):
         ConfirmStep(required_agreement=2, sources=[Source(broker="fink")])
     assert ConfirmStep(required_agreement=3).sources == []
+
+
+def test_target_collection_validation_and_round_trip():
+    step = GetLightcurveStep(target_ids=["B", "A"])
+    assert step.target_id is None
+    assert step.target_ids == ["B", "A"]
+    workflow = WorkflowIR(steps=[step])
+    restored = WorkflowIR.model_validate(workflow.model_dump())
+    assert restored.steps[0].target_id is None
+    assert restored.steps[0].target_ids == ["B", "A"]
+
+    for invalid in ([], [""], ["A", "A"]):
+        with pytest.raises(ValidationError):
+            GetLightcurveStep(target_ids=invalid)
+    with pytest.raises(ValidationError):
+        GetLightcurveStep(target_id="A", target_ids=["B"])

@@ -187,3 +187,28 @@ def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(gr
     )
     with pytest.raises(PlanningNotApplicableError):
         plan_workflow(WorkflowIR(steps=[FilterStep(criteria={})]), graph)
+
+
+def test_multi_target_planning_uses_collection_capable_endpoints(graph):
+    cases = [
+        (GetLightcurveStep, "fink", "lsst", "sources"),
+        (GetForcedPhotometryStep, "fink", "lsst", "fp"),
+        (GetLightcurveStep, "fink", "ztf", "objects"),
+        (GetLightcurveStep, "lasair", "ztf", "lightcurves"),
+    ]
+    for step_type, broker, origin, endpoint in cases:
+        plans = plan_step(step_type(target_ids=["A", "B"], sources=[Source(broker=broker, origin=origin)]), graph)
+        assert len(plans) == 1
+        assert plans[0].endpoint == endpoint
+
+    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
+        plan_step(GetLightcurveStep(target_ids=["1", "2"], sources=[Source(broker="alerce", origin="lsst")]), graph)
+
+
+def test_multi_target_multiple_sources_remain_one_plan_each(graph):
+    step = GetLightcurveStep(
+        target_ids=["A", "B"],
+        sources=[Source(broker="fink", origin="ztf"), Source(broker="lasair", origin="ztf")],
+    )
+    plans = plan_step(step, graph)
+    assert [(p.broker, p.endpoint) for p in plans] == [("fink", "objects"), ("lasair", "lightcurves")]

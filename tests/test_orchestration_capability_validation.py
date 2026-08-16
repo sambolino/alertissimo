@@ -183,3 +183,17 @@ def test_workflow_validation_preserves_step_order():
     assert [item.status for item in results] == [
         "supported", "not_applicable", "unsupported"
     ]
+
+
+def test_multi_target_requires_explicit_collection_binding_evidence():
+    graph = build_capability_graph()
+    supported = validate_step_capabilities(
+        GetLightcurveStep(target_ids=["A", "B"], sources=[Source(broker="fink", origin="lsst")]), graph
+    )
+    rejected = validate_step_capabilities(
+        GetLightcurveStep(target_ids=["1", "2"], sources=[Source(broker="alerce", origin="lsst")]), graph
+    )
+    assert supported.status == "supported"
+    assert {item.endpoint for item in supported.candidates} == {"sources"}
+    assert rejected.status == "unsupported"
+    assert "multi-target binding" in rejected.source_results[0].reason

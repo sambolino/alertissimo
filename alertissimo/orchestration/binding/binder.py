@@ -43,13 +43,30 @@ def _context(plan: EndpointPlan) -> str:
     return f"{plan.broker}/{plan.origin}/{plan.endpoint}"
 
 
-def _transform(value: Any, declaration: Mapping[str, Any]) -> Any:
+def _transform(
+    value: Any, declaration: Mapping[str, Any], *, endpoint_plan: EndpointPlan, role: str
+) -> Any:
     binding = declaration.get("binding") or {}
     collection = binding.get("collection")
+    values = value if isinstance(value, (list, tuple)) else None
     if collection is None:
+        if values is not None:
+            if len(values) != 1:
+                raise UnsupportedParameterBindingError(
+                    f"unsupported parameter binding for {_context(endpoint_plan)}: "
+                    f"binding role {role!r} is singular but received cardinality {len(values)}"
+                )
+            return values[0]
         return value
     if collection == "csv":
-        values = value if isinstance(value, (list, tuple)) else (value,)
+        values = values if values is not None else (value,)
+        max_items = binding.get("max_items")
+        if max_items is not None and len(values) > max_items:
+            raise UnsupportedParameterBindingError(
+                f"unsupported parameter binding for {_context(endpoint_plan)}: "
+                f"binding role {role!r} exceeds declared limit {max_items} "
+                f"with cardinality {len(values)}"
+            )
         return ",".join(str(item) for item in values)
     raise ParameterBindingError(f"unknown binding collection transform {collection!r}")
 
@@ -107,8 +124,12 @@ def bind_endpoint(
             continue
         declared_roles.append(role)
         value = getattr(step, role, None)
+        if role == "target_id" and value is None:
+            value = getattr(step, "target_ids", None)
         if value is not None:
-            transformed = _transform(value, declaration)
+            transformed = _transform(
+                value, declaration, endpoint_plan=endpoint_plan, role=role
+            )
             params[physical_name] = _coerce_physical_type(
                 transformed,
                 declaration,
