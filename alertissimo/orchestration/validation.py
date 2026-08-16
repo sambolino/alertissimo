@@ -43,6 +43,7 @@ from .ir.models import (
     Source,
     SqlQueryStep,
     Step,
+    TargetStep,
     WorkflowIR,
 )
 
@@ -107,20 +108,17 @@ def _query(
     )
 
 
-def _candidates_for_source(
+@dataclass(frozen=True)
+class _CandidateEvidence:
+    """Raw semantic matches and the subset usable for this target cardinality."""
+
+    raw: tuple[EndpointCapability, ...]
+    compatible: tuple[EndpointCapability, ...]
+
+
+def _raw_candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
-    def cardinality_compatible(
-        candidates: tuple[EndpointCapability, ...]
-    ) -> tuple[EndpointCapability, ...]:
-        target_ids = getattr(step, "target_ids", None)
-        if target_ids is None or len(target_ids) <= 1:
-            return candidates
-        return tuple(
-            candidate for candidate in candidates
-            if "target_id" in candidate.collection_binding_roles
-        )
-
     if isinstance(step, ConeSearchStep):
         return _query(graph, source, noun=step.semantic_type, operation="cone_search")
     if isinstance(step, SqlQueryStep):
@@ -136,14 +134,12 @@ def _candidates_for_source(
             )
         )
     if isinstance(step, GetLightcurveStep):
-        return cardinality_compatible(tuple(
+        return tuple(
             endpoint for endpoint in _query(graph, source)
             if _FULL_LIGHTCURVE_OPERATIONS.intersection(endpoint.operation_types)
-        ))
-    if isinstance(step, GetForcedPhotometryStep):
-        return cardinality_compatible(
-            _query(graph, source, operation="forced_photometry")
         )
+    if isinstance(step, GetForcedPhotometryStep):
+        return _query(graph, source, operation="forced_photometry")
     if isinstance(step, GetClassificationStep):
         # Classifications can be embedded in generic object/context responses;
         # endpoint input suitability is resolved later by the planner.
@@ -161,6 +157,21 @@ def _candidates_for_source(
     return ()
 
 
+def _candidate_evidence_for_source(
+    step: Step, graph: CapabilityGraph, source: Source | None
+) -> _CandidateEvidence:
+    raw = _raw_candidates_for_source(step, graph, source)
+    target_ids = step.target_ids if isinstance(step, TargetStep) else None
+    if target_ids is None or len(target_ids) <= 1:
+        return _CandidateEvidence(raw=raw, compatible=raw)
+    compatible = tuple(
+        candidate
+        for candidate in raw
+        if "target_id" in candidate.collection_binding_roles
+    )
+    return _CandidateEvidence(raw=raw, compatible=compatible)
+
+
 def candidate_capabilities(
     step: Step, graph: CapabilityGraph
 ) -> tuple[EndpointCapability, ...]:
@@ -168,7 +179,7 @@ def candidate_capabilities(
     keyed = {
         (item.broker, item.origin, item.endpoint): item
         for source in _sources(step)
-        for item in _candidates_for_source(step, graph, source)
+        for item in _candidate_evidence_for_source(step, graph, source).compatible
     }
     return tuple(keyed[key] for key in sorted(keyed))
 
@@ -213,14 +224,16 @@ def validate_step_capabilities(
 
     results = []
     for source in _sources(step):
-        candidates = _candidates_for_source(step, graph, source)
+        evidence = _candidate_evidence_for_source(step, graph, source)
+        candidates = evidence.compatible
         status = "supported" if candidates else "unsupported"
         results.append(SourceCapabilityResult(
             source, status, candidates,
             "matching registered endpoint capability found" if candidates
             else (
                 "no compatible multi-target binding exists"
-                if len(getattr(step, "target_ids", None) or ()) > 1
+                if evidence.raw
+                and len(getattr(step, "target_ids", None) or ()) > 1
                 else "no compatible registered endpoint capability found"
             ),
         ))

@@ -3,12 +3,17 @@
 import pytest
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
-from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.data_layer.runtime.capability_graph import (
+    CapabilityGraph, EndpointCapability, SemanticRecordCapability, build_capability_graph,
+)
 from alertissimo.orchestration.ir.models import (
     ClassifyStep,
     ConeSearchStep,
     FilterStep,
     GetClassificationStep,
+    GetCutoutStep,
+    GetCrossmatchStep,
+    GetDataProductStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
@@ -212,3 +217,55 @@ def test_multi_target_multiple_sources_remain_one_plan_each(graph):
     )
     plans = plan_step(step, graph)
     assert [(p.broker, p.endpoint) for p in plans] == [("fink", "objects"), ("lasair", "lightcurves")]
+
+
+def test_singular_cutout_accepts_one_collection_item_but_rejects_many(graph):
+    source = [Source(broker="fink", origin="ztf")]
+    assert plan_step(GetCutoutStep(target_ids=["A"], sources=source), graph)[0].endpoint == "cutouts"
+    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
+        plan_step(GetCutoutStep(target_ids=["A", "B"], sources=source), graph)
+
+
+def test_singular_data_product_is_not_planned_for_multiple_targets():
+    capability = EndpointCapability(
+        "test", "ztf", "product", "/product", "GET",
+        ("data_product_lookup",), (), (), None, False, "object",
+        ("target_id",), (),
+    )
+    graph = CapabilityGraph((capability,), (), (), (), ())
+    step = GetDataProductStep(target_ids=["A", "B"], sources=[Source(broker="test")])
+    assert validate_step_capabilities(step, graph).status == "unsupported"
+    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
+        plan_step(step, graph)
+
+
+def test_multi_target_spectrum_planning_reports_missing_capability(graph):
+    with pytest.raises(UnsupportedStepError) as caught:
+        plan_step(GetSpectrumStep(target_ids=["A", "B"]), graph)
+    assert "no compatible registered endpoint capability found" in str(caught.value)
+    assert "multi-target binding" not in str(caught.value)
+
+
+@pytest.mark.parametrize(("step_type", "noun"), [
+    (GetClassificationStep, "classification"),
+    (GetCrossmatchStep, "crossmatch"),
+])
+def test_semantic_target_planning_uses_only_collection_candidate(step_type, noun):
+    singular = EndpointCapability(
+        "test", "ztf", f"{noun}_one", "/one", "GET",
+        ("context_lookup",), (), (), None, False, "object",
+        ("target_id",), (),
+    )
+    collection = EndpointCapability(
+        "test", "ztf", f"{noun}_many", "/many", "GET",
+        ("context_lookup",), (), (), None, False, "array",
+        ("target_id",), ("target_id",),
+    )
+    records = (SemanticRecordCapability(
+        "test", "ztf", noun, (singular.endpoint, collection.endpoint), (),
+    ),)
+    graph = CapabilityGraph((singular, collection), (), (), (), records)
+    source = [Source(broker="test", origin="ztf")]
+    with pytest.raises(PlanningAmbiguityError):
+        plan_step(step_type(target_id="A", sources=source), graph)
+    assert plan_step(step_type(target_ids=["A", "B"], sources=source), graph)[0].endpoint == f"{noun}_many"

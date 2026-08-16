@@ -6,10 +6,11 @@ Portfolio``.  Orchestration retains workflow/Step occurrence association;
 ``data_layer.execution`` owns physical results, RecordBuilder owns provider
 payload normalization, and Portfolio owns records and execution provenance.
 
-Each physical execution deliberately remains an independent Portfolio.  Search
-executions can contain many astrophysical objects, while several Get executions
-can concern one object, so neither an execution nor a Step establishes object
-identity.  Grouping and entity association are intentionally out of scope.
+Each physical execution deliberately remains an independent execution occurrence
+and wrapper, and may normalize into zero, one, or many Portfolios.  Every
+Portfolio represents one primary astronomical object.  Executions and Steps do
+not establish cross-execution object identity; Portfolio composition and entity
+resolution are intentionally out of scope.
 """
 
 from .models import (
