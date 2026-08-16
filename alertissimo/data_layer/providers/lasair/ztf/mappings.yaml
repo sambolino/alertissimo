@@ -25,13 +25,13 @@ payloads:
     path: classifications{}
   sherlock_objects_classifications:
     endpoint: sherlock_objects
-    path: classifications{}
+    path: '[].classifications{}'
   sherlock_position_crossmatches:
     endpoint: sherlock_position
     path: crossmatches[]
   sherlock_objects_crossmatches:
     endpoint: sherlock_objects
-    path: crossmatches[]
+    path: '[].crossmatches[]'
   objects_candidates:
     endpoint: objects
     path: '[].candidates[]'
@@ -493,6 +493,7 @@ transforms:
   crossmatch@{producer}:lasair.provenance.producer.id:
     object#sherlock.catalogue_table_name:
       type: value_map
+      default: unknown
       map: &id004
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
@@ -505,12 +506,15 @@ transforms:
         DESI Legacy Survey DR10: desi_legacy_survey
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
+      default: unknown
       map: *id004
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
+      default: unknown
       map: *id004
     objects#sherlock.catalogue_table_name:
       type: value_map
+      default: unknown
       map:
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1

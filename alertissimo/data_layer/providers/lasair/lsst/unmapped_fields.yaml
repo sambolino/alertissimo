@@ -35,6 +35,9 @@ unmapped:
 - sherlock_object_crossmatches#sm_axis_arcsec:
     reason: unsupported_semantic_concept
     candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
+- sherlock_object_crossmatches#major_axis_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
 - sherlock_object_crossmatches#transient_object_id:
     reason: duplicate_execution_payload_context
     candidate_meaning: Sherlock transient identifier identifies the queried transient rather than the matched catalogue object.
@@ -68,6 +71,9 @@ unmapped:
     reason: unsupported_semantic_concept
     candidate_meaning: Sherlock search-radius configuration is query context rather than matched-source separation.
 - sherlock_position_crossmatches#sm_axis_arcsec:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
+- sherlock_position_crossmatches#major_axis_arcsec:
     reason: unsupported_semantic_concept
     candidate_meaning: Catalogue-source apparent morphology has no same-meaning canonical crossmatch morphology path.
 - sherlock_position_crossmatches#transient_object_id:

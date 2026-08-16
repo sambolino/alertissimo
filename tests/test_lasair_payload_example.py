@@ -61,10 +61,10 @@ def test_compact_object_sherlock_binds_crossmatch_producer():
         if record.semantic_type.startswith("crossmatch@")
     ]
 
-    assert len(crossmatches) == 1
-    assert crossmatches[0].semantic_type == "crossmatch@gaia:lasair"
-    assert dict(crossmatches[0].fields)["provenance.producer.id"] == "gaia"
-    assert dict(crossmatches[0].fields)["provenance.producer.name"] == "Gaia DR3"
+    by_type = {record.semantic_type: dict(record.fields) for record in crossmatches}
+    assert "crossmatch@tns:lasair" in by_type
+    assert by_type["crossmatch@gaia:lasair"]["provenance.producer.id"] == "gaia"
+    assert by_type["crossmatch@gaia:lasair"]["provenance.producer.name"] == "Gaia DR3"
 
 
 def test_payload_script_reads_file_and_reports_summary(tmp_path):
@@ -176,8 +176,8 @@ def test_observed_ztf_sherlock_position_preserves_scientific_roles():
     assert combined["classification.assessment.sherlock.class"] == "SN"
     assert combined["classification.assessment.sherlock.score"] == 2.0
     assert combined["classification.assessment.sherlock.method"] == "multiple"
-    assert combined["redshift.value"] == 0.129075
-    assert combined["redshift.error"] == 0.03112
+    assert "redshift.value" not in combined
+    assert "redshift.error" not in combined
     assert combined["separation.north"] == -1.15164
     assert combined["separation.east"] == 1.06992
     assert combined["photometry.J.mag"] == 17.007
@@ -406,8 +406,8 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     assert fields["separation.total"] == 1.5719427375338366
     assert fields["separation.north"] == -1.15164
     assert fields["separation.east"] == 1.06992
-    assert fields["redshift.value"] == 0.123
-    assert fields["redshift.error"] == 0.004
+    assert "redshift.value" not in fields
+    assert "redshift.error" not in fields
     assert "redshift.native_z" not in fields
     assert fields["rank"] == 1
     assert fields["classification.assessment.catalogue.class"] == "galaxy"
@@ -416,17 +416,17 @@ def test_sherlock_crossmatch_maps_observed_core_science_fields():
     assert portfolio.edges == ()
 
 
-def test_sherlock_crossmatch_rank_falls_back_to_merged_rank():
+def test_sherlock_crossmatch_merged_rank_does_not_populate_rank():
     portfolio = _build_endpoint_payload(
         {"crossmatches": [{"catalogue_table_name": "2MASS PSC", "catalogue_table_id": 2,
                            "catalogue_object_id": "abc", "rank": None, "merged_rank": "3"}]},
         "sherlock_position",
     )
     record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@twomass:lasair")
-    assert dict(record.fields)["rank"] == 3
+    assert "rank" not in dict(record.fields)
 
 
-def test_sherlock_crossmatch_redshift_z_wins_over_photo_z():
+def test_sherlock_crossmatch_native_z_excludes_photo_z_error():
     portfolio = _build_endpoint_payload(
         {"crossmatches": [{
             "catalogue_table_name": "Million Quasars (MILLIQUAS) Catalog v8.0",
@@ -438,7 +438,7 @@ def test_sherlock_crossmatch_redshift_z_wins_over_photo_z():
     record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@milliquas:lasair")
     fields = dict(record.fields)
     assert fields["redshift.value"] == 2.492
-    assert fields["redshift.error"] == 0.004
+    assert "redshift.error" not in fields
     assert "redshift.native_z" not in fields
 
 

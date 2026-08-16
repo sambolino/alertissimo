@@ -507,6 +507,8 @@ mappings:
   - object#lasairData.sherlock.association_type
   - sherlock_position_crossmatches#association_type
   - sherlock_object_crossmatches#association_type
+  - sherlock_position_crossmatches#classification
+  - sherlock_object_crossmatches#classification
   crossmatch@{producer}:lasair.classification.assessment.sherlock.score:
   - object#lasairData.sherlock.classificationReliability
   - sherlock_position_crossmatches#classificationReliability
@@ -514,6 +516,24 @@ mappings:
   crossmatch@{producer}:lasair.classification.assessment.sherlock.method:
   - sherlock_position_crossmatches#search_name
   - sherlock_object_crossmatches#search_name
+  crossmatch@{producer}:lasair.photometry.J.mag:
+  - sherlock_position_crossmatches#J
+  - sherlock_object_crossmatches#J
+  crossmatch@{producer}:lasair.photometry.J.mag.error:
+  - sherlock_position_crossmatches#JErr
+  - sherlock_object_crossmatches#JErr
+  crossmatch@{producer}:lasair.photometry.H.mag:
+  - sherlock_position_crossmatches#H
+  - sherlock_object_crossmatches#H
+  crossmatch@{producer}:lasair.photometry.H.mag.error:
+  - sherlock_position_crossmatches#HErr
+  - sherlock_object_crossmatches#HErr
+  crossmatch@{producer}:lasair.photometry.K.mag:
+  - sherlock_position_crossmatches#K
+  - sherlock_object_crossmatches#K
+  crossmatch@{producer}:lasair.photometry.K.mag.error:
+  - sherlock_position_crossmatches#KErr
+  - sherlock_object_crossmatches#KErr
   crossmatch@{producer}:lasair.photometry.g.mag:
   - sherlock_position_crossmatches#_g
   - sherlock_object_crossmatches#_g
@@ -640,6 +660,7 @@ transforms:
   crossmatch@{producer}:lasair.provenance.producer.id:
     object#lasairData.sherlock.catalogue_table_name:
       type: value_map
+      default: unknown
       map:
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
@@ -653,6 +674,7 @@ transforms:
         DESI: desi_legacy_survey
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
+      default: unknown
       map:
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
@@ -666,6 +688,7 @@ transforms:
         DESI: desi_legacy_survey
     sherlock_object_crossmatches#catalogue_table_name:
       type: value_map
+      default: unknown
       map:
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
@@ -843,4 +866,8 @@ transforms:
     sherlock_position_crossmatches#association_type:
       skip_null: true
     sherlock_object_crossmatches#association_type:
+      skip_null: true
+    sherlock_position_crossmatches#classification:
+      skip_null: true
+    sherlock_object_crossmatches#classification:
       skip_null: true
