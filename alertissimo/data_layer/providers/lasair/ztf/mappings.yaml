@@ -503,12 +503,15 @@ transforms:
         Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
         Gaia DR3: gaia
         DESI Legacy Survey DR10: desi_legacy_survey
+      default: unknown
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
       map: *id004
+      default: unknown
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
       map: *id004
+      default: unknown
     objects#sherlock.catalogue_table_name:
       type: value_map
       map:
@@ -521,6 +524,7 @@ transforms:
         Million Quasars (MILLIQUAS) Catalog v8.0: milliquas
         Gaia DR3: gaia
         DESI Legacy Survey DR10: desi_legacy_survey
+      default: unknown
   crossmatch@{producer}:lasair.position.ra:
     object#sherlock.raDeg:
       type: to_float

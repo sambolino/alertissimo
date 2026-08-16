@@ -71,7 +71,8 @@ def test_lasair_ztf_semantic_records():
         if item.broker == "lasair" and item.origin == "ztf"
     }
     assert {
-        "summary@ztf:lasair", "detection@ztf:lasair", "classification@lasair",
+        "summary@ztf:lasair", "detection@ztf:lasair",
+        "classification@sherlock:lasair",
         "classification@tns:lasair", "crossmatch@tns:lasair",
         "crossmatch@{producer}:lasair",
     } <= semantic_types
@@ -86,8 +87,8 @@ def test_semantic_paths_are_split_at_first_dot():
         "detection@ztf:lasair.photometry.{filter}.psf.mag": (
             "detection@ztf:lasair", "photometry.{filter}.psf.mag"
         ),
-        "classification@lsst:alerce.assessment.{output}.probability": (
-            "classification@lsst:alerce", "assessment.{output}.probability"
+        "classification@{producer}:alerce.assessment.{output}.probability": (
+            "classification@{producer}:alerce", "assessment.{output}.probability"
         ),
     }
     for path, split in expected.items():
@@ -106,7 +107,6 @@ def test_lasair_ztf_payload_and_raw_references():
         and item.semantic_path == "detection@ztf:lasair.photometry.{filter}.psf.mag"
     }
     assert mappings == {
-        "candidates#magpsf": "object",
         "lightcurve_candidates#magpsf": "lightcurves",
     }
 
@@ -117,11 +117,13 @@ def test_lasair_ztf_transforms():
     assert {(item.raw_ref, item.transform_type) for item in mjd} == {
         ("candidates#jd", "jd_to_mjd"),
         ("lightcurve_candidates#jd", "jd_to_mjd"),
+        ("objects_candidates#jd", "jd_to_mjd"),
     }
     filters = graph.transforms_for("detection@ztf:lasair.photometry.{filter}")
     assert {(item.raw_ref, item.transform_type) for item in filters} == {
         ("candidates#fid", "value_map"),
         ("lightcurve_candidates#fid", "value_map"),
+        ("objects_candidates#fid", "value_map"),
     }
 
 

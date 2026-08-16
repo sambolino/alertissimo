@@ -135,7 +135,9 @@ def test_singleton_context_is_rooted_in_object_payload() -> None:
 
 
 def test_lsst_context_and_collection_mappings() -> None:
-    mappings = load("lsst", "mappings.yaml")["mappings"]
+    document = load("lsst", "mappings.yaml")
+    mappings = document["mappings"]
+    transforms = document["transforms"]
     assert mappings["classification@sherlock:lasair.best.class"][0] == (
         "object#lasairData.sherlock.classification"
     )
@@ -143,6 +145,32 @@ def test_lsst_context_and_collection_mappings() -> None:
         "object#lasairData.TNS.name"
     ]
     assert "lightcurve@lsst:lasair.{filter}.points" not in mappings
+    sherlock_classes = mappings[
+        "crossmatch@{producer}:lasair.classification.assessment.sherlock.class"
+    ]
+    assert sherlock_classes == [
+        "object#lasairData.sherlock.association_type",
+        "object#lasairData.sherlock.classification",
+        "sherlock_position_crossmatches#association_type",
+        "sherlock_position_crossmatches#classification",
+        "sherlock_object_crossmatches#association_type",
+        "sherlock_object_crossmatches#classification",
+    ]
+    for band in ("J", "H", "K"):
+        for suffix, raw_suffix in (("mag", ""), ("mag.error", "Err")):
+            assert set(mappings[f"crossmatch@{{producer}}:lasair.photometry.{band}.{suffix}"]) == {
+                f"sherlock_position_crossmatches#{band}{raw_suffix}",
+                f"sherlock_object_crossmatches#{band}{raw_suffix}",
+            }
+    producer_transforms = transforms[
+        "crossmatch@{producer}:lasair.provenance.producer.id"
+    ]
+    for raw_ref in (
+        "object#lasairData.sherlock.catalogue_table_name",
+        "sherlock_position_crossmatches#catalogue_table_name",
+        "sherlock_object_crossmatches#catalogue_table_name",
+    ):
+        assert producer_transforms[raw_ref]["default"] == "unknown"
 
 
 def test_ztf_context_collection_mappings_and_transforms() -> None:
@@ -201,9 +229,22 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     assert transforms["detection@ztf:lasair.time.mjd"]["candidates#jd"][
         "type"
     ] == "jd_to_mjd"
+    assert transforms["detection@ztf:lasair.time.mjd"]["objects_candidates#jd"][
+        "type"
+    ] == "jd_to_mjd"
     assert transforms["detection@ztf:lasair.photometry.{filter}"][
         "candidates#fid"
+    ]["type"] == "value_map"
+    assert transforms["detection@ztf:lasair.photometry.{filter}"][
+        "objects_candidates#fid"
     ]["type"] == "value_map"
     assert transforms["detection@ztf:lasair.image_metrics.is_positive"][
         "candidates#isdiffpos"
     ]["type"] == "value_map"
+    producer_transforms = transforms[
+        "crossmatch@{producer}:lasair.provenance.producer.id"
+    ]
+    assert all(
+        producer_transforms[raw_ref]["default"] == "unknown"
+        for raw_ref in mappings["crossmatch@{producer}:lasair.provenance.producer.id"]
+    )
