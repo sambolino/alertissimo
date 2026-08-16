@@ -15,7 +15,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 
 ROOT = Path(__file__).parent
 FIXTURES = ROOT / "fixtures/fink/ztf"
@@ -52,6 +52,21 @@ def _build(endpoint, payload=None):
         execution,
         mappings_path=MAPPINGS,
         internal_portfolio_id=InternalPortfolioId("portfolio:fixture"),
+        record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
+        validate_semantic_model=True,
+    )
+
+
+def _build_many(endpoint, payload=None):
+    ids = count()
+    execution = ExecutionResult(
+        payload=_payload(endpoint) if payload is None else payload,
+        execution_provenance=InternalExecutionProvenance(
+            InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", _physical_endpoint(endpoint)
+        ),
+    )
+    return build_portfolios_from_execution(
+        execution, mappings_path=MAPPINGS,
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
         validate_semantic_model=True,
     )
@@ -129,8 +144,28 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert not synthetic.records
 
 
+def test_multi_object_list_cardinality_and_grouping():
+    for endpoint, expected in (("anomaly", 10), ("latests", 7)):
+        payload = _payload(endpoint)
+        portfolios = _build_many(endpoint)
+        object_ids = {row["i:objectId"] for row in payload}
+        assert len(portfolios) == len(object_ids) == expected
+        assert len({p.internal_portfolio_id for p in portfolios}) == expected
+        assert all(p.executions[0].internal_execution_id == f"execution:fixture:{endpoint}" for p in portfolios)
+        for portfolio in portfolios:
+            ids = {r.fields["identity.object_id"] for r in portfolio.records if "identity.object_id" in r.fields}
+            assert len(ids) == 1
+        counts = Counter(row["i:objectId"] for row in payload)
+        assert sorted(counts.values()) == sorted(
+            sum(1 for r in p.records if r.semantic_type == "detection@ztf:fink") for p in portfolios
+        )
+
+
 def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
-    portfolio = _build("anomaly")
+    portfolios = _build_many("anomaly")
+    assert len(portfolios) == 10
+    object_id = _payload("anomaly")[0]["i:objectId"]
+    portfolio = next(p for p in portfolios if any(r.fields.get("identity.object_id") == object_id for r in p.records))
     assert _records(portfolio, "classification@fink")[0].fields["best.class"] == "RRLyr"
     assert _records(portfolio, "crossmatch@simbad:fink")[0].fields[
         "classification.best.class"
@@ -265,32 +300,15 @@ def test_frozen_service_failures_are_never_scientific_values():
     assert not any(value in observed for record in portfolio.records for value in record.fields.values())
 
 
-def test_statistics_emit_only_first_level_survey_records():
-    portfolio = _build("statistics")
-    assert not _records(portfolio, "detection@ztf:fink")
-    survey = _records(portfolio, "survey@fink")
-    assert len(survey) == 1
-    fields = dict(survey[0].fields)
-    assert fields["exposure_count"] == 460
-    assert fields["field_count"] == 236
-    assert fields["raw_alerts"] == 346644
-    assert fields["science_alerts"] == 246843
-    assert fields["snapshot_key"] == "ztf_20211103"
-    assert fields["filter_counts"] == {"g": 112699, "r": 134144}
-    distribution = fields["class_distribution"]
-    assert distribution["**"] == 17
-    assert distribution["AGN"] == 136
-    assert distribution["Early SN Ia candidate"] == 6
-    assert distribution["OH/IR"] == 0
-    assert distribution["Radio(cm)"] == 0
-    assert "simbad_tot" not in distribution
-    assert "simbad_gal" not in distribution
-    assert all(isinstance(value, int) and not isinstance(value, bool)
-               for value in distribution.values())
-    assert all(isinstance(value, int) and not isinstance(value, bool)
-               for value in fields["filter_counts"].values())
-    assert fields["selection.simbad_match.record_count"] == 76905
-    assert fields["selection.simbad_extragalactic_host.record_count"] == 1449
+def test_statistics_is_not_normalized_as_an_object_portfolio():
+    assert _build_many("statistics") == ()
+
+
+def test_sso_response_is_one_solar_system_object_portfolio():
+    portfolios = _build_many("sso")
+    assert len(portfolios) == 1
+    assert {row["sso_number"] for row in _payload("sso")} == {8467}
+    assert len(_records(portfolios[0], "detection@ztf:fink")) == len(_payload("sso"))
 
 
 def test_frozen_scalar_accounting_and_positive_record_counts():

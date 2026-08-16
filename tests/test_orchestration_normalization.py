@@ -248,3 +248,31 @@ def test_standalone_step_normalization_supports_completed_failure_path_output():
 
     assert result.step_index == 4
     assert result.executions[0].execution_id == "execution:alerce"
+
+
+def test_one_execution_keeps_multiple_object_portfolios_in_one_wrapper():
+    execution = _execution(
+        "fink", "ztf", "anomaly",
+        FIXTURES / "fink" / "ztf" / "anomaly.json",
+        "execution:fink:anomaly",
+    )
+    result = normalize_workflow_execution(_workflow_result(((execution,),)))
+    assert len(result.steps) == 1
+    assert len(result.steps[0].executions) == 1
+    output = result.steps[0].executions[0]
+    assert output.execution_id == "execution:fink:anomaly"
+    assert len(output.portfolios) == 10
+    assert all(p.executions == (execution.execution_provenance,) for p in output.portfolios)
+
+
+def test_zero_portfolios_still_preserves_execution_wrapper():
+    execution = _execution(
+        "fink", "ztf", "statistics",
+        FIXTURES / "fink" / "ztf" / "statistics_day.json",
+        "execution:fink:statistics",
+    )
+    result = normalize_workflow_execution(_workflow_result(((execution,),)))
+    assert len(result.steps[0].executions) == 1
+    output = result.steps[0].executions[0]
+    assert output.execution_id == "execution:fink:statistics"
+    assert output.portfolios == ()

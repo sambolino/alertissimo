@@ -194,10 +194,12 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     assert payloads["sherlock_objects_classifications"] == {
         "endpoint": "sherlock_objects",
         "path": "classifications{}",
+        "object_partition": {"mode": "single"},
     }
     assert payloads["sherlock_objects_crossmatches"] == {
         "endpoint": "sherlock_objects",
         "path": "crossmatches[]",
+        "object_partition": {"mode": "single"},
     }
     assert not any(
         key.startswith("classification@sherlock:lasair.")
@@ -224,6 +226,7 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     assert payloads["objects_candidates"] == {
         "endpoint": "objects",
         "path": "[].candidates[]",
+        "object_partition": {"mode": "root_field", "field": "objectId"},
     }
     assert "lightcurve@ztf:lasair.{filter}.points" not in mappings
     assert transforms["detection@ztf:lasair.time.mjd"]["candidates#jd"][

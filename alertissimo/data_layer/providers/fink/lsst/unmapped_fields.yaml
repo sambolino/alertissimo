@@ -196,3 +196,492 @@ unmapped:
       aggregate and cannot be placed under a fabricated science subcontainer. Keep
       explicit debt until the image-plane/aggregate measurement structure is modeled
       without semantic collision.
+- sso#f:sso_name:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:apFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:apFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:apFlux_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:apFlux_flag_apertureTruncated:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:band:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:bboxSize:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:centroid_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dec:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:decErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:designation:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:detector:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:diaDistanceRank:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:diaObjectId:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:diaSourceId:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleAngle:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleChi2:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleFitAttempted:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleFluxDiff:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleFluxDiffErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleLength:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleMeanFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleMeanFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:dipoleNdata:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:eclBeta:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:eclLambda:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:elongation:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephDec:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephOffset:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephOffsetAlongTrack:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephOffsetCrossTrack:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephOffsetDec:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephOffsetRa:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephRa:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephRate:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephRateDec:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephRateRa:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ephVmag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:exposureTime:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:extendedness:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:forced_PsfFlux_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:forced_PsfFlux_flag_edge:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:forced_PsfFlux_flag_noGoodPixels:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:galLat:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:galLon:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:glint_trail:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helioRange:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helioRangeRate:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_vtot:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_vx:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_vy:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_vz:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_x:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_y:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:helio_z:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:isDipole:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:isNegative:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ixx:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ixxPSF:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ixy:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ixyPSF:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:iyy:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:iyyPSF:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:midpointMjdTai:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:observation_reason:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:parentDiaSourceId:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:phaseAngle:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_bad:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_cr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_crCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_edge:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_injected:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_injectedCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_injected_template:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_injected_templateCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_interpolated:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_interpolatedCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_nodata:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_nodataCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_offimage:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_saturated:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_saturatedCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_streak:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_streakCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_suspect:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:pixelFlags_suspectCenter:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfChi2:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfFlux_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfFlux_flag_edge:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfFlux_flag_noGoodPixels:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfLnL:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:psfNdata:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ra:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:raErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ra_dec_Cov:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:reliability:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:reliabilityVersion:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:scienceFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:scienceFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:shape_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:shape_flag_no_pixels:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:shape_flag_not_contained:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:shape_flag_parent_source:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:snr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:ssObjectId:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:target_name:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:templateFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:templateFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:timeProcessedMjdTai:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:timeWithdrawnMjdTai:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topoRange:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topoRangeRate:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_vtot:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_vx:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_vy:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_vz:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_x:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_y:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:topo_z:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailAlgorithm:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailAngle:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailAngleErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailChi2:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailDec:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailDecErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailFlux:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailFluxErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailLength:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailLengthErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailNdata:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailRa:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trailRaErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trail_flag:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:trail_flag_edge:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:visit:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:x:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:xErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:y:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- sso#r:yErr:
+    reason: no_authoritative_primary_object_partition
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_g:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_i:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_r:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_u:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_y:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:alerts_z:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:fink_broker_version:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:fink_science_version:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:glint_trail:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:in_tns:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:isDipole:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:is_cataloged:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:is_first:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:is_sso:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:night:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:objects:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:pixelFlags_cr:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:pixelFlags_saturated:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:pixelFlags_streak:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#f:visits:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.

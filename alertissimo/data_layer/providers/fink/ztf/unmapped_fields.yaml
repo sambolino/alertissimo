@@ -324,3 +324,393 @@ unmapped:
     reason: structural_selection_multiplicity
     note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
       cannot emit an independent same-producer match, and "bright" is not a producer.
+- statistics#basic:exposures:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#basic:fields:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#basic:n_g:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#basic:n_r:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#basic:raw:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#basic:sci:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:**:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:AGB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:AGN:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:AGN_Candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Ae*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Ambiguous:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BClG:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BLLac:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BLLac_Candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BYDra:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Be*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Blazar:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Blazar_Candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Blue:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BlueSG*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:BlueStraggler:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Bubble:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:C*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_AGB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_Ae*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_Be*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_C*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_CV*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_EB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_HB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_Hsd:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_LP*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_Mi*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_RRLyr:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_RSG*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_S*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_SN*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_TTau*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_WD*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Candidate_YSO:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:CataclyV*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Cepheid:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:ClG:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:EB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Early SN Ia candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:EllipVar:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Em*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:EmG:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:EmObj:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Erupt*RCrB:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Eruptive*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:FIR:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Galaxy:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:GinCl:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:GinGroup:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:GinPair:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:GlCl:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:GravLensSystem:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:HB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:HH:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:HII:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:HMXB:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:HotSubdwarf:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:IR:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:LINER:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:LMXB:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:LPV*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:LensedQ:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:MIR:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Mira:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:NIR:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Nova:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:OH/IR:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Orion_V*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PM*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PN:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PN?:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PartofG:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Pec*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Planet:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Planet?:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PulsV*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PulsV*RVTau:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PulsV*WVir:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:PulsV*delSct:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:QSO:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:QSO_Candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RGB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RRLyr:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RSCVn:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Radio:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Radio(cm):
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RadioG:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RedSG*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RotV*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:RotV*alf2CVn:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:S*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:SB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:SG*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:SN:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:SN candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Seyfert:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Seyfert_1:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Seyfert_2:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Solar System MPC:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Solar System candidate:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Star:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Symbiotic*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:TTau*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Tracklet:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:UV:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:Unknown:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:V*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:V*?:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:WD*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:WR*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:X:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:XB:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:YSO:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:deltaCep:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:gammaBurst:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:gammaDor:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:low-mass*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:multiple_object:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:post-AGB*:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:pulsV*SX:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:simbad_gal:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#class:simbad_tot:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.
+- statistics#key:key:
+    reason: survey_aggregate_has_no_primary_object_subject
+    note: Preserved physical field is outside object-Portfolio normalization.

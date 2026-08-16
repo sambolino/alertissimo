@@ -15,7 +15,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 from tools.audit_payload_mapping_coverage import audit_payload
 
 
@@ -48,6 +48,18 @@ def _build(endpoint: str, payload):
         ),
         mappings_path=MAPPINGS,
         internal_portfolio_id=InternalPortfolioId("portfolio:fixture"),
+        record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
+        validate_semantic_model=True,
+    )
+
+
+def _build_many(endpoint: str, payload):
+    execution_id = InternalExecutionId(f"execution:fixture:{endpoint}:plural")
+    ids = count()
+    return build_portfolios_from_execution(
+        ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
+            internal_execution_id=execution_id, broker="lasair", origin="ztf", endpoint=endpoint,
+        )), mappings_path=MAPPINGS,
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
         validate_semantic_model=True,
     )
@@ -95,6 +107,21 @@ def test_live_object_and_plural_object_are_fully_accounted() -> None:
     assert tns.fields["photometry.r.mag"] == pytest.approx(19.7399)
     plural = _build("objects", objs)
     assert len([r for r in plural.records if r.semantic_type == "detection@ztf:lasair"]) == 92
+
+def test_nested_candidates_follow_their_root_object_partition() -> None:
+    roots = _fixture("objects_plural")
+    second = json.loads(json.dumps(roots[0]))
+    second["objectId"] = "ZTF-synthetic-second-root"
+    second["candidates"] = second["candidates"][:2]
+    portfolios = _build_many("objects", [roots[0], second])
+    assert len(portfolios) == 2
+    expected = {roots[0]["objectId"]: 92, second["objectId"]: 2}
+    for portfolio in portfolios:
+        summary = next(r for r in portfolio.records if r.semantic_type == "summary@ztf:lasair")
+        object_id = summary.fields["identity.object_id"]
+        candidates = [r for r in portfolio.records if r.internal_source.payload_key == "objects_candidates"]
+        assert len(candidates) == expected[object_id]
+
 
 def test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None:
     payload = _fixture("lightcurves")

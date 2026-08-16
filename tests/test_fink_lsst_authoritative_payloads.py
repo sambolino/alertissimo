@@ -19,7 +19,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 from alertissimo.data_layer.runtime.mapping_schema import validate_mapping_file
 
 ROOT = Path(__file__).parents[1]
@@ -56,6 +56,21 @@ def test_fixture_bytes_and_primary_evidence():
     assert (obj["r:observation_reason"], obj["r:target_name"]) == ("ddf_edfs_b", "ddf_edfs_b, lowdust")
     assert all(set(row) == set(sources[0]) for row in sources)
     assert all(set(row) == set(forced[0]) for row in forced)
+
+
+def test_sources_and_forced_photometry_partition_on_prefixed_object_id():
+    for endpoint, expected_records in (("sources", 16), ("fp", 20)):
+        rows = fixture(endpoint)
+        assert all("r:diaObjectId" in row and "diaObjectId" not in row for row in rows)
+        execution = ExecutionResult(payload=rows, execution_provenance=InternalExecutionProvenance(
+            InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "lsst", endpoint
+        ))
+        portfolios = build_portfolios_from_execution(execution, mappings_path=MAPPINGS, validate_semantic_model=True)
+        assert len(portfolios) == 1
+        portfolio = portfolios[0]
+        assert portfolio.executions == (execution.execution_provenance,)
+        assert len([r for r in portfolio.records if r.semantic_type == "detection@lsst:fink"]) == expected_records
+        assert {r.fields["identity.object_id"] for r in portfolio.records if "identity.object_id" in r.fields} == {170587117485817955}
 
 
 def test_source_schema_versions_types_sentinels_and_mixed_history():

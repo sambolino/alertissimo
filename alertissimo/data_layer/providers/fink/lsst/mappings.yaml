@@ -37,9 +37,6 @@ payloads:
   sso:
     endpoint: sso
     path: "[]"
-    object_partition:
-      mode: field
-      field: r:diaObjectId
   resolver:
     endpoint: resolver
     path: "[]"
@@ -49,8 +46,6 @@ payloads:
   statistics:
     endpoint: statistics
     path: "[]"
-    object_partition:
-      mode: single
   tags:
     endpoint: tags
     path: "[]"
@@ -280,70 +275,54 @@ mappings:
   detection@lsst:fink.identity.source_id:
   - sources#r:diaSourceId
   - conesearch#r:diaSourceId
-  - sso#r:diaSourceId
   - fp#r:diaForcedSourceId
   detection@lsst:fink.identity.object_id:
   - sources#r:diaObjectId
   - conesearch#r:diaObjectId
-  - sso#r:diaObjectId
   - fp#r:diaObjectId
-  detection@lsst:fink.identity.parent_source_id:
-  - sso#r:parentDiaSourceId
   detection@lsst:fink.identity.visit_id:
   - sources#r:visit
   - conesearch#r:visit
-  - sso#r:visit
   - fp#r:visit
   detection@lsst:fink.identity.detector_id:
   - sources#r:detector
   - conesearch#r:detector
-  - sso#r:detector
   - fp#r:detector
   detection@lsst:fink.time.mjd:
   - sources#r:midpointMjdTai
   - conesearch#r:midpointMjdTai
-  - sso#r:midpointMjdTai
   - fp#r:midpointMjdTai
   detection@lsst:fink.time.processed_mjd:
   - sources#r:timeProcessedMjdTai
   - conesearch#r:timeProcessedMjdTai
-  - sso#r:timeProcessedMjdTai
   - fp#r:timeProcessedMjdTai
   detection@lsst:fink.time.invalidated_mjd:
   - sources#r:timeWithdrawnMjdTai
   - conesearch#r:timeWithdrawnMjdTai
-  - sso#r:timeWithdrawnMjdTai
   - fp#r:timeWithdrawnMjdTai
   detection@lsst:fink.position.ra:
   - sources#r:ra
   - conesearch#r:ra
-  - sso#r:ra
   - fp#r:ra
   detection@lsst:fink.position.dec:
   - sources#r:dec
   - conesearch#r:dec
-  - sso#r:dec
   - fp#r:dec
   detection@lsst:fink.position.ra_error:
   - sources#r:raErr
   - conesearch#r:raErr
-  - sso#r:raErr
   detection@lsst:fink.position.dec_error:
   - sources#r:decErr
   - conesearch#r:decErr
-  - sso#r:decErr
   detection@lsst:fink.position.ra_dec_covariance:
   - sources#r:ra_dec_Cov
   - conesearch#r:ra_dec_Cov
-  - sso#r:ra_dec_Cov
   detection@lsst:fink.provenance.producer.program.id:
   - sources#r:observation_reason
   - conesearch#r:observation_reason
-  - sso#r:observation_reason
   detection@lsst:fink.provenance.producer.program.target_name:
   - sources#r:target_name
   - conesearch#r:target_name
-  - sso#r:target_name
   detection@lsst:fink.provenance.channel.version:
   - sources#f:fink_broker_version
   - conesearch#f:fink_broker_version
@@ -356,380 +335,230 @@ mappings:
   detection@lsst:fink.photometry.{filter}:
   - sources#r:band
   - conesearch#r:band
-  - sso#r:band
   detection@lsst:fink.photometry.{filter}.psf.flux:
   - sources#r:psfFlux
   - conesearch#r:psfFlux
-  - sso#r:psfFlux
   detection@lsst:fink.photometry.{filter}.psf.flux.error:
   - sources#r:psfFluxErr
   - conesearch#r:psfFluxErr
-  - sso#r:psfFluxErr
   detection@lsst:fink.photometry.{filter}.psf.fit_chi2:
   - sources#r:psfChi2
   - conesearch#r:psfChi2
-  - sso#r:psfChi2
   detection@lsst:fink.photometry.{filter}.psf.fit_ndata:
   - sources#r:psfNdata
   - conesearch#r:psfNdata
-  - sso#r:psfNdata
   detection@lsst:fink.photometry.{filter}.psf.flags.failed:
   - sources#r:psfFlux_flag
   - conesearch#r:psfFlux_flag
-  - sso#r:psfFlux_flag
   detection@lsst:fink.photometry.{filter}.psf.flags.edge:
   - sources#r:psfFlux_flag_edge
   - conesearch#r:psfFlux_flag_edge
-  - sso#r:psfFlux_flag_edge
   detection@lsst:fink.photometry.{filter}.psf.flags.no_good_pixels:
   - sources#r:psfFlux_flag_noGoodPixels
   - conesearch#r:psfFlux_flag_noGoodPixels
-  - sso#r:psfFlux_flag_noGoodPixels
   detection@lsst:fink.photometry.{filter}.aperture.flux:
   - sources#r:apFlux
   - conesearch#r:apFlux
-  - sso#r:apFlux
   detection@lsst:fink.photometry.{filter}.aperture.flux.error:
   - sources#r:apFluxErr
   - conesearch#r:apFluxErr
-  - sso#r:apFluxErr
   detection@lsst:fink.photometry.{filter}.aperture.flags.failed:
   - sources#r:apFlux_flag
   - conesearch#r:apFlux_flag
-  - sso#r:apFlux_flag
   detection@lsst:fink.photometry.{filter}.aperture.flags.aperture_truncated:
   - sources#r:apFlux_flag_apertureTruncated
   - conesearch#r:apFlux_flag_apertureTruncated
-  - sso#r:apFlux_flag_apertureTruncated
   detection@lsst:fink.forced_photometry.{filter}:
   - sources#r:band
   - conesearch#r:band
-  - sso#r:band
   - fp#r:band
   detection@lsst:fink.forced_photometry.{filter}.psf.flux:
   - sources#r:scienceFlux
   - conesearch#r:scienceFlux
-  - sso#r:scienceFlux
   - fp#r:psfFlux
   detection@lsst:fink.forced_photometry.{filter}.psf.flux.error:
   - sources#r:scienceFluxErr
   - conesearch#r:scienceFluxErr
-  - sso#r:scienceFluxErr
   - fp#r:psfFluxErr
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.failed:
   - sources#r:forced_PsfFlux_flag
   - conesearch#r:forced_PsfFlux_flag
-  - sso#r:forced_PsfFlux_flag
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.edge:
   - sources#r:forced_PsfFlux_flag_edge
   - conesearch#r:forced_PsfFlux_flag_edge
-  - sso#r:forced_PsfFlux_flag_edge
   detection@lsst:fink.forced_photometry.{filter}.psf.flags.no_good_pixels:
   - sources#r:forced_PsfFlux_flag_noGoodPixels
   - conesearch#r:forced_PsfFlux_flag_noGoodPixels
-  - sso#r:forced_PsfFlux_flag_noGoodPixels
   detection@lsst:fink.reference_image.forced_photometry.{filter}.psf.flux:
   - sources#r:templateFlux
   - conesearch#r:templateFlux
-  - sso#r:templateFlux
   detection@lsst:fink.reference_image.forced_photometry.{filter}.psf.flux.error:
   - sources#r:templateFluxErr
   - conesearch#r:templateFluxErr
-  - sso#r:templateFluxErr
   detection@lsst:fink.quality.signal_to_noise:
   - sources#r:snr
   - conesearch#r:snr
-  - sso#r:snr
   detection@lsst:fink.quality.reliability:
   - sources#r:reliability
   - conesearch#r:reliability
-  - sso#r:reliability
   detection@lsst:fink.quality.reliability.version:
   - sources#r:reliabilityVersion
   - conesearch#r:reliabilityVersion
-  - sso#r:reliabilityVersion
   detection@lsst:fink.image_metrics.trail.algorithm:
   - sources#r:trailAlgorithm
   - conesearch#r:trailAlgorithm
-  - sso#r:trailAlgorithm
   detection@lsst:fink.image_metrics.trail.fit_failed:
   - sources#r:trail_flag
   - conesearch#r:trail_flag
-  - sso#r:trail_flag
   detection@lsst:fink.image_metrics.is_positive:
   - sources#r:isNegative
   - conesearch#r:isNegative
-  - sso#r:isNegative
   detection@lsst:fink.image_metrics.bbox_size:
   - sources#r:bboxSize
   - conesearch#r:bboxSize
-  - sso#r:bboxSize
   detection@lsst:fink.image_metrics.extendedness:
   - sources#r:extendedness
   - conesearch#r:extendedness
-  - sso#r:extendedness
   detection@lsst:fink.image_metrics.shape.ixx:
   - sources#r:ixx
   - conesearch#r:ixx
-  - sso#r:ixx
   detection@lsst:fink.image_metrics.shape.iyy:
   - sources#r:iyy
   - conesearch#r:iyy
-  - sso#r:iyy
   detection@lsst:fink.image_metrics.shape.ixy:
   - sources#r:ixy
   - conesearch#r:ixy
-  - sso#r:ixy
   detection@lsst:fink.image_metrics.shape.psf_ixx:
   - sources#r:ixxPSF
   - conesearch#r:ixxPSF
-  - sso#r:ixxPSF
   detection@lsst:fink.image_metrics.shape.psf_iyy:
   - sources#r:iyyPSF
   - conesearch#r:iyyPSF
-  - sso#r:iyyPSF
   detection@lsst:fink.image_metrics.shape.psf_ixy:
   - sources#r:ixyPSF
   - conesearch#r:ixyPSF
-  - sso#r:ixyPSF
   detection@lsst:fink.image_metrics.pixel_flags.bad:
   - sources#r:pixelFlags_bad
   - conesearch#r:pixelFlags_bad
-  - sso#r:pixelFlags_bad
   detection@lsst:fink.image_metrics.pixel_flags.cosmic_ray:
   - sources#r:pixelFlags_cr
   - conesearch#r:pixelFlags_cr
-  - sso#r:pixelFlags_cr
   detection@lsst:fink.image_metrics.pixel_flags.cosmic_ray_center:
   - sources#r:pixelFlags_crCenter
   - conesearch#r:pixelFlags_crCenter
-  - sso#r:pixelFlags_crCenter
   detection@lsst:fink.image_metrics.pixel_flags.edge:
   - sources#r:pixelFlags_edge
   - conesearch#r:pixelFlags_edge
-  - sso#r:pixelFlags_edge
   detection@lsst:fink.image_metrics.pixel_flags.injected:
   - sources#r:pixelFlags_injected
   - conesearch#r:pixelFlags_injected
-  - sso#r:pixelFlags_injected
   detection@lsst:fink.image_metrics.pixel_flags.injected_center:
   - sources#r:pixelFlags_injectedCenter
   - conesearch#r:pixelFlags_injectedCenter
-  - sso#r:pixelFlags_injectedCenter
   detection@lsst:fink.image_metrics.pixel_flags.injected_template:
   - sources#r:pixelFlags_injected_template
   - conesearch#r:pixelFlags_injected_template
-  - sso#r:pixelFlags_injected_template
   detection@lsst:fink.image_metrics.pixel_flags.injected_template_center:
   - sources#r:pixelFlags_injected_templateCenter
   - conesearch#r:pixelFlags_injected_templateCenter
-  - sso#r:pixelFlags_injected_templateCenter
   detection@lsst:fink.image_metrics.pixel_flags.interpolated:
   - sources#r:pixelFlags_interpolated
   - conesearch#r:pixelFlags_interpolated
-  - sso#r:pixelFlags_interpolated
   detection@lsst:fink.image_metrics.pixel_flags.interpolated_center:
   - sources#r:pixelFlags_interpolatedCenter
   - conesearch#r:pixelFlags_interpolatedCenter
-  - sso#r:pixelFlags_interpolatedCenter
   detection@lsst:fink.image_metrics.pixel_flags.no_data:
   - sources#r:pixelFlags_nodata
   - conesearch#r:pixelFlags_nodata
-  - sso#r:pixelFlags_nodata
   detection@lsst:fink.image_metrics.pixel_flags.no_data_center:
   - sources#r:pixelFlags_nodataCenter
   - conesearch#r:pixelFlags_nodataCenter
-  - sso#r:pixelFlags_nodataCenter
   detection@lsst:fink.image_metrics.pixel_flags.off_image:
   - sources#r:pixelFlags_offimage
   - conesearch#r:pixelFlags_offimage
-  - sso#r:pixelFlags_offimage
   detection@lsst:fink.image_metrics.pixel_flags.saturated:
   - sources#r:pixelFlags_saturated
   - conesearch#r:pixelFlags_saturated
-  - sso#r:pixelFlags_saturated
   detection@lsst:fink.image_metrics.pixel_flags.saturated_center:
   - sources#r:pixelFlags_saturatedCenter
   - conesearch#r:pixelFlags_saturatedCenter
-  - sso#r:pixelFlags_saturatedCenter
   detection@lsst:fink.image_metrics.pixel_flags.streak:
   - sources#r:pixelFlags_streak
   - conesearch#r:pixelFlags_streak
-  - sso#r:pixelFlags_streak
   detection@lsst:fink.image_metrics.pixel_flags.streak_center:
   - sources#r:pixelFlags_streakCenter
   - conesearch#r:pixelFlags_streakCenter
-  - sso#r:pixelFlags_streakCenter
   detection@lsst:fink.image_metrics.pixel_flags.suspect:
   - sources#r:pixelFlags_suspect
   - conesearch#r:pixelFlags_suspect
-  - sso#r:pixelFlags_suspect
   detection@lsst:fink.image_metrics.pixel_flags.suspect_center:
   - sources#r:pixelFlags_suspectCenter
   - conesearch#r:pixelFlags_suspectCenter
-  - sso#r:pixelFlags_suspectCenter
   detection@lsst:fink.image_metrics.dipole.is_dipole:
   - sources#r:isDipole
   - conesearch#r:isDipole
-  - sso#r:isDipole
   detection@lsst:fink.image_metrics.dipole.fit_attempted:
   - sources#r:dipoleFitAttempted
   - conesearch#r:dipoleFitAttempted
-  - sso#r:dipoleFitAttempted
   detection@lsst:fink.image_metrics.dipole.angle:
   - sources#r:dipoleAngle
   - conesearch#r:dipoleAngle
-  - sso#r:dipoleAngle
   detection@lsst:fink.image_metrics.dipole.chi2:
   - sources#r:dipoleChi2
   - conesearch#r:dipoleChi2
-  - sso#r:dipoleChi2
   detection@lsst:fink.image_metrics.dipole.flux_difference:
   - sources#r:dipoleFluxDiff
   - conesearch#r:dipoleFluxDiff
-  - sso#r:dipoleFluxDiff
   detection@lsst:fink.image_metrics.dipole.flux_difference_error:
   - sources#r:dipoleFluxDiffErr
   - conesearch#r:dipoleFluxDiffErr
-  - sso#r:dipoleFluxDiffErr
   detection@lsst:fink.image_metrics.dipole.length:
   - sources#r:dipoleLength
   - conesearch#r:dipoleLength
-  - sso#r:dipoleLength
   detection@lsst:fink.image_metrics.dipole.mean_flux:
   - sources#r:dipoleMeanFlux
   - conesearch#r:dipoleMeanFlux
-  - sso#r:dipoleMeanFlux
   detection@lsst:fink.image_metrics.dipole.mean_flux_error:
   - sources#r:dipoleMeanFluxErr
   - conesearch#r:dipoleMeanFluxErr
-  - sso#r:dipoleMeanFluxErr
   detection@lsst:fink.image_metrics.trail.angle:
   - sources#r:trailAngle
   - conesearch#r:trailAngle
-  - sso#r:trailAngle
   detection@lsst:fink.image_metrics.trail.angle_error:
   - sources#r:trailAngleErr
   - conesearch#r:trailAngleErr
-  - sso#r:trailAngleErr
   detection@lsst:fink.image_metrics.trail.chi2:
   - sources#r:trailChi2
   - conesearch#r:trailChi2
-  - sso#r:trailChi2
   detection@lsst:fink.image_metrics.trail.dec:
   - sources#r:trailDec
   - conesearch#r:trailDec
-  - sso#r:trailDec
   detection@lsst:fink.image_metrics.trail.dec_error:
   - sources#r:trailDecErr
   - conesearch#r:trailDecErr
-  - sso#r:trailDecErr
   detection@lsst:fink.image_metrics.trail.flux:
   - sources#r:trailFlux
   - conesearch#r:trailFlux
-  - sso#r:trailFlux
   detection@lsst:fink.image_metrics.trail.flux_error:
   - sources#r:trailFluxErr
   - conesearch#r:trailFluxErr
-  - sso#r:trailFluxErr
   detection@lsst:fink.image_metrics.trail.length:
   - sources#r:trailLength
   - conesearch#r:trailLength
-  - sso#r:trailLength
   detection@lsst:fink.image_metrics.trail.length_error:
   - sources#r:trailLengthErr
   - conesearch#r:trailLengthErr
-  - sso#r:trailLengthErr
   detection@lsst:fink.image_metrics.trail.ra:
   - sources#r:trailRa
   - conesearch#r:trailRa
-  - sso#r:trailRa
   detection@lsst:fink.image_metrics.trail.ra_error:
   - sources#r:trailRaErr
   - conesearch#r:trailRaErr
-  - sso#r:trailRaErr
   detection@lsst:fink.solar_system.identity.object_id:
   - sources#r:ssObjectId
   - conesearch#r:ssObjectId
-  - sso#r:ssObjectId
   detection@lsst:fink.separation.from_search_center:
   - conesearch#v:separation_degree
-  detection@lsst:fink.solar_system.designation:
-  - sso#r:designation
-  detection@lsst:fink.solar_system.name:
-  - sso#f:sso_name
-  detection@lsst:fink.solar_system.match.rank:
-  - sso#r:diaDistanceRank
-  detection@lsst:fink.position.galactic.longitude:
-  - sso#r:galLon
-  detection@lsst:fink.position.galactic.latitude:
-  - sso#r:galLat
-  detection@lsst:fink.solar_system.ecliptic.longitude:
-  - sso#r:eclLambda
-  detection@lsst:fink.solar_system.ecliptic.latitude:
-  - sso#r:eclBeta
-  detection@lsst:fink.solar_system.phase_angle:
-  - sso#r:phaseAngle
-  detection@lsst:fink.solar_system.elongation:
-  - sso#r:elongation
-  detection@lsst:fink.solar_system.ephemeris.ra:
-  - sso#r:ephRa
-  detection@lsst:fink.solar_system.ephemeris.dec:
-  - sso#r:ephDec
-  detection@lsst:fink.solar_system.ephemeris.vmag:
-  - sso#r:ephVmag
-  detection@lsst:fink.solar_system.ephemeris.offset.total:
-  - sso#r:ephOffset
-  detection@lsst:fink.solar_system.ephemeris.offset.ra:
-  - sso#r:ephOffsetRa
-  detection@lsst:fink.solar_system.ephemeris.offset.dec:
-  - sso#r:ephOffsetDec
-  detection@lsst:fink.solar_system.ephemeris.offset.along_track:
-  - sso#r:ephOffsetAlongTrack
-  detection@lsst:fink.solar_system.ephemeris.offset.cross_track:
-  - sso#r:ephOffsetCrossTrack
-  detection@lsst:fink.solar_system.ephemeris.rate.total:
-  - sso#r:ephRate
-  detection@lsst:fink.solar_system.ephemeris.rate.ra:
-  - sso#r:ephRateRa
-  detection@lsst:fink.solar_system.ephemeris.rate.dec:
-  - sso#r:ephRateDec
-  detection@lsst:fink.solar_system.heliocentric.range:
-  - sso#r:helioRange
-  detection@lsst:fink.solar_system.heliocentric.range_rate:
-  - sso#r:helioRangeRate
-  detection@lsst:fink.solar_system.heliocentric.position.x:
-  - sso#r:helio_x
-  detection@lsst:fink.solar_system.heliocentric.position.y:
-  - sso#r:helio_y
-  detection@lsst:fink.solar_system.heliocentric.position.z:
-  - sso#r:helio_z
-  detection@lsst:fink.solar_system.heliocentric.velocity.x:
-  - sso#r:helio_vx
-  detection@lsst:fink.solar_system.heliocentric.velocity.y:
-  - sso#r:helio_vy
-  detection@lsst:fink.solar_system.heliocentric.velocity.z:
-  - sso#r:helio_vz
-  detection@lsst:fink.solar_system.heliocentric.velocity.total:
-  - sso#r:helio_vtot
-  detection@lsst:fink.solar_system.topocentric.range:
-  - sso#r:topoRange
-  detection@lsst:fink.solar_system.topocentric.range_rate:
-  - sso#r:topoRangeRate
-  detection@lsst:fink.solar_system.topocentric.position.x:
-  - sso#r:topo_x
-  detection@lsst:fink.solar_system.topocentric.position.y:
-  - sso#r:topo_y
-  detection@lsst:fink.solar_system.topocentric.position.z:
-  - sso#r:topo_z
-  detection@lsst:fink.solar_system.topocentric.velocity.x:
-  - sso#r:topo_vx
-  detection@lsst:fink.solar_system.topocentric.velocity.y:
-  - sso#r:topo_vy
-  detection@lsst:fink.solar_system.topocentric.velocity.z:
-  - sso#r:topo_vz
-  detection@lsst:fink.solar_system.topocentric.velocity.total:
-  - sso#r:topo_vtot
   data_product@lsst:fink.payload:
   - cutouts#b:cutoutScience
   - cutouts#b:cutoutTemplate
@@ -827,115 +656,57 @@ mappings:
   crossmatch@mangrove:fink.luminosity_distance:
   - sources#f:xm_mangrove_lum_dist
   - conesearch#f:xm_mangrove_lum_dist
-  survey@lsst:fink.time.night:
-  - statistics#f:night
-  survey@lsst:fink.alert_count:
-  - statistics#f:alerts
-  survey@lsst:fink.object_count:
-  - statistics#f:objects
-  survey@lsst:fink.visit_count:
-  - statistics#f:visits
-  survey@lsst:fink.filter_counts.u:
-  - statistics#f:alerts_u
-  survey@lsst:fink.filter_counts.g:
-  - statistics#f:alerts_g
-  survey@lsst:fink.filter_counts.r:
-  - statistics#f:alerts_r
-  survey@lsst:fink.filter_counts.i:
-  - statistics#f:alerts_i
-  survey@lsst:fink.filter_counts.z:
-  - statistics#f:alerts_z
-  survey@lsst:fink.filter_counts.y:
-  - statistics#f:alerts_y
-  survey@lsst:fink.flag_counts.is_cataloged:
-  - statistics#f:is_cataloged
-  survey@lsst:fink.flag_counts.is_first_detection:
-  - statistics#f:is_first
-  survey@lsst:fink.flag_counts.is_solar_system:
-  - statistics#f:is_sso
-  survey@lsst:fink.flag_counts.is_dipole:
-  - statistics#f:isDipole
-  survey@lsst:fink.flag_counts.glint_trail:
-  - statistics#f:glint_trail
-  survey@lsst:fink.flag_counts.pixel_flags.cosmic_ray:
-  - statistics#f:pixelFlags_cr
-  survey@lsst:fink.flag_counts.pixel_flags.saturated:
-  - statistics#f:pixelFlags_saturated
-  survey@lsst:fink.flag_counts.pixel_flags.streak:
-  - statistics#f:pixelFlags_streak
-  survey@lsst:fink.flag_counts.in_tns:
-  - statistics#f:in_tns
-  survey@lsst:fink.provenance.channel.version:
-  - statistics#f:fink_broker_version
-  survey@lsst:fink.provenance.channel.science_version:
-  - statistics#f:fink_science_version
   summary@lsst:fink.time.snapshot_mjd:
   - objects#r:validityStartMjdTai
   - conesearch#r:validityStartMjdTai
   detection@lsst:fink.position.image_x:
   - sources#r:x
   - conesearch#r:x
-  - sso#r:x
   detection@lsst:fink.position.image_x_error:
   - sources#r:xErr
   - conesearch#r:xErr
-  - sso#r:xErr
   detection@lsst:fink.position.image_y:
   - sources#r:y
   - conesearch#r:y
-  - sso#r:y
   detection@lsst:fink.position.image_y_error:
   - sources#r:yErr
   - conesearch#r:yErr
-  - sso#r:yErr
   detection@lsst:fink.time.exposure:
   - sources#r:exposureTime
   - conesearch#r:exposureTime
-  - sso#r:exposureTime
   detection@lsst:fink.photometry.{filter}.psf.fit_log_likelihood:
   - sources#r:psfLnL
   - conesearch#r:psfLnL
-  - sso#r:psfLnL
   detection@lsst:fink.image_metrics.centroid_flag:
   - sources#r:centroid_flag
   - conesearch#r:centroid_flag
-  - sso#r:centroid_flag
   detection@lsst:fink.image_metrics.trail.is_glint:
   - sources#r:glint_trail
   - conesearch#r:glint_trail
-  - sso#r:glint_trail
   detection@lsst:fink.image_metrics.shape.flag:
   - sources#r:shape_flag
   - conesearch#r:shape_flag
-  - sso#r:shape_flag
   detection@lsst:fink.image_metrics.shape.flag_no_pixels:
   - sources#r:shape_flag_no_pixels
   - conesearch#r:shape_flag_no_pixels
-  - sso#r:shape_flag_no_pixels
   detection@lsst:fink.image_metrics.shape.flag_not_contained:
   - sources#r:shape_flag_not_contained
   - conesearch#r:shape_flag_not_contained
-  - sso#r:shape_flag_not_contained
   detection@lsst:fink.image_metrics.shape.flag_parent_source:
   - sources#r:shape_flag_parent_source
   - conesearch#r:shape_flag_parent_source
-  - sso#r:shape_flag_parent_source
   detection@lsst:fink.image_metrics.pixel_flags.any:
   - sources#r:pixelFlags
   - conesearch#r:pixelFlags
-  - sso#r:pixelFlags
   detection@lsst:fink.image_metrics.dipole.ndata:
   - sources#r:dipoleNdata
   - conesearch#r:dipoleNdata
-  - sso#r:dipoleNdata
   detection@lsst:fink.image_metrics.trail.ndata:
   - sources#r:trailNdata
   - conesearch#r:trailNdata
-  - sso#r:trailNdata
   detection@lsst:fink.image_metrics.trail.flag_edge:
   - sources#r:trail_flag_edge
   - conesearch#r:trail_flag_edge
-  - sso#r:trail_flag_edge
 transforms:
   summary@lsst:fink.time.first_mjd:
     objects#r:firstDiaSourceMjdTai:
@@ -958,7 +729,6 @@ transforms:
       map: {"nan": null}
       skip_null: true
     conesearch#r:reliabilityVersion: *fink_reliability_version
-    sso#r:reliabilityVersion: *fink_reliability_version
   detection@lsst:fink.image_metrics.trail.algorithm:
     sources#r:trailAlgorithm: &fink_trail_algorithm
       type: value_map
@@ -966,7 +736,6 @@ transforms:
       default: null
       skip_null: true
     conesearch#r:trailAlgorithm: *fink_trail_algorithm
-    sso#r:trailAlgorithm: *fink_trail_algorithm
   detection@lsst:fink.image_metrics.trail.fit_failed:
     sources#r:trail_flag: &fink_trail_failed
       type: value_map
@@ -974,11 +743,8 @@ transforms:
       default: null
       skip_null: true
     conesearch#r:trail_flag: *fink_trail_failed
-    sso#r:trail_flag: *fink_trail_failed
   detection@lsst:fink.image_metrics.is_positive:
     sources#r:isNegative:
       type: boolean_not
     conesearch#r:isNegative:
-      type: boolean_not
-    sso#r:isNegative:
       type: boolean_not
