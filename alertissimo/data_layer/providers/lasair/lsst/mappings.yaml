@@ -3,30 +3,50 @@ origin: lsst
 description: Authoritative semantic mappings for fields returned by the Lasair LSST REST API.
 payloads:
   object:
+    object_partition:
+      mode: single
     endpoint: object
     path: .
   query:
+    object_partition:
+      mode: field
+      field: 'diaObjectId'
     endpoint: query
     path: '[]'
   cone_objects:
+    object_partition:
+      mode: field
+      field: 'object'
     endpoint: cone
     path: objects[]
   diaSourcesList:
+    object_partition:
+      mode: single
     endpoint: object
     path: diaSourcesList[]
   diaForcedSourcesList:
+    object_partition:
+      mode: single
     endpoint: object
     path: diaForcedSourcesList[]
   sherlock_object_classifications:
+    object_partition:
+      mode: single
     endpoint: sherlock_object
     path: classifications{}
   sherlock_position_classifications:
+    object_partition:
+      mode: single
     endpoint: sherlock_position
     path: classifications{}
   sherlock_object_crossmatches:
+    object_partition:
+      mode: single
     endpoint: sherlock_object
     path: crossmatches[]
   sherlock_position_crossmatches:
+    object_partition:
+      mode: single
     endpoint: sherlock_position
     path: crossmatches[]
 mappings:

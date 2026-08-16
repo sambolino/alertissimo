@@ -3,42 +3,69 @@ origin: ztf
 description: Minimal semantic mapping registry for ALeRCE ZTF payloads.
 payloads:
   query_objects:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: items[]
     description: Object rows inside the paginated query_objects response.
     endpoint: query_objects
   query_object:
+    object_partition:
+      mode: single
     path: .
     description: query_object response payload.
     endpoint: query_object
   query_detections:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_detections response payload.
     endpoint: query_detections
   query_non_detections:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_non_detections response payload.
     endpoint: query_non_detections
   query_forced_photometry:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_forced_photometry response payload.
     endpoint: query_forced_photometry
   query_lightcurve:
+    object_partition:
+      mode: single
     path: .
     description: query_lightcurve response payload.
     endpoint: query_lightcurve
   query_magstats:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_magstats response payload.
     endpoint: query_magstats
   query_probabilities:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_probabilities response payload.
     endpoint: query_probabilities
   query_features:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     description: query_features response payload.
     endpoint: query_features
   query_feature:
+    object_partition:
+      mode: single
     path: .
     description: query_feature response payload.
     endpoint: query_feature
@@ -71,10 +98,14 @@ payloads:
     description: catshtm_redshift response payload.
     endpoint: catshtm_redshift
   query_lightcurve.detections:
+    object_partition:
+      mode: single
     path: detections[]
     endpoint: query_lightcurve
     description: Rows from the detections collection in the light-curve bundle.
   query_lightcurve.non_detections:
+    object_partition:
+      mode: single
     path: non_detections[]
     endpoint: query_lightcurve
     description: Rows from the non_detections collection in the light-curve bundle.

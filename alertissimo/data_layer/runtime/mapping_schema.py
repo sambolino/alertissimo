@@ -22,7 +22,9 @@ class InvalidSemanticPathError(MappingSchemaError):
 MAPPING_KEYS = {
     "broker", "origin", "payloads", "mappings", "transforms", "description", "notes",
 }
-PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter"}
+PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter", "object_partition"}
+OBJECT_PARTITION_KEYS = {"mode", "field"}
+OBJECT_PARTITION_MODES = {"single", "field", "root_field"}
 TRANSFORM_KEYS = {
     "type", "map", "default", "factor", "skip_null", "note", "object_key",
 }
@@ -203,6 +205,35 @@ def validate_mapping_file(path: str | Path) -> None:
                     raise MappingSchemaError(
                         f"{path}: payload {key!r} row_filter values must be scalar"
                     )
+        if "object_partition" in definition:
+            partition = _mapping(
+                definition["object_partition"],
+                f"{path}: payload {key!r} object_partition",
+            )
+            _allowed_keys(
+                partition,
+                OBJECT_PARTITION_KEYS,
+                f"{path}: payload {key!r} object_partition",
+            )
+            mode = partition.get("mode")
+            if mode not in OBJECT_PARTITION_MODES:
+                raise MappingSchemaError(
+                    f"{path}: payload {key!r} object_partition mode must be one of "
+                    f"{sorted(OBJECT_PARTITION_MODES)}"
+                )
+            if mode in {"field", "root_field"}:
+                if "field" not in partition:
+                    raise MappingSchemaError(
+                        f"{path}: payload {key!r} field partition requires 'field'"
+                    )
+                _nonempty_string(
+                    partition["field"],
+                    f"{path}: payload {key!r} object_partition field",
+                )
+            elif "field" in partition:
+                raise MappingSchemaError(
+                    f"{path}: payload {key!r} single partition must not define 'field'"
+                )
         endpoints_used.append((key, endpoint))
 
     mappings = _mapping(document["mappings"], f"{path}: mappings")

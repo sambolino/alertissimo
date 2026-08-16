@@ -3,36 +3,63 @@ origin: ztf
 description: Minimal semantic mappings for fields returned by the Lasair ZTF REST API.
 payloads:
   object:
+    object_partition:
+      mode: single
     endpoint: object
     path: .
   objects:
+    object_partition:
+      mode: field
+      field: 'objectId'
     endpoint: objects
     path: '[]'
   query:
+    object_partition:
+      mode: field
+      field: 'objectId'
     endpoint: query
     path: '[]'
   cone:
+    object_partition:
+      mode: field
+      field: 'object'
     endpoint: cone
     path: '[]'
   candidates:
+    object_partition:
+      mode: single
     endpoint: object
     path: candidates[]
   lightcurve_candidates:
+    object_partition:
+      mode: root_field
+      field: 'objectId'
     endpoint: lightcurves
     path: '[].candidates[]'
   sherlock_position_classifications:
+    object_partition:
+      mode: single
     endpoint: sherlock_position
     path: classifications{}
   sherlock_objects_classifications:
+    object_partition:
+      mode: single
     endpoint: sherlock_objects
     path: classifications{}
   sherlock_position_crossmatches:
+    object_partition:
+      mode: single
     endpoint: sherlock_position
     path: crossmatches[]
   sherlock_objects_crossmatches:
+    object_partition:
+      mode: single
     endpoint: sherlock_objects
     path: crossmatches[]
   objects_candidates:
+    object_partition:
+      mode: root_field
+      field: 'objectId'
     endpoint: objects
     path: '[].candidates[]'
 mappings:

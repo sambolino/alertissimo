@@ -3,24 +3,41 @@ broker: fink
 origin: lsst
 payloads:
   sources:
+    object_partition:
+      mode: field
+      field: 'diaObjectId'
     endpoint: sources
     path: "[]"
   objects:
+    object_partition:
+      mode: field
+      field: 'r:diaObjectId'
     endpoint: objects
     path: "[]"
   fp:
+    object_partition:
+      mode: field
+      field: 'diaObjectId'
     endpoint: fp
     path: "[]"
   conesearch:
+    object_partition:
+      mode: field
+      field: 'r:diaObjectId'
     endpoint: conesearch
     path: "[]"
   cutouts:
+    object_partition:
+      mode: single
     endpoint: cutouts
     path: "."
   schema:
     endpoint: schema
     path: "."
   sso:
+    object_partition:
+      mode: field
+      field: 'ssObjectId'
     endpoint: sso
     path: "[]"
   resolver:

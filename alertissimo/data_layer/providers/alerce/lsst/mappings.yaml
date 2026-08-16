@@ -3,42 +3,67 @@ origin: lsst
 description: Authoritative semantic mappings for captured ALeRCE 2.3.1 LSST payloads.
 payloads:
   query_objects:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     endpoint: query_objects
     description: Classification-bearing object-search rows; each row emits minimal object identity alongside its independent classifier result.
   query_object:
+    object_partition:
+      mode: single
     path: '.'
     endpoint: query_object
     description: Single object-summary response.
   query_detections:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     endpoint: query_detections
     description: Detection rows.
   query_non_detections:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     endpoint: query_non_detections
     description: Non-detection rows; the authoritative capture is empty.
   query_forced_photometry:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     endpoint: query_forced_photometry
     description: Forced-photometry rows represented as generic detections.
   query_lightcurve:
+    object_partition:
+      mode: single
     path: '.'
     endpoint: query_lightcurve
     description: Light-curve bundle container.
   query_probabilities:
+    object_partition:
+      mode: field
+      field: 'oid'
     path: '[]'
     endpoint: query_probabilities
     description: Classifier probability rows.
   query_lightcurve.detections:
+    object_partition:
+      mode: single
     path: 'detections[]'
     endpoint: query_lightcurve
     description: Detection rows delegated from the light-curve bundle.
   query_lightcurve.non_detections:
+    object_partition:
+      mode: single
     path: 'non_detections[]'
     endpoint: query_lightcurve
     description: Non-detection rows delegated from the light-curve bundle.
   query_lightcurve.forced_photometry:
+    object_partition:
+      mode: single
     path: 'forced_photometry[]'
     endpoint: query_lightcurve
     description: Forced-photometry rows delegated from the light-curve bundle.

@@ -2,18 +2,32 @@ broker: fink
 origin: ztf
 payloads:
   objects:
+    object_partition:
+      mode: field
+      field: 'i:objectId'
     endpoint: objects
     path: '[]'
   conesearch:
+    object_partition:
+      mode: field
+      field: 'i:objectId'
     endpoint: conesearch
     path: '[]'
   latests:
+    object_partition:
+      mode: field
+      field: 'i:objectId'
     endpoint: latests
     path: '[]'
   anomaly:
+    object_partition:
+      mode: field
+      field: 'i:objectId'
     endpoint: anomaly
     path: '[]'
   cutouts:
+    object_partition:
+      mode: single
     endpoint: cutouts
     path: .
   sso:

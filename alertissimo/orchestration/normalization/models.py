@@ -10,10 +10,10 @@ from alertissimo.orchestration.runtime import WorkflowRun
 
 @dataclass(frozen=True)
 class ExecutionPortfolioResult:
-    """The Portfolio independently produced for one physical execution."""
+    """Object Portfolios independently produced by one physical execution."""
 
     execution_id: str
-    portfolio: Portfolio
+    portfolios: tuple[Portfolio, ...]
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class StepPortfolioResult:
     """Normalized physical executions for one workflow Step occurrence."""
 
     step_index: int
-    portfolios: tuple[ExecutionPortfolioResult, ...]
+    executions: tuple[ExecutionPortfolioResult, ...]
 
 
 @dataclass(frozen=True)

@@ -2,36 +2,60 @@ broker: antares
 origin: ztf
 payloads:
   locus:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: .
   locus_alerts:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: alerts[]
   locus_catalog_2mass:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.2mass_psc[]
   locus_catalog_allwise:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.allwise[]
   locus_catalog_bright:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.bright_guide_star_cat[]
   locus_catalog_gaia:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_dr3_gaia_source[]
   locus_catalog_gaia_variability:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_dr3_variability[]
   locus_catalog_bailer_jones:
+    object_partition:
+      mode: single
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_edr3_distances_bailer_jones[]
   locus_by_id:
+    object_partition:
+      mode: single
     endpoint: get_by_id
     path: .
   search_loci:
+    object_partition:
+      mode: field
+      field: 'locus_id'
     endpoint: search
     path: '[]'
   cone_loci:
+    object_partition:
+      mode: field
+      field: 'locus_id'
     endpoint: cone_search
     path: '[]'
 mappings:

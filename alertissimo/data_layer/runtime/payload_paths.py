@@ -14,6 +14,7 @@ class ResolvedPayloadItem:
     value: Any
     payload_index: int | None = None
     index_path: tuple[int, ...] = ()
+    root_value: Any = None
 
 
 class RawFieldMissing(LookupError):
@@ -87,10 +88,10 @@ def resolve_payload_items(
     else:
         roots = ((payload, ()),)
 
-    resolved: list[tuple[Any, tuple[int, ...]]] = []
+    resolved: list[tuple[Any, tuple[int, ...], Any]] = []
     for root, root_indexes in roots:
         if not path:  # root list, "[]"
-            resolved.append((root, root_indexes))
+            resolved.append((root, root_indexes, root))
             continue
         try:
             collection = _mapping_path(root, collection_path)
@@ -108,7 +109,7 @@ def resolve_payload_items(
                 for key, value in sorted(collection.items(), key=lambda item: str(item[0]))
             )
         resolved.extend(
-            (value, (*root_indexes, index)) for index, value in enumerate(values)
+            (value, (*root_indexes, index), root) for index, value in enumerate(values)
         )
 
     return tuple(
@@ -118,8 +119,9 @@ def resolve_payload_items(
             value=value,
             payload_index=index,
             index_path=index_path,
+            root_value=root_value,
         )
-        for index, (value, index_path) in enumerate(resolved)
+        for index, (value, index_path, root_value) in enumerate(resolved)
     )
 
 

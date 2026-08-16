@@ -337,3 +337,26 @@ def test_invalid_transform_fails(tmp_path, valid_mapping, transforms, match):
     valid_mapping["transforms"] = transforms
     with pytest.raises(MappingSchemaError, match=match):
         validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_object_partition_modes_are_validated(tmp_path, valid_mapping):
+    valid_mapping["payloads"]["objects"]["object_partition"] = {
+        "mode": "field", "field": "oid"
+    }
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+    valid_mapping["payloads"]["objects"]["object_partition"] = {"mode": "single"}
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize(("partition", "match"), [
+    ({}, "mode must be one of"),
+    ({"mode": "unknown"}, "mode must be one of"),
+    ({"mode": "field"}, "requires 'field'"),
+    ({"mode": "field", "field": ""}, "non-empty string"),
+    ({"mode": "single", "field": "oid"}, "must not define 'field'"),
+    ({"mode": "single", "extra": True}, "unsupported key"),
+])
+def test_invalid_object_partition_fails(tmp_path, valid_mapping, partition, match):
+    valid_mapping["payloads"]["objects"]["object_partition"] = partition
+    with pytest.raises(MappingSchemaError, match=match):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
