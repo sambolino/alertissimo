@@ -95,3 +95,13 @@ def test_missing_and_structural_mismatches_are_empty():
 def test_invalid_syntax_raises(path):
     with pytest.raises(ValueError):
         resolve_payload_items({}, payload_key="x", payload_path=path)
+
+
+def test_nested_root_expansion_retains_corresponding_root_object():
+    payload = [
+        {"objectId": "A", "candidates": [{"candid": 1}]},
+        {"objectId": "B", "candidates": [{"candid": 2}, {"candid": 3}]},
+    ]
+    items = resolve_payload_items(payload, payload_key="candidates", payload_path="[].candidates[]")
+    assert [item.root_value["objectId"] for item in items] == ["A", "B", "B"]
+    assert [item.index_path for item in items] == [(0, 0), (1, 0), (1, 1)]

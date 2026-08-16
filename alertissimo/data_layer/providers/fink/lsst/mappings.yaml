@@ -5,24 +5,41 @@ payloads:
   sources:
     endpoint: sources
     path: "[]"
+    object_partition:
+      mode: field
+      field: r:diaObjectId
   objects:
     endpoint: objects
     path: "[]"
+    object_partition:
+      mode: field
+      field: r:diaObjectId
   fp:
     endpoint: fp
     path: "[]"
+    object_partition:
+      mode: field
+      field: r:diaObjectId
   conesearch:
     endpoint: conesearch
     path: "[]"
+    object_partition:
+      mode: field
+      field: r:diaObjectId
   cutouts:
     endpoint: cutouts
     path: "."
+    object_partition:
+      mode: single
   schema:
     endpoint: schema
     path: "."
   sso:
     endpoint: sso
     path: "[]"
+    object_partition:
+      mode: field
+      field: r:diaObjectId
   resolver:
     endpoint: resolver
     path: "[]"
@@ -32,6 +49,8 @@ payloads:
   statistics:
     endpoint: statistics
     path: "[]"
+    object_partition:
+      mode: single
   tags:
     endpoint: tags
     path: "[]"

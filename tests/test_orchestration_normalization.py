@@ -115,7 +115,7 @@ def _workflow_result(
 def test_real_execution_normalizes_with_provenance_and_record_sources(
     execution, expected_family
 ):
-    portfolio = normalize_execution(execution)
+    (portfolio,) = normalize_execution(execution)
 
     assert expected_family in {record.semantic_type for record in portfolio.records}
     assert portfolio.executions == (execution.execution_provenance,)
@@ -132,15 +132,15 @@ def test_two_provider_executions_in_one_step_remain_independent_and_ordered():
     result = normalize_workflow_execution(_workflow_result(((_alerce(), _lasair()),)))
 
     assert len(result.steps) == 1
-    outputs = result.steps[0].portfolios
+    outputs = result.steps[0].executions
     assert [output.execution_id for output in outputs] == [
         "execution:alerce",
         "execution:lasair",
     ]
-    assert outputs[0].portfolio is not outputs[1].portfolio
+    assert outputs[0].portfolios[0] is not outputs[1].portfolios[0]
     assert (
-        outputs[0].portfolio.internal_portfolio_id
-        != outputs[1].portfolio.internal_portfolio_id
+        outputs[0].portfolios[0].internal_portfolio_id
+        != outputs[1].portfolios[0].internal_portfolio_id
     )
 
 
@@ -152,7 +152,7 @@ def test_repeated_step_occurrences_stay_distinct():
     )
 
     assert [step.step_index for step in result.steps] == [0, 1]
-    assert [step.portfolios[0].execution_id for step in result.steps] == [
+    assert [step.executions[0].execution_id for step in result.steps] == [
         "execution:first",
         "execution:second",
     ]
@@ -247,4 +247,4 @@ def test_standalone_step_normalization_supports_completed_failure_path_output():
     )
 
     assert result.step_index == 4
-    assert result.portfolios[0].execution_id == "execution:alerce"
+    assert result.executions[0].execution_id == "execution:alerce"

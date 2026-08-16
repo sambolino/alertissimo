@@ -4,36 +4,60 @@ payloads:
   locus:
     endpoint: get_by_ztf_object_id
     path: .
+    object_partition:
+      mode: single
   locus_alerts:
     endpoint: get_by_ztf_object_id
     path: alerts[]
+    object_partition:
+      mode: single
   locus_catalog_2mass:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.2mass_psc[]
+    object_partition:
+      mode: single
   locus_catalog_allwise:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.allwise[]
+    object_partition:
+      mode: single
   locus_catalog_bright:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.bright_guide_star_cat[]
+    object_partition:
+      mode: single
   locus_catalog_gaia:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_dr3_gaia_source[]
+    object_partition:
+      mode: single
   locus_catalog_gaia_variability:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_dr3_variability[]
+    object_partition:
+      mode: single
   locus_catalog_bailer_jones:
     endpoint: get_by_ztf_object_id
     path: catalog_objects.gaia_edr3_distances_bailer_jones[]
+    object_partition:
+      mode: single
   locus_by_id:
     endpoint: get_by_id
     path: .
+    object_partition:
+      mode: single
   search_loci:
     endpoint: search
     path: '[]'
+    object_partition:
+      mode: field
+      field: locus_id
   cone_loci:
     endpoint: cone_search
     path: '[]'
+    object_partition:
+      mode: field
+      field: locus_id
 mappings:
   summary@ztf:antares.identity.object_id:
   - locus#properties.ztf_object_id

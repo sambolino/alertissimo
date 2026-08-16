@@ -4,42 +4,67 @@ description: Authoritative semantic mappings for captured ALeRCE 2.3.1 LSST payl
 payloads:
   query_objects:
     path: '[]'
+    object_partition:
+      mode: field
+      field: oid
     endpoint: query_objects
     description: Classification-bearing object-search rows; each row emits minimal object identity alongside its independent classifier result.
   query_object:
     path: '.'
+    object_partition:
+      mode: single
     endpoint: query_object
     description: Single object-summary response.
   query_detections:
     path: '[]'
+    object_partition:
+      mode: field
+      field: oid
     endpoint: query_detections
     description: Detection rows.
   query_non_detections:
     path: '[]'
+    object_partition:
+      mode: field
+      field: oid
     endpoint: query_non_detections
     description: Non-detection rows; the authoritative capture is empty.
   query_forced_photometry:
     path: '[]'
+    object_partition:
+      mode: field
+      field: oid
     endpoint: query_forced_photometry
     description: Forced-photometry rows represented as generic detections.
   query_lightcurve:
     path: '.'
+    object_partition:
+      mode: single
     endpoint: query_lightcurve
     description: Light-curve bundle container.
   query_probabilities:
     path: '[]'
+    object_partition:
+      mode: field
+      field: oid
     endpoint: query_probabilities
     description: Classifier probability rows.
   query_lightcurve.detections:
     path: 'detections[]'
+    object_partition:
+      mode: single
     endpoint: query_lightcurve
     description: Detection rows delegated from the light-curve bundle.
   query_lightcurve.non_detections:
     path: 'non_detections[]'
+    object_partition:
+      mode: single
     endpoint: query_lightcurve
     description: Non-detection rows delegated from the light-curve bundle.
   query_lightcurve.forced_photometry:
     path: 'forced_photometry[]'
+    object_partition:
+      mode: single
     endpoint: query_lightcurve
     description: Forced-photometry rows delegated from the light-curve bundle.
 mappings:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
 from alertissimo.orchestration.runtime import (
     StepExecutionResult,
     StepRunState,
@@ -26,14 +26,14 @@ def normalize_execution(
     execution: ExecutionResult,
     *,
     validate_semantic_model: bool = True,
-) -> Portfolio:
+) -> tuple[Portfolio, ...]:
     """Normalize exactly one physical result using the authoritative builder.
 
     Validation defaults on because orchestration is a production boundary from
     physical provider data into the canonical semantic model.
     """
 
-    return build_portfolio_from_execution(
+    return build_portfolios_from_execution(
         execution, validate_semantic_model=validate_semantic_model
     )
 
@@ -47,10 +47,10 @@ def normalize_step_execution(
 
     return StepPortfolioResult(
         step_index=result.step_index,
-        portfolios=tuple(
+        executions=tuple(
             ExecutionPortfolioResult(
                 execution_id=execution.internal_execution_id.value,
-                portfolio=normalize_execution(
+                portfolios=normalize_execution(
                     execution,
                     validate_semantic_model=validate_semantic_model,
                 ),

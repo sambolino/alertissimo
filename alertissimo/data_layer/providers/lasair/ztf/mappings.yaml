@@ -5,36 +5,63 @@ payloads:
   object:
     endpoint: object
     path: .
+    object_partition:
+      mode: single
   objects:
     endpoint: objects
     path: '[]'
+    object_partition:
+      mode: field
+      field: objectId
   query:
     endpoint: query
     path: '[]'
+    object_partition:
+      mode: field
+      field: objectId
   cone:
     endpoint: cone
     path: '[]'
+    object_partition:
+      mode: field
+      field: object
   candidates:
     endpoint: object
     path: candidates[]
+    object_partition:
+      mode: single
   lightcurve_candidates:
     endpoint: lightcurves
     path: '[].candidates[]'
+    object_partition:
+      mode: root_field
+      field: objectId
   sherlock_position_classifications:
     endpoint: sherlock_position
     path: classifications{}
+    object_partition:
+      mode: single
   sherlock_objects_classifications:
     endpoint: sherlock_objects
     path: classifications{}
+    object_partition:
+      mode: single
   sherlock_position_crossmatches:
     endpoint: sherlock_position
     path: crossmatches[]
+    object_partition:
+      mode: single
   sherlock_objects_crossmatches:
     endpoint: sherlock_objects
     path: crossmatches[]
+    object_partition:
+      mode: single
   objects_candidates:
     endpoint: objects
     path: '[].candidates[]'
+    object_partition:
+      mode: root_field
+      field: objectId
 mappings:
   summary@ztf:lasair.identity.object_id:
   - object#objectId
