@@ -1,0 +1,4 @@
+[
+  {"objectId":"ZTF21abfmbix","candidates":[{"candid":1,"jd":2459001.5,"fid":1,"ra":10.1,"dec":-2.1,"magpsf":19.1,"sigmapsf":0.1}]},
+  {"objectId":"ZTF20acpwljl","candidates":[{"candid":3,"jd":2459003.5,"fid":1,"ra":124.88,"dec":-6.02,"magpsf":19.7,"sigmapsf":0.2}]}
+]

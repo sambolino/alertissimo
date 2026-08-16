@@ -6,3 +6,8 @@ Alertissimo is a flexible and inclusive platform for orchestrating astronomical 
 Much like a conductor guiding a complex ensemble, Alertissimo brings structure and harmony to the fast-paced, asynchronous world of transient discovery. It enables users to define, refine, and execute real-time logic across multiple brokers. Brokers and their unique features can be seen as instruments and voices in an orchestra and Alertissimo offers scientists the ability to extract the best from every player, just like Duke Ellington masterly did with his big bang, oops big band.
 
 Built for extensibility and designed for clarity, Alertissimo helps researchers tune their pipelines, collaborate across tools, and stay in sync with the swinging rhythm of the universe.
+
+## Orchestration smoke scenarios
+
+Offline multi-provider, batch, and expected-failure acceptance commands are
+documented in [`scripts/smoke/README.md`](scripts/smoke/README.md).

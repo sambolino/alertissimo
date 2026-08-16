@@ -1,0 +1,22 @@
+[
+  {
+    "i:objectId": "170587117485817955",
+    "i:candid": 1,
+    "i:jd": 2459001.5,
+    "i:fid": 1,
+    "i:ra": 10.1,
+    "i:dec": -2.1,
+    "i:magpsf": 19.1,
+    "i:sigmapsf": 0.1
+  },
+  {
+    "i:objectId": "170587117485817955",
+    "i:candid": 2,
+    "i:jd": 2459002.5,
+    "i:fid": 2,
+    "i:ra": 10.1,
+    "i:dec": -2.1,
+    "i:magpsf": 18.9,
+    "i:sigmapsf": 0.1
+  }
+]

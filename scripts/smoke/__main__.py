@@ -1,0 +1,51 @@
+"""Command-line entry point for orchestration smoke scenarios."""
+
+import argparse
+
+from .reporting import render_human, render_json
+from .scenarios import SCENARIOS, run_scenario
+
+
+def parser() -> argparse.ArgumentParser:
+    result = argparse.ArgumentParser(
+        description="Run offline-first orchestration smoke scenarios"
+    )
+    result.add_argument("scenario", nargs="?", choices=sorted(SCENARIOS))
+    result.add_argument("--list", action="store_true", help="list available scenarios")
+    result.add_argument(
+        "--json", action="store_true", help="emit provider-neutral JSON"
+    )
+    result.add_argument(
+        "--live",
+        action="store_true",
+        help="explicitly allow registered provider network execution",
+    )
+    result.add_argument(
+        "--target",
+        action="append",
+        dest="targets",
+        help="override target ID (repeat for a batch)",
+    )
+    return result
+
+
+def main(argv=None) -> int:
+    args = parser().parse_args(argv)
+    if args.list:
+        if args.scenario or args.live or args.json or args.targets:
+            parser().error("--list cannot be combined with scenario options")
+        print("\n".join(sorted(SCENARIOS)))
+        return 0
+    if not args.scenario:
+        parser().error("a scenario is required unless --list is used")
+    result = run_scenario(
+        args.scenario,
+        live=args.live,
+        targets=tuple(args.targets) if args.targets else None,
+    )
+    print(render_json(result) if args.json else render_human(result))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
