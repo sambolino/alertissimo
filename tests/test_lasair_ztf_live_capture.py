@@ -218,3 +218,43 @@ def test_live_plural_sherlock_object_shape_is_fully_accounted() -> None:
     assert "crossmatch@twomass:lasair" in semantic_types
     assert "crossmatch@panstarrs:lasair" in semantic_types
     assert "crossmatch@sdss:lasair" in semantic_types
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "name"),
+    [("sherlock_object", "sherlock_object_lite"),
+     ("sherlock_object", "sherlock_object_full"),
+     ("sherlock_objects", "sherlock_objects_lite"),
+     ("sherlock_objects", "sherlock_objects_full")],
+)
+def test_authoritative_object_sherlock_capture_remains_one_portfolio(endpoint, name):
+    _assert_zero_unaccounted(endpoint, name)
+    payload = _fixture(name)
+    (portfolio,) = _build_all(endpoint, payload)
+    assert set(payload["classifications"]) == {"ZTF20acpwljl"}
+    assert {row["transient_object_id"] for row in payload["crossmatches"]} == {
+        "ZTF20acpwljl"
+    }
+    assert {r.internal_source.payload_key.rsplit("_", 1)[-1]
+            for r in portfolio.records if r.internal_source is not None} >= {
+                "classifications", "crossmatches"
+            }
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "name"),
+    [("sherlock_position", "sherlock_position_lite"),
+     ("sherlock_object", "sherlock_object_lite"),
+     ("sherlock_objects", "sherlock_objects_lite")],
+)
+def test_authoritative_lite_sherlock_photometry_is_accounted(endpoint, name):
+    _assert_zero_unaccounted(endpoint, name)
+    (portfolio,) = _build_all(endpoint, _fixture(name))
+    crossmatch = next(
+        record for record in portfolio.records
+        if record.semantic_type.startswith("crossmatch@")
+        and "photometry.r.mag" in record.fields
+    )
+    assert crossmatch.fields["photometry.r.mag"] == pytest.approx(19.142)
+    assert crossmatch.fields["photometry.r.mag.error"] == pytest.approx(0.002)
+    assert all("{filter}" not in field for field in crossmatch.fields)

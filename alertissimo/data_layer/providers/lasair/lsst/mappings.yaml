@@ -33,7 +33,8 @@ payloads:
     endpoint: sherlock_object
     path: classifications{}
     object_partition:
-      mode: single
+      mode: field
+      field: _key
   sherlock_position_classifications:
     endpoint: sherlock_position
     path: classifications{}
@@ -43,7 +44,8 @@ payloads:
     endpoint: sherlock_object
     path: crossmatches[]
     object_partition:
-      mode: single
+      mode: field
+      field: transient_object_id
   sherlock_position_crossmatches:
     endpoint: sherlock_position
     path: crossmatches[]

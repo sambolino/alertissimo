@@ -145,6 +145,7 @@ endpoints:
       objectId:
         required: true
         type: string
+        bind: target_id
         description: ZTF objectId.
       lite:
         required: false
@@ -165,6 +166,9 @@ endpoints:
       objectIds:
         required: true
         type: string
+        bind: target_id
+        binding:
+          collection: csv
         description: Comma-separated ZTF objectIds.
       lite:
         required: false

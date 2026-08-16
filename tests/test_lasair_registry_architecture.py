@@ -184,22 +184,30 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         "objects#sherlock.classification",
         "sherlock_position_classifications#_value.0",
         "sherlock_objects_classifications#_value.0",
+        "sherlock_object_classifications#_value.0",
     }
     assert set(mappings["classification@sherlock:lasair.best.description"]) == {
         "object#sherlock.description",
         "objects#sherlock.description",
         "sherlock_position_classifications#_value.1",
         "sherlock_objects_classifications#_value.1",
+        "sherlock_object_classifications#_value.1",
     }
     assert payloads["sherlock_objects_classifications"] == {
         "endpoint": "sherlock_objects",
         "path": "classifications{}",
-        "object_partition": {"mode": "single"},
+        "object_partition": {"mode": "field", "field": "_key"},
     }
     assert payloads["sherlock_objects_crossmatches"] == {
         "endpoint": "sherlock_objects",
         "path": "crossmatches[]",
-        "object_partition": {"mode": "single"},
+        "object_partition": {"mode": "field", "field": "transient_object_id"},
+    }
+    assert payloads["sherlock_object_classifications"]["object_partition"] == {
+        "mode": "field", "field": "_key"
+    }
+    assert payloads["sherlock_object_crossmatches"]["object_partition"] == {
+        "mode": "field", "field": "transient_object_id"
     }
     assert not any(
         key.startswith("classification@sherlock:lasair.")

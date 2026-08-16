@@ -50,7 +50,7 @@
       "z_distance_scale": null,
       "z_distance_cat": null,
       "major_axis_arcsec": 0.7,
-      "transient_object_id": "ZTF20acpwljl"
+      "transient_object_id": "3069424811013379278"
     },
     {
       "catalogue_table_name": "2MASS PSC",
@@ -65,7 +65,8 @@
       "separationArcsec": 0.4,
       "rank": 2,
       "J": 13.2,
-      "JErr": 0.02
+      "JErr": 0.02,
+      "transient_object_id": "3069424811013379278"
     }
   ]
 }

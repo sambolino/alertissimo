@@ -116,13 +116,16 @@ endpoints:
   sherlock_object:
     path: /api/sherlock/object/
     method: POST
-    description: Retrieve Sherlock context for one LSST diaObject.
+    description: Retrieve Sherlock context for one or more comma-separated LSST diaObjectIds.
     headers: *id001
     params:
       objectId:
         required: true
         type: string
-        description: LSST diaObjectId.
+        bind: target_id
+        binding:
+          collection: csv
+        description: One or more comma-separated LSST diaObjectIds.
       lite:
         required: false
         type: boolean

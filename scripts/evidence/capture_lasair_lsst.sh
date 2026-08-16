@@ -8,6 +8,7 @@
 #
 # Optional:
 #   LASAIR_LSST_OID   numeric diaObjectId; if unset, discover one
+#   LASAIR_LSST_OID_2 optional distinct numeric diaObjectId for batch Sherlock capture
 #   LASAIR_LSST_BASE  default: https://api.lasair.lsst.ac.uk
 #
 set -euo pipefail
@@ -23,6 +24,7 @@ Required:
 Optional:
   LASAIR_LSST_OID    Numeric Rubin/LSST diaObjectId.
                      If unset, discover one with /api/query/.
+  LASAIR_LSST_OID_2  Optional distinct numeric diaObjectId for a batch Sherlock capture.
   LASAIR_LSST_BASE   default: https://api.lasair.lsst.ac.uk
 
 Captures:
@@ -167,6 +169,7 @@ post()
 ##############################################################################
 
 OID="${LASAIR_LSST_OID:-}"
+OID_2="${LASAIR_LSST_OID_2:-}"
 
 if [[ -z "$OID" ]]; then
     echo "LASAIR_LSST_OID not set; discovering a live diaObjectId."
@@ -225,6 +228,12 @@ if [[ ! "$OID" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+if [[ -n "${LASAIR_LSST_OID_2+x}" ]]; then
+    [[ -n "$OID_2" ]] || { echo "ERROR: LASAIR_LSST_OID_2 must be non-empty when supplied" >&2; exit 1; }
+    [[ "$OID_2" =~ ^[0-9]+$ ]] || { echo "ERROR: second LSST diaObjectId must be numeric; got: $OID_2" >&2; exit 1; }
+    [[ "$OID_2" != "$OID" ]] || { echo "ERROR: LASAIR_LSST_OID_2 must differ from LASAIR_LSST_OID" >&2; exit 1; }
+fi
+
 echo "Using LSST diaObjectId: $OID"
 
 cat > "$OUT/capture_metadata.txt" <<META
@@ -235,6 +244,7 @@ script=$0
 transport=authenticated-rest
 base_url=$BASE
 primary_object_identifier=$OID
+secondary_object_identifier=$OID_2
 git_commit=$GIT_COMMIT
 git_branch=$GIT_BRANCH
 META
@@ -362,6 +372,14 @@ post required sherlock_object_lite /api/sherlock/object/ \
 post required sherlock_object_full /api/sherlock/object/ \
     --arg oid "$OID" \
     '{objectId:$oid, lite:false}'
+
+if [[ -n "$OID_2" ]]; then
+    BATCH_IDS="$OID,$OID_2"
+    post required sherlock_object_batch_lite /api/sherlock/object/ \
+        --arg ids "$BATCH_IDS" '{objectId:$ids, lite:true}'
+    post required sherlock_object_batch_full /api/sherlock/object/ \
+        --arg ids "$BATCH_IDS" '{objectId:$ids, lite:false}'
+fi
 
 post required sherlock_position_lite /api/sherlock/position/ \
     --argjson ra "$RA" \
