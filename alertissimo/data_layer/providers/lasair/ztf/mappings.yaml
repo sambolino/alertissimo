@@ -452,12 +452,21 @@ mappings:
   crossmatch@{producer}:lasair.photometry.{filter}:
   - object#sherlock.MagFilter
   - objects#sherlock.MagFilter
+  - sherlock_position_crossmatches#MagFilter
+  - sherlock_object_crossmatches#MagFilter
+  - sherlock_objects_crossmatches#MagFilter
   crossmatch@{producer}:lasair.photometry.{filter}.mag:
   - object#sherlock.Mag
   - objects#sherlock.Mag
+  - sherlock_position_crossmatches#Mag
+  - sherlock_object_crossmatches#Mag
+  - sherlock_objects_crossmatches#Mag
   crossmatch@{producer}:lasair.photometry.{filter}.mag.error:
   - object#sherlock.MagErr
   - objects#sherlock.MagErr
+  - sherlock_position_crossmatches#MagErr
+  - sherlock_object_crossmatches#MagErr
+  - sherlock_objects_crossmatches#MagErr
 transforms:
   classification@sherlock:lasair.best.score:
     object#sherlock.classificationReliability:
