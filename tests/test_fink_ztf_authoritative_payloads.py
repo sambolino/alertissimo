@@ -15,7 +15,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 
 ROOT = Path(__file__).parent
 FIXTURES = ROOT / "fixtures/fink/ztf"
@@ -43,7 +43,10 @@ def _physical_endpoint(fixture):
 def _build(endpoint, payload=None):
     ids = count()
     execution = ExecutionResult(
-        payload=_payload(endpoint) if payload is None else payload,
+        payload=_payload(endpoint) if payload is None else (
+            [{**row, "i:objectId": row.get("i:objectId", "ZTF-synthetic")} for row in payload]
+            if endpoint == "anomaly" else payload
+        ),
         execution_provenance=InternalExecutionProvenance(
             InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", _physical_endpoint(endpoint)
         ),
@@ -55,6 +58,16 @@ def _build(endpoint, payload=None):
         record_id_factory=lambda: InternalRecordId(f"record:{next(ids)}"),
         validate_semantic_model=True,
     )
+
+
+def _build_all(endpoint):
+    execution = ExecutionResult(
+        payload=_payload(endpoint),
+        execution_provenance=InternalExecutionProvenance(
+            InternalExecutionId(f"execution:fixture:{endpoint}"), "fink", "ztf", endpoint
+        ),
+    )
+    return build_portfolios_from_execution(execution, mappings_path=MAPPINGS, validate_semantic_model=True)
 
 
 def _records(portfolio, semantic_type):
@@ -130,7 +143,7 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
 
 
 def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
-    portfolio = _build("anomaly")
+    portfolio = next(p for p in _build_all("anomaly") if _records(p, "classification@fink") and _records(p, "classification@fink")[0].fields.get("best.class") == "RRLyr")
     assert _records(portfolio, "classification@fink")[0].fields["best.class"] == "RRLyr"
     assert _records(portfolio, "crossmatch@simbad:fink")[0].fields[
         "classification.best.class"
@@ -265,32 +278,35 @@ def test_frozen_service_failures_are_never_scientific_values():
     assert not any(value in observed for record in portfolio.records for value in record.fields.values())
 
 
-def test_statistics_emit_only_first_level_survey_records():
-    portfolio = _build("statistics")
-    assert not _records(portfolio, "detection@ztf:fink")
-    survey = _records(portfolio, "survey@fink")
-    assert len(survey) == 1
-    fields = dict(survey[0].fields)
-    assert fields["exposure_count"] == 460
-    assert fields["field_count"] == 236
-    assert fields["raw_alerts"] == 346644
-    assert fields["science_alerts"] == 246843
-    assert fields["snapshot_key"] == "ztf_20211103"
-    assert fields["filter_counts"] == {"g": 112699, "r": 134144}
-    distribution = fields["class_distribution"]
-    assert distribution["**"] == 17
-    assert distribution["AGN"] == 136
-    assert distribution["Early SN Ia candidate"] == 6
-    assert distribution["OH/IR"] == 0
-    assert distribution["Radio(cm)"] == 0
-    assert "simbad_tot" not in distribution
-    assert "simbad_gal" not in distribution
-    assert all(isinstance(value, int) and not isinstance(value, bool)
-               for value in distribution.values())
-    assert all(isinstance(value, int) and not isinstance(value, bool)
-               for value in fields["filter_counts"].values())
-    assert fields["selection.simbad_match.record_count"] == 76905
-    assert fields["selection.simbad_extragalactic_host.record_count"] == 1449
+def test_statistics_are_mapped_but_not_object_portfolios():
+    document = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
+    assert document["payloads"]["statistics"]["object_partition"] == {"mode": "none"}
+    assert _build_all("statistics") == ()
+    assert any(ref.startswith("statistics#") for refs in document["mappings"].values() for ref in refs)
+
+
+def test_authoritative_multi_object_cardinalities_and_provenance():
+    anomaly = _build_all("anomaly")
+    assert len(anomaly) == 10
+    anomaly_ids = [{r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"} for p in anomaly]
+    assert all(len(ids) == 1 for ids in anomaly_ids) and len({next(iter(ids)) for ids in anomaly_ids}) == 10
+
+    latest = _build_all("latests")
+    raw_counts = Counter(row["i:objectId"] for row in _payload("latests"))
+    assert len(latest) == 7
+    actual = {next(r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"): len(_records(p, "detection@ztf:fink")) for p in latest}
+    assert actual == raw_counts
+    for portfolios in (anomaly, latest):
+        assert len({p.internal_portfolio_id for p in portfolios}) == len(portfolios)
+        assert all(p.executions[0].internal_execution_id.value.endswith(tuple(FILES)) for p in portfolios)
+
+
+def test_authoritative_sso_is_one_solar_system_object():
+    rows = _payload("sso")
+    assert len(rows) == 327 and {row["sso_number"] for row in rows} == {8467}
+    (portfolio,) = _build_all("sso")
+    assert len(_records(portfolio, "detection@ztf:fink")) == 327
+    assert portfolio.executions[0].internal_execution_id == InternalExecutionId("execution:fixture:sso")
 
 
 def test_frozen_scalar_accounting_and_positive_record_counts():

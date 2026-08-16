@@ -39,7 +39,7 @@ payloads:
     path: "[]"
     object_partition:
       mode: field
-      field: r:diaObjectId
+      field: r:ssObjectId
   resolver:
     endpoint: resolver
     path: "[]"
@@ -50,7 +50,7 @@ payloads:
     endpoint: statistics
     path: "[]"
     object_partition:
-      mode: single
+      mode: none
   tags:
     endpoint: tags
     path: "[]"
@@ -937,6 +937,15 @@ mappings:
   - conesearch#r:trail_flag_edge
   - sso#r:trail_flag_edge
 transforms:
+  crossmatch@gaia:fink.identity.object_id:
+    sources#f:xm_gaiadr3_DR3Name: &valid_crossmatch_identity
+      type: value_map
+      map: {"Fail": null, "nan": null}
+      skip_null: true
+    conesearch#f:xm_gaiadr3_DR3Name: *valid_crossmatch_identity
+  crossmatch@tns:fink.identity.object_id:
+    sources#f:xm_tns_fullname: *valid_crossmatch_identity
+    conesearch#f:xm_tns_fullname: *valid_crossmatch_identity
   summary@lsst:fink.time.first_mjd:
     objects#r:firstDiaSourceMjdTai:
       skip_null: true

@@ -19,7 +19,7 @@ from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
 )
-from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution
+from alertissimo.data_layer.runtime.record_builder import build_portfolio_from_execution, build_portfolios_from_execution
 from alertissimo.data_layer.runtime.mapping_schema import validate_mapping_file
 
 ROOT = Path(__file__).parents[1]
@@ -234,6 +234,45 @@ def test_fp_endpoint_emits_twenty_detection_records(tmp_path):
     row, fields = fixture("fp")[0], dict(portfolio.records[0].fields); band = row["r:band"]
     expected = {"identity.object_id": row["r:diaObjectId"], "identity.source_id": row["r:diaForcedSourceId"], "identity.visit_id": row["r:visit"], "identity.detector_id": row["r:detector"], "time.mjd": row["r:midpointMjdTai"], "position.ra": row["r:ra"], "position.dec": row["r:dec"], f"forced_photometry.{band}.psf.flux": row["r:psfFlux"], f"forced_photometry.{band}.psf.flux.error": row["r:psfFluxErr"]}
     assert {key: fields[key] for key in expected} == expected
+
+
+@pytest.mark.parametrize(("endpoint", "count_expected"), (("sources", 16), ("fp", 20)))
+def test_authoritative_detection_payload_cardinality(endpoint, count_expected):
+    rows = fixture(endpoint)
+    assert len(rows) == count_expected
+    assert {row["r:diaObjectId"] for row in rows} == {170587117485817955}
+    execution = ExecutionResult(rows, InternalExecutionProvenance(InternalExecutionId(f"execution:{endpoint}"), "fink", "lsst", endpoint))
+    (portfolio,) = build_portfolios_from_execution(execution, mappings_path=MAPPINGS)
+    detections = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
+    assert len(detections) == count_expected
+    assert {record.fields["identity.object_id"] for record in detections} == {170587117485817955}
+
+
+def test_synthetic_sso_partitions_by_physical_solar_system_identity():
+    def build(rows):
+        execution = ExecutionResult(rows, InternalExecutionProvenance(InternalExecutionId("execution:sso"), "fink", "lsst", "sso"))
+        return build_portfolios_from_execution(execution, mappings_path=MAPPINGS)
+
+    one = build([
+        {"r:ssObjectId": 42, "r:diaObjectId": 1001, "r:diaSourceId": 1},
+        {"r:ssObjectId": 42, "r:diaObjectId": 1002, "r:diaSourceId": 2},
+    ])
+    assert len(one) == 1
+    assert len([r for r in one[0].records if r.semantic_type == "detection@lsst:fink"]) == 2
+    assert len(build([{"r:ssObjectId": 42, "r:diaObjectId": 1}, {"r:ssObjectId": 43, "r:diaObjectId": 1}])) == 2
+
+
+def test_crossmatch_identity_service_sentinels_are_suppressed():
+    execution = ExecutionResult(fixture("sources"), InternalExecutionProvenance(InternalExecutionId("execution:sources"), "fink", "lsst", "sources"))
+    (portfolio,) = build_portfolios_from_execution(execution, mappings_path=MAPPINGS)
+    external_ids = {
+        record.fields["identity.object_id"]
+        for record in portfolio.records
+        if record.semantic_type in {"crossmatch@gaia:fink", "crossmatch@tns:fink"}
+        and "identity.object_id" in record.fields
+    }
+    assert not {"Fail", "nan"} & external_ids
+    assert "AT 2026qhm" in external_ids
 
 
 def test_rubin_native_destinations_converge_with_alerce_and_antares():

@@ -235,6 +235,10 @@ def build_portfolios_from_execution(
         # Unmapped payload definitions are deliberately harmless.
         if partition is None:
             continue
+        # A mapped non-object payload remains part of semantic registry
+        # validation, but cannot create an astronomical-object Portfolio.
+        if partition["mode"] == "none":
+            continue
         items = resolve_payload_items(
             payload,
             payload_key=payload_key,

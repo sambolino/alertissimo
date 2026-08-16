@@ -27,6 +27,15 @@ def test_empty_response_produces_no_portfolio(tmp_path):
     assert build(tmp_path,[]) == ()
 
 
+def test_mapped_non_object_response_produces_no_portfolio(tmp_path):
+    payloads = {"rows": {"endpoint": "search", "path": "[]", "object_partition": {"mode": "none"}}}
+    path = mapping(tmp_path, payloads)
+    result = build_portfolios_from_execution(execution([{"oid": "A", "ra": 1}]), mappings_path=path)
+    assert result == ()
+    with pytest.raises(PortfolioBuildError, match="found 0"):
+        build_portfolio_from_execution(execution([{"oid": "A", "ra": 1}]), mappings_path=path)
+
+
 def test_repeated_rows_are_grouped_by_explicit_object_identity(tmp_path):
     portfolios=build(tmp_path,[{"oid":"A","ra":1},{"oid":"A","ra":2},{"oid":"B","ra":3},{"oid":"B","ra":4},{"oid":"B","ra":5}])
     assert [len(p.records) for p in portfolios] == [2,3]

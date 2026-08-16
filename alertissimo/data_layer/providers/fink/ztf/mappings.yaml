@@ -35,12 +35,12 @@ payloads:
     path: '[]'
     object_partition:
       mode: field
-      field: i:objectId
+      field: sso_number
   statistics:
     endpoint: statistics
     path: '[]'
     object_partition:
-      mode: single
+      mode: none
   resolver:
     endpoint: resolver
     path: '[]'

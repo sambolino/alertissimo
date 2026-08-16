@@ -194,10 +194,10 @@ def validate_mapping_file(path: str | Path) -> None:
             partition = _mapping(definition["object_partition"], f"{path}: payload {key!r} object_partition")
             _allowed_keys(partition, OBJECT_PARTITION_KEYS, f"{path}: payload {key!r} object_partition")
             mode = partition.get("mode")
-            if mode not in {"single", "field", "root_field"}:
-                raise MappingSchemaError(f"{path}: payload {key!r} object_partition mode must be one of ['field', 'root_field', 'single']")
-            if mode == "single" and "field" in partition:
-                raise MappingSchemaError(f"{path}: payload {key!r} single object_partition must not define field")
+            if mode not in {"none", "single", "field", "root_field"}:
+                raise MappingSchemaError(f"{path}: payload {key!r} object_partition mode must be one of ['field', 'none', 'root_field', 'single']")
+            if mode in {"none", "single"} and "field" in partition:
+                raise MappingSchemaError(f"{path}: payload {key!r} {mode} object_partition must not define field")
             if mode in {"field", "root_field"}:
                 if "field" not in partition:
                     raise MappingSchemaError(f"{path}: payload {key!r} {mode} object_partition requires field")
