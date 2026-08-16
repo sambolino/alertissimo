@@ -24,63 +24,78 @@ unmapped:
       redshift.value; the current ontology has no multi-estimate redshift structure.
 - sherlock_position_crossmatches#photoZ: *id002
 - sherlock_objects_crossmatches#photoZ: *id002
+- sherlock_object_crossmatches#photoZ: *id002
 - object#sherlock.photoZErr: &id003
     reason: structural_multiple_redshift_estimates
     candidate_meaning: Uncertainty of Sherlock photoZ. It cannot safely populate redshift.error when redshift.value may come
       from the distinct z field.
 - sherlock_position_crossmatches#photoZErr: *id003
 - sherlock_objects_crossmatches#photoZErr: *id003
+- sherlock_object_crossmatches#photoZErr: *id003
 - sherlock_position_classifications#_key: &id004
     reason: duplicate_execution_payload_context
     candidate_meaning: Native transient identifier used as the key of Sherlock's classification dictionary; portfolio context
       already identifies the transient.
 - sherlock_objects_classifications#_key: *id004
+- sherlock_object_classifications#_key: *id004
 - sherlock_position_crossmatches#catalogue_table_id: &id005
     reason: provider_native_implementation_identifier
     candidate_meaning: Internal Sherlock catalogue-table database identifier; producer name supplies the scientific provenance.
 - sherlock_objects_crossmatches#catalogue_table_id: *id005
+- sherlock_object_crossmatches#catalogue_table_id: *id005
 - sherlock_position_crossmatches#catalogue_view_id: &id006
     reason: provider_native_implementation_identifier
     candidate_meaning: Internal Sherlock catalogue-view database identifier.
 - sherlock_objects_crossmatches#catalogue_view_id: *id006
+- sherlock_object_crossmatches#catalogue_view_id: *id006
 - sherlock_position_crossmatches#catalogue_view_name: &id007
     reason: provider_native_implementation_metadata
     candidate_meaning: Sherlock implementation/search-view metadata, distinct from the scientific classification method in
       search_name.
 - sherlock_objects_crossmatches#catalogue_view_name: *id007
+- sherlock_object_crossmatches#catalogue_view_name: *id007
 - sherlock_position_crossmatches#major_axis_arcsec: &id008
     reason: unsupported_semantic_concept
     candidate_meaning: Catalogue-source apparent major axis; no same-meaning crossmatch morphology path exists.
 - sherlock_objects_crossmatches#major_axis_arcsec: *id008
+- sherlock_object_crossmatches#major_axis_arcsec: *id008
 - sherlock_position_crossmatches#transient_object_id: &id009
     reason: duplicate_execution_payload_context
     candidate_meaning: Sherlock's native transient identifier; it is not the identity of the matched catalogue object.
 - sherlock_objects_crossmatches#transient_object_id: *id009
+- sherlock_object_crossmatches#transient_object_id: *id009
 - sherlock_position_crossmatches#original_search_radius_arcsec: &id010
     reason: unsupported_semantic_concept
     candidate_meaning: Sherlock search configuration, not a measured crossmatch separation.
 - sherlock_objects_crossmatches#original_search_radius_arcsec: *id010
+- sherlock_object_crossmatches#original_search_radius_arcsec: *id010
 - sherlock_position_crossmatches#catalogue_object_subtype: &id011
     reason: unsupported_semantic_concept
     candidate_meaning: Provider-native catalogue subtype with no same-meaning crossmatch path.
 - sherlock_objects_crossmatches#catalogue_object_subtype: *id011
+- sherlock_object_crossmatches#catalogue_object_subtype: *id011
 - sherlock_position_crossmatches#rankScore: &id012
     reason: unsupported_semantic_concept
     candidate_meaning: Sherlock ranking score, distinct from the ordinal rank field.
 - sherlock_objects_crossmatches#rankScore: *id012
+- sherlock_object_crossmatches#rankScore: *id012
 - sherlock_position_crossmatches#merged_rank: &id013
     reason: distinct_provider_rank_semantics
     candidate_meaning: Sherlock merged-group rank is distinct from the row's ordinal rank and must not be used as a fallback
       for crossmatch.rank without a documented equivalence.
 - sherlock_objects_crossmatches#merged_rank: *id013
+- sherlock_object_crossmatches#merged_rank: *id013
 - sherlock_position_crossmatches#scale: &id014
     reason: ambiguous_provider_field
     candidate_meaning: Legacy Sherlock distance metadata whose precise semantics are not established by the observed payload.
 - sherlock_position_crossmatches#distance: *id014
 - sherlock_position_crossmatches#distance_modulus: *id014
 - sherlock_objects_crossmatches#scale: *id014
+- sherlock_object_crossmatches#scale: *id014
 - sherlock_objects_crossmatches#distance: *id014
+- sherlock_object_crossmatches#distance: *id014
 - sherlock_objects_crossmatches#distance_modulus: *id014
+- sherlock_object_crossmatches#distance_modulus: *id014
 - objects_candidates#magpsf:
     reason: conditional_detection_presence_required
     candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.

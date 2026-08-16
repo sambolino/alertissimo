@@ -66,7 +66,8 @@
       "separationArcsec": 0.4,
       "rank": 2,
       "J": 13.2,
-      "JErr": 0.02
+      "JErr": 0.02,
+      "transient_object_id": "ZTF20acpwljl"
     }
   ]
 }

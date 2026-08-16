@@ -9,6 +9,7 @@
 #
 # Optional:
 #   LASAIR_ZTF_OID   default: ZTF20acpwljl
+#   LASAIR_ZTF_OID_2 optional distinct second ZTF object for batch Sherlock capture
 #   LASAIR_ZTF_BASE  default: https://lasair-ztf.lsst.ac.uk
 #
 # Usage:
@@ -26,6 +27,7 @@ Required environment:
 
 Optional environment:
   LASAIR_ZTF_OID     Object to capture (default: ZTF20acpwljl)
+  LASAIR_ZTF_OID_2   Optional distinct second object for a batch Sherlock capture.
   LASAIR_ZTF_BASE    API base URL (default: https://lasair-ztf.lsst.ac.uk)
 
 The capture includes:
@@ -68,7 +70,15 @@ if [[ "$LASAIR_TOKEN" != "${LASAIR_TOKEN#"${LASAIR_TOKEN%%[![:space:]]*}"}" ]] |
 fi
 
 OID="${LASAIR_ZTF_OID:-ZTF20acpwljl}"
+OID_2="${LASAIR_ZTF_OID_2:-}"
 BASE="${LASAIR_ZTF_BASE:-https://lasair-ztf.lsst.ac.uk}"
+
+[[ "$OID" =~ ^ZTF[0-9]{2}[a-z]+$ ]] || { echo "ERROR: invalid ZTF objectId: $OID" >&2; exit 1; }
+if [[ -n "${LASAIR_ZTF_OID_2+x}" ]]; then
+    [[ -n "$OID_2" ]] || { echo "ERROR: LASAIR_ZTF_OID_2 must be non-empty when supplied" >&2; exit 1; }
+    [[ "$OID_2" =~ ^ZTF[0-9]{2}[a-z]+$ ]] || { echo "ERROR: invalid second ZTF objectId: $OID_2" >&2; exit 1; }
+    [[ "$OID_2" != "$OID" ]] || { echo "ERROR: LASAIR_ZTF_OID_2 must differ from LASAIR_ZTF_OID" >&2; exit 1; }
+fi
 
 STAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 OUT="${1:-/tmp/lasair-ztf-capture-${STAMP}}"
@@ -97,6 +107,7 @@ script=$0
 transport=authenticated-rest
 base_url=$BASE
 primary_object_identifier=$OID
+secondary_object_identifier=$OID_2
 git_commit=$GIT_COMMIT
 git_branch=$GIT_BRANCH
 META
@@ -342,6 +353,14 @@ post optional sherlock_objects_lite /api/sherlock/objects/ \
 post optional sherlock_objects_full /api/sherlock/objects/ \
     --arg oid "$OID" \
     '{objectIds:$oid, lite:false}'
+
+if [[ -n "$OID_2" ]]; then
+    BATCH_IDS="$OID,$OID_2"
+    post required sherlock_objects_batch_lite /api/sherlock/objects/ \
+        --arg ids "$BATCH_IDS" '{objectIds:$ids, lite:true}'
+    post required sherlock_objects_batch_full /api/sherlock/objects/ \
+        --arg ids "$BATCH_IDS" '{objectIds:$ids, lite:false}'
+fi
 
 ##############################################################################
 # INVENTORY / FIELD SURFACE

@@ -332,6 +332,7 @@ def test_sherlock_objects_crossmatch_object_response_shape():
                     "catalogue_table_name": "2MASS PSC",
                     "catalogue_table_id": 2,
                     "catalogue_object_id": "abc",
+                    "transient_object_id": "synthetic-object",
                 }
             ]
         },
@@ -515,6 +516,7 @@ def test_sherlock_objects_crossmatch_maps_distance_and_projected_separation():
         {"crossmatches": [{
             "catalogue_table_name": "Gaia DR3",
             "catalogue_object_id": 3902146494731655680,
+            "transient_object_id": "synthetic-object",
             "z_distance": "123.4", "z_distance_modulus": "35.1",
             "z_distance_scale": "2.3", "physical_separation_kpc": "0.5",
         }]},
@@ -532,6 +534,7 @@ def test_sherlock_objects_crossmatch_maps_core_science_fields():
     portfolio = _build_endpoint_payload(
         {"crossmatches": [{"catalogue_table_name": "SDSS DR12 PhotoObjAll Table",
                             "catalogue_table_id": 4, "catalogue_object_id": "sdss-object",
+                            "transient_object_id": "synthetic-object",
                             "raDeg": "1.2", "decDeg": "3.4", "association_type": "AGN",
                             "classificationReliability": "0.9"}]},
         "sherlock_objects",
