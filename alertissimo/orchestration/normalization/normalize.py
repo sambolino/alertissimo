@@ -79,6 +79,31 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 f"step_index {step_run.step_index} is {step_run.state.value}; "
                 "workflow normalization requires succeeded state"
             )
+        if len(step_run.endpoint_plans) != len(step_result.executions):
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} endpoint plan count does not "
+                "match execution result count "
+                f"({len(step_run.endpoint_plans)} != "
+                f"{len(step_result.executions)})"
+            )
+        for execution_position, (plan, execution) in enumerate(
+            zip(step_run.endpoint_plans, step_result.executions)
+        ):
+            provenance = execution.execution_provenance
+            planned_identity = (plan.broker, plan.origin, plan.endpoint)
+            actual_identity = (
+                provenance.broker,
+                provenance.origin,
+                provenance.endpoint,
+            )
+            if planned_identity != actual_identity:
+                raise WorkflowNormalizationAlignmentError(
+                    f"step_index {step_run.step_index} execution position "
+                    f"{execution_position} endpoint identity does not align: "
+                    f"planned broker={plan.broker}, origin={plan.origin}, "
+                    f"endpoint={plan.endpoint}; actual broker={provenance.broker}, "
+                    f"origin={provenance.origin}, endpoint={provenance.endpoint}"
+                )
         actual_ids = tuple(
             execution.internal_execution_id.value
             for execution in step_result.executions
