@@ -206,13 +206,11 @@ def test_sherlock_objects_classification_dictionary():
     )
     portfolio = build_portfolio_from_execution(
         ExecutionResult(
-            payload=[
-                {
-                    "classifications": {
-                        "170028526577123339": ["AGN", description]
-                    }
+            payload={
+                "classifications": {
+                    "170028526577123339": ["AGN", description]
                 }
-            ],
+            },
             execution_provenance=provenance,
         ),
         validate_semantic_model=True,
@@ -304,19 +302,17 @@ def test_sherlock_crossmatch_observed_producers_normalize():
     assert portfolio.edges == ()
 
 
-def test_sherlock_objects_crossmatch_list_shape():
+def test_sherlock_objects_crossmatch_object_response_shape():
     portfolio = _build_endpoint_payload(
-        [
-            {
-                "crossmatches": [
-                    {
-                        "catalogue_table_name": "2MASS PSC",
-                        "catalogue_table_id": 2,
-                        "catalogue_object_id": "abc",
-                    }
-                ]
-            }
-        ],
+        {
+            "crossmatches": [
+                {
+                    "catalogue_table_name": "2MASS PSC",
+                    "catalogue_table_id": 2,
+                    "catalogue_object_id": "abc",
+                }
+            ]
+        },
         "sherlock_objects",
     )
 
@@ -494,12 +490,12 @@ def test_sherlock_crossmatch_maps_distance_estimates_and_skips_null_numbers():
 
 def test_sherlock_objects_crossmatch_maps_distance_and_projected_separation():
     portfolio = _build_endpoint_payload(
-        [{"crossmatches": [{
+        {"crossmatches": [{
             "catalogue_table_name": "Gaia DR3",
             "catalogue_object_id": 3902146494731655680,
             "z_distance": "123.4", "z_distance_modulus": "35.1",
             "z_distance_scale": "2.3", "physical_separation_kpc": "0.5",
-        }]}],
+        }]},
         "sherlock_objects",
     )
     record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@gaia:lasair")
@@ -512,10 +508,10 @@ def test_sherlock_objects_crossmatch_maps_distance_and_projected_separation():
 
 def test_sherlock_objects_crossmatch_maps_core_science_fields():
     portfolio = _build_endpoint_payload(
-        [{"crossmatches": [{"catalogue_table_name": "SDSS DR12 PhotoObjAll Table",
-                             "catalogue_table_id": 4, "catalogue_object_id": "sdss-object",
-                             "raDeg": "1.2", "decDeg": "3.4", "association_type": "AGN",
-                             "classificationReliability": "0.9"}]}],
+        {"crossmatches": [{"catalogue_table_name": "SDSS DR12 PhotoObjAll Table",
+                            "catalogue_table_id": 4, "catalogue_object_id": "sdss-object",
+                            "raDeg": "1.2", "decDeg": "3.4", "association_type": "AGN",
+                            "classificationReliability": "0.9"}]},
         "sherlock_objects",
     )
     record = next(r for r in portfolio.records if r.semantic_type == "crossmatch@sdss:lasair")
