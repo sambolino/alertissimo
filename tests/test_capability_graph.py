@@ -22,6 +22,33 @@ def test_graph_builds_for_all_normalized_registries():
         for origin in ("lsst", "ztf")
     }
 
+def test_fink_lsst_skip_null_only_directives_are_not_transform_capabilities():
+    graph = build_capability_graph()
+
+    # Fink/LSST must still participate normally in the capability graph.
+    assert graph.endpoints_for("fink", "lsst")
+
+    # These mapping directives intentionally contain only skip_null=True.
+    # They affect RecordBuilder behavior but are not value transforms and
+    # therefore must not become TransformCapability entries.
+    skip_null_only_refs = {
+        (
+            "summary@lsst:fink.time.first_mjd",
+            "objects#r:firstDiaSourceMjdTai",
+        ),
+        (
+            "summary@lsst:fink.time.first_mjd",
+            "conesearch#r:firstDiaSourceMjdTai",
+        ),
+    }
+
+    graph_transforms = {
+        (item.semantic_path, item.raw_ref)
+        for item in graph.transform_capabilities
+        if item.broker == "fink" and item.origin == "lsst"
+    }
+
+    assert skip_null_only_refs.isdisjoint(graph_transforms)
 
 def test_lasair_ztf_endpoint_capabilities_and_projection():
     graph = build_capability_graph()
