@@ -1,0 +1,16 @@
+[
+  {
+    "objectId": "ZTF18abbuksn",
+    "candidates": [
+      {
+        "candid": 1,
+        "jd": 2459001.5,
+        "fid": 1,
+        "ra": 10.1,
+        "dec": -2.1,
+        "magpsf": 19.1,
+        "sigmapsf": 0.1
+      }
+    ]
+  }
+]

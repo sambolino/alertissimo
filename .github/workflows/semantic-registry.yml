@@ -33,6 +33,8 @@ on:
       - 'scripts/build_ui_fixtures.py'
       - 'scripts/evidence/capture_lasair_ztf.sh'
       - 'scripts/evidence/capture_lasair_lsst.sh'
+      - 'scripts/smoke/**'
+      - 'tests/test_smoke_scenarios.py'
       - 'tests/test_antares_ztf_authoritative_payloads.py'
       - 'tests/test_fink_ztf_authoritative_payloads.py'
       - 'tests/test_fink_lsst_authoritative_payloads.py'
@@ -85,6 +87,7 @@ jobs:
             tests/test_lasair_ztf_authoritative_payloads.py \
             tests/test_evidence_capture_scripts.py \
             tests/test_payload_mapping_coverage.py \
-            tests/test_ui_fixtures.py
+            tests/test_ui_fixtures.py \
+            tests/test_smoke_scenarios.py
       - name: Validate every provider mapping
         run: PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all

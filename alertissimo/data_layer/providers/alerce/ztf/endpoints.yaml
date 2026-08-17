@@ -377,6 +377,7 @@ endpoints:
       oid:
         type: string
         required: true
+        bind: target_id
         description: Physical oid parameter accepted by query_forced_photometry.
       format:
         type: string
@@ -440,6 +441,7 @@ endpoints:
       oid:
         type: string
         required: true
+        bind: target_id
         description: Physical oid parameter accepted by query_lightcurve.
       format:
         type: string
