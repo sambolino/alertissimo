@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from alertissimo.data_layer.execution import (
     EndpointRegistry,
     EndpointSpec,
+    MissingEndpointCredentialError,
     RegistryEndpointExecutor,
     RestTransport,
     TransportResult,
@@ -63,12 +66,123 @@ def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
     assert result.raw_size_bytes == len(raw)
 
 
+def _capture_request(monkeypatch, raw=b"{}"):
+    captured = {}
+
+    class Headers:
+        @staticmethod
+        def get_content_type():
+            return "application/json"
+
+    class Response:
+        status = 200
+        headers = Headers()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return raw
+
+    def fake_urlopen(request):
+        captured["request"] = request
+        return Response()
+
+    monkeypatch.setattr(
+        "alertissimo.data_layer.execution.transports.urlopen", fake_urlopen
+    )
+    return captured
+
+
+def test_lasair_form_post_preserves_auth_and_redacts_provenance(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    monkeypatch.setenv("LASAIR_ZTF_TOKEN", "transport-secret")
+
+    result = RegistryEndpointExecutor(EndpointRegistry(REGISTRY)).execute(
+        "lasair", "ztf", "object", {"objectId": "ZTF18abbuksn"}
+    )
+
+    request = captured["request"]
+    assert request.data == b"objectId=ZTF18abbuksn&lasair_added=true"
+    assert request.get_header("Content-type") == "application/x-www-form-urlencoded"
+    assert request.get_header("Authorization") == "Token transport-secret"
+    assert result.execution_provenance.sanitized_headers["Authorization"] == "<redacted>"
+    assert "transport-secret" not in repr(result)
+
+
+def test_json_remains_default_for_rest_post(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        method="POST",
+        url="https://example.test/object",
+    )
+
+    RestTransport().execute(spec, {"active": True})
+
+    request = captured["request"]
+    assert request.data == b'{"active": true}'
+    assert request.get_header("Content-type") == "application/json"
+
+
+def test_explicit_content_type_header_takes_precedence(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        request_encoding="form",
+        method="POST",
+        url="https://example.test/object",
+    )
+
+    RestTransport().execute(
+        spec, {"active": False}, headers={"content-type": "text/plain"}
+    )
+
+    assert captured["request"].get_header("Content-type") == "text/plain"
+
+
+def test_unsupported_request_encoding_fails_before_network(monkeypatch):
+    called = False
+
+    def fake_urlopen(request):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(
+        "alertissimo.data_layer.execution.transports.urlopen", fake_urlopen
+    )
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        method="POST",
+        url="https://example.test/object",
+    )
+    object.__setattr__(spec, "request_encoding", "xml")
+
+    with pytest.raises(ValueError, match="unsupported REST request encoding: xml"):
+        RestTransport().execute(spec, {})
+
+    assert called is False
+
+
 def test_registry_resolves_lasair_rest_endpoint():
     spec = EndpointRegistry(REGISTRY).resolve("lasair", "ztf", "object")
 
     assert spec.transport_kind == "rest"
     assert spec.method == "POST"
     assert spec.url == "https://lasair-ztf.lsst.ac.uk/api/object/"
+    assert spec.request_encoding == "form"
 
 
 def test_registry_resolves_antares_python_endpoint():
@@ -95,8 +209,9 @@ class FixtureTransport:
     def __init__(self, payload):
         self.payload = payload
 
-    def execute(self, spec, params):
+    def execute(self, spec, params, headers=None):
         assert params["lasair_added"] is True
+        assert headers is not None
         return TransportResult(
             self.payload,
             method="POST",
@@ -130,6 +245,27 @@ endpoints:
     }
 
 
+def test_registry_endpoint_transport_overrides_default_request_encoding(tmp_path):
+    registry = tmp_path / "example" / "ztf"
+    registry.mkdir(parents=True)
+    (registry / "endpoints.yaml").write_text(
+        """broker: example
+origin: ztf
+baseurl: https://example.test
+transport_defaults: {kind: rest, request_encoding: json}
+endpoints:
+  object:
+    path: /object
+    method: POST
+    transport: {request_encoding: form}
+"""
+    )
+
+    spec = EndpointRegistry(tmp_path).resolve("example", "ztf", "object")
+
+    assert spec.request_encoding == "form"
+
+
 def test_executor_preserves_payload_and_full_provenance():
     payload = {"objectId": "ZTF25aazqavg"}
     executor = RegistryEndpointExecutor(
@@ -137,7 +273,10 @@ def test_executor_preserves_payload_and_full_provenance():
         transports={"rest": FixtureTransport(payload)},
         execution_id_factory=lambda: InternalExecutionId("exec:fixed"),
     )
-    result = executor.execute("lasair", "ztf", "object", {"objectId": "ZTF25aazqavg"})
+    result = executor.execute(
+        "lasair", "ztf", "object", {"objectId": "ZTF25aazqavg"},
+        headers={"Authorization": "Token secret-value"},
+    )
 
     assert result.payload is payload
     assert result.internal_execution_id == InternalExecutionId("exec:fixed")
@@ -156,3 +295,78 @@ def test_executor_preserves_payload_and_full_provenance():
     assert result.execution_provenance.sanitized_headers["Authorization"] == "<redacted>"
     assert "secret-value" not in repr(result.execution_provenance)
     assert "secret-value" not in repr(result)
+
+
+class CapturingTransport:
+    name = "capture"
+
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, spec, params, headers=None):
+        self.calls.append((spec, params, headers))
+        return TransportResult(payload={}, sanitized_headers=headers or {})
+
+
+@pytest.mark.parametrize(
+    ("origin", "variable"),
+    (("ztf", "LASAIR_ZTF_TOKEN"), ("lsst", "LASAIR_LSST_TOKEN")),
+)
+def test_executor_resolves_lasair_raw_token_from_origin_environment(
+    monkeypatch, origin, variable
+):
+    monkeypatch.delenv("LASAIR_ZTF_TOKEN", raising=False)
+    monkeypatch.delenv("LASAIR_LSST_TOKEN", raising=False)
+    monkeypatch.setenv(variable, "raw-secret")
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    result = executor.execute("lasair", origin, "object", {"objectId": "ID1"})
+
+    assert transport.calls[0][2] == {"Authorization": "Token raw-secret"}
+    assert result.execution_provenance.sanitized_headers == {
+        "Authorization": "<redacted>"
+    }
+    assert "raw-secret" not in repr(result)
+
+
+def test_explicit_header_overrides_environment(monkeypatch):
+    monkeypatch.setenv("LASAIR_ZTF_TOKEN", "environment-secret")
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    executor.execute(
+        "lasair", "ztf", "object", {"objectId": "ID1"},
+        headers={"Authorization": "Token explicit-secret"},
+    )
+
+    assert transport.calls[0][2] == {"Authorization": "Token explicit-secret"}
+
+
+def test_missing_required_credential_fails_before_transport(monkeypatch):
+    monkeypatch.delenv("LASAIR_ZTF_TOKEN", raising=False)
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    with pytest.raises(MissingEndpointCredentialError, match="LASAIR_ZTF_TOKEN") as error:
+        executor.execute("lasair", "ztf", "object", {"objectId": "ID1"})
+
+    assert transport.calls == []
+    assert "Token " not in str(error.value)
+
+
+def test_public_endpoint_does_not_resolve_headers():
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    executor.execute("fink", "ztf", "objects", {"objectId": "ZTF1"})
+
+    assert transport.calls[0][2] is None

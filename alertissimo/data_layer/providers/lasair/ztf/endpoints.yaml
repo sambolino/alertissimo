@@ -1,6 +1,9 @@
 broker: lasair
 origin: ztf
 baseurl: https://lasair-ztf.lsst.ac.uk
+transport_defaults:
+  kind: rest
+  request_encoding: form
 
 endpoints:
   object:
@@ -11,6 +14,9 @@ endpoints:
       Authorization:
         required: true
         type: string
+        environment_variable: LASAIR_ZTF_TOKEN
+        prefix: 'Token '
+        environment_value: raw
         description: Lasair API token, formatted as 'Token <token>'.
     params:
       objectId:

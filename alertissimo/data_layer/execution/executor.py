@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
 from time import perf_counter
 from typing import Any, Callable, Mapping
 
@@ -12,6 +13,10 @@ from .ids import new_internal_execution_id
 from .models import EndpointSpec, ExecutionResult, TransportResult
 from .registry import EndpointRegistry
 from .transports import PythonClientTransport, RestTransport
+
+
+class MissingEndpointCredentialError(RuntimeError):
+    """A required physical endpoint credential could not be resolved."""
 
 
 class RegistryEndpointExecutor:
@@ -47,6 +52,35 @@ class RegistryEndpointExecutor:
         validated.update(spec.fixed_params)
         return validated
 
+    @staticmethod
+    def _resolved_headers(
+        spec: EndpointSpec, supplied: Mapping[str, str] | None
+    ) -> dict[str, str] | None:
+        """Resolve physical header contracts, with caller values taking priority."""
+        resolved = dict(supplied or {})
+        for name, contract in spec.headers.items():
+            contract = contract or {}
+            if name in resolved:
+                continue
+            environment_variable = contract.get("environment_variable")
+            if environment_variable:
+                value = os.environ.get(environment_variable)
+                if value:
+                    # Only raw environment values are supported. Formatting remains
+                    # declarative in the endpoint contract.
+                    if contract.get("environment_value") != "raw":
+                        raise ValueError(
+                            f"unsupported environment value format for endpoint header: {name}"
+                        )
+                    resolved[name] = f"{contract.get('prefix', '')}{value}"
+                    continue
+            if contract.get("required") is True:
+                raise MissingEndpointCredentialError(
+                    f"missing required credential for {spec.broker}/{spec.origin}/"
+                    f"{spec.endpoint} header {name}; set {environment_variable or 'the header explicitly'}"
+                )
+        return resolved or None
+
     def execute(
         self,
         broker: str,
@@ -57,13 +91,14 @@ class RegistryEndpointExecutor:
     ) -> ExecutionResult:
         spec = self.registry.resolve(broker, origin, endpoint)
         validated = self._validated_params(spec, params or {})
+        resolved_headers = self._resolved_headers(spec, headers)
         execution_id = self.execution_id_factory()
         started = datetime.now(timezone.utc)
         timer = perf_counter()
         transport = self.transports[spec.transport_kind]
         transport_result = (
-            transport.execute(spec, validated, headers)
-            if headers is not None
+            transport.execute(spec, validated, resolved_headers)
+            if resolved_headers is not None
             else transport.execute(spec, validated)
         )
         if not isinstance(transport_result, TransportResult):
@@ -84,8 +119,16 @@ class RegistryEndpointExecutor:
             method=transport_result.method or spec.method,
             url=transport_result.url or spec.url,
             sanitized_headers=(
-                dict(transport_result.sanitized_headers)
+                {
+                    **dict(transport_result.sanitized_headers or {}),
+                    **{
+                        name: "<redacted>"
+                        for name in spec.headers
+                        if resolved_headers is not None and name in resolved_headers
+                    },
+                }
                 if transport_result.sanitized_headers is not None
+                or resolved_headers is not None
                 else None
             ),
             response_status_code=transport_result.status_code,

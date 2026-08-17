@@ -1,6 +1,9 @@
 broker: lasair
 origin: lsst
 baseurl: https://api.lasair.lsst.ac.uk
+transport_defaults:
+  kind: rest
+  request_encoding: form
 endpoints:
   object:
     path: /api/object/
@@ -10,6 +13,9 @@ endpoints:
       Authorization:
         required: true
         type: string
+        environment_variable: LASAIR_LSST_TOKEN
+        prefix: 'Token '
+        environment_value: raw
         description: Lasair API token, formatted as 'Token <token>'.
     params:
       objectId:

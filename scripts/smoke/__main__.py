@@ -2,6 +2,8 @@
 
 import argparse
 
+from dotenv import load_dotenv
+
 from .reporting import render_human, render_json
 from .scenarios import SCENARIOS, run_scenario
 
@@ -44,6 +46,9 @@ def main(argv=None) -> int:
         )
     if args.scenario == "partial-failure" and args.live:
         parser().error("partial-failure is fixture-only and cannot be used with --live")
+    if args.live:
+        # python-dotenv preserves credentials already exported by the caller.
+        load_dotenv(override=False)
     result = run_scenario(
         args.scenario,
         live=args.live,
