@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from alertissimo.orchestration.ir import TargetSelector
+
 import json
 from pathlib import Path
 
@@ -302,10 +304,10 @@ def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
             )
 
     workflow = WorkflowIR(steps=[GetLightcurveStep(
-        target_ids=list(expected_ids),
+        target=TargetSelector(ids=list(expected_ids), kind="object"),
         sources=[Source(broker="fink", origin="ztf")],
     )])
-    assert len(workflow.steps) == 1 and workflow.steps[0].target_ids == list(expected_ids)
+    assert len(workflow.steps) == 1 and workflow.steps[0].target.ids == list(expected_ids)
     run = plan_workflow(workflow, build_capability_graph())
     assert [(plan.broker, plan.origin, plan.endpoint) for plan in run.steps[0].endpoint_plans] == [
         ("fink", "ztf", "objects")
@@ -385,7 +387,7 @@ def test_synthetic_lasair_sherlock_aggregate_keeps_two_objects_separate(
     }
     plan = EndpointPlan(broker="lasair", origin=origin, endpoint=endpoint)
     call = bind_endpoint(
-        GetCrossmatchStep(target_ids=["A", "B"]), plan, EndpointRegistry()
+        GetCrossmatchStep(target=TargetSelector(ids=["A", "B"], kind="object")), plan, EndpointRegistry()
     )
     assert call.params == {physical_name: "A,B"}  # one bound physical call
 

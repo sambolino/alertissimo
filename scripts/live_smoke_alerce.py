@@ -8,7 +8,12 @@ from alertissimo.data_layer.execution import (
 )
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.orchestration.binding import bind_workflow_run
-from alertissimo.orchestration.ir import GetLightcurveStep, Source, WorkflowIR
+from alertissimo.orchestration.ir import (
+    GetLightcurveStep,
+    Source,
+    TargetSelector,
+    WorkflowIR,
+)
 from alertissimo.orchestration.normalization import normalize_workflow_execution
 from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import execute_workflow_run
@@ -22,7 +27,7 @@ def main():
     workflow = WorkflowIR(
         steps=[
             GetLightcurveStep(
-                target_id=TARGET,
+                target=TargetSelector(ids=[TARGET], kind="object"),
                 sources=[
                     Source(
                         broker="alerce",

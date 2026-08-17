@@ -1,17 +1,16 @@
-Alertissimo DSL verbs 1.0
+# Alertissimo DSL verbs
 
-| IR Class              | DSL Verb     | DSL Syntax Example                                                       |
-| --------------------- | ------------ | ------------------------------------------------------------------------ |
-| `FilterCondition`     | `filter`     | `filter attribute=magpsf op="<" value=19.5 source=fink`                  |
-| `FindObject`          | `find`       | `find object_id=ZTF18abc sources=[fink, lasair]`                         |
-| `ConfirmationRule`    | `confirm`    | `confirm object_id=ZTF18abc sources=[fink, lasair] required_agreement=2` |
-| `Classifier`          | `classify`   | `classify method=rf model=ztf_supernova source=alerce`                   |
-| `ScoringRule`         | `score`      | `score name=sn_score formula="prob_SN * 0.8 + prob_TDE * 0.2"`           |
-| `ActStep`             | `act`        | `act export=results.csv path=/tmp/alerts/ notify=you@example.com`        |
-| `LightcurveStep`      | `lightcurve` | `lightcurve source=fink`                                                 |
-| `CrossmatchStep`      | `crossmatch` | `crossmatch catalogs=[SDSS, Gaia] source=alerce`                         |
-| `CutoutStep`          | `cutout`     | `cutout source=antares`                                                  |
-| `KafkaStep`           | `monitor`    | `monitor source=fink`                                                    |
-| `WorkflowIR.schedule` | `schedule`   | `schedule cron="0 * * * *"`                                              |
-| `WorkflowIR.name`     | `name`       | `name "SMBBH Search Workflow"`                                           |
+The DSL remains future work. Its verbs should compile to the canonical semantic
+operation classes rather than introduce a second operation model.
 
+| Semantic category | Representative IR classes | Future DSL verbs |
+| --- | --- | --- |
+| `GetStep` | `GetLightcurveStep`, `GetCrossmatchStep`, `GetCutoutStep` | `get lightcurve`, `get crossmatch`, `get cutout` |
+| `SearchStep` | `SemanticSearchStep`, `ConeSearchStep`, `SqlQueryStep` | `search`, `cone search`, `sql query` |
+| `AnalyzeStep` | `ClassifyStep`, `AggregateStep`, `CompareStep` | `classify`, `aggregate`, `compare` |
+| `ActionStep` | `FollowupRequestStep`, `NotifyStep`, `ExportStep` | `request followup`, `notify`, `export` |
+
+Target syntax in a future DSL or UI must compile into a `TargetSelector`. For
+example, an object target would produce
+`TargetSelector(ids=["ZTF18abc"], kind="object")`; it does not define a fifth
+Step category. No DSL parser is implemented by this document.

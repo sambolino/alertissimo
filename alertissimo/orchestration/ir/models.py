@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
@@ -65,22 +65,21 @@ class Step(IRModel):
     sources: list[Source] = Field(default_factory=list)
 
 
-class TargetStep(Step):
-    """Implementation helper for operations whose target may come from later context."""
+TargetKind = Literal["object", "alert", "source", "detection"]
 
-    target_id: NonEmptyStr | None = None
-    target_ids: list[NonEmptyStr] | None = None
 
-    @model_validator(mode="after")
-    def validate_target_form(self) -> TargetStep:
-        if self.target_id is not None and self.target_ids is not None:
-            raise ValueError("target_id and target_ids are mutually exclusive")
-        if self.target_ids is not None:
-            if not self.target_ids:
-                raise ValueError("target_ids must not be empty")
-            if len(set(self.target_ids)) != len(self.target_ids):
-                raise ValueError("target_ids must not contain duplicates")
-        return self
+class TargetSelector(IRModel):
+    """Explicit selection of one or more entities in an optional namespace."""
+
+    ids: list[NonEmptyStr] = Field(min_length=1)
+    kind: TargetKind | None = None
+
+    @field_validator("ids")
+    @classmethod
+    def reject_duplicate_ids(cls, ids: list[str]) -> list[str]:
+        if len(set(ids)) != len(ids):
+            raise ValueError("ids must not contain duplicates")
+        return ids
 
 
 class LookupStep(Step):
@@ -149,13 +148,15 @@ class FilterStep(Step):
     criteria: dict[str, Any]
 
 
-class GetStep(TargetStep):
+class GetStep(Step):
     """Conceptual base for retrieving already-existing information or evidence.
 
     Get operations obtain a semantic record, product, or assertion from an
     available source.  They do not compute a new Alertissimo result locally and do
     not request that a facility generate a new observation or product.
     """
+
+    target: TargetSelector | None = None
 
 
 class GetLightcurveStep(GetStep):
@@ -207,7 +208,7 @@ class GetDataProductStep(GetStep):
     product_type: NonEmptyStr | None = None
 
 
-class LightcurveStep(TargetStep):
+class LightcurveStep(Step):
     """Produce an Alertissimo-derived lightcurve from available evidence.
 
     This is distinct from retrieving an existing provider lightcurve.  TODO: the
@@ -216,11 +217,12 @@ class LightcurveStep(TargetStep):
     """
 
     op: Literal["lightcurve"] = "lightcurve"
+    target: TargetSelector | None = None
     bands: list[NonEmptyStr] | None = None
     time_context: TimeContext | None = None
 
 
-class MatchStep(TargetStep):
+class MatchStep(Step):
     """Locally perform a scientific association/matching operation.
 
     Match asks whether astronomical entities or records are spatially, temporally,
@@ -231,12 +233,15 @@ class MatchStep(TargetStep):
     """
 
     op: Literal["match"] = "match"
+    target: TargetSelector | None = None
     method: NonEmptyStr | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 
 
-class AnalyzeStep(TargetStep):
+class AnalyzeStep(Step):
     """Conceptual base for locally deriving analytical information from available data."""
+
+    target: TargetSelector | None = None
 
 
 class MethodAnalysisStep(AnalyzeStep):
@@ -273,7 +278,6 @@ class CompareStep(AnalyzeStep):
     """
 
     op: Literal["compare"] = "compare"
-    target: NonEmptyStr | None = None
     method: NonEmptyStr | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 
@@ -292,10 +296,11 @@ class UtilityScoreStep(AnalyzeStep):
     params: dict[str, Any] = Field(default_factory=dict)
 
 
-class ConfirmStep(TargetStep):
+class ConfirmStep(Step):
     """Require corroboration while its future relationship to Compare/Match remains open."""
 
     op: Literal["confirm"] = "confirm"
+    target: TargetSelector | None = None
     required_agreement: Annotated[int, Field(ge=1)] = 1
 
     @model_validator(mode="after")
@@ -322,7 +327,7 @@ class FollowupRequestStep(ActionStep):
     """Cause/request a new observation or product, unlike GetStep retrieval."""
 
     op: Literal["followup_request"] = "followup_request"
-    target_id: NonEmptyStr | None = None
+    target: TargetSelector | None = None
     request_type: NonEmptyStr
     facility: NonEmptyStr | None = None
     params: dict[str, Any] = Field(default_factory=dict)
@@ -373,5 +378,6 @@ __all__ = [
     "GetLightcurveStep", "GetSpectrumStep", "GetStep", "LightcurveStep",
     "LookupStep", "MatchStep", "MethodAnalysisStep", "MonitorStep", "NotifyStep",
     "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
-    "StepUnion", "TimeContext", "UtilityScoreStep", "WorkflowIR",
+    "StepUnion", "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep",
+    "WorkflowIR",
 ]

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from alertissimo.orchestration.ir import TargetSelector
+
 from dataclasses import dataclass
 from typing import Callable
 
@@ -45,17 +47,17 @@ def multi_provider_workflow(targets: tuple[str, ...] = (DEFAULT_TARGET,)) -> Wor
         name="multi-provider enrichment",
         steps=[
             GetLightcurveStep(
-                target_id=target,
+                target=TargetSelector(ids=[target], kind="object"),
                 sources=[
                     Source(broker="fink", origin="ztf"),
                     Source(broker="lasair", origin="ztf"),
                 ],
             ),
             GetForcedPhotometryStep(
-                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
             ),
             GetLightcurveStep(
-                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
             ),
         ],
     )
@@ -68,10 +70,10 @@ def multi_target_workflow(targets: tuple[str, ...] = BATCH_TARGETS) -> WorkflowI
         name="multi-target batch retrieval",
         steps=[
             GetLightcurveStep(
-                target_ids=list(targets), sources=[Source(broker="fink", origin="ztf")]
+                target=TargetSelector(ids=list(targets), kind="object"), sources=[Source(broker="fink", origin="ztf")]
             ),
             GetLightcurveStep(
-                target_ids=list(targets),
+                target=TargetSelector(ids=list(targets), kind="object"),
                 sources=[Source(broker="lasair", origin="ztf")],
             ),
         ],
@@ -88,17 +90,17 @@ def partial_failure_workflow(
         name="expected fail-fast partial execution",
         steps=[
             GetLightcurveStep(
-                target_id=target, sources=[Source(broker="fink", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="fink", origin="ztf")]
             ),
             GetLightcurveStep(
-                target_id=target,
+                target=TargetSelector(ids=[target], kind="object"),
                 sources=[
                     Source(broker="fink", origin="ztf"),
                     Source(broker="lasair", origin="ztf"),
                 ],
             ),
             GetForcedPhotometryStep(
-                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
             ),
         ],
     )

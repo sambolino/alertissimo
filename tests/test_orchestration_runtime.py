@@ -1,5 +1,6 @@
 """Focused tests for minimal workflow invocation state."""
 
+from alertissimo.orchestration.ir import TargetSelector
 import pytest
 from pydantic import ValidationError
 
@@ -17,8 +18,8 @@ def _repeated_workflow() -> WorkflowIR:
     source = [Source(broker="lasair", origin="ztf")]
     return WorkflowIR(
         steps=[
-            GetLightcurveStep(target_id="A", sources=source),
-            GetLightcurveStep(target_id="B", sources=source),
+            GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object"), sources=source),
+            GetLightcurveStep(target=TargetSelector(ids=["B"], kind="object"), sources=source),
         ]
     )
 
@@ -30,7 +31,7 @@ def test_from_workflow_creates_ordered_pending_step_runs():
     assert [step.step_index for step in run.steps] == [0, 1]
     assert all(step.state is StepRunState.PENDING for step in run.steps)
     assert all(step.endpoint_plans == () for step in run.steps)
-    assert run.step_at(1).target_id == "B"
+    assert run.step_at(1).target.ids == ["B"]
     assert run.step_run_at(0) is run.steps[0]
 
 
@@ -56,7 +57,7 @@ def test_same_operation_steps_remain_distinct_after_planning():
     run = plan_workflow(_repeated_workflow(), build_capability_graph())
 
     assert [step.step_index for step in run.steps] == [0, 1]
-    assert [run.step_at(step.step_index).target_id for step in run.steps] == ["A", "B"]
+    assert [run.step_at(step.step_index).target.ids[0] for step in run.steps] == ["A", "B"]
     assert all(step.state is StepRunState.PLANNED for step in run.steps)
     assert [step.endpoint_plans[0].endpoint for step in run.steps] == [
         "lightcurves",

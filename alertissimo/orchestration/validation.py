@@ -43,7 +43,7 @@ from .ir.models import (
     Source,
     SqlQueryStep,
     Step,
-    TargetStep,
+    TargetSelector,
     WorkflowIR,
 )
 
@@ -161,7 +161,8 @@ def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
     raw = _raw_candidates_for_source(step, graph, source)
-    target_ids = step.target_ids if isinstance(step, TargetStep) else None
+    target = _target_selector(step)
+    target_ids = target.ids if target is not None else None
     if target_ids is None or len(target_ids) <= 1:
         return _CandidateEvidence(raw=raw, compatible=raw)
     compatible = tuple(
@@ -170,6 +171,12 @@ def _candidate_evidence_for_source(
         if "target_id" in candidate.collection_binding_roles
     )
     return _CandidateEvidence(raw=raw, compatible=compatible)
+
+
+def _target_selector(step: Step) -> TargetSelector | None:
+    """Return composed target intent without defining a target-bearing Step family."""
+    target = getattr(step, "target", None)
+    return target if isinstance(target, TargetSelector) else None
 
 
 def candidate_capabilities(
@@ -226,6 +233,7 @@ def validate_step_capabilities(
     for source in _sources(step):
         evidence = _candidate_evidence_for_source(step, graph, source)
         candidates = evidence.compatible
+        target = _target_selector(step)
         status = "supported" if candidates else "unsupported"
         results.append(SourceCapabilityResult(
             source, status, candidates,
@@ -233,7 +241,7 @@ def validate_step_capabilities(
             else (
                 "no compatible multi-target binding exists"
                 if evidence.raw
-                and len(getattr(step, "target_ids", None) or ()) > 1
+                and len(target.ids if target else ()) > 1
                 else "no compatible registered endpoint capability found"
             ),
         ))

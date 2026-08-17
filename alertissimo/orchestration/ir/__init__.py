@@ -7,7 +7,7 @@ from .models import (
     GetForcedPhotometryStep, GetLightcurveStep, GetSpectrumStep, GetStep,
     LightcurveStep, LookupStep, MatchStep, MethodAnalysisStep, MonitorStep,
     NotifyStep, SearchStep, SemanticSearchStep, Source, SqlQueryStep, Step,
-    StepUnion, TimeContext, UtilityScoreStep, WorkflowIR,
+    StepUnion, TargetKind, TargetSelector, TimeContext, UtilityScoreStep, WorkflowIR,
 )
 
 __all__ = [
@@ -18,5 +18,6 @@ __all__ = [
     "GetLightcurveStep", "GetSpectrumStep", "GetStep", "LightcurveStep",
     "LookupStep", "MatchStep", "MethodAnalysisStep", "MonitorStep", "NotifyStep",
     "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
-    "StepUnion", "TimeContext", "UtilityScoreStep", "WorkflowIR",
+    "StepUnion", "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep",
+    "WorkflowIR",
 ]

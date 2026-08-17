@@ -1,5 +1,6 @@
 """Offline endpoint-selection tests for orchestration planner v1."""
 
+from alertissimo.orchestration.ir import TargetSelector
 import pytest
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
@@ -55,7 +56,7 @@ def _assert_resolves(plans):
 
 def test_explicit_lasair_ztf_lightcurve_selects_registered_endpoint(graph):
     step = GetLightcurveStep(
-        target_id="ZTF20abc", sources=[Source(broker="lasair", origin="ztf")]
+        target=TargetSelector(ids=["ZTF20abc"], kind="object"), sources=[Source(broker="lasair", origin="ztf")]
     )
     plans = plan_step(step, graph)
     assert plans == (
@@ -173,7 +174,7 @@ def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(gr
                 sources=[Source(broker="lasair", origin="ztf")],
             ),
             GetLightcurveStep(
-                target_id="ZTF20abc",
+                target=TargetSelector(ids=["ZTF20abc"], kind="object"),
                 sources=[Source(broker="lasair", origin="ztf")],
             ),
         ]
@@ -202,17 +203,17 @@ def test_multi_target_planning_uses_collection_capable_endpoints(graph):
         (GetLightcurveStep, "lasair", "ztf", "lightcurves"),
     ]
     for step_type, broker, origin, endpoint in cases:
-        plans = plan_step(step_type(target_ids=["A", "B"], sources=[Source(broker=broker, origin=origin)]), graph)
+        plans = plan_step(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker=broker, origin=origin)]), graph)
         assert len(plans) == 1
         assert plans[0].endpoint == endpoint
 
     with pytest.raises(UnsupportedStepError, match="multi-target binding"):
-        plan_step(GetLightcurveStep(target_ids=["1", "2"], sources=[Source(broker="alerce", origin="lsst")]), graph)
+        plan_step(GetLightcurveStep(target=TargetSelector(ids=["1", "2"], kind="object"), sources=[Source(broker="alerce", origin="lsst")]), graph)
 
 
 def test_multi_target_multiple_sources_remain_one_plan_each(graph):
     step = GetLightcurveStep(
-        target_ids=["A", "B"],
+        target=TargetSelector(ids=["A", "B"], kind="object"),
         sources=[Source(broker="fink", origin="ztf"), Source(broker="lasair", origin="ztf")],
     )
     plans = plan_step(step, graph)
@@ -221,9 +222,9 @@ def test_multi_target_multiple_sources_remain_one_plan_each(graph):
 
 def test_singular_cutout_accepts_one_collection_item_but_rejects_many(graph):
     source = [Source(broker="fink", origin="ztf")]
-    assert plan_step(GetCutoutStep(target_ids=["A"], sources=source), graph)[0].endpoint == "cutouts"
+    assert plan_step(GetCutoutStep(target=TargetSelector(ids=["A"], kind="object"), sources=source), graph)[0].endpoint == "cutouts"
     with pytest.raises(UnsupportedStepError, match="multi-target binding"):
-        plan_step(GetCutoutStep(target_ids=["A", "B"], sources=source), graph)
+        plan_step(GetCutoutStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), graph)
 
 
 def test_singular_data_product_is_not_planned_for_multiple_targets():
@@ -233,7 +234,7 @@ def test_singular_data_product_is_not_planned_for_multiple_targets():
         ("target_id",), (),
     )
     graph = CapabilityGraph((capability,), (), (), (), ())
-    step = GetDataProductStep(target_ids=["A", "B"], sources=[Source(broker="test")])
+    step = GetDataProductStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker="test")])
     assert validate_step_capabilities(step, graph).status == "unsupported"
     with pytest.raises(UnsupportedStepError, match="multi-target binding"):
         plan_step(step, graph)
@@ -241,7 +242,7 @@ def test_singular_data_product_is_not_planned_for_multiple_targets():
 
 def test_multi_target_spectrum_planning_reports_missing_capability(graph):
     with pytest.raises(UnsupportedStepError) as caught:
-        plan_step(GetSpectrumStep(target_ids=["A", "B"]), graph)
+        plan_step(GetSpectrumStep(target=TargetSelector(ids=["A", "B"], kind="object")), graph)
     assert "no compatible registered endpoint capability found" in str(caught.value)
     assert "multi-target binding" not in str(caught.value)
 
@@ -267,14 +268,14 @@ def test_semantic_target_planning_uses_only_collection_candidate(step_type, noun
     graph = CapabilityGraph((singular, collection), (), (), (), records)
     source = [Source(broker="test", origin="ztf")]
     with pytest.raises(PlanningAmbiguityError):
-        plan_step(step_type(target_id="A", sources=source), graph)
-    assert plan_step(step_type(target_ids=["A", "B"], sources=source), graph)[0].endpoint == f"{noun}_many"
+        plan_step(step_type(target=TargetSelector(ids=["A"], kind="object"), sources=source), graph)
+    assert plan_step(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), graph)[0].endpoint == f"{noun}_many"
 
 
 @pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
 def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
     ztf = step_type(
-        target_ids=["A", "B"],
+        target=TargetSelector(ids=["A", "B"], kind="object"),
         sources=[Source(broker="lasair", origin="ztf")],
     )
     candidates = validate_step_capabilities(ztf, graph).candidates
@@ -284,7 +285,7 @@ def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
         plan_step(ztf, graph)
 
     lsst = step_type(
-        target_ids=["313761042336317573", "313761042336317574"],
+        target=TargetSelector(ids=["313761042336317573", "313761042336317574"], kind="object"),
         sources=[Source(broker="lasair", origin="lsst")],
     )
     assert plan_step(lsst, graph) == (
