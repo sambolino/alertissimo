@@ -1,3 +1,5 @@
+from alertissimo.orchestration.ir import TargetSelector
+
 from pathlib import Path
 
 import pytest
@@ -33,7 +35,7 @@ def plan(broker: str, origin: str, endpoint: str) -> EndpointPlan:
 
 def test_alerce_lsst_lightcurve_uses_registry_target_binding():
     call = bind_endpoint(
-        GetLightcurveStep(target_id="170587117485817955"),
+        GetLightcurveStep(target=TargetSelector(ids=["170587117485817955"], kind="object")),
         plan("alerce", "lsst", "query_lightcurve"),
         EndpointRegistry(),
     )
@@ -47,7 +49,7 @@ def test_alerce_lsst_lightcurve_uses_registry_target_binding():
 
 def test_lasair_ztf_lightcurve_uses_declared_csv_collection():
     call = bind_endpoint(
-        GetLightcurveStep(target_id="ZTF20abc"),
+        GetLightcurveStep(target=TargetSelector(ids=["ZTF20abc"], kind="object")),
         plan("lasair", "ztf", "lightcurves"),
         EndpointRegistry(),
     )
@@ -61,7 +63,7 @@ def test_lasair_ztf_lightcurve_uses_declared_csv_collection():
 
 def test_alerce_forced_photometry_target_binding():
     call = bind_endpoint(
-        GetForcedPhotometryStep(target_id="123"),
+        GetForcedPhotometryStep(target=TargetSelector(ids=["123"], kind="object")),
         plan("alerce", "lsst", "query_forced_photometry"),
         EndpointRegistry(),
     )
@@ -72,12 +74,12 @@ def test_registry_physical_types_distinguish_identical_target_role():
     registry = EndpointRegistry()
 
     alerce_call = bind_endpoint(
-        GetLightcurveStep(target_id="170587117485817955"),
+        GetLightcurveStep(target=TargetSelector(ids=["170587117485817955"], kind="object")),
         plan("alerce", "lsst", "query_lightcurve"),
         registry,
     )
     lasair_call = bind_endpoint(
-        GetLightcurveStep(target_id="ZTF20abc"),
+        GetLightcurveStep(target=TargetSelector(ids=["ZTF20abc"], kind="object")),
         plan("lasair", "ztf", "lightcurves"),
         registry,
     )
@@ -89,7 +91,7 @@ def test_registry_physical_types_distinguish_identical_target_role():
 def test_invalid_integer_target_fails_during_binding():
     with pytest.raises(ParameterBindingError) as error:
         bind_endpoint(
-            GetLightcurveStep(target_id="not-an-integer"),
+            GetLightcurveStep(target=TargetSelector(ids=["not-an-integer"], kind="object")),
             plan("alerce", "lsst", "query_lightcurve"),
             EndpointRegistry(),
         )
@@ -117,7 +119,7 @@ def test_cone_binding_passes_arcsecond_contract_through():
 
 def test_repeated_steps_keep_distinct_occurrence_bindings():
     workflow = WorkflowIR(
-        steps=[GetLightcurveStep(target_id="A"), GetLightcurveStep(target_id="B")]
+        steps=[GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object")), GetLightcurveStep(target=TargetSelector(ids=["B"], kind="object"))]
     )
     endpoint = plan("lasair", "ztf", "lightcurves")
     run = WorkflowRun(
@@ -139,7 +141,7 @@ def test_repeated_steps_keep_distinct_occurrence_bindings():
 
 
 def test_pending_workflow_run_cannot_be_bound():
-    workflow = WorkflowIR(steps=[GetLightcurveStep(target_id="ZTF20abc")])
+    workflow = WorkflowIR(steps=[GetLightcurveStep(target=TargetSelector(ids=["ZTF20abc"], kind="object"))])
     run = WorkflowRun.from_workflow(workflow)
 
     with pytest.raises(
@@ -167,7 +169,7 @@ def test_missing_required_parameter_reports_full_endpoint_context():
 
 def test_optional_canonical_fields_are_not_fabricated():
     call = bind_endpoint(
-        GetLightcurveStep(target_id="A", bands=None, time_context=None),
+        GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object"), bands=None, time_context=None),
         plan("lasair", "ztf", "lightcurves"),
         EndpointRegistry(),
     )
@@ -213,7 +215,7 @@ def test_plural_targets_bind_once_and_preserve_order():
     ]
     for broker, origin, endpoint, physical in cases:
         call = bind_endpoint(
-            GetLightcurveStep(target_ids=["A", "B"]),
+            GetLightcurveStep(target=TargetSelector(ids=["A", "B"], kind="object")),
             plan(broker, origin, endpoint), registry,
         )
         assert call.params == {physical: "A,B"}
@@ -222,9 +224,9 @@ def test_plural_targets_bind_once_and_preserve_order():
 def test_singular_binding_unwraps_one_and_rejects_many():
     registry = EndpointRegistry()
     endpoint = plan("alerce", "lsst", "query_lightcurve")
-    assert bind_endpoint(GetLightcurveStep(target_ids=["123"]), endpoint, registry).params == {"oid": 123}
+    assert bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=["123"], kind="object")), endpoint, registry).params == {"oid": 123}
     with pytest.raises(UnsupportedParameterBindingError) as error:
-        bind_endpoint(GetLightcurveStep(target_ids=["1", "2"]), endpoint, registry)
+        bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=["1", "2"], kind="object")), endpoint, registry)
     assert "alerce/lsst/query_lightcurve" in str(error.value)
     assert "target_id" in str(error.value)
     assert "cardinality 2" in str(error.value)
@@ -233,19 +235,19 @@ def test_singular_binding_unwraps_one_and_rejects_many():
 def test_lasair_sherlock_physical_bindings_are_registry_driven():
     registry = EndpointRegistry()
     ztf_scalar = bind_endpoint(
-        GetClassificationStep(target_id="ZTF-A"),
+        GetClassificationStep(target=TargetSelector(ids=["ZTF-A"], kind="object")),
         plan("lasair", "ztf", "sherlock_object"), registry,
     )
     ztf_batch = bind_endpoint(
-        GetCrossmatchStep(target_ids=["ZTF-A", "ZTF-B"]),
+        GetCrossmatchStep(target=TargetSelector(ids=["ZTF-A", "ZTF-B"], kind="object")),
         plan("lasair", "ztf", "sherlock_objects"), registry,
     )
     lsst_scalar = bind_endpoint(
-        GetClassificationStep(target_id="123"),
+        GetClassificationStep(target=TargetSelector(ids=["123"], kind="object")),
         plan("lasair", "lsst", "sherlock_object"), registry,
     )
     lsst_batch = bind_endpoint(
-        GetCrossmatchStep(target_ids=["123", "456"]),
+        GetCrossmatchStep(target=TargetSelector(ids=["123", "456"], kind="object")),
         plan("lasair", "lsst", "sherlock_object"), registry,
     )
 
@@ -259,9 +261,9 @@ def test_lasair_sherlock_physical_bindings_are_registry_driven():
 def test_collection_limit_is_enforced_before_execution():
     endpoint = plan("lasair", "ztf", "lightcurves")
     registry = EndpointRegistry()
-    assert bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(50)]), endpoint, registry)
+    assert bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=[str(i) for i in range(50)], kind="object")), endpoint, registry)
     with pytest.raises(UnsupportedParameterBindingError, match="declared limit 50"):
-        bind_endpoint(GetLightcurveStep(target_ids=[str(i) for i in range(51)]), endpoint, registry)
+        bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=[str(i) for i in range(51)], kind="object")), endpoint, registry)
 
 
 def test_multi_target_multiple_provider_binding_is_one_result_with_two_calls():
@@ -270,7 +272,7 @@ def test_multi_target_multiple_provider_binding_is_one_result_with_two_calls():
     from alertissimo.orchestration.planner import plan_workflow
 
     workflow = WorkflowIR(steps=[GetLightcurveStep(
-        target_ids=["A", "B"],
+        target=TargetSelector(ids=["A", "B"], kind="object"),
         sources=[Source(broker="fink", origin="ztf"), Source(broker="lasair", origin="ztf")],
     )])
     results = bind_workflow_run(plan_workflow(workflow, build_capability_graph()), EndpointRegistry())

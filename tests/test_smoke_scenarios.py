@@ -22,7 +22,7 @@ def test_scenario_construction_is_valid_ir_and_all_ztf():
     assert isinstance(workflow, WorkflowIR)
     assert isinstance(multi_target_workflow(), WorkflowIR)
     assert DEFAULT_TARGET == "ZTF18abbuksn"
-    assert {step.target_id for step in workflow.steps} == {DEFAULT_TARGET}
+    assert {step.target.ids[0] for step in workflow.steps} == {DEFAULT_TARGET}
     assert {source.origin for step in workflow.steps for source in step.sources} == {
         "ztf"
     }
@@ -166,7 +166,7 @@ def test_live_target_override_reaches_construction_without_execution(monkeypatch
         pass
 
     def stop(workflow, graph):
-        assert workflow.steps[0].target_id == "ZTF-custom"
+        assert workflow.steps[0].target.ids == ["ZTF-custom"]
         raise Stop
 
     monkeypatch.setattr("scripts.smoke.scenarios.plan_workflow", stop)

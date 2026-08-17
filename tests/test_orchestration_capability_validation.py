@@ -1,5 +1,6 @@
 """Tests for the read-only orchestration-to-registry capability bridge."""
 
+from alertissimo.orchestration.ir import TargetSelector
 import pytest
 
 from alertissimo.data_layer.runtime.capability_graph import (
@@ -119,10 +120,10 @@ def test_lasair_sherlock_candidates_respect_target_cardinality(step_type):
     graph = build_capability_graph()
     ztf_source = [Source(broker="lasair", origin="ztf")]
     scalar = validate_step_capabilities(
-        step_type(target_id="A", sources=ztf_source), graph
+        step_type(target=TargetSelector(ids=["A"], kind="object"), sources=ztf_source), graph
     )
     many = validate_step_capabilities(
-        step_type(target_ids=["A", "B"], sources=ztf_source), graph
+        step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=ztf_source), graph
     )
     assert "sherlock_object" in {item.endpoint for item in scalar.candidates}
     assert "sherlock_object" not in {item.endpoint for item in many.candidates}
@@ -132,7 +133,7 @@ def test_lasair_sherlock_candidates_respect_target_cardinality(step_type):
 
     lsst_many = validate_step_capabilities(
         step_type(
-            target_ids=["313761042336317573", "313761042336317574"],
+            target=TargetSelector(ids=["313761042336317573", "313761042336317574"], kind="object"),
             sources=[Source(broker="lasair", origin="lsst")],
         ),
         graph,
@@ -233,10 +234,10 @@ def test_workflow_validation_preserves_step_order():
 def test_multi_target_requires_explicit_collection_binding_evidence():
     graph = build_capability_graph()
     supported = validate_step_capabilities(
-        GetLightcurveStep(target_ids=["A", "B"], sources=[Source(broker="fink", origin="lsst")]), graph
+        GetLightcurveStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker="fink", origin="lsst")]), graph
     )
     rejected = validate_step_capabilities(
-        GetLightcurveStep(target_ids=["1", "2"], sources=[Source(broker="alerce", origin="lsst")]), graph
+        GetLightcurveStep(target=TargetSelector(ids=["1", "2"], kind="object"), sources=[Source(broker="alerce", origin="lsst")]), graph
     )
     assert supported.status == "supported"
     assert {item.endpoint for item in supported.candidates} == {"sources"}
@@ -246,8 +247,8 @@ def test_multi_target_requires_explicit_collection_binding_evidence():
 
 def test_cardinality_filter_applies_to_cutout_and_data_product():
     graph = build_capability_graph()
-    one = GetCutoutStep(target_ids=["A"], sources=[Source(broker="fink", origin="ztf")])
-    many = GetCutoutStep(target_ids=["A", "B"], sources=one.sources)
+    one = GetCutoutStep(target=TargetSelector(ids=["A"], kind="object"), sources=[Source(broker="fink", origin="ztf")])
+    many = GetCutoutStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=one.sources)
     assert validate_step_capabilities(one, graph).status == "supported"
     rejected = validate_step_capabilities(many, graph)
     assert rejected.status == "unsupported"
@@ -260,7 +261,7 @@ def test_cardinality_filter_applies_to_cutout_and_data_product():
     )
     product_graph = CapabilityGraph((singular_product,), (), (), (), ())
     product = GetDataProductStep(
-        target_ids=["A", "B"], sources=[Source(broker="test", origin="ztf")]
+        target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker="test", origin="ztf")]
     )
     product_result = validate_step_capabilities(product, product_graph)
     assert product_result.status == "unsupported"
@@ -291,8 +292,8 @@ def _semantic_target_graph(noun):
 def test_semantic_gets_filter_singular_candidates_for_multiple_targets(step_type, noun):
     graph = _semantic_target_graph(noun)
     source = [Source(broker="test", origin="ztf")]
-    scalar = validate_step_capabilities(step_type(target_id="A", sources=source), graph)
-    many = validate_step_capabilities(step_type(target_ids=["A", "B"], sources=source), graph)
+    scalar = validate_step_capabilities(step_type(target=TargetSelector(ids=["A"], kind="object"), sources=source), graph)
+    many = validate_step_capabilities(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), graph)
     assert {item.endpoint for item in scalar.candidates} == {f"{noun}_one", f"{noun}_many"}
     assert {item.endpoint for item in many.candidates} == {f"{noun}_many"}
 
@@ -301,12 +302,12 @@ def test_semantic_gets_filter_singular_candidates_for_multiple_targets(step_type
             "test", "ztf", noun, (f"{noun}_one",), ()
         ),
     ))
-    rejected = validate_step_capabilities(step_type(target_ids=["A", "B"], sources=source), singular_graph)
+    rejected = validate_step_capabilities(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), singular_graph)
     assert rejected.status == "unsupported"
     assert "multi-target binding" in rejected.source_results[0].reason
 
 
 def test_multi_target_spectrum_retains_semantic_absence_reason():
-    result = validate_step_capabilities(GetSpectrumStep(target_ids=["A", "B"]), build_capability_graph())
+    result = validate_step_capabilities(GetSpectrumStep(target=TargetSelector(ids=["A", "B"], kind="object")), build_capability_graph())
     assert result.status == "unsupported"
     assert result.source_results[0].reason == "no compatible registered endpoint capability found"

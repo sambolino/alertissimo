@@ -16,6 +16,7 @@ on:
       - 'tests/test_orchestration_capability_validation.py'
       - 'tests/test_orchestration_planner.py'
       - 'tests/test_orchestration_runner.py'
+      - 'tests/test_orchestration_runtime.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_endpoint_execution.py'
       - 'tests/test_lasair_registry_architecture.py'
@@ -72,6 +73,7 @@ jobs:
             tests/test_orchestration_capability_validation.py \
             tests/test_orchestration_planner.py \
             tests/test_orchestration_runner.py \
+            tests/test_orchestration_runtime.py \
             tests/test_capability_graph.py \
             tests/test_endpoint_execution.py \
             tests/test_antares_ztf_authoritative_payloads.py \

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from alertissimo.orchestration.ir import TargetSelector
+
 from dataclasses import replace
 
 import pytest
@@ -57,7 +59,7 @@ def _planned_run(
     targets: tuple[str, ...], plans: tuple[tuple[EndpointPlan, ...], ...]
 ) -> WorkflowRun:
     workflow = WorkflowIR(
-        steps=tuple(GetLightcurveStep(target_id=target) for target in targets)
+        steps=tuple(GetLightcurveStep(target=TargetSelector(ids=[target], kind="object")) for target in targets)
     )
     return WorkflowRun(
         workflow=workflow,
@@ -139,7 +141,7 @@ def test_repeated_occurrences_and_endpoint_fanout_execute_in_stable_order():
 
 def test_pending_run_is_rejected_before_execution():
     run = WorkflowRun.from_workflow(
-        WorkflowIR(steps=[GetLightcurveStep(target_id="A")])
+        WorkflowIR(steps=[GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object"))])
     )
     executor = FakeExecutor()
 
@@ -207,7 +209,7 @@ def test_failure_preserves_completed_and_partial_results_and_chains_cause():
 
 
 def test_multi_id_step_remains_one_physical_execution():
-    workflow = WorkflowIR(steps=[GetLightcurveStep(target_ids=["A", "B"])])
+    workflow = WorkflowIR(steps=[GetLightcurveStep(target=TargetSelector(ids=["A", "B"], kind="object"))])
     endpoint = _plan("lasair", "ztf", "lightcurves")
     run = WorkflowRun(
         workflow=workflow,

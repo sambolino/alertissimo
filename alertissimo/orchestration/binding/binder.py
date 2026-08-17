@@ -124,8 +124,9 @@ def bind_endpoint(
             continue
         declared_roles.append(role)
         value = getattr(step, role, None)
-        if role == "target_id" and value is None:
-            value = getattr(step, "target_ids", None)
+        if role == "target_id":
+            target = getattr(step, "target", None)
+            value = target.ids if target is not None else None
         if value is not None:
             transformed = _transform(
                 value, declaration, endpoint_plan=endpoint_plan, role=role

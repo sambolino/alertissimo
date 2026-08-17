@@ -17,11 +17,8 @@ def _object_ids(portfolio) -> list[str]:
 
 
 def _requested_target_ids(step) -> list[str]:
-    if getattr(step, "target_ids", None) is not None:
-        return list(step.target_ids)
-    if getattr(step, "target_id", None) is not None:
-        return [step.target_id]
-    return []
+    target = getattr(step, "target", None)
+    return list(target.ids) if target is not None else []
 
 
 def report_data(result) -> dict[str, Any]:

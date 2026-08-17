@@ -12,7 +12,7 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep, GetLightcurveStep, GetSpectrumStep, GetStep,
     LightcurveStep, LookupStep, MatchStep, MethodAnalysisStep, MonitorStep,
     NotifyStep, SearchStep, SemanticSearchStep, Source, SqlQueryStep, TimeContext,
-    UtilityScoreStep, WorkflowIR,
+    Step, TargetKind, TargetSelector, UtilityScoreStep, WorkflowIR,
 )
 
 
@@ -26,23 +26,27 @@ def concrete_steps():
         ConeSearchStep(semantic_type="detection", ra=12.5, dec=-20, radius=0.1),
         SqlQueryStep(semantic_type="classification", query="SELECT class FROM classifications"),
         FilterStep(criteria={"magnitude": {"lt": 20}}),
-        GetLightcurveStep(target_id="target", bands=["g", "r"], time_context=time),
-        GetCrossmatchStep(target_id="target", catalog="gaia", radius=1.0),
-        GetCutoutStep(target_id="target", format="fits", size=30),
-        GetForcedPhotometryStep(target_id="target", bands=["g"], time_context=time),
-        GetClassificationStep(target_id="target"),
-        GetSpectrumStep(target_id="target", time_context=time),
-        GetDataProductStep(target_id="target", product_type="image"),
-        LightcurveStep(target_id="target", bands=["g", "r"], time_context=time),
-        MatchStep(target_id="target", method="spatial", params={"radius": 1}),
-        MethodAnalysisStep(target_id="target", method="periodicity", params={"period_min": 1}),
-        ClassifyStep(target_id="target", method="random_forest"),
+        GetLightcurveStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g", "r"], time_context=time),
+        GetCrossmatchStep(target=TargetSelector(ids=["target"], kind="object"), catalog="gaia", radius=1.0),
+        GetCutoutStep(target=TargetSelector(ids=["target"], kind="object"), format="fits", size=30),
+        GetForcedPhotometryStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g"], time_context=time),
+        GetClassificationStep(target=TargetSelector(ids=["target"], kind="object")),
+        GetSpectrumStep(target=TargetSelector(ids=["target"], kind="object"), time_context=time),
+        GetDataProductStep(target=TargetSelector(ids=["target"], kind="object"), product_type="image"),
+        LightcurveStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g", "r"], time_context=time),
+        MatchStep(target=TargetSelector(ids=["target"], kind="object"), method="spatial", params={"radius": 1}),
+        MethodAnalysisStep(target=TargetSelector(ids=["target"], kind="object"), method="periodicity", params={"period_min": 1}),
+        ClassifyStep(target=TargetSelector(ids=["target"], kind="object"), method="random_forest"),
         AggregateStep(method="mean", field="photometry.flux", group_by=["band"]),
-        CompareStep(target="classification", method="disagreement"),
-        UtilityScoreStep(target_id="target", method="followup_priority"),
-        ConfirmStep(target_id="target", required_agreement=1, sources=[source]),
+        CompareStep(
+            target=TargetSelector(ids=["target"], kind="object"),
+            comparison_target="classification",
+            method="disagreement",
+        ),
+        UtilityScoreStep(target=TargetSelector(ids=["target"], kind="object"), method="followup_priority"),
+        ConfirmStep(target=TargetSelector(ids=["target"], kind="object"), required_agreement=1, sources=[source]),
         MonitorStep(stream="alerts", criteria={"survey": "ztf"}),
-        FollowupRequestStep(request_type="spectroscopy", target_id="target", facility="generic"),
+        FollowupRequestStep(request_type="spectroscopy", target=TargetSelector(ids=["target"], kind="object"), facility="generic"),
         NotifyStep(channel="email", recipient="team@example.test", message="Candidate found"),
         ExportStep(destination="portfolio.json", format="json"),
     ]
@@ -170,16 +174,88 @@ def test_confirmation_validates_required_agreement():
 
 
 def test_target_collection_validation_and_round_trip():
-    step = GetLightcurveStep(target_ids=["B", "A"])
-    assert step.target_id is None
-    assert step.target_ids == ["B", "A"]
+    step = GetLightcurveStep(target=TargetSelector(ids=["B", "A"], kind="object"))
+    assert step.model_dump()["target"] == {"ids": ["B", "A"], "kind": "object"}
+    assert "target_id" not in step.model_dump() and "target_ids" not in step.model_dump()
     workflow = WorkflowIR(steps=[step])
     restored = WorkflowIR.model_validate(workflow.model_dump())
-    assert restored.steps[0].target_id is None
-    assert restored.steps[0].target_ids == ["B", "A"]
+    assert restored == workflow
 
     for invalid in ([], [""], ["A", "A"]):
         with pytest.raises(ValidationError):
-            GetLightcurveStep(target_ids=invalid)
+            TargetSelector(ids=invalid)
+
+
+@pytest.mark.parametrize("kind", ["object", "alert", "source", "detection", None])
+def test_target_selector_kinds_round_trip(kind):
+    selector = TargetSelector(ids=["one"], kind=kind)
+    assert TargetSelector.model_validate(selector.model_dump()) == selector
+
+
+def test_target_selector_rejects_unknown_kind():
     with pytest.raises(ValidationError):
-        GetLightcurveStep(target_id="A", target_ids=["B"])
+        TargetSelector(ids=["one"], kind="unknown")
+
+
+def test_followup_target_and_discriminated_workflow_serialization():
+    workflow = WorkflowIR(steps=[
+        FollowupRequestStep(
+            request_type="spectroscopy",
+            target=TargetSelector(ids=["A", "B"], kind=None),
+        )
+    ])
+    dumped = workflow.model_dump()
+    assert dumped["steps"][0]["target"] == {"ids": ["A", "B"], "kind": None}
+    assert WorkflowIR.model_validate(dumped) == workflow
+
+
+def test_target_step_is_not_public():
+    import alertissimo.orchestration.ir as ir
+    import alertissimo.orchestration.ir.models as models
+
+    assert not issubclass(TargetSelector, Step)
+    assert not hasattr(ir, "TargetStep")
+    assert not hasattr(models, "TargetStep")
+    assert "TargetStep" not in ir.__all__
+    assert "TargetStep" not in models.__all__
+    assert ir.TargetSelector is TargetSelector
+    assert ir.TargetKind is TargetKind
+
+
+@pytest.mark.parametrize(
+    "constructor",
+    [
+        lambda: GetLightcurveStep(target_id="A"),
+        lambda: GetLightcurveStep(target_ids=["A", "B"]),
+        lambda: FollowupRequestStep(request_type="spectroscopy", target_id="A"),
+    ],
+)
+def test_legacy_target_construction_is_rejected(constructor):
+    with pytest.raises(ValidationError):
+        constructor()
+
+
+def test_compare_preserves_entity_and_comparison_targets():
+    step = CompareStep(
+        target=TargetSelector(ids=["ZTF18abbuksn"], kind="object"),
+        comparison_target="classification",
+        method="disagreement",
+    )
+    dumped = step.model_dump()
+    assert dumped["target"] == {"ids": ["ZTF18abbuksn"], "kind": "object"}
+    assert dumped["comparison_target"] == "classification"
+    assert CompareStep.model_validate(dumped) == step
+
+    workflow = WorkflowIR(steps=[step])
+    restored = WorkflowIR.model_validate(workflow.model_dump())
+    assert restored == workflow
+    assert isinstance(restored.steps[0], CompareStep)
+    assert restored.steps[0].comparison_target == "classification"
+
+
+def test_compare_comparison_target_validation_and_deferred_entity_context():
+    assert CompareStep(comparison_target="classification").target is None
+    with pytest.raises(ValidationError):
+        CompareStep(comparison_target="  ")
+    with pytest.raises(ValidationError):
+        CompareStep(target="classification")
