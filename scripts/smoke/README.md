@@ -25,6 +25,38 @@ in automated tests. Fixture payload IDs are fixed, so `--target` is rejected
 unless `--live` is also supplied; repeat `--target` for a live batch override.
 The expected `partial-failure` scenario is always fixture-only.
 
+## Live setup and commands
+
+Install the project and its local development dependency from the repository
+root (using a virtual environment is recommended):
+
+```bash
+python -m pip install -e .
+python -m pip install pytest
+```
+
+Create a `.env` file containing the **raw** Lasair token, without the `Token `
+prefix. The CLI adds that prefix from the physical endpoint contract. Exported
+environment variables take precedence over values in `.env`.
+
+```dotenv
+LASAIR_ZTF_TOKEN=your-raw-lasair-token
+# Only needed for workflows that call Lasair LSST endpoints:
+LASAIR_LSST_TOKEN=your-raw-lasair-lsst-token
+```
+
+Run live smoke scenarios with:
+
+```bash
+python -m scripts.smoke multi-provider --live
+python -m scripts.smoke multi-provider --live --json
+python -m scripts.smoke multi-target --live --target ID1 --target ID2
+```
+
+**Warning:** live execution performs real requests against provider services.
+Never use the live commands in automated tests. Fixture commands above remain
+fully offline and require no credentials.
+
 Steps remain independent: they cannot consume earlier normalized outputs because
 workflow context, dependencies, and step-output references are deferred. These
 scenarios are intended to become acceptance fixtures for a later DSL compiler;

@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from alertissimo.data_layer.execution import (
     EndpointRegistry,
     EndpointSpec,
+    MissingEndpointCredentialError,
     RegistryEndpointExecutor,
     RestTransport,
     TransportResult,
@@ -95,8 +98,9 @@ class FixtureTransport:
     def __init__(self, payload):
         self.payload = payload
 
-    def execute(self, spec, params):
+    def execute(self, spec, params, headers=None):
         assert params["lasair_added"] is True
+        assert headers is not None
         return TransportResult(
             self.payload,
             method="POST",
@@ -137,7 +141,10 @@ def test_executor_preserves_payload_and_full_provenance():
         transports={"rest": FixtureTransport(payload)},
         execution_id_factory=lambda: InternalExecutionId("exec:fixed"),
     )
-    result = executor.execute("lasair", "ztf", "object", {"objectId": "ZTF25aazqavg"})
+    result = executor.execute(
+        "lasair", "ztf", "object", {"objectId": "ZTF25aazqavg"},
+        headers={"Authorization": "Token secret-value"},
+    )
 
     assert result.payload is payload
     assert result.internal_execution_id == InternalExecutionId("exec:fixed")
@@ -156,3 +163,78 @@ def test_executor_preserves_payload_and_full_provenance():
     assert result.execution_provenance.sanitized_headers["Authorization"] == "<redacted>"
     assert "secret-value" not in repr(result.execution_provenance)
     assert "secret-value" not in repr(result)
+
+
+class CapturingTransport:
+    name = "capture"
+
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, spec, params, headers=None):
+        self.calls.append((spec, params, headers))
+        return TransportResult(payload={}, sanitized_headers=headers or {})
+
+
+@pytest.mark.parametrize(
+    ("origin", "variable"),
+    (("ztf", "LASAIR_ZTF_TOKEN"), ("lsst", "LASAIR_LSST_TOKEN")),
+)
+def test_executor_resolves_lasair_raw_token_from_origin_environment(
+    monkeypatch, origin, variable
+):
+    monkeypatch.delenv("LASAIR_ZTF_TOKEN", raising=False)
+    monkeypatch.delenv("LASAIR_LSST_TOKEN", raising=False)
+    monkeypatch.setenv(variable, "raw-secret")
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    result = executor.execute("lasair", origin, "object", {"objectId": "ID1"})
+
+    assert transport.calls[0][2] == {"Authorization": "Token raw-secret"}
+    assert result.execution_provenance.sanitized_headers == {
+        "Authorization": "<redacted>"
+    }
+    assert "raw-secret" not in repr(result)
+
+
+def test_explicit_header_overrides_environment(monkeypatch):
+    monkeypatch.setenv("LASAIR_ZTF_TOKEN", "environment-secret")
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    executor.execute(
+        "lasair", "ztf", "object", {"objectId": "ID1"},
+        headers={"Authorization": "Token explicit-secret"},
+    )
+
+    assert transport.calls[0][2] == {"Authorization": "Token explicit-secret"}
+
+
+def test_missing_required_credential_fails_before_transport(monkeypatch):
+    monkeypatch.delenv("LASAIR_ZTF_TOKEN", raising=False)
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    with pytest.raises(MissingEndpointCredentialError, match="LASAIR_ZTF_TOKEN") as error:
+        executor.execute("lasair", "ztf", "object", {"objectId": "ID1"})
+
+    assert transport.calls == []
+    assert "Token " not in str(error.value)
+
+
+def test_public_endpoint_does_not_resolve_headers():
+    transport = CapturingTransport()
+    executor = RegistryEndpointExecutor(
+        EndpointRegistry(REGISTRY), transports={"rest": transport}
+    )
+
+    executor.execute("fink", "ztf", "objects", {"objectId": "ZTF1"})
+
+    assert transport.calls[0][2] is None
