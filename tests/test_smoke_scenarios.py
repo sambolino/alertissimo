@@ -152,6 +152,63 @@ def test_reporting_json_is_payload_free():
     assert "payload" not in json.dumps(data)
 
 
+@pytest.mark.parametrize("scenario", ["multi-provider", "multi-target"])
+def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenario):
+    from html.parser import HTMLParser
+    from scripts.smoke.html_output import write_smoke_html
+
+    output = tmp_path / scenario
+    index = write_smoke_html(run_scenario(scenario), output)
+    dossiers = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
+    assert len(dossiers) == 4
+    assert index == output / "index.html"
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.hrefs = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "a":
+                self.hrefs.extend(value for name, value in attrs if name == "href")
+
+    links = Links()
+    links.feed(index.read_text())
+    assert len(links.hrefs) == 4
+    assert all((output / href).is_file() for href in links.hrefs)
+    assert len(set(links.hrefs)) == 4
+
+    text = index.read_text()
+    assert "Fink" not in text  # provenance uses canonical lower-case broker names
+    assert "fink / ztf /" in text
+    if scenario == "multi-provider":
+        assert "lasair / ztf /" in text and "alerce / ztf /" in text
+    else:
+        assert text.count("identity unavailable") == 2
+        assert text.count("Open Portfolio dossier") == 4
+
+
+def test_html_dir_rejects_nonempty_directory_without_modification(tmp_path):
+    from scripts.smoke.html_output import HtmlOutputError, write_smoke_html
+
+    marker = tmp_path / "keep.txt"
+    marker.write_text("do not change")
+    with pytest.raises(HtmlOutputError, match="refusing to overwrite nonempty"):
+        write_smoke_html(run_scenario("multi-provider"), tmp_path)
+    assert list(tmp_path.iterdir()) == [marker]
+    assert marker.read_text() == "do not change"
+
+
+def test_cli_json_with_html_dir_keeps_stdout_json(tmp_path, capsys):
+    from scripts.smoke.__main__ import main
+
+    output = tmp_path / "html"
+    assert main(["multi-target", "--json", "--html-dir", str(output)]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["portfolio_count"] == 4
+    assert captured.err.strip() == f"HTML index: {output / 'index.html'}"
+
+
 def test_fixture_custom_targets_rejected_programmatically_before_planning(monkeypatch):
     monkeypatch.setattr(
         "scripts.smoke.scenarios.plan_workflow",

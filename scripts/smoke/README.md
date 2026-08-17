@@ -15,6 +15,8 @@ PYTHONPATH=. python -m scripts.smoke multi-provider
 PYTHONPATH=. python -m scripts.smoke multi-target
 PYTHONPATH=. python -m scripts.smoke partial-failure
 PYTHONPATH=. python -m scripts.smoke multi-provider --json
+PYTHONPATH=. python -m scripts.smoke multi-provider --html-dir /tmp/alertissimo-multi-provider
+PYTHONPATH=. python -m scripts.smoke multi-target --html-dir /tmp/alertissimo-multi-target
 ```
 
 Fixture mode is always the default and performs no network access. `--live` is an
@@ -51,7 +53,22 @@ Run live smoke scenarios with:
 python -m scripts.smoke multi-provider --live
 python -m scripts.smoke multi-provider --live --json
 python -m scripts.smoke multi-target --live --target ID1 --target ID2
+python -m scripts.smoke multi-target --live \
+  --target ZTF21abfmbix --target ZTF20acpwljl \
+  --html-dir /tmp/alertissimo-multi-target
 ```
+
+`--html-dir` writes a separate dossier for every normalized Portfolio plus an
+`index.html` linking them; provider and target results are never combined. The
+directory must be missing or empty, and the command never deletes existing
+output or opens a browser. Open the generated index yourself if desired:
+
+```bash
+xdg-open /tmp/alertissimo-multi-target/index.html
+```
+
+It can also be combined with `--json`. In that mode JSON remains the only stdout
+content and the generated index notice is written to stderr.
 
 **Warning:** live execution performs real requests against provider services.
 Never use the live commands in automated tests. Fixture commands above remain
