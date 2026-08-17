@@ -200,6 +200,28 @@ def test_cli_accepts_live_target_override_without_executing(monkeypatch):
         cli.main(["multi-provider", "--live", "--target", "ZTF-custom"])
 
 
+def test_cli_loads_dotenv_without_overriding_exported_values(monkeypatch):
+    from scripts.smoke import __main__ as cli
+
+    class StopBeforeExecution(Exception):
+        pass
+
+    calls = []
+    monkeypatch.setattr(
+        cli, "load_dotenv", lambda *, override: calls.append(override)
+    )
+    monkeypatch.setattr(
+        cli,
+        "run_scenario",
+        lambda *args, **kwargs: (_ for _ in ()).throw(StopBeforeExecution),
+    )
+
+    with pytest.raises(StopBeforeExecution):
+        cli.main(["multi-provider", "--live"])
+
+    assert calls == [False]
+
+
 @pytest.mark.parametrize(
     "args", [["--list"], ["multi-provider", "--json"], ["partial-failure"]]
 )

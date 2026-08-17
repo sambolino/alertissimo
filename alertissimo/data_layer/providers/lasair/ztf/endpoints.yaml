@@ -11,6 +11,9 @@ endpoints:
       Authorization:
         required: true
         type: string
+        environment_variable: LASAIR_ZTF_TOKEN
+        prefix: 'Token '
+        environment_value: raw
         description: Lasair API token, formatted as 'Token <token>'.
     params:
       objectId:
