@@ -131,3 +131,10 @@ def test_stable_serialization_adapter_matches_primary_projection():
 def test_primary_api_rejects_serialized_dict():
     with pytest.raises(TypeError, match="in-memory Portfolio"):
         portfolio_lightcurve_dataframe({"records": []})  # type: ignore[arg-type]
+
+def test_package_level_lightcurve_export_uses_lazy_public_api():
+    from alertissimo.data_layer.presentation import (
+        portfolio_lightcurve_dataframe as public_dataframe,
+    )
+
+    assert public_dataframe is portfolio_lightcurve_dataframe

@@ -152,6 +152,63 @@ def test_reporting_json_is_payload_free():
     assert "payload" not in json.dumps(data)
 
 
+@pytest.mark.parametrize("scenario", ["multi-provider", "multi-target"])
+def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenario):
+    from html.parser import HTMLParser
+    from scripts.smoke.html_output import write_smoke_html
+
+    output = tmp_path / scenario
+    index = write_smoke_html(run_scenario(scenario), output)
+    dossiers = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
+    assert len(dossiers) == 4
+    assert index == output / "index.html"
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.hrefs = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "a":
+                self.hrefs.extend(value for name, value in attrs if name == "href")
+
+    links = Links()
+    links.feed(index.read_text())
+    assert len(links.hrefs) == 4
+    assert all((output / href).is_file() for href in links.hrefs)
+    assert len(set(links.hrefs)) == 4
+
+    text = index.read_text()
+    assert "Fink" not in text  # provenance uses canonical lower-case broker names
+    assert "fink / ztf /" in text
+    if scenario == "multi-provider":
+        assert "lasair / ztf /" in text and "alerce / ztf /" in text
+    else:
+        assert text.count("identity unavailable") == 2
+        assert text.count("Open Portfolio dossier") == 4
+
+
+def test_html_dir_rejects_nonempty_directory_without_modification(tmp_path):
+    from scripts.smoke.html_output import HtmlOutputError, write_smoke_html
+
+    marker = tmp_path / "keep.txt"
+    marker.write_text("do not change")
+    with pytest.raises(HtmlOutputError, match="refusing to overwrite nonempty"):
+        write_smoke_html(run_scenario("multi-provider"), tmp_path)
+    assert list(tmp_path.iterdir()) == [marker]
+    assert marker.read_text() == "do not change"
+
+
+def test_cli_json_with_html_dir_keeps_stdout_json(tmp_path, capsys):
+    from scripts.smoke.__main__ import main
+
+    output = tmp_path / "html"
+    assert main(["multi-target", "--json", "--html-dir", str(output)]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["portfolio_count"] == 4
+    assert captured.err.strip() == f"HTML index: {output / 'index.html'}"
+
+
 def test_fixture_custom_targets_rejected_programmatically_before_planning(monkeypatch):
     monkeypatch.setattr(
         "scripts.smoke.scenarios.plan_workflow",
@@ -259,3 +316,88 @@ def test_cli_rejects_unknown_or_invalid_arguments(args, message):
     assert completed.returncode != 0
     assert "usage:" in completed.stderr
     assert message in completed.stderr
+
+def test_html_presentation_import_does_not_require_pandas():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys\n"
+                "sys.modules['pandas'] = None\n"
+                "from alertissimo.data_layer.presentation "
+                "import write_portfolio_html\n"
+                "assert callable(write_portfolio_html)\n"
+            ),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+def test_cli_rejects_nonempty_html_dir_before_live_execution(
+    tmp_path, monkeypatch, capsys
+):
+    from scripts.smoke import __main__ as cli
+
+    output = tmp_path / "html"
+    output.mkdir()
+    marker = output / "keep.txt"
+    marker.write_text("do not change")
+
+    monkeypatch.setattr(
+        cli,
+        "load_dotenv",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("dotenv loaded")
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "run_scenario",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("scenario executed")
+        ),
+    )
+
+    assert (
+        cli.main(
+            [
+                "multi-provider",
+                "--live",
+                "--html-dir",
+                str(output),
+            ]
+        )
+        == 2
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "nonempty HTML output directory" in captured.err
+    assert marker.read_text() == "do not change"
+    assert list(output.iterdir()) == [marker]
+
+def test_html_dossier_filename_uses_normalized_step_index(tmp_path):
+    from dataclasses import replace
+
+    from scripts.smoke.html_output import write_smoke_html
+
+    result = run_scenario("multi-provider")
+    assert result.normalized is not None
+
+    step = result.normalized.steps[2]
+    sparse_result = replace(
+        result,
+        normalized=replace(result.normalized, steps=(step,)),
+    )
+
+    output = tmp_path / "html"
+    index = write_smoke_html(sparse_result, output)
+
+    filename = "step-02-execution-00-portfolio-00.html"
+    assert (output / filename).is_file()
+
+    text = index.read_text()
+    assert "Step 2" in text
+    assert filename in text
