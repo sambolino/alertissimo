@@ -16,6 +16,13 @@ from alertissimo.data_layer.representations import InternalExecutionId
 REGISTRY = Path(__file__).parents[1] / "alertissimo/data_layer/providers"
 
 
+def test_endpoint_spec_preserves_legacy_positional_params_argument():
+    spec = EndpointSpec("example", "ztf", "objects", "rest", {"limit": {}})
+
+    assert spec.params == {"limit": {}}
+    assert spec.request_encoding == "json"
+
+
 def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
     raw = b'{"objects": ["ZTF1", "ZTF2"]}'
     captured = {}
@@ -66,12 +73,123 @@ def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
     assert result.raw_size_bytes == len(raw)
 
 
+def _capture_request(monkeypatch, raw=b"{}"):
+    captured = {}
+
+    class Headers:
+        @staticmethod
+        def get_content_type():
+            return "application/json"
+
+    class Response:
+        status = 200
+        headers = Headers()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return raw
+
+    def fake_urlopen(request):
+        captured["request"] = request
+        return Response()
+
+    monkeypatch.setattr(
+        "alertissimo.data_layer.execution.transports.urlopen", fake_urlopen
+    )
+    return captured
+
+
+def test_lasair_form_post_preserves_auth_and_redacts_provenance(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    monkeypatch.setenv("LASAIR_ZTF_TOKEN", "transport-secret")
+
+    result = RegistryEndpointExecutor(EndpointRegistry(REGISTRY)).execute(
+        "lasair", "ztf", "object", {"objectId": "ZTF18abbuksn"}
+    )
+
+    request = captured["request"]
+    assert request.data == b"objectId=ZTF18abbuksn&lasair_added=true"
+    assert request.get_header("Content-type") == "application/x-www-form-urlencoded"
+    assert request.get_header("Authorization") == "Token transport-secret"
+    assert result.execution_provenance.sanitized_headers["Authorization"] == "<redacted>"
+    assert "transport-secret" not in repr(result)
+
+
+def test_json_remains_default_for_rest_post(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        method="POST",
+        url="https://example.test/object",
+    )
+
+    RestTransport().execute(spec, {"active": True})
+
+    request = captured["request"]
+    assert request.data == b'{"active": true}'
+    assert request.get_header("Content-type") == "application/json"
+
+
+def test_explicit_content_type_header_takes_precedence(monkeypatch):
+    captured = _capture_request(monkeypatch)
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        request_encoding="form",
+        method="POST",
+        url="https://example.test/object",
+    )
+
+    RestTransport().execute(
+        spec, {"active": False}, headers={"content-type": "text/plain"}
+    )
+
+    assert captured["request"].get_header("Content-type") == "text/plain"
+
+
+def test_unsupported_request_encoding_fails_before_network(monkeypatch):
+    called = False
+
+    def fake_urlopen(request):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(
+        "alertissimo.data_layer.execution.transports.urlopen", fake_urlopen
+    )
+    spec = EndpointSpec(
+        broker="example",
+        origin="ztf",
+        endpoint="object",
+        transport_kind="rest",
+        method="POST",
+        url="https://example.test/object",
+    )
+    object.__setattr__(spec, "request_encoding", "xml")
+
+    with pytest.raises(ValueError, match="unsupported REST request encoding: xml"):
+        RestTransport().execute(spec, {})
+
+    assert called is False
+
+
 def test_registry_resolves_lasair_rest_endpoint():
     spec = EndpointRegistry(REGISTRY).resolve("lasair", "ztf", "object")
 
     assert spec.transport_kind == "rest"
     assert spec.method == "POST"
     assert spec.url == "https://lasair-ztf.lsst.ac.uk/api/object/"
+    assert spec.request_encoding == "form"
 
 
 def test_registry_resolves_antares_python_endpoint():
@@ -132,6 +250,27 @@ endpoints:
     assert RegistryEndpointExecutor._validated_params(spec, {"object_id": "ZTF1"}) == {
         "object_id": "ZTF1", "survey": "ztf"
     }
+
+
+def test_registry_endpoint_transport_overrides_default_request_encoding(tmp_path):
+    registry = tmp_path / "example" / "ztf"
+    registry.mkdir(parents=True)
+    (registry / "endpoints.yaml").write_text(
+        """broker: example
+origin: ztf
+baseurl: https://example.test
+transport_defaults: {kind: rest, request_encoding: json}
+endpoints:
+  object:
+    path: /object
+    method: POST
+    transport: {request_encoding: form}
+"""
+    )
+
+    spec = EndpointRegistry(tmp_path).resolve("example", "ztf", "object")
+
+    assert spec.request_encoding == "form"
 
 
 def test_executor_preserves_payload_and_full_provenance():

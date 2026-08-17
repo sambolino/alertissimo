@@ -23,8 +23,13 @@ class EndpointSpec:
     client: str | None = None
     client_method: str | None = None
     headers: Mapping[str, Any] = field(default_factory=dict)
+    request_encoding: str = "json"
 
     def __post_init__(self) -> None:
+        if self.request_encoding not in {"json", "form"}:
+            raise ValueError(
+                f"unsupported REST request encoding: {self.request_encoding}"
+            )
         for name in ("params", "fixed_params", "headers"):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
 

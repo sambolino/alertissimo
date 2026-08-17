@@ -16,6 +16,20 @@ def _sanitized(headers: Mapping[str, str]) -> dict[str, str]:
     return {key: "<redacted>" if key.lower() in secret_names else value for key, value in headers.items()}
 
 
+def _form_value(value: Any) -> Any:
+    """Match provider form conventions while retaining urlencode's sequence support."""
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (list, tuple)):
+        return [_form_value(item) for item in value]
+    return value
+
+
+def _set_default_content_type(headers: dict[str, str], value: str) -> None:
+    if not any(name.lower() == "content-type" for name in headers):
+        headers["Content-Type"] = value
+
+
 class RestTransport:
     name = "rest"
 
@@ -39,8 +53,21 @@ class RestTransport:
                 separator = "&" if "?" in url else "?"
                 url = f"{url}{separator}{query}"
         else:
-            body = json.dumps(dict(params)).encode("utf-8")
-            request_headers.setdefault("Content-Type", "application/json")
+            if spec.request_encoding == "json":
+                body = json.dumps(dict(params)).encode("utf-8")
+                _set_default_content_type(request_headers, "application/json")
+            elif spec.request_encoding == "form":
+                form_params = {
+                    key: _form_value(value) for key, value in params.items()
+                }
+                body = urlencode(form_params, doseq=True).encode("utf-8")
+                _set_default_content_type(
+                    request_headers, "application/x-www-form-urlencoded"
+                )
+            else:
+                raise ValueError(
+                    f"unsupported REST request encoding: {spec.request_encoding}"
+                )
 
         request = Request(
             url,

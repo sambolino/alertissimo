@@ -61,6 +61,7 @@ class EndpointRegistry:
             origin=document.get("origin", origin),
             endpoint=endpoint,
             transport_kind=kind,
+            request_encoding=transport.get("request_encoding", "json"),
             params=endpoint_data.get("params") or {},
             fixed_params=transport["fixed_params"],
             method=transport.get("http_method") or (top_method if kind == "rest" else None),

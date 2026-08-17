@@ -57,6 +57,10 @@ python -m scripts.smoke multi-target --live --target ID1 --target ID2
 Never use the live commands in automated tests. Fixture commands above remain
 fully offline and require no credentials.
 
+Lasair POST body encoding is a physical endpoint transport contract (`form`),
+not orchestration or semantic workflow behavior. Other REST POST endpoints keep
+the transport's backward-compatible JSON default.
+
 Steps remain independent: they cannot consume earlier normalized outputs because
 workflow context, dependencies, and step-output references are deferred. These
 scenarios are intended to become acceptance fixtures for a later DSL compiler;

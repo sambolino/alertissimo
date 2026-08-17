@@ -1,6 +1,9 @@
 broker: lasair
 origin: lsst
 baseurl: https://api.lasair.lsst.ac.uk
+transport_defaults:
+  kind: rest
+  request_encoding: form
 endpoints:
   object:
     path: /api/object/

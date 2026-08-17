@@ -65,7 +65,10 @@ def main() -> int:
         )
     except Exception as error:
         print(f"\nLIVE EXECUTION FAILED: {type(error).__name__}: {error}", file=sys.stderr)
-        print("If Lasair returns 400/415, check generic REST POST encoding (JSON vs form).", file=sys.stderr)
+        print(
+            "Check the endpoint's declared request encoding and the provider response status.",
+            file=sys.stderr,
+        )
         return 1
 
     p = execution.execution_provenance

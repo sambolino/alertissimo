@@ -1,6 +1,9 @@
 broker: lasair
 origin: ztf
 baseurl: https://lasair-ztf.lsst.ac.uk
+transport_defaults:
+  kind: rest
+  request_encoding: form
 
 endpoints:
   object:
