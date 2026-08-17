@@ -22,3 +22,10 @@ resolution are deferred until identifier namespaces are formally modeled.
 Workflow context and step-output references are also outside this model. A
 future DSL and UI should compile their target syntax into `TargetSelector`; this
 change does not implement either compiler.
+
+`CompareStep` keeps its comparison operand separate from entity selection. Its
+`target` selects the astronomical entities being analyzed through a
+`TargetSelector`, while `comparison_target` names the semantic value, assertion,
+or representation to compare (for example, `"classification"`). A comparison
+operand may be declared without an entity selector when a future workflow context
+will provide the entity set.

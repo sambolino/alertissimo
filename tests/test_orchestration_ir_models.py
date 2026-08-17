@@ -1,6 +1,5 @@
 """Focused tests for the provider-independent orchestration IR."""
 
-from alertissimo.orchestration.ir import TargetSelector
 from datetime import datetime, timezone
 
 import pytest
@@ -13,7 +12,7 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep, GetLightcurveStep, GetSpectrumStep, GetStep,
     LightcurveStep, LookupStep, MatchStep, MethodAnalysisStep, MonitorStep,
     NotifyStep, SearchStep, SemanticSearchStep, Source, SqlQueryStep, TimeContext,
-    UtilityScoreStep, WorkflowIR,
+    Step, TargetKind, TargetSelector, UtilityScoreStep, WorkflowIR,
 )
 
 
@@ -39,7 +38,11 @@ def concrete_steps():
         MethodAnalysisStep(target=TargetSelector(ids=["target"], kind="object"), method="periodicity", params={"period_min": 1}),
         ClassifyStep(target=TargetSelector(ids=["target"], kind="object"), method="random_forest"),
         AggregateStep(method="mean", field="photometry.flux", group_by=["band"]),
-        CompareStep(target=TargetSelector(ids=["target"], kind="object"), method="disagreement"),
+        CompareStep(
+            target=TargetSelector(ids=["target"], kind="object"),
+            comparison_target="classification",
+            method="disagreement",
+        ),
         UtilityScoreStep(target=TargetSelector(ids=["target"], kind="object"), method="followup_priority"),
         ConfirmStep(target=TargetSelector(ids=["target"], kind="object"), required_agreement=1, sources=[source]),
         MonitorStep(stream="alerts", criteria={"survey": "ztf"}),
@@ -208,6 +211,51 @@ def test_followup_target_and_discriminated_workflow_serialization():
 
 def test_target_step_is_not_public():
     import alertissimo.orchestration.ir as ir
+    import alertissimo.orchestration.ir.models as models
 
+    assert not issubclass(TargetSelector, Step)
     assert not hasattr(ir, "TargetStep")
+    assert not hasattr(models, "TargetStep")
     assert "TargetStep" not in ir.__all__
+    assert "TargetStep" not in models.__all__
+    assert ir.TargetSelector is TargetSelector
+    assert ir.TargetKind is TargetKind
+
+
+@pytest.mark.parametrize(
+    "constructor",
+    [
+        lambda: GetLightcurveStep(target_id="A"),
+        lambda: GetLightcurveStep(target_ids=["A", "B"]),
+        lambda: FollowupRequestStep(request_type="spectroscopy", target_id="A"),
+    ],
+)
+def test_legacy_target_construction_is_rejected(constructor):
+    with pytest.raises(ValidationError):
+        constructor()
+
+
+def test_compare_preserves_entity_and_comparison_targets():
+    step = CompareStep(
+        target=TargetSelector(ids=["ZTF18abbuksn"], kind="object"),
+        comparison_target="classification",
+        method="disagreement",
+    )
+    dumped = step.model_dump()
+    assert dumped["target"] == {"ids": ["ZTF18abbuksn"], "kind": "object"}
+    assert dumped["comparison_target"] == "classification"
+    assert CompareStep.model_validate(dumped) == step
+
+    workflow = WorkflowIR(steps=[step])
+    restored = WorkflowIR.model_validate(workflow.model_dump())
+    assert restored == workflow
+    assert isinstance(restored.steps[0], CompareStep)
+    assert restored.steps[0].comparison_target == "classification"
+
+
+def test_compare_comparison_target_validation_and_deferred_entity_context():
+    assert CompareStep(comparison_target="classification").target is None
+    with pytest.raises(ValidationError):
+        CompareStep(comparison_target="  ")
+    with pytest.raises(ValidationError):
+        CompareStep(target="classification")

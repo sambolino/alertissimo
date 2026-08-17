@@ -271,13 +271,15 @@ class AggregateStep(AnalyzeStep):
 
 
 class CompareStep(AnalyzeStep):
-    """Compare already-selected semantic values, assertions, or representations.
+    """Compare selected values, assertions, or representations for entities.
 
     Comparison measures difference or agreement; unlike MatchStep, it does not ask
-    whether astronomical entities are scientifically associated.
+    whether astronomical entities are scientifically associated. ``target`` selects
+    entities, while ``comparison_target`` names the semantic comparison operand.
     """
 
     op: Literal["compare"] = "compare"
+    comparison_target: NonEmptyStr | None = None
     method: NonEmptyStr | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 

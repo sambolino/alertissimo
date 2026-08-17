@@ -162,8 +162,8 @@ def _candidate_evidence_for_source(
 ) -> _CandidateEvidence:
     raw = _raw_candidates_for_source(step, graph, source)
     target = _target_selector(step)
-    target_ids = target.ids if target is not None else None
-    if target_ids is None or len(target_ids) <= 1:
+    ids = target.ids if target is not None else None
+    if ids is None or len(ids) <= 1:
         return _CandidateEvidence(raw=raw, compatible=raw)
     compatible = tuple(
         candidate
