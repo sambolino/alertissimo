@@ -316,3 +316,88 @@ def test_cli_rejects_unknown_or_invalid_arguments(args, message):
     assert completed.returncode != 0
     assert "usage:" in completed.stderr
     assert message in completed.stderr
+
+def test_html_presentation_import_does_not_require_pandas():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys\n"
+                "sys.modules['pandas'] = None\n"
+                "from alertissimo.data_layer.presentation "
+                "import write_portfolio_html\n"
+                "assert callable(write_portfolio_html)\n"
+            ),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+def test_cli_rejects_nonempty_html_dir_before_live_execution(
+    tmp_path, monkeypatch, capsys
+):
+    from scripts.smoke import __main__ as cli
+
+    output = tmp_path / "html"
+    output.mkdir()
+    marker = output / "keep.txt"
+    marker.write_text("do not change")
+
+    monkeypatch.setattr(
+        cli,
+        "load_dotenv",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("dotenv loaded")
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "run_scenario",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("scenario executed")
+        ),
+    )
+
+    assert (
+        cli.main(
+            [
+                "multi-provider",
+                "--live",
+                "--html-dir",
+                str(output),
+            ]
+        )
+        == 2
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "nonempty HTML output directory" in captured.err
+    assert marker.read_text() == "do not change"
+    assert list(output.iterdir()) == [marker]
+
+def test_html_dossier_filename_uses_normalized_step_index(tmp_path):
+    from dataclasses import replace
+
+    from scripts.smoke.html_output import write_smoke_html
+
+    result = run_scenario("multi-provider")
+    assert result.normalized is not None
+
+    step = result.normalized.steps[2]
+    sparse_result = replace(
+        result,
+        normalized=replace(result.normalized, steps=(step,)),
+    )
+
+    output = tmp_path / "html"
+    index = write_smoke_html(sparse_result, output)
+
+    filename = "step-02-execution-00-portfolio-00.html"
+    assert (output / filename).is_file()
+
+    text = index.read_text()
+    assert "Step 2" in text
+    assert filename in text

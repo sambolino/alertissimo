@@ -6,7 +6,11 @@ import sys
 from dotenv import load_dotenv
 
 from .reporting import render_human, render_json
-from .html_output import HtmlOutputError, write_smoke_html
+from .html_output import (
+    HtmlOutputError,
+    validate_html_output_directory,
+    write_smoke_html,
+)
 from .scenarios import SCENARIOS, run_scenario
 
 
@@ -53,6 +57,13 @@ def main(argv=None) -> int:
         )
     if args.scenario == "partial-failure" and args.live:
         parser().error("partial-failure is fixture-only and cannot be used with --live")
+    if args.html_dir:
+        try:
+            validate_html_output_directory(args.html_dir)
+        except HtmlOutputError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
+
     if args.live:
         # python-dotenv preserves credentials already exported by the caller.
         load_dotenv(override=False)
