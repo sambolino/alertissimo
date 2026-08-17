@@ -16,6 +16,14 @@ def _object_ids(portfolio) -> list[str]:
     return sorted(set(values))
 
 
+def _requested_target_ids(step) -> list[str]:
+    if getattr(step, "target_ids", None) is not None:
+        return list(step.target_ids)
+    if getattr(step, "target_id", None) is not None:
+        return [step.target_id]
+    return []
+
+
 def report_data(result) -> dict[str, Any]:
     normalized_by_step = {
         step.step_index: step
@@ -36,13 +44,15 @@ def report_data(result) -> dict[str, Any]:
             for output in execution_outputs.executions:
                 portfolios = []
                 for portfolio in output.portfolios:
+                    object_ids = _object_ids(portfolio)
                     counts = Counter(
                         record.semantic_type for record in portfolio.records
                     )
                     portfolios.append(
                         {
                             "portfolio_id": portfolio.internal_portfolio_id.value,
-                            "object_ids": _object_ids(portfolio),
+                            "object_ids": object_ids,
+                            "object_identity_available": bool(object_ids),
                             "semantic_counts": dict(sorted(counts.items())),
                             "provenance": [
                                 {
@@ -71,6 +81,9 @@ def report_data(result) -> dict[str, Any]:
                 "operation": result.workflow.steps[step_run.step_index].op,
                 "state": step_run.state.value,
                 "error": step_run.error,
+                "requested_target_ids": _requested_target_ids(
+                    result.workflow.steps[step_run.step_index]
+                ),
                 "execution_ids": list(step_run.execution_ids),
                 "calls": [
                     {
@@ -84,6 +97,7 @@ def report_data(result) -> dict[str, Any]:
                 "executions": executions,
             }
         )
+    failed_steps = [step for step in steps if step["state"] == "failed"]
     return {
         "scenario": result.name,
         "workflow": result.workflow.name,
@@ -94,6 +108,11 @@ def report_data(result) -> dict[str, Any]:
             len(e["portfolios"]) for s in steps for e in s["executions"]
         ),
         "expected_failure": result.expected_error is not None,
+        "failed_step_index": failed_steps[0]["step_index"] if failed_steps else None,
+        "failure_error": failed_steps[0]["error"] if failed_steps else None,
+        "preserved_execution_ids": [
+            execution_id for step in steps for execution_id in step["execution_ids"]
+        ],
         "steps": steps,
     }
 
@@ -105,10 +124,18 @@ def render_json(result) -> str:
 def render_human(result) -> str:
     data = report_data(result)
     lines = [f"scenario: {data['scenario']}", f"workflow: {data['workflow']}"]
+    if data["expected_failure"]:
+        lines.append("expected failure: yes (fail-fast contract observed)")
+        lines.append(f"failed step: {data['failed_step_index']}")
+        lines.append(f"error: {data['failure_error']}")
+        lines.append(
+            f"preserved successful execution IDs: {data['preserved_execution_ids']}"
+        )
     for step in data["steps"]:
         lines.append(
             f"step/op: {step['step_index']}/{step['operation']}  runtime state: {step['state']}"
         )
+        lines.append(f"  requested target IDs: {step['requested_target_ids']}")
         for call in step["calls"]:
             lines.append(
                 f"  planned endpoint: {call['broker']}/{call['origin']}/{call['endpoint']}"
@@ -118,7 +145,12 @@ def render_human(result) -> str:
             lines.append(f"  execution ID: {execution['execution_id']}")
             for portfolio in execution["portfolios"]:
                 lines.append(f"    portfolio ID: {portfolio['portfolio_id']}")
-                lines.append(f"    object ID: {portfolio['object_ids']}")
+                if portfolio["object_identity_available"]:
+                    lines.append(f"    object ID: {portfolio['object_ids']}")
+                else:
+                    lines.append(
+                        "    object identity: unavailable in normalized Portfolio"
+                    )
                 lines.append(
                     f"    semantic types/counts: {portfolio['semantic_counts']}"
                 )

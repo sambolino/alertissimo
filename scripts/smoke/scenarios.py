@@ -23,7 +23,7 @@ from alertissimo.orchestration.runtime import (
 
 from .executors import FixtureEndpointExecutor, fixture_key
 
-DEFAULT_TARGET = "170587117485817955"
+DEFAULT_TARGET = "ZTF18abbuksn"
 BATCH_TARGETS = ("ZTF21abfmbix", "ZTF20acpwljl")
 
 
@@ -52,10 +52,10 @@ def multi_provider_workflow(targets: tuple[str, ...] = (DEFAULT_TARGET,)) -> Wor
                 ],
             ),
             GetForcedPhotometryStep(
-                target_id=target, sources=[Source(broker="alerce", origin="lsst")]
+                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
             ),
             GetLightcurveStep(
-                target_id=target, sources=[Source(broker="alerce", origin="lsst")]
+                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
             ),
         ],
     )
@@ -98,7 +98,7 @@ def partial_failure_workflow(
                 ],
             ),
             GetForcedPhotometryStep(
-                target_id=target, sources=[Source(broker="alerce", origin="lsst")]
+                target_id=target, sources=[Source(broker="alerce", origin="ztf")]
             ),
         ],
     )
@@ -123,15 +123,15 @@ def _fixtures(targets: tuple[str, ...]):
             else "lasair_lightcurves.json"
         ),
     }
-    if len(targets) == 1 and targets[0].isdigit():
+    if len(targets) == 1 and targets[0] == DEFAULT_TARGET:
         fixtures.update(
             {
                 fixture_key(
-                    "alerce", "lsst", "query_forced_photometry", oid=int(targets[0])
-                ): "../../../tests/fixtures/alerce/lsst/query_forced_photometry.json",
+                    "alerce", "ztf", "query_forced_photometry", oid=targets[0]
+                ): "../../../tests/fixtures/alerce/ztf/query_forced_photometry.json",
                 fixture_key(
-                    "alerce", "lsst", "query_lightcurve", oid=int(targets[0])
-                ): "../../../tests/fixtures/alerce/lsst/query_lightcurve.json",
+                    "alerce", "ztf", "query_lightcurve", oid=targets[0]
+                ): "../../../tests/fixtures/alerce/ztf/query_lightcurve.json",
             }
         )
     return fixtures
@@ -140,6 +140,12 @@ def _fixtures(targets: tuple[str, ...]):
 def run_scenario(
     name: str, *, live: bool = False, targets: tuple[str, ...] | None = None
 ) -> ScenarioResult:
+    if targets is not None and not live:
+        raise ValueError(
+            "custom targets require live=True because fixture scenarios use fixed payload identifiers"
+        )
+    if live and name == "partial-failure":
+        raise ValueError("partial-failure is intentionally fixture-only")
     factory = SCENARIOS[name]
     selected = targets or (
         BATCH_TARGETS if name == "multi-target" else (DEFAULT_TARGET,)
@@ -148,8 +154,6 @@ def run_scenario(
     registry = EndpointRegistry()
     run = plan_workflow(workflow, build_capability_graph())
     bindings = bind_workflow_run(run, registry)
-    if live and name == "partial-failure":
-        raise ValueError("partial-failure is intentionally fixture-only")
     executor = (
         RegistryEndpointExecutor(registry=registry)
         if live

@@ -38,6 +38,12 @@ def main(argv=None) -> int:
         return 0
     if not args.scenario:
         parser().error("a scenario is required unless --list is used")
+    if args.targets and not args.live:
+        parser().error(
+            "--target requires --live because fixture scenarios use fixed payload identifiers"
+        )
+    if args.scenario == "partial-failure" and args.live:
+        parser().error("partial-failure is fixture-only and cannot be used with --live")
     result = run_scenario(
         args.scenario,
         live=args.live,
