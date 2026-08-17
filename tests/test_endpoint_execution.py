@@ -16,6 +16,13 @@ from alertissimo.data_layer.representations import InternalExecutionId
 REGISTRY = Path(__file__).parents[1] / "alertissimo/data_layer/providers"
 
 
+def test_endpoint_spec_preserves_legacy_positional_params_argument():
+    spec = EndpointSpec("example", "ztf", "objects", "rest", {"limit": {}})
+
+    assert spec.params == {"limit": {}}
+    assert spec.request_encoding == "json"
+
+
 def test_rest_transport_encodes_get_params_in_url_without_body(monkeypatch):
     raw = b'{"objects": ["ZTF1", "ZTF2"]}'
     captured = {}

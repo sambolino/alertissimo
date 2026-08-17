@@ -15,7 +15,6 @@ class EndpointSpec:
     origin: str
     endpoint: str
     transport_kind: str
-    request_encoding: str = "json"
     params: Mapping[str, Any] = field(default_factory=dict)
     fixed_params: Mapping[str, Any] = field(default_factory=dict)
     method: str | None = None
@@ -24,6 +23,7 @@ class EndpointSpec:
     client: str | None = None
     client_method: str | None = None
     headers: Mapping[str, Any] = field(default_factory=dict)
+    request_encoding: str = "json"
 
     def __post_init__(self) -> None:
         if self.request_encoding not in {"json", "form"}:
