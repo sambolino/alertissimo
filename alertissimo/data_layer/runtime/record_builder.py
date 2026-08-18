@@ -26,6 +26,10 @@ from alertissimo.data_layer.semantic_model.validation import (
 )
 
 from .capability_graph import split_semantic_path
+from .intrinsic_array_collector import (
+    IntrinsicArrayCollectionError,
+    collect_intrinsic_array_records,
+)
 from .mapping_schema import validate_mapping_file
 from .payload_paths import RawFieldMissing, extract_raw_field, resolve_payload_items
 
@@ -342,6 +346,16 @@ def build_portfolios_from_execution(
                         ),
                     )
                 )
+
+    try:
+        records_by_object = {
+            partition_key: list(collect_intrinsic_array_records(records))
+            for partition_key, records in records_by_object.items()
+        }
+    except IntrinsicArrayCollectionError as error:
+        raise PortfolioBuildError(
+            f"cannot collect intrinsic semantic arrays: {error}"
+        ) from error
 
     if internal_portfolio_id is not None and len(records_by_object) != 1:
         raise PortfolioBuildError(
