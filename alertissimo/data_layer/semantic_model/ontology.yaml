@@ -2143,7 +2143,6 @@ levels:
   $ref: <position>(L0)
   $ref: <photometry>(L0)
   $ref: <forced_photometry>(L0)
-  $ref: <color>(L0)
   $ref: <flags>(L0)
   $ref: <provenance>
   $edges:
