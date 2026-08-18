@@ -140,6 +140,7 @@ def test_payload_selection_uses_only_authoritative_nested_lightcurve_rows():
         "query_lightcurve.non_detections",
     }
     assert len(detections) == 2
-    assert lightcurves
+    assert len(lightcurves) == 1
     assert {record.internal_source.payload_key for record in detections} == expected_payloads
-    assert {record.internal_source.payload_key for record in lightcurves} == expected_payloads
+    assert lightcurves[0].internal_source is None
+    assert len(lightcurves[0].fields["points"]) == 2
