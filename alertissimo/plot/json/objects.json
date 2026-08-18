@@ -1,0 +1,272 @@
+[
+  {
+    "diaObjectId": "313761043604045881",
+    "tns": {
+      "name": "AT 2026AAXA",
+      "type": "Type Ia Supernova"
+    },
+    "coordinates": {
+      "ra": 14.287531,
+      "dec": -18.449072
+    },
+    "filters": {
+      "g": 1,
+      "r": 1,
+      "i": 1,
+      "z": 1
+    },
+    "lightCurve": [
+      {
+        "date": "2026-01-08T02:12:00Z",
+        "mjd": 61048.091667,
+        "band": "g",
+        "magnitude": 22.4,
+        "magnitudeError": 0.16
+      },
+      {
+        "date": "2026-01-19T03:40:00Z",
+        "mjd": 61059.152778,
+        "band": "r",
+        "magnitude": 20.9,
+        "magnitudeError": 0.09
+      },
+      {
+        "date": "2026-02-03T01:18:00Z",
+        "mjd": 61074.054167,
+        "band": "i",
+        "magnitude": 19.2,
+        "magnitudeError": 0.05
+      },
+      {
+        "date": "2026-02-21T04:05:00Z",
+        "mjd": 61092.170139,
+        "band": "z",
+        "magnitude": 18.7,
+        "magnitudeError": 0.04
+      }
+    ],
+    "summary": {
+      "firstDetection": "2026-01-08T02:12:00Z",
+      "lastDetection": "2026-02-21T04:05:00Z",
+      "brightestMagnitude": 18.7,
+      "faintestMagnitude": 22.4,
+      "numberOfMeasurements": 4
+    }
+  },
+  {
+    "diaObjectId": "313761043604045882",
+    "tns": {
+      "name": "AT 2026BBXB",
+      "type": "Type II Supernova"
+    },
+    "coordinates": {
+      "ra": 76.912644,
+      "dec": 12.381905
+    },
+    "filters": {
+      "g": 1,
+      "r": 1,
+      "i": 1,
+      "z": 1
+    },
+    "lightCurve": [
+      {
+        "date": "2026-02-14T21:30:00Z",
+        "mjd": 61085.895833,
+        "band": "g",
+        "magnitude": 21.8,
+        "magnitudeError": 0.13
+      },
+      {
+        "date": "2026-02-25T22:10:00Z",
+        "mjd": 61096.923611,
+        "band": "r",
+        "magnitude": 20.5,
+        "magnitudeError": 0.08
+      },
+      {
+        "date": "2026-03-11T20:45:00Z",
+        "mjd": 61110.864583,
+        "band": "i",
+        "magnitude": 19.9,
+        "magnitudeError": 0.06
+      },
+      {
+        "date": "2026-04-02T23:15:00Z",
+        "mjd": 61132.968750,
+        "band": "z",
+        "magnitude": 20.2,
+        "magnitudeError": 0.07
+      }
+    ],
+    "summary": {
+      "firstDetection": "2026-02-14T21:30:00Z",
+      "lastDetection": "2026-04-02T23:15:00Z",
+      "brightestMagnitude": 19.9,
+      "faintestMagnitude": 21.8,
+      "numberOfMeasurements": 4
+    }
+  },
+  {
+    "diaObjectId": "313761043604045883",
+    "tns": {
+      "name": "AT 2026CCYC",
+      "type": "Cataclysmic Variable"
+    },
+    "coordinates": {
+      "ra": 131.504827,
+      "dec": -7.622410
+    },
+    "filters": {
+      "g": 1,
+      "r": 1,
+      "i": 1,
+      "z": 1
+    },
+    "lightCurve": [
+      {
+        "date": "2026-03-03T05:25:00Z",
+        "mjd": 61102.225694,
+        "band": "g",
+        "magnitude": 20.1,
+        "magnitudeError": 0.08
+      },
+      {
+        "date": "2026-03-03T05:31:00Z",
+        "mjd": 61102.229861,
+        "band": "r",
+        "magnitude": 18.4,
+        "magnitudeError": 0.03
+      },
+      {
+        "date": "2026-03-17T04:55:00Z",
+        "mjd": 61116.204861,
+        "band": "i",
+        "magnitude": 19.3,
+        "magnitudeError": 0.05
+      },
+      {
+        "date": "2026-04-09T03:20:00Z",
+        "mjd": 61139.138889,
+        "band": "z",
+        "magnitude": 20.0,
+        "magnitudeError": 0.07
+      }
+    ],
+    "summary": {
+      "firstDetection": "2026-03-03T05:25:00Z",
+      "lastDetection": "2026-04-09T03:20:00Z",
+      "brightestMagnitude": 18.4,
+      "faintestMagnitude": 20.1,
+      "numberOfMeasurements": 4
+    }
+  },
+  {
+    "diaObjectId": "313761043604045884",
+    "tns": {
+      "name": "AT 2026DDZD",
+      "type": "Tidal Disruption Event"
+    },
+    "coordinates": {
+      "ra": 218.773109,
+      "dec": 34.109622
+    },
+    "filters": {
+      "g": 1,
+      "r": 1,
+      "i": 1,
+      "z": 1
+    },
+    "lightCurve": [
+      {
+        "date": "2026-04-18T10:05:00Z",
+        "mjd": 61148.420139,
+        "band": "g",
+        "magnitude": 22.9,
+        "magnitudeError": 0.19
+      },
+      {
+        "date": "2026-05-01T09:42:00Z",
+        "mjd": 61161.404167,
+        "band": "r",
+        "magnitude": 21.1,
+        "magnitudeError": 0.10
+      },
+      {
+        "date": "2026-05-22T08:16:00Z",
+        "mjd": 61182.344444,
+        "band": "i",
+        "magnitude": 19.6,
+        "magnitudeError": 0.06
+      },
+      {
+        "date": "2026-06-12T07:50:00Z",
+        "mjd": 61203.326389,
+        "band": "z",
+        "magnitude": 18.9,
+        "magnitudeError": 0.04
+      }
+    ],
+    "summary": {
+      "firstDetection": "2026-04-18T10:05:00Z",
+      "lastDetection": "2026-06-12T07:50:00Z",
+      "brightestMagnitude": 18.9,
+      "faintestMagnitude": 22.9,
+      "numberOfMeasurements": 4
+    }
+  },
+  {
+    "diaObjectId": "313761043604045885",
+    "tns": {
+      "name": "AT 2026EEAE",
+      "type": "Unknown Transient"
+    },
+    "coordinates": {
+      "ra": 302.118456,
+      "dec": -51.870334
+    },
+    "filters": {
+      "g": 1,
+      "r": 1,
+      "i": 1,
+      "z": 1
+    },
+    "lightCurve": [
+      {
+        "date": "2026-05-27T16:44:00Z",
+        "mjd": 61187.697222,
+        "band": "g",
+        "magnitude": 23.4,
+        "magnitudeError": 0.22
+      },
+      {
+        "date": "2026-06-06T15:28:00Z",
+        "mjd": 61197.644444,
+        "band": "r",
+        "magnitude": 22.2,
+        "magnitudeError": 0.15
+      },
+      {
+        "date": "2026-06-28T14:02:00Z",
+        "mjd": 61219.584722,
+        "band": "i",
+        "magnitude": 21.4,
+        "magnitudeError": 0.11
+      },
+      {
+        "date": "2026-07-19T12:36:00Z",
+        "mjd": 61240.525000,
+        "band": "z",
+        "magnitude": 20.8,
+        "magnitudeError": 0.08
+      }
+    ],
+    "summary": {
+      "firstDetection": "2026-05-27T16:44:00Z",
+      "lastDetection": "2026-07-19T12:36:00Z",
+      "brightestMagnitude": 20.8,
+      "faintestMagnitude": 23.4,
+      "numberOfMeasurements": 4
+    }
+  }
+]

@@ -5,5 +5,7 @@ headless = true
 magicEnabled = true
 
 [theme]
-base = "dark"
-
+base = "light"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f6f8"
+textColor = "#172033"
