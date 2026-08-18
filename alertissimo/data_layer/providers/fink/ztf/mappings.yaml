@@ -475,11 +475,22 @@ mappings:
   - sso#i:nmtchps
   - latests#i:nmtchps
   - anomaly#i:nmtchps
-  lightcurve@fink.feature_vector.g.value:
+  lightcurve@fink.feature_vector_points.time.mjd:
+  - objects#i:jd
+  - sso#i:jd
+  - latests#i:jd
+  - anomaly#i:jd
+  lightcurve@fink.feature_vector_points.identity.source_id:
+  - objects#i:candid
+  - sso#i:candid
+  - latests#i:candid
+  - anomaly#i:candid
+  lightcurve@fink.feature_vector_points.g.value:
+  - objects#d:lc_features_g
   - sso#d:lc_features_g
   - latests#d:lc_features_g
   - anomaly#d:lc_features_g
-  lightcurve@fink.feature_vector.r.value:
+  lightcurve@fink.feature_vector_points.r.value:
   - objects#d:lc_features_r
   - sso#d:lc_features_r
   - latests#d:lc_features_r
@@ -729,12 +740,6 @@ mappings:
   - statistics#class:simbad_tot
   survey@fink.selection.simbad_extragalactic_host.record_count:
   - statistics#class:simbad_gal
-  lightcurve@fink.detection_count:
-  - objects#d:nalerthist
-  - conesearch#d:nalerthist
-  - sso#d:nalerthist
-  - latests#d:nalerthist
-  - anomaly#d:nalerthist
   classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
   - objects#d:blazar_stats_cdf_quantile
   - sso#d:blazar_stats_cdf_quantile
@@ -1337,22 +1342,6 @@ transforms:
       skip_null: true
   survey@fink.selection.simbad_extragalactic_host.record_count:
     statistics#class:simbad_gal:
-      type: to_int
-      skip_null: true
-  lightcurve@fink.detection_count:
-    objects#d:nalerthist:
-      type: to_int
-      skip_null: true
-    conesearch#d:nalerthist:
-      type: to_int
-      skip_null: true
-    sso#d:nalerthist:
-      type: to_int
-      skip_null: true
-    latests#d:nalerthist:
-      type: to_int
-      skip_null: true
-    anomaly#d:nalerthist:
       type: to_int
       skip_null: true
   classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
@@ -3247,14 +3236,16 @@ transforms:
     sso#sso_number:
       type: to_int
       skip_null: true
-  lightcurve@fink.feature_vector.g.value:
+  lightcurve@fink.feature_vector_points.g.value:
+    objects#d:lc_features_g:
+      skip_null: true
     sso#d:lc_features_g:
       skip_null: true
     latests#d:lc_features_g:
       skip_null: true
     anomaly#d:lc_features_g:
       skip_null: true
-  lightcurve@fink.feature_vector.r.value:
+  lightcurve@fink.feature_vector_points.r.value:
     objects#d:lc_features_r:
       skip_null: true
     sso#d:lc_features_r:

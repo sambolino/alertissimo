@@ -412,3 +412,18 @@ unmapped:
     reason: structural_multiplicity
     note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
     candidate_meaning: lightcurve@fink.magnitude_rate_points.from_upper_limit
+- objects#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- conesearch#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- latests#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- anomaly#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- sso#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.

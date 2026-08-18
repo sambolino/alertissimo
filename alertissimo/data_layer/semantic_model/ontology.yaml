@@ -2218,6 +2218,9 @@ levels:
 <_magnitude_rate_point>:
   $ref: <_time_series_point>
   $ref: <photometry>(L4)
+  [from_upper_limit]:
+    description: "Whether the preceding photometric constraint used to derive the rate was an upper limit"
+    type: boolean
   
 <_feature_vector_point>:
   $ref: <_time_series_point>
@@ -2225,10 +2228,6 @@ levels:
     [value]:
       description: "Feature-vector value for this filter"
   
-  [from_upper_limit]:
-    description: "Whether the preceding photometric constraint used to derive the rate was an upper limit"
-    type: boolean
-
 <_color_point>:
   $ref: <_time_series_point>
   $ref: <color>(L1)
@@ -2266,7 +2265,10 @@ levels:
       $ref: <_color_point>
 
   <feature_vector_points>:
-    description: "Serialized or structured feature vector derived from a time series"
+    description: "Feature-vector snapshots derived from the time series at reported epochs"
+    type: array
+    items:
+      $ref: <_feature_vector_point>
 
   [detection_count]:
     description: "Number of detections in the time-series history"

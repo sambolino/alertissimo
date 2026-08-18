@@ -32,6 +32,7 @@ _INTRINSIC_ARRAY_FIELDS = {
             "forced_photometry_points",
             "magnitude_rate_points",
             "color_points",
+            "feature_vector_points",            
         }
     ),
 }
