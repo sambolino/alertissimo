@@ -936,6 +936,80 @@ mappings:
   - sources#r:trail_flag_edge
   - conesearch#r:trail_flag_edge
   - sso#r:trail_flag_edge
+  lightcurve@lsst:fink.points.identity.source_id:
+  - sources#r:diaSourceId
+  lightcurve@lsst:fink.points.identity.visit_id:
+  - sources#r:visit
+  lightcurve@lsst:fink.points.identity.detector_id:
+  - sources#r:detector
+  lightcurve@lsst:fink.points.time.mjd:
+  - sources#r:midpointMjdTai
+  lightcurve@lsst:fink.points.time.processed_mjd:
+  - sources#r:timeProcessedMjdTai
+  lightcurve@lsst:fink.points.time.invalidated_mjd:
+  - sources#r:timeWithdrawnMjdTai
+  lightcurve@lsst:fink.points.provenance.producer.program.id:
+  - sources#r:observation_reason
+  lightcurve@lsst:fink.points.provenance.producer.program.target_name:
+  - sources#r:target_name
+  lightcurve@lsst:fink.points.provenance.channel.version:
+  - sources#f:fink_broker_version
+  lightcurve@lsst:fink.points.provenance.channel.science_version:
+  - sources#f:fink_science_version
+  lightcurve@lsst:fink.points.provenance.producer.schema_version:
+  - sources#f:lsst_schema_version
+  lightcurve@lsst:fink.points.photometry.{filter}:
+  - sources#r:band
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.flux:
+  - sources#r:psfFlux
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.flux.error:
+  - sources#r:psfFluxErr
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.fit_chi2:
+  - sources#r:psfChi2
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.fit_ndata:
+  - sources#r:psfNdata
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.flags.failed:
+  - sources#r:psfFlux_flag
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.flags.edge:
+  - sources#r:psfFlux_flag_edge
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.flags.no_good_pixels:
+  - sources#r:psfFlux_flag_noGoodPixels
+  lightcurve@lsst:fink.points.photometry.{filter}.aperture.flux:
+  - sources#r:apFlux
+  lightcurve@lsst:fink.points.photometry.{filter}.aperture.flux.error:
+  - sources#r:apFluxErr
+  lightcurve@lsst:fink.points.photometry.{filter}.aperture.flags.failed:
+  - sources#r:apFlux_flag
+  lightcurve@lsst:fink.points.photometry.{filter}.aperture.flags.aperture_truncated:
+  - sources#r:apFlux_flag_apertureTruncated
+  lightcurve@lsst:fink.points.quality.signal_to_noise:
+  - sources#r:snr
+  lightcurve@lsst:fink.points.quality.reliability:
+  - sources#r:reliability
+  lightcurve@lsst:fink.points.quality.reliability.version:
+  - sources#r:reliabilityVersion
+  lightcurve@lsst:fink.points.time.exposure:
+  - sources#r:exposureTime
+  lightcurve@lsst:fink.points.photometry.{filter}.psf.fit_log_likelihood:
+  - sources#r:psfLnL
+  lightcurve@lsst:fink.forced_photometry_points.identity.source_id:
+  - fp#r:diaForcedSourceId
+  lightcurve@lsst:fink.forced_photometry_points.identity.visit_id:
+  - fp#r:visit
+  lightcurve@lsst:fink.forced_photometry_points.identity.detector_id:
+  - fp#r:detector
+  lightcurve@lsst:fink.forced_photometry_points.time.mjd:
+  - fp#r:midpointMjdTai
+  lightcurve@lsst:fink.forced_photometry_points.time.processed_mjd:
+  - fp#r:timeProcessedMjdTai
+  lightcurve@lsst:fink.forced_photometry_points.time.invalidated_mjd:
+  - fp#r:timeWithdrawnMjdTai
+  lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}:
+  - fp#r:band
+  lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}.psf.flux:
+  - fp#r:psfFlux
+  lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}.psf.flux.error:
+  - fp#r:psfFluxErr
 transforms:
   crossmatch@gaia:fink.identity.object_id:
     sources#f:xm_gaiadr3_DR3Name: &valid_crossmatch_identity
@@ -991,3 +1065,5 @@ transforms:
       type: boolean_not
     sso#r:isNegative:
       type: boolean_not
+  lightcurve@lsst:fink.points.quality.reliability.version:
+    sources#r:reliabilityVersion: *fink_reliability_version

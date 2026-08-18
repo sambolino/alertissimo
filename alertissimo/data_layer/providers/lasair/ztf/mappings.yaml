@@ -142,10 +142,6 @@ mappings:
   - candidates#diffmaglim
   - lightcurve_candidates#diffmaglim
   - objects_candidates#diffmaglim
-  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
-  - candidates#diffmaglim
-  - lightcurve_candidates#diffmaglim
-  - objects_candidates#diffmaglim
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
   - candidates#magnr
   - lightcurve_candidates#magnr
@@ -467,6 +463,22 @@ mappings:
   - sherlock_position_crossmatches#MagErr
   - sherlock_object_crossmatches#MagErr
   - sherlock_objects_crossmatches#MagErr
+  lightcurve@ztf:lasair.points.identity.source_id:
+  - lightcurve_candidates#candid
+  lightcurve@ztf:lasair.points.identity.night_id:
+  - lightcurve_candidates#nid
+  lightcurve@ztf:lasair.points.time.mjd:
+  - lightcurve_candidates#jd
+  lightcurve@ztf:lasair.points.photometry.{filter}:
+  - lightcurve_candidates#fid
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
+  - lightcurve_candidates#magpsf
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
+  - lightcurve_candidates#sigmapsf
+  lightcurve@ztf:lasair.points.photometry.{filter}.limit.mag:
+  - lightcurve_candidates#diffmaglim
+  lightcurve@ztf:lasair.points.quality.real_bogus:
+  - lightcurve_candidates#drb
 transforms:
   classification@sherlock:lasair.best.score:
     object#sherlock.classificationReliability:
@@ -512,22 +524,6 @@ transforms:
         1: g
         2: r
         3: i
-  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
-    candidates#diffmaglim:
-      type: value_map
-      map: &id001 {}
-      default: true
-      skip_null: true
-    lightcurve_candidates#diffmaglim:
-      type: value_map
-      map: *id001
-      default: true
-      skip_null: true
-    objects_candidates#diffmaglim:
-      type: value_map
-      map: {}
-      default: true
-      skip_null: true
   detection@ztf:lasair.image_metrics.is_positive:
     candidates#isdiffpos:
       type: value_map
@@ -864,3 +860,13 @@ transforms:
       skip_null: true
     sherlock_object_crossmatches#classification:
       skip_null: true
+  lightcurve@ztf:lasair.points.time.mjd:
+    lightcurve_candidates#jd:
+      type: jd_to_mjd
+  lightcurve@ztf:lasair.points.photometry.{filter}:
+    lightcurve_candidates#fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i

@@ -102,7 +102,14 @@ def test_isdiffpos_uses_ztf_sign_semantics_without_unsafe_default():
         {"fid": 1, "isdiffpos": -1, "mjd": 2.0},
         {"fid": 1, "isdiffpos": "unexpected", "mjd": 3.0},
     ])
-    records = sorted(portfolio.records, key=lambda record: record.fields["time.mjd"])
+    records = sorted(
+        (
+            record
+            for record in portfolio.records
+            if record.semantic_type == "detection@ztf:alerce"
+        ),
+        key=lambda record: record.fields["time.mjd"],
+    )
     assert records[0].fields["image_metrics.is_positive"] is True
     assert records[1].fields["image_metrics.is_positive"] is False
     assert "image_metrics.is_positive" not in records[2].fields
@@ -118,8 +125,21 @@ def test_payload_selection_uses_only_authoritative_nested_lightcurve_rows():
         "detections": [{"oid": "ZTF-detection", "fid": 1, "mjd": 1.0}],
         "non_detections": [{"oid": "ZTF-limit", "fid": 2, "mjd": 2.0, "diffmaglim": 20.2}],
     })
-    assert len(lightcurve.records) == 2
-    assert {record.internal_source.payload_key for record in lightcurve.records} == {
+    detections = [
+        record
+        for record in lightcurve.records
+        if record.semantic_type == "detection@ztf:alerce"
+    ]
+    lightcurves = [
+        record
+        for record in lightcurve.records
+        if record.semantic_type == "lightcurve@ztf:alerce"
+    ]
+    expected_payloads = {
         "query_lightcurve.detections",
         "query_lightcurve.non_detections",
     }
+    assert len(detections) == 2
+    assert lightcurves
+    assert {record.internal_source.payload_key for record in detections} == expected_payloads
+    assert {record.internal_source.payload_key for record in lightcurves} == expected_payloads

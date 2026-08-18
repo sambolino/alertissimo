@@ -189,7 +189,7 @@ def test_documented_object_upper_limit_does_not_fabricate_measured_psf_mag():
     fields = dict(detection.fields)
     assert fields["time.mjd"] == 59994.351793999784
     assert fields["photometry.r.limit.mag"] == 20.46820068359375
-    assert fields["photometry.r.limit.upper_limit"] is True
+    assert "photometry.r.upper_limit" not in fields
     assert "photometry.r.psf.mag" not in fields
     assert "photometry.r.psf.mag.error" not in fields
 
@@ -204,7 +204,7 @@ def test_lightcurve_surface_keeps_measured_difference_photometry():
     assert fields["identity.source_id"] == 1
     assert fields["photometry.g.psf.mag"] == 18.2
     assert fields["photometry.g.psf.mag.error"] == 0.1
-    assert "photometry.g.limit.upper_limit" not in fields
+    assert "photometry.g.upper_limit" not in fields
 
 
 def test_object_candidate_magpsf_is_conditional_debt():
