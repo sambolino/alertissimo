@@ -128,6 +128,67 @@ def test_one_row_can_contribute_to_multiple_intrinsic_arrays(tmp_path):
     )
 
 
+def test_context_only_derived_points_are_pruned(tmp_path):
+    mappings = {
+        "lightcurve@fink.magnitude_rate_points.time.mjd": ["row#mjd"],
+        "lightcurve@fink.magnitude_rate_points.identity.source_id": ["row#source"],
+        "lightcurve@fink.magnitude_rate_points.photometry.g.mag.rate": ["row#rate"],
+        "lightcurve@fink.color_points.time.mjd": ["row#mjd"],
+        "lightcurve@fink.color_points.identity.source_id": ["row#source"],
+        "lightcurve@fink.color_points.color.g-r.diff": ["row#color"],
+    }
+    portfolio = _build(
+        tmp_path,
+        [
+            {"mjd": 10.0, "source": "a"},
+            {"mjd": 11.0, "source": "b", "rate": 0.1, "color": 0.5},
+        ],
+        mappings,
+    )
+
+    (record,) = portfolio.records
+    assert record.fields["magnitude_rate_points"] == (
+        {"time.mjd": 11.0, "identity.source_id": "b", "photometry.g.mag.rate": 0.1},
+    )
+    assert record.fields["color_points"] == (
+        {"time.mjd": 11.0, "identity.source_id": "b", "color.g-r.diff": 0.5},
+    )
+
+
+def test_json_feature_vectors_decode_skip_empty_and_collect(tmp_path):
+    mappings = {
+        "lightcurve@fink.feature_vector_points.time.mjd": ["row#jd"],
+        "lightcurve@fink.feature_vector_points.identity.source_id": ["row#source"],
+        "lightcurve@fink.feature_vector_points.g.value": ["row#g"],
+        "lightcurve@fink.feature_vector_points.r.value": ["row#r"],
+    }
+    transforms = {
+        "lightcurve@fink.feature_vector_points.time.mjd": {
+            "row#jd": {"type": "jd_to_mjd"}
+        },
+        "lightcurve@fink.feature_vector_points.g.value": {
+            "row#g": {"type": "json_decode", "skip_empty": True}
+        },
+        "lightcurve@fink.feature_vector_points.r.value": {
+            "row#r": {"type": "json_decode", "skip_empty": True}
+        },
+    }
+    portfolio = _build(
+        tmp_path,
+        [
+            {"jd": 2400010.5, "source": "a", "g": "[]", "r": "[]"},
+            {"jd": 2400011.5, "source": "b", "g": "[1.0, 2.0]", "r": "[]"},
+        ],
+        mappings,
+        transforms,
+    )
+
+    (record,) = portfolio.records
+    assert record.fields["feature_vector_points"] == (
+        {"time.mjd": 11.0, "identity.source_id": "b", "g.value": [1.0, 2.0]},
+    )
+
+
 def test_root_lightcurve_fields_deduplicate_while_points_collect(tmp_path):
     mappings = {
         "lightcurve@fink.detection_count": ["row#count"],
@@ -168,10 +229,11 @@ def test_non_lightcurve_records_keep_row_cardinality(tmp_path):
     mappings = {
         "detection@ztf:test.time.mjd": ["row#jd"],
         "lightcurve@ztf:test.points.time.mjd": ["row#jd"],
+        "lightcurve@ztf:test.points.photometry.g.psf.mag": ["row#mag"],
     }
     portfolio = _build(
         tmp_path,
-        [{"jd": 1.0}, {"jd": 2.0}],
+        [{"jd": 1.0, "mag": 18.1}, {"jd": 2.0, "mag": 18.2}],
         mappings,
     )
     detections = [
@@ -184,6 +246,6 @@ def test_non_lightcurve_records_keep_row_cardinality(tmp_path):
     assert [record.internal_source.payload_index for record in detections] == [0, 1]
     assert len(lightcurves) == 1
     assert lightcurves[0].fields["points"] == (
-        {"time.mjd": 1.0},
-        {"time.mjd": 2.0},
+        {"time.mjd": 1.0, "photometry.g.psf.mag": 18.1},
+        {"time.mjd": 2.0, "photometry.g.psf.mag": 18.2},
     )
