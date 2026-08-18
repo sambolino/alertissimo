@@ -31,7 +31,7 @@ TRANSFORM_TYPES = {
     "boolean_not",
     "value_map",
     "jd_to_mjd",
-    "json_decode",
+    "array_decode",
     "to_string_strip",
     "to_float",
     "to_int",
@@ -211,7 +211,7 @@ def validate_mapping_file(path: str | Path) -> None:
             raise MappingSchemaError(f"{path}: payload {key!r} is missing required key 'path'")
         _validate_payload_path(definition["path"], f"{path}: payload {key!r} path")
         if "object_partition" in definition:
-            partition = _mapping(document["payloads"][key]["object_partition"], f"{path}: payload {key!r} object_partition")
+            partition = _mapping(definition["object_partition"], f"{path}: payload {key!r} object_partition")
             _allowed_keys(partition, OBJECT_PARTITION_KEYS, f"{path}: payload {key!r} object_partition")
             mode = partition.get("mode")
             if mode not in {"none", "single", "field", "root_field"}:
