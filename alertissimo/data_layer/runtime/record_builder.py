@@ -170,6 +170,33 @@ def _should_skip_mapping_value(
     return False
 
 
+def _decode_serialized_array(value: Any) -> list[Any]:
+    """Decode JSON- or brace-delimited array text into a structured list.
+
+    Some upstream stores serialize arrays using JSON brackets while others emit
+    brace-delimited array text. Non-finite ``NaN``/``Infinity`` elements are
+    unavailable numeric features and normalize to ``None`` so downstream JSON
+    remains standards-compliant.
+    """
+
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    if not isinstance(value, (str, bytes, bytearray)):
+        raise TypeError(f"cannot decode serialized array from {value!r}")
+    if isinstance(value, (bytes, bytearray)):
+        value = bytes(value).decode("utf-8")
+    text = value.strip()
+    if text.startswith("{") and text.endswith("}"):
+        text = f"[{text[1:-1]}]"
+    try:
+        decoded = json.loads(text, parse_constant=lambda _: None)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"cannot decode serialized array {value!r}") from error
+    if not isinstance(decoded, list):
+        raise ValueError(f"serialized array did not decode to a list: {value!r}")
+    return decoded
+
+
 def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any:
     if not specification:
         return value
@@ -185,13 +212,8 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
         return value - 2400000.5
     if value is None:
         return None
-    if transform_type == "json_decode":
-        if not isinstance(value, (str, bytes, bytearray)):
-            raise TypeError(f"cannot JSON-decode non-text value {value!r}")
-        try:
-            return json.loads(value)
-        except (json.JSONDecodeError, UnicodeDecodeError) as error:
-            raise ValueError(f"cannot JSON-decode {value!r}") from error
+    if transform_type == "array_decode":
+        return _decode_serialized_array(value)
     if transform_type == "scale":
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise TypeError(f"cannot scale non-numeric value {value!r}")
@@ -324,9 +346,8 @@ def build_portfolios_from_execution(
                     except RawFieldMissing:
                         continue
                     # Skip explicit null/empty sentinels both before and after
-                    # transforms. The second check handles transforms such as
-                    # JSON decoding that turn a non-empty serialized value into
-                    # an empty structured value.
+                    # transforms. The second check handles transforms that turn
+                    # a serialized value into an empty structured value.
                     if _should_skip_mapping_value(value, specification):
                         continue
                     value = _apply_transform(value, specification)
