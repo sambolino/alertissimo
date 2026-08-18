@@ -3254,6 +3254,15 @@ transforms:
       skip_null: true
     anomaly#d:lc_features_r:
       skip_null: true
+  lightcurve@fink.feature_vector_points.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
+    sso#i:jd:
+      type: jd_to_mjd
+    latests#i:jd:
+      type: jd_to_mjd
+    anomaly#i:jd:
+      type: jd_to_mjd
   detection@ztf:fink.provenance.channel.science_version:
     objects#i:fink_science_version:
       skip_null: true
