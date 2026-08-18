@@ -248,7 +248,7 @@ transforms:
       map:
         R: r
         g: g
-      default:
+      default: null
       skip_null: true
       note: Strict authoritative ANTARES passband normalization.
   detection@ztf:antares.photometry.{filter}.upper_limit:
@@ -257,7 +257,7 @@ transforms:
       map:
         1: false
         2: true
-      default:
+      default: null
       skip_null: true
       note: 'ANTARES survey discriminator: candidate=1, upper limit=2.'
   detection@ztf:antares.image_metrics.is_positive:
@@ -266,6 +266,6 @@ transforms:
       map:
         f: false
         '0': false
-      default:
+      default: null
       skip_null: true
       note: Only negative encodings observed in frozen 1.14.0 evidence; unknown tokens omitted.

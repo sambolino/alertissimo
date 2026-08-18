@@ -502,7 +502,7 @@ transforms:
     query_detections#forced_PsfFlux_flag: &strict_forced_psf_flag
       type: value_map
       map: {0: false, 1: true}
-      default:
+      default: null
       skip_null: true
     query_lightcurve.detections#forced_PsfFlux_flag: *strict_forced_psf_flag
   detection@lsst:alerce.forced_photometry.{filter}.psf.flags.edge:
@@ -515,7 +515,7 @@ transforms:
     query_detections#psfFlux_flag: &strict_psf_flag
       type: value_map
       map: {0: false, 1: true}
-      default:
+      default: null
       skip_null: true
     query_lightcurve.detections#psfFlux_flag: *strict_psf_flag
   detection@lsst:alerce.photometry.{filter}.psf.flags.edge:
@@ -530,20 +530,8 @@ transforms:
     query_lightcurve.detections#isNegative:
       type: boolean_not
   lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.failed:
-    query_lightcurve.detections#psfFlux_flag:
-      type: value_map
-      map: {0: false, 1: true}
-      default:
-      skip_null: true
+    query_lightcurve.detections#psfFlux_flag: *strict_psf_flag
   lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.edge:
-    query_lightcurve.detections#psfFlux_flag_edge:
-      type: value_map
-      map: {0: false, 1: true}
-      default:
-      skip_null: true
+    query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
   lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.no_good_pixels:
-    query_lightcurve.detections#psfFlux_flag_noGoodPixels:
-      type: value_map
-      map: {0: false, 1: true}
-      default:
-      skip_null: true
+    query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag

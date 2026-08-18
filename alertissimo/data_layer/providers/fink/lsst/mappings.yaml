@@ -1,3 +1,4 @@
+---
 broker: fink
 origin: lsst
 payloads:
@@ -739,6 +740,9 @@ mappings:
   classification@fink.best.description:
   - objects#f:main_label_classifier
   - conesearch#f:main_label_classifier
+  classification@fink.assessment.crossmatch.class:
+  - objects#f:main_label_crossmatch
+  - conesearch#f:main_label_crossmatch
   classification@fink.assessment.cats.class:
   - sources#f:clf_cats_class
   - conesearch#f:clf_cats_class
@@ -1046,7 +1050,7 @@ transforms:
     sources#r:trailAlgorithm: &fink_trail_algorithm
       type: value_map
       map: {1: sdss_shape, 2: hsm_shape}
-      default:
+      default: null
       skip_null: true
     conesearch#r:trailAlgorithm: *fink_trail_algorithm
     sso#r:trailAlgorithm: *fink_trail_algorithm
@@ -1054,7 +1058,7 @@ transforms:
     sources#r:trail_flag: &fink_trail_failed
       type: value_map
       map: {false: false, true: true, "nan": null}
-      default:
+      default: null
       skip_null: true
     conesearch#r:trail_flag: *fink_trail_failed
     sso#r:trail_flag: *fink_trail_failed
@@ -1066,7 +1070,4 @@ transforms:
     sso#r:isNegative:
       type: boolean_not
   lightcurve@lsst:fink.points.quality.reliability.version:
-    sources#r:reliabilityVersion:
-      type: value_map
-      map: {"nan": null}
-      skip_null: true
+    sources#r:reliabilityVersion: *fink_reliability_version

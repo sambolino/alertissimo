@@ -543,40 +543,42 @@ transforms:
   detection@ztf:lasair.solar_system.mpc_match.identity.object_id:
     candidates#ssnamenr:
       type: value_map
-      map: &id001
-        '':
-        'null':
-        '-999':
-        '-999.0':
-        Unknown:
+      map: &id002
+        ? ''
+        : null
+        'null': null
+        '-999': null
+        '-999.0': null
+        Unknown: null
       skip_null: true
     lightcurve_candidates#ssnamenr:
       type: value_map
-      map: *id001
+      map: *id002
       skip_null: true
     objects_candidates#ssnamenr:
       type: value_map
       map:
-        '':
-        'null':
-        '-999':
-        '-999.0':
-        Unknown:
+        ? ''
+        : null
+        'null': null
+        '-999': null
+        '-999.0': null
+        Unknown: null
       skip_null: true
   detection@ztf:lasair.solar_system.mpc_match.separation.total:
     candidates#ssdistnr:
       type: value_map
-      map: &id002
-        -999:
+      map: &id003
+        -999: null
       skip_null: true
     lightcurve_candidates#ssdistnr:
       type: value_map
-      map: *id002
+      map: *id003
       skip_null: true
     objects_candidates#ssdistnr:
       type: value_map
       map:
-        -999:
+        -999: null
       skip_null: true
   crossmatch@{producer}:lasair.identity.object_id:
     object#sherlock.catalogue_object_id:
@@ -590,7 +592,7 @@ transforms:
   crossmatch@{producer}:lasair.provenance.producer.id:
     object#sherlock.catalogue_table_name:
       type: value_map
-      map: &id003
+      map: &id004
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
         2MASS PSC: twomass
@@ -603,15 +605,15 @@ transforms:
       default: unknown
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id003
+      map: *id004
       default: unknown
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id003
+      map: *id004
       default: unknown
     sherlock_object_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id003
+      map: *id004
       default: unknown
     objects#sherlock.catalogue_table_name:
       type: value_map

@@ -474,6 +474,15 @@ transforms:
         3: i
         '3': i
       default: unknown
+      type: value_map
+      map:
+        1: g
+        '1': g
+        2: r
+        '2': r
+        3: i
+        '3': i
+      default: unknown
   summary@ztf:alerce.photometry.{filter}:
     query_magstats#fid:
       type: value_map
@@ -493,7 +502,7 @@ transforms:
         1: true
         '-1': false
         -1: false
-      default:
+      default: null
       skip_null: true
     query_lightcurve.detections#isdiffpos:
       type: value_map
@@ -502,7 +511,7 @@ transforms:
         1: true
         '-1': false
         -1: false
-      default:
+      default: null
       skip_null: true
     query_forced_photometry#isdiffpos:
       type: value_map
@@ -511,7 +520,7 @@ transforms:
         1: true
         '-1': false
         -1: false
-      default:
+      default: null
       skip_null: true
   lightcurve@ztf:alerce.points.photometry.{filter}:
     query_lightcurve.detections#fid:
@@ -536,6 +545,15 @@ transforms:
       default: unknown
   lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}:
     query_forced_photometry#fid:
+      type: value_map
+      map:
+        1: g
+        '1': g
+        2: r
+        '2': r
+        3: i
+        '3': i
+      default: unknown
       type: value_map
       map:
         1: g
