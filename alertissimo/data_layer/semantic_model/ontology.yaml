@@ -2219,6 +2219,12 @@ levels:
   $ref: <_time_series_point>
   $ref: <photometry>(L4)
   
+<_feature_vector_point>:
+  $ref: <_time_series_point>
+  <{filter}>:
+    [value]:
+      description: "Feature-vector value for this filter"
+  
   [from_upper_limit]:
     description: "Whether the preceding photometric constraint used to derive the rate was an upper limit"
     type: boolean
@@ -2259,11 +2265,8 @@ levels:
     items:
       $ref: <_color_point>
 
-  <feature_vector>:
+  <feature_vector_points>:
     description: "Serialized or structured feature vector derived from a time series"
-    <{filter}>:
-      [value]:
-        description: "Feature-vector value for this filter"
 
   [detection_count]:
     description: "Number of detections in the time-series history"
