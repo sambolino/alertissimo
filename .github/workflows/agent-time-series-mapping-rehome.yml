@@ -1,0 +1,394 @@
+name: Agent time-series mapping rehome
+
+on:
+  push:
+    branches:
+      - agent/time-series-mapping-rehome
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/time-series-mapping-rehome
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install migration dependency
+        run: python -m pip install --disable-pip-version-check ruamel.yaml
+      - name: Rehome time-series mappings
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          from copy import deepcopy
+          from pathlib import Path
+
+          from ruamel.yaml import YAML
+          from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
+          ROOT = Path('alertissimo/data_layer/providers')
+          FILES = {
+              'fink_ztf': ROOT / 'fink/ztf/mappings.yaml',
+              'fink_lsst': ROOT / 'fink/lsst/mappings.yaml',
+              'alerce_ztf': ROOT / 'alerce/ztf/mappings.yaml',
+              'alerce_lsst': ROOT / 'alerce/lsst/mappings.yaml',
+              'lasair_ztf': ROOT / 'lasair/ztf/mappings.yaml',
+              'antares_ztf': ROOT / 'antares/ztf/mappings.yaml',
+          }
+
+          yaml = YAML()
+          yaml.preserve_quotes = True
+          yaml.width = 4096
+          yaml.indent(mapping=2, sequence=2, offset=0)
+
+          def load(path: Path):
+              with path.open() as fh:
+                  return yaml.load(fh)
+
+          def save(path: Path, data) -> None:
+              with path.open('w') as fh:
+                  yaml.dump(data, fh)
+
+          def maps(data):
+              return data.setdefault('mappings', CommentedMap())
+
+          def xforms(data):
+              return data.setdefault('transforms', CommentedMap())
+
+          def rename_key(cm, old: str, new: str) -> None:
+              if old not in cm:
+                  return
+              if new in cm:
+                  raise RuntimeError(f'cannot rename {old}: destination already exists: {new}')
+              keys = list(cm.keys())
+              idx = keys.index(old)
+              value = cm.pop(old)
+              cm.insert(idx, new, value)
+
+          def rename_semantic(data, old: str, new: str) -> None:
+              rename_key(maps(data), old, new)
+              rename_key(xforms(data), old, new)
+
+          def remove_semantic(data, key: str) -> None:
+              maps(data).pop(key, None)
+              xforms(data).pop(key, None)
+
+          def append_ref(data, dst: str, raw_ref: str, transform=None) -> None:
+              m = maps(data)
+              if dst not in m:
+                  m[dst] = CommentedSeq()
+              if raw_ref not in m[dst]:
+                  m[dst].append(raw_ref)
+              if transform is not None:
+                  t = xforms(data)
+                  if dst not in t:
+                      t[dst] = CommentedMap()
+                  t[dst][raw_ref] = deepcopy(transform)
+
+          def copy_refs(data, src: str, dst: str, payloads: set[str]) -> None:
+              m = maps(data)
+              if src not in m:
+                  return
+              src_t = xforms(data).get(src, {})
+              for raw_ref in list(m[src]):
+                  payload = str(raw_ref).split('#', 1)[0]
+                  if payload not in payloads:
+                      continue
+                  append_ref(data, dst, raw_ref, src_t.get(raw_ref))
+
+          def copy_point_sources(
+              data,
+              src_record: str,
+              dst_record: str,
+              payloads: set[str],
+              roots: set[str],
+          ) -> None:
+              # Snapshot the original map so newly created lightcurve entries are not
+              # recursively copied during the same migration.
+              original = list(maps(data).items())
+              for semantic, raw_refs in original:
+                  prefix = src_record + '.'
+                  if not str(semantic).startswith(prefix):
+                      continue
+                  suffix = str(semantic)[len(prefix):]
+                  root = suffix.split('.', 1)[0]
+                  if root not in roots:
+                      continue
+                  src_t = xforms(data).get(semantic, {})
+                  dst = dst_record + '.' + suffix
+                  for raw_ref in list(raw_refs):
+                      payload = str(raw_ref).split('#', 1)[0]
+                      if payload in payloads:
+                          append_ref(data, dst, raw_ref, src_t.get(raw_ref))
+
+          # ------------------------------------------------------------------
+          # Fink / ZTF
+          # ------------------------------------------------------------------
+          p = FILES['fink_ztf']
+          d = load(p)
+
+          rename_semantic(
+              d,
+              'detection@ztf:fink.photometry.{filter}.limit.upper_limit',
+              'detection@ztf:fink.photometry.{filter}.upper_limit',
+          )
+          rename_semantic(d, 'lightcurve@fink.g.feature_vector', 'lightcurve@fink.feature_vector.g.value')
+          rename_semantic(d, 'lightcurve@fink.r.feature_vector', 'lightcurve@fink.feature_vector.r.value')
+
+          # Fink query-time v:rate is a local same-filter rate point, not an
+          # object-summary scalar.
+          rename_semantic(
+              d,
+              'summary@ztf:fink.photometry.{filter}',
+              'lightcurve@fink.magnitude_rate_points.photometry.{filter}',
+          )
+          rename_semantic(
+              d,
+              'summary@ztf:fink.photometry.{filter}.mag.rate',
+              'lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate',
+          )
+          rename_semantic(
+              d,
+              'summary@ztf:fink.photometry.{filter}.mag.rate_error',
+              'lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error',
+          )
+          copy_refs(
+              d,
+              'detection@ztf:fink.time.mjd',
+              'lightcurve@fink.magnitude_rate_points.time.mjd',
+              {'objects', 'latests'},
+          )
+          copy_refs(
+              d,
+              'detection@ztf:fink.identity.source_id',
+              'lightcurve@fink.magnitude_rate_points.identity.source_id',
+              {'objects', 'latests'},
+          )
+
+          # Fink query-time color and color-rate values are epoch-associated
+          # time-series points, not summary scalars.
+          for tail in ('diff', 'error', 'rate', 'rate_error'):
+              rename_semantic(
+                  d,
+                  f'summary@ztf:fink.color.g-r.{tail}',
+                  f'lightcurve@fink.color_points.color.g-r.{tail}',
+              )
+          copy_refs(
+              d,
+              'detection@ztf:fink.time.mjd',
+              'lightcurve@fink.color_points.time.mjd',
+              {'objects', 'latests'},
+          )
+          copy_refs(
+              d,
+              'detection@ztf:fink.identity.source_id',
+              'lightcurve@fink.color_points.identity.source_id',
+              {'objects', 'latests'},
+          )
+
+          # d:mag_rate is a distinct Fink fast-transient estimator. The old flat
+          # paths no longer exist in the ontology, and mapping it onto v:rate in
+          # this row-oriented stage would silently collapse two estimators. Defer
+          # the whole family until independent repeated rate points are collected.
+          for key in (
+              'lightcurve@fink.{filter}.rate_lower_percentile',
+              'lightcurve@fink.{filter}.rate_upper_percentile',
+              'lightcurve@fink.{filter}.delta_time_rate',
+              'lightcurve@fink.{filter}.from_upper_limit',
+              'lightcurve@fink.{filter}',
+              'lightcurve@fink.{filter}.magnitude_rate',
+              'lightcurve@fink.{filter}.magnitude_rate_error',
+          ):
+              remove_semantic(d, key)
+
+          # The Fink /objects physical surface is also a lightcurve/object-history
+          # surface. Preserve the existing detection records and additionally
+          # expose the point-compatible ZTF content in lightcurve.points.
+          copy_point_sources(
+              d,
+              'detection@ztf:fink',
+              'lightcurve@ztf:fink.points',
+              {'objects'},
+              {'time', 'identity', 'quality', 'provenance', 'photometry'},
+          )
+          save(p, d)
+
+          # ------------------------------------------------------------------
+          # Fink / LSST
+          # ------------------------------------------------------------------
+          p = FILES['fink_lsst']
+          d = load(p)
+          copy_point_sources(
+              d,
+              'detection@lsst:fink',
+              'lightcurve@lsst:fink.points',
+              {'sources'},
+              {'time', 'identity', 'quality', 'provenance', 'photometry'},
+          )
+          copy_point_sources(
+              d,
+              'detection@lsst:fink',
+              'lightcurve@lsst:fink.forced_photometry_points',
+              {'fp'},
+              {'time', 'identity', 'quality', 'provenance', 'forced_photometry'},
+          )
+          save(p, d)
+
+          # ------------------------------------------------------------------
+          # ALeRCE / ZTF
+          # ------------------------------------------------------------------
+          p = FILES['alerce_ztf']
+          d = load(p)
+          copy_point_sources(
+              d,
+              'detection@ztf:alerce',
+              'lightcurve@ztf:alerce.points',
+              {'query_lightcurve.detections', 'query_lightcurve.non_detections'},
+              {'time', 'identity', 'quality', 'provenance', 'photometry'},
+          )
+          copy_point_sources(
+              d,
+              'detection@ztf:alerce',
+              'lightcurve@ztf:alerce.forced_photometry_points',
+              {'query_forced_photometry'},
+              {'time', 'identity', 'quality', 'provenance', 'forced_photometry'},
+          )
+          save(p, d)
+
+          # ------------------------------------------------------------------
+          # ALeRCE / LSST
+          # ------------------------------------------------------------------
+          p = FILES['alerce_lsst']
+          d = load(p)
+          copy_point_sources(
+              d,
+              'detection@lsst:alerce',
+              'lightcurve@lsst:alerce.points',
+              {'query_lightcurve.detections', 'query_lightcurve.non_detections'},
+              {'time', 'identity', 'quality', 'provenance', 'photometry'},
+          )
+          copy_point_sources(
+              d,
+              'detection@lsst:alerce',
+              'lightcurve@lsst:alerce.forced_photometry_points',
+              {'query_forced_photometry', 'query_lightcurve.forced_photometry'},
+              {'time', 'identity', 'quality', 'provenance', 'forced_photometry'},
+          )
+          save(p, d)
+
+          # ------------------------------------------------------------------
+          # Lasair / ZTF
+          # ------------------------------------------------------------------
+          p = FILES['lasair_ztf']
+          d = load(p)
+          # Presence of diffmaglim is not itself proof that the represented row is
+          # an upper limit; keep the limiting magnitude and drop this inference.
+          remove_semantic(d, 'detection@ztf:lasair.photometry.{filter}.limit.upper_limit')
+          copy_point_sources(
+              d,
+              'detection@ztf:lasair',
+              'lightcurve@ztf:lasair.points',
+              {'lightcurve_candidates'},
+              {'time', 'identity', 'quality', 'provenance', 'photometry'},
+          )
+          save(p, d)
+
+          # ------------------------------------------------------------------
+          # ANTARES / ZTF
+          # ------------------------------------------------------------------
+          p = FILES['antares_ztf']
+          d = load(p)
+          rename_semantic(
+              d,
+              'detection@ztf:antares.photometry.{filter}.limit.upper_limit',
+              'detection@ztf:antares.photometry.{filter}.upper_limit',
+          )
+          save(p, d)
+
+          # Contract checks for the migration itself.
+          fz = load(FILES['fink_ztf'])
+          fm = maps(fz)
+          assert 'detection@ztf:fink.photometry.{filter}.upper_limit' in fm
+          assert 'detection@ztf:fink.photometry.{filter}.limit.upper_limit' not in fm
+          assert 'lightcurve@fink.feature_vector.g.value' in fm
+          assert 'lightcurve@fink.feature_vector.r.value' in fm
+          assert 'lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate' in fm
+          assert 'lightcurve@fink.magnitude_rate_points.time.mjd' in fm
+          assert 'lightcurve@fink.color_points.color.g-r.diff' in fm
+          assert 'lightcurve@fink.color_points.time.mjd' in fm
+          assert 'lightcurve@ztf:fink.points.photometry.{filter}.psf.mag' in fm
+          for old in (
+              'lightcurve@fink.{filter}.rate_lower_percentile',
+              'lightcurve@fink.{filter}.rate_upper_percentile',
+              'lightcurve@fink.{filter}.delta_time_rate',
+              'lightcurve@fink.{filter}.from_upper_limit',
+              'lightcurve@fink.{filter}.magnitude_rate',
+              'lightcurve@fink.{filter}.magnitude_rate_error',
+          ):
+              assert old not in fm
+
+          fl = maps(load(FILES['fink_lsst']))
+          assert 'lightcurve@lsst:fink.points.photometry.{filter}.psf.flux' in fl
+          assert 'lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}.psf.flux' in fl
+
+          az = maps(load(FILES['alerce_ztf']))
+          assert 'lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag' in az
+          assert 'lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag' in az
+
+          al = maps(load(FILES['alerce_lsst']))
+          assert 'lightcurve@lsst:alerce.points.photometry.{filter}.psf.flux' in al
+          assert 'lightcurve@lsst:alerce.forced_photometry_points.forced_photometry.{filter}.psf.flux' in al
+
+          lz = maps(load(FILES['lasair_ztf']))
+          assert 'detection@ztf:lasair.photometry.{filter}.limit.upper_limit' not in lz
+          assert 'lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag' in lz
+
+          atz = maps(load(FILES['antares_ztf']))
+          assert 'detection@ztf:antares.photometry.{filter}.upper_limit' in atz
+          assert 'detection@ztf:antares.photometry.{filter}.limit.upper_limit' not in atz
+
+          print('Mapping migration assertions passed.')
+          PY
+      - name: Show mapping diff
+        run: |
+          git diff --check
+          git status --short
+          git diff --stat
+      - name: Commit mapping changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            alertissimo/data_layer/providers/fink/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/fink/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/antares/ztf/mappings.yaml
+          if git diff --cached --quiet; then
+            echo 'No mapping changes to commit.'
+          else
+            git commit -m 'Rehome time-series semantic mappings'
+            git push origin HEAD:agent/time-series-mapping-rehome
+          fi
+      - name: Install focused test dependencies
+        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1'
+      - name: Validate mappings and focused providers
+        run: |
+          PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
+          PYTHONPATH=. pytest -q \
+            tests/test_mapping_schema.py \
+            tests/test_semantic_paths.py \
+            tests/test_semantic_model_validation.py \
+            tests/test_fink_ztf_authoritative_payloads.py \
+            tests/test_fink_lsst_authoritative_payloads.py \
+            tests/test_alerce_ztf_authoritative_payloads.py \
+            tests/test_alerce_lsst_authoritative_payloads.py \
+            tests/test_lasair_ztf_authoritative_payloads.py \
+            tests/test_antares_ztf_authoritative_payloads.py
