@@ -142,10 +142,6 @@ mappings:
   - candidates#diffmaglim
   - lightcurve_candidates#diffmaglim
   - objects_candidates#diffmaglim
-  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
-  - candidates#diffmaglim
-  - lightcurve_candidates#diffmaglim
-  - objects_candidates#diffmaglim
   detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
   - candidates#magnr
   - lightcurve_candidates#magnr
@@ -467,6 +463,22 @@ mappings:
   - sherlock_position_crossmatches#MagErr
   - sherlock_object_crossmatches#MagErr
   - sherlock_objects_crossmatches#MagErr
+  lightcurve@ztf:lasair.points.identity.source_id:
+  - lightcurve_candidates#candid
+  lightcurve@ztf:lasair.points.identity.night_id:
+  - lightcurve_candidates#nid
+  lightcurve@ztf:lasair.points.time.mjd:
+  - lightcurve_candidates#jd
+  lightcurve@ztf:lasair.points.photometry.{filter}:
+  - lightcurve_candidates#fid
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
+  - lightcurve_candidates#magpsf
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
+  - lightcurve_candidates#sigmapsf
+  lightcurve@ztf:lasair.points.photometry.{filter}.limit.mag:
+  - lightcurve_candidates#diffmaglim
+  lightcurve@ztf:lasair.points.quality.real_bogus:
+  - lightcurve_candidates#drb
 transforms:
   classification@sherlock:lasair.best.score:
     object#sherlock.classificationReliability:
@@ -512,22 +524,6 @@ transforms:
         1: g
         2: r
         3: i
-  detection@ztf:lasair.photometry.{filter}.limit.upper_limit:
-    candidates#diffmaglim:
-      type: value_map
-      map: &id001 {}
-      default: true
-      skip_null: true
-    lightcurve_candidates#diffmaglim:
-      type: value_map
-      map: *id001
-      default: true
-      skip_null: true
-    objects_candidates#diffmaglim:
-      type: value_map
-      map: {}
-      default: true
-      skip_null: true
   detection@ztf:lasair.image_metrics.is_positive:
     candidates#isdiffpos:
       type: value_map
@@ -547,42 +543,40 @@ transforms:
   detection@ztf:lasair.solar_system.mpc_match.identity.object_id:
     candidates#ssnamenr:
       type: value_map
-      map: &id002
-        ? ''
-        : null
-        'null': null
-        '-999': null
-        '-999.0': null
-        Unknown: null
+      map: &id001
+        '':
+        'null':
+        '-999':
+        '-999.0':
+        Unknown:
       skip_null: true
     lightcurve_candidates#ssnamenr:
       type: value_map
-      map: *id002
+      map: *id001
       skip_null: true
     objects_candidates#ssnamenr:
       type: value_map
       map:
-        ? ''
-        : null
-        'null': null
-        '-999': null
-        '-999.0': null
-        Unknown: null
+        '':
+        'null':
+        '-999':
+        '-999.0':
+        Unknown:
       skip_null: true
   detection@ztf:lasair.solar_system.mpc_match.separation.total:
     candidates#ssdistnr:
       type: value_map
-      map: &id003
-        -999: null
+      map: &id002
+        -999:
       skip_null: true
     lightcurve_candidates#ssdistnr:
       type: value_map
-      map: *id003
+      map: *id002
       skip_null: true
     objects_candidates#ssdistnr:
       type: value_map
       map:
-        -999: null
+        -999:
       skip_null: true
   crossmatch@{producer}:lasair.identity.object_id:
     object#sherlock.catalogue_object_id:
@@ -596,7 +590,7 @@ transforms:
   crossmatch@{producer}:lasair.provenance.producer.id:
     object#sherlock.catalogue_table_name:
       type: value_map
-      map: &id004
+      map: &id003
         SDSS: sdss
         SDSS/2MASS/PS1: sdss_2mass_ps1
         2MASS PSC: twomass
@@ -609,15 +603,15 @@ transforms:
       default: unknown
     sherlock_position_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id004
+      map: *id003
       default: unknown
     sherlock_objects_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id004
+      map: *id003
       default: unknown
     sherlock_object_crossmatches#catalogue_table_name:
       type: value_map
-      map: *id004
+      map: *id003
       default: unknown
     objects#sherlock.catalogue_table_name:
       type: value_map
@@ -864,3 +858,13 @@ transforms:
       skip_null: true
     sherlock_object_crossmatches#classification:
       skip_null: true
+  lightcurve@ztf:lasair.points.time.mjd:
+    lightcurve_candidates#jd:
+      type: jd_to_mjd
+  lightcurve@ztf:lasair.points.photometry.{filter}:
+    lightcurve_candidates#fid:
+      type: value_map
+      map:
+        1: g
+        2: r
+        3: i
