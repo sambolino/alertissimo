@@ -325,9 +325,6 @@ mappings:
   lightcurve@ztf:alerce.points.photometry.{filter}:
   - query_lightcurve.detections#fid
   - query_lightcurve.non_detections#fid
-  lightcurve@ztf:alerce.points.identity.object_id:
-  - query_lightcurve.detections#oid
-  - query_lightcurve.non_detections#oid
   lightcurve@ztf:alerce.points.identity.source_id:
   - query_lightcurve.detections#measurement_id
   lightcurve@ztf:alerce.points.identity.alert_id:
@@ -381,8 +378,6 @@ mappings:
   - query_lightcurve.detections#drb
   lightcurve@ztf:alerce.points.quality.real_bogus.version:
   - query_lightcurve.detections#drbversion
-  lightcurve@ztf:alerce.forced_photometry_points.identity.object_id:
-  - query_forced_photometry#oid
   lightcurve@ztf:alerce.forced_photometry_points.identity.source_id:
   - query_forced_photometry#measurement_id
   lightcurve@ztf:alerce.forced_photometry_points.identity.alert_id:
@@ -545,15 +540,6 @@ transforms:
       default: unknown
   lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}:
     query_forced_photometry#fid:
-      type: value_map
-      map:
-        1: g
-        '1': g
-        2: r
-        '2': r
-        3: i
-        '3': i
-      default: unknown
       type: value_map
       map:
         1: g

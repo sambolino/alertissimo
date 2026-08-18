@@ -938,8 +938,6 @@ mappings:
   - sso#r:trail_flag_edge
   lightcurve@lsst:fink.points.identity.source_id:
   - sources#r:diaSourceId
-  lightcurve@lsst:fink.points.identity.object_id:
-  - sources#r:diaObjectId
   lightcurve@lsst:fink.points.identity.visit_id:
   - sources#r:visit
   lightcurve@lsst:fink.points.identity.detector_id:
@@ -996,8 +994,6 @@ mappings:
   - sources#r:psfLnL
   lightcurve@lsst:fink.forced_photometry_points.identity.source_id:
   - fp#r:diaForcedSourceId
-  lightcurve@lsst:fink.forced_photometry_points.identity.object_id:
-  - fp#r:diaObjectId
   lightcurve@lsst:fink.forced_photometry_points.identity.visit_id:
   - fp#r:visit
   lightcurve@lsst:fink.forced_photometry_points.identity.detector_id:

@@ -420,8 +420,6 @@ mappings:
   - query_lightcurve.detections#templateFluxErr
   lightcurve@lsst:alerce.points.photometry.{filter}:
   - query_lightcurve.detections#band_name
-  lightcurve@lsst:alerce.points.identity.object_id:
-  - query_lightcurve.detections#oid
   lightcurve@lsst:alerce.points.identity.source_id:
   - query_lightcurve.detections#measurement_id
   lightcurve@lsst:alerce.points.identity.visit_id:
@@ -464,9 +462,6 @@ mappings:
   - query_lightcurve.detections#apFlux_flag
   lightcurve@lsst:alerce.points.photometry.{filter}.aperture.flags.aperture_truncated:
   - query_lightcurve.detections#apFlux_flag_apertureTruncated
-  lightcurve@lsst:alerce.forced_photometry_points.identity.object_id:
-  - query_forced_photometry#oid
-  - query_lightcurve.forced_photometry#oid
   lightcurve@lsst:alerce.forced_photometry_points.identity.source_id:
   - query_forced_photometry#measurement_id
   - query_lightcurve.forced_photometry#measurement_id
