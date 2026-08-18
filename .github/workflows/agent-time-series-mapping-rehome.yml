@@ -1,0 +1,68 @@
+name: Agent time-series mapping rehome
+
+on:
+  pull_request:
+    branches:
+      - feature/orchestration
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/time-series-mapping-rehome
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore provider mappings from base
+        run: |
+          git fetch origin feature/orchestration
+          git checkout origin/feature/orchestration -- \
+            alertissimo/data_layer/providers/fink/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/fink/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/antares/ztf/mappings.yaml
+      - name: Apply targeted migration
+        run: python scripts/_tmp_time_series_mapping_rehome.py
+      - name: Install focused test dependencies
+        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1'
+      - name: Validate mappings and focused providers
+        run: |
+          git diff --check
+          PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
+          PYTHONPATH=. pytest -q \
+            tests/test_mapping_schema.py \
+            tests/test_semantic_paths.py \
+            tests/test_semantic_model_validation.py \
+            tests/test_fink_ztf_authoritative_payloads.py \
+            tests/test_fink_lsst_authoritative_payloads.py \
+            tests/test_alerce_ztf_authoritative_payloads.py \
+            tests/test_alerce_lsst_authoritative_payloads.py \
+            tests/test_lasair_ztf_authoritative_payloads.py \
+            tests/test_antares_ztf_authoritative_payloads.py
+      - name: Show final mapping diff
+        if: always()
+        run: |
+          git status --short
+          git diff --stat
+      - name: Commit minimal mapping changes
+        if: success()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            alertissimo/data_layer/providers/fink/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/fink/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
+            alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/antares/ztf/mappings.yaml
+          git commit -m 'Tighten time-series mapping rehome diff'
+          git push origin HEAD:agent/time-series-mapping-rehome
