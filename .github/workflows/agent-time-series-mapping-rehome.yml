@@ -19,16 +19,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore provider mappings from base
+      - name: Restore mapping and contract files from base
         run: |
           git fetch origin feature/orchestration
           git checkout origin/feature/orchestration -- \
             alertissimo/data_layer/providers/fink/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/fink/ztf/unmapped_fields.yaml \
             alertissimo/data_layer/providers/fink/lsst/mappings.yaml \
             alertissimo/data_layer/providers/alerce/ztf/mappings.yaml \
             alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
             alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
-            alertissimo/data_layer/providers/antares/ztf/mappings.yaml
+            alertissimo/data_layer/providers/antares/ztf/mappings.yaml \
+            tests/test_fink_ztf_authoritative_payloads.py \
+            tests/test_fink_lsst_authoritative_payloads.py \
+            tests/test_alerce_lsst_authoritative_payloads.py \
+            tests/test_lasair_ztf_authoritative_payloads.py \
+            tests/test_antares_ztf_authoritative_payloads.py
       - name: Tighten temporary parser indentation
         run: |
           python - <<'PY'
@@ -45,8 +51,10 @@ jobs:
           )
           path.write_text(text)
           PY
-      - name: Apply targeted migration
+      - name: Apply targeted mapping migration
         run: python scripts/_tmp_time_series_mapping_rehome.py
+      - name: Update mapping debt and acceptance contracts
+        run: python scripts/_tmp_update_time_series_mapping_contracts.py
       - name: Install focused test dependencies
         run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1'
       - name: Validate mappings and focused providers
@@ -63,22 +71,28 @@ jobs:
             tests/test_alerce_lsst_authoritative_payloads.py \
             tests/test_lasair_ztf_authoritative_payloads.py \
             tests/test_antares_ztf_authoritative_payloads.py
-      - name: Show final mapping diff
+      - name: Show final diff
         if: always()
         run: |
           git status --short
           git diff --stat
-      - name: Commit minimal mapping changes
+      - name: Commit mapping and contract changes
         if: success()
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             alertissimo/data_layer/providers/fink/ztf/mappings.yaml \
+            alertissimo/data_layer/providers/fink/ztf/unmapped_fields.yaml \
             alertissimo/data_layer/providers/fink/lsst/mappings.yaml \
             alertissimo/data_layer/providers/alerce/ztf/mappings.yaml \
             alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
             alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
-            alertissimo/data_layer/providers/antares/ztf/mappings.yaml
-          git commit -m 'Tighten time-series mapping rehome diff'
+            alertissimo/data_layer/providers/antares/ztf/mappings.yaml \
+            tests/test_fink_ztf_authoritative_payloads.py \
+            tests/test_fink_lsst_authoritative_payloads.py \
+            tests/test_alerce_lsst_authoritative_payloads.py \
+            tests/test_lasair_ztf_authoritative_payloads.py \
+            tests/test_antares_ztf_authoritative_payloads.py
+          git commit -m 'Rehome time-series semantic mappings'
           git push origin HEAD:agent/time-series-mapping-rehome
