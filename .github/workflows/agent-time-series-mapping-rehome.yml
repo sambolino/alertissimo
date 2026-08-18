@@ -29,6 +29,22 @@ jobs:
             alertissimo/data_layer/providers/alerce/lsst/mappings.yaml \
             alertissimo/data_layer/providers/lasair/ztf/mappings.yaml \
             alertissimo/data_layer/providers/antares/ztf/mappings.yaml
+      - name: Tighten temporary parser indentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/_tmp_time_series_mapping_rehome.py')
+          text = path.read_text()
+          text = text.replace(
+              'ENTRY = re.compile(r"(?m)^  ([^\\n]+):\\n")',
+              'ENTRY = re.compile(r"(?m)^  (\\S[^\\n]*):\\n")',
+          )
+          text = text.replace(
+              'CHILD = re.compile(r"(?m)^    ([^\\n]+?):(?:\\s+([&*][^\\n]+))?\\n")',
+              'CHILD = re.compile(r"(?m)^    (\\S[^\\n]*?):(?:\\s+([&*][^\\n]+))?\\n")',
+          )
+          path.write_text(text)
+          PY
       - name: Apply targeted migration
         run: python scripts/_tmp_time_series_mapping_rehome.py
       - name: Install focused test dependencies
