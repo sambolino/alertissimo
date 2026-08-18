@@ -177,7 +177,7 @@ def test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None
         if record.fields.get("photometry.g.limit.mag") == 19.93899917602539
     )
     upper_fields = dict(upper.fields)
-    assert upper_fields["photometry.g.limit.upper_limit"] is True
+    assert "photometry.g.upper_limit" not in upper_fields
     assert "photometry.g.psf.mag" not in upper_fields
 
 
