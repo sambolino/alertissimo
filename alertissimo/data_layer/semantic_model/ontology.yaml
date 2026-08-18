@@ -1168,6 +1168,9 @@ levels:
   <{filter}>:
     level: L1, L6
     description: "Bandpass filter"
+    [upper_limit]:
+      description: "True if the photometric value represents an upper limit or non-detection"
+      type: boolean
     [mag]:
       description: "Generic calibrated magnitude"
       unit: mag
@@ -1233,9 +1236,6 @@ levels:
       [rate_upper_percentile]:
         description: "Upper percentile of the sampled magnitude-rate distribution"
         unit: mag/day
-      [rate_from_upper_limit]:
-        description: "Whether the rate estimate uses an upper limit as the preceding photometric point"
-        type: boolean
     [flux]:
       description: "Generic calibrated photometric flux quantity"
       [error]:
@@ -1277,7 +1277,7 @@ levels:
           unit: mag
           [error]:
             description: "Large-aperture magnitude uncertainty"
-            unit: mag
+            unit:` mag
       <flags>:
         description: "Flags affecting the aperture-flux measurement"
         [failed]:
@@ -1297,9 +1297,6 @@ levels:
       [mag_offset_from_limit]:
         description: "Magnitude offset between the reported limiting magnitude and the selected measured source magnitude; adapters must document or normalize the sign convention"
         unit: mag
-      [upper_limit]:
-        description: "True if the photometric value represents an upper limit or non-detection"
-        type: boolean
     <psf>:
       description: "Photometry obtained by fitting the point-spread function"
       [flux]:
@@ -2221,6 +2218,10 @@ levels:
 <_magnitude_rate_point>:
   $ref: <_time_series_point>
   $ref: <photometry>(L4)
+  
+  [from_upper_limit]:
+    description: "Whether the preceding photometric constraint used to derive the rate was an upper limit"
+    type: boolean
 
 <_color_point>:
   $ref: <_time_series_point>
