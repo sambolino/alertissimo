@@ -274,6 +274,25 @@
 #   Levels are descriptive metadata used for documentation, validation, sanity
 #   checks, and future tooling. They are not semantic path components.
 #
+#   Levels are primarily a triage mechanism. They help decide which semantic
+#   context or product family a field normally belongs to, without replacing the
+#   semantic hierarchy itself. They are intentionally allowed to overlap and are
+#   not required to form a complete or mutually exclusive classification of all
+#   data. Source, derivation history, and delivery route must not be inferred from
+#   a level; those are expressed by semantic paths, @producer:channel qualifiers,
+#   and provenance.
+#
+#   Reusable intermediary containers may therefore combine fields or projections
+#   associated with different levels when the surrounding semantic hierarchy
+#   makes their roles clear. Do not force a unique level merely to make the level
+#   scheme look cleaner; its present role is practical triage and validation.
+#
+#   A future ontology revision may tighten this convention toward a stricter
+#   "where does this datum belong?" interpretation, potentially aligning levels
+#   more directly with first-level Portfolio product families. Such a change
+#   should follow the evolution of the complete ontology and is not part of the
+#   current contract.
+#
 #   Level declarations are scoped and ordered:
 #
 #       - a level declared on a container applies to descendants that follow it
@@ -485,7 +504,7 @@
 #
 #       portfolio.summary@lsst.identity.object_id
 #       portfolio.detection@lsst:lasair.photometry.g.psf.flux
-#       portfolio.lightcurve@ztf:fink.r.points
+#       portfolio.lightcurve@ztf:fink.points.photometry.r.psf.mag
 #       portfolio.crossmatch@gaia:fink.identity.object_id
 #       portfolio.classification@fink.best.class
 #
@@ -516,13 +535,13 @@
 #   Valid:
 #
 #       portfolio.detection@lsst:lasair.position.ra
-#       portfolio.lightcurve@alertissimo.r.points
+#       portfolio.lightcurve@alertissimo.points.photometry.r.psf.mag
 #       portfolio.crossmatch@gaia:fink.astrometric_solution.parallax
 #
 #   Invalid as ordinary field qualification:
 #
 #       portfolio.detection.photometry.g@lsst.psf.flux
-#       portfolio.lightcurve.r.points@ztf
+#       portfolio.lightcurve.points.photometry.r@ztf.psf.mag
 #
 #   Edge participants are the exception. A connection may point to another
 #   semantic record by using the record type with its qualifier:
@@ -666,7 +685,7 @@
 #       portfolio.detection@lsst:lasair.photometry.g.aperture.flux
 #       portfolio.detection@lsst:lasair.reference.nearest_source.separation.total
 #       portfolio.detection@lsst:lasair.reference.forced_photometry.g.psf.flux
-#       portfolio.lightcurve@ztf:fink.r.points
+#       portfolio.lightcurve@ztf:fink.points.photometry.r.psf.mag
 #       portfolio.spectrum@gemini:archive.feature.si_ii_6355.velocity
 #       portfolio.data_product@gemini:archive.uri
 #       portfolio.crossmatch@gaia:fink.identity.object_id
@@ -768,13 +787,13 @@
 # ============================================================================
 
 levels:
-  L0: "Portfolio Aggregates - object identifiers and statistics"
+  L0: "Object commons and cumulatives - identifiers and statistics"
   L1: "Single Detection Parameters - numerical"
   L2: "Specific Phenomena - solar system, gravitational waves, neutrinos, radio, X-ray, gamma-ray, satellites"
   L3: "Binary, image, spectrum, and data-product content"
   L4: "Light Curve Features - derived time-series"
-  L5: "Machine learning - quality scores, metrics, classification"
-  L6: "Data enrich - internal (broker) matching, external catalogs, crossmatch"
+  L5: "Scientific assessment and inference - classification, scores, model/rule outputs"
+  L6: "Association and external context - matching, crossmatch, linked catalog/service data"
   L7: "Survey Aggregates - statistics"
   L8: "External services - name resolution, ephemeris, etc."
 
@@ -899,7 +918,9 @@ levels:
   [exposure]:
     description: "Exposure duration"
     unit: sec
-
+  [delta]:
+    description: "Signed time offset from the primary/reference epoch to a second contributing epoch"
+    unit: days
   level: L0
   description: "Historical temporal data"
   [first_detection]:
@@ -1206,6 +1227,15 @@ levels:
       [rate_error]:
         description: "Uncertainty of the magnitude-change rate"
         unit: mag/day
+      [rate_lower_percentile]:
+        description: "Lower percentile of the sampled magnitude-rate distribution"
+        unit: mag/day
+      [rate_upper_percentile]:
+        description: "Upper percentile of the sampled magnitude-rate distribution"
+        unit: mag/day
+      [rate_from_upper_limit]:
+        description: "Whether the rate estimate uses an upper limit as the preceding photometric point"
+        type: boolean
     [flux]:
       description: "Generic calibrated photometric flux quantity"
       [error]:
@@ -1618,7 +1648,7 @@ levels:
       description: "Uncertainty of colour coefficient for this filter"
 
 <color>:
-  level: L0, L1, L6
+  level: L1, L6
   description: "Color measurements"
   <{filter1-filter2}>:
     description: "Difference in magnitudes between filters"
@@ -2173,43 +2203,70 @@ levels:
     unit: Mpc
   [{field}]:
     description: "Catalog-specific additional fields"
-<_lightcurve_point>:
-  $ref: <time>(L1)
-  $ref: <photometry>(L1)
+
+<_time_series_point>:
+  description: "Reusable temporal context shared by point-like time-series data"
+  $ref: <time>(L1, L4)
   $ref: <quality>(L1)
   $ref: <identity>(L1)
   $ref: <provenance>
 
+<_lightcurve_point>:
+  $ref: <_time_series_point>
+  $ref: <photometry>(L1)
+
+<_forced_photometry_point>:
+  $ref: <_time_series_point>
+  $ref: <forced_photometry>(L1)
+
+<_magnitude_rate_point>:
+  $ref: <_time_series_point>
+  $ref: <photometry>(L4)
+
+<_color_point>:
+  $ref: <_time_series_point>
+  $ref: <color>(L1)
+
+# Keep <lightcurve> as the first-level product name for now. The reusable
+# point model is intentionally generic enough for a possible future rename to
+# <time_series> without changing the semantic content of the point types.
 <lightcurve>:
   level: L4
-  description: "Time-series of photometric points"
+  description: "Photometric and photometry-derived time-series data"
   $ref: <provenance>
-  <{filter}>:
-    <points>:
-      type: array
-      items:
-        $ref: <_lightcurve_point>
-    $ref: <photometry>(L4)    
-    [rate_lower_percentile]:
-      description: "Lower percentile of the magnitude rate in this filter"
-      unit: mag/day
-    [rate_upper_percentile]:
-      description: "Upper percentile of the magnitude rate in this filter"
-      unit: mag/day
-    [delta_time_rate]:
-      unit: days
-    [from_upper_limit]:
-      type: boolean
-    [feature_vector]:
-      description: "Serialized feature vector (e.g. lc_features_g)"
-    [magnitude_rate]:
-      description: "Rate of change of magnitude in this filter"
-      unit: mag/day
-    [magnitude_rate_error]:
-      description: "Uncertainty of the magnitude rate in this filter"
-      unit: mag/day
+
+  <points>:
+    description: "Photometric measurements represented as a time series"
+    type: array
+    items:
+      $ref: <_lightcurve_point>
+
+  <forced_photometry_points>:
+    description: "Forced-photometry measurements represented as a time series"
+    type: array
+    items:
+      $ref: <_forced_photometry_point>
+
+  <magnitude_rate_points>:
+    description: "Magnitude-change rates associated with reported time-series epochs"
+    type: array
+    items:
+      $ref: <_magnitude_rate_point>
+
+  <color_points>:
+    description: "Color values and color-change rates associated with reported time-series epochs"
+    type: array
+    items:
+      $ref: <_color_point>
+
+  <feature_vector>:
+    description: "Serialized or structured feature vector derived from a time series"
+    <{filter}>:
+      [value]:
+        description: "Feature-vector value for this filter"
+
   [detection_count]:
-    description: "Number of detection points represented by this light curve; upper-limit or non-detection points are excluded"
+    description: "Number of detections in the time-series history"
     type: integer
 
 <survey>:
