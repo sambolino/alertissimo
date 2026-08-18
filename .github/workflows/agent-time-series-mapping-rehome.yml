@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/time-series-mapping-rehome
+  pull_request:
+    branches:
+      - feature/orchestration
 
 permissions:
   contents: write
@@ -109,8 +112,6 @@ jobs:
               payloads: set[str],
               roots: set[str],
           ) -> None:
-              # Snapshot the original map so newly created lightcurve entries are not
-              # recursively copied during the same migration.
               original = list(maps(data).items())
               for semantic, raw_refs in original:
                   prefix = src_record + '.'
@@ -127,12 +128,9 @@ jobs:
                       if payload in payloads:
                           append_ref(data, dst, raw_ref, src_t.get(raw_ref))
 
-          # ------------------------------------------------------------------
           # Fink / ZTF
-          # ------------------------------------------------------------------
           p = FILES['fink_ztf']
           d = load(p)
-
           rename_semantic(
               d,
               'detection@ztf:fink.photometry.{filter}.limit.upper_limit',
@@ -140,9 +138,6 @@ jobs:
           )
           rename_semantic(d, 'lightcurve@fink.g.feature_vector', 'lightcurve@fink.feature_vector.g.value')
           rename_semantic(d, 'lightcurve@fink.r.feature_vector', 'lightcurve@fink.feature_vector.r.value')
-
-          # Fink query-time v:rate is a local same-filter rate point, not an
-          # object-summary scalar.
           rename_semantic(
               d,
               'summary@ztf:fink.photometry.{filter}',
@@ -170,9 +165,6 @@ jobs:
               'lightcurve@fink.magnitude_rate_points.identity.source_id',
               {'objects', 'latests'},
           )
-
-          # Fink query-time color and color-rate values are epoch-associated
-          # time-series points, not summary scalars.
           for tail in ('diff', 'error', 'rate', 'rate_error'):
               rename_semantic(
                   d,
@@ -191,11 +183,6 @@ jobs:
               'lightcurve@fink.color_points.identity.source_id',
               {'objects', 'latests'},
           )
-
-          # d:mag_rate is a distinct Fink fast-transient estimator. The old flat
-          # paths no longer exist in the ontology, and mapping it onto v:rate in
-          # this row-oriented stage would silently collapse two estimators. Defer
-          # the whole family until independent repeated rate points are collected.
           for key in (
               'lightcurve@fink.{filter}.rate_lower_percentile',
               'lightcurve@fink.{filter}.rate_upper_percentile',
@@ -206,10 +193,6 @@ jobs:
               'lightcurve@fink.{filter}.magnitude_rate_error',
           ):
               remove_semantic(d, key)
-
-          # The Fink /objects physical surface is also a lightcurve/object-history
-          # surface. Preserve the existing detection records and additionally
-          # expose the point-compatible ZTF content in lightcurve.points.
           copy_point_sources(
               d,
               'detection@ztf:fink',
@@ -219,9 +202,7 @@ jobs:
           )
           save(p, d)
 
-          # ------------------------------------------------------------------
           # Fink / LSST
-          # ------------------------------------------------------------------
           p = FILES['fink_lsst']
           d = load(p)
           copy_point_sources(
@@ -240,9 +221,7 @@ jobs:
           )
           save(p, d)
 
-          # ------------------------------------------------------------------
           # ALeRCE / ZTF
-          # ------------------------------------------------------------------
           p = FILES['alerce_ztf']
           d = load(p)
           copy_point_sources(
@@ -261,9 +240,7 @@ jobs:
           )
           save(p, d)
 
-          # ------------------------------------------------------------------
           # ALeRCE / LSST
-          # ------------------------------------------------------------------
           p = FILES['alerce_lsst']
           d = load(p)
           copy_point_sources(
@@ -282,13 +259,9 @@ jobs:
           )
           save(p, d)
 
-          # ------------------------------------------------------------------
           # Lasair / ZTF
-          # ------------------------------------------------------------------
           p = FILES['lasair_ztf']
           d = load(p)
-          # Presence of diffmaglim is not itself proof that the represented row is
-          # an upper limit; keep the limiting magnitude and drop this inference.
           remove_semantic(d, 'detection@ztf:lasair.photometry.{filter}.limit.upper_limit')
           copy_point_sources(
               d,
@@ -299,9 +272,7 @@ jobs:
           )
           save(p, d)
 
-          # ------------------------------------------------------------------
           # ANTARES / ZTF
-          # ------------------------------------------------------------------
           p = FILES['antares_ztf']
           d = load(p)
           rename_semantic(
@@ -311,7 +282,7 @@ jobs:
           )
           save(p, d)
 
-          # Contract checks for the migration itself.
+          # Migration contract checks.
           fz = load(FILES['fink_ztf'])
           fm = maps(fz)
           assert 'detection@ztf:fink.photometry.{filter}.upper_limit' in fm
