@@ -93,3 +93,25 @@ def test_static_validation_rejects_invalid_explicit_order_path():
 
     assert not report.is_valid
     assert report.errors[0].code == "invalid_order_path"
+
+
+def test_static_validation_resolves_spaced_compound_record_noun():
+    surface = parse_surface_script(
+        "objects from lsst\nwith color magnitude g-r vs r\n"
+    )
+
+    report = validate_surface_semantics(
+        surface,
+        semantic_paths=_FakeSemanticPaths(),
+    )
+
+    assert report.is_valid
+
+
+def test_inline_comment_is_not_part_of_requirement_product():
+    surface = parse_surface_script(
+        "objects from lsst\nwith crossmatch from gaia # catalog enrichment\n"
+    )
+
+    assert surface.clauses[0].product == "crossmatch"
+    assert surface.clauses[0].source == "gaia"

@@ -49,9 +49,9 @@ duration: DURATION
 
 // PRODUCT stops before a WITH-clause qualifier. TEXT consumes the remaining
 // semantic-expression slot on the current line.
-PRODUCT.2: /[^\n]+?(?=\s+(?i:from|via|using)\s+[A-Za-z]|\s*(?:\n|$))/
-TEXT: /[^\n]+/
-WINDOW_BOUND: /[^,\n]+/
+PRODUCT.2: /[^#\n]+?(?=\s+(?i:from|via|using)\s+[A-Za-z]|\s*(?:#|\n|$))/
+TEXT: /[^#\n]+/
+WINDOW_BOUND: /[^,#\n]+/
 DURATION: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:s|min|h|d|w)/i
 ANGLE: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:deg|arcmin|arcsec)?/i
 METHOD: /[A-Za-z][A-Za-z0-9_.:-]*/

@@ -79,11 +79,13 @@ def resolve_record_type(
 ) -> str | None:
     """Resolve one ontology record noun embedded in a user requirement phrase."""
 
+    words = [_normalize_noun(token) for token in _WORD.findall(product)]
     matches: list[str] = []
-    for token in _WORD.findall(product):
-        noun = _normalize_noun(token)
-        if noun in record_types and noun not in matches:
-            matches.append(noun)
+    for start in range(len(words)):
+        for stop in range(start + 1, min(len(words), start + 3) + 1):
+            noun = "_".join(words[start:stop])
+            if noun in record_types and noun not in matches:
+                matches.append(noun)
     return matches[0] if len(matches) == 1 else None
 
 
