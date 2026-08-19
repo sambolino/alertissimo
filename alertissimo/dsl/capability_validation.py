@@ -1,0 +1,555 @@
+"""Read-only capability validation for the declarative DSL surface.
+
+This module bridges an ontology-valid ``SurfaceScript`` to the existing
+data-layer ``CapabilityGraph``. It never selects an endpoint, binds parameters,
+executes providers, or lowers user intent to orchestration IR.
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+import re
+from typing import Literal, Protocol
+
+from pydantic import BaseModel, ConfigDict
+
+from alertissimo.data_layer.runtime.capability_graph import (
+    CapabilityGraph,
+    EndpointCapability,
+    SemanticRecordCapability,
+    build_capability_graph,
+)
+
+from .surface import (
+    InsideClause,
+    MatchClause,
+    RankedByClause,
+    RequirementClause,
+    SurfaceScript,
+)
+from .validation import resolve_record_type, validate_surface_semantics
+
+
+class SurfaceCapabilityValidationError(ValueError):
+    """Raised when capability validation is attempted before ontology validity."""
+
+
+class _SemanticPaths(Protocol):
+    record_types: frozenset[str]
+
+    def is_valid(self, semantic_path: str) -> bool: ...
+
+
+class SurfaceCapabilityStatus(str, Enum):
+    SUPPORTED = "supported"
+    UNSUPPORTED = "unsupported"
+    DEFERRED = "deferred"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class SurfaceCapabilityEvidence(BaseModel):
+    """Registered provider evidence supporting one surface capability check."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    broker: str
+    origin: str
+    semantic_record_type: str | None = None
+    endpoints: tuple[str, ...] = ()
+
+
+class SurfaceCapabilityCheck(BaseModel):
+    """One explainable capability decision for candidate or clause intent."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    subject: Literal[
+        "candidates",
+        "requirement",
+        "match_counterpart",
+        "match_local",
+        "ranking",
+    ]
+    status: SurfaceCapabilityStatus
+    reason: str
+    clause_index: int | None = None
+    origin: str | None = None
+    broker: str | None = None
+    semantic_noun: str | None = None
+    producer: str | None = None
+    channel: str | None = None
+    evidence: tuple[SurfaceCapabilityEvidence, ...] = ()
+
+
+class SurfaceCapabilityReport(BaseModel):
+    """Ordered, non-executing capability results for one surface script."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    checks: tuple[SurfaceCapabilityCheck, ...] = ()
+
+    @property
+    def unsupported(self) -> tuple[SurfaceCapabilityCheck, ...]:
+        return tuple(
+            check
+            for check in self.checks
+            if check.status is SurfaceCapabilityStatus.UNSUPPORTED
+        )
+
+    @property
+    def deferred(self) -> tuple[SurfaceCapabilityCheck, ...]:
+        return tuple(
+            check
+            for check in self.checks
+            if check.status is SurfaceCapabilityStatus.DEFERRED
+        )
+
+    @property
+    def status(self) -> SurfaceCapabilityStatus:
+        if self.unsupported:
+            return SurfaceCapabilityStatus.UNSUPPORTED
+        if self.deferred:
+            return SurfaceCapabilityStatus.DEFERRED
+        if self.checks and all(
+            check.status is SurfaceCapabilityStatus.NOT_APPLICABLE
+            for check in self.checks
+        ):
+            return SurfaceCapabilityStatus.NOT_APPLICABLE
+        return SurfaceCapabilityStatus.SUPPORTED
+
+    @property
+    def is_supported(self) -> bool:
+        return self.status is SurfaceCapabilityStatus.SUPPORTED
+
+
+_DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
+_GEOMETRIC_SEARCH_OPERATIONS = frozenset(
+    {"cone_search", "spatial_search", "catalog_conesearch", "skymap_search"}
+)
+_PROVIDER_OPERATION_FALLBACKS: dict[str, frozenset[str]] = {
+    "lightcurve": frozenset({"lightcurve", "lightcurve_lookup"}),
+    "data_product": frozenset({"data_product_lookup"}),
+}
+_LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
+
+
+def _semantic_path_model() -> _SemanticPaths:
+    from alertissimo.data_layer.semantic_model import SemanticPathModel
+
+    return SemanticPathModel.from_ontology()
+
+
+def _semantic_record_parts(
+    semantic_record_type: str,
+) -> tuple[str, str | None, str | None]:
+    noun, at, qualifiers = semantic_record_type.partition("@")
+    if not at:
+        return noun, None, None
+    producer, colon, channel = qualifiers.partition(":")
+    return noun, producer or None, (channel or None) if colon else None
+
+
+def _is_dynamic_qualifier(value: str | None) -> bool:
+    return bool(value and _DYNAMIC_QUALIFIER.fullmatch(value))
+
+
+def _qualifier_relation(
+    actual: str | None,
+    requested: str | None,
+    *,
+    fallback: str | None = None,
+) -> Literal["exact", "dynamic", "mismatch"]:
+    if requested is None:
+        return "exact"
+    requested = requested.lower()
+    if actual is None:
+        actual = fallback
+    if actual is None:
+        return "mismatch"
+    actual = actual.lower()
+    if actual == requested:
+        return "exact"
+    if _is_dynamic_qualifier(actual):
+        return "dynamic"
+    return "mismatch"
+
+
+def _record_relation(
+    record: SemanticRecordCapability,
+    *,
+    producer: str | None,
+    channel: str | None,
+) -> Literal["exact", "dynamic", "mismatch"]:
+    _, actual_producer, actual_channel = _semantic_record_parts(
+        record.semantic_record_type
+    )
+    producer_relation = _qualifier_relation(actual_producer, producer)
+    channel_relation = _qualifier_relation(
+        actual_channel,
+        channel,
+        fallback=record.broker,
+    )
+    if "mismatch" in (producer_relation, channel_relation):
+        return "mismatch"
+    if "dynamic" in (producer_relation, channel_relation):
+        return "dynamic"
+    return "exact"
+
+
+def _record_evidence(
+    records: tuple[SemanticRecordCapability, ...],
+) -> tuple[SurfaceCapabilityEvidence, ...]:
+    return tuple(
+        SurfaceCapabilityEvidence(
+            broker=record.broker,
+            origin=record.origin,
+            semantic_record_type=record.semantic_record_type,
+            endpoints=record.endpoints,
+        )
+        for record in sorted(
+            records,
+            key=lambda item: (
+                item.broker,
+                item.origin,
+                item.semantic_record_type,
+                item.endpoints,
+            ),
+        )
+    )
+
+
+def _endpoint_evidence(
+    endpoints: tuple[EndpointCapability, ...],
+) -> tuple[SurfaceCapabilityEvidence, ...]:
+    grouped: dict[tuple[str, str], set[str]] = {}
+    for endpoint in endpoints:
+        grouped.setdefault((endpoint.broker, endpoint.origin), set()).add(
+            endpoint.endpoint
+        )
+    return tuple(
+        SurfaceCapabilityEvidence(
+            broker=broker,
+            origin=origin,
+            endpoints=tuple(sorted(names)),
+        )
+        for (broker, origin), names in sorted(grouped.items())
+    )
+
+
+def _candidate_checks(
+    surface: SurfaceScript,
+    graph: CapabilityGraph,
+) -> tuple[SurfaceCapabilityCheck, ...]:
+    spatial_required = any(
+        isinstance(clause, InsideClause) for clause in surface.clauses
+    )
+    checks: list[SurfaceCapabilityCheck] = []
+    for origin in surface.candidates.origins:
+        endpoints = graph.query_endpoints(
+            broker=surface.candidates.broker,
+            origin=origin,
+            semantic_record_noun="summary",
+        )
+        if spatial_required:
+            endpoints = tuple(
+                endpoint
+                for endpoint in endpoints
+                if _GEOMETRIC_SEARCH_OPERATIONS.intersection(
+                    endpoint.operation_types
+                )
+            )
+        supported = bool(endpoints)
+        if spatial_required:
+            positive = "registered spatial-search object capability found"
+            negative = "no registered spatial-search object capability found"
+        else:
+            positive = "registered object-summary capability found"
+            negative = "no registered object-summary capability found"
+        checks.append(
+            SurfaceCapabilityCheck(
+                subject="candidates",
+                status=(
+                    SurfaceCapabilityStatus.SUPPORTED
+                    if supported
+                    else SurfaceCapabilityStatus.UNSUPPORTED
+                ),
+                reason=positive if supported else negative,
+                origin=origin,
+                broker=surface.candidates.broker,
+                semantic_noun="summary",
+                channel=surface.candidates.broker,
+                evidence=_endpoint_evidence(endpoints),
+            )
+        )
+    return tuple(checks)
+
+
+def _operation_fallback(
+    graph: CapabilityGraph,
+    *,
+    noun: str,
+    origin: str,
+    broker: str | None,
+    producer: str | None,
+) -> tuple[EndpointCapability, ...]:
+    operations = _PROVIDER_OPERATION_FALLBACKS.get(noun)
+    if not operations:
+        return ()
+    # Physical origin is a safe producer fallback only for products whose
+    # first-level semantic record is not materialized directly in the registry.
+    if producer is not None and producer.lower() != origin.lower():
+        return ()
+    return tuple(
+        endpoint
+        for endpoint in graph.query_endpoints(broker=broker, origin=origin)
+        if operations.intersection(endpoint.operation_types)
+    )
+
+
+def _requirement_checks(
+    surface: SurfaceScript,
+    clause: RequirementClause,
+    *,
+    clause_index: int,
+    graph: CapabilityGraph,
+    record_types: frozenset[str],
+) -> tuple[SurfaceCapabilityCheck, ...]:
+    noun = resolve_record_type(clause.product, record_types)
+    if noun is None:
+        raise SurfaceCapabilityValidationError(
+            "capability validation requires ontology-valid requirement nouns"
+        )
+
+    broker = clause.via or surface.candidates.broker
+    channel = broker
+
+    if clause.method is not None:
+        return tuple(
+            SurfaceCapabilityCheck(
+                subject="requirement",
+                status=SurfaceCapabilityStatus.DEFERRED,
+                reason=(
+                    "an explicit producing method was requested; local/algorithm "
+                    "capabilities are not modeled by the provider CapabilityGraph"
+                ),
+                clause_index=clause_index,
+                origin=origin,
+                broker=broker,
+                semantic_noun=noun,
+                producer=clause.source,
+                channel=channel,
+            )
+            for origin in surface.candidates.origins
+        )
+
+    checks: list[SurfaceCapabilityCheck] = []
+    for origin in surface.candidates.origins:
+        records = graph.query_records(
+            broker=broker,
+            origin=origin,
+            semantic_record_noun=noun,
+        )
+        exact = tuple(
+            record
+            for record in records
+            if _record_relation(
+                record,
+                producer=clause.source,
+                channel=channel,
+            )
+            == "exact"
+        )
+        dynamic = tuple(
+            record
+            for record in records
+            if _record_relation(
+                record,
+                producer=clause.source,
+                channel=channel,
+            )
+            == "dynamic"
+        )
+
+        if exact:
+            status = SurfaceCapabilityStatus.SUPPORTED
+            reason = "exact registered semantic-record capability found"
+            evidence = _record_evidence(exact)
+        else:
+            endpoints = _operation_fallback(
+                graph,
+                noun=noun,
+                origin=origin,
+                broker=broker,
+                producer=clause.source,
+            )
+            if endpoints:
+                status = SurfaceCapabilityStatus.SUPPORTED
+                reason = (
+                    "registered provider operation can satisfy the product even "
+                    "though no first-level semantic record is materialized directly"
+                )
+                evidence = _endpoint_evidence(endpoints)
+            elif dynamic:
+                status = SurfaceCapabilityStatus.DEFERRED
+                reason = (
+                    "only a dynamic qualified semantic capability is registered; "
+                    "the requested producer/channel cannot be confirmed statically"
+                )
+                evidence = _record_evidence(dynamic)
+            elif noun in _LOCAL_REQUIREMENTS:
+                status = SurfaceCapabilityStatus.DEFERRED
+                reason = (
+                    "the product is locally derivable, but local derivation/input "
+                    "capabilities are outside the provider CapabilityGraph"
+                )
+                evidence = ()
+            else:
+                status = SurfaceCapabilityStatus.UNSUPPORTED
+                reason = "no compatible registered capability found"
+                evidence = ()
+
+        checks.append(
+            SurfaceCapabilityCheck(
+                subject="requirement",
+                status=status,
+                reason=reason,
+                clause_index=clause_index,
+                origin=origin,
+                broker=broker,
+                semantic_noun=noun,
+                producer=clause.source,
+                channel=channel,
+                evidence=evidence,
+            )
+        )
+    return tuple(checks)
+
+
+def _match_checks(
+    surface: SurfaceScript,
+    clause: MatchClause,
+    *,
+    clause_index: int,
+    graph: CapabilityGraph,
+) -> tuple[SurfaceCapabilityCheck, ...]:
+    checks: list[SurfaceCapabilityCheck] = []
+    broker = clause.via or surface.candidates.broker
+    if clause.counterpart_origin is not None:
+        endpoints = graph.query_endpoints(
+            broker=broker,
+            origin=clause.counterpart_origin,
+        )
+        checks.append(
+            SurfaceCapabilityCheck(
+                subject="match_counterpart",
+                status=(
+                    SurfaceCapabilityStatus.SUPPORTED
+                    if endpoints
+                    else SurfaceCapabilityStatus.UNSUPPORTED
+                ),
+                reason=(
+                    "registered counterpart source capability found"
+                    if endpoints
+                    else "no registered counterpart source capability found"
+                ),
+                clause_index=clause_index,
+                origin=clause.counterpart_origin,
+                broker=broker,
+                channel=broker,
+                evidence=_endpoint_evidence(endpoints),
+            )
+        )
+
+    checks.append(
+        SurfaceCapabilityCheck(
+            subject="match_local",
+            status=SurfaceCapabilityStatus.DEFERRED,
+            reason=(
+                "association is local orchestration behavior; executable match "
+                "methods/predicates are not modeled by the provider CapabilityGraph"
+            ),
+            clause_index=clause_index,
+            broker=broker,
+        )
+    )
+    return tuple(checks)
+
+
+def validate_surface_capabilities(
+    surface: SurfaceScript,
+    *,
+    graph: CapabilityGraph | None = None,
+    semantic_paths: _SemanticPaths | None = None,
+) -> SurfaceCapabilityReport:
+    """Validate provider-facing surface intent against registered capabilities.
+
+    The function performs no network/provider I/O. Candidate origins remain fixed;
+    a clause-level ``via`` only overrides the broker for that clause. Semantic
+    ``from`` qualifiers are matched against the producer part of qualified
+    semantic record types and never mutate the physical origin.
+
+    Ontology-invalid surfaces are rejected before capability resolution so syntax,
+    ontology, capability, planning, binding, and execution remain separate stages.
+    """
+
+    semantic_model = semantic_paths or _semantic_path_model()
+    semantic_report = validate_surface_semantics(
+        surface,
+        semantic_paths=semantic_model,
+    )
+    if not semantic_report.is_valid:
+        codes = ", ".join(issue.code for issue in semantic_report.errors)
+        raise SurfaceCapabilityValidationError(
+            "capability validation requires ontology-valid surface intent"
+            + (f" ({codes})" if codes else "")
+        )
+
+    capability_graph = graph or build_capability_graph()
+    checks: list[SurfaceCapabilityCheck] = list(
+        _candidate_checks(surface, capability_graph)
+    )
+
+    for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, RequirementClause):
+            checks.extend(
+                _requirement_checks(
+                    surface,
+                    clause,
+                    clause_index=index,
+                    graph=capability_graph,
+                    record_types=semantic_model.record_types,
+                )
+            )
+        elif isinstance(clause, MatchClause):
+            checks.extend(
+                _match_checks(
+                    surface,
+                    clause,
+                    clause_index=index,
+                    graph=capability_graph,
+                )
+            )
+        elif isinstance(clause, RankedByClause):
+            checks.append(
+                SurfaceCapabilityCheck(
+                    subject="ranking",
+                    status=SurfaceCapabilityStatus.DEFERRED,
+                    reason=(
+                        "ranking methods are not yet registered as local/provider "
+                        "capabilities"
+                    ),
+                    clause_index=index,
+                )
+            )
+
+    return SurfaceCapabilityReport(checks=tuple(checks))
+
+
+__all__ = [
+    "SurfaceCapabilityCheck",
+    "SurfaceCapabilityEvidence",
+    "SurfaceCapabilityReport",
+    "SurfaceCapabilityStatus",
+    "SurfaceCapabilityValidationError",
+    "validate_surface_capabilities",
+]
