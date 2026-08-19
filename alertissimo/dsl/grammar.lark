@@ -1,95 +1,67 @@
-// AUTO-GENERATED FROM definitions.py - DO NOT EDIT DIRECTLY
-// Generated: 2026-03-19T13:33:42.349292
-// Source: alertissimo/dsl/definitions.py
-// Total verbs: 40
+// Alertissimo declarative DSL v0.1
+//
+// This file is the hand-authored formal syntax of the user-facing language.
+// It is intentionally not generated from orchestration Step classes.
+// WHERE/FILTER predicates, ORDER expressions, RANKED criteria, and MATCH ON
+// predicates are embedded semantic-expression slots in v0.1; their internal
+// expression grammar will be formalized independently.
 
 start: script
+script: _NL* candidate_statement (_NL+ clause)* _NL*
 
-script: (statement NEWLINE*)+
+candidate_statement: "objects"i "from"i origin_list via_clause?
+origin_list: NAME ("," NAME)*
 
-statement: simple_command NEWLINE*
+?clause: inside_clause
+       | within_clause
+       | latest_clause
+       | where_clause
+       | filter_clause
+       | with_clause
+       | match_clause
+       | order_clause
+       | ranked_clause
 
-simple_command: VERB parameter*
+inside_clause: "inside"i "(" NUMBER "," NUMBER "," ANGLE ")"
 
-parameter: KEY "=" value
+within_clause: "within"i duration                       -> within_relative
+             | "within"i WINDOW_BOUND "," WINDOW_BOUND -> within_explicit
 
-?value: STRING
-      | NUMBER
-      | IDENTIFIER
-      | list
-      | geometry
-      | TRUE
-      | FALSE
+latest_clause: "latest"i INT
+where_clause: "where"i TEXT
+filter_clause: "filter"i TEXT
 
-list: "[" [value ("," value)*] "]"
+with_clause: "with"i requirement
+requirement: PRODUCT from_clause? via_clause? using_clause?
+from_clause: "from"i NAME
+via_clause: "via"i NAME
+using_clause: "using"i METHOD
 
-geometry: point
-        | circle
-        | box
-        | polygon
+match_clause: "match"i match_from? via_clause? match_within? match_on?
+match_from: "from"i NAME
+match_within: "within"i duration
+match_on: "on"i TEXT
 
-point: "point(" NUMBER "," NUMBER ")"
-circle: "circle(" NUMBER "," NUMBER "," NUMBER ")"
-box: "box(" NUMBER "," NUMBER "," NUMBER "," NUMBER ")"
-polygon: "polygon(" NUMBER "," NUMBER ("," NUMBER "," NUMBER)+ ")"
+order_clause: "order"i "by"i TEXT
+ranked_clause: "ranked"i "by"i TEXT
 
-VERB: "act"
-    | "aggregate"
-    | "analyze"
-    | "class"
-    | "classify"
-    | "cone"
-    | "conesearch"
-    | "confirm"
-    | "crossmatch"
-    | "cutout"
-    | "do"
-    | "email"
-    | "enrich"
-    | "export"
-    | "filter"
-    | "find"
-    | "findobject"
-    | "findobjects"
-    | "get"
-    | "kafka"
-    | "lc"
-    | "lightcurve"
-    | "mail"
-    | "match"
-    | "monitor"
-    | "near"
-    | "notify"
-    | "process"
-    | "save"
-    | "search"
-    | "send"
-    | "slack"
-    | "sqlquery"
-    | "stats"
-    | "stream"
-    | "summarize"
-    | "timeseries"
-    | "watch"
-    | "write"
-    | "xm"
+duration: DURATION
 
-KEY: /[a-zA-Z_][a-zA-Z0-9_]*/
-
-IDENTIFIER: /[A-Za-z0-9_\-\.]+/
-
-TRUE: "true"
-FALSE: "false"
+// PRODUCT stops before a WITH-clause qualifier. TEXT consumes the remaining
+// semantic-expression slot on the current line.
+PRODUCT.2: /[^#\n]+?(?=\s+(?i:from|via|using)\s+[A-Za-z]|\s*(?:#|\n|$))/
+TEXT: /[^#\n]+/
+WINDOW_BOUND: /[^,#\n]+/
+DURATION: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:s|min|h|d|w)/i
+ANGLE: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:deg|arcmin|arcsec)?/i
+METHOD: /[A-Za-z][A-Za-z0-9_.:-]*/
+NAME: /[A-Za-z][A-Za-z0-9_.-]*/
+NUMBER: /[+-]?(?:\d+(?:\.\d*)?|\.\d+)/
+INT: /\d+/
 
 COMMENT: /#[^\n]*/
+_NL: /\r?\n/
 
-STRING: ESCAPED_STRING
-NUMBER: SIGNED_NUMBER
-
-%import common.ESCAPED_STRING
-%import common.SIGNED_NUMBER
-%import common.NEWLINE
 %import common.WS_INLINE
-
 %ignore WS_INLINE
 %ignore COMMENT
