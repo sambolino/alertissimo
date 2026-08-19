@@ -3238,22 +3238,38 @@ transforms:
       skip_null: true
   lightcurve@fink.feature_vector_points.g.value:
     objects#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     sso#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     latests#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     anomaly#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
   lightcurve@fink.feature_vector_points.r.value:
     objects#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     sso#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     latests#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     anomaly#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
   lightcurve@fink.feature_vector_points.time.mjd:
     objects#i:jd:
       type: jd_to_mjd
