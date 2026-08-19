@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import streamlit as st
 
-from alertissimo.dsl import DSLParseError, parse_surface_script
+from alertissimo.dsl import (
+    DSLParseError,
+    parse_surface_script,
+    validate_surface_semantics,
+)
 
 
 _EXAMPLE = """objects from lsst via fink
     within 7d
     latest 100
-    where classification = \"SN Ia\"
+    where classification = "SN Ia"
     with lightcurve
     with crossmatch from gaia
     order by summary.photometry.r.mag.mean asc
@@ -18,32 +22,42 @@ _EXAMPLE = """objects from lsst via fink
 
 
 def main() -> None:
-    """Render a small parser/inspection UI for the production DSL surface."""
+    """Render a parser and static-validation UI for the production DSL surface."""
 
     st.title("Alertissimo DSL")
     st.markdown(
-        "Parse the declarative user-facing DSL and inspect the preserved surface "
-        "intent. Capability validation and WorkflowIR lowering are intentionally "
-        "separate later stages."
+        "Parse the formal declarative syntax, inspect preserved user intent, and "
+        "run ontology-level static validation. Provider capability resolution and "
+        "WorkflowIR lowering remain separate stages."
     )
 
     dsl_input = st.text_area("DSL", value=_EXAMPLE, height=280)
-
-    if not st.button("Parse"):
+    if not st.button("Validate"):
         return
 
     try:
         surface = parse_surface_script(dsl_input)
     except DSLParseError as exc:
-        st.error(f"DSL parse error: {exc}")
+        st.error(f"DSL syntax error: {exc}")
         return
 
-    st.success("DSL parsed successfully")
+    st.success("Formal syntax is valid")
+    report = validate_surface_semantics(surface)
+    if report.errors:
+        st.error("Ontology validation failed")
+        for issue in report.errors:
+            st.markdown(f"- `{issue.code}`: {issue.message}")
+    else:
+        st.success("Ontology-grounded surface intent is valid")
+
+    for issue in report.warnings:
+        st.warning(f"{issue.code}: {issue.message}")
+
     st.subheader("Surface intent")
     st.json(surface.model_dump(mode="json"))
     st.info(
-        "This UI stops at the DSL surface. Ontology validation, capability "
-        "validation, planning, and execution are not wired here yet."
+        "This UI deliberately stops before capability validation, planning, and "
+        "execution."
     )
 
 

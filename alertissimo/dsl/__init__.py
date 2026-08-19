@@ -1,9 +1,6 @@
-"""Public declarative DSL surface.
+"""Public declarative Alertissimo DSL surface and static validation."""
 
-The DSL package intentionally exposes user intent only.  Ontology validation,
-capability resolution, and lowering to orchestration IR live in later layers.
-"""
-
+from .parser import grammar_text, parse_surface_script
 from .surface import (
     AngularRadius,
     CandidateSet,
@@ -20,7 +17,13 @@ from .surface import (
     SurfaceScript,
     WhereClause,
     WithinClause,
-    parse_surface_script,
+)
+from .validation import (
+    SurfaceValidationIssue,
+    SurfaceValidationReport,
+    ValidationSeverity,
+    resolve_record_type,
+    validate_surface_semantics,
 )
 
 __all__ = (
@@ -37,7 +40,13 @@ __all__ = (
     "RequirementClause",
     "SurfaceClause",
     "SurfaceScript",
+    "SurfaceValidationIssue",
+    "SurfaceValidationReport",
+    "ValidationSeverity",
     "WhereClause",
     "WithinClause",
+    "grammar_text",
     "parse_surface_script",
+    "resolve_record_type",
+    "validate_surface_semantics",
 )

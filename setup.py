@@ -22,10 +22,12 @@ setup(
     name="alertissimo",
     version="0.1.0",
     packages=find_packages(include=["alertissimo", "alertissimo.*"]),
+    package_data={"alertissimo.dsl": ["grammar.lark"]},
     cmdclass={"install": CustomInstall},
     install_requires=[
         "setuptools>=69.5.1",
         "antares-client==1.14.0",
+        "lark==1.2.2",
         "marshmallow==3.21.1",
         "marshmallow-jsonapi==0.24.0",
         "pydantic==2.11.7",
