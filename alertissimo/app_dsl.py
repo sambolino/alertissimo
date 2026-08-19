@@ -1,4 +1,4 @@
-"""Minimal Streamlit front end for the declarative DSL surface."""
+"""Minimal Streamlit front end for the declarative DSL validation pipeline."""
 
 from __future__ import annotations
 
@@ -6,29 +6,30 @@ import streamlit as st
 
 from alertissimo.dsl import (
     DSLParseError,
+    SurfaceCapabilityStatus,
+    SurfaceCapabilityValidationError,
     parse_surface_script,
+    validate_surface_capabilities,
     validate_surface_semantics,
 )
 
 
-_EXAMPLE = """objects from lsst via fink
+_EXAMPLE = """objects from ztf via antares
+    inside (34, 33, 0.5deg)
     within 7d
     latest 100
-    where classification = "SN Ia"
-    with lightcurve
     with crossmatch from gaia
-    order by summary.photometry.r.mag.mean asc
 """
 
 
 def main() -> None:
-    """Render a parser and static-validation UI for the production DSL surface."""
+    """Render syntax, ontology, and read-only capability validation."""
 
     st.title("Alertissimo DSL")
     st.markdown(
-        "Parse the formal declarative syntax, inspect preserved user intent, and "
-        "run ontology-level static validation. Provider capability resolution and "
-        "WorkflowIR lowering remain separate stages."
+        "Validate the formal declarative syntax, ontology-grounded surface intent, "
+        "and registered provider capabilities. Planning, binding, and execution "
+        "remain separate later stages."
     )
 
     dsl_input = st.text_area("DSL", value=_EXAMPLE, height=280)
@@ -42,22 +43,41 @@ def main() -> None:
         return
 
     st.success("Formal syntax is valid")
-    report = validate_surface_semantics(surface)
-    if report.errors:
+    semantic_report = validate_surface_semantics(surface)
+    if semantic_report.errors:
         st.error("Ontology validation failed")
-        for issue in report.errors:
+        for issue in semantic_report.errors:
             st.markdown(f"- `{issue.code}`: {issue.message}")
-    else:
-        st.success("Ontology-grounded surface intent is valid")
+        return
 
-    for issue in report.warnings:
+    st.success("Ontology-grounded surface intent is valid")
+    for issue in semantic_report.warnings:
         st.warning(f"{issue.code}: {issue.message}")
+
+    try:
+        capability_report = validate_surface_capabilities(surface)
+    except SurfaceCapabilityValidationError as exc:
+        st.error(f"Capability validation could not run: {exc}")
+        return
+
+    if capability_report.status is SurfaceCapabilityStatus.UNSUPPORTED:
+        st.error("One or more registered capability requirements are unsupported")
+    elif capability_report.status is SurfaceCapabilityStatus.DEFERRED:
+        st.warning(
+            "Provider capability validation passed where applicable, but one or "
+            "more local/dynamic capabilities remain deferred"
+        )
+    else:
+        st.success("Registered provider capabilities support the surface intent")
+
+    st.subheader("Capability checks")
+    st.json(capability_report.model_dump(mode="json"))
 
     st.subheader("Surface intent")
     st.json(surface.model_dump(mode="json"))
     st.info(
-        "This UI deliberately stops before capability validation, planning, and "
-        "execution."
+        "This UI deliberately stops before planning, parameter binding, and "
+        "provider execution."
     )
 
 
