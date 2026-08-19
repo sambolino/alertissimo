@@ -27,6 +27,7 @@ from .ir.models import (
     ActionStep,
     AnalyzeStep,
     ConeSearchStep,
+    DeriveStep,
     FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
@@ -35,7 +36,6 @@ from .ir.models import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
-    LightcurveStep,
     LookupStep,
     MatchStep,
     MonitorStep,
@@ -218,7 +218,7 @@ def validate_step_capabilities(
             "lookup target semantics cannot be inferred safely from the identifier",
         )
 
-    if isinstance(step, (FilterStep, LightcurveStep, MatchStep, AnalyzeStep, ActionStep)):
+    if isinstance(step, (FilterStep, DeriveStep, MatchStep, AnalyzeStep, ActionStep)):
         return CapabilityValidationResult(
             operation, semantic_type, "not_applicable", (),
             "provider CapabilityGraph validation does not govern this local/orchestration step",

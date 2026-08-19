@@ -17,6 +17,8 @@
     "i:ra": 10.1,
     "i:dec": -2.1,
     "i:magpsf": 18.9,
-    "i:sigmapsf": 0.1
+    "i:sigmapsf": 0.1,
+    "v:g-r": 0.2,
+    "v:sigma(g-r)": 0.05
   }
 ]

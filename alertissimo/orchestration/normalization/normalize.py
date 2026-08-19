@@ -5,6 +5,7 @@ from __future__ import annotations
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
+from alertissimo.orchestration.ir import DeriveStep
 from alertissimo.orchestration.runtime import (
     StepExecutionResult,
     StepRunState,
@@ -74,6 +75,21 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 f"execution Step result at position {position} has step_index "
                 f"{step_result.step_index}; expected {step_run.step_index}"
             )
+
+        step = run.step_at(step_run.step_index)
+        if isinstance(step, DeriveStep):
+            if step_run.state is not StepRunState.PLANNED:
+                raise WorkflowNormalizationAlignmentError(
+                    f"derive step_index {step_run.step_index} is {step_run.state.value}; "
+                    "it must remain planned until post-normalization derivation"
+                )
+            if step_run.endpoint_plans or step_run.execution_ids or step_result.executions:
+                raise WorkflowNormalizationAlignmentError(
+                    f"derive step_index {step_run.step_index} must have no physical "
+                    "endpoint plans, execution IDs, or execution results"
+                )
+            continue
+
         if step_run.state is not StepRunState.SUCCEEDED:
             raise WorkflowNormalizationAlignmentError(
                 f"step_index {step_run.step_index} is {step_run.state.value}; "
@@ -120,7 +136,7 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> WorkflowPortfolioResult:
-    """Validate associations, then independently normalize every execution."""
+    """Normalize physical results while preserving endpoint-free derive occurrences."""
 
     # Complete validation first: malformed results must not produce partial output.
     _validate_workflow_alignment(result)

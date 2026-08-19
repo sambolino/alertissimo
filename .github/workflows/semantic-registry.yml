@@ -11,6 +11,7 @@ on:
       - 'tests/test_normalization_cardinality.py'
       - 'tests/test_payload_paths.py'
       - 'tests/test_orchestration_normalization.py'
+      - 'tests/test_orchestration_derivation.py'
       - 'tests/test_orchestration_ir_models.py'
       - 'tests/test_orchestration_binding.py'
       - 'tests/test_orchestration_capability_validation.py'
@@ -68,6 +69,7 @@ jobs:
             tests/test_normalization_cardinality.py \
             tests/test_payload_paths.py \
             tests/test_orchestration_normalization.py \
+            tests/test_orchestration_derivation.py \
             tests/test_orchestration_ir_models.py \
             tests/test_orchestration_binding.py \
             tests/test_orchestration_capability_validation.py \

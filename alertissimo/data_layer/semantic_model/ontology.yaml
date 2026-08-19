@@ -357,6 +357,8 @@
 #       detection
 #       crossmatch
 #       lightcurve
+#       color_magnitude
+#       color_color
 #       spectrum
 #       data_product
 #       classification
@@ -2274,6 +2276,33 @@ levels:
     description: "Number of detections in the time-series history"
     type: integer
 
+<_color_magnitude_point>:
+  description: "One point in a non-temporal color-magnitude relation"
+  $ref: <color>(L1, L6)
+  $ref: <photometry>(L1, L6)
+
+<color_magnitude>:
+  description: "Non-temporal relation pairing a color measurement with a photometric magnitude; may be supplied directly by a producer or derived locally"
+  $ref: <provenance>
+  <points>:
+    description: "Color-magnitude relation points"
+    type: array
+    items:
+      $ref: <_color_magnitude_point>
+
+<_color_color_point>:
+  description: "One point in a non-temporal color-color relation"
+  $ref: <color>(L1, L6)
+
+<color_color>:
+  description: "Non-temporal relation pairing two color measurements; may be supplied directly by a producer or derived locally"
+  $ref: <provenance>
+  <points>:
+    description: "Color-color relation points"
+    type: array
+    items:
+      $ref: <_color_color_point>
+
 <survey>:
   level: L7
   description: "Survey, stream, sample, or selection-level statistics, thresholds, distributions, and aggregate context"
@@ -2541,6 +2570,8 @@ levels:
   $refs: <detection>@{producer}:{channel}
   $refs: <crossmatch>@{producer}:{channel}
   $refs: <lightcurve>@{producer}:{channel}
+  $refs: <color_magnitude>@{producer}:{channel}
+  $refs: <color_color>@{producer}:{channel}
   $refs: <spectrum>@{producer}:{channel}
   $refs: <data_product>@{producer}:{channel}
   $refs: <classification>@{producer}:{channel}

@@ -10,7 +10,9 @@ from typing import Callable
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.orchestration.binding import bind_workflow_run
+from alertissimo.orchestration.derivation import derive_workflow_portfolios
 from alertissimo.orchestration.ir import (
+    ColorMagnitudeStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
     Source,
@@ -63,6 +65,26 @@ def multi_provider_workflow(targets: tuple[str, ...] = (DEFAULT_TARGET,)) -> Wor
     )
 
 
+def color_magnitude_workflow(
+    targets: tuple[str, ...] = (DEFAULT_TARGET,)
+) -> WorkflowIR:
+    if len(targets) != 1:
+        raise ValueError("color-magnitude requires exactly one target")
+    return WorkflowIR(
+        name="post-normalization color-magnitude derivation",
+        steps=[
+            GetLightcurveStep(
+                target=TargetSelector(ids=[targets[0]], kind="object"),
+                sources=[Source(broker="fink", origin="ztf")],
+            ),
+            ColorMagnitudeStep(
+                color="g-r",
+                magnitude_field="photometry.r.psf.mag",
+            ),
+        ],
+    )
+
+
 def multi_target_workflow(targets: tuple[str, ...] = BATCH_TARGETS) -> WorkflowIR:
     if len(targets) < 2:
         raise ValueError("multi-target requires at least two targets")
@@ -108,6 +130,7 @@ def partial_failure_workflow(
 
 SCENARIOS: dict[str, Callable[[tuple[str, ...]], WorkflowIR]] = {
     "multi-provider": multi_provider_workflow,
+    "color-magnitude": color_magnitude_workflow,
     "multi-target": multi_target_workflow,
     "partial-failure": partial_failure_workflow,
 }
@@ -186,5 +209,5 @@ def run_scenario(
         return ScenarioResult(name, workflow, error.workflow_run, bindings, None, error)
     if name == "partial-failure":
         raise RuntimeError("partial-failure scenario unexpectedly succeeded")
-    normalized = normalize_workflow_execution(executed)
-    return ScenarioResult(name, workflow, executed.run, bindings, normalized)
+    normalized = derive_workflow_portfolios(normalize_workflow_execution(executed))
+    return ScenarioResult(name, workflow, normalized.run, bindings, normalized)
