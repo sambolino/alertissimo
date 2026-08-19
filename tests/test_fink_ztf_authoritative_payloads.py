@@ -72,6 +72,17 @@ def _records(portfolio, semantic_type):
     return [record for record in portfolio.records if record.semantic_type == semantic_type]
 
 
+def _scalar_values(value):
+    if isinstance(value, dict):
+        for nested in value.values():
+            yield from _scalar_values(nested)
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            yield from _scalar_values(nested)
+    else:
+        yield value
+
+
 def test_classtar_and_fink_final_classification_are_positive_products():
     portfolio = _build("objects")
     sextractor = _records(portfolio, "classification@sextractor:fink")
@@ -276,7 +287,13 @@ def test_frozen_service_failures_are_never_scientific_values():
     }
     assert observed == {"Fail", "Fail 500", "Fail 503"}
     portfolio = _build("sso")
-    assert not any(value in observed for record in portfolio.records for value in record.fields.values())
+    assert not any(
+        value in observed
+        for record in portfolio.records
+        for field_value in record.fields.values()
+        for value in _scalar_values(field_value)
+        if isinstance(value, str)
+    )
 
 
 def test_statistics_are_mapped_but_not_object_portfolios():
