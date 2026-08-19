@@ -9,6 +9,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
 )
 from alertissimo.orchestration.ir.models import (
     ClassifyStep,
+    ColorMagnitudeStep,
     ConeSearchStep,
     FilterStep,
     GetClassificationStep,
@@ -159,10 +160,15 @@ def test_unsupported_deferred_and_local_statuses_are_distinct(graph):
         ClassifyStep(),
         FilterStep(criteria={}),
         MatchStep(),
-        LightcurveStep(),
     ):
         with pytest.raises(PlanningNotApplicableError):
             plan_step(step, graph)
+
+    assert plan_step(LightcurveStep(), graph) == ()
+    assert plan_step(
+        ColorMagnitudeStep(color="g-r", magnitude_field="photometry.r.psf.mag"),
+        graph,
+    ) == ()
 
 
 def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(graph):
@@ -177,16 +183,21 @@ def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(gr
                 target=TargetSelector(ids=["ZTF20abc"], kind="object"),
                 sources=[Source(broker="lasair", origin="ztf")],
             ),
+            ColorMagnitudeStep(
+                color="g-r", magnitude_field="photometry.r.psf.mag"
+            ),
         ]
     )
     run = plan_workflow(workflow, graph)
     assert [step.state for step in run.steps] == [
         StepRunState.PLANNED,
         StepRunState.PLANNED,
+        StepRunState.PLANNED,
     ]
     assert [[item.endpoint for item in step.endpoint_plans] for step in run.steps] == [
         ["query"],
         ["lightcurves"],
+        [],
     ]
     _assert_resolves(
         tuple(plan for step_run in run.steps for plan in step_run.endpoint_plans)
