@@ -410,7 +410,11 @@ def test_html_renderer_renders_intrinsic_arrays_as_nested_nodes():
         _tree(
             {
                 "points": (
-                    {"time.mjd": 1.0, "photometry.g.psf.mag": 18.1},
+                    {
+                        "time.mjd": 1.0,
+                        "photometry.g.psf.mag": 18.1,
+                        "photometry.g.psf.mag.error": 0.1,
+                    },
                     {"time.mjd": 2.0, "photometry.r.psf.mag": 18.2},
                 ),
                 "feature_vector_points": (
@@ -428,9 +432,17 @@ def test_html_renderer_renders_intrinsic_arrays_as_nested_nodes():
         '<span>feature_vector_points</span><span class="array-count">[1]</span>'
         in rendered
     )
-    assert '<span>g.value</span><span class="array-count">[2]</span>' in rendered
+    assert '<span>value</span><span class="array-count">[2]</span>' in rendered
+    assert '<span>time</span><code>points[0].time</code>' in rendered
+    assert '<span>photometry</span><code>points[0].photometry</code>' in rendered
+    assert '<span>g</span><code>points[0].photometry.g</code>' in rendered
+    assert '<span>psf</span><code>points[0].photometry.g.psf</code>' in rendered
     assert "points[0].time.mjd" in rendered
+    assert "points[0].photometry.g.psf.mag.error" in rendered
     assert "feature_vector_points[0].g.value[1]" in rendered
     assert "18.1" in rendered
+    assert '<span>time.mjd</span>' not in rendered
+    assert '<span>photometry.g.psf.mag</span>' not in rendered
+    assert '<span>photometry.g.psf.mag.error</span>' not in rendered
     assert 'class="value value-object"' not in rendered
     assert 'data-search="points points [' not in rendered

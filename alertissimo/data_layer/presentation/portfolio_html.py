@@ -192,6 +192,8 @@ def _render_value(key, path, value, semantic, *, mapping_open=True):
         for index, item in enumerate(value):
             item_key = f"[{index}]"
             item_path = f"{path}[{index}]"
+            if isinstance(item, Mapping):
+                item = _tree(item)
             out.append(
                 _render_value(
                     item_key,
