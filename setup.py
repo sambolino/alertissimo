@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 import subprocess
 
+
 class CustomInstall(install):
     def run(self):
         # Install confluent-kafka with custom paths
@@ -12,19 +13,19 @@ class CustomInstall(install):
             "--global-option=--include-dirs=/usr/include",
             "--global-option=--library-dirs=/usr/lib/x86_64-linux-gnu"
         ], check=True)
-        
+
         # Proceed with normal installation
         super().run()
+
 
 setup(
     name="alertissimo",
     version="0.1.0",
-    packages=find_packages(include=['alertissimo', 'alertissimo.*']),
+    packages=find_packages(include=["alertissimo", "alertissimo.*"]),
     cmdclass={"install": CustomInstall},
     install_requires=[
         "setuptools>=69.5.1",
         "antares-client==1.14.0",
-        "lark==1.2.2",
         "marshmallow==3.21.1",
         "marshmallow-jsonapi==0.24.0",
         "pydantic==2.11.7",
@@ -41,10 +42,8 @@ setup(
         "numpy>=2.0.0,<2.1.0",  # Allow NumPy 2.0.x but not 2.1+
     ],
     entry_points={
-        'console_scripts': [
-            'alertissimo = alertissimo.app_dsl:main',
-            'dsl-generate-grammar = alertissimo.dsl.grammar_tools:main',
-            'dsl-validate-grammar = alertissimo.dsl.grammar_tools:main',
+        "console_scripts": [
+            "alertissimo = alertissimo.app_dsl:main",
         ],
     },
 )
