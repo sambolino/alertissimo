@@ -4,7 +4,8 @@ The orchestration runtime drives Step occurrence lifecycle while delegating each
 physical call to ``RegistryEndpointExecutor``.  ``WorkflowRun`` retains only
 lifecycle facts and execution IDs; raw payload and complete call provenance stay
 in the transient ``ExecutionResult`` values returned here for a later semantic
-normalization and Portfolio-composition layer.
+normalization and Portfolio-composition layer.  DeriveStep occurrences deliberately
+remain planned here: they own no physical call and run only after normalization.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from alertissimo.orchestration.binding.models import (
     BoundEndpointCall,
     StepBindingResult,
 )
+from alertissimo.orchestration.ir.models import DeriveStep
 
 from .models import StepRun, StepRunState, WorkflowRun
 
@@ -122,13 +124,20 @@ def execute_workflow_run(
     bindings: tuple[StepBindingResult, ...],
     executor: RegistryEndpointExecutor,
 ) -> WorkflowExecutionResult:
-    """Execute a planned and bound workflow sequentially, failing fast."""
+    """Execute physical calls sequentially; leave DeriveSteps for Portfolio phase."""
 
     _validate_alignment(run, bindings)
     updated_run = run
     step_results: list[StepExecutionResult] = []
 
     for step_run, binding in zip(run.steps, bindings):
+        step = run.step_at(step_run.step_index)
+        if isinstance(step, DeriveStep):
+            step_results.append(
+                StepExecutionResult(step_index=step_run.step_index, executions=())
+            )
+            continue
+
         executions: list[ExecutionResult] = []
         try:
             for call in binding.bound_calls:
