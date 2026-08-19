@@ -10,6 +10,11 @@ from typing import Any
 def _object_ids(portfolio) -> list[str]:
     values = []
     for record in portfolio.records:
+        # Portfolio subject identity is represented by object-level summaries.
+        # Crossmatch records may legitimately carry their own catalog object IDs;
+        # those must not be reported as identities of the normalized Portfolio.
+        if record.semantic_type.split("@", 1)[0] != "summary":
+            continue
         for key, value in record.fields.items():
             if key == "identity.object_id" and value is not None:
                 values.append(str(value))

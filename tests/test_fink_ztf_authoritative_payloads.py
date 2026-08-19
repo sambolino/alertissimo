@@ -72,6 +72,17 @@ def _records(portfolio, semantic_type):
     return [record for record in portfolio.records if record.semantic_type == semantic_type]
 
 
+def _scalar_values(value):
+    if isinstance(value, dict):
+        for nested in value.values():
+            yield from _scalar_values(nested)
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            yield from _scalar_values(nested)
+    else:
+        yield value
+
+
 def test_classtar_and_fink_final_classification_are_positive_products():
     portfolio = _build("objects")
     sextractor = _records(portfolio, "classification@sextractor:fink")
@@ -105,7 +116,10 @@ def test_candid_history_reference_times_calibration_and_fixed_color():
     assert detection.fields["calibration.color_median"] == 0.594
     assert detection.fields["calibration.color_rms"] == 0.314855
     lightcurve = _records(portfolio, "lightcurve@fink")[0]
-    assert lightcurve.fields["color_points.color.g-r.diff"] == 0.744712
+    assert any(
+        point.get("color.g-r.diff") == pytest.approx(0.744712)
+        for point in lightcurve.fields["color_points"]
+    )
 
 
 def test_distnr_pixels_are_not_emitted_as_angular_reference_separation():
@@ -136,8 +150,9 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert detection.fields["solar_system.iau_name"] == "Benoitcarry"
     assert detection.fields["solar_system.iau_number"] == 8467
     assert detection.fields["solar_system.mpc_match.identity.object_id"] == "8467"
-    assert "feature_vector.g.value" in lightcurve.fields
-    assert "feature_vector.r.value" in lightcurve.fields
+    feature_points = lightcurve.fields["feature_vector_points"]
+    assert any("g.value" in point for point in feature_points)
+    assert any("r.value" in point for point in feature_points)
     synthetic = _build("objects", [{"i:objectId": "ZTF-synthetic", "i:ssdistnr": -999.0, "i:ssmagnr": -999.0, "i:candid": -1}])
     assert not _records(synthetic, "detection@ztf:fink")
 
@@ -272,7 +287,13 @@ def test_frozen_service_failures_are_never_scientific_values():
     }
     assert observed == {"Fail", "Fail 500", "Fail 503"}
     portfolio = _build("sso")
-    assert not any(value in observed for record in portfolio.records for value in record.fields.values())
+    assert not any(
+        value in observed
+        for record in portfolio.records
+        for field_value in record.fields.values()
+        for value in _scalar_values(field_value)
+        if isinstance(value, str)
+    )
 
 
 def test_statistics_are_mapped_but_not_object_portfolios():

@@ -1,8 +1,8 @@
 """Collect row-wise semantic fragments into intrinsic array-valued records.
 
 The provider mapping layer is intentionally row-oriented: one selected payload row
-can emit one semantic fragment.  Some ontology fields, however, are intrinsically
-array-valued (currently the point collections on ``lightcurve``).  This module
+can emit one semantic fragment. Some ontology fields, however, are intrinsically
+array-valued (currently the point collections on ``lightcurve``). This module
 collapses those row fragments after mapping without adding collection directives
 to provider registries.
 """
@@ -22,7 +22,7 @@ class IntrinsicArrayCollectionError(ValueError):
     """Raised when row fragments cannot be safely collected."""
 
 
-# These are ontology-owned intrinsic arrays.  Provider mappings address fields
+# These are ontology-owned intrinsic arrays. Provider mappings address fields
 # below them (for example ``points.time.mjd``); the collector turns those flat
 # row fragments into ``fields["points"] == ({...}, ...)``.
 _INTRINSIC_ARRAY_FIELDS = {
@@ -32,10 +32,16 @@ _INTRINSIC_ARRAY_FIELDS = {
             "forced_photometry_points",
             "magnitude_rate_points",
             "color_points",
-            "feature_vector_points",            
+            "feature_vector_points",
         }
     ),
 }
+
+# All current intrinsic lightcurve arrays are point-like and inherit this shared
+# context from ``_time_series_point``. Context alone must not materialize a point:
+# an item needs at least one family-specific datum such as photometry, a rate,
+# color, forced photometry, or a feature-vector value.
+_POINT_CONTEXT_ROOTS = frozenset({"time", "quality", "identity", "provenance"})
 
 
 def _base_semantic_type(semantic_type: str) -> str:
@@ -57,7 +63,18 @@ def _record_has_intrinsic_array_fragment(record: SemanticRecord) -> bool:
     return False
 
 
-def _copy_array_items(value: Any, *, semantic_type: str, field_name: str) -> list[dict[str, Any]]:
+def _item_has_substantive_fields(item: Mapping[str, Any]) -> bool:
+    """Return whether a point item carries more than shared point context."""
+
+    return any(
+        field_path.split(".", 1)[0] not in _POINT_CONTEXT_ROOTS
+        for field_path in item
+    )
+
+
+def _copy_array_items(
+    value: Any, *, semantic_type: str, field_name: str
+) -> list[dict[str, Any]]:
     if not isinstance(value, (tuple, list)):
         raise IntrinsicArrayCollectionError(
             f"{semantic_type}.{field_name} must be an array value during collection"
@@ -68,7 +85,9 @@ def _copy_array_items(value: Any, *, semantic_type: str, field_name: str) -> lis
             raise IntrinsicArrayCollectionError(
                 f"{semantic_type}.{field_name}[{index}] must be a mapping"
             )
-        items.append(dict(item))
+        copied = dict(item)
+        if _item_has_substantive_fields(copied):
+            items.append(copied)
     return items
 
 
@@ -111,7 +130,7 @@ def _split_fragment_fields(
 
     arrays = dict(existing_arrays)
     for field_name, point in flat_items.items():
-        if point:
+        if point and _item_has_substantive_fields(point):
             arrays.setdefault(field_name, []).append(point)
     return root_fields, arrays
 
@@ -158,7 +177,7 @@ def _collection_source(records: Sequence[SemanticRecord]) -> InternalRecordSourc
     )
 
 
-def _collect_group(records: Sequence[SemanticRecord]) -> SemanticRecord:
+def _collect_group(records: Sequence[SemanticRecord]) -> SemanticRecord | None:
     first = records[0]
     root_fields: dict[str, Any] = {}
     arrays: dict[str, list[dict[str, Any]]] = {}
@@ -179,6 +198,9 @@ def _collect_group(records: Sequence[SemanticRecord]) -> SemanticRecord:
     for field_name, items in arrays.items():
         if items:
             fields[field_name] = tuple(items)
+
+    if not fields:
+        return None
 
     return SemanticRecord(
         internal_record_id=first.internal_record_id,
@@ -226,7 +248,9 @@ def collect_intrinsic_array_records(
             continue
         if semantic_type in emitted:
             continue
-        result.append(collected[semantic_type])
+        collected_record = collected[semantic_type]
+        if collected_record is not None:
+            result.append(collected_record)
         emitted.add(semantic_type)
     return tuple(result)
 
