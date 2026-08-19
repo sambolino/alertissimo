@@ -122,7 +122,7 @@ def test_payload_selection_uses_only_authoritative_nested_lightcurve_rows():
     assert [record.semantic_type for record in object_portfolio.records] == ["summary@ztf:alerce"]
 
     lightcurve = _build("query_lightcurve", {
-        "detections": [{"oid": "ZTF-detection", "fid": 1, "mjd": 1.0}],
+        "detections": [{"oid": "ZTF-detection", "fid": 1, "mjd": 1.0, "magpsf": 19.1}],
         "non_detections": [{"oid": "ZTF-limit", "fid": 2, "mjd": 2.0, "diffmaglim": 20.2}],
     })
     detections = [
