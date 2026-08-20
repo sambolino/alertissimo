@@ -1,8 +1,8 @@
 """Abstract syntax for the user-facing declarative Alertissimo DSL.
 
 The surface model preserves what the scientist asked for without deciding how the
-request will be satisfied. Formal syntax lives in ``grammar.lark``; ontology and
-capability validation are separate later stages.
+request will be satisfied. Formal syntax lives in ``grammar.lark``; ontology,
+capability validation, IR lowering, and result-view lowering remain separate stages.
 """
 
 from __future__ import annotations
@@ -101,11 +101,15 @@ class WithinClause(SurfaceModel):
 
 
 class LatestClause(SurfaceModel):
+    """Keep the latest N candidates after first-pass selection semantics."""
+
     kind: Literal["latest"] = "latest"
     count: int = Field(gt=0)
 
 
 class WhereClause(SurfaceModel):
+    """One general first-pass candidate predicate."""
+
     kind: Literal["where"] = "where"
     condition: str
 
@@ -132,13 +136,20 @@ class FilterClause(SurfaceModel):
 
 
 class RequirementClause(SurfaceModel):
-    """Semantic enrichment requirement; it never filters candidates by itself."""
+    """Semantic requirement, optionally carrying one scoped predicate block.
+
+    ``predicates`` are conjunctive conditions over the requested product.  A
+    predicate-bearing requirement therefore means both "ensure this semantic
+    product" and "select/refine candidates using these conditions".  Whether the
+    provider can satisfy both in one call is a planner concern.
+    """
 
     kind: Literal["with"] = "with"
     product: str
     source: str | None = None
     via: str | None = None
     method: str | None = None
+    predicates: tuple[str, ...] = ()
 
     @field_validator("product")
     @classmethod
@@ -147,6 +158,16 @@ class RequirementClause(SurfaceModel):
         if not value:
             raise ValueError("with requires a semantic product")
         return value
+
+    @field_validator("predicates")
+    @classmethod
+    def require_nonempty_predicates(
+        cls, value: tuple[str, ...]
+    ) -> tuple[str, ...]:
+        normalized = tuple(item.strip() for item in value)
+        if any(not item for item in normalized):
+            raise ValueError("with predicate expressions cannot be empty")
+        return normalized
 
 
 class MatchClause(SurfaceModel):
@@ -166,6 +187,8 @@ class MatchClause(SurfaceModel):
 
 
 class OrderByClause(SurfaceModel):
+    """Result-view ordering; this does not create scientific workflow content."""
+
     kind: Literal["order_by"] = "order_by"
     expression: str
     direction: Literal["asc", "desc"] | None = None
@@ -196,6 +219,16 @@ class SurfaceScript(SurfaceModel):
 
     candidates: CandidateSet
     clauses: tuple[SurfaceClause, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_single_general_where_and_view_order(self) -> "SurfaceScript":
+        where_count = sum(isinstance(clause, WhereClause) for clause in self.clauses)
+        if where_count > 1:
+            raise ValueError("only one general where clause is allowed")
+        order_count = sum(isinstance(clause, OrderByClause) for clause in self.clauses)
+        if order_count > 1:
+            raise ValueError("only one order by clause is allowed")
+        return self
 
 
 def parse_surface_script(script: str) -> SurfaceScript:

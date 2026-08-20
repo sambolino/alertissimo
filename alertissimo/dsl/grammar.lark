@@ -2,25 +2,31 @@
 //
 // This file is the hand-authored formal syntax of the user-facing language.
 // It is intentionally not generated from orchestration Step classes.
-// WHERE/FILTER predicates, ORDER expressions, RANKED criteria, and MATCH ON
-// predicates are embedded semantic-expression slots in v0.1; their internal
-// expression grammar will be formalized independently.
+// WHERE/FILTER predicates, ORDER expressions, RANKED criteria, MATCH ON
+// predicates, and WITH-scoped predicates are embedded semantic-expression slots
+// in v0.1; their internal expression grammar can be formalized independently.
+//
+// Layout rule: top-level indentation is cosmetic. Relative indentation below a
+// WITH line is semantic only for its scoped predicate block. parser.py performs
+// deterministic layout normalization before this grammar is applied.
 
 start: script
-script: _NL* candidate_statement (_NL+ clause)* _NL*
+script: _NL* candidate_statement (_NL clause*)? _DEDENT*
 
 candidate_statement: "objects"i "from"i origin_list via_clause?
 origin_list: NAME ("," NAME)*
 
-?clause: inside_clause
-       | within_clause
-       | latest_clause
-       | where_clause
-       | filter_clause
+?clause: simple_clause _NL
        | with_clause
-       | match_clause
-       | order_clause
-       | ranked_clause
+
+?simple_clause: inside_clause
+              | within_clause
+              | latest_clause
+              | where_clause
+              | filter_clause
+              | match_clause
+              | order_clause
+              | ranked_clause
 
 inside_clause: "inside"i "(" NUMBER "," NUMBER "," ANGLE ")"
 
@@ -31,7 +37,15 @@ latest_clause: "latest"i INT
 where_clause: "where"i TEXT
 filter_clause: "filter"i TEXT
 
-with_clause: "with"i requirement
+// A WITH can stand alone, carry a colon block of one-or-more conjunctive
+// predicates, or carry one nested WHERE expression. The two scoped forms are
+// semantically equivalent at the surface AST level.
+with_clause: "with"i requirement ":" _NL _INDENT scoped_bare+ _DEDENT -> with_colon
+           | "with"i requirement _NL _INDENT scoped_where _DEDENT    -> with_where
+           | "with"i requirement _NL                                 -> with_plain
+scoped_bare: TEXT _NL
+scoped_where: "where"i TEXT _NL
+
 requirement: PRODUCT from_clause? via_clause? using_clause?
 from_clause: "from"i NAME
 via_clause: "via"i NAME
@@ -47,9 +61,7 @@ ranked_clause: "ranked"i "by"i TEXT
 
 duration: DURATION
 
-// PRODUCT stops before a WITH-clause qualifier. TEXT consumes the remaining
-// semantic-expression slot on the current line.
-PRODUCT.2: /[^#\n]+?(?=\s+(?i:from|via|using)\s+[A-Za-z]|\s*(?:#|\n|$))/
+PRODUCT.2: /[^:#\n]+?(?=\s+(?i:from|via|using)\s+[A-Za-z]|\s*(?::|#|\n|$))/
 TEXT: /[^#\n]+/
 WINDOW_BOUND: /[^,#\n]+/
 DURATION: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:s|min|h|d|w)/i
@@ -60,7 +72,8 @@ NUMBER: /[+-]?(?:\d+(?:\.\d*)?|\.\d+)/
 INT: /\d+/
 
 COMMENT: /#[^\n]*/
-_NL: /\r?\n/
+_NL: /(\r?\n[\t ]*)+/
+%declare _INDENT _DEDENT
 
 %import common.WS_INLINE
 %ignore WS_INLINE

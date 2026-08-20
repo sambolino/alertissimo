@@ -1,7 +1,7 @@
 """Declarative, provider-independent orchestration intermediate representation.
 
 The inheritance tree is intentionally part of the IR vocabulary: it records whether
-an operation discovers, retrieves, derives, analyzes, or acts.  These distinctions
+an operation discovers, retrieves, derives, analyzes, or acts. These distinctions
 remain semantic even if a future planner can execute several operations with one
 provider request.
 """
@@ -86,7 +86,7 @@ class LookupStep(Step):
     """Resolve an already-known identifier rather than discover by constraints.
 
     Object, alert, source, and detection identifiers may resolve to different
-    semantic entity families.  Consequently lookup remains outside SearchStep and
+    semantic entity families. Consequently lookup remains outside SearchStep and
     does not require ``semantic_type`` until identifier namespaces are formalized.
     """
 
@@ -94,23 +94,43 @@ class LookupStep(Step):
     id: NonEmptyStr
 
 
+class SearchSelection(IRModel):
+    """Selection semantics attached to candidate discovery, not a separate step.
+
+    ``latest`` means the latest N candidates in the semantic candidate universe.
+    A planner may push limits/order into provider parameters when equivalent, but
+    must preserve global semantics when several sources participate.
+    """
+
+    latest: Annotated[int, Field(gt=0)] | None = None
+
+    @model_validator(mode="after")
+    def require_selector(self) -> SearchSelection:
+        if self.latest is None:
+            raise ValueError("search selection requires at least one selector")
+        return self
+
+
 class SearchStep(Step):
     """Conceptual base for provider/capability discovery of SemanticRecords.
 
     Search asks the available provider space to discover records matching a query.
-    Every search therefore declares the expected SemanticRecord family.  It does
-    not mean reducing records that are already in the working context; that is
-    FilterStep's deliberately separate meaning.
+    Every search therefore declares the expected SemanticRecord family. ``criteria``
+    contains semantic first-pass predicates, including predicates whose provider
+    implementation may require enrichment plus local filtering. It does not mean
+    reducing records that are already in the working context; that is FilterStep's
+    deliberately separate meaning.
     """
 
     semantic_type: NonEmptyStr
+    criteria: dict[str, Any] = Field(default_factory=dict)
+    selection: SearchSelection | None = None
 
 
 class SemanticSearchStep(SearchStep):
     """Discover SemanticRecords through semantic predicates or criteria."""
 
     op: Literal["semantic_search"] = "semantic_search"
-    criteria: dict[str, Any] = Field(default_factory=dict)
     time_context: TimeContext | None = None
 
 
@@ -135,12 +155,12 @@ class SqlQueryStep(SearchStep):
 class FilterStep(Step):
     """Reduce data already present in the current working context.
 
-    Unlike SearchStep, FilterStep does not ask providers to discover records.  For
+    Unlike SearchStep, FilterStep does not ask providers to discover records. For
     example, semantic-searching summaries for supernovae may become a provider
     query, whereas filtering current candidates by decline rate operates on
-    material already available to the workflow/session/Portfolio context.  A
+    material already available to the workflow/session/Portfolio context. A
     future planner may push this predicate into an upstream query as an execution
-    optimization, but doing so must not change the IR meaning.  No input/result-set
+    optimization, but doing so must not change the IR meaning. No input/result-set
     model is implied here yet.
     """
 
@@ -152,7 +172,7 @@ class GetStep(Step):
     """Conceptual base for retrieving already-existing information or evidence.
 
     Get operations obtain a semantic record, product, or assertion from an
-    available source.  They do not compute a new Alertissimo result locally and do
+    available source. They do not compute a new Alertissimo result locally and do
     not request that a facility generate a new observation or product.
     """
 
@@ -193,9 +213,10 @@ class GetForcedPhotometryStep(GetStep):
 
 
 class GetClassificationStep(GetStep):
-    """Retrieve an existing assertion; ClassifyStep runs a model to create one."""
+    """Retrieve an existing classification assertion from an optional classifier."""
 
     op: Literal["get_classification"] = "get_classification"
+    classifier: NonEmptyStr | None = None
 
 
 class GetSpectrumStep(GetStep):
@@ -211,7 +232,7 @@ class GetDataProductStep(GetStep):
 class DeriveStep(Step):
     """Locally construct a semantic product from already-normalized Portfolio data.
 
-    Derivations do not select or call provider endpoints.  They run only after
+    Derivations do not select or call provider endpoints. They run only after
     provider execution and normalization have produced Portfolio material, and
     complement those Portfolios with newly produced semantic records.
     """
@@ -222,7 +243,7 @@ class DeriveStep(Step):
 class LightcurveStep(DeriveStep):
     """Produce an Alertissimo-derived lightcurve from available evidence.
 
-    This is distinct from retrieving an existing provider lightcurve.  TODO: the
+    This is distinct from retrieving an existing provider lightcurve. TODO: the
     exact construction semantics (such as unifying detections, forced photometry,
     surveys, and sources) are intentionally provisional and will be iterated.
     """
@@ -276,9 +297,9 @@ class MatchStep(Step):
     """Locally perform a scientific association/matching operation.
 
     Match asks whether astronomical entities or records are spatially, temporally,
-    probabilistically, or otherwise associated.  It differs from GetCrossmatchStep,
+    probabilistically, or otherwise associated. It differs from GetCrossmatchStep,
     which retrieves somebody else's result, and from CompareStep, which asks how
-    already-selected values or assertions agree or differ.  Geometry and input-set
+    already-selected values or assertions agree or differ. Geometry and input-set
     models remain intentionally provisional pending the use-case census.
     """
 
@@ -338,9 +359,9 @@ class UtilityScoreStep(AnalyzeStep):
     """Compute objective-relative candidate or program utility/prioritization.
 
     Examples include follow-up priority, scientific utility, observability-weighted
-    target value, and telescope-time utility.  This term explicitly does not mean a
+    target value, and telescope-time utility. This term explicitly does not mean a
     classifier or anomaly score, quality, significance, or an arbitrary numeric
-    scientific measurement.  Its ontology/session placement remains unresolved.
+    scientific measurement. Its ontology/session placement remains unresolved.
     """
 
     op: Literal["utility_score"] = "utility_score"
@@ -430,7 +451,8 @@ __all__ = [
     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
     "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
     "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
-    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchStep",
-    "SemanticSearchStep", "Source", "SqlQueryStep", "Step", "StepUnion",
-    "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep", "WorkflowIR",
+    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchSelection",
+    "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
+    "StepUnion", "TargetKind", "TargetSelector", "TimeContext",
+    "UtilityScoreStep", "WorkflowIR",
 ]

@@ -8,19 +8,22 @@ The boundary is deliberately narrow::
         -> candidate registered endpoint(s)
 
 It answers whether and where the registered system can satisfy provider-facing
-intent.  It does not select an endpoint, translate arguments, execute requests,
-or merge results.  In particular, semantic-search criteria are not evidence of
-server-side pushdown: this module validates only the broad registered operation.
+intent. It does not select an endpoint, translate arguments, execute requests,
+or merge results. In particular, semantic-search criteria are not evidence of
+server-side pushdown: this module validates the broad registered operation and
+explicit semantic selectors such as a requested classifier.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Literal
 
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    semantic_record_noun_matches,
 )
 
 from .ir.models import (
@@ -85,11 +88,10 @@ _FULL_LIGHTCURVE_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
 _GEOMETRIC_SEARCH_OPERATIONS = frozenset(
     {"cone_search", "spatial_search", "catalog_conesearch", "skymap_search"}
 )
+_DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
 
 
 def _sources(step: Step) -> tuple[Source | None, ...]:
-    # Each explicit source is checked independently so one successful broker
-    # cannot hide another requested broker/origin that is unsupported.
     return tuple(step.sources) if step.sources else (None,)
 
 
@@ -116,17 +118,59 @@ class _CandidateEvidence:
     compatible: tuple[EndpointCapability, ...]
 
 
+def _semantic_record_producer(semantic_record_type: str) -> str | None:
+    _, at, qualifiers = semantic_record_type.partition("@")
+    if not at:
+        return None
+    producer, _, _ = qualifiers.partition(":")
+    return producer or None
+
+
+def _classification_endpoint_supports_classifier(
+    graph: CapabilityGraph,
+    endpoint: EndpointCapability,
+    classifier: str,
+) -> bool:
+    """Check exact/dynamic producer evidence for one classification endpoint."""
+
+    requested = classifier.lower()
+    records = (
+        record
+        for record in graph.records_for_endpoint(
+            endpoint.broker, endpoint.origin, endpoint.endpoint
+        )
+        if semantic_record_noun_matches(record.semantic_record_type, "classification")
+    )
+    for record in records:
+        producer = _semantic_record_producer(record.semantic_record_type)
+        if producer is None:
+            continue
+        if producer.lower() == requested:
+            return True
+        if _DYNAMIC_QUALIFIER.fullmatch(producer) and (
+            "classifier" in endpoint.server_filters or "classifier" in endpoint.params
+        ):
+            return True
+    return False
+
+
 def _raw_candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
     if isinstance(step, ConeSearchStep):
-        return _query(graph, source, noun=step.semantic_type, operation="cone_search")
+        semantic = _query(graph, source, noun=step.semantic_type)
+        return tuple(
+            endpoint
+            for endpoint in semantic
+            if _GEOMETRIC_SEARCH_OPERATIONS.intersection(endpoint.operation_types)
+        )
     if isinstance(step, SqlQueryStep):
         return _query(graph, source, noun=step.semantic_type, operation="sql_query")
     if isinstance(step, SemanticSearchStep):
         semantic = _query(graph, source, noun=step.semantic_type)
         return tuple(
-            endpoint for endpoint in semantic
+            endpoint
+            for endpoint in semantic
             if any(
                 (op.endswith("_search") and op not in _GEOMETRIC_SEARCH_OPERATIONS)
                 or op.endswith("_filter")
@@ -135,24 +179,30 @@ def _raw_candidates_for_source(
         )
     if isinstance(step, GetLightcurveStep):
         return tuple(
-            endpoint for endpoint in _query(graph, source)
+            endpoint
+            for endpoint in _query(graph, source)
             if _FULL_LIGHTCURVE_OPERATIONS.intersection(endpoint.operation_types)
         )
     if isinstance(step, GetForcedPhotometryStep):
         return _query(graph, source, operation="forced_photometry")
     if isinstance(step, GetClassificationStep):
-        # Classifications can be embedded in generic object/context responses;
-        # endpoint input suitability is resolved later by the planner.
-        return _query(graph, source, noun="classification")
+        candidates = _query(graph, source, noun="classification")
+        if step.classifier is None:
+            return candidates
+        return tuple(
+            endpoint
+            for endpoint in candidates
+            if _classification_endpoint_supports_classifier(
+                graph, endpoint, step.classifier
+            )
+        )
     if isinstance(step, GetCrossmatchStep):
-        # Crossmatches can be embedded in a generically named context endpoint.
         return _query(graph, source, noun="crossmatch")
     if isinstance(step, GetCutoutStep):
         return _query(graph, source, operation="cutout")
     if isinstance(step, GetDataProductStep):
         return _query(graph, source, operation="data_product_lookup")
     if isinstance(step, GetSpectrumStep):
-        # No operation vocabulary is guessed for an unregistered product.
         return ()
     return ()
 
@@ -174,7 +224,6 @@ def _candidate_evidence_for_source(
 
 
 def _target_selector(step: Step) -> TargetSelector | None:
-    """Return composed target intent without defining a target-bearing Step family."""
     target = getattr(step, "target", None)
     return target if isinstance(target, TargetSelector) else None
 
@@ -206,26 +255,40 @@ def validate_step_capabilities(
             reason = (
                 "source exists; object-vs-alert capability resolution is deferred "
                 "until identifier namespaces are resolved"
-                if endpoints else "requested source has no registered endpoints"
+                if endpoints
+                else "requested source has no registered endpoints"
             )
             results.append(SourceCapabilityResult(source, status, endpoints, reason))
         overall: ValidationStatus = (
-            "unsupported" if any(item.status == "unsupported" for item in results)
+            "unsupported"
+            if any(item.status == "unsupported" for item in results)
             else "deferred"
         )
         return CapabilityValidationResult(
-            operation, None, overall, tuple(results),
+            operation,
+            None,
+            overall,
+            tuple(results),
             "lookup target semantics cannot be inferred safely from the identifier",
         )
 
-    if isinstance(step, (FilterStep, DeriveStep, MatchStep, AnalyzeStep, ActionStep)):
+    if isinstance(
+        step,
+        (FilterStep, DeriveStep, MatchStep, AnalyzeStep, ActionStep),
+    ):
         return CapabilityValidationResult(
-            operation, semantic_type, "not_applicable", (),
+            operation,
+            semantic_type,
+            "not_applicable",
+            (),
             "provider CapabilityGraph validation does not govern this local/orchestration step",
         )
     if isinstance(step, MonitorStep):
         return CapabilityValidationResult(
-            operation, semantic_type, "deferred", (),
+            operation,
+            semantic_type,
+            "deferred",
+            (),
             "stream transport capability is not modeled sufficiently in the registry",
         )
 
@@ -235,23 +298,32 @@ def validate_step_capabilities(
         candidates = evidence.compatible
         target = _target_selector(step)
         status = "supported" if candidates else "unsupported"
-        results.append(SourceCapabilityResult(
-            source, status, candidates,
-            "matching registered endpoint capability found" if candidates
-            else (
-                "no compatible multi-target binding exists"
-                if evidence.raw
-                and len(target.ids if target else ()) > 1
-                else "no compatible registered endpoint capability found"
-            ),
-        ))
+        results.append(
+            SourceCapabilityResult(
+                source,
+                status,
+                candidates,
+                "matching registered endpoint capability found"
+                if candidates
+                else (
+                    "no compatible multi-target binding exists"
+                    if evidence.raw and len(target.ids if target else ()) > 1
+                    else "no compatible registered endpoint capability found"
+                ),
+            )
+        )
     overall = (
-        "supported" if results and all(item.status == "supported" for item in results)
+        "supported"
+        if results and all(item.status == "supported" for item in results)
         else "unsupported"
     )
     return CapabilityValidationResult(
-        operation, semantic_type, overall, tuple(results),
-        "all requested source constraints are supported" if overall == "supported"
+        operation,
+        semantic_type,
+        overall,
+        tuple(results),
+        "all requested source constraints are supported"
+        if overall == "supported"
         else "one or more requested source constraints are unsupported",
     )
 
@@ -264,7 +336,10 @@ def validate_workflow_capabilities(
 
 
 __all__ = [
-    "CapabilityValidationResult", "SourceCapabilityResult", "ValidationStatus",
-    "candidate_capabilities", "validate_step_capabilities",
+    "CapabilityValidationResult",
+    "SourceCapabilityResult",
+    "ValidationStatus",
+    "candidate_capabilities",
+    "validate_step_capabilities",
     "validate_workflow_capabilities",
 ]

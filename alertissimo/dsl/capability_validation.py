@@ -26,8 +26,13 @@ from .surface import (
     RankedByClause,
     RequirementClause,
     SurfaceScript,
+    WhereClause,
 )
-from .validation import resolve_record_type, validate_surface_semantics
+from .validation import (
+    extract_semantic_record_references,
+    resolve_record_type,
+    validate_surface_semantics,
+)
 
 
 class SurfaceCapabilityValidationError(ValueError):
@@ -295,14 +300,39 @@ def _operation_fallback(
     operations = _PROVIDER_OPERATION_FALLBACKS.get(noun)
     if not operations:
         return ()
-    # Physical origin is a safe producer fallback only for products whose
-    # first-level semantic record is not materialized directly in the registry.
     if producer is not None and producer.lower() != origin.lower():
         return ()
     return tuple(
         endpoint
         for endpoint in graph.query_endpoints(broker=broker, origin=origin)
         if operations.intersection(endpoint.operation_types)
+    )
+
+
+def _dynamic_records_are_selectable(
+    records: tuple[SemanticRecordCapability, ...],
+    *,
+    noun: str,
+    graph: CapabilityGraph,
+) -> bool:
+    """Return true when a dynamic qualifier has an explicit provider selector.
+
+    A dynamic semantic mapping alone is not wildcard proof. Classification is a
+    deliberate exception when one of the mapped endpoints explicitly exposes a
+    ``classifier`` server filter/parameter, as ALeRCE ``query_objects`` does.
+    """
+
+    if noun != "classification":
+        return False
+    endpoint_keys = {
+        (record.broker, record.origin, endpoint)
+        for record in records
+        for endpoint in record.endpoints
+    }
+    return any(
+        (endpoint.broker, endpoint.origin, endpoint.endpoint) in endpoint_keys
+        and ("classifier" in endpoint.server_filters or "classifier" in endpoint.params)
+        for endpoint in graph.endpoint_capabilities
     )
 
 
@@ -389,6 +419,15 @@ def _requirement_checks(
                     "though no first-level semantic record is materialized directly"
                 )
                 evidence = _endpoint_evidence(endpoints)
+            elif dynamic and _dynamic_records_are_selectable(
+                dynamic, noun=noun, graph=graph
+            ):
+                status = SurfaceCapabilityStatus.SUPPORTED
+                reason = (
+                    "dynamic semantic producer is backed by an explicit provider "
+                    "selector for this record family"
+                )
+                evidence = _record_evidence(dynamic)
             elif dynamic:
                 status = SurfaceCapabilityStatus.DEFERRED
                 reason = (
@@ -488,8 +527,9 @@ def validate_surface_capabilities(
     ``from`` qualifiers are matched against the producer part of qualified
     semantic record types and never mutate the physical origin.
 
-    Ontology-invalid surfaces are rejected before capability resolution so syntax,
-    ontology, capability, planning, binding, and execution remain separate stages.
+    A general ``where`` may itself imply semantic requirements through qualified
+    ontology paths; those implicit requirements are capability-checked just like
+    explicit ``with`` clauses.
     """
 
     semantic_model = semantic_paths or _semantic_path_model()
@@ -508,9 +548,19 @@ def validate_surface_capabilities(
     checks: list[SurfaceCapabilityCheck] = list(
         _candidate_checks(surface, capability_graph)
     )
+    checked_requirements: set[tuple[str, str | None, str | None]] = set()
 
     for index, clause in enumerate(surface.clauses):
         if isinstance(clause, RequirementClause):
+            noun = resolve_record_type(clause.product, semantic_model.record_types)
+            signature = (
+                noun or clause.product,
+                clause.source,
+                clause.via or surface.candidates.broker,
+            )
+            if signature in checked_requirements:
+                continue
+            checked_requirements.add(signature)
             checks.extend(
                 _requirement_checks(
                     surface,
@@ -520,6 +570,31 @@ def validate_surface_capabilities(
                     record_types=semantic_model.record_types,
                 )
             )
+        elif isinstance(clause, WhereClause):
+            for ref in extract_semantic_record_references(
+                clause.condition, semantic_model.record_types
+            ):
+                signature = (
+                    ref.noun,
+                    ref.producer,
+                    ref.channel or surface.candidates.broker,
+                )
+                if signature in checked_requirements:
+                    continue
+                checked_requirements.add(signature)
+                checks.extend(
+                    _requirement_checks(
+                        surface,
+                        RequirementClause(
+                            product=ref.noun,
+                            source=ref.producer,
+                            via=ref.channel,
+                        ),
+                        clause_index=index,
+                        graph=capability_graph,
+                        record_types=semantic_model.record_types,
+                    )
+                )
         elif isinstance(clause, MatchClause):
             checks.extend(
                 _match_checks(
