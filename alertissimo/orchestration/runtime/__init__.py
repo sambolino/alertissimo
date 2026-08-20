@@ -1,6 +1,6 @@
 """Public models for tracking a single workflow invocation."""
 
-from .models import EndpointPlan, StepRun, StepRunState, WorkflowRun
+from .models import EndpointPlan, PredicateRealization, StepRun, StepRunState, WorkflowRun
 from .runner import (
     StepExecutionResult,
     WorkflowExecutionAlignmentError,
@@ -12,6 +12,7 @@ from .runner import (
 
 __all__ = [
     "EndpointPlan",
+    "PredicateRealization",
     "StepExecutionResult",
     "StepRun",
     "StepRunState",
