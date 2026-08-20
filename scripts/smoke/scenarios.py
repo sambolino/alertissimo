@@ -7,7 +7,6 @@ from typing import Callable
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph, build_capability_graph
-from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.orchestration.binding import bind_workflow_run
 from alertissimo.orchestration.derivation import derive_workflow_portfolios
 from alertissimo.orchestration.ir import (
@@ -146,6 +145,11 @@ def dsl_pipeline_workflow(
 
     if targets:
         raise ValueError("dsl-pipeline defines its candidates in DSL and accepts no target IDs")
+
+    # Keep Lark/DSL optional for every non-DSL smoke consumer. The semantic-registry
+    # workflow intentionally does not install DSL dependencies.
+    from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
+
     capability_graph = graph or build_capability_graph()
     surface = parse_surface_script(DSL_PIPELINE_SOURCE)
     return compile_surface_to_ir(
