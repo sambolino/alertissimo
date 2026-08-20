@@ -32,6 +32,12 @@ from .lowering import (
     lower_surface_to_ir,
 )
 from .parser import grammar_text, parse_surface_script
+from .predicate_binding import (
+    EndpointPredicateBinding,
+    PredicateParameterBinding,
+    SurfacePredicateBindingReport,
+    bind_surface_predicates,
+)
 from .surface import (
     AngularRadius,
     CandidateSet,
@@ -67,6 +73,7 @@ __all__ = (
     "ComparisonExpression",
     "DSLParseError",
     "Duration",
+    "EndpointPredicateBinding",
     "ExistsExpression",
     "Expression",
     "ExpressionModel",
@@ -79,6 +86,7 @@ __all__ = (
     "NotExpression",
     "OperandExpression",
     "OrderByClause",
+    "PredicateParameterBinding",
     "RankedByClause",
     "ReferenceExpression",
     "RequirementClause",
@@ -91,12 +99,14 @@ __all__ = (
     "SurfaceClause",
     "SurfaceCompilation",
     "SurfaceLoweringError",
+    "SurfacePredicateBindingReport",
     "SurfaceScript",
     "SurfaceValidationIssue",
     "SurfaceValidationReport",
     "ValidationSeverity",
     "WhereClause",
     "WithinClause",
+    "bind_surface_predicates",
     "compile_surface",
     "compile_surface_to_ir",
     "expression_grammar_text",
