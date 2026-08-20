@@ -122,6 +122,17 @@ def bind_endpoint(
     spec = registry.resolve(
         endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
     )
+
+    # A reused semantic plan owns no new invocation. The planner has already
+    # proven that an earlier execution of this same endpoint materializes the
+    # requested semantic record. Runtime validates and performs the reuse.
+    if endpoint_plan.execution_reuse_from is not None:
+        return BoundEndpointCall(
+            endpoint_plan=endpoint_plan,
+            endpoint_spec=spec,
+            params={},
+        )
+
     params: dict[str, Any] = {}
 
     realization = endpoint_plan.predicate_realization
@@ -204,7 +215,7 @@ def bind_endpoint(
 def bind_workflow_run(
     run: WorkflowRun, registry: EndpointRegistry
 ) -> tuple[StepBindingResult, ...]:
-    """Bind every plan without flattening positional Step occurrence identity."""
+    """Bind every semantic Step occurrence without flattening its identity."""
 
     for step_run in run.steps:
         if step_run.state != StepRunState.PLANNED:

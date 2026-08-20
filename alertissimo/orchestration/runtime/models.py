@@ -12,7 +12,7 @@ from alertissimo.orchestration.ir.predicates import Predicate
 
 
 class RuntimeModel(BaseModel):
-    """Serializable, strictly shaped runtime value object."""
+    """Common configuration for immutable runtime value objects."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -38,11 +38,18 @@ class PredicateRealization(RuntimeModel):
         return self
 
 
-class EndpointPlan(RuntimeModel):
-    """Physical identity of a registered endpoint selected by the planner.
+class EndpointPlanRef(RuntimeModel):
+    """Reference to one earlier physical endpoint plan in the same WorkflowRun."""
 
-    Predicate realization is execution strategy, not scientific intent: the
-    authoritative semantic predicate remains on the owning IR Step.
+    step_index: int = Field(ge=0)
+    plan_index: int = Field(ge=0)
+
+
+class EndpointPlan(RuntimeModel):
+    """Physical identity selected for one semantic Step occurrence.
+
+    ``execution_reuse_from`` records that this semantic plan is satisfied by an
+    earlier physical execution. It never changes or collapses WorkflowIR Steps.
     """
 
     broker: str
@@ -50,6 +57,7 @@ class EndpointPlan(RuntimeModel):
     endpoint: str
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
+    execution_reuse_from: EndpointPlanRef | None = None
 
 
 class StepRunState(StrEnum):
@@ -87,6 +95,25 @@ class WorkflowRun(RuntimeModel):
                 "StepRun indices must cover WorkflowIR steps exactly in order "
                 f"(expected {expected}, got {actual})"
             )
+        for step_run in self.steps:
+            for plan_index, plan in enumerate(step_run.endpoint_plans):
+                reference = plan.execution_reuse_from
+                if reference is None:
+                    continue
+                if reference.step_index >= step_run.step_index:
+                    raise ValueError(
+                        "execution reuse must reference an earlier Step occurrence "
+                        f"(step_index {step_run.step_index}, plan_index {plan_index}, "
+                        f"reference step_index {reference.step_index})"
+                    )
+                if reference.step_index >= len(self.steps):
+                    raise ValueError("execution reuse references unknown Step occurrence")
+                owner = self.steps[reference.step_index]
+                if reference.plan_index >= len(owner.endpoint_plans):
+                    raise ValueError(
+                        "execution reuse references unknown endpoint plan "
+                        f"({reference.step_index}, {reference.plan_index})"
+                    )
         return self
 
     @classmethod
@@ -107,6 +134,7 @@ class WorkflowRun(RuntimeModel):
 
 __all__ = [
     "EndpointPlan",
+    "EndpointPlanRef",
     "PredicateRealization",
     "StepRun",
     "StepRunState",

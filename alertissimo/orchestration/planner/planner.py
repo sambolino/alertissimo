@@ -1,25 +1,46 @@
 """Deterministically select registered endpoints for provider-facing IR steps.
 
 Capability validation determines *what can* satisfy an intent; this planner chooses
-endpoint identities and records how an ontology predicate can be realized there.
-Physical invocation values are still applied later by the parameter binder.
+endpoint identities, records predicate realization, and may prove that a later
+semantic retrieval can reuse an earlier candidate-search execution. WorkflowIR
+Steps remain distinct even when their physical execution is shared.
 """
 
 from __future__ import annotations
 
+import re
+
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
     DeriveStep,
+    GetClassificationStep,
+    GetCrossmatchStep,
+    GetCutoutStep,
+    GetDataProductStep,
+    GetForcedPhotometryStep,
+    GetLightcurveStep,
+    GetSpectrumStep,
+    GetStep,
     SearchStep,
     Source,
     Step,
     WorkflowIR,
 )
+from alertissimo.orchestration.ir.predicates import (
+    BooleanPredicate,
+    ComparisonPredicate,
+    ExistsPredicate,
+    NotPredicate,
+    Predicate,
+    SemanticReference,
+)
 from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
+    EndpointPlanRef,
     StepRun,
     StepRunState,
     WorkflowRun,
@@ -51,6 +72,9 @@ class PlanningDeferredError(PlanningError):
 
 class PlanningNotApplicableError(PlanningError):
     """Raised for a local/orchestration step that needs no provider endpoint."""
+
+
+_DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
 
 
 def _source_text(source: Source | None) -> str:
@@ -146,8 +170,223 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     )
 
 
+def _semantic_record_producer(record_type: str) -> str | None:
+    _, at, qualifiers = record_type.partition("@")
+    if not at:
+        return None
+    producer, _, _ = qualifiers.partition(":")
+    return producer or None
+
+
+def _get_record_requirement(step: GetStep) -> SemanticReference | None:
+    """Return the semantic record a targetless GetStep requires from candidates.
+
+    This intentionally models only whole-record retrieval cases whose current Step
+    fields add no extra retrieval semantics. More specific requests remain separate
+    executions until their equivalence can be proved.
+    """
+
+    if getattr(step, "target", None) is not None:
+        return None
+    if isinstance(step, GetClassificationStep):
+        return SemanticReference(
+            semantic_type="classification",
+            producer=step.classifier,
+        )
+    if isinstance(step, GetCrossmatchStep):
+        if step.radius is not None:
+            return None
+        return SemanticReference(
+            semantic_type="crossmatch",
+            producer=step.catalog,
+        )
+    if isinstance(step, GetLightcurveStep):
+        if step.bands is not None or step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="lightcurve")
+    if isinstance(step, GetForcedPhotometryStep):
+        if step.bands is not None or step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="forced_photometry")
+    if isinstance(step, GetSpectrumStep):
+        if step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="spectrum")
+    if isinstance(step, GetDataProductStep):
+        if step.product_type is not None:
+            return None
+        return SemanticReference(semantic_type="data_product")
+    if isinstance(step, GetCutoutStep):
+        return None
+    return None
+
+
+def _positive_references(predicate: Predicate | None) -> tuple[SemanticReference, ...]:
+    """References whose existence is positively required by a predicate.
+
+    AND preserves positive evidence. OR and NOT do not: neither proves that a
+    particular referenced semantic record must be present in every accepted result.
+    """
+
+    if predicate is None:
+        return ()
+    if isinstance(predicate, ComparisonPredicate):
+        return tuple(
+            operand
+            for operand in (predicate.left, predicate.right)
+            if isinstance(operand, SemanticReference)
+        )
+    if isinstance(predicate, ExistsPredicate):
+        return (predicate.reference,)
+    if isinstance(predicate, BooleanPredicate) and predicate.operator == "and":
+        return tuple(
+            reference
+            for operand in predicate.operands
+            for reference in _positive_references(operand)
+        )
+    if isinstance(predicate, NotPredicate):
+        return ()
+    return ()
+
+
+def _predicate_requires_reference(
+    predicate: Predicate | None, requirement: SemanticReference
+) -> bool:
+    for reference in _positive_references(predicate):
+        if reference.semantic_type != requirement.semantic_type:
+            continue
+        if requirement.producer is not None and reference.producer != requirement.producer:
+            continue
+        if requirement.channel is not None and reference.channel != requirement.channel:
+            continue
+        return True
+    return False
+
+
+def _search_execution_guarantees(
+    search_step: SearchStep,
+    search_plan: EndpointPlan,
+    consumer_step: GetStep,
+    consumer_plan: EndpointPlan,
+    graph: CapabilityGraph,
+) -> bool:
+    requirement = _get_record_requirement(consumer_step)
+    if requirement is None:
+        return False
+    if (
+        search_plan.broker,
+        search_plan.origin,
+        search_plan.endpoint,
+    ) != (
+        consumer_plan.broker,
+        consumer_plan.origin,
+        consumer_plan.endpoint,
+    ):
+        return False
+
+    records = graph.records_for_endpoint(
+        search_plan.broker, search_plan.origin, search_plan.endpoint
+    )
+    matching = tuple(
+        record
+        for record in records
+        if canonical_semantic_noun(record.semantic_record_type)
+        == requirement.semantic_type
+    )
+    if not matching:
+        return False
+
+    if requirement.producer is None:
+        return True
+
+    for record in matching:
+        producer = _semantic_record_producer(record.semantic_record_type)
+        if producer == requirement.producer:
+            return True
+        if (
+            producer is not None
+            and _DYNAMIC_QUALIFIER.fullmatch(producer)
+            and _predicate_requires_reference(search_step.predicate, requirement)
+        ):
+            return True
+    return False
+
+
+def _mark_execution_reuse(
+    workflow: WorkflowIR,
+    planned_steps: tuple[StepRun, ...],
+    graph: CapabilityGraph,
+) -> tuple[StepRun, ...]:
+    """Mark safe reuse of candidate-search executions by later enrichment Steps."""
+
+    rewritten = list(planned_steps)
+    active_search_index: int | None = None
+
+    for step_index, step in enumerate(workflow.steps):
+        if isinstance(step, SearchStep):
+            active_search_index = step_index
+            continue
+
+        if active_search_index is None:
+            continue
+
+        if not isinstance(step, GetStep) or getattr(step, "target", None) is not None:
+            active_search_index = None
+            continue
+
+        requirement = _get_record_requirement(step)
+        if requirement is None:
+            active_search_index = None
+            continue
+
+        search_step = workflow.steps[active_search_index]
+        if not isinstance(search_step, SearchStep):
+            active_search_index = None
+            continue
+
+        search_run = rewritten[active_search_index]
+        current_run = rewritten[step_index]
+        current_plans: list[EndpointPlan] = []
+
+        for consumer_plan in current_run.endpoint_plans:
+            owner_index = next(
+                (
+                    plan_index
+                    for plan_index, search_plan in enumerate(search_run.endpoint_plans)
+                    if _search_execution_guarantees(
+                        search_step,
+                        search_plan,
+                        step,
+                        consumer_plan,
+                        graph,
+                    )
+                ),
+                None,
+            )
+            if owner_index is None:
+                current_plans.append(consumer_plan)
+                continue
+            current_plans.append(
+                consumer_plan.model_copy(
+                    update={
+                        "execution_reuse_from": EndpointPlanRef(
+                            step_index=active_search_index,
+                            plan_index=owner_index,
+                        )
+                    }
+                )
+            )
+
+        rewritten[step_index] = current_run.model_copy(
+            update={"endpoint_plans": tuple(current_plans)}
+        )
+
+    return tuple(rewritten)
+
+
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
-    """Plan provider calls while retaining endpoint-free derive occurrences."""
+    """Plan semantic Steps, then mark physically reusable enrichment executions."""
+
     pending_run = WorkflowRun.from_workflow(workflow)
     planned_steps = tuple(
         StepRun(
@@ -157,6 +396,7 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         )
         for step_run in pending_run.steps
     )
+    planned_steps = _mark_execution_reuse(workflow, planned_steps, graph)
     return WorkflowRun(workflow=workflow, steps=planned_steps)
 
 
