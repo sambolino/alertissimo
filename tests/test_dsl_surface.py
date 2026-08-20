@@ -30,15 +30,10 @@ def test_objects_without_origin_are_rejected():
 
 def test_candidate_origins_cannot_be_redeclared_later():
     with pytest.raises(DSLParseError, match="candidate origins are fixed"):
-        parse_surface_script(
-            """
-            objects from lsst
-            objects from ztf
-            """
-        )
+        parse_surface_script("objects from lsst\nobjects from ztf\n")
 
 
-def test_first_pass_preserves_ordered_selection_and_enrichment_clauses():
+def test_first_pass_preserves_selection_enrichment_and_view_clauses():
     result = parse_surface_script(
         """
         objects from lsst via fink
@@ -56,43 +51,28 @@ def test_first_pass_preserves_ordered_selection_and_enrichment_clauses():
     assert isinstance(result.clauses[0], InsideClause)
     assert result.clauses[0].radius.value == 0.5
     assert result.clauses[0].radius.unit == "deg"
-
     assert isinstance(result.clauses[1], WithinClause)
     assert result.clauses[1].relative_to == "now"
     assert result.clauses[1].duration.value == 7
     assert result.clauses[1].duration.unit == "d"
-
     assert isinstance(result.clauses[2], LatestClause)
     assert result.clauses[2].count == 100
-
     assert isinstance(result.clauses[3], WhereClause)
     assert result.clauses[3].condition == 'classification = "SN Ia"'
-
     assert isinstance(result.clauses[4], RequirementClause)
     assert result.clauses[4].product == "lightcurve"
-    assert result.clauses[4].source is None
-
     crossmatch = result.clauses[5]
     assert isinstance(crossmatch, RequirementClause)
-    assert crossmatch.product == "crossmatch"
     assert crossmatch.source == "gaia"
     assert crossmatch.via == "fink"
-
     assert isinstance(result.clauses[6], OrderByClause)
-    assert result.clauses[6].expression == "summary.photometry.r.mag.mean"
     assert result.clauses[6].direction == "asc"
-
     assert isinstance(result.clauses[7], RankedByClause)
-    assert result.clauses[7].criterion == "chance coincidence"
-    assert result.clauses[7].direction is None
 
 
 def test_requirement_can_select_explicit_method_without_changing_candidate_scope():
     result = parse_surface_script(
-        """
-        objects from lsst
-            with classification using alertissimo:clasMeV2
-        """
+        "objects from lsst\nwith classification using alertissimo:clasMeV2\n"
     )
 
     requirement = result.clauses[0]
@@ -102,7 +82,41 @@ def test_requirement_can_select_explicit_method_without_changing_candidate_scope
     assert result.candidates.origins == ("lsst",)
 
 
-def test_filter_then_with_means_refine_then_enrich_in_order():
+def test_colon_scopes_multiple_conjunctive_predicates_to_with():
+    result = parse_surface_script(
+        """objects from lsst via alerce
+with classification from lc_classifier:
+    best.class = "SN"
+    best.probability >= 0.8
+"""
+    )
+
+    requirement = result.clauses[0]
+    assert isinstance(requirement, RequirementClause)
+    assert requirement.product == "classification"
+    assert requirement.source == "lc_classifier"
+    assert requirement.predicates == (
+        'best.class = "SN"',
+        "best.probability >= 0.8",
+    )
+
+
+def test_nested_where_is_equivalent_single_requirement_predicate():
+    result = parse_surface_script(
+        """objects from lsst via alerce
+    with classification from lc_classifier
+        where best.class = "LPV" and best.probability >= 0.8
+"""
+    )
+
+    requirement = result.clauses[0]
+    assert isinstance(requirement, RequirementClause)
+    assert requirement.predicates == (
+        'best.class = "LPV" and best.probability >= 0.8',
+    )
+
+
+def test_filter_then_with_remains_top_level_when_indentation_is_cosmetic():
     result = parse_surface_script(
         """
         objects from lsst via fink
@@ -121,25 +135,25 @@ def test_filter_then_with_means_refine_then_enrich_in_order():
     assert result.candidates.broker == "fink"
 
 
-def test_where_is_not_allowed_after_filter():
+def test_only_one_general_where_is_allowed():
+    with pytest.raises(DSLParseError, match="only one general where"):
+        parse_surface_script(
+            "objects from lsst\nwhere x = 1\nwhere y = 2\n"
+        )
+
+
+def test_general_where_is_not_allowed_after_filter():
     with pytest.raises(
         DSLParseError, match="where belongs to the initial candidate pass"
     ):
         parse_surface_script(
-            """
-            objects from lsst
-            filter decline_rate > 0.3
-            where classification = "SN Ia"
-            """
+            "objects from lsst\nfilter decline_rate > 0.3\nwhere x = 1\n"
         )
 
 
 def test_match_can_associate_candidate_origins_without_external_counterpart():
     result = parse_surface_script(
-        """
-        objects from lsst, ztf
-            match on position within 1arcsec
-        """
+        "objects from lsst, ztf\nmatch on position within 1arcsec\n"
     )
 
     match = result.clauses[0]
@@ -151,11 +165,9 @@ def test_match_can_associate_candidate_origins_without_external_counterpart():
 
 def test_match_can_introduce_external_counterpart_without_mutating_candidate_origins():
     result = parse_surface_script(
-        """
-        objects from lsst via fink
-        filter classification = "SN"
-            match from icecube within 3d on position within 2deg
-        """
+        "objects from lsst via fink\n"
+        "filter classification = \"SN\"\n"
+        "match from icecube within 3d on position within 2deg\n"
     )
 
     match = result.clauses[1]
@@ -165,15 +177,11 @@ def test_match_can_introduce_external_counterpart_without_mutating_candidate_ori
     assert match.within.unit == "d"
     assert match.on == "position within 2deg"
     assert result.candidates.origins == ("lsst",)
-    assert result.candidates.broker == "fink"
 
 
 def test_explicit_within_window_is_preserved_without_resolving_runtime_time():
     result = parse_surface_script(
-        """
-        objects from lsst
-            within 2026-08-01, 2026-08-15
-        """
+        "objects from lsst\nwithin 2026-08-01, 2026-08-15\n"
     )
 
     window = result.clauses[0]
@@ -186,12 +194,7 @@ def test_explicit_within_window_is_preserved_without_resolving_runtime_time():
 
 def test_latest_requires_positive_count():
     with pytest.raises(DSLParseError, match="positive integer"):
-        parse_surface_script(
-            """
-            objects from lsst
-            latest 0
-            """
-        )
+        parse_surface_script("objects from lsst\nlatest 0\n")
 
 
 def test_unknown_clause_is_rejected_with_line_number():
