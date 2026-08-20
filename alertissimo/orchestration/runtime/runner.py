@@ -1,11 +1,8 @@
 """Synchronous execution control for already planned and bound workflows.
 
-The orchestration runtime drives Step occurrence lifecycle while delegating each
-physical call to ``RegistryEndpointExecutor``.  ``WorkflowRun`` retains only
-lifecycle facts and execution IDs; raw payload and complete call provenance stay
-in the transient ``ExecutionResult`` values returned here for a later semantic
-normalization and Portfolio-composition layer.  DeriveStep occurrences deliberately
-remain planned here: they own no physical call and run only after normalization.
+The runtime preserves semantic Step occurrences while allowing an EndpointPlan to
+reuse a physical execution already owned by an earlier Step. Reuse is a planner
+decision and never collapses WorkflowIR.
 """
 
 from __future__ import annotations
@@ -20,12 +17,12 @@ from alertissimo.orchestration.binding.models import (
 )
 from alertissimo.orchestration.ir.models import DeriveStep
 
-from .models import StepRun, StepRunState, WorkflowRun
+from .models import EndpointPlan, StepRun, StepRunState, WorkflowRun
 
 
 @dataclass(frozen=True)
 class StepExecutionResult:
-    """Successful physical executions belonging to one Step occurrence."""
+    """Physical execution results satisfying one semantic Step occurrence."""
 
     step_index: int
     executions: tuple[ExecutionResult, ...]
@@ -61,7 +58,7 @@ class WorkflowExecutionError(RuntimeError):
 def execute_bound_call(
     call: BoundEndpointCall, executor: RegistryEndpointExecutor
 ) -> ExecutionResult:
-    """Delegate one bound call to the physical endpoint executor."""
+    """Delegate one independently owned bound call to the physical executor."""
 
     plan = call.endpoint_plan
     return executor.execute(
@@ -70,6 +67,10 @@ def execute_bound_call(
         endpoint=plan.endpoint,
         params=call.params,
     )
+
+
+def _plan_identity(plan: EndpointPlan) -> tuple[str, str, str]:
+    return plan.broker, plan.origin, plan.endpoint
 
 
 def _validate_alignment(
@@ -98,6 +99,7 @@ def _validate_alignment(
                 "endpoint plan count "
                 f"({len(binding.bound_calls)} != {len(step_run.endpoint_plans)})"
             )
+
         for call_position, (call, owned_plan) in enumerate(
             zip(binding.bound_calls, step_run.endpoint_plans)
         ):
@@ -105,6 +107,27 @@ def _validate_alignment(
                 raise WorkflowExecutionAlignmentError(
                     f"step_index {step_run.step_index} bound call {call_position} "
                     "does not match its owned EndpointPlan"
+                )
+            reference = owned_plan.execution_reuse_from
+            if reference is None:
+                continue
+            if reference.step_index >= step_run.step_index:
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse must reference an earlier Step occurrence"
+                )
+            owner_step = run.steps[reference.step_index]
+            if reference.plan_index >= len(owner_step.endpoint_plans):
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse references an unavailable endpoint plan"
+                )
+            owner_plan = owner_step.endpoint_plans[reference.plan_index]
+            if _plan_identity(owner_plan) != _plan_identity(owned_plan):
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse requires identical physical endpoint identity"
+                )
+            if call.params:
+                raise WorkflowExecutionAlignmentError(
+                    "reused endpoint plan must not own independent invocation params"
                 )
 
 
@@ -124,11 +147,12 @@ def execute_workflow_run(
     bindings: tuple[StepBindingResult, ...],
     executor: RegistryEndpointExecutor,
 ) -> WorkflowExecutionResult:
-    """Execute physical calls sequentially; leave DeriveSteps for Portfolio phase."""
+    """Execute independent calls once and reuse proven earlier executions."""
 
     _validate_alignment(run, bindings)
     updated_run = run
     step_results: list[StepExecutionResult] = []
+    execution_cache: dict[tuple[int, int], ExecutionResult] = {}
 
     for step_run, binding in zip(run.steps, bindings):
         step = run.step_at(step_run.step_index)
@@ -140,8 +164,21 @@ def execute_workflow_run(
 
         executions: list[ExecutionResult] = []
         try:
-            for call in binding.bound_calls:
-                executions.append(execute_bound_call(call, executor))
+            for plan_index, call in enumerate(binding.bound_calls):
+                reference = call.endpoint_plan.execution_reuse_from
+                if reference is None:
+                    execution = execute_bound_call(call, executor)
+                else:
+                    cache_key = (reference.step_index, reference.plan_index)
+                    try:
+                        execution = execution_cache[cache_key]
+                    except KeyError as error:
+                        raise WorkflowExecutionAlignmentError(
+                            "reused execution is not available from its declared owner "
+                            f"{cache_key}"
+                        ) from error
+                executions.append(execution)
+                execution_cache[(step_run.step_index, plan_index)] = execution
         except Exception as error:
             partial_result = StepExecutionResult(
                 step_index=step_run.step_index, executions=tuple(executions)

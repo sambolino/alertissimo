@@ -5,13 +5,16 @@ from __future__ import annotations
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.orchestration.ir import DeriveStep
+from alertissimo.orchestration.ir import DeriveStep, and_predicates
+from alertissimo.orchestration.ir.predicates import Predicate
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
+    EndpointPlanRef,
     StepExecutionResult,
     StepRun,
     StepRunState,
     WorkflowExecutionResult,
+    WorkflowRun,
 )
 
 from .models import (
@@ -70,21 +73,66 @@ def normalize_step_execution(
     )
 
 
+def _plan_at(run: WorkflowRun, reference: EndpointPlanRef) -> EndpointPlan:
+    try:
+        step_run = run.steps[reference.step_index]
+        return step_run.endpoint_plans[reference.plan_index]
+    except IndexError as error:
+        raise WorkflowNormalizationAlignmentError(
+            "execution reuse references an unavailable endpoint plan "
+            f"({reference.step_index}, {reference.plan_index})"
+        ) from error
+
+
+def _effective_residual(
+    run: WorkflowRun,
+    step_index: int,
+    plan_index: int,
+    *,
+    visited: frozenset[tuple[int, int]] = frozenset(),
+) -> Predicate | None:
+    """Combine residuals inherited through execution reuse with this plan's own."""
+
+    key = (step_index, plan_index)
+    if key in visited:
+        raise WorkflowNormalizationAlignmentError(
+            f"execution reuse cycle detected at endpoint plan {key}"
+        )
+    plan = run.steps[step_index].endpoint_plans[plan_index]
+    own = (
+        plan.predicate_realization.residual
+        if plan.predicate_realization is not None
+        else None
+    )
+    reference = plan.execution_reuse_from
+    if reference is None:
+        return own
+    inherited = _effective_residual(
+        run,
+        reference.step_index,
+        reference.plan_index,
+        visited=visited | {key},
+    )
+    return and_predicates(
+        predicate for predicate in (inherited, own) if predicate is not None
+    )
+
+
 def _normalize_planned_execution(
     execution: ExecutionResult,
     plan: EndpointPlan,
+    residual: Predicate | None,
     *,
     validate_semantic_model: bool,
 ) -> ExecutionPortfolioResult:
-    """Normalize one aligned execution and apply only its residual predicate."""
+    """Normalize one aligned execution and apply its effective residual predicate."""
 
     portfolios = normalize_execution(
         execution,
         validate_semantic_model=validate_semantic_model,
     )
-    realization = plan.predicate_realization
-    if realization is not None and realization.residual is not None:
-        portfolios = prune_portfolios(portfolios, realization.residual)
+    if residual is not None:
+        portfolios = prune_portfolios(portfolios, residual)
     return ExecutionPortfolioResult(
         execution_id=execution.internal_execution_id.value,
         portfolios=portfolios,
@@ -94,6 +142,7 @@ def _normalize_planned_execution(
 def _normalize_planned_step(
     result: StepExecutionResult,
     step_run: StepRun,
+    run: WorkflowRun,
     *,
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
@@ -105,11 +154,65 @@ def _normalize_planned_step(
             _normalize_planned_execution(
                 execution,
                 plan,
+                _effective_residual(
+                    run,
+                    step_run.step_index,
+                    plan_index,
+                ),
                 validate_semantic_model=validate_semantic_model,
             )
-            for plan, execution in zip(step_run.endpoint_plans, result.executions)
+            for plan_index, (plan, execution) in enumerate(
+                zip(step_run.endpoint_plans, result.executions)
+            )
         ),
     )
+
+
+def _validate_reuse_alignment(
+    result: WorkflowExecutionResult,
+    *,
+    step_index: int,
+    plan_index: int,
+    plan: EndpointPlan,
+    execution: ExecutionResult,
+) -> None:
+    reference = plan.execution_reuse_from
+    if reference is None:
+        return
+    if reference.step_index >= step_index:
+        raise WorkflowNormalizationAlignmentError(
+            f"step_index {step_index} plan {plan_index} reuses a non-earlier Step"
+        )
+    owner_plan = _plan_at(result.run, reference)
+    owner_step_result = result.steps[reference.step_index]
+    try:
+        owner_execution = owner_step_result.executions[reference.plan_index]
+    except IndexError as error:
+        raise WorkflowNormalizationAlignmentError(
+            "execution reuse references an unavailable execution result "
+            f"({reference.step_index}, {reference.plan_index})"
+        ) from error
+
+    if (
+        owner_plan.broker,
+        owner_plan.origin,
+        owner_plan.endpoint,
+    ) != (
+        plan.broker,
+        plan.origin,
+        plan.endpoint,
+    ):
+        raise WorkflowNormalizationAlignmentError(
+            "reused endpoint plan does not match owner endpoint identity"
+        )
+    if (
+        owner_execution.internal_execution_id.value
+        != execution.internal_execution_id.value
+    ):
+        raise WorkflowNormalizationAlignmentError(
+            f"step_index {step_index} plan {plan_index} does not carry the "
+            "execution ID of its declared reuse owner"
+        )
 
 
 def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
@@ -171,6 +274,13 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     f"endpoint={plan.endpoint}; actual broker={provenance.broker}, "
                     f"origin={provenance.origin}, endpoint={provenance.endpoint}"
                 )
+            _validate_reuse_alignment(
+                result,
+                step_index=step_run.step_index,
+                plan_index=execution_position,
+                plan=plan,
+                execution=execution,
+            )
         actual_ids = tuple(
             execution.internal_execution_id.value
             for execution in step_result.executions
@@ -187,16 +297,13 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> WorkflowPortfolioResult:
-    """Normalize aligned executions, then enforce each plan's residual predicate.
+    """Normalize aligned executions and enforce effective residual predicates.
 
-    Endpoint pushdown has already happened before execution. At this boundary the
-    normalized Portfolio and the exact EndpointPlan are both available, so any
-    semantic predicate intentionally left residual by the planner is evaluated
-    here. The scientific predicate remains on WorkflowIR; this is only its local
-    execution strategy.
+    A reused execution inherits the residual predicate of its physical owner, so a
+    later semantic enrichment cannot resurrect candidates already pruned from the
+    candidate-search result. The consumer's own residual, if any, is conjoined.
     """
 
-    # Complete validation first: malformed results must not produce partial output.
     _validate_workflow_alignment(result)
     normalized_steps: list[StepPortfolioResult] = []
     for step_run, step_result in zip(result.run.steps, result.steps):
@@ -213,6 +320,7 @@ def normalize_workflow_execution(
             _normalize_planned_step(
                 step_result,
                 step_run,
+                result.run,
                 validate_semantic_model=validate_semantic_model,
             )
         )
