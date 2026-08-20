@@ -51,6 +51,16 @@ class SurfaceValidationReport(BaseModel):
         return not self.errors
 
 
+class SemanticRecordReference(BaseModel):
+    """One semantic record family explicitly referenced by an expression path."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    noun: str
+    producer: str | None = None
+    channel: str | None = None
+
+
 class _SemanticPaths(Protocol):
     record_types: frozenset[str]
 
@@ -58,8 +68,9 @@ class _SemanticPaths(Protocol):
 
 
 _WORD = re.compile(r"[A-Za-z][A-Za-z0-9_-]*")
-_DOTTED_PATH = re.compile(
-    r"\b[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_{}-]+)+\b"
+_PATH = re.compile(
+    r"\b(?P<root>[A-Za-z][A-Za-z0-9_-]*(?:@[A-Za-z][A-Za-z0-9_-]*(?::[A-Za-z][A-Za-z0-9_-]*)?)?)"
+    r"\.(?P<tail>[A-Za-z0-9_{}-]+(?:\.[A-Za-z0-9_{}-]+)*)\b"
 )
 
 
@@ -89,14 +100,83 @@ def resolve_record_type(
     return matches[0] if len(matches) == 1 else None
 
 
-def _unqualified_path_valid(
+def _reference_parts(root: str) -> tuple[str, str | None, str | None]:
+    noun, at, qualifiers = root.partition("@")
+    if not at:
+        return noun, None, None
+    producer, colon, channel = qualifiers.partition(":")
+    return noun, producer or None, (channel or None) if colon else None
+
+
+def extract_semantic_record_references(
+    expression: str,
+    record_types: frozenset[str],
+) -> tuple[SemanticRecordReference, ...]:
+    """Extract explicit record-family dependencies from dotted expression paths."""
+
+    refs: list[SemanticRecordReference] = []
+    seen: set[tuple[str, str | None, str | None]] = set()
+    for match in _PATH.finditer(expression):
+        noun, producer, channel = _reference_parts(match.group("root"))
+        noun = _normalize_noun(noun)
+        if noun not in record_types:
+            continue
+        key = (noun, producer, channel)
+        if key in seen:
+            continue
+        seen.add(key)
+        refs.append(
+            SemanticRecordReference(
+                noun=noun,
+                producer=producer.lower() if producer else None,
+                channel=channel.lower() if channel else None,
+            )
+        )
+    return tuple(refs)
+
+
+def _path_valid(
     path: str,
     semantic_paths: _SemanticPaths,
+    *,
+    scoped_noun: str | None = None,
 ) -> bool | None:
-    head, dot, tail = path.partition(".")
-    if not dot or head not in semantic_paths.record_types:
+    match = _PATH.fullmatch(path)
+    if match is None:
         return None
-    return semantic_paths.is_valid(f"{head}@dsl.{tail}")
+    root = match.group("root")
+    tail = match.group("tail")
+    noun, _, _ = _reference_parts(root)
+    noun = _normalize_noun(noun)
+    if noun in semantic_paths.record_types:
+        return semantic_paths.is_valid(f"{noun}@dsl.{tail}")
+    if scoped_noun is not None:
+        return semantic_paths.is_valid(f"{scoped_noun}@dsl.{path}")
+    return None
+
+
+def _validate_expression_paths(
+    expression: str,
+    model: _SemanticPaths,
+    *,
+    clause_index: int,
+    code: str,
+    scoped_noun: str | None = None,
+) -> list[SurfaceValidationIssue]:
+    issues: list[SurfaceValidationIssue] = []
+    for match in _PATH.finditer(expression):
+        path = match.group(0)
+        valid = _path_valid(path, model, scoped_noun=scoped_noun)
+        if valid is False:
+            issues.append(
+                SurfaceValidationIssue(
+                    severity=ValidationSeverity.ERROR,
+                    code=code,
+                    message=f"condition path is not valid in the ontology: {path!r}",
+                    clause_index=clause_index,
+                )
+            )
+    return issues
 
 
 def validate_surface_semantics(
@@ -108,8 +188,8 @@ def validate_surface_semantics(
 
     This stage deliberately does not reject unknown origins, brokers, algorithms,
     external counterpart streams, or ranking methods. Those belong to capability
-    validation and lowering. It validates what is already knowable from the
-    ontology: requested record nouns and explicit ontology paths.
+    validation and lowering. It validates requested record nouns and explicit or
+    WITH-scoped ontology paths.
     """
 
     model = semantic_paths or _semantic_path_model()
@@ -130,9 +210,20 @@ def validate_surface_semantics(
                         clause_index=index,
                     )
                 )
+            else:
+                for predicate in clause.predicates:
+                    issues.extend(
+                        _validate_expression_paths(
+                            predicate,
+                            model,
+                            clause_index=index,
+                            code="invalid_requirement_predicate_path",
+                            scoped_noun=noun,
+                        )
+                    )
 
         if isinstance(clause, OrderByClause):
-            valid = _unqualified_path_valid(clause.expression, model)
+            valid = _path_valid(clause.expression, model)
             if valid is False:
                 issues.append(
                     SurfaceValidationIssue(
@@ -147,28 +238,24 @@ def validate_surface_semantics(
                 )
 
         if isinstance(clause, (WhereClause, FilterClause)):
-            for path in _DOTTED_PATH.findall(clause.condition):
-                valid = _unqualified_path_valid(path, model)
-                if valid is False:
-                    issues.append(
-                        SurfaceValidationIssue(
-                            severity=ValidationSeverity.ERROR,
-                            code="invalid_condition_path",
-                            message=(
-                                "condition path is not valid in the ontology: "
-                                f"{path!r}"
-                            ),
-                            clause_index=index,
-                        )
-                    )
+            issues.extend(
+                _validate_expression_paths(
+                    clause.condition,
+                    model,
+                    clause_index=index,
+                    code="invalid_condition_path",
+                )
+            )
 
     return SurfaceValidationReport(issues=tuple(issues))
 
 
 __all__ = [
+    "SemanticRecordReference",
     "SurfaceValidationIssue",
     "SurfaceValidationReport",
     "ValidationSeverity",
+    "extract_semantic_record_references",
     "resolve_record_type",
     "validate_surface_semantics",
 ]
