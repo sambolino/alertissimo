@@ -67,6 +67,15 @@ def test_dsl_pipeline_fixture_compiles_coalesces_executes_and_normalizes():
         step.executions[0].execution_id for step in result.normalized.steps
     } == set(execution_ids)
 
+    search_portfolios = result.normalized.steps[0].executions[0].portfolios
+    classification_portfolios = result.normalized.steps[1].executions[0].portfolios
+    assert len(search_portfolios) == len(classification_portfolios) == 1
+    assert search_portfolios[0] is classification_portfolios[0]
+    assert (
+        search_portfolios[0].internal_portfolio_id.value
+        == classification_portfolios[0].internal_portfolio_id.value
+    )
+
     for step_output in result.normalized.steps:
         records = _classification_records(step_output)
         assert records
@@ -88,6 +97,7 @@ def test_dsl_pipeline_fixture_compiles_coalesces_executes_and_normalizes():
     assert report["normalized_execution_count"] == 2
     assert report["physical_execution_count"] == 1
     assert len(report["physical_execution_ids"]) == 1
+    assert report["unique_portfolio_count"] == 1
     assert report["steps"][1]["calls"][0]["reuse_from"] == {
         "step_index": 0,
         "plan_index": 0,
