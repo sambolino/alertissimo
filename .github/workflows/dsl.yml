@@ -4,12 +4,18 @@ on:
   pull_request:
     paths:
       - 'alertissimo/dsl/**'
+      - 'alertissimo/data_layer/runtime/capability_graph.py'
+      - 'alertissimo/data_layer/providers/**/request_mappings.yaml'
       - 'alertissimo/orchestration/ir/**'
+      - 'alertissimo/orchestration/planner/**'
+      - 'alertissimo/orchestration/binding/**'
+      - 'alertissimo/orchestration/runtime/**'
+      - 'alertissimo/orchestration/normalization/**'
       - 'alertissimo/orchestration/results/**'
       - 'alertissimo/orchestration/validation.py'
       - 'tests/test_dsl_*.py'
-      - 'tests/test_orchestration_ir_models.py'
-      - 'tests/test_orchestration_capability_validation.py'
+      - 'tests/test_capability_graph.py'
+      - 'tests/test_orchestration_*.py'
       - '.github/workflows/dsl.yml'
   workflow_dispatch:
 
@@ -29,5 +35,5 @@ jobs:
         run: |
           PYTHONPATH=. pytest -q \
             tests/test_dsl_*.py \
-            tests/test_orchestration_ir_models.py \
-            tests/test_orchestration_capability_validation.py
+            tests/test_capability_graph.py \
+            tests/test_orchestration_*.py
