@@ -29,19 +29,21 @@ from alertissimo.orchestration.ir import (
     GetLightcurveStep,
     GetSpectrumStep,
     MatchStep,
+    Predicate,
     SearchSelection,
     SemanticSearchStep,
     Source,
     TimeContext,
     WorkflowIR,
+    and_predicates,
 )
 from alertissimo.orchestration.results import ResultOrderSpec, ResultViewSpec
 
 from .capability_validation import (
     SurfaceCapabilityCheck,
-    SurfaceCapabilityStatus,
     validate_surface_capabilities,
 )
+from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .surface import (
     Duration,
     FilterClause,
@@ -196,6 +198,53 @@ def _first_filter_index(surface: SurfaceScript) -> int:
     )
 
 
+def _semantic_predicate(
+    expression: str,
+    *,
+    record_types: frozenset[str],
+    clause_index: int,
+    scoped_noun: str | None = None,
+    scoped_producer: str | None = None,
+    scoped_channel: str | None = None,
+) -> Predicate:
+    try:
+        return lower_expression_predicate(
+            expression,
+            record_types,
+            scoped_noun=scoped_noun,
+            scoped_producer=scoped_producer,
+            scoped_channel=scoped_channel,
+        )
+    except PredicateLoweringError as exc:
+        raise SurfaceLoweringError(
+            str(exc),
+            code="ungrounded_predicate",
+            clause_index=clause_index,
+        ) from exc
+
+
+def _scoped_requirement_predicate(
+    surface: SurfaceScript,
+    clause: RequirementClause,
+    *,
+    noun: str,
+    record_types: frozenset[str],
+    clause_index: int,
+) -> Predicate | None:
+    predicates = [
+        _semantic_predicate(
+            expression,
+            record_types=record_types,
+            clause_index=clause_index,
+            scoped_noun=noun,
+            scoped_producer=clause.source,
+            scoped_channel=clause.via or surface.candidates.broker,
+        )
+        for expression in clause.predicates
+    ]
+    return and_predicates(predicates)
+
+
 def _candidate_search(
     surface: SurfaceScript,
     *,
@@ -207,8 +256,7 @@ def _candidate_search(
     inside: tuple[int, InsideClause] | None = None
     within: tuple[int, WithinClause] | None = None
     latest: tuple[int, LatestClause] | None = None
-    general_where: tuple[int, WhereClause] | None = None
-    semantic_requirements: list[dict[str, object]] = []
+    predicates: list[Predicate] = []
     consumed: set[int] = set()
 
     for index, clause in enumerate(surface.clauses[:first_filter]):
@@ -240,7 +288,13 @@ def _candidate_search(
             latest = (index, clause)
             consumed.add(index)
         elif isinstance(clause, WhereClause):
-            general_where = (index, clause)
+            predicates.append(
+                _semantic_predicate(
+                    clause.condition,
+                    record_types=record_types,
+                    clause_index=index,
+                )
+            )
             consumed.add(index)
         elif isinstance(clause, RequirementClause) and clause.predicates:
             noun = resolve_record_type(clause.product, record_types)
@@ -250,22 +304,17 @@ def _candidate_search(
                     code="unresolved_requirement",
                     clause_index=index,
                 )
-            semantic_requirements.append(
-                {
-                    "semantic_type": noun,
-                    "producer": clause.source,
-                    "channel": clause.via or surface.candidates.broker,
-                    "method": clause.method,
-                    "predicates": list(clause.predicates),
-                }
+            scoped = _scoped_requirement_predicate(
+                surface,
+                clause,
+                noun=noun,
+                record_types=record_types,
+                clause_index=index,
             )
+            if scoped is not None:
+                predicates.append(scoped)
 
-    criteria: dict[str, object] = {}
-    if general_where is not None:
-        criteria["where"] = general_where[1].condition
-    if semantic_requirements:
-        criteria["semantic_requirements"] = semantic_requirements
-
+    predicate = and_predicates(predicates)
     time_context = (
         _time_context(within[1], clause_index=within[0]) if within is not None else None
     )
@@ -277,7 +326,7 @@ def _candidate_search(
         return (
             ConeSearchStep(
                 semantic_type="summary",
-                criteria=criteria,
+                predicate=predicate,
                 selection=selection,
                 ra=cone.ra,
                 dec=cone.dec,
@@ -291,7 +340,7 @@ def _candidate_search(
     return (
         SemanticSearchStep(
             semantic_type="summary",
-            criteria=criteria,
+            predicate=predicate,
             selection=selection,
             time_context=time_context,
             sources=sources,
@@ -433,7 +482,7 @@ def _lower_requirement(
         match = _COLOR_COLOR_RE.fullmatch(clause.product.strip())
         if match is None:
             raise SurfaceLoweringError(
-                "color-color lowering requires 'color-color <color-x> vs <color-y>'",
+                "color-color lowering requires 'color-color <color-x> vs <color-y-field>'",
                 code="incomplete_color_color",
                 clause_index=clause_index,
             )
@@ -532,23 +581,6 @@ def _implicit_requirements_from_where(
     return tuple(requirements)
 
 
-def _scoped_filter_criteria(
-    surface: SurfaceScript,
-    clause: RequirementClause,
-    *,
-    noun: str,
-) -> dict[str, object]:
-    return {
-        "semantic_scope": {
-            "semantic_type": noun,
-            "producer": clause.source,
-            "channel": clause.via or surface.candidates.broker,
-            "method": clause.method,
-        },
-        "predicates": list(clause.predicates),
-    }
-
-
 def lower_surface(
     surface: SurfaceScript,
     *,
@@ -569,8 +601,6 @@ def lower_surface(
     emitted: set[tuple[str, str | None, str | None]] = set()
     view = ResultViewSpec()
 
-    # Explicit WITH requirements are authoritative for de-duplication even when a
-    # general WHERE references the same semantic material earlier in the text.
     explicit_signatures = {
         signature
         for clause in surface.clauses
@@ -637,18 +667,25 @@ def lower_surface(
                 emitted.add(signature)
 
             if clause.predicates and index >= first_filter:
-                noun = signature[0]
-                steps.append(
-                    FilterStep(
-                        criteria=_scoped_filter_criteria(
-                            surface,
-                            clause,
-                            noun=noun,
-                        )
+                scoped = _scoped_requirement_predicate(
+                    surface,
+                    clause,
+                    noun=signature[0],
+                    record_types=semantic_model.record_types,
+                    clause_index=index,
+                )
+                if scoped is not None:
+                    steps.append(FilterStep(predicate=scoped))
+        elif isinstance(clause, FilterClause):
+            steps.append(
+                FilterStep(
+                    predicate=_semantic_predicate(
+                        clause.condition,
+                        record_types=semantic_model.record_types,
+                        clause_index=index,
                     )
                 )
-        elif isinstance(clause, FilterClause):
-            steps.append(FilterStep(criteria={"expression": clause.condition}))
+            )
         elif isinstance(clause, MatchClause):
             steps.append(_lower_match(surface, clause, clause_index=index))
         elif isinstance(clause, RankedByClause):
@@ -658,7 +695,6 @@ def lower_surface(
                 clause_index=index,
             )
         elif isinstance(clause, (InsideClause, WithinClause, LatestClause, WhereClause)):
-            # Candidate-scope clauses are consumed by _candidate_search.
             continue
         else:  # pragma: no cover - discriminated surface union guards this.
             raise SurfaceLoweringError(
@@ -684,8 +720,6 @@ def _deferred_check_is_lowerable(
         return False
     clause = surface.clauses[check.clause_index]
     if isinstance(clause, WhereClause):
-        # A deferred provider-facing semantic dependency implied by WHERE is not
-        # safe to compile: the planner does not yet have evidence for satisfying it.
         return False
     if not isinstance(clause, RequirementClause):
         return False
