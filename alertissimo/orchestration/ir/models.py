@@ -160,18 +160,14 @@ class FilterStep(Step):
     ``predicate`` uses exactly the same semantic language as SearchStep. The
     distinction is lifecycle: FilterStep acts on already materialized context,
     whereas SearchStep defines candidate discovery. ``criteria`` is retained only
-    for non-predicate legacy/internal filter details.
+    for non-predicate legacy/internal filter details. Empty FilterStep instances
+    remain valid for backward-compatible internal/local-step construction; the
+    user-facing DSL independently requires an actual filter condition.
     """
 
     op: Literal["filter"] = "filter"
     predicate: Predicate | None = None
     criteria: dict[str, Any] = Field(default_factory=dict)
-
-    @model_validator(mode="after")
-    def require_filter_content(self) -> "FilterStep":
-        if self.predicate is None and not self.criteria:
-            raise ValueError("filter requires a semantic predicate or criteria")
-        return self
 
 
 class GetStep(Step):
