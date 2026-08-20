@@ -1,0 +1,16 @@
+broker: alerce
+origin: lsst
+
+# Request-side semantic mappings. These do not define a parallel semantic
+# vocabulary: every semantic_path must already exist in mappings.yaml.
+constraints:
+  query_objects:
+    classifier:
+      semantic_path: classification.provenance.producer.name
+      operator: "="
+    class_name:
+      semantic_path: classification.best.class
+      operator: "="
+    probability:
+      semantic_path: classification.best.probability
+      operator: ">="

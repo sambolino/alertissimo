@@ -1,9 +1,8 @@
 """Deterministically select registered endpoints for provider-facing IR steps.
 
-Capability validation determines *what can* satisfy an intent; this planner
-chooses endpoint identities from that evidence.  It deliberately does not bind
-generic IR arguments to physical parameter names or invoke an ``EndpointSpec``.
-The later boundaries are therefore: planning -> parameter binding -> execution.
+Capability validation determines *what can* satisfy an intent; this planner chooses
+endpoint identities and records how an ontology predicate can be realized there.
+Physical invocation values are still applied later by the parameter binder.
 """
 
 from __future__ import annotations
@@ -12,7 +11,13 @@ from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
 )
-from alertissimo.orchestration.ir.models import DeriveStep, Source, Step, WorkflowIR
+from alertissimo.orchestration.ir.models import (
+    DeriveStep,
+    SearchStep,
+    Source,
+    Step,
+    WorkflowIR,
+)
 from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
     StepRun,
@@ -24,6 +29,8 @@ from alertissimo.orchestration.validation import (
     SourceCapabilityResult,
     validate_step_capabilities,
 )
+
+from .predicate_realization import realize_predicate
 
 
 class PlanningError(ValueError):
@@ -91,8 +98,30 @@ def _select_one(
     return candidates[0]
 
 
+def _endpoint_plan(
+    step: Step,
+    endpoint: EndpointCapability,
+    validation: CapabilityValidationResult,
+    graph: CapabilityGraph,
+) -> EndpointPlan:
+    realization = None
+    if isinstance(step, SearchStep) and step.predicate is not None:
+        realization = realize_predicate(
+            step.predicate,
+            endpoint=endpoint,
+            graph=graph,
+        )
+    return EndpointPlan(
+        broker=endpoint.broker,
+        origin=endpoint.origin,
+        endpoint=endpoint.endpoint,
+        semantic_type=validation.semantic_type,
+        predicate_realization=realization,
+    )
+
+
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
-    """Select provider endpoints, or register a DeriveStep as endpoint-free."""
+    """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
     if validation.status == "not_applicable":
         if isinstance(step, DeriveStep):
@@ -113,24 +142,12 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
         _select_one(validation, item) for item in validation.source_results
     )
     return tuple(
-        EndpointPlan(
-            broker=item.broker,
-            origin=item.origin,
-            endpoint=item.endpoint,
-            semantic_type=validation.semantic_type,
-        )
-        for item in selected
+        _endpoint_plan(step, item, validation, graph) for item in selected
     )
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
-    """Plan provider calls while retaining endpoint-free derive occurrences.
-
-    Planning remains fail-fast for deferred, ambiguous, unsupported, or other
-    local orchestration steps.  A DeriveStep is the deliberate exception: its
-    occurrence is planned with zero endpoint plans and executes only after
-    provider results have been normalized into Portfolios.
-    """
+    """Plan provider calls while retaining endpoint-free derive occurrences."""
     pending_run = WorkflowRun.from_workflow(workflow)
     planned_steps = tuple(
         StepRun(

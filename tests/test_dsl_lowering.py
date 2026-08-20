@@ -16,14 +16,18 @@ from alertissimo.dsl import (
     parse_surface_script,
 )
 from alertissimo.orchestration.ir import (
+    BooleanPredicate,
     ClassifyStep,
     ColorMagnitudeStep,
+    ComparisonPredicate,
     ConeSearchStep,
     FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
     MatchStep,
+    PredicateLiteral,
     SearchSelection,
+    SemanticReference,
     SemanticSearchStep,
     WorkflowIR,
 )
@@ -145,6 +149,27 @@ def _lower(script: str):
     )
 
 
+def _assert_reference_literal(
+    predicate,
+    *,
+    semantic_type: str,
+    field_path: str,
+    operator: str,
+    value,
+    producer: str | None = None,
+    channel: str | None = None,
+):
+    assert isinstance(predicate, ComparisonPredicate)
+    assert predicate.operator == operator
+    assert predicate.left == SemanticReference(
+        semantic_type=semantic_type,
+        field_path=field_path,
+        producer=producer,
+        channel=channel,
+    )
+    assert predicate.right == PredicateLiteral(value=value)
+
+
 def test_latest_is_search_selection_not_ir_step():
     compilation = _lower(
         """objects from lsst, ztf via fink
@@ -211,7 +236,7 @@ def test_workflow_only_compatibility_helper_refuses_to_drop_result_view():
     assert exc.value.code == "result_view_present"
 
 
-def test_general_where_is_candidate_search_criteria_not_filter_step():
+def test_general_where_is_candidate_search_predicate_not_filter_step():
     compilation = _lower(
         "objects from lsst\nwhere summary.time.last_mjd > 60000\n"
     )
@@ -219,7 +244,14 @@ def test_general_where_is_candidate_search_criteria_not_filter_step():
     assert len(compilation.workflow.steps) == 1
     search = compilation.workflow.steps[0]
     assert isinstance(search, SemanticSearchStep)
-    assert search.criteria == {"where": "summary.time.last_mjd > 60000"}
+    assert search.criteria == {}
+    _assert_reference_literal(
+        search.predicate,
+        semantic_type="summary",
+        field_path="time.last_mjd",
+        operator=">",
+        value=60000,
+    )
 
 
 def test_scoped_classification_predicate_implies_search_condition_and_requirement():
@@ -236,17 +268,27 @@ with classification from lc_classifier:
         GetClassificationStep,
     ]
     search = compilation.workflow.steps[0]
-    assert search.criteria == {
-        "semantic_requirements": [
-            {
-                "semantic_type": "classification",
-                "producer": "lc_classifier",
-                "channel": "alerce",
-                "method": None,
-                "predicates": ['best.class = "SN"', "best.probability >= 0.8"],
-            }
-        ]
-    }
+    assert search.criteria == {}
+    assert isinstance(search.predicate, BooleanPredicate)
+    assert search.predicate.operator == "and"
+    _assert_reference_literal(
+        search.predicate.operands[0],
+        semantic_type="classification",
+        field_path="best.class",
+        operator="=",
+        value="SN",
+        producer="lc_classifier",
+        channel="alerce",
+    )
+    _assert_reference_literal(
+        search.predicate.operands[1],
+        semantic_type="classification",
+        field_path="best.probability",
+        operator=">=",
+        value=0.8,
+        producer="lc_classifier",
+        channel="alerce",
+    )
     classification = compilation.workflow.steps[1]
     assert classification.classifier == "lc_classifier"
     assert [(source.origin, source.broker) for source in classification.sources] == [
@@ -263,9 +305,16 @@ with classification from lc_classifier
     )
 
     search = compilation.workflow.steps[0]
-    assert search.criteria["semantic_requirements"][0]["predicates"] == [
-        'best.class = "LPV" and best.probability >= 0.8'
-    ]
+    assert isinstance(search.predicate, BooleanPredicate)
+    _assert_reference_literal(
+        search.predicate.operands[0],
+        semantic_type="classification",
+        field_path="best.class",
+        operator="=",
+        value="LPV",
+        producer="lc_classifier",
+        channel="alerce",
+    )
     assert compilation.workflow.steps[1].classifier == "lc_classifier"
 
 
@@ -280,8 +329,15 @@ def test_fully_qualified_general_where_implies_classification_requirement():
         SemanticSearchStep,
         GetClassificationStep,
     ]
-    assert compilation.workflow.steps[0].criteria["where"].startswith(
-        "classification@lc_classifier.best.class"
+    search = compilation.workflow.steps[0]
+    assert isinstance(search.predicate, BooleanPredicate)
+    _assert_reference_literal(
+        search.predicate.operands[0],
+        semantic_type="classification",
+        field_path="best.class",
+        operator="=",
+        value="SN",
+        producer="lc_classifier",
     )
     assert compilation.workflow.steps[1].classifier == "lc_classifier"
 
@@ -315,17 +371,25 @@ with classification from lc_classifier:
         GetClassificationStep,
         FilterStep,
     ]
+    first_filter = compilation.workflow.steps[1]
+    _assert_reference_literal(
+        first_filter.predicate,
+        semantic_type="summary",
+        field_path="time.last_mjd",
+        operator=">",
+        value=60000,
+    )
     scoped_filter = compilation.workflow.steps[-1]
-    assert scoped_filter.criteria["semantic_scope"] == {
-        "semantic_type": "classification",
-        "producer": "lc_classifier",
-        "channel": "alerce",
-        "method": None,
-    }
-    assert scoped_filter.criteria["predicates"] == [
-        'best.class = "SN"',
-        "best.probability >= 0.8",
-    ]
+    assert isinstance(scoped_filter.predicate, BooleanPredicate)
+    _assert_reference_literal(
+        scoped_filter.predicate.operands[0],
+        semantic_type="classification",
+        field_path="best.class",
+        operator="=",
+        value="SN",
+        producer="lc_classifier",
+        channel="alerce",
+    )
 
 
 def test_with_crossmatch_preserves_fixed_origin_and_local_broker_override():
@@ -403,12 +467,19 @@ def test_ranked_by_remains_unlowered_until_ranking_semantics_exist():
     assert exc.value.code == "ranking_semantics_deferred"
 
 
-def test_search_selection_and_classifier_round_trip_through_workflow_union():
+def test_search_selection_classifier_and_predicate_round_trip_through_workflow_union():
     workflow = WorkflowIR(
         steps=[
             SemanticSearchStep(
                 semantic_type="summary",
                 selection=SearchSelection(latest=5),
+                predicate=ComparisonPredicate(
+                    operator=">",
+                    left=SemanticReference(
+                        semantic_type="summary", field_path="time.last_mjd"
+                    ),
+                    right=PredicateLiteral(value=60000),
+                ),
             ),
             GetClassificationStep(classifier="lc_classifier"),
         ]
@@ -417,6 +488,7 @@ def test_search_selection_and_classifier_round_trip_through_workflow_union():
     restored = WorkflowIR.model_validate(workflow.model_dump())
     assert restored == workflow
     assert restored.steps[0].selection.latest == 5
+    assert restored.steps[0].predicate == workflow.steps[0].predicate
     assert restored.steps[1].classifier == "lc_classifier"
 
 
@@ -487,6 +559,4 @@ def test_compile_surface_to_ir_refuses_to_discard_order_view():
             semantic_paths=_FakeSemanticPaths(),
         )
 
-    # Capability failure happens first with an empty graph; the compatibility
-    # helper never silently drops view intent in supported executions.
     assert exc.value.code == "unsupported_capability"
