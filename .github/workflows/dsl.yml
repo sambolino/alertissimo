@@ -1,0 +1,37 @@
+name: DSL compiler
+
+on:
+  pull_request:
+    paths:
+      - 'alertissimo/dsl/**'
+      - 'alertissimo/orchestration/ir/**'
+      - 'alertissimo/orchestration/results/**'
+      - 'alertissimo/orchestration/validation.py'
+      - 'tests/test_dsl_*.py'
+      - 'tests/test_orchestration_ir_models.py'
+      - 'tests/test_orchestration_capability_validation.py'
+      - '.github/workflows/dsl.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install focused DSL dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1' 'lark==1.2.2'
+      - name: Run DSL and touched orchestration contracts
+        run: |
+          PYTHONPATH=. pytest -q \
+            tests/test_dsl_surface.py \
+            tests/test_dsl_formal_grammar.py \
+            tests/test_dsl_capability_validation.py \
+            tests/test_dsl_lowering.py \
+            tests/test_dsl_ir_integration.py \
+            tests/test_orchestration_ir_models.py \
+            tests/test_orchestration_capability_validation.py
