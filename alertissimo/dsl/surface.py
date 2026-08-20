@@ -1,8 +1,9 @@
 """Abstract syntax for the user-facing declarative Alertissimo DSL.
 
 The surface model preserves what the scientist asked for without deciding how the
-request will be satisfied. Formal syntax lives in ``grammar.lark``; ontology,
-capability validation, IR lowering, and result-view lowering remain separate stages.
+request will be satisfied. Formal syntax lives in ``grammar.lark``; predicate
+syntax lives in ``expression.lark``. Ontology, capability validation, IR lowering,
+and result-view lowering remain separate stages.
 """
 
 from __future__ import annotations
@@ -10,6 +11,8 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from .expression import ExpressionParseError, parse_expression
 
 
 class SurfaceModel(BaseModel):
@@ -38,6 +41,17 @@ class DSLParseError(ValueError):
                 location += f", column {column}"
             location += ": "
         super().__init__(location + message)
+
+
+def _predicate_text(value: str, *, context: str) -> str:
+    value = value.strip()
+    if not value:
+        raise ValueError(f"{context} requires a condition")
+    try:
+        parse_expression(value)
+    except ExpressionParseError as exc:
+        raise ValueError(f"{context} has invalid expression syntax: {exc}") from exc
+    return value
 
 
 class CandidateSet(SurfaceModel):
@@ -116,10 +130,7 @@ class WhereClause(SurfaceModel):
     @field_validator("condition")
     @classmethod
     def require_condition(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("where requires a condition")
-        return value
+        return _predicate_text(value, context="where")
 
 
 class FilterClause(SurfaceModel):
@@ -129,18 +140,15 @@ class FilterClause(SurfaceModel):
     @field_validator("condition")
     @classmethod
     def require_condition(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("filter requires a condition")
-        return value
+        return _predicate_text(value, context="filter")
 
 
 class RequirementClause(SurfaceModel):
     """Semantic requirement, optionally carrying one scoped predicate block.
 
-    ``predicates`` are conjunctive conditions over the requested product.  A
+    ``predicates`` are conjunctive conditions over the requested product. A
     predicate-bearing requirement therefore means both "ensure this semantic
-    product" and "select/refine candidates using these conditions".  Whether the
+    product" and "select/refine candidates using these conditions". Whether the
     provider can satisfy both in one call is a planner concern.
     """
 
@@ -161,13 +169,12 @@ class RequirementClause(SurfaceModel):
 
     @field_validator("predicates")
     @classmethod
-    def require_nonempty_predicates(
+    def require_valid_predicates(
         cls, value: tuple[str, ...]
     ) -> tuple[str, ...]:
-        normalized = tuple(item.strip() for item in value)
-        if any(not item for item in normalized):
-            raise ValueError("with predicate expressions cannot be empty")
-        return normalized
+        return tuple(
+            _predicate_text(item, context="with predicate") for item in value
+        )
 
 
 class MatchClause(SurfaceModel):
