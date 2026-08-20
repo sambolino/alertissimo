@@ -122,7 +122,12 @@ def _raw_candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
     if isinstance(step, ConeSearchStep):
-        return _query(graph, source, noun=step.semantic_type, operation="cone_search")
+        semantic = _query(graph, source, noun=step.semantic_type)
+        return tuple(
+            endpoint
+            for endpoint in semantic
+            if _GEOMETRIC_SEARCH_OPERATIONS.intersection(endpoint.operation_types)
+        )
     if isinstance(step, SqlQueryStep):
         return _query(graph, source, noun=step.semantic_type, operation="sql_query")
     if isinstance(step, SemanticSearchStep):
