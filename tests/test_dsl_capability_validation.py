@@ -32,6 +32,8 @@ def _endpoint(
     origin: str,
     endpoint: str,
     *operations: str,
+    params: tuple[str, ...] = (),
+    server_filters: tuple[str, ...] = (),
 ) -> EndpointCapability:
     return EndpointCapability(
         broker=broker,
@@ -40,8 +42,8 @@ def _endpoint(
         path=f"/{endpoint}",
         method="GET",
         operation_types=tuple(operations),
-        params=(),
-        server_filters=(),
+        params=params,
+        server_filters=server_filters,
         projection_param=None,
         supports_projection=False,
         output_type="array",
@@ -72,6 +74,15 @@ def _graph() -> CapabilityGraph:
         _endpoint("antares", "ztf", "object", "object_lookup"),
         _endpoint("antares", "ztf", "cone", "cone_search"),
         _endpoint("lasair", "ztf", "object", "object_lookup"),
+        _endpoint(
+            "alerce",
+            "lsst",
+            "query_objects",
+            "object_search",
+            "classification_filter",
+            params=("classifier", "class_name", "probability"),
+            server_filters=("classifier", "class_name", "probability"),
+        ),
     )
     records = (
         _record("fink", "lsst", "summary@lsst:fink", "objects", "conesearch"),
@@ -81,6 +92,13 @@ def _graph() -> CapabilityGraph:
         _record("antares", "ztf", "crossmatch@gaia:antares", "object"),
         _record("lasair", "ztf", "summary@ztf:lasair", "object"),
         _record("lasair", "ztf", "crossmatch@{producer}:lasair", "object"),
+        _record("alerce", "lsst", "summary@lsst:alerce", "query_objects"),
+        _record(
+            "alerce",
+            "lsst",
+            "classification@{producer}:alerce",
+            "query_objects",
+        ),
     )
     return CapabilityGraph(
         endpoint_capabilities=endpoints,
@@ -101,8 +119,7 @@ def _validate(script: str):
 
 def test_requirement_inherits_default_broker_and_matches_qualified_record():
     report = _validate(
-        "objects from ztf via antares\n"
-        "with crossmatch from gaia\n"
+        "objects from ztf via antares\nwith crossmatch from gaia\n"
     )
 
     requirement = next(
@@ -119,8 +136,7 @@ def test_requirement_inherits_default_broker_and_matches_qualified_record():
 
 def test_requirement_via_overrides_broker_but_never_candidate_origin():
     report = _validate(
-        "objects from ztf via fink\n"
-        "with crossmatch from gaia via antares\n"
+        "objects from ztf via fink\nwith crossmatch from gaia via antares\n"
     )
 
     requirement = next(
@@ -134,8 +150,7 @@ def test_requirement_via_overrides_broker_but_never_candidate_origin():
 
 def test_missing_qualified_producer_is_unsupported():
     report = _validate(
-        "objects from ztf via antares\n"
-        "with crossmatch from erosita\n"
+        "objects from ztf via antares\nwith crossmatch from erosita\n"
     )
 
     requirement = next(
@@ -145,10 +160,9 @@ def test_missing_qualified_producer_is_unsupported():
     assert report.status is SurfaceCapabilityStatus.UNSUPPORTED
 
 
-def test_dynamic_producer_mapping_is_deferred_not_treated_as_wildcard():
+def test_dynamic_crossmatch_producer_mapping_remains_deferred_not_wildcard():
     report = _validate(
-        "objects from ztf via lasair\n"
-        "with crossmatch from gaia\n"
+        "objects from ztf via lasair\nwith crossmatch from gaia\n"
     )
 
     requirement = next(
@@ -160,11 +174,43 @@ def test_dynamic_producer_mapping_is_deferred_not_treated_as_wildcard():
     } == {"crossmatch@{producer}:lasair"}
 
 
-def test_lightcurve_can_be_supported_by_registered_operation_fallback():
+def test_dynamic_classification_producer_is_supported_with_explicit_classifier_selector():
     report = _validate(
-        "objects from lsst via fink\n"
-        "with lightcurve\n"
+        """objects from lsst via alerce
+with classification from lc_classifier:
+    best.class = "SN"
+    best.probability >= 0.8
+"""
     )
+
+    requirement = next(
+        check for check in report.checks if check.subject == "requirement"
+    )
+    assert report.status is SurfaceCapabilityStatus.SUPPORTED
+    assert requirement.status is SurfaceCapabilityStatus.SUPPORTED
+    assert requirement.producer == "lc_classifier"
+    assert {
+        evidence.semantic_record_type for evidence in requirement.evidence
+    } == {"classification@{producer}:alerce"}
+
+
+def test_fully_qualified_general_where_implies_same_classification_capability():
+    report = _validate(
+        "objects from lsst via alerce\n"
+        'where classification@lc_classifier.best.class = "SN" and '
+        "classification@lc_classifier.best.probability >= 0.8\n"
+    )
+
+    requirements = [
+        check for check in report.checks if check.subject == "requirement"
+    ]
+    assert len(requirements) == 1
+    assert requirements[0].producer == "lc_classifier"
+    assert requirements[0].status is SurfaceCapabilityStatus.SUPPORTED
+
+
+def test_lightcurve_can_be_supported_by_registered_operation_fallback():
+    report = _validate("objects from lsst via fink\nwith lightcurve\n")
 
     requirement = next(
         check for check in report.checks if check.subject == "requirement"
@@ -187,8 +233,7 @@ def test_explicit_algorithm_is_deferred_to_local_method_capabilities():
 
 def test_inside_requires_registered_spatial_object_capability():
     report = _validate(
-        "objects from lsst via fink\n"
-        "inside (34, 33, 0.5deg)\n"
+        "objects from lsst via fink\ninside (34, 33, 0.5deg)\n"
     )
 
     candidate = next(
@@ -230,8 +275,7 @@ def test_match_counterpart_checks_external_origin_without_mutating_candidates():
 def test_real_registry_exposes_exact_gaia_crossmatch_via_antares_ztf():
     graph = build_capability_graph()
     surface = parse_surface_script(
-        "objects from ztf via antares\n"
-        "with crossmatch from gaia\n"
+        "objects from ztf via antares\nwith crossmatch from gaia\n"
     )
 
     report = validate_surface_capabilities(surface, graph=graph)
@@ -248,8 +292,7 @@ def test_real_registry_exposes_exact_gaia_crossmatch_via_antares_ztf():
 def test_real_registry_rejects_unregistered_erosita_crossmatch_via_antares():
     graph = build_capability_graph()
     surface = parse_surface_script(
-        "objects from ztf via antares\n"
-        "with crossmatch from erosita\n"
+        "objects from ztf via antares\nwith crossmatch from erosita\n"
     )
 
     report = validate_surface_capabilities(surface, graph=graph)
@@ -258,3 +301,22 @@ def test_real_registry_rejects_unregistered_erosita_crossmatch_via_antares():
         check for check in report.checks if check.subject == "requirement"
     )
     assert requirement.status is SurfaceCapabilityStatus.UNSUPPORTED
+
+
+def test_real_alerce_lsst_classifier_selector_supports_scoped_classification():
+    graph = build_capability_graph()
+    surface = parse_surface_script(
+        """objects from lsst via alerce
+with classification from lc_classifier:
+    best.class = "SN"
+    best.probability >= 0.8
+"""
+    )
+
+    report = validate_surface_capabilities(surface, graph=graph)
+
+    requirement = next(
+        check for check in report.checks if check.subject == "requirement"
+    )
+    assert requirement.status is SurfaceCapabilityStatus.SUPPORTED
+    assert requirement.producer == "lc_classifier"
