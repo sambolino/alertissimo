@@ -1,0 +1,26 @@
+broker: alerce
+origin: lsst
+
+# Declarative semantic-predicate -> physical-server-filter mappings.
+# These declarations describe exact semantics only.  The DSL/compiler does not
+# contain ALeRCE-specific parameter names or operator assumptions.
+bindings:
+  query_objects:
+    classifier:
+      semantic_record: classification
+      value_from: producer
+
+    class_name:
+      semantic_path: classification.best.class
+      value_from: literal
+      operators:
+        - "="
+      requires_producer: true
+
+    probability:
+      semantic_path: classification.best.probability
+      value_from: literal
+      # ALeRCE query_objects documents probability as a minimum threshold.
+      operators:
+        - ">="
+      requires_producer: true
