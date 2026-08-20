@@ -9,6 +9,7 @@ from typing import Literal
 
 from lark import Lark, Transformer, UnexpectedInput
 from lark.exceptions import VisitError
+from lark.indenter import Indenter
 
 from .surface import (
     AngularRadius,
@@ -47,6 +48,15 @@ _CLAUSE_PREFIXES = (
 )
 
 
+class _DSLIndenter(Indenter):
+    NL_type = "_NL"
+    OPEN_PAREN_types: list[str] = []
+    CLOSE_PAREN_types: list[str] = []
+    INDENT_type = "_INDENT"
+    DEDENT_type = "_DEDENT"
+    tab_len = 8
+
+
 def grammar_text() -> str:
     """Return the version-controlled formal grammar used by the parser."""
 
@@ -61,6 +71,7 @@ def _lark_parser() -> Lark:
         grammar_text(),
         parser="lalr",
         lexer="contextual",
+        postlex=_DSLIndenter(),
         propagate_positions=True,
     )
 
@@ -160,8 +171,22 @@ class _SurfaceTransformer(Transformer):
             method=qualifiers.get("using"),
         )
 
-    def with_clause(self, items):
+    def scoped_bare(self, items):
+        return str(items[0]).strip()
+
+    def scoped_where(self, items):
+        return str(items[0]).strip()
+
+    def with_plain(self, items):
         return items[0]
+
+    def with_colon(self, items):
+        requirement = items[0]
+        return requirement.model_copy(update={"predicates": tuple(items[1:])})
+
+    def with_where(self, items):
+        requirement = items[0]
+        return requirement.model_copy(update={"predicates": (items[1],)})
 
     def match_from(self, items):
         return "from", str(items[0]).lower()
@@ -193,15 +218,74 @@ class _SurfaceTransformer(Transformer):
 _TRANSFORMER = _SurfaceTransformer()
 
 
-def _meaningful_lines(script: str) -> list[tuple[int, str]]:
+def _indent_width(raw: str) -> int:
+    prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
+    return len(prefix.expandtabs(8))
+
+
+def _canonicalize_layout(script: str) -> str:
+    """Normalize cosmetic top-level indentation while retaining WITH scopes.
+
+    Existing DSL examples freely indent top-level clauses for readability. The
+    only indentation with semantic force in v0.1 is indentation relative to a
+    preceding ``with`` line: after ``with ...:`` it introduces a conjunctive
+    predicate block; after plain ``with ...`` it may introduce one scoped
+    ``where`` line. The normalized text is what the formal indentation grammar
+    consumes, while line count is preserved for diagnostics.
+    """
+
+    lines = script.splitlines()
+    out: list[str] = []
+    scope_mode: Literal["colon", "where"] | None = None
+    scope_indent = -1
+
+    for raw in lines:
+        stripped = raw.strip()
+        if not stripped or raw.lstrip().startswith("#"):
+            out.append(raw)
+            continue
+
+        indent = _indent_width(raw)
+        lowered = stripped.lower()
+
+        if scope_mode == "colon" and indent > scope_indent:
+            out.append("    " + stripped)
+            continue
+        if (
+            scope_mode == "where"
+            and indent > scope_indent
+            and lowered.startswith("where ")
+        ):
+            out.append("    " + stripped)
+            scope_mode = None
+            continue
+
+        scope_mode = None
+        scope_indent = -1
+        out.append(stripped)
+
+        if lowered.startswith("with "):
+            scope_indent = indent
+            scope_mode = "colon" if stripped.endswith(":") else "where"
+
+    return "\n".join(out) + ("\n" if script.endswith("\n") else "")
+
+
+def _meaningful_top_level_lines(script: str) -> list[tuple[int, str]]:
     return [
         (number, raw.strip())
         for number, raw in enumerate(script.splitlines(), start=1)
-        if raw.strip() and not raw.lstrip().startswith("#")
+        if raw.strip()
+        and not raw.lstrip().startswith("#")
+        and raw == raw.lstrip(" \t")
     ]
 
 
-def _preflight_structure(lines: list[tuple[int, str]]) -> None:
+def _preflight_structure(script: str) -> None:
+    lines = _meaningful_top_level_lines(script)
+    if not lines:
+        raise DSLParseError("DSL script is empty")
+
     first_line, first = lines[0]
     if not first.lower().startswith("objects from "):
         raise DSLParseError(
@@ -211,6 +295,7 @@ def _preflight_structure(lines: list[tuple[int, str]]) -> None:
         )
 
     filter_seen = False
+    where_count = 0
     for line_no, text in lines[1:]:
         lowered = text.lower()
         if lowered.startswith("objects "):
@@ -232,10 +317,22 @@ def _preflight_structure(lines: list[tuple[int, str]]) -> None:
                 )
         if lowered.startswith("filter "):
             filter_seen = True
-        elif lowered.startswith("where ") and filter_seen:
+        elif lowered.startswith("where "):
+            where_count += 1
+            if where_count > 1:
+                raise DSLParseError(
+                    "only one general where clause is allowed",
+                    line=line_no,
+                )
+            if filter_seen:
+                raise DSLParseError(
+                    "where belongs to the initial candidate pass; use filter for "
+                    "later refinement",
+                    line=line_no,
+                )
+        elif filter_seen and lowered.startswith(("inside", "within ", "latest ")):
             raise DSLParseError(
-                "where belongs to the initial candidate pass; use filter for "
-                "later refinement",
+                "inside, within, and latest belong to the initial candidate pass",
                 line=line_no,
             )
 
@@ -245,13 +342,11 @@ def parse_surface_script(script: str) -> SurfaceScript:
 
     if not script or not script.strip():
         raise DSLParseError("DSL script is empty")
-    lines = _meaningful_lines(script)
-    if not lines:
-        raise DSLParseError("DSL script is empty")
-    _preflight_structure(lines)
+    normalized = _canonicalize_layout(script)
+    _preflight_structure(normalized)
 
     try:
-        result = _TRANSFORMER.transform(_lark_parser().parse(script))
+        result = _TRANSFORMER.transform(_lark_parser().parse(normalized))
     except VisitError as exc:
         if isinstance(exc.orig_exc, DSLParseError):
             raise exc.orig_exc from exc
