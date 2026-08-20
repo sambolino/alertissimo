@@ -22,7 +22,7 @@ setup(
     name="alertissimo",
     version="0.1.0",
     packages=find_packages(include=["alertissimo", "alertissimo.*"]),
-    package_data={"alertissimo.dsl": ["grammar.lark"]},
+    package_data={"alertissimo.dsl": ["grammar.lark", "expression.lark"]},
     cmdclass={"install": CustomInstall},
     install_requires=[
         "setuptools>=69.5.1",

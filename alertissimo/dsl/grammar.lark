@@ -2,9 +2,10 @@
 //
 // This file is the hand-authored formal syntax of the user-facing language.
 // It is intentionally not generated from orchestration Step classes.
-// WHERE/FILTER predicates, ORDER expressions, RANKED criteria, MATCH ON
-// predicates, and WITH-scoped predicates are embedded semantic-expression slots
-// in v0.1; their internal expression grammar can be formalized independently.
+// WHERE/FILTER and WITH-scoped predicate slots are parsed by the independent
+// hand-authored expression grammar in expression.lark. ORDER, RANKED, and
+// MATCH ON remain separate semantic slots because they are not ordinary boolean
+// predicates in v0.1.
 //
 // Layout rule: top-level indentation is cosmetic. Relative indentation below a
 // WITH line is semantic only for its scoped predicate block. parser.py performs

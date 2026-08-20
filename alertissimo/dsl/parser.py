@@ -107,6 +107,25 @@ def _split_direction(
     return text, None
 
 
+def _with_predicates(
+    requirement: RequirementClause,
+    predicates: tuple[str, ...],
+) -> RequirementClause:
+    """Rebuild a requirement so Pydantic validates newly attached predicates.
+
+    ``model_copy(update=...)`` deliberately skips validation in Pydantic v2 and
+    must not be used at this syntax boundary: scoped predicates need to pass the
+    same production expression grammar as top-level WHERE/FILTER conditions.
+    """
+
+    return RequirementClause.model_validate(
+        {
+            **requirement.model_dump(),
+            "predicates": predicates,
+        }
+    )
+
+
 class _SurfaceTransformer(Transformer):
     """Transform formal syntax directly into the provider-independent surface AST."""
 
@@ -182,11 +201,11 @@ class _SurfaceTransformer(Transformer):
 
     def with_colon(self, items):
         requirement = items[0]
-        return requirement.model_copy(update={"predicates": tuple(items[1:])})
+        return _with_predicates(requirement, tuple(items[1:]))
 
     def with_where(self, items):
         requirement = items[0]
-        return requirement.model_copy(update={"predicates": (items[1],)})
+        return _with_predicates(requirement, (items[1],))
 
     def match_from(self, items):
         return "from", str(items[0]).lower()
