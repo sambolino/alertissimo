@@ -26,6 +26,10 @@ def _requested_target_ids(step) -> list[str]:
     return list(target.ids) if target is not None else []
 
 
+def _predicate_data(predicate):
+    return predicate.model_dump(mode="json") if predicate is not None else None
+
+
 def report_data(result) -> dict[str, Any]:
     normalized_by_step = {
         step.step_index: step
@@ -77,6 +81,35 @@ def report_data(result) -> dict[str, Any]:
                 {"execution_id": item.internal_execution_id.value, "portfolios": []}
                 for item in partial.executions
             ]
+
+        calls = []
+        for call in binding.bound_calls:
+            plan = call.endpoint_plan
+            reuse = plan.execution_reuse_from
+            realization = plan.predicate_realization
+            calls.append(
+                {
+                    "broker": plan.broker,
+                    "origin": plan.origin,
+                    "endpoint": plan.endpoint,
+                    "params": dict(call.params),
+                    "reuse_from": (
+                        {
+                            "step_index": reuse.step_index,
+                            "plan_index": reuse.plan_index,
+                        }
+                        if reuse is not None
+                        else None
+                    ),
+                    "pushdown": _predicate_data(
+                        realization.pushdown if realization is not None else None
+                    ),
+                    "residual": _predicate_data(
+                        realization.residual if realization is not None else None
+                    ),
+                }
+            )
+
         steps.append(
             {
                 "step_index": step_run.step_index,
@@ -87,25 +120,30 @@ def report_data(result) -> dict[str, Any]:
                     result.workflow.steps[step_run.step_index]
                 ),
                 "execution_ids": list(step_run.execution_ids),
-                "calls": [
-                    {
-                        "broker": call.endpoint_plan.broker,
-                        "origin": call.endpoint_plan.origin,
-                        "endpoint": call.endpoint_plan.endpoint,
-                        "params": dict(call.params),
-                    }
-                    for call in binding.bound_calls
-                ],
+                "calls": calls,
                 "executions": executions,
             }
         )
     failed_steps = [step for step in steps if step["state"] == "failed"]
+
+    physical_execution_ids: list[str] = []
+    seen_execution_ids: set[str] = set()
+    for step in steps:
+        for execution_id in step["execution_ids"]:
+            if execution_id in seen_execution_ids:
+                continue
+            seen_execution_ids.add(execution_id)
+            physical_execution_ids.append(execution_id)
+
     return {
         "scenario": result.name,
         "workflow": result.workflow.name,
+        "dsl_source": result.dsl_source,
         "normalized_execution_count": sum(
             len(s.executions) for s in normalized_by_step.values()
         ),
+        "physical_execution_count": len(physical_execution_ids),
+        "physical_execution_ids": physical_execution_ids,
         "portfolio_count": sum(
             len(e["portfolios"]) for s in steps for e in s["executions"]
         ),
@@ -126,6 +164,9 @@ def render_json(result) -> str:
 def render_human(result) -> str:
     data = report_data(result)
     lines = [f"scenario: {data['scenario']}", f"workflow: {data['workflow']}"]
+    if data["dsl_source"]:
+        lines.append("dsl:")
+        lines.extend(f"  {line}" for line in data["dsl_source"].rstrip().splitlines())
     if data["expected_failure"]:
         lines.append("expected failure: yes (fail-fast contract observed)")
         lines.append(f"failed step: {data['failed_step_index']}")
@@ -139,10 +180,23 @@ def render_human(result) -> str:
         )
         lines.append(f"  requested target IDs: {step['requested_target_ids']}")
         for call in step["calls"]:
+            reuse = call["reuse_from"]
+            reuse_text = (
+                f"  reuse: step {reuse['step_index']} plan {reuse['plan_index']}"
+                if reuse is not None
+                else ""
+            )
             lines.append(
                 f"  planned endpoint: {call['broker']}/{call['origin']}/{call['endpoint']}"
+                f"{reuse_text}"
             )
             lines.append(f"  bound parameters: {call['params']}")
+            if call["pushdown"] is not None or call["residual"] is not None:
+                lines.append(
+                    "  predicate realization: "
+                    f"pushdown={'yes' if call['pushdown'] is not None else 'no'}, "
+                    f"residual={'yes' if call['residual'] is not None else 'no'}"
+                )
         for execution in step["executions"]:
             lines.append(f"  execution ID: {execution['execution_id']}")
             for portfolio in execution["portfolios"]:
@@ -157,6 +211,8 @@ def render_human(result) -> str:
                     f"    semantic types/counts: {portfolio['semantic_counts']}"
                 )
     lines.append(
-        f"normalized executions: {data['normalized_execution_count']}; Portfolios: {data['portfolio_count']}"
+        "semantic execution outputs: "
+        f"{data['normalized_execution_count']}; unique physical executions: "
+        f"{data['physical_execution_count']}; Portfolios: {data['portfolio_count']}"
     )
     return "\n".join(lines)
