@@ -11,13 +11,9 @@ import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 
+from alertissimo.ui_portfolios import DEFAULT_PORTFOLIO, load_ui_portfolio, portfolio_to_display
 
-DEFAULT_DATA_PATH = (
-    Path(__file__).resolve().parent
-    / "plot"
-    / "json"
-    / "obj-ID-313-lightcurve.json"
-)
+
 DEFAULT_IMAGE_PATH = (
     Path(__file__).resolve().parent
     / "plot"
@@ -58,8 +54,10 @@ def load_lightcurve_document(data: Any) -> dict[str, Any]:
 
     if not isinstance(data, dict):
         raise ValueError("The JSON root must be an object.")
+    if isinstance(data.get("records"), list):
+        return portfolio_to_display(data)
     if not isinstance(data.get("lightCurve"), list):
-        raise ValueError("The JSON must contain a 'lightCurve' array.")
+        raise ValueError("The JSON must contain Portfolio records or a 'lightCurve' array.")
     return data
 
 
@@ -149,8 +147,8 @@ def lightcurve_chart(
         ),
     )
     month_ticks = month_midpoint_ticks(frame)
-    first_date = frame["date"].min().to_pydatetime()
-    last_date = frame["date"].max().to_pydatetime()
+    first_date = frame["date"].min().to_pydatetime(warn=False)
+    last_date = frame["date"].max().to_pydatetime(warn=False)
     x_axis = alt.X(
         "date:T",
         title="Time (UTC)",
@@ -236,6 +234,12 @@ def format_utc(value: pd.Timestamp) -> str:
 def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_table") -> None:
     """Render the original light-curve data in a sortable, paginated grid."""
     table = pd.DataFrame(data["lightCurve"])
+    # ``details`` is the complete SemanticRecord field mapping used by the
+    # click interaction; it is intentionally not a grid column because Arrow
+    # tables cannot hash nested dictionaries.
+    table = table[[column for column in (
+        "date", "mjd", "band", "magnitude", "magnitudeError", "record_id"
+    ) if column in table]]
     st.subheader("Light curve data")
 
     grid = GridOptionsBuilder.from_dataframe(table)
@@ -331,6 +335,17 @@ def _rows(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
     return value if isinstance(value, list) else []
 
 
+def arrow_safe_dataframe(rows: list[dict[str, Any]]) -> pd.DataFrame:
+    """Make heterogeneous canonical-record fields safe for Streamlit/Arrow tables."""
+    frame = pd.DataFrame(rows)
+    for column in frame.select_dtypes(include="object"):
+        frame[column] = frame[column].map(
+            lambda value: json.dumps(value, sort_keys=True) if isinstance(value, (dict, list))
+            else str(value) if value is not None else None
+        )
+    return frame
+
+
 def semantic_record_index(data: dict[str, Any]) -> list[dict[str, Any]]:
     """Adapt local demo data into SemanticRecord-shaped UI rows.
 
@@ -338,6 +353,10 @@ def semantic_record_index(data: dict[str, Any]) -> list[dict[str, Any]]:
     adapter makes the prototype obey the same portfolio → SemanticRecord
     hierarchy while its fixture remains deliberately lightweight.
     """
+    canonical_records = data.get("semantic_records")
+    if isinstance(canonical_records, list):
+        return [record for record in canonical_records if isinstance(record, dict)]
+
     records: list[dict[str, Any]] = []
 
     def add(family: str, record_id: str, fields: dict[str, Any]) -> None:
@@ -454,8 +473,9 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
     st.markdown("#### Light curve")
     detection_col, upper_col, forced_col, band_col = st.columns(4)
     detection_col.metric("Detections", len(frame))
-    upper_col.metric("Non-detections", "6 demo")
-    forced_col.metric("Forced photometry", "4 demo")
+    record_counts = data.get("record_counts", {})
+    upper_col.metric("Non-detections", record_counts.get("non_detection", "—"))
+    forced_col.metric("Forced photometry", record_counts.get("forced_photometry", "—"))
     band_col.metric("Observed bands", len(frame["band"].unique()))
 
     image_col, chart_col = st.columns([1, 5], gap="large")
@@ -500,7 +520,7 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             else:
                 st.caption("Click a detection point to inspect its SemanticRecord.")
     st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source.")
-    st.caption("Non-detection and forced-photometry counts are local demo metadata; plotted points are detections.")
+    st.caption("Counts and plotted measurements come from normalized frozen broker records.")
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
     render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}")
@@ -534,7 +554,7 @@ def render_context(data: dict[str, Any]) -> None:
     probability = host.get("associationProbability")
     fourth.metric("Association probability", f"{probability:.0%}" if isinstance(probability, (int, float)) else "—")
     st.markdown("#### Crossmatches")
-    matches = pd.DataFrame(_rows(context, "crossmatches"))
+    matches = arrow_safe_dataframe(_rows(context, "crossmatches"))
     if not matches.empty:
         st.dataframe(matches.rename(columns={"catalog": "Catalogue", "match": "Result", "separationArcsec": "Separation (arcsec)"}), use_container_width=True, hide_index=True)
     solar_system = context.get("solarSystem", {})
@@ -587,13 +607,29 @@ def render_provenance(data: dict[str, Any]) -> None:
 
 def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single") -> None:
     """Render a rich, single-object scientific portfolio from local demo data."""
+    if not data.get("lightCurve"):
+        object_name = data.get("diaObjectId") or "Object"
+        st.subheader(f"{object_name} — object portfolio")
+        st.caption("Frozen cone-search evidence · summary-level Portfolio")
+        st.info("This cone result contains a summary record only; no light-curve endpoint was captured for this locus.")
+        summary, records, provenance = st.tabs(["Summary", "Semantic Records", "Provenance"])
+        with summary:
+            st.markdown("#### Identity and sky position")
+            st.write(f"**Survey:** {data.get('survey', '—')}")
+            coordinates = data.get("coordinates", {})
+            st.write(f"**RA / Dec:** {coordinates.get('ra', '—')}°, {coordinates.get('dec', '—')}°")
+        with records:
+            render_semantic_record_browser(data, widget_key=widget_key)
+        with provenance:
+            render_provenance(data)
+        return
     frame, rejected_count = lightcurve_dataframe(data)
     if frame.empty:
         st.warning("The JSON contains no valid light-curve measurements.")
         return
     object_name = data.get("tns", {}).get("name") or data.get("diaObjectId") or "Object"
     st.subheader(f"{object_name} — object portfolio")
-    st.caption(f'diaObjectId {data.get("diaObjectId", "—")} · local demo data')
+    st.caption(f'Object ID {data.get("diaObjectId", "—")} · frozen broker evidence')
     first, last, brightest, count = st.columns(4)
     first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
     last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))
@@ -713,7 +749,7 @@ def main() -> None:
     st.caption("Time versus sci mag")
 
     try:
-        data = load_lightcurve_json(DEFAULT_DATA_PATH)
+        data = load_lightcurve_document(load_ui_portfolio(DEFAULT_PORTFOLIO))
     except (OSError, json.JSONDecodeError, ValueError) as error:
         st.error(f"Unable to display the JSON: {error}")
         st.stop()

@@ -9,46 +9,77 @@ contact a broker or require credentials.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import streamlit as st
 
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
-
-
-DATA_DIR = Path(__file__).resolve().parent / "plot" / "json"
-CANDIDATES_PATH = DATA_DIR / "search_candidates.json"
-PRESETS_PATH = DATA_DIR / "search_presets.json"
-CANDIDATE_PORTFOLIOS_PATH = DATA_DIR / "search_candidate_portfolios.json"
+from alertissimo.ui_portfolios import (
+    SEARCH_PORTFOLIOS,
+    load_antares_ztf_cone_portfolios,
+    load_ui_portfolio,
+    portfolio_to_display,
+)
 
 
 @st.cache_data
 def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Load the local candidate catalogue and form defaults for this prototype."""
-    with CANDIDATES_PATH.open(encoding="utf-8") as candidate_file:
-        candidates = json.load(candidate_file)
-    with PRESETS_PATH.open(encoding="utf-8") as preset_file:
-        presets = json.load(preset_file)
-    if not isinstance(candidates, list) or not all(isinstance(item, dict) for item in candidates):
-        raise ValueError("search_candidates.json must contain an array of objects")
-    if not isinstance(presets, dict):
-        raise ValueError("search_presets.json must contain an object")
+    """Build searchable rows exclusively from frozen, normalized Portfolios."""
+    portfolios = load_demo_candidate_portfolios()
+    candidates = []
+    for object_id, portfolio in portfolios.items():
+        points = portfolio["lightCurve"]
+        if not points:
+            continue
+        classes = portfolio["classifications"]
+        leading = classes[0] if classes else {}
+        brokers = sorted({str(row["broker"]) for row in portfolio["provenance"] if row.get("broker")})
+        candidates.append({
+            "object_id": object_id, "survey": portfolio["survey"],
+            "ra_deg": portfolio["coordinates"]["ra"], "dec_deg": portfolio["coordinates"]["dec"],
+            "first_detection": points[0]["date"], "last_detection": points[-1]["date"],
+            "detections": len(points), "latest_mag": points[-1]["magnitude"],
+            "classification": leading.get("class", "No classification"),
+            "probability": leading.get("probability"), "brokers": brokers,
+            "status": "Frozen broker evidence",
+        })
+    candidates = [candidate for candidate in candidates if isinstance(candidate["ra_deg"], (int, float)) and isinstance(candidate["dec_deg"], (int, float))]
+    if not candidates:
+        raise ValueError("The generated Portfolio fixtures contain no searchable detections")
+    first = candidates[0]
+    presets = {"id_lookup": {"survey": first["survey"], "object_id": first["object_id"]},
+               "cone_search": {"ra_deg": first["ra_deg"], "dec_deg": first["dec_deg"], "radius_arcsec": 300.0}}
     return candidates, presets
 
 
 @st.cache_data
 def load_demo_candidate_portfolios() -> dict[str, dict[str, Any]]:
-    """Load distinct local portfolio fixtures keyed by search-result Object ID."""
-    with CANDIDATE_PORTFOLIOS_PATH.open(encoding="utf-8") as portfolio_file:
-        portfolios = json.load(portfolio_file)
-    if not isinstance(portfolios, dict) or not all(
-        isinstance(object_id, str) and isinstance(portfolio, dict)
-        for object_id, portfolio in portfolios.items()
-    ):
-        raise ValueError("search_candidate_portfolios.json must contain object-ID keyed objects")
+    """Load real Portfolio fixtures and project them only for the existing layout."""
+    portfolios = {}
+    for name in SEARCH_PORTFOLIOS:
+        display = portfolio_to_display(load_ui_portfolio(name))
+        portfolios[display["diaObjectId"]] = display
     return portfolios
+
+
+@st.cache_data
+def load_frozen_cone_candidates() -> tuple[list[dict[str, Any]], dict[str, float]]:
+    """Expose every locus in the captured four-result ANTARES cone response."""
+    candidates = []
+    for raw_portfolio in load_antares_ztf_cone_portfolios():
+        display = portfolio_to_display(raw_portfolio)
+        summary = next(record["fields"] for record in display["semantic_records"] if record["family"] == "summary")
+        locus_id = str(summary["identity.antares_locus_id"])
+        candidates.append({
+            "candidate_id": locus_id, "object_id": display["diaObjectId"], "survey": "ZTF",
+            "ra_deg": display["coordinates"]["ra"], "dec_deg": display["coordinates"]["dec"],
+            "first_detection": "—", "last_detection": "—", "detections": 0, "latest_mag": None,
+            "classification": "No classification", "probability": None,
+            "brokers": ["antares"], "status": "Frozen cone result", "portfolio": display,
+        })
+    first = candidates[0]
+    return candidates, {"ra_deg": first["ra_deg"], "dec_deg": first["dec_deg"], "radius_arcsec": 300.0}
 
 
 def candidate_for_id(
@@ -80,13 +111,12 @@ def render_selected_candidate(candidate: dict[str, Any]) -> None:
     st.divider()
     st.caption(
         f'Selected search result: {candidate["object_id"]} · {candidate["survey"]} · '
-        f'{" · ".join(candidate["brokers"])}. The portfolio below uses local demo photometry.'
+        f'{" · ".join(candidate["brokers"])}. The portfolio below uses frozen broker evidence.'
     )
     portfolio_tab, dsl_tab = st.tabs(("Portfolio", "DSL"))
     with portfolio_tab:
         try:
-            data = load_demo_candidate_portfolios()[candidate["object_id"]]
-            data = load_lightcurve_document(data)
+            data = load_lightcurve_document(candidate.get("portfolio") or load_demo_candidate_portfolios()[candidate["object_id"]])
         except (KeyError, OSError, json.JSONDecodeError, ValueError) as error:
             st.error(f"Unable to load the local portfolio for this search result: {error}")
         else:
@@ -112,8 +142,8 @@ def render_id_lookup(candidates: list[dict[str, Any]], presets: dict[str, Any]) 
         candidate = candidate_for_id(candidates, object_id, survey)
         if candidate is None:
             st.session_state.pop("id_lookup_result", None)
-            st.warning("No local demo candidate matches that survey and Object ID.")
-            st.caption("Try the prefilled example, or use cone search to discover nearby demo candidates.")
+            st.warning("No frozen fixture matches that survey and Object ID.")
+            st.caption("Try the prefilled example, or use cone search to discover nearby fixture candidates.")
             return
         st.session_state["id_lookup_result"] = candidate["object_id"]
 
@@ -136,21 +166,26 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
         radius_arcsec = right.number_input("Radius (arcsec)", min_value=1.0, value=float(presets["cone_search"]["radius_arcsec"]), step=10.0)
         submitted = st.form_submit_button("Search cone", type="primary")
     if submitted:
-        matches = cone_candidates(candidates, ra_deg, dec_deg, radius_arcsec)
+        cone_candidates_data, _ = load_frozen_cone_candidates()
+        matches = cone_candidates(candidates + cone_candidates_data, ra_deg, dec_deg, radius_arcsec)
         st.session_state["cone_search_results"] = matches
 
     matches = st.session_state.get("cone_search_results")
     if matches is None:
         return
     if not matches:
-        st.warning("No local demo candidates fall inside this cone.")
-        st.caption("Increase the radius or try RA 150.12000°, Dec 2.21500°, radius 300 arcsec.")
+        st.warning("No frozen fixture candidates fall inside this cone.")
+        st.caption("Increase the radius or use the prefilled coordinates.")
         return
-    st.success(f"{len(matches)} local demo candidate(s) found.")
+    st.success(f"{len(matches)} fixture candidate(s) found.")
     frame = pd.DataFrame(matches)[[
         "object_id", "survey", "separation_arcsec", "last_detection", "detections",
         "latest_mag", "classification", "probability", "status", "brokers",
-    ]].rename(columns={
+    ]]
+    frame["brokers"] = frame["brokers"].map(
+        lambda brokers: " · ".join(map(str, brokers)) if isinstance(brokers, list) else str(brokers)
+    )
+    frame = frame.rename(columns={
         "object_id": "Object ID", "survey": "Survey", "separation_arcsec": "Separation (arcsec)",
         "last_detection": "Last detection", "detections": "Detections", "latest_mag": "Latest mag",
         "classification": "Leading class", "probability": "Probability", "status": "Behaviour",
@@ -162,8 +197,18 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
         hide_index=True,
         column_config={"Probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0%")},
     )
-    selected_id = st.selectbox("Inspect a candidate", [candidate["object_id"] for candidate in matches])
-    render_selected_candidate(next(candidate for candidate in matches if candidate["object_id"] == selected_id))
+    selected_id = st.selectbox(
+        "Inspect a candidate",
+        [candidate.get("candidate_id", candidate["object_id"]) for candidate in matches],
+        format_func=lambda candidate_id: next(
+            f'{candidate["object_id"]} · {candidate.get("candidate_id", candidate["object_id"])}'
+            for candidate in matches if candidate.get("candidate_id", candidate["object_id"]) == candidate_id
+        ),
+    )
+    render_selected_candidate(next(
+        candidate for candidate in matches
+        if candidate.get("candidate_id", candidate["object_id"]) == selected_id
+    ))
 
 
 def render_dsl_entry(
@@ -188,7 +233,7 @@ def render_dsl_entry(
 def main() -> None:
     st.set_page_config(page_title="Alertissimo · Find a candidate", page_icon="🔭", layout="wide")
     st.title("Start a transient investigation")
-    st.caption("Local UI prototype — no broker request is made from this page.")
+    st.caption("Local UI prototype — rendered from frozen broker evidence; no broker request is made.")
     try:
         candidates, presets = load_demo_search_data()
     except (OSError, ValueError, json.JSONDecodeError) as error:
@@ -204,7 +249,8 @@ def main() -> None:
     if mode == "Object ID":
         render_id_lookup(candidates, presets)
     elif mode == "Cone search":
-        render_cone_search(candidates, presets)
+        _, cone_presets = load_frozen_cone_candidates()
+        render_cone_search(candidates, {**presets, "cone_search": cone_presets})
     else:
         render_dsl_entry()
 
