@@ -236,7 +236,7 @@ mappings:
   - sso#i:isdiffpos
   - latests#i:isdiffpos
   - anomaly#i:isdiffpos
-  detection@ztf:fink.photometry.{filter}.limit.upper_limit:
+  detection@ztf:fink.photometry.{filter}.upper_limit:
   - objects#d:tag
   detection@ztf:fink.image_metrics.nbad_pixels:
   - objects#i:nbad
@@ -351,10 +351,10 @@ mappings:
   - latests#v:constellation
   - sso#v:constellation
   - anomaly#v:constellation
-  summary@ztf:fink.photometry.{filter}.mag.rate:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate:
   - objects#v:rate
   - latests#v:rate
-  summary@ztf:fink.photometry.{filter}.mag.rate_error:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error:
   - objects#v:sigma(rate)
   - latests#v:sigma(rate)
   classification@fink.best.class:
@@ -475,11 +475,22 @@ mappings:
   - sso#i:nmtchps
   - latests#i:nmtchps
   - anomaly#i:nmtchps
-  lightcurve@fink.g.feature_vector:
+  lightcurve@fink.feature_vector_points.time.mjd:
+  - objects#i:jd
+  - sso#i:jd
+  - latests#i:jd
+  - anomaly#i:jd
+  lightcurve@fink.feature_vector_points.identity.source_id:
+  - objects#i:candid
+  - sso#i:candid
+  - latests#i:candid
+  - anomaly#i:candid
+  lightcurve@fink.feature_vector_points.g.value:
+  - objects#d:lc_features_g
   - sso#d:lc_features_g
   - latests#d:lc_features_g
   - anomaly#d:lc_features_g
-  lightcurve@fink.r.feature_vector:
+  lightcurve@fink.feature_vector_points.r.value:
   - objects#d:lc_features_r
   - sso#d:lc_features_r
   - latests#d:lc_features_r
@@ -512,16 +523,16 @@ mappings:
   - sso#i:ssmagnr
   - latests#i:ssmagnr
   - anomaly#i:ssmagnr
-  summary@ztf:fink.color.g-r.diff:
+  lightcurve@fink.color_points.color.g-r.diff:
   - objects#v:g-r
   - latests#v:g-r
-  summary@ztf:fink.color.g-r.error:
+  lightcurve@fink.color_points.color.g-r.error:
   - objects#v:sigma(g-r)
   - latests#v:sigma(g-r)
-  summary@ztf:fink.color.g-r.rate:
+  lightcurve@fink.color_points.color.g-r.rate:
   - objects#v:rate(g-r)
   - latests#v:rate(g-r)
-  summary@ztf:fink.color.g-r.rate_error:
+  lightcurve@fink.color_points.color.g-r.rate_error:
   - objects#v:sigma(rate(g-r))
   - latests#v:sigma(rate(g-r))
   survey@fink.exposure_count:
@@ -569,7 +580,7 @@ mappings:
   - sso#i:sgscore1
   - latests#i:sgscore1
   - anomaly#i:sgscore1
-  summary@ztf:fink.photometry.{filter}:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}:
   - objects#i:fid
   - latests#i:fid
   crossmatch@tns:fink.classification.best.class:
@@ -600,29 +611,6 @@ mappings:
   - sso#i:maggaia
   - latests#i:maggaia
   - anomaly#i:maggaia
-  lightcurve@fink.{filter}.rate_lower_percentile:
-  - objects#d:lower_rate
-  - sso#d:lower_rate
-  - latests#d:lower_rate
-  - anomaly#d:lower_rate
-  lightcurve@fink.{filter}.rate_upper_percentile:
-  - objects#d:upper_rate
-  - sso#d:upper_rate
-  - latests#d:upper_rate
-  - anomaly#d:upper_rate
-  lightcurve@fink.{filter}.delta_time_rate:
-  - sso#d:delta_time
-  - latests#d:delta_time
-  - anomaly#d:delta_time
-  lightcurve@fink.{filter}.from_upper_limit:
-  - sso#d:from_upper
-  - latests#d:from_upper
-  - anomaly#d:from_upper
-  lightcurve@fink.{filter}:
-  - objects#i:fid
-  - sso#i:fid
-  - latests#i:fid
-  - anomaly#i:fid
   survey@fink.filter_counts:
   - statistics#basic:n_g
   - statistics#basic:n_r
@@ -752,22 +740,6 @@ mappings:
   - statistics#class:simbad_tot
   survey@fink.selection.simbad_extragalactic_host.record_count:
   - statistics#class:simbad_gal
-  lightcurve@fink.detection_count:
-  - objects#d:nalerthist
-  - conesearch#d:nalerthist
-  - sso#d:nalerthist
-  - latests#d:nalerthist
-  - anomaly#d:nalerthist
-  lightcurve@fink.{filter}.magnitude_rate:
-  - objects#d:mag_rate
-  - sso#d:mag_rate
-  - latests#d:mag_rate
-  - anomaly#d:mag_rate
-  lightcurve@fink.{filter}.magnitude_rate_error:
-  - objects#d:sigma_rate
-  - sso#d:sigma_rate
-  - latests#d:sigma_rate
-  - anomaly#d:sigma_rate
   classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
   - objects#d:blazar_stats_cdf_quantile
   - sso#d:blazar_stats_cdf_quantile
@@ -793,6 +765,82 @@ mappings:
   - sso#d:blazar_stats_robustness_high
   - latests#d:blazar_stats_robustness_high
   - anomaly#d:blazar_stats_robustness_high
+  lightcurve@fink.magnitude_rate_points.time.mjd:
+  - objects#i:jd
+  - latests#i:jd
+  lightcurve@fink.magnitude_rate_points.identity.source_id:
+  - objects#i:candid
+  - latests#i:candid
+  lightcurve@fink.color_points.time.mjd:
+  - objects#i:jd
+  - latests#i:jd
+  lightcurve@fink.color_points.identity.source_id:
+  - objects#i:candid
+  - latests#i:candid
+  lightcurve@ztf:fink.points.photometry.{filter}:
+  - objects#i:fid
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.mag:
+  - objects#i:magpsf
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.mag.error:
+  - objects#i:sigmapsf
+  lightcurve@ztf:fink.points.time.mjd:
+  - objects#i:jd
+  lightcurve@ztf:fink.points.photometry.{filter}.limit.mag:
+  - objects#i:diffmaglim
+  lightcurve@ztf:fink.points.photometry.{filter}.limit.mag_offset_from_limit:
+  - objects#i:magfromlim
+  lightcurve@ztf:fink.points.time.exposure:
+  - objects#i:exptime
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.mag:
+  - objects#i:magap
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.large.mag:
+  - objects#i:magapbig
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.mag.error:
+  - objects#i:sigmagap
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.large.mag.error:
+  - objects#i:sigmagapbig
+  lightcurve@ztf:fink.points.photometry.{filter}.mag_minus_psf:
+  - objects#i:magdiff
+  lightcurve@ztf:fink.points.quality.real_bogus:
+  - objects#i:drb
+  lightcurve@ztf:fink.points.quality.rf_real_bogus:
+  - objects#i:rb
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.fit_chi2:
+  - objects#i:chipsf
+  lightcurve@ztf:fink.points.quality.real_bogus.version:
+  - objects#i:drbversion
+  lightcurve@ztf:fink.points.quality.rf_real_bogus.version:
+  - objects#i:rbversion
+  lightcurve@ztf:fink.points.identity.field_id:
+  - objects#i:field
+  lightcurve@ztf:fink.points.identity.night_id:
+  - objects#i:nid
+  lightcurve@ztf:fink.points.provenance.producer.program_id:
+  - objects#i:programid
+  lightcurve@ztf:fink.points.provenance.producer.program_pi:
+  - objects#i:programpi
+  lightcurve@ztf:fink.points.provenance.channel.name:
+  - objects#i:publisher
+  lightcurve@ztf:fink.points.provenance.channel.version:
+  - objects#i:fink_broker_version
+  lightcurve@ztf:fink.points.provenance.producer.schema_version:
+  - objects#i:schemavsn
+  lightcurve@ztf:fink.points.provenance.producer.pipeline_id:
+  - objects#i:pid
+  lightcurve@ztf:fink.points.provenance.producer.reference_image_id:
+  - objects#i:rfid
+  lightcurve@ztf:fink.points.provenance.producer.diffim_filename:
+  - objects#i:pdiffimfilename
+  lightcurve@ztf:fink.points.provenance.producer.too_flag:
+  - objects#i:tooflag
+  lightcurve@ztf:fink.points.provenance.producer.rcid:
+  - objects#i:rcid
+  lightcurve@ztf:fink.points.photometry.{filter}.upper_limit:
+  - objects#d:tag
+  lightcurve@ztf:fink.points.identity.source_id:
+  - objects#i:candid
+  lightcurve@ztf:fink.points.provenance.channel.science_version:
+  - objects#i:fink_science_version
 transforms:
   survey@fink.filter_counts:
     statistics#basic:n_g:
@@ -1296,40 +1344,6 @@ transforms:
     statistics#class:simbad_gal:
       type: to_int
       skip_null: true
-  lightcurve@fink.detection_count:
-    objects#d:nalerthist:
-      type: to_int
-      skip_null: true
-    conesearch#d:nalerthist:
-      type: to_int
-      skip_null: true
-    sso#d:nalerthist:
-      type: to_int
-      skip_null: true
-    latests#d:nalerthist:
-      type: to_int
-      skip_null: true
-    anomaly#d:nalerthist:
-      type: to_int
-      skip_null: true
-  lightcurve@fink.{filter}.magnitude_rate:
-    objects#d:mag_rate:
-      skip_null: true
-    sso#d:mag_rate:
-      skip_null: true
-    latests#d:mag_rate:
-      skip_null: true
-    anomaly#d:mag_rate:
-      skip_null: true
-  lightcurve@fink.{filter}.magnitude_rate_error:
-    objects#d:sigma_rate:
-      skip_null: true
-    sso#d:sigma_rate:
-      skip_null: true
-    latests#d:sigma_rate:
-      skip_null: true
-    anomaly#d:sigma_rate:
-      skip_null: true
   classification@fink.assessment.blazar_extreme_state_cdf_quantile.value:
     objects#d:blazar_stats_cdf_quantile:
       type: value_map
@@ -1505,7 +1519,7 @@ transforms:
         '3': i
       default: null
       skip_null: true
-  summary@ztf:fink.photometry.{filter}:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}:
     objects#i:fid:
       type: value_map
       map:
@@ -3023,7 +3037,7 @@ transforms:
         '0': false
       default: null
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.limit.upper_limit:
+  detection@ztf:fink.photometry.{filter}.upper_limit:
     objects#d:tag:
       type: value_map
       map:
@@ -3196,12 +3210,12 @@ transforms:
       skip_null: true
     anomaly#v:constellation:
       skip_null: true
-  summary@ztf:fink.photometry.{filter}.mag.rate:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate:
     objects#v:rate:
       skip_null: true
     latests#v:rate:
       skip_null: true
-  summary@ztf:fink.photometry.{filter}.mag.rate_error:
+  lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error:
     objects#v:sigma(rate):
       skip_null: true
     latests#v:sigma(rate):
@@ -3222,43 +3236,70 @@ transforms:
     sso#sso_number:
       type: to_int
       skip_null: true
-  lightcurve@fink.g.feature_vector:
+  lightcurve@fink.feature_vector_points.g.value:
+    objects#d:lc_features_g:
+      type: array_decode
+      skip_null: true
+      skip_empty: true
     sso#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     latests#d:lc_features_g:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     anomaly#d:lc_features_g:
+      type: array_decode
       skip_null: true
-  lightcurve@fink.r.feature_vector:
+      skip_empty: true
+  lightcurve@fink.feature_vector_points.r.value:
     objects#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     sso#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     latests#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
     anomaly#d:lc_features_r:
+      type: array_decode
       skip_null: true
+      skip_empty: true
+  lightcurve@fink.feature_vector_points.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
+    sso#i:jd:
+      type: jd_to_mjd
+    latests#i:jd:
+      type: jd_to_mjd
+    anomaly#i:jd:
+      type: jd_to_mjd
   detection@ztf:fink.provenance.channel.science_version:
     objects#i:fink_science_version:
       skip_null: true
     anomaly#i:fink_science_version:
       skip_null: true
-  summary@ztf:fink.color.g-r.diff:
+  lightcurve@fink.color_points.color.g-r.diff:
     objects#v:g-r:
       skip_null: true
     latests#v:g-r:
       skip_null: true
-  summary@ztf:fink.color.g-r.error:
+  lightcurve@fink.color_points.color.g-r.error:
     objects#v:sigma(g-r):
       skip_null: true
     latests#v:sigma(g-r):
       skip_null: true
-  summary@ztf:fink.color.g-r.rate:
+  lightcurve@fink.color_points.color.g-r.rate:
     objects#v:rate(g-r):
       skip_null: true
     latests#v:rate(g-r):
       skip_null: true
-  summary@ztf:fink.color.g-r.rate_error:
+  lightcurve@fink.color_points.color.g-r.rate_error:
     objects#v:sigma(rate(g-r)):
       skip_null: true
     latests#v:sigma(rate(g-r)):
@@ -3497,54 +3538,43 @@ transforms:
         -999: null
         -1: null
       skip_null: true
-  lightcurve@fink.{filter}.rate_lower_percentile:
-    objects#d:lower_rate:
+  lightcurve@fink.magnitude_rate_points.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
       skip_null: true
-    sso#d:lower_rate:
+    latests#i:jd:
+      type: jd_to_mjd
       skip_null: true
-    latests#d:lower_rate:
-      skip_null: true
-    anomaly#d:lower_rate:
-      skip_null: true
-  lightcurve@fink.{filter}.rate_upper_percentile:
-    objects#d:upper_rate:
-      skip_null: true
-    sso#d:upper_rate:
-      skip_null: true
-    latests#d:upper_rate:
-      skip_null: true
-    anomaly#d:upper_rate:
-      skip_null: true
-  lightcurve@fink.{filter}.delta_time_rate:
-    sso#d:delta_time:
-      skip_null: true
-    latests#d:delta_time:
-      skip_null: true
-    anomaly#d:delta_time:
-      skip_null: true
-  lightcurve@fink.{filter}.from_upper_limit:
-    sso#d:from_upper:
+  lightcurve@fink.magnitude_rate_points.identity.source_id:
+    objects#i:candid:
       type: value_map
       map:
-        true: true
-        false: null
-      default: null
+        -1: null
       skip_null: true
-    latests#d:from_upper:
+    latests#i:candid:
       type: value_map
       map:
-        true: true
-        false: null
-      default: null
+        -1: null
       skip_null: true
-    anomaly#d:from_upper:
+  lightcurve@fink.color_points.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
+      skip_null: true
+    latests#i:jd:
+      type: jd_to_mjd
+      skip_null: true
+  lightcurve@fink.color_points.identity.source_id:
+    objects#i:candid:
       type: value_map
       map:
-        true: true
-        false: null
-      default: null
+        -1: null
       skip_null: true
-  lightcurve@fink.{filter}:
+    latests#i:candid:
+      type: value_map
+      map:
+        -1: null
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}:
     objects#i:fid:
       type: value_map
       map:
@@ -3556,36 +3586,105 @@ transforms:
         '3': i
       default: null
       skip_null: true
-    sso#i:fid:
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.mag:
+    objects#i:magpsf:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.mag.error:
+    objects#i:sigmapsf:
+      skip_null: true
+  lightcurve@ztf:fink.points.time.mjd:
+    objects#i:jd:
+      type: jd_to_mjd
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.limit.mag:
+    objects#i:diffmaglim:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.limit.mag_offset_from_limit:
+    objects#i:magfromlim:
+      skip_null: true
+  lightcurve@ztf:fink.points.time.exposure:
+    objects#i:exptime:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.mag:
+    objects#i:magap:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.large.mag:
+    objects#i:magapbig:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.mag.error:
+    objects#i:sigmagap:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.aperture.large.mag.error:
+    objects#i:sigmagapbig:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.mag_minus_psf:
+    objects#i:magdiff:
+      skip_null: true
+  lightcurve@ztf:fink.points.quality.real_bogus:
+    objects#i:drb:
+      skip_null: true
+  lightcurve@ztf:fink.points.quality.rf_real_bogus:
+    objects#i:rb:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.psf.fit_chi2:
+    objects#i:chipsf:
+      skip_null: true
+  lightcurve@ztf:fink.points.quality.real_bogus.version:
+    objects#i:drbversion:
+      skip_null: true
+  lightcurve@ztf:fink.points.quality.rf_real_bogus.version:
+    objects#i:rbversion:
+      skip_null: true
+  lightcurve@ztf:fink.points.identity.field_id:
+    objects#i:field:
+      skip_null: true
+  lightcurve@ztf:fink.points.identity.night_id:
+    objects#i:nid:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.program_id:
+    objects#i:programid:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.program_pi:
+    objects#i:programpi:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.channel.name:
+    objects#i:publisher:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.channel.version:
+    objects#i:fink_broker_version:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.schema_version:
+    objects#i:schemavsn:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.pipeline_id:
+    objects#i:pid:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.reference_image_id:
+    objects#i:rfid:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.diffim_filename:
+    objects#i:pdiffimfilename:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.too_flag:
+    objects#i:tooflag:
+      skip_null: true
+  lightcurve@ztf:fink.points.provenance.producer.rcid:
+    objects#i:rcid:
+      skip_null: true
+  lightcurve@ztf:fink.points.photometry.{filter}.upper_limit:
+    objects#d:tag:
       type: value_map
       map:
-        1: g
-        2: r
-        3: i
-        '1': g
-        '2': r
-        '3': i
+        upperlim: true
+        valid: false
       default: null
       skip_null: true
-    latests#i:fid:
+  lightcurve@ztf:fink.points.identity.source_id:
+    objects#i:candid:
       type: value_map
       map:
-        1: g
-        2: r
-        3: i
-        '1': g
-        '2': r
-        '3': i
-      default: null
+        -1: null
       skip_null: true
-    anomaly#i:fid:
-      type: value_map
-      map:
-        1: g
-        2: r
-        3: i
-        '1': g
-        '2': r
-        '3': i
-      default: null
+  lightcurve@ztf:fink.points.provenance.channel.science_version:
+    objects#i:fink_science_version:
       skip_null: true

@@ -1,0 +1,66 @@
+"""Public declarative Alertissimo DSL surface and validation layers."""
+
+from .capability_validation import (
+    SurfaceCapabilityCheck,
+    SurfaceCapabilityEvidence,
+    SurfaceCapabilityReport,
+    SurfaceCapabilityStatus,
+    SurfaceCapabilityValidationError,
+    validate_surface_capabilities,
+)
+from .parser import grammar_text, parse_surface_script
+from .surface import (
+    AngularRadius,
+    CandidateSet,
+    DSLParseError,
+    Duration,
+    FilterClause,
+    InsideClause,
+    LatestClause,
+    MatchClause,
+    OrderByClause,
+    RankedByClause,
+    RequirementClause,
+    SurfaceClause,
+    SurfaceScript,
+    WhereClause,
+    WithinClause,
+)
+from .validation import (
+    SurfaceValidationIssue,
+    SurfaceValidationReport,
+    ValidationSeverity,
+    resolve_record_type,
+    validate_surface_semantics,
+)
+
+__all__ = (
+    "AngularRadius",
+    "CandidateSet",
+    "DSLParseError",
+    "Duration",
+    "FilterClause",
+    "InsideClause",
+    "LatestClause",
+    "MatchClause",
+    "OrderByClause",
+    "RankedByClause",
+    "RequirementClause",
+    "SurfaceCapabilityCheck",
+    "SurfaceCapabilityEvidence",
+    "SurfaceCapabilityReport",
+    "SurfaceCapabilityStatus",
+    "SurfaceCapabilityValidationError",
+    "SurfaceClause",
+    "SurfaceScript",
+    "SurfaceValidationIssue",
+    "SurfaceValidationReport",
+    "ValidationSeverity",
+    "WhereClause",
+    "WithinClause",
+    "grammar_text",
+    "parse_surface_script",
+    "resolve_record_type",
+    "validate_surface_capabilities",
+    "validate_surface_semantics",
+)

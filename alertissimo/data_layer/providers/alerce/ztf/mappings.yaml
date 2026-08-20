@@ -322,6 +322,100 @@ mappings:
   - query_probabilities#class_name
   classification@{producer}:alerce.assessment.{output}.probability:
   - query_probabilities#probability
+  lightcurve@ztf:alerce.points.photometry.{filter}:
+  - query_lightcurve.detections#fid
+  - query_lightcurve.non_detections#fid
+  lightcurve@ztf:alerce.points.identity.source_id:
+  - query_lightcurve.detections#measurement_id
+  lightcurve@ztf:alerce.points.identity.alert_id:
+  - query_lightcurve.detections#candid
+  lightcurve@ztf:alerce.points.time.mjd:
+  - query_lightcurve.detections#mjd
+  - query_lightcurve.non_detections#mjd
+  lightcurve@ztf:alerce.points.provenance.processing_id:
+  - query_lightcurve.detections#pid
+  lightcurve@ztf:alerce.points.provenance.night_id:
+  - query_lightcurve.detections#nid
+  lightcurve@ztf:alerce.points.provenance.reference_image_id:
+  - query_lightcurve.detections#rfid
+  lightcurve@ztf:alerce.points.provenance.producer.survey_id:
+  - query_lightcurve.detections#tid
+  - query_lightcurve.non_detections#tid
+  lightcurve@ztf:alerce.points.quality.corrected:
+  - query_lightcurve.detections#corrected
+  lightcurve@ztf:alerce.points.quality.dubious:
+  - query_lightcurve.detections#dubious
+  lightcurve@ztf:alerce.points.photometry.{filter}.limit.mag:
+  - query_lightcurve.detections#diffmaglim
+  - query_lightcurve.non_detections#diffmaglim
+  lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag:
+  - query_lightcurve.detections#magpsf
+  lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag.error:
+  - query_lightcurve.detections#sigmapsf
+  lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag.corrected:
+  - query_lightcurve.detections#magpsf_corr
+  lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag.corrected.error:
+  - query_lightcurve.detections#sigmapsf_corr
+  lightcurve@ztf:alerce.points.photometry.{filter}.psf.mag.corrected.extended_component_error:
+  - query_lightcurve.detections#sigmapsf_corr_ext
+  lightcurve@ztf:alerce.points.photometry.{filter}.aperture.mag:
+  - query_lightcurve.detections#magap
+  lightcurve@ztf:alerce.points.photometry.{filter}.aperture.mag.error:
+  - query_lightcurve.detections#sigmagap
+  lightcurve@ztf:alerce.points.photometry.{filter}.aperture.large.mag:
+  - query_lightcurve.detections#magapbig
+  lightcurve@ztf:alerce.points.photometry.{filter}.aperture.large.mag.error:
+  - query_lightcurve.detections#sigmagapbig
+  lightcurve@ztf:alerce.points.provenance.producer.program.field:
+  - query_lightcurve.detections#field
+  lightcurve@ztf:alerce.points.provenance.producer.program.id:
+  - query_lightcurve.detections#programid
+  lightcurve@ztf:alerce.points.quality.rf_real_bogus:
+  - query_lightcurve.detections#rb
+  lightcurve@ztf:alerce.points.quality.rf_real_bogus.version:
+  - query_lightcurve.detections#rbversion
+  lightcurve@ztf:alerce.points.quality.real_bogus:
+  - query_lightcurve.detections#drb
+  lightcurve@ztf:alerce.points.quality.real_bogus.version:
+  - query_lightcurve.detections#drbversion
+  lightcurve@ztf:alerce.forced_photometry_points.identity.source_id:
+  - query_forced_photometry#measurement_id
+  lightcurve@ztf:alerce.forced_photometry_points.identity.alert_id:
+  - query_forced_photometry#candid
+  lightcurve@ztf:alerce.forced_photometry_points.time.mjd:
+  - query_forced_photometry#mjd
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.processing_id:
+  - query_forced_photometry#pid
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.reference_image_id:
+  - query_forced_photometry#rfid
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.producer.survey_id:
+  - query_forced_photometry#tid
+  lightcurve@ztf:alerce.forced_photometry_points.quality.corrected:
+  - query_forced_photometry#corrected
+  lightcurve@ztf:alerce.forced_photometry_points.quality.dubious:
+  - query_forced_photometry#dubious
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.producer.program.field:
+  - query_forced_photometry#field
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.producer.program.id:
+  - query_forced_photometry#programid
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}:
+  - query_forced_photometry#fid
+  lightcurve@ztf:alerce.forced_photometry_points.provenance.processing_status:
+  - query_forced_photometry#procstatus
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.limit.mag:
+  - query_forced_photometry#diffmaglim
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag:
+  - query_forced_photometry#mag
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag.error:
+  - query_forced_photometry#e_mag
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag.corrected:
+  - query_forced_photometry#mag_corr
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag.corrected.error:
+  - query_forced_photometry#e_mag_corr
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}.mag.corrected.extended_component_error:
+  - query_forced_photometry#e_mag_corr_ext
+  lightcurve@ztf:alerce.forced_photometry_points.time.exposure:
+  - query_forced_photometry#exptime
 transforms:
   detection@ztf:alerce.photometry.{filter}:
     query_detections#fid:
@@ -423,3 +517,35 @@ transforms:
         -1: false
       default: null
       skip_null: true
+  lightcurve@ztf:alerce.points.photometry.{filter}:
+    query_lightcurve.detections#fid:
+      type: value_map
+      map:
+        1: g
+        '1': g
+        2: r
+        '2': r
+        3: i
+        '3': i
+      default: unknown
+    query_lightcurve.non_detections#fid:
+      type: value_map
+      map:
+        1: g
+        '1': g
+        2: r
+        '2': r
+        3: i
+        '3': i
+      default: unknown
+  lightcurve@ztf:alerce.forced_photometry_points.forced_photometry.{filter}:
+    query_forced_photometry#fid:
+      type: value_map
+      map:
+        1: g
+        '1': g
+        2: r
+        '2': r
+        3: i
+        '3': i
+      default: unknown

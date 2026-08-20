@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Iterator, Mapping
 from decimal import Decimal, InvalidOperation
@@ -26,6 +27,10 @@ from alertissimo.data_layer.semantic_model.validation import (
 )
 
 from .capability_graph import split_semantic_path
+from .intrinsic_array_collector import (
+    IntrinsicArrayCollectionError,
+    collect_intrinsic_array_records,
+)
 from .mapping_schema import validate_mapping_file
 from .payload_paths import RawFieldMissing, extract_raw_field, resolve_payload_items
 
@@ -54,6 +59,7 @@ def _semantic_identifier(value: Any) -> str:
     """Normalize a payload label for use in a semantic path segment."""
     normalized = re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
     return normalized or "unknown"
+
 
 _PLACEHOLDER_PATTERN = re.compile(r"\{([^{}]+)\}")
 
@@ -143,6 +149,54 @@ def new_internal_record_id() -> InternalRecordId:
     return InternalRecordId(f"record:{uuid4().hex}")
 
 
+def _is_empty_mapping_value(value: Any) -> bool:
+    """Return whether a value is an explicitly empty scalar/container payload."""
+
+    return isinstance(
+        value,
+        (str, bytes, bytearray, list, tuple, dict, set, frozenset),
+    ) and len(value) == 0
+
+
+def _should_skip_mapping_value(
+    value: Any, specification: Mapping[str, Any] | None
+) -> bool:
+    if not specification:
+        return False
+    if value is None and specification.get("skip_null", False):
+        return True
+    if specification.get("skip_empty", False) and _is_empty_mapping_value(value):
+        return True
+    return False
+
+
+def _decode_serialized_array(value: Any) -> list[Any]:
+    """Decode JSON- or brace-delimited array text into a structured list.
+
+    Some upstream stores serialize arrays using JSON brackets while others emit
+    brace-delimited array text. Non-finite ``NaN``/``Infinity`` elements are
+    unavailable numeric features and normalize to ``None`` so downstream JSON
+    remains standards-compliant.
+    """
+
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    if not isinstance(value, (str, bytes, bytearray)):
+        raise TypeError(f"cannot decode serialized array from {value!r}")
+    if isinstance(value, (bytes, bytearray)):
+        value = bytes(value).decode("utf-8")
+    text = value.strip()
+    if text.startswith("{") and text.endswith("}"):
+        text = f"[{text[1:-1]}]"
+    try:
+        decoded = json.loads(text, parse_constant=lambda _: None)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"cannot decode serialized array {value!r}") from error
+    if not isinstance(decoded, list):
+        raise ValueError(f"serialized array did not decode to a list: {value!r}")
+    return decoded
+
+
 def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any:
     if not specification:
         return value
@@ -158,6 +212,8 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
         return value - 2400000.5
     if value is None:
         return None
+    if transform_type == "array_decode":
+        return _decode_serialized_array(value)
     if transform_type == "scale":
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise TypeError(f"cannot scale non-numeric value {value!r}")
@@ -220,7 +276,7 @@ def build_portfolios_from_execution(
     records_by_object: dict[Any, list[SemanticRecord]] = {}
     make_record_id = record_id_factory or new_internal_record_id
 
-    # Search endpoints may return one-shot iterators.  Materialize once so all
+    # Search endpoints may return one-shot iterators. Materialize once so all
     # payload definitions in this build see the identical finite result set.
     payload = execution.payload
     if isinstance(payload, Iterator):
@@ -289,17 +345,13 @@ def build_portfolios_from_execution(
                         value = extract_raw_field(item.value, raw_field)
                     except RawFieldMissing:
                         continue
-                    # Some delivery surfaces include explicit nulls for fields that
-                    # are not measurements (notably Fink upper-limit history rows).
-                    # Skip those before arithmetic transforms such as JD-to-MJD.
-                    if value is None and specification and specification.get(
-                        "skip_null", False
-                    ):
+                    # Skip explicit null/empty sentinels both before and after
+                    # transforms. The second check handles transforms that turn
+                    # a serialized value into an empty structured value.
+                    if _should_skip_mapping_value(value, specification):
                         continue
                     value = _apply_transform(value, specification)
-                    if value is None and specification and specification.get(
-                        "skip_null", False
-                    ):
+                    if _should_skip_mapping_value(value, specification):
                         continue
                     if object_key is not None:
                         if object_key in composed_entries and composed_entries[object_key] != value:
@@ -342,6 +394,16 @@ def build_portfolios_from_execution(
                         ),
                     )
                 )
+
+    try:
+        records_by_object = {
+            partition_key: list(collect_intrinsic_array_records(records))
+            for partition_key, records in records_by_object.items()
+        }
+    except IntrinsicArrayCollectionError as error:
+        raise PortfolioBuildError(
+            f"cannot collect intrinsic semantic arrays: {error}"
+        ) from error
 
     if internal_portfolio_id is not None and len(records_by_object) != 1:
         raise PortfolioBuildError(

@@ -324,3 +324,106 @@ unmapped:
     reason: structural_selection_multiplicity
     note: This is a second Gaia DR1 counterpart selected by brightness. The flat-row builder
       cannot emit an independent same-producer match, and "bright" is not a producer.
+- objects#d:mag_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate
+- objects#d:sigma_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error
+- objects#d:lower_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_lower_percentile
+- objects#d:upper_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_upper_percentile
+- sso#d:mag_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate
+- sso#d:sigma_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error
+- sso#d:lower_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_lower_percentile
+- sso#d:upper_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_upper_percentile
+- latests#d:mag_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate
+- latests#d:sigma_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error
+- latests#d:lower_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_lower_percentile
+- latests#d:upper_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_upper_percentile
+- anomaly#d:mag_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate
+- anomaly#d:sigma_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_error
+- anomaly#d:lower_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_lower_percentile
+- anomaly#d:upper_rate:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.photometry.{filter}.mag.rate_upper_percentile
+- sso#d:delta_time:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.time.delta
+- sso#d:from_upper:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.from_upper_limit
+- latests#d:delta_time:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.time.delta
+- latests#d:from_upper:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.from_upper_limit
+- anomaly#d:delta_time:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.time.delta
+- anomaly#d:from_upper:
+    reason: structural_multiplicity
+    note: Distinct Fink fast-transient magnitude-rate estimate is intentionally deferred until repeated rate-point collection can preserve it independently from query-time v:rate.
+    candidate_meaning: lightcurve@fink.magnitude_rate_points.from_upper_limit
+- objects#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- conesearch#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- latests#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- anomaly#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.
+- sso#d:nalerthist:
+    reason: semantic_scope_mismatch
+    note: Per-alert cumulative detection count (current+history), not a whole-lightcurve detection count.

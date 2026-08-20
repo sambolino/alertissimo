@@ -249,7 +249,14 @@ def test_probability_row_is_classifier_produced_assessment_not_computed_best():
 
 def test_lightcurve_delegates_all_three_branches_without_edges():
     p=build("query_lightcurve",fixture("query_lightcurve"))
-    assert len(p.records)==26 and {r.internal_source.payload_key for r in p.records}=={"query_lightcurve.detections","query_lightcurve.forced_photometry"}
+    detections=[r for r in p.records if r.semantic_type=="detection@lsst:alerce"]
+    lightcurves=[r for r in p.records if r.semantic_type=="lightcurve@lsst:alerce"]
+    assert len(detections)==26
+    assert len(lightcurves)==1
+    assert {r.internal_source.payload_key for r in detections}=={"query_lightcurve.detections","query_lightcurve.forced_photometry"}
+    assert lightcurves[0].internal_source is None
+    assert len(lightcurves[0].fields["points"])==16
+    assert len(lightcurves[0].fields["forced_photometry_points"])==10
     assert p.edges==()
 
 def test_unsupported_methods_have_no_active_payload_definitions():

@@ -25,12 +25,13 @@ MAPPING_KEYS = {
 PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter", "object_partition"}
 OBJECT_PARTITION_KEYS = {"mode", "field"}
 TRANSFORM_KEYS = {
-    "type", "map", "default", "factor", "skip_null", "note", "object_key",
+    "type", "map", "default", "factor", "skip_null", "skip_empty", "note", "object_key",
 }
 TRANSFORM_TYPES = {
     "boolean_not",
     "value_map",
     "jd_to_mjd",
+    "array_decode",
     "to_string_strip",
     "to_float",
     "to_int",
@@ -314,10 +315,9 @@ def validate_mapping_file(path: str | Path) -> None:
                 or isinstance(specification["default"], (str, int, float, bool))
             ):
                 raise MappingSchemaError(f"{path}: transform default must be scalar or null")
-            if "skip_null" in specification and not isinstance(
-                specification["skip_null"], bool
-            ):
-                raise MappingSchemaError(f"{path}: transform skip_null must be boolean")
+            for flag in ("skip_null", "skip_empty"):
+                if flag in specification and not isinstance(specification[flag], bool):
+                    raise MappingSchemaError(f"{path}: transform {flag} must be boolean")
             if "note" in specification and not isinstance(specification["note"], str):
                 raise MappingSchemaError(f"{path}: transform note must be a string")
 

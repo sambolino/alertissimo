@@ -208,7 +208,18 @@ class GetDataProductStep(GetStep):
     product_type: NonEmptyStr | None = None
 
 
-class LightcurveStep(Step):
+class DeriveStep(Step):
+    """Locally construct a semantic product from already-normalized Portfolio data.
+
+    Derivations do not select or call provider endpoints.  They run only after
+    provider execution and normalization have produced Portfolio material, and
+    complement those Portfolios with newly produced semantic records.
+    """
+
+    target: TargetSelector | None = None
+
+
+class LightcurveStep(DeriveStep):
     """Produce an Alertissimo-derived lightcurve from available evidence.
 
     This is distinct from retrieving an existing provider lightcurve.  TODO: the
@@ -217,9 +228,48 @@ class LightcurveStep(Step):
     """
 
     op: Literal["lightcurve"] = "lightcurve"
-    target: TargetSelector | None = None
     bands: list[NonEmptyStr] | None = None
     time_context: TimeContext | None = None
+
+
+def _require_non_negative_delta(value: timedelta) -> timedelta:
+    if value < timedelta(0):
+        raise ValueError("max_time_delta must be non-negative")
+    return value
+
+
+class ColorMagnitudeStep(DeriveStep):
+    """Construct a non-temporal color-magnitude relation from Portfolio evidence."""
+
+    op: Literal["color_magnitude"] = "color_magnitude"
+    color: NonEmptyStr
+    magnitude_field: NonEmptyStr
+    max_time_delta: timedelta = timedelta(0)
+
+    @field_validator("max_time_delta")
+    @classmethod
+    def validate_max_time_delta(cls, value: timedelta) -> timedelta:
+        return _require_non_negative_delta(value)
+
+
+class ColorColorStep(DeriveStep):
+    """Construct a non-temporal color-color relation from Portfolio evidence."""
+
+    op: Literal["color_color"] = "color_color"
+    color_x: NonEmptyStr
+    color_y: NonEmptyStr
+    max_time_delta: timedelta = timedelta(0)
+
+    @field_validator("max_time_delta")
+    @classmethod
+    def validate_max_time_delta(cls, value: timedelta) -> timedelta:
+        return _require_non_negative_delta(value)
+
+    @model_validator(mode="after")
+    def require_distinct_colors(self) -> ColorColorStep:
+        if self.color_x == self.color_y:
+            raise ValueError("color_x and color_y must be distinct")
+        return self
 
 
 class MatchStep(Step):
@@ -357,9 +407,10 @@ StepUnion = Annotated[
     LookupStep | SemanticSearchStep | ConeSearchStep | SqlQueryStep | FilterStep
     | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
     | GetForcedPhotometryStep | GetClassificationStep | GetSpectrumStep
-    | GetDataProductStep | LightcurveStep | MatchStep | MethodAnalysisStep
-    | ClassifyStep | AggregateStep | CompareStep | UtilityScoreStep | ConfirmStep
-    | MonitorStep | FollowupRequestStep | NotifyStep | ExportStep,
+    | GetDataProductStep | LightcurveStep | ColorMagnitudeStep | ColorColorStep
+    | MatchStep | MethodAnalysisStep | ClassifyStep | AggregateStep | CompareStep
+    | UtilityScoreStep | ConfirmStep | MonitorStep | FollowupRequestStep
+    | NotifyStep | ExportStep,
     Field(discriminator="op"),
 ]
 
@@ -373,13 +424,13 @@ class WorkflowIR(IRModel):
 
 
 __all__ = [
-    "ActionStep", "AggregateStep", "AnalyzeStep", "ClassifyStep", "CompareStep",
-    "ConeSearchStep", "ConfirmStep", "ExportStep", "FilterStep",
-    "FollowupRequestStep", "GetClassificationStep", "GetCrossmatchStep",
-    "GetCutoutStep", "GetDataProductStep", "GetForcedPhotometryStep",
-    "GetLightcurveStep", "GetSpectrumStep", "GetStep", "LightcurveStep",
-    "LookupStep", "MatchStep", "MethodAnalysisStep", "MonitorStep", "NotifyStep",
-    "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
-    "StepUnion", "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep",
-    "WorkflowIR",
+    "ActionStep", "AggregateStep", "AnalyzeStep", "ClassifyStep", "ColorColorStep",
+    "ColorMagnitudeStep", "CompareStep", "ConeSearchStep", "ConfirmStep",
+    "DeriveStep", "ExportStep", "FilterStep", "FollowupRequestStep",
+    "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
+    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
+    "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
+    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchStep",
+    "SemanticSearchStep", "Source", "SqlQueryStep", "Step", "StepUnion",
+    "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep", "WorkflowIR",
 ]

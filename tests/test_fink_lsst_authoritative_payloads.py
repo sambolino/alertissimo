@@ -122,7 +122,8 @@ def test_core_mapping_contract_and_debt_are_disjoint():
     expected = {"detection@lsst:fink.position.image_x", "detection@lsst:fink.position.image_x_error", "detection@lsst:fink.position.image_y", "detection@lsst:fink.position.image_y_error", "detection@lsst:fink.time.exposure", "detection@lsst:fink.photometry.{filter}.psf.fit_log_likelihood", "detection@lsst:fink.image_metrics.centroid_flag", "detection@lsst:fink.image_metrics.trail.is_glint", "detection@lsst:fink.image_metrics.shape.flag", "detection@lsst:fink.image_metrics.pixel_flags.any", "detection@lsst:fink.image_metrics.dipole.ndata", "detection@lsst:fink.image_metrics.trail.ndata", "detection@lsst:fink.image_metrics.trail.flag_edge"}
     assert expected <= mappings.keys()
     assert document["transforms"]["detection@lsst:fink.image_metrics.is_positive"]["sources#r:isNegative"] == {"type": "boolean_not"}
-    assert not any(path.startswith("lightcurve@lsst:fink") for path in mappings)
+    assert "lightcurve@lsst:fink.points.photometry.{filter}.psf.flux" in mappings
+    assert "lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}.psf.flux" in mappings
     assert "fp#r:diaForcedSourceId" in mappings["detection@lsst:fink.identity.source_id"]
     mapped = {ref for refs in mappings.values() for ref in refs}
     debt = {next(iter(entry)) for entry in yaml.safe_load(UNMAPPED.read_text())["unmapped"]}
@@ -226,12 +227,13 @@ def test_lifecycle_reliability_and_trail_debt_converges_end_to_end(tmp_path):
     assert historical_fields["time.invalidated_mjd"] is None
 
 
-def test_fp_endpoint_emits_twenty_detection_records(tmp_path):
+def test_fp_endpoint_preserves_twenty_detection_records_while_exposing_lightcurve_semantics(tmp_path):
     paths = [path for path, refs in registry()["mappings"].items() if any(ref.startswith("fp#") for ref in refs)]
     portfolio = _build_filtered(tmp_path, "fp", fixture("fp"), paths)
-    assert len(portfolio.records) == 20
-    assert {record.semantic_type for record in portfolio.records} == {"detection@lsst:fink"}
-    row, fields = fixture("fp")[0], dict(portfolio.records[0].fields); band = row["r:band"]
+    detections = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
+    assert len(detections) == 20
+    assert any(record.semantic_type == "lightcurve@lsst:fink" for record in portfolio.records)
+    row, fields = fixture("fp")[0], dict(detections[0].fields); band = row["r:band"]
     expected = {"identity.object_id": row["r:diaObjectId"], "identity.source_id": row["r:diaForcedSourceId"], "identity.visit_id": row["r:visit"], "identity.detector_id": row["r:detector"], "time.mjd": row["r:midpointMjdTai"], "position.ra": row["r:ra"], "position.dec": row["r:dec"], f"forced_photometry.{band}.psf.flux": row["r:psfFlux"], f"forced_photometry.{band}.psf.flux.error": row["r:psfFluxErr"]}
     assert {key: fields[key] for key in expected} == expected
 

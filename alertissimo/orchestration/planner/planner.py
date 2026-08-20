@@ -12,7 +12,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
 )
-from alertissimo.orchestration.ir.models import Source, Step, WorkflowIR
+from alertissimo.orchestration.ir.models import DeriveStep, Source, Step, WorkflowIR
 from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
     StepRun,
@@ -92,15 +92,11 @@ def _select_one(
 
 
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
-    """Select one endpoint per requested source, without binding or execution.
-
-    With no explicit source, exactly one candidate is required globally.  With
-    explicit sources, validation has checked each independently and exactly one
-    candidate is required within each source constraint.  No ordering-based or
-    provider-specific preference is used to break ties.
-    """
+    """Select provider endpoints, or register a DeriveStep as endpoint-free."""
     validation = validate_step_capabilities(step, graph)
     if validation.status == "not_applicable":
+        if isinstance(step, DeriveStep):
+            return ()
         raise PlanningNotApplicableError(
             f"provider endpoint planning is not applicable ({_context(validation)}): "
             f"{validation.reason}"
@@ -128,10 +124,12 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
-    """Plan every provider Step while retaining each Step occurrence boundary.
+    """Plan provider calls while retaining endpoint-free derive occurrences.
 
-    Planning remains fail-fast: a local, deferred, ambiguous, or unsupported Step
-    raises its existing error rather than returning a partially updated run.
+    Planning remains fail-fast for deferred, ambiguous, unsupported, or other
+    local orchestration steps.  A DeriveStep is the deliberate exception: its
+    occurrence is planned with zero endpoint plans and executes only after
+    provider results have been normalized into Portfolios.
     """
     pending_run = WorkflowRun.from_workflow(workflow)
     planned_steps = tuple(

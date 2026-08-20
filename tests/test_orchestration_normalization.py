@@ -332,6 +332,7 @@ def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
             combined_rows[record.internal_source.payload_index]["i:objectId"]
             for record in portfolio.records
             if record.internal_source is not None
+            and record.internal_source.payload_index is not None
         }
         assert len(raw_object_ids) == 1
         portfolio_ids.extend(raw_object_ids)
@@ -354,6 +355,7 @@ def test_one_multi_id_execution_normalizes_to_two_object_portfolios():
     assert set(portfolio_ids) == set(expected_ids)
     assert sum(
         record.internal_source is not None
+        and record.internal_source.payload_index is not None
         and combined_rows[record.internal_source.payload_index]["i:objectId"] == expected_ids[0]
         for portfolio in wrapper.portfolios
         for record in portfolio.records

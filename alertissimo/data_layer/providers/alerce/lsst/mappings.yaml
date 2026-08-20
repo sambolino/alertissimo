@@ -418,6 +418,74 @@ mappings:
   detection@lsst:alerce.reference_image.forced_photometry.{filter}.psf.flux.error:
   - query_detections#templateFluxErr
   - query_lightcurve.detections#templateFluxErr
+  lightcurve@lsst:alerce.points.photometry.{filter}:
+  - query_lightcurve.detections#band_name
+  lightcurve@lsst:alerce.points.identity.source_id:
+  - query_lightcurve.detections#measurement_id
+  lightcurve@lsst:alerce.points.identity.visit_id:
+  - query_lightcurve.detections#visit
+  lightcurve@lsst:alerce.points.identity.detector_id:
+  - query_lightcurve.detections#detector
+  lightcurve@lsst:alerce.points.time.mjd:
+  - query_lightcurve.detections#mjd
+  lightcurve@lsst:alerce.points.time.processed_mjd:
+  - query_lightcurve.detections#timeProcessedMjdTai
+  lightcurve@lsst:alerce.points.time.invalidated_mjd:
+  - query_lightcurve.detections#timeWithdrawnMjdTai
+  lightcurve@lsst:alerce.points.provenance.producer.name:
+  - query_lightcurve.detections#survey_id
+  lightcurve@lsst:alerce.points.quality.reliability:
+  - query_lightcurve.detections#reliability
+  lightcurve@lsst:alerce.points.quality.signal_to_noise:
+  - query_lightcurve.detections#snr
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flux:
+  - query_lightcurve.detections#psfFlux
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flux.error:
+  - query_lightcurve.detections#psfFluxErr
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.fit_chi2:
+  - query_lightcurve.detections#psfChi2
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.fit_log_likelihood:
+  - query_lightcurve.detections#psfLnL
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.fit_ndata:
+  - query_lightcurve.detections#psfNdata
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.failed:
+  - query_lightcurve.detections#psfFlux_flag
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.edge:
+  - query_lightcurve.detections#psfFlux_flag_edge
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.no_good_pixels:
+  - query_lightcurve.detections#psfFlux_flag_noGoodPixels
+  lightcurve@lsst:alerce.points.photometry.{filter}.aperture.flux:
+  - query_lightcurve.detections#apFlux
+  lightcurve@lsst:alerce.points.photometry.{filter}.aperture.flux.error:
+  - query_lightcurve.detections#apFluxErr
+  lightcurve@lsst:alerce.points.photometry.{filter}.aperture.flags.failed:
+  - query_lightcurve.detections#apFlux_flag
+  lightcurve@lsst:alerce.points.photometry.{filter}.aperture.flags.aperture_truncated:
+  - query_lightcurve.detections#apFlux_flag_apertureTruncated
+  lightcurve@lsst:alerce.forced_photometry_points.identity.source_id:
+  - query_forced_photometry#measurement_id
+  - query_lightcurve.forced_photometry#measurement_id
+  lightcurve@lsst:alerce.forced_photometry_points.identity.visit_id:
+  - query_forced_photometry#visit
+  - query_lightcurve.forced_photometry#visit
+  lightcurve@lsst:alerce.forced_photometry_points.identity.detector_id:
+  - query_forced_photometry#detector
+  - query_lightcurve.forced_photometry#detector
+  lightcurve@lsst:alerce.forced_photometry_points.time.mjd:
+  - query_forced_photometry#mjd
+  - query_lightcurve.forced_photometry#mjd
+  lightcurve@lsst:alerce.forced_photometry_points.provenance.producer.name:
+  - query_forced_photometry#survey_id
+  - query_lightcurve.forced_photometry#survey_id
+  lightcurve@lsst:alerce.forced_photometry_points.forced_photometry.{filter}:
+  - query_forced_photometry#band_name
+  - query_lightcurve.forced_photometry#band_name
+  lightcurve@lsst:alerce.forced_photometry_points.forced_photometry.{filter}.psf.flux:
+  - query_forced_photometry#psfFlux
+  - query_lightcurve.forced_photometry#psfFlux
+  lightcurve@lsst:alerce.forced_photometry_points.forced_photometry.{filter}.psf.flux.error:
+  - query_forced_photometry#psfFluxErr
+  - query_lightcurve.forced_photometry#psfFluxErr
 transforms:
   detection@lsst:alerce.solar_system.identity.object_id:
     query_detections#ssObjectId: &optional_ss_object_id
@@ -456,3 +524,9 @@ transforms:
       type: boolean_not
     query_lightcurve.detections#isNegative:
       type: boolean_not
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.failed:
+    query_lightcurve.detections#psfFlux_flag: *strict_psf_flag
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.edge:
+    query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
+  lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.no_good_pixels:
+    query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag

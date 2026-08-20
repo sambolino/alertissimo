@@ -99,7 +99,7 @@ mappings:
   - locus_alerts#properties.ant_magerr
   detection@ztf:antares.photometry.{filter}.limit.mag:
   - locus_alerts#properties.ant_maglim
-  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+  detection@ztf:antares.photometry.{filter}.upper_limit:
   - locus_alerts#properties.ant_survey
   detection@ztf:antares.photometry.{filter}.aperture.mag:
   - locus_alerts#properties.ztf_magap
@@ -251,7 +251,7 @@ transforms:
       default: null
       skip_null: true
       note: Strict authoritative ANTARES passband normalization.
-  detection@ztf:antares.photometry.{filter}.limit.upper_limit:
+  detection@ztf:antares.photometry.{filter}.upper_limit:
     locus_alerts#properties.ant_survey:
       type: value_map
       map:

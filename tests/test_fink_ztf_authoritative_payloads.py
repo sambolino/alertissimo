@@ -72,6 +72,17 @@ def _records(portfolio, semantic_type):
     return [record for record in portfolio.records if record.semantic_type == semantic_type]
 
 
+def _scalar_values(value):
+    if isinstance(value, dict):
+        for nested in value.values():
+            yield from _scalar_values(nested)
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            yield from _scalar_values(nested)
+    else:
+        yield value
+
+
 def test_classtar_and_fink_final_classification_are_positive_products():
     portfolio = _build("objects")
     sextractor = _records(portfolio, "classification@sextractor:fink")
@@ -104,7 +115,11 @@ def test_candid_history_reference_times_calibration_and_fixed_color():
     assert detection.fields["calibration.nmatches"] == 390
     assert detection.fields["calibration.color_median"] == 0.594
     assert detection.fields["calibration.color_rms"] == 0.314855
-    assert summary.fields["color.g-r.diff"] == 0.744712
+    lightcurve = _records(portfolio, "lightcurve@fink")[0]
+    assert any(
+        point.get("color.g-r.diff") == pytest.approx(0.744712)
+        for point in lightcurve.fields["color_points"]
+    )
 
 
 def test_distnr_pixels_are_not_emitted_as_angular_reference_separation():
@@ -135,7 +150,9 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert detection.fields["solar_system.iau_name"] == "Benoitcarry"
     assert detection.fields["solar_system.iau_number"] == 8467
     assert detection.fields["solar_system.mpc_match.identity.object_id"] == "8467"
-    assert "g.feature_vector" in lightcurve.fields and "r.feature_vector" in lightcurve.fields
+    feature_points = lightcurve.fields["feature_vector_points"]
+    assert any("g.value" in point for point in feature_points)
+    assert any("r.value" in point for point in feature_points)
     synthetic = _build("objects", [{"i:objectId": "ZTF-synthetic", "i:ssdistnr": -999.0, "i:ssmagnr": -999.0, "i:candid": -1}])
     assert not _records(synthetic, "detection@ztf:fink")
 
@@ -197,13 +214,13 @@ def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
     for raw, record in zip(payload, detections, strict=True):
         band = {1: "g", 2: "r", 3: "i", "1": "g", "2": "r", "3": "i"}[raw["i:fid"]]
         if raw["d:tag"] == "upperlim":
-            assert record.fields[f"photometry.{band}.limit.upper_limit"] is True
+            assert record.fields[f"photometry.{band}.upper_limit"] is True
             assert record.fields[f"photometry.{band}.limit.mag"] == raw["i:diffmaglim"]
             for field in ("psf.mag", "psf.mag.error", "aperture.mag", "aperture.large.mag"):
                 assert f"photometry.{band}.{field}" not in record.fields
         else:
             # Policy A: an upstream-valid measured detection explicitly is not an upper limit.
-            assert record.fields[f"photometry.{band}.limit.upper_limit"] is False
+            assert record.fields[f"photometry.{band}.upper_limit"] is False
     bad = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "i:fid": "1", "d:tag": "badquality"}]), "detection@ztf:fink")
     assert not bad  # badquality is neither a valid detection nor an upper limit
 
@@ -219,28 +236,25 @@ def test_object_and_cone_final_classification_converge():
     assert _records(_build("conesearch"), "classification@fink")[0].fields["best.class"] == "SN candidate"
 
 
-def test_fast_transient_fields_use_lightcurve_semantics():
-    no_rate = [{"i:objectId": "ZTF-synthetic", "i:fid": 1, "d:lower_rate": None, "d:upper_rate": None,
-                "d:delta_time": None, "d:from_upper": False}]
-    records = _records(_build("anomaly", no_rate), "lightcurve@fink")
-    assert not records or "g.from_upper_limit" not in records[0].fields
-
-    upper = [{"i:objectId": "ZTF-synthetic", "i:fid": 2, "d:lower_rate": -0.2, "d:upper_rate": 0.4,
-              "d:delta_time": 0.5, "d:from_upper": True}]
-    record = _records(_build("anomaly", upper), "lightcurve@fink")[0]
-    assert record.fields["r.rate_lower_percentile"] == -0.2
-    assert record.fields["r.rate_upper_percentile"] == 0.4
-    assert record.fields["r.delta_time_rate"] == 0.5
-    assert record.fields["r.from_upper_limit"] is True
-
-    derived = _records(_build("anomaly", [{"i:objectId": "ZTF-synthetic",
-        "i:fid": 1, "d:nalerthist": 17, "d:mag_rate": 0.25,
-        "d:sigma_rate": 0.05,
-    }]), "lightcurve@fink")[0]
-    assert derived.semantic_type == "lightcurve@fink"
-    assert derived.fields["detection_count"] == 17
-    assert derived.fields["g.magnitude_rate"] == 0.25
-    assert derived.fields["g.magnitude_rate_error"] == 0.05
+def test_fast_transient_fields_are_explicit_structural_debt_until_rate_point_collection():
+    document = yaml.safe_load(MAPPINGS.read_text(encoding="utf-8"))
+    mapped = {reference for refs in document["mappings"].values() for reference in refs}
+    debt = {
+        next(iter(entry))
+        for entry in yaml.safe_load(DEBT.read_text(encoding="utf-8"))["unmapped"]
+    }
+    expected = {
+        f"{payload}#{field}"
+        for payload in ("objects", "sso", "latests", "anomaly")
+        for field in ("d:mag_rate", "d:sigma_rate", "d:lower_rate", "d:upper_rate")
+    }
+    expected |= {
+        f"{payload}#{field}"
+        for payload in ("sso", "latests", "anomaly")
+        for field in ("d:delta_time", "d:from_upper")
+    }
+    assert expected <= debt
+    assert mapped.isdisjoint(expected)
 
 
 def test_blazar_extreme_state_assessments_are_explicit_and_suppress_minus_one():
@@ -273,7 +287,13 @@ def test_frozen_service_failures_are_never_scientific_values():
     }
     assert observed == {"Fail", "Fail 500", "Fail 503"}
     portfolio = _build("sso")
-    assert not any(value in observed for record in portfolio.records for value in record.fields.values())
+    assert not any(
+        value in observed
+        for record in portfolio.records
+        for field_value in record.fields.values()
+        for value in _scalar_values(field_value)
+        if isinstance(value, str)
+    )
 
 
 def test_statistics_are_mapped_but_not_object_portfolios():

@@ -52,8 +52,8 @@ def test_locus_and_complete_alert_semantics():
     assert 'detection_count' not in sf and not any(r.semantic_type.startswith('classification@') for r in portfolio.records)
     detections=records(portfolio,'detection@ztf:antares'); assert len(detections)==316
     fields=[dict(r.fields) for r in detections]; assert all('identity.alert_id' in f for f in fields)
-    assert sum(f.get('photometry.g.limit.upper_limit') is False or f.get('photometry.r.limit.upper_limit') is False for f in fields)==70
-    assert sum(f.get('photometry.g.limit.upper_limit') is True or f.get('photometry.r.limit.upper_limit') is True for f in fields)==246
+    assert sum(f.get('photometry.g.upper_limit') is False or f.get('photometry.r.upper_limit') is False for f in fields)==70
+    assert sum(f.get('photometry.g.upper_limit') is True or f.get('photometry.r.upper_limit') is True for f in fields)==246
     assert sum(any(k.startswith('photometry.r.') for k in f) for f in fields)==216
     assert sum(any(k.startswith('photometry.g.') for k in f) for f in fields)==100
     assert not any(any(k.startswith('photometry.R') for k in f) for f in fields)
