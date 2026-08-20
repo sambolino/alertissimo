@@ -1,6 +1,7 @@
 """Public models for tracking a single workflow invocation."""
 
 from .models import (
+    CandidateInputRef,
     EndpointPlan,
     EndpointPlanRef,
     PredicateRealization,
@@ -18,6 +19,7 @@ from .runner import (
 )
 
 __all__ = [
+    "CandidateInputRef",
     "EndpointPlan",
     "EndpointPlanRef",
     "PredicateRealization",
