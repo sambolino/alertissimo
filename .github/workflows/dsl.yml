@@ -30,6 +30,7 @@ jobs:
           PYTHONPATH=. pytest -q \
             tests/test_dsl_surface.py \
             tests/test_dsl_formal_grammar.py \
+            tests/test_dsl_expressions.py \
             tests/test_dsl_capability_validation.py \
             tests/test_dsl_lowering.py \
             tests/test_dsl_ir_integration.py \
