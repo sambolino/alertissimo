@@ -1,0 +1,58 @@
+[
+  {
+    "object_id": "ZTF24aabqkxy",
+    "survey": "ZTF",
+    "ra_deg": 150.1142,
+    "dec_deg": 2.2086,
+    "first_detection": "2026-08-15 03:12 UTC",
+    "last_detection": "2026-08-18 04:26 UTC",
+    "detections": 7,
+    "latest_mag": 18.42,
+    "classification": "SN Ia candidate",
+    "probability": 0.82,
+    "brokers": ["Fink", "ALeRCE", "Lasair"],
+    "status": "rising"
+  },
+  {
+    "object_id": "ZTF24aabqkxz",
+    "survey": "ZTF",
+    "ra_deg": 150.1289,
+    "dec_deg": 2.2214,
+    "first_detection": "2026-08-16 22:18 UTC",
+    "last_detection": "2026-08-18 01:04 UTC",
+    "detections": 4,
+    "latest_mag": 19.16,
+    "classification": "AGN candidate",
+    "probability": 0.61,
+    "brokers": ["ALeRCE", "Antares"],
+    "status": "variable"
+  },
+  {
+    "object_id": "313761042336317573",
+    "survey": "LSST",
+    "ra_deg": 150.1035,
+    "dec_deg": 2.1972,
+    "first_detection": "2026-08-17 06:41 UTC",
+    "last_detection": "2026-08-18 05:08 UTC",
+    "detections": 3,
+    "latest_mag": 20.03,
+    "classification": "Fast transient candidate",
+    "probability": 0.74,
+    "brokers": ["Fink", "Lasair", "Antares"],
+    "status": "new"
+  },
+  {
+    "object_id": "313761042336317812",
+    "survey": "LSST",
+    "ra_deg": 150.1718,
+    "dec_deg": 2.2531,
+    "first_detection": "2026-08-11 02:57 UTC",
+    "last_detection": "2026-08-17 23:52 UTC",
+    "detections": 12,
+    "latest_mag": 19.48,
+    "classification": "Variable star",
+    "probability": 0.88,
+    "brokers": ["Fink", "Lasair"],
+    "status": "fading"
+  }
+]

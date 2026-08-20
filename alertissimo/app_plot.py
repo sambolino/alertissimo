@@ -192,10 +192,10 @@ def lightcurve_chart(
 
 
 def format_utc(value: pd.Timestamp) -> str:
-    return value.strftime("%d/%m/%Y %H:%M UTC")
+    return value.strftime("%Y-%m-%d %H:%M UTC")
 
 
-def render_lightcurve_table(data: dict[str, Any]) -> None:
+def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_table") -> None:
     """Render the original light-curve data in a sortable, paginated grid."""
     table = pd.DataFrame(data["lightCurve"])
     st.subheader("Light curve data")
@@ -246,8 +246,187 @@ def render_lightcurve_table(data: dict[str, Any]) -> None:
         update_on=[],
         show_search=False,
         show_download_button=False,
-        key="lightcurve_table",
+        key=key,
     )
+
+
+def _rows(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    """Return an optional JSON list as safe table rows."""
+    value = data.get(key, [])
+    return value if isinstance(value, list) else []
+
+
+def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
+    """Render identity, quality, coverage, and decision-relevant object context."""
+    coordinates = data.get("coordinates", {})
+    quality = data.get("quality", {})
+    left, middle = st.columns([1, 1], gap="large")
+    with left:
+        st.markdown("#### Identity and sky position")
+        st.write(f"**Survey:** {data.get('survey', '—')}")
+        st.write(f"**RA / Dec:** {coordinates.get('ra', '—')}°, {coordinates.get('dec', '—')}°")
+        st.write(f"**TNS type:** {data.get('tns', {}).get('type', 'Unclassified')}")
+        st.write(f"**Candidate status:** {data.get('candidateStatus', 'No assessment')}")
+    with middle:
+        st.markdown("#### Data quality")
+        st.write(quality.get("photometryStatus", "No local quality summary."))
+        st.write(f"**Alert quality:** {quality.get('alertQuality', '—')}")
+        st.write(f"**Last local refresh:** {quality.get('lastUpdated', '—')}")
+
+    st.markdown("#### Broker coverage")
+    coverage = pd.DataFrame(_rows(data, "brokerCoverage"))
+    if coverage.empty:
+        st.info("No broker coverage is recorded for this local demo object.")
+    else:
+        coverage["products"] = coverage["products"].apply(lambda value: " · ".join(value))
+        st.dataframe(
+            coverage.rename(columns={"broker": "Broker", "origin": "Survey", "status": "Status", "products": "Available products"}),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    st.markdown("#### Quick photometry readout")
+    summary = data.get("summary", {})
+    st.write(
+        f"{len(frame)} displayed detection points from {summary.get('firstDetection', '—')} "
+        f"to {summary.get('lastDetection', '—')}. Brightest local point: "
+        f"{summary.get('brightestMagnitude', '—')} mag."
+    )
+
+
+def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count: int, widget_key: str) -> None:
+    """Render the existing interactive light-curve view and measurement table."""
+    st.markdown("#### Light curve")
+    detection_col, upper_col, forced_col, band_col = st.columns(4)
+    detection_col.metric("Detections", len(frame))
+    upper_col.metric("Non-detections", "6 demo")
+    forced_col.metric("Forced photometry", "4 demo")
+    band_col.metric("Observed bands", len(frame["band"].unique()))
+
+    image_col, chart_col = st.columns([1, 5], gap="large")
+    with image_col:
+        st.image(DEFAULT_IMAGE_PATH, caption="Object image", use_container_width=True)
+    with chart_col:
+        observed_bands = list(dict.fromkeys(frame["band"].astype(str)))
+        configured_bands = list(data.get("filters", {}))
+        bands = [band for band in configured_bands if band in observed_bands]
+        bands.extend(band for band in observed_bands if band not in bands)
+        band_counts = frame["band"].astype(str).value_counts().to_dict()
+        st.markdown('<div class="filter-title">Filter</div>', unsafe_allow_html=True)
+        selected_bands = st.pills(
+            "Filter",
+            options=bands,
+            default=bands,
+            selection_mode="multi",
+            key=f"band_filter_{widget_key}",
+            label_visibility="collapsed",
+        )
+        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)]
+        if filtered_frame.empty:
+            st.info("Select at least one band to display the light curve.")
+        else:
+            st.altair_chart(lightcurve_chart(filtered_frame, band_counts), use_container_width=True)
+    st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source.")
+    st.caption("Non-detection and forced-photometry counts are local demo metadata; plotted points are detections.")
+    if rejected_count:
+        st.warning(f"Skipped {rejected_count} invalid measurement(s).")
+    render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}")
+
+
+def render_classification(data: dict[str, Any]) -> None:
+    """Render per-broker model outputs without pretending disagreement is resolved."""
+    st.markdown("#### Classification evidence")
+    classifications = pd.DataFrame(_rows(data, "classifications"))
+    if classifications.empty:
+        st.info("No classification evidence is available.")
+        return
+    st.dataframe(
+        classifications.rename(columns={"broker": "Broker", "model": "Model", "class": "Class", "probability": "Probability", "computedAt": "Computed at"}),
+        use_container_width=True,
+        hide_index=True,
+        column_config={"Probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0%")},
+    )
+    st.warning("Demo interpretation: broker classifications are consistent with an extragalactic transient, but they are not identical and should not be merged automatically.")
+
+
+def render_context(data: dict[str, Any]) -> None:
+    """Render host association, catalog context, and solar-system screening."""
+    context = data.get("context", {})
+    host = context.get("host", {})
+    st.markdown("#### Host association")
+    first, second, third, fourth = st.columns(4)
+    first.metric("Candidate host", host.get("name", "—"))
+    second.metric("Host separation", f'{host.get("separationArcsec", "—")} arcsec')
+    third.metric("Host redshift", host.get("redshift", "—"))
+    probability = host.get("associationProbability")
+    fourth.metric("Association probability", f"{probability:.0%}" if isinstance(probability, (int, float)) else "—")
+    st.markdown("#### Crossmatches")
+    matches = pd.DataFrame(_rows(context, "crossmatches"))
+    if not matches.empty:
+        st.dataframe(matches.rename(columns={"catalog": "Catalogue", "match": "Result", "separationArcsec": "Separation (arcsec)"}), use_container_width=True, hide_index=True)
+    solar_system = context.get("solarSystem", {})
+    st.info(f'**Solar-system screen:** {solar_system.get("status", "—")}. Nearest ephemeris separation: {solar_system.get("nearestEphemerisSeparationArcsec", "—")} arcsec.')
+
+
+def render_images(data: dict[str, Any]) -> None:
+    """Render local placeholders for science, template, and difference cutouts."""
+    st.markdown("#### Cutout inspection")
+    cutouts = _rows(data, "cutouts")
+    if not cutouts:
+        st.info("No cutouts are listed for this object.")
+        return
+    columns = st.columns(len(cutouts))
+    for column, cutout in zip(columns, cutouts):
+        with column:
+            st.image(DEFAULT_IMAGE_PATH, caption=f'{cutout.get("kind", "Cutout")} · {cutout.get("band", "—")}')
+            st.caption(f'{cutout.get("broker", "—")} · {cutout.get("epoch", "—")} · {cutout.get("status", "—")}')
+    st.caption("These are local image placeholders. Production data will render the distinct science, template, and difference products.")
+
+
+def render_products_and_provenance(data: dict[str, Any]) -> None:
+    """Render available data products and the execution trail behind the dossier."""
+    st.markdown("#### Available data products")
+    products = pd.DataFrame(_rows(data, "dataProducts"))
+    if not products.empty:
+        st.dataframe(products.rename(columns={"product": "Product", "broker": "Broker", "availability": "Availability", "note": "Local demo note"}), use_container_width=True, hide_index=True)
+    st.markdown("#### Broker execution provenance")
+    provenance = pd.DataFrame(_rows(data, "provenance"))
+    if not provenance.empty:
+        st.dataframe(provenance.rename(columns={"broker": "Broker", "endpoint": "Endpoint", "requestedAt": "Requested at", "status": "Status", "records": "Records"}), use_container_width=True, hide_index=True)
+    with st.expander("Complete local object metadata"):
+        metadata = {key: value for key, value in data.items() if key != "lightCurve"}
+        st.json(metadata)
+
+
+def render_object_dossier(data: dict[str, Any], *, widget_key: str = "single") -> None:
+    """Render a rich, single-object scientific dossier from local demo data."""
+    frame, rejected_count = lightcurve_dataframe(data)
+    if frame.empty:
+        st.warning("The JSON contains no valid light-curve measurements.")
+        return
+    object_name = data.get("tns", {}).get("name") or data.get("diaObjectId") or "Object"
+    st.subheader(f"{object_name} — object dossier")
+    st.caption(f'diaObjectId {data.get("diaObjectId", "—")} · local demo data')
+    first, last, brightest, count = st.columns(4)
+    first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
+    last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))
+    brightest.metric("Brightest", f'{frame["magnitude"].min():.2f} mag')
+    count.metric("Displayed points", len(frame))
+    overview, photometry, classification, context, images, provenance = st.tabs([
+        "Overview", "Photometry", "Classification", "Context & host", "Images", "Products & provenance",
+    ])
+    with overview:
+        render_overview(data, frame)
+    with photometry:
+        render_photometry(data, frame, rejected_count, widget_key)
+    with classification:
+        render_classification(data)
+    with context:
+        render_context(data)
+    with images:
+        render_images(data)
+    with provenance:
+        render_products_and_provenance(data)
 
 
 def main() -> None:
@@ -284,7 +463,7 @@ def main() -> None:
             font-weight: 700 !important;
             margin-bottom: 0.1rem;
         }
-        .st-key-band_filter button {
+        [class*="st-key-band_filter"] button {
             width: 2.5rem !important;
             min-width: 2.5rem !important;
             max-width: 2.5rem !important;
@@ -295,41 +474,41 @@ def main() -> None:
             aspect-ratio: 1 / 1;
             flex: 0 0 2.5rem !important;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(1) {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button:nth-of-type(1) {
             --band-color: #00c853;
             --band-soft-color: #e4f8ea;
             --band-text-color: #007a32;
             --band-active-text-color: #072b15;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(2) {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button:nth-of-type(2) {
             --band-color: #ff1744;
             --band-soft-color: #ffe5ea;
             --band-text-color: #b80028;
             --band-active-text-color: #ffffff;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(3) {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button:nth-of-type(3) {
             --band-color: #ff9100;
             --band-soft-color: #fff1dc;
             --band-text-color: #945400;
             --band-active-text-color: #3b2200;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button:nth-of-type(4) {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button:nth-of-type(4) {
             --band-color: #d500f9;
             --band-soft-color: #f8e0fb;
             --band-text-color: #850098;
             --band-active-text-color: #ffffff;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button {
             background-color: var(--band-soft-color) !important;
             border: 2px solid var(--band-color) !important;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button * {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button * {
             color: var(--band-text-color) !important;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button[kind="pillsActive"] {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button[kind="pillsActive"] {
             background-color: var(--band-color) !important;
         }
-        .st-key-band_filter [data-baseweb="button-group"] button[kind="pillsActive"] * {
+        [class*="st-key-band_filter"] [data-baseweb="button-group"] button[kind="pillsActive"] * {
             color: var(--band-active-text-color) !important;
         }
         </style>
@@ -341,71 +520,10 @@ def main() -> None:
 
     try:
         data = load_lightcurve_json(DEFAULT_DATA_PATH)
-        frame, rejected_count = lightcurve_dataframe(data)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         st.error(f"Unable to display the JSON: {error}")
         st.stop()
-
-    if frame.empty:
-        st.warning("The JSON contains no valid light-curve measurements.")
-        st.stop()
-
-    object_name = data.get("tns", {}).get("name") or data.get("diaObjectId") or "Object"
-    object_id = data.get("diaObjectId", "—")
-    st.subheader(f"{object_name} — light curve")
-    st.caption(f"diaObjectId {object_id}")
-
-    first, last = frame.iloc[0], frame.iloc[-1]
-    brightest = frame["magnitude"].min()
-    first_col, last_col, brightest_col, count_col = st.columns(4)
-    first_col.metric("First measurement", format_utc(first["date"]))
-    last_col.metric("Last measurement", format_utc(last["date"]))
-    brightest_col.metric("Brightest", f"{brightest:.2f} mag")
-    count_col.metric("Displayed points", len(frame))
-
-    image_col, chart_col = st.columns([1, 5], gap="large")
-    with image_col:
-        st.image(
-            DEFAULT_IMAGE_PATH,
-            caption="Object image",
-            use_container_width=True,
-        )
-    with chart_col:
-        observed_bands = list(dict.fromkeys(frame["band"].astype(str)))
-        configured_bands = list(data.get("filters", {}))
-        bands = [band for band in configured_bands if band in observed_bands]
-        bands.extend(band for band in observed_bands if band not in bands)
-        band_counts = frame["band"].astype(str).value_counts().to_dict()
-        st.markdown('<div class="filter-title">Filter</div>', unsafe_allow_html=True)
-        selected_bands = st.pills(
-            "Filter",
-            options=bands,
-            default=bands,
-            selection_mode="multi",
-            key="band_filter",
-            label_visibility="collapsed",
-        )
-        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)]
-        if filtered_frame.empty:
-            st.info("Select at least one band to display the light curve.")
-        else:
-            st.altair_chart(
-                lightcurve_chart(filtered_frame, band_counts),
-                use_container_width=True,
-            )
-    st.caption(
-        "The Y axis is inverted according to astronomical convention: "
-        "a lower magnitude means a brighter source."
-    )
-
-    if rejected_count:
-        st.warning(f"Skipped {rejected_count} invalid measurement(s).")
-
-    render_lightcurve_table(data)
-
-    with st.expander("Object metadata"):
-        metadata = {key: value for key, value in data.items() if key != "lightCurve"}
-        st.json(metadata)
+    render_object_dossier(data)
 
 
 if __name__ == "__main__":

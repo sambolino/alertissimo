@@ -1,0 +1,11 @@
+{
+  "id_lookup": {
+    "survey": "ZTF",
+    "object_id": "ZTF24aabqkxy"
+  },
+  "cone_search": {
+    "ra_deg": 150.12,
+    "dec_deg": 2.215,
+    "radius_arcsec": 300.0
+  }
+}
