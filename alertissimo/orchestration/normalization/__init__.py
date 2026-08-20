@@ -1,16 +1,8 @@
 """Semantic-output bridge for occurrence-aligned workflow results.
 
-The path is ``WorkflowIR -> planner -> WorkflowRun -> binder ->
-BoundEndpointCall -> runner -> ExecutionResult -> existing RecordBuilder ->
-Portfolio``.  Orchestration retains workflow/Step occurrence association;
-``data_layer.execution`` owns physical results, RecordBuilder owns provider
-payload normalization, and Portfolio owns records and execution provenance.
-
-Each physical execution deliberately remains an independent execution occurrence
-and wrapper, and may normalize into zero, one, or many Portfolios.  Every
-Portfolio represents one primary astronomical object.  Executions and Steps do
-not establish cross-execution object identity; Portfolio composition and entity
-resolution are intentionally out of scope.
+Provider results normalize into object-level Portfolios. Semantic predicates that
+were not safely realized as provider request constraints can then be evaluated
+against those normalized records without changing their meaning.
 """
 
 from .models import (
@@ -24,13 +16,16 @@ from .normalize import (
     normalize_step_execution,
     normalize_workflow_execution,
 )
+from .predicate import evaluate_portfolio_predicate, prune_portfolios
 
 __all__ = [
     "ExecutionPortfolioResult",
     "StepPortfolioResult",
     "WorkflowNormalizationAlignmentError",
     "WorkflowPortfolioResult",
+    "evaluate_portfolio_predicate",
     "normalize_execution",
     "normalize_step_execution",
     "normalize_workflow_execution",
+    "prune_portfolios",
 ]
