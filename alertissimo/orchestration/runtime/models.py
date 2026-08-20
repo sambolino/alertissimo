@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from alertissimo.orchestration.ir.models import Step, WorkflowIR
+from alertissimo.orchestration.ir.predicates import Predicate
 
 
 class RuntimeModel(BaseModel):
@@ -15,27 +17,43 @@ class RuntimeModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class PredicateRealization(RuntimeModel):
+    """How one endpoint will satisfy one semantic predicate.
+
+    ``pushdown`` and ``residual`` remain semantic predicates. ``params`` contains
+    only the physical request values proven equivalent to ``pushdown`` by the
+    provider's request mappings. Residual evaluation happens after normalization.
+    """
+
+    pushdown: Predicate | None = None
+    residual: Predicate | None = None
+    params: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def require_predicate_content(self) -> "PredicateRealization":
+        if self.pushdown is None and self.residual is None:
+            raise ValueError("predicate realization requires pushdown or residual content")
+        if self.pushdown is None and self.params:
+            raise ValueError("physical predicate params require semantic pushdown evidence")
+        return self
+
+
 class EndpointPlan(RuntimeModel):
     """Physical identity of a registered endpoint selected by the planner.
 
-    This contains neither the semantic Step nor transport and bound-parameter
-    details.  The owning StepRun connects it to exactly one Step occurrence.
+    Predicate realization is execution strategy, not scientific intent: the
+    authoritative semantic predicate remains on the owning IR Step.
     """
 
     broker: str
     origin: str
     endpoint: str
     semantic_type: str | None = None
+    predicate_realization: PredicateRealization | None = None
 
 
 class StepRunState(StrEnum):
-    """The deliberately small lifecycle vocabulary for a Step occurrence.
-
-    ``pending`` has not been planned; ``planned`` has endpoint plans;
-    ``running`` has begun execution; ``succeeded`` completed successfully; and
-    ``failed`` encountered an execution failure.  Planning currently uses only
-    the first two states.
-    """
+    """The deliberately small lifecycle vocabulary for a Step occurrence."""
 
     PENDING = "pending"
     PLANNED = "planned"
@@ -45,13 +63,7 @@ class StepRunState(StrEnum):
 
 
 class StepRun(RuntimeModel):
-    """Runtime state for one semantic Step occurrence.
-
-    Step is not StepRun: the declarative Step remains in WorkflowIR.  Two equal
-    Step values may occur independently, so position identifies the occurrence
-    without prematurely inventing a persistent Step ID.  This object owns all
-    endpoint plans selected for that one occurrence, including provider fan-out.
-    """
+    """Runtime state for one semantic Step occurrence."""
 
     step_index: int = Field(ge=0)
     state: StepRunState = StepRunState.PENDING
@@ -61,17 +73,13 @@ class StepRun(RuntimeModel):
 
 
 class WorkflowRun(RuntimeModel):
-    """Runtime state for one invocation of a declarative WorkflowIR.
-
-    WorkflowIR is intent, not runtime state.  Its ordering remains authoritative;
-    this model adds one structurally aligned StepRun per declared Step.
-    """
+    """Runtime state for one invocation of a declarative WorkflowIR."""
 
     workflow: WorkflowIR
     steps: tuple[StepRun, ...]
 
     @model_validator(mode="after")
-    def validate_step_alignment(self) -> WorkflowRun:
+    def validate_step_alignment(self) -> "WorkflowRun":
         expected = list(range(len(self.workflow.steps)))
         actual = [step.step_index for step in self.steps]
         if actual != expected:
@@ -82,9 +90,7 @@ class WorkflowRun(RuntimeModel):
         return self
 
     @classmethod
-    def from_workflow(cls, workflow: WorkflowIR) -> WorkflowRun:
-        """Initialize one pending StepRun for every Step, in workflow order."""
-
+    def from_workflow(cls, workflow: WorkflowIR) -> "WorkflowRun":
         return cls(
             workflow=workflow,
             steps=tuple(
@@ -93,14 +99,16 @@ class WorkflowRun(RuntimeModel):
         )
 
     def step_at(self, index: int) -> Step:
-        """Resolve a Step occurrence from its authoritative WorkflowIR."""
-
         return self.workflow.steps[index]
 
     def step_run_at(self, index: int) -> StepRun:
-        """Return aligned runtime state for a workflow position."""
-
         return self.steps[index]
 
 
-__all__ = ["EndpointPlan", "StepRun", "StepRunState", "WorkflowRun"]
+__all__ = [
+    "EndpointPlan",
+    "PredicateRealization",
+    "StepRun",
+    "StepRunState",
+    "WorkflowRun",
+]
