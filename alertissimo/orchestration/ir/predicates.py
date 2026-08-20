@@ -29,6 +29,7 @@ class SemanticReference(PredicateModel):
     ``field_path`` is allowed only for existence tests over the record family.
     """
 
+    kind: Literal["reference"] = "reference"
     semantic_type: NonEmptyStr
     field_path: str = ""
     producer: NonEmptyStr | None = None
@@ -54,8 +55,6 @@ class SemanticReference(PredicateModel):
             if self.channel is not None:
                 value += f":{self.channel}"
         elif self.channel is not None:
-            # Channel without producer is not part of the current record syntax,
-            # but retaining it explicitly avoids silently discarding user intent.
             value += f"@*:{self.channel}"
         return value
 
@@ -65,11 +64,17 @@ class PredicateLiteral(PredicateModel):
     value: str | int | float | bool
 
 
+PredicateOperand: TypeAlias = Annotated[
+    SemanticReference | PredicateLiteral,
+    Field(discriminator="kind"),
+]
+
+
 class ComparisonPredicate(PredicateModel):
     kind: Literal["comparison"] = "comparison"
     operator: Literal["=", "!=", "<", "<=", ">", ">="]
-    reference: SemanticReference
-    value: PredicateLiteral
+    left: PredicateOperand
+    right: PredicateOperand
 
 
 class ExistsPredicate(PredicateModel):
@@ -118,7 +123,10 @@ def iter_semantic_references(predicate: Predicate):
     """Yield ontology references in stable predicate order."""
 
     if isinstance(predicate, ComparisonPredicate):
-        yield predicate.reference
+        if isinstance(predicate.left, SemanticReference):
+            yield predicate.left
+        if isinstance(predicate.right, SemanticReference):
+            yield predicate.right
     elif isinstance(predicate, ExistsPredicate):
         yield predicate.reference
     elif isinstance(predicate, NotPredicate):
@@ -136,6 +144,7 @@ __all__ = [
     "Predicate",
     "PredicateLiteral",
     "PredicateModel",
+    "PredicateOperand",
     "SemanticReference",
     "and_predicates",
     "iter_semantic_references",
