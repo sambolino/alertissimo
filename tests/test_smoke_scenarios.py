@@ -153,14 +153,14 @@ def test_reporting_json_is_payload_free():
 
 
 @pytest.mark.parametrize("scenario", ["multi-provider", "multi-target"])
-def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenario):
+def test_html_dir_writes_separate_portfolios_and_resolving_index(tmp_path, scenario):
     from html.parser import HTMLParser
     from scripts.smoke.html_output import write_smoke_html
 
     output = tmp_path / scenario
     index = write_smoke_html(run_scenario(scenario), output)
-    dossiers = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
-    assert len(dossiers) == 4
+    portfolios = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
+    assert len(portfolios) == 4
     assert index == output / "index.html"
 
     class Links(HTMLParser):
@@ -185,7 +185,7 @@ def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenari
         assert "lasair / ztf /" in text and "alerce / ztf /" in text
     else:
         assert text.count("identity unavailable") == 2
-        assert text.count("Open Portfolio dossier") == 4
+        assert text.count("Open Portfolio") == 4
 
 
 def test_html_dir_rejects_nonempty_directory_without_modification(tmp_path):
@@ -378,7 +378,7 @@ def test_cli_rejects_nonempty_html_dir_before_live_execution(
     assert marker.read_text() == "do not change"
     assert list(output.iterdir()) == [marker]
 
-def test_html_dossier_filename_uses_normalized_step_index(tmp_path):
+def test_html_portfolio_filename_uses_normalized_step_index(tmp_path):
     from dataclasses import replace
 
     from scripts.smoke.html_output import write_smoke_html

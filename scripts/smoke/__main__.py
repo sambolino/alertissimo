@@ -37,7 +37,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--html-dir",
         metavar="PATH",
-        help="write separate Portfolio dossiers and a linked index to PATH",
+        help="write separate Portfolio views and a linked index to PATH",
     )
     return result
 

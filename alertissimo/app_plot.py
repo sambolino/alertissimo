@@ -33,11 +33,28 @@ BAND_COLORS = {
 }
 FALLBACK_COLORS = ["#00b8d4", "#00b85c", "#ff4081", "#651fff"]
 
+SEMANTIC_RECORD_FAMILIES = (
+    "summary",
+    "detection",
+    "crossmatch",
+    "lightcurve",
+    "spectrum",
+    "data_product",
+    "classification",
+    "survey",
+)
+
 
 def load_lightcurve_json(source: Path) -> dict[str, Any]:
     """Load a light-curve document from a JSON file."""
     with source.open(encoding="utf-8") as json_file:
         data = json.load(json_file)
+
+    return load_lightcurve_document(data)
+
+
+def load_lightcurve_document(data: Any) -> dict[str, Any]:
+    """Validate an in-memory local light-curve document."""
 
     if not isinstance(data, dict):
         raise ValueError("The JSON root must be an object.")
@@ -108,7 +125,9 @@ def month_midpoint_ticks(frame: pd.DataFrame) -> list[object]:
 def lightcurve_chart(
     frame: pd.DataFrame,
     band_counts: dict[str, int] | None = None,
-) -> alt.LayerChart:
+    *,
+    selection_name: str | None = None,
+) -> alt.Chart | alt.LayerChart:
     """Create the interactive chart used by the Streamlit page."""
     if band_counts is None:
         band_counts = frame["band"].astype(str).value_counts().to_dict()
@@ -164,7 +183,7 @@ def lightcurve_chart(
         color=color,
     )
 
-    points = base.mark_circle(size=95).encode(
+    points = base.mark_circle(size=95, cursor="pointer" if selection_name is not None else None).encode(
         x=x_axis,
         y=y_axis,
         color=color,
@@ -175,6 +194,25 @@ def lightcurve_chart(
             alt.Tooltip("band:N", title="Filter"),
         ],
     )
+
+    if selection_name is not None:
+        # Streamlit supports selection events only for a single Vega-Lite view,
+        # not an Altair layer. Keep this chart clickable; its tooltip and the
+        # details panel still expose the photometric uncertainty.
+        selection = alt.selection_point(selection_name, fields=["_point_id"], on="click")
+        return (
+            points.add_params(selection)
+            .properties(height=520)
+            .configure(background="#ffffff")
+            .configure_view(fill="#ffffff", stroke=None)
+            .configure_axis(
+                gridColor="#e7ecf3",
+                domainColor="#9ba8bb",
+                labelColor="#66758d",
+                titleColor="#35445d",
+            )
+            .interactive()
+        )
 
     return (
         alt.layer(error_bars, points)
@@ -250,10 +288,127 @@ def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_tabl
     )
 
 
+def selected_chart_point(event: Any, selection_name: str) -> str | None:
+    """Extract a stable point identifier from a Streamlit Altair selection event."""
+    if not isinstance(event, dict):
+        return None
+    selection = event.get("selection", {})
+    if not isinstance(selection, dict):
+        return None
+    points = selection.get(selection_name, [])
+    if not isinstance(points, list) or not points or not isinstance(points[0], dict):
+        return None
+    point_id = points[0].get("_point_id")
+    return str(point_id) if point_id is not None else None
+
+
+def render_detection_details(data: dict[str, Any], detection: pd.Series) -> None:
+    """Render the individual detection represented by a selected chart point."""
+    st.markdown("#### Detection details")
+    st.caption("Individual `detection` SemanticRecord selected from the light curve.")
+    details = {
+        "time.datetime": format_utc(detection["date"]),
+        "time.mjd": float(detection["mjd"]),
+        f"photometry.{detection['band']}.psf.mag": float(detection["magnitude"]),
+        f"photometry.{detection['band']}.psf.mag.error": float(detection["magnitudeError"]),
+        "position.ra": data.get("coordinates", {}).get("ra"),
+        "position.dec": data.get("coordinates", {}).get("dec"),
+        "provenance.survey": data.get("survey"),
+    }
+    defaults = data.get("detectionDefaults", {})
+    extra = defaults.copy() if isinstance(defaults, dict) else {}
+    point_extra = detection.get("details")
+    if isinstance(point_extra, dict):
+        extra.update(point_extra)
+    if isinstance(extra, dict):
+        details.update(extra)
+    st.json(details, expanded=True)
+
+
 def _rows(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
     """Return an optional JSON list as safe table rows."""
     value = data.get(key, [])
     return value if isinstance(value, list) else []
+
+
+def semantic_record_index(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Adapt local demo data into SemanticRecord-shaped UI rows.
+
+    The production UI receives normalized ``Portfolio.records`` directly. This
+    adapter makes the prototype obey the same portfolio → SemanticRecord
+    hierarchy while its fixture remains deliberately lightweight.
+    """
+    records: list[dict[str, Any]] = []
+
+    def add(family: str, record_id: str, fields: dict[str, Any]) -> None:
+        records.append({
+            "record_id": record_id,
+            "semantic_type": f"{family}@demo:local",
+            "family": family,
+            "fields": fields,
+        })
+
+    add("summary", "summary:demo:local", {
+        "identity.object_id": data.get("diaObjectId"),
+        "identity.name": data.get("tns", {}).get("name"),
+        "summary": data.get("summary", {}),
+    })
+    for index, detection in enumerate(_rows(data, "lightCurve"), start=1):
+        add("detection", f"detection:demo:{index}", detection)
+    if data.get("lightCurve"):
+        add("lightcurve", "lightcurve:demo:local", {
+            "point_count": len(_rows(data, "lightCurve")),
+            "points": _rows(data, "lightCurve"),
+        })
+    for index, match in enumerate(_rows(data.get("context", {}), "crossmatches"), start=1):
+        add("crossmatch", f"crossmatch:demo:{index}", match)
+    for index, product in enumerate(_rows(data, "dataProducts"), start=1):
+        add("data_product", f"data_product:demo:{index}", product)
+    for index, classification in enumerate(_rows(data, "classifications"), start=1):
+        add("classification", f"classification:demo:{index}", classification)
+    for index, spectrum in enumerate(_rows(data, "spectra"), start=1):
+        add("spectrum", f"spectrum:demo:{index}", spectrum)
+    for index, coverage in enumerate(_rows(data, "brokerCoverage"), start=1):
+        add("survey", f"survey:demo:{index}", coverage)
+    return records
+
+
+def render_semantic_record_browser(data: dict[str, Any], *, widget_key: str) -> None:
+    """Render grouped SemanticRecords and allow inspection of one concrete record."""
+    records = semantic_record_index(data)
+    st.markdown("#### Semantic Records")
+    st.caption(
+        "A Portfolio collects SemanticRecords. Grouped views show one record family; "
+        "select a row below to inspect one concrete record."
+    )
+    counts = {family: sum(record["family"] == family for record in records) for family in SEMANTIC_RECORD_FAMILIES}
+    family = st.selectbox(
+        "SemanticRecord family",
+        SEMANTIC_RECORD_FAMILIES,
+        format_func=lambda value: f"{value} ({counts[value]})",
+        key=f"semantic_record_family_{widget_key}",
+    )
+    grouped = [record for record in records if record["family"] == family]
+    if not grouped:
+        st.info(f"This portfolio has no {family} SemanticRecords.")
+        return
+
+    st.dataframe(
+        pd.DataFrame([
+            {"Record ID": record["record_id"], "Semantic type": record["semantic_type"]}
+            for record in grouped
+        ]),
+        use_container_width=True,
+        hide_index=True,
+    )
+    selected_id = st.selectbox(
+        f"Inspect one {family} SemanticRecord",
+        [record["record_id"] for record in grouped],
+        key=f"semantic_record_item_{widget_key}",
+    )
+    selected = next(record for record in grouped if record["record_id"] == selected_id)
+    st.markdown(f"**{selected['semantic_type']}** · `{selected['record_id']}`")
+    st.json(selected["fields"], expanded=False)
 
 
 def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
@@ -321,11 +476,29 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             key=f"band_filter_{widget_key}",
             label_visibility="collapsed",
         )
-        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)]
+        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)].copy()
+        filtered_frame["_point_id"] = filtered_frame.index.astype(str)
         if filtered_frame.empty:
             st.info("Select at least one band to display the light curve.")
         else:
-            st.altair_chart(lightcurve_chart(filtered_frame, band_counts), use_container_width=True)
+            selection_name = f"detection_point_{widget_key}"
+            event = st.altair_chart(
+                lightcurve_chart(
+                    filtered_frame,
+                    band_counts,
+                    selection_name=selection_name,
+                ),
+                use_container_width=True,
+                key=f"lightcurve_chart_{widget_key}",
+                on_select="rerun",
+                selection_mode=selection_name,
+            )
+            point_id = selected_chart_point(event, selection_name)
+            if point_id is not None and point_id in filtered_frame.index.astype(str):
+                selected = filtered_frame.loc[filtered_frame.index.astype(str) == point_id].iloc[0]
+                render_detection_details(data, selected)
+            else:
+                st.caption("Click a detection point to inspect its SemanticRecord.")
     st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source.")
     st.caption("Non-detection and forced-photometry counts are local demo metadata; plotted points are detections.")
     if rejected_count:
@@ -383,12 +556,26 @@ def render_images(data: dict[str, Any]) -> None:
     st.caption("These are local image placeholders. Production data will render the distinct science, template, and difference products.")
 
 
-def render_products_and_provenance(data: dict[str, Any]) -> None:
-    """Render available data products and the execution trail behind the dossier."""
+def render_spectra(data: dict[str, Any]) -> None:
+    """Render spectrum SemanticRecords, keeping absence distinct from a failed lookup."""
+    st.markdown("#### Spectra")
+    spectra = pd.DataFrame(_rows(data, "spectra"))
+    if spectra.empty:
+        st.info("No spectrum SemanticRecords are present in this portfolio.")
+        return
+    st.dataframe(spectra, use_container_width=True, hide_index=True)
+
+
+def render_data_products(data: dict[str, Any]) -> None:
+    """Render data_product SemanticRecords and related local image products."""
     st.markdown("#### Available data products")
     products = pd.DataFrame(_rows(data, "dataProducts"))
     if not products.empty:
         st.dataframe(products.rename(columns={"product": "Product", "broker": "Broker", "availability": "Availability", "note": "Local demo note"}), use_container_width=True, hide_index=True)
+
+
+def render_provenance(data: dict[str, Any]) -> None:
+    """Render execution provenance for the containing portfolio."""
     st.markdown("#### Broker execution provenance")
     provenance = pd.DataFrame(_rows(data, "provenance"))
     if not provenance.empty:
@@ -398,35 +585,42 @@ def render_products_and_provenance(data: dict[str, Any]) -> None:
         st.json(metadata)
 
 
-def render_object_dossier(data: dict[str, Any], *, widget_key: str = "single") -> None:
-    """Render a rich, single-object scientific dossier from local demo data."""
+def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single") -> None:
+    """Render a rich, single-object scientific portfolio from local demo data."""
     frame, rejected_count = lightcurve_dataframe(data)
     if frame.empty:
         st.warning("The JSON contains no valid light-curve measurements.")
         return
     object_name = data.get("tns", {}).get("name") or data.get("diaObjectId") or "Object"
-    st.subheader(f"{object_name} — object dossier")
+    st.subheader(f"{object_name} — object portfolio")
     st.caption(f'diaObjectId {data.get("diaObjectId", "—")} · local demo data')
     first, last, brightest, count = st.columns(4)
     first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
     last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))
     brightest.metric("Brightest", f'{frame["magnitude"].min():.2f} mag')
     count.metric("Displayed points", len(frame))
-    overview, photometry, classification, context, images, provenance = st.tabs([
-        "Overview", "Photometry", "Classification", "Context & host", "Images", "Products & provenance",
+    summary, photometry, classification, crossmatches, spectra, products, records, provenance = st.tabs([
+        "Summary", "Detections & light curve", "Classifications", "Crossmatches", "Spectra",
+        "Data products", "Semantic Records", "Provenance",
     ])
-    with overview:
+    with summary:
         render_overview(data, frame)
     with photometry:
+        st.caption("Hybrid view: this portfolio's lightcurve together with its detection SemanticRecords.")
         render_photometry(data, frame, rejected_count, widget_key)
     with classification:
         render_classification(data)
-    with context:
+    with crossmatches:
         render_context(data)
-    with images:
+    with spectra:
+        render_spectra(data)
+    with products:
         render_images(data)
+        render_data_products(data)
+    with records:
+        render_semantic_record_browser(data, widget_key=widget_key)
     with provenance:
-        render_products_and_provenance(data)
+        render_provenance(data)
 
 
 def main() -> None:
@@ -523,7 +717,7 @@ def main() -> None:
     except (OSError, json.JSONDecodeError, ValueError) as error:
         st.error(f"Unable to display the JSON: {error}")
         st.stop()
-    render_object_dossier(data)
+    render_object_portfolio(data)
 
 
 if __name__ == "__main__":

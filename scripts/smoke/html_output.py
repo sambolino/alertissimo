@@ -67,7 +67,7 @@ def _prepare_directory(directory: str | Path) -> Path:
 
 
 def write_smoke_html(result, directory: str | Path) -> Path:
-    """Write one dossier per normalized Portfolio and a provenance-safe index."""
+    """Write one portfolio view per normalized Portfolio and a provenance-safe index."""
     portfolios = [
         portfolio
         for step in (result.normalized.steps if result.normalized else ())
@@ -95,13 +95,13 @@ def write_smoke_html(result, directory: str | Path) -> Path:
                     f"execution-{execution_index:02d}-"
                     f"portfolio-{portfolio_index:02d}.html"
                 )
-                dossier_path = output_dir / filename
+                portfolio_path = output_dir / filename
 
                 try:
-                    write_portfolio_html(portfolio, dossier_path)
+                    write_portfolio_html(portfolio, portfolio_path)
                 except OSError as error:
                     raise HtmlOutputError(
-                        f"could not write HTML dossier: {dossier_path}"
+                        f"could not write HTML portfolio: {portfolio_path}"
                     ) from error
 
                 identities = _object_ids(portfolio)
@@ -142,7 +142,7 @@ def write_smoke_html(result, directory: str | Path) -> Path:
                     f"<dt>Records</dt><dd>{len(portfolio.records)}</dd>"
                     f"<dt>Semantic types</dt><dd>{counts}</dd></dl>"
                     f'<p><a href="{_h(filename)}">'
-                    "Open Portfolio dossier</a></p></article>"
+                    "Open Portfolio</a></p></article>"
                 )
 
     index = output_dir / "index.html"
@@ -160,7 +160,7 @@ def write_smoke_html(result, directory: str | Path) -> Path:
             "dl{display:grid;grid-template-columns:12rem 1fr;gap:.35rem}"
             "dt{font-weight:bold}.unavailable{color:#9a5500}"
             "</style></head><body>"
-            f"<h1>Portfolio dossiers</h1>"
+            f"<h1>Portfolios</h1>"
             f"<p>Scenario: {_h(result.name)} · "
             f"Workflow: {_h(result.workflow.name)}</p>"
             f"{''.join(cards)}</body></html>",

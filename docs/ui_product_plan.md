@@ -41,7 +41,7 @@ photometry, classification, context, images, and provenance.
 
 ## UI roles
 
-### Object dossier: evolution of `app_plot.py`
+### Object portfolio: evolution of `app_plot.py`
 
 This is the single-candidate scientific view. Its eventual layout is:
 
@@ -71,7 +71,7 @@ Its eventual layout is:
   classification/probability, anomaly score, and available data products;
 - a sortable candidate table with concise scientific columns;
 - selection of candidates for side-by-side comparison;
-- drill-down into the object dossier.
+- drill-down into the object portfolio.
 
 The first implementation should use hardcoded multi-object data and deliver a
 filterable, sortable candidate list plus a selected-object detail view.
@@ -100,13 +100,36 @@ The capability graph should determine which enrichment controls are available
 for a chosen broker and origin. New execution results append records, edges,
 and execution provenance; they do not overwrite earlier evidence.
 
+## Portfolio and SemanticRecord navigation
+
+A Portfolio is a container of `SemanticRecord` instances, using the families
+declared by `<portfolio>` in `ontology.yaml`: `summary`, `detection`,
+`crossmatch`, `lightcurve`, `spectrum`, `data_product`, `classification`, and
+`survey`. A Portfolio is not itself a search result type.
+
+Every SemanticRecord family needs three compatible views:
+
+- **Grouped search:** results across Portfolios, for example detection rows or
+  classification assertions. A summary result is a thin object-oriented row
+  that opens its Portfolio.
+- **Individual record:** one concrete SemanticRecord and its provenance, with
+  a route back to its Portfolio.
+- **Portfolio hybrid:** grouped records restricted to one Portfolio. For
+  example, the Portfolio light-curve view is a combined lightcurve with its
+  detection records; users can then open an individual provider/telescope
+  record.
+
+The local `app_plot.py` prototype exposes this hierarchy through family tabs
+and a Semantic Records index. Its fixture adapter is temporary; production
+views must consume normalized `Portfolio.records` directly.
+
 ## Delivery sequence
 
 1. Treat the two current JSON apps as visual prototypes and improve their
    information hierarchy and interaction design with fake data.
 2. Add a common, tested view-model layer so both pages share chart, filtering,
    metric, and provenance formatting.
-3. Build the Object dossier MVP: Overview, Photometry, Provenance.
+3. Build the Object portfolio MVP: Overview, Photometry, Provenance.
 4. Build the Candidate workspace MVP: filterable/sortable table, selection,
    comparison, and drill-down.
 5. Replace prototype-specific JSON inputs with normalized serialized
@@ -123,4 +146,4 @@ and execution provenance; they do not overwrite earlier evidence.
 - A scientist can distinguish a non-detection from a photometric detection on
   the chart.
 - A scientist can trace any displayed scientific value to its source in the
-  dossier once Portfolio data is introduced.
+  portfolio once Portfolio data is introduced.

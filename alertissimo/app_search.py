@@ -1,8 +1,9 @@
 """Streamlit prototype for starting a transient investigation.
 
-This page deliberately uses local demo candidates. It models the first two ways
-an astronomer may begin work: resolving a known object identifier or searching
-around sky coordinates. It does not contact a broker or require credentials.
+This page deliberately uses local demo candidates. It models three ways an
+astronomer may begin work: resolving a known object identifier, searching
+around sky coordinates, or entering a future DSL expression. It does not
+contact a broker or require credentials.
 """
 
 from __future__ import annotations
@@ -14,12 +15,13 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from alertissimo.app_plot import DEFAULT_DATA_PATH, load_lightcurve_json, render_object_dossier
+from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
 
 
 DATA_DIR = Path(__file__).resolve().parent / "plot" / "json"
 CANDIDATES_PATH = DATA_DIR / "search_candidates.json"
 PRESETS_PATH = DATA_DIR / "search_presets.json"
+CANDIDATE_PORTFOLIOS_PATH = DATA_DIR / "search_candidate_portfolios.json"
 
 
 @st.cache_data
@@ -34,6 +36,19 @@ def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if not isinstance(presets, dict):
         raise ValueError("search_presets.json must contain an object")
     return candidates, presets
+
+
+@st.cache_data
+def load_demo_candidate_portfolios() -> dict[str, dict[str, Any]]:
+    """Load distinct local portfolio fixtures keyed by search-result Object ID."""
+    with CANDIDATE_PORTFOLIOS_PATH.open(encoding="utf-8") as portfolio_file:
+        portfolios = json.load(portfolio_file)
+    if not isinstance(portfolios, dict) or not all(
+        isinstance(object_id, str) and isinstance(portfolio, dict)
+        for object_id, portfolio in portfolios.items()
+    ):
+        raise ValueError("search_candidate_portfolios.json must contain object-ID keyed objects")
+    return portfolios
 
 
 def candidate_for_id(
@@ -61,24 +76,33 @@ def cone_candidates(
 
 
 def render_selected_candidate(candidate: dict[str, Any]) -> None:
-    """Show the existing app_plot single-object view below a search result."""
+    """Show a found candidate's portfolio and its DSL continuation option."""
     st.divider()
     st.caption(
         f'Selected search result: {candidate["object_id"]} · {candidate["survey"]} · '
-        f'{" · ".join(candidate["brokers"])}. The dossier below uses local demo photometry.'
+        f'{" · ".join(candidate["brokers"])}. The portfolio below uses local demo photometry.'
     )
-    try:
-        data = load_lightcurve_json(DEFAULT_DATA_PATH)
-    except (OSError, json.JSONDecodeError, ValueError) as error:
-        st.error(f"Unable to load the local object dossier: {error}")
-        return
-    render_object_dossier(data, widget_key="search_result")
+    portfolio_tab, dsl_tab = st.tabs(("Portfolio", "DSL"))
+    with portfolio_tab:
+        try:
+            data = load_demo_candidate_portfolios()[candidate["object_id"]]
+            data = load_lightcurve_document(data)
+        except (KeyError, OSError, json.JSONDecodeError, ValueError) as error:
+            st.error(f"Unable to load the local portfolio for this search result: {error}")
+        else:
+            render_object_portfolio(data, widget_key="search_result")
+    with dsl_tab:
+        render_dsl_entry(
+            title="Continue with DSL",
+            context=f'Continue the survey from {candidate["object_id"]}.',
+            key="survey_dsl_after_search_result",
+        )
 
 
 def render_id_lookup(candidates: list[dict[str, Any]], presets: dict[str, Any]) -> None:
     """Render the known-object-ID entry flow."""
     st.subheader("Look up a known object")
-    st.write("Use an LSST `diaObjectId` or a ZTF object ID to begin a dossier.")
+    st.write("Use an LSST `diaObjectId` or a ZTF object ID to begin a portfolio.")
     with st.form("object-id-lookup"):
         survey = st.selectbox("Survey", ("ZTF", "LSST"), index=("ZTF", "LSST").index(presets["id_lookup"]["survey"]))
         example = presets["id_lookup"]["object_id"]
@@ -142,6 +166,25 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
     render_selected_candidate(next(candidate for candidate in matches if candidate["object_id"] == selected_id))
 
 
+def render_dsl_entry(
+    *, title: str = "Start with DSL", context: str | None = None, key: str = "survey_dsl"
+) -> None:
+    """Render the optional DSL entry point without interpreting its contents yet."""
+    st.subheader(title)
+    st.write("Describe the survey in the Alertissimo DSL. Support for running DSL will be added later.")
+    if context:
+        st.caption(context)
+    dsl_text = st.text_area(
+        "DSL",
+        placeholder="Enter a DSL survey definition…",
+        height=180,
+        key=key,
+        help="Optional. This prototype stores the text locally for the current session only.",
+    )
+    if dsl_text:
+        st.caption("DSL input is saved for this session. It is not parsed or executed yet.")
+
+
 def main() -> None:
     st.set_page_config(page_title="Alertissimo · Find a candidate", page_icon="🔭", layout="wide")
     st.title("Start a transient investigation")
@@ -153,15 +196,17 @@ def main() -> None:
         st.stop()
     mode = st.radio(
         "How would you like to begin?",
-        ("Object ID", "Cone search"),
+        ("Object ID", "Cone search", "DSL"),
         horizontal=True,
         label_visibility="collapsed",
     )
     st.divider()
     if mode == "Object ID":
         render_id_lookup(candidates, presets)
-    else:
+    elif mode == "Cone search":
         render_cone_search(candidates, presets)
+    else:
+        render_dsl_entry()
 
 
 if __name__ == "__main__":

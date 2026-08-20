@@ -58,7 +58,7 @@ python -m scripts.smoke multi-target --live \
   --html-dir /tmp/alertissimo-multi-target
 ```
 
-`--html-dir` writes a separate dossier for every normalized Portfolio plus an
+`--html-dir` writes a separate portfolio view for every normalized Portfolio plus an
 `index.html` linking them; provider and target results are never combined. The
 directory must be missing or empty, and the command never deletes existing
 output or opens a browser. Open the generated index yourself if desired:
