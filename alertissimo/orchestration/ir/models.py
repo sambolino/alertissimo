@@ -13,6 +13,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .predicates import Predicate
+
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
 PositiveFloat = Annotated[float, Field(gt=0)]
@@ -114,15 +116,15 @@ class SearchSelection(IRModel):
 class SearchStep(Step):
     """Conceptual base for provider/capability discovery of SemanticRecords.
 
-    Search asks the available provider space to discover records matching a query.
-    Every search therefore declares the expected SemanticRecord family. ``criteria``
-    contains semantic first-pass predicates, including predicates whose provider
-    implementation may require enrichment plus local filtering. It does not mean
-    reducing records that are already in the working context; that is FilterStep's
-    deliberately separate meaning.
+    ``predicate`` is the canonical ontology-grounded first-pass condition. It says
+    what must be true, not where it is evaluated. A planner may realize some or all
+    of it as endpoint input constraints and keep the remainder for post-normalization
+    pruning. ``criteria`` remains for non-predicate search semantics that are not yet
+    modeled by dedicated fields.
     """
 
     semantic_type: NonEmptyStr
+    predicate: Predicate | None = None
     criteria: dict[str, Any] = Field(default_factory=dict)
     selection: SearchSelection | None = None
 
@@ -155,17 +157,21 @@ class SqlQueryStep(SearchStep):
 class FilterStep(Step):
     """Reduce data already present in the current working context.
 
-    Unlike SearchStep, FilterStep does not ask providers to discover records. For
-    example, semantic-searching summaries for supernovae may become a provider
-    query, whereas filtering current candidates by decline rate operates on
-    material already available to the workflow/session/Portfolio context. A
-    future planner may push this predicate into an upstream query as an execution
-    optimization, but doing so must not change the IR meaning. No input/result-set
-    model is implied here yet.
+    ``predicate`` uses exactly the same semantic language as SearchStep. The
+    distinction is lifecycle: FilterStep acts on already materialized context,
+    whereas SearchStep defines candidate discovery. ``criteria`` is retained only
+    for non-predicate legacy/internal filter details.
     """
 
     op: Literal["filter"] = "filter"
-    criteria: dict[str, Any]
+    predicate: Predicate | None = None
+    criteria: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def require_filter_content(self) -> "FilterStep":
+        if self.predicate is None and not self.criteria:
+            raise ValueError("filter requires a semantic predicate or criteria")
+        return self
 
 
 class GetStep(Step):
@@ -287,7 +293,7 @@ class ColorColorStep(DeriveStep):
         return _require_non_negative_delta(value)
 
     @model_validator(mode="after")
-    def require_distinct_colors(self) -> ColorColorStep:
+    def require_distinct_colors(self) -> "ColorColorStep":
         if self.color_x == self.color_y:
             raise ValueError("color_x and color_y must be distinct")
         return self
@@ -377,7 +383,7 @@ class ConfirmStep(Step):
     required_agreement: Annotated[int, Field(ge=1)] = 1
 
     @model_validator(mode="after")
-    def validate_explicit_source_count(self) -> ConfirmStep:
+    def validate_explicit_source_count(self) -> "ConfirmStep":
         if self.sources and self.required_agreement > len(self.sources):
             raise ValueError("required_agreement cannot exceed the explicit source count")
         return self
