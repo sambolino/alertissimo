@@ -1,15 +1,9 @@
 """Provider-neutral application of endpoint parameter binding declarations.
 
-The four layers are deliberately separate: an IR Step supplies canonical
-semantic arguments; EndpointPlan identifies the selected endpoint; EndpointSpec
-contains its physical contract and declarative binding metadata; and
-BoundEndpointCall contains invocation parameters.  The registry owns physical
-naming differences, the binder owns generic application of its declarations,
-and neither the IR nor planner knows provider parameter names.
-
-Cone geometry is passed through unchanged.  The initial registry declarations
-use degrees for RA/Dec and arcseconds for radius, matching the existing
-orchestration cone contract; no provider-dependent unit conversion occurs here.
+IR supplies canonical semantic arguments, EndpointPlan supplies the selected
+endpoint plus any predicate realization already proven by the planner, EndpointSpec
+contains the physical contract, and BoundEndpointCall contains invocation params.
+The binder applies decisions; it does not reinterpret semantic predicates.
 """
 
 from __future__ import annotations
@@ -79,8 +73,6 @@ def _coerce_physical_type(
     physical_name: str,
     role: str,
 ) -> Any:
-    """Normalize a transformed value using only its physical declaration."""
-
     declared_type = declaration.get("type")
     try:
         if declared_type == "integer":
@@ -107,6 +99,21 @@ def _coerce_physical_type(
         ) from error
 
 
+def _set_param(
+    params: dict[str, Any],
+    physical_name: str,
+    value: Any,
+    *,
+    endpoint_plan: EndpointPlan,
+) -> None:
+    if physical_name in params and params[physical_name] != value:
+        raise UnsupportedParameterBindingError(
+            f"conflicting bindings for {_context(endpoint_plan)} physical parameter "
+            f"{physical_name!r}: {params[physical_name]!r} vs {value!r}"
+        )
+    params[physical_name] = value
+
+
 def bind_endpoint(
     step: Step, endpoint_plan: EndpointPlan, registry: EndpointRegistry
 ) -> BoundEndpointCall:
@@ -116,6 +123,30 @@ def bind_endpoint(
         endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
     )
     params: dict[str, Any] = {}
+
+    realization = endpoint_plan.predicate_realization
+    if realization is not None:
+        for physical_name, value in realization.params.items():
+            if physical_name not in spec.params:
+                raise UnsupportedParameterBindingError(
+                    f"predicate realization for {_context(endpoint_plan)} references "
+                    f"undeclared physical parameter {physical_name!r}"
+                )
+            declaration = spec.params[physical_name] or {}
+            coerced = _coerce_physical_type(
+                value,
+                declaration,
+                endpoint_plan=endpoint_plan,
+                physical_name=physical_name,
+                role="semantic_predicate",
+            )
+            _set_param(
+                params,
+                physical_name,
+                coerced,
+                endpoint_plan=endpoint_plan,
+            )
+
     declared_roles: list[str] = []
     for physical_name, raw_declaration in spec.params.items():
         declaration = raw_declaration or {}
@@ -131,16 +162,20 @@ def bind_endpoint(
             transformed = _transform(
                 value, declaration, endpoint_plan=endpoint_plan, role=role
             )
-            params[physical_name] = _coerce_physical_type(
+            coerced = _coerce_physical_type(
                 transformed,
                 declaration,
                 endpoint_plan=endpoint_plan,
                 physical_name=physical_name,
                 role=role,
             )
+            _set_param(
+                params,
+                physical_name,
+                coerced,
+                endpoint_plan=endpoint_plan,
+            )
 
-    # A SQL string cannot safely populate a split selected/tables/conditions
-    # contract.  It remains deferred until a generic compiler is introduced.
     if getattr(step, "op", None) == "sql_query" and "query" not in declared_roles:
         raise UnsupportedParameterBindingError(
             f"unsupported parameter binding for {_context(endpoint_plan)}: canonical "
