@@ -28,11 +28,6 @@ jobs:
       - name: Run DSL and touched orchestration contracts
         run: |
           PYTHONPATH=. pytest -q \
-            tests/test_dsl_surface.py \
-            tests/test_dsl_formal_grammar.py \
-            tests/test_dsl_expressions.py \
-            tests/test_dsl_capability_validation.py \
-            tests/test_dsl_lowering.py \
-            tests/test_dsl_ir_integration.py \
+            tests/test_dsl_*.py \
             tests/test_orchestration_ir_models.py \
             tests/test_orchestration_capability_validation.py
