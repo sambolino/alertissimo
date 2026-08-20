@@ -7,7 +7,9 @@ from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
 from alertissimo.orchestration.ir import DeriveStep
 from alertissimo.orchestration.runtime import (
+    EndpointPlan,
     StepExecutionResult,
+    StepRun,
     StepRunState,
     WorkflowExecutionResult,
 )
@@ -17,6 +19,7 @@ from .models import (
     StepPortfolioResult,
     WorkflowPortfolioResult,
 )
+from .predicate import prune_portfolios
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -31,7 +34,8 @@ def normalize_execution(
     """Normalize exactly one physical result using the authoritative builder.
 
     Validation defaults on because orchestration is a production boundary from
-    physical provider data into the canonical semantic model.
+    physical provider data into the canonical semantic model. This helper has no
+    orchestration plan context, so it deliberately performs no residual pruning.
     """
 
     return build_portfolios_from_execution(
@@ -44,7 +48,12 @@ def normalize_step_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> StepPortfolioResult:
-    """Normalize a completed Step result, including one from a failure path."""
+    """Normalize a completed Step result without endpoint-plan strategy context.
+
+    This standalone helper remains a pure normalization bridge. Workflow-level
+    normalization has the aligned EndpointPlans needed to apply residual semantic
+    predicates safely.
+    """
 
     return StepPortfolioResult(
         step_index=result.step_index,
@@ -57,6 +66,48 @@ def normalize_step_execution(
                 ),
             )
             for execution in result.executions
+        ),
+    )
+
+
+def _normalize_planned_execution(
+    execution: ExecutionResult,
+    plan: EndpointPlan,
+    *,
+    validate_semantic_model: bool,
+) -> ExecutionPortfolioResult:
+    """Normalize one aligned execution and apply only its residual predicate."""
+
+    portfolios = normalize_execution(
+        execution,
+        validate_semantic_model=validate_semantic_model,
+    )
+    realization = plan.predicate_realization
+    if realization is not None and realization.residual is not None:
+        portfolios = prune_portfolios(portfolios, realization.residual)
+    return ExecutionPortfolioResult(
+        execution_id=execution.internal_execution_id.value,
+        portfolios=portfolios,
+    )
+
+
+def _normalize_planned_step(
+    result: StepExecutionResult,
+    step_run: StepRun,
+    *,
+    validate_semantic_model: bool,
+) -> StepPortfolioResult:
+    """Normalize executions against their already-validated endpoint-plan order."""
+
+    return StepPortfolioResult(
+        step_index=result.step_index,
+        executions=tuple(
+            _normalize_planned_execution(
+                execution,
+                plan,
+                validate_semantic_model=validate_semantic_model,
+            )
+            for plan, execution in zip(step_run.endpoint_plans, result.executions)
         ),
     )
 
@@ -136,18 +187,39 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> WorkflowPortfolioResult:
-    """Normalize physical results while preserving endpoint-free derive occurrences."""
+    """Normalize aligned executions, then enforce each plan's residual predicate.
+
+    Endpoint pushdown has already happened before execution. At this boundary the
+    normalized Portfolio and the exact EndpointPlan are both available, so any
+    semantic predicate intentionally left residual by the planner is evaluated
+    here. The scientific predicate remains on WorkflowIR; this is only its local
+    execution strategy.
+    """
 
     # Complete validation first: malformed results must not produce partial output.
     _validate_workflow_alignment(result)
+    normalized_steps: list[StepPortfolioResult] = []
+    for step_run, step_result in zip(result.run.steps, result.steps):
+        step = result.run.step_at(step_run.step_index)
+        if isinstance(step, DeriveStep):
+            normalized_steps.append(
+                normalize_step_execution(
+                    step_result,
+                    validate_semantic_model=validate_semantic_model,
+                )
+            )
+            continue
+        normalized_steps.append(
+            _normalize_planned_step(
+                step_result,
+                step_run,
+                validate_semantic_model=validate_semantic_model,
+            )
+        )
+
     return WorkflowPortfolioResult(
         run=result.run,
-        steps=tuple(
-            normalize_step_execution(
-                step, validate_semantic_model=validate_semantic_model
-            )
-            for step in result.steps
-        ),
+        steps=tuple(normalized_steps),
     )
 
 
