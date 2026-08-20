@@ -148,6 +148,31 @@ class FilterStep(Step):
     criteria: dict[str, Any]
 
 
+class OrderStep(Step):
+    """Order the current working candidate context by one deterministic scalar.
+
+    The expression remains semantic rather than provider-specific.  Cardinality
+    validation must establish that it resolves to one sortable value per current
+    candidate before execution or provider pushdown.
+    """
+
+    op: Literal["order"] = "order"
+    expression: NonEmptyStr
+    direction: Literal["asc", "desc"] | None = None
+
+
+class LatestStep(Step):
+    """Keep the latest ``count`` candidates using their canonical recency meaning.
+
+    ``latest`` is deliberately represented as a cardinality selection rather than
+    a time window.  A planner/executor may realize it by provider pushdown or by
+    local ordering plus limiting without changing the IR intent.
+    """
+
+    op: Literal["latest"] = "latest"
+    count: Annotated[int, Field(gt=0)]
+
+
 class GetStep(Step):
     """Conceptual base for retrieving already-existing information or evidence.
 
@@ -405,6 +430,7 @@ class ExportStep(ActionStep):
 
 StepUnion = Annotated[
     LookupStep | SemanticSearchStep | ConeSearchStep | SqlQueryStep | FilterStep
+    | OrderStep | LatestStep
     | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
     | GetForcedPhotometryStep | GetClassificationStep | GetSpectrumStep
     | GetDataProductStep | LightcurveStep | ColorMagnitudeStep | ColorColorStep
@@ -429,8 +455,9 @@ __all__ = [
     "DeriveStep", "ExportStep", "FilterStep", "FollowupRequestStep",
     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
     "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
-    "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
-    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchStep",
-    "SemanticSearchStep", "Source", "SqlQueryStep", "Step", "StepUnion",
-    "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep", "WorkflowIR",
+    "GetSpectrumStep", "GetStep", "LatestStep", "LightcurveStep", "LookupStep",
+    "MatchStep", "MethodAnalysisStep", "MonitorStep", "NotifyStep", "OrderStep",
+    "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
+    "StepUnion", "TargetKind", "TargetSelector", "TimeContext",
+    "UtilityScoreStep", "WorkflowIR",
 ]
