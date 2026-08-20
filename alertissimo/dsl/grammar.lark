@@ -11,7 +11,7 @@
 // deterministic layout normalization before this grammar is applied.
 
 start: script
-script: _NL* candidate_statement _NL clause* _DEDENT*
+script: _NL* candidate_statement (_NL clause*)? _DEDENT*
 
 candidate_statement: "objects"i "from"i origin_list via_clause?
 origin_list: NAME ("," NAME)*
