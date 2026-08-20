@@ -230,8 +230,8 @@ def _canonicalize_layout(script: str) -> str:
     only indentation with semantic force in v0.1 is indentation relative to a
     preceding ``with`` line: after ``with ...:`` it introduces a conjunctive
     predicate block; after plain ``with ...`` it may introduce one scoped
-    ``where`` line. The normalized text is what the formal indentation grammar
-    consumes, while line count is preserved for diagnostics.
+    ``where`` line. Blank and comment-only lines preserve line count for
+    diagnostics but never carry indentation state into Lark's indenter.
     """
 
     lines = script.splitlines()
@@ -241,8 +241,11 @@ def _canonicalize_layout(script: str) -> str:
 
     for raw in lines:
         stripped = raw.strip()
-        if not stripped or raw.lstrip().startswith("#"):
-            out.append(raw)
+        if not stripped:
+            out.append("")
+            continue
+        if raw.lstrip().startswith("#"):
+            out.append(stripped)
             continue
 
         indent = _indent_width(raw)
