@@ -1,4 +1,4 @@
-"""Public declarative Alertissimo DSL surface, validation, and IR lowering."""
+"""Public declarative Alertissimo DSL surface, validation, and lowering."""
 
 from .capability_validation import (
     SurfaceCapabilityCheck,
@@ -9,8 +9,11 @@ from .capability_validation import (
     validate_surface_capabilities,
 )
 from .lowering import (
+    SurfaceCompilation,
     SurfaceLoweringError,
+    compile_surface,
     compile_surface_to_ir,
+    lower_surface,
     lower_surface_to_ir,
 )
 from .parser import grammar_text, parse_surface_script
@@ -32,9 +35,11 @@ from .surface import (
     WithinClause,
 )
 from .validation import (
+    SemanticRecordReference,
     SurfaceValidationIssue,
     SurfaceValidationReport,
     ValidationSeverity,
+    extract_semantic_record_references,
     resolve_record_type,
     validate_surface_semantics,
 )
@@ -51,12 +56,14 @@ __all__ = (
     "OrderByClause",
     "RankedByClause",
     "RequirementClause",
+    "SemanticRecordReference",
     "SurfaceCapabilityCheck",
     "SurfaceCapabilityEvidence",
     "SurfaceCapabilityReport",
     "SurfaceCapabilityStatus",
     "SurfaceCapabilityValidationError",
     "SurfaceClause",
+    "SurfaceCompilation",
     "SurfaceLoweringError",
     "SurfaceScript",
     "SurfaceValidationIssue",
@@ -64,8 +71,11 @@ __all__ = (
     "ValidationSeverity",
     "WhereClause",
     "WithinClause",
+    "compile_surface",
     "compile_surface_to_ir",
+    "extract_semantic_record_references",
     "grammar_text",
+    "lower_surface",
     "lower_surface_to_ir",
     "parse_surface_script",
     "resolve_record_type",
