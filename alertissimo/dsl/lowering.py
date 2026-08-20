@@ -1,10 +1,9 @@
-"""Lower the declarative DSL surface AST into orchestration ``WorkflowIR``.
+"""Lower declarative DSL surface intent into WorkflowIR plus result-view intent.
 
-This is a semantic compiler boundary, not a planner.  It preserves the user's
-ordered intent in canonical IR operations without selecting endpoints, binding
-provider parameters, or executing anything.  One surface clause may become zero,
-one, or multiple IR operations; conversely, candidate-scope clauses may be folded
-into the initial search operation.
+This is a semantic compiler boundary, not a planner. It preserves the scientist's
+intent without selecting endpoints, binding provider parameters, or executing
+anything. Scientific operations become ``WorkflowIR``; non-scientific presentation
+instructions such as ``order by`` become a sibling ``ResultViewSpec``.
 """
 
 from __future__ import annotations
@@ -13,7 +12,7 @@ from datetime import timedelta
 import re
 from typing import Protocol
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph
 from alertissimo.orchestration.ir import (
@@ -29,14 +28,14 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
-    LatestStep,
     MatchStep,
-    OrderStep,
+    SearchSelection,
     SemanticSearchStep,
     Source,
     TimeContext,
     WorkflowIR,
 )
+from alertissimo.orchestration.results import ResultOrderSpec, ResultViewSpec
 
 from .capability_validation import (
     SurfaceCapabilityCheck,
@@ -56,11 +55,15 @@ from .surface import (
     WhereClause,
     WithinClause,
 )
-from .validation import resolve_record_type, validate_surface_semantics
+from .validation import (
+    extract_semantic_record_references,
+    resolve_record_type,
+    validate_surface_semantics,
+)
 
 
 class SurfaceLoweringError(ValueError):
-    """A valid surface construct cannot yet be represented faithfully in IR."""
+    """A valid surface construct cannot yet be represented faithfully downstream."""
 
     def __init__(
         self,
@@ -71,10 +74,17 @@ class SurfaceLoweringError(ValueError):
     ) -> None:
         self.code = code
         self.clause_index = clause_index
-        location = (
-            f"clause {clause_index}: " if clause_index is not None else ""
-        )
+        location = f"clause {clause_index}: " if clause_index is not None else ""
         super().__init__(f"{location}{message} [{code}]")
+
+
+class SurfaceCompilation(BaseModel):
+    """Scientific workflow intent and orthogonal presentation intent."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    workflow: WorkflowIR
+    view: ResultViewSpec = ResultViewSpec()
 
 
 class _SemanticPaths(Protocol):
@@ -104,6 +114,17 @@ _ANGLE_TO_ARCSEC = {
     "deg": 3600.0,
 }
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
+_IMPLICIT_GET_NOUNS = frozenset(
+    {
+        "classification",
+        "crossmatch",
+        "lightcurve",
+        "forced_photometry",
+        "cutout",
+        "spectrum",
+        "data_product",
+    }
+)
 
 
 def _semantic_path_model() -> _SemanticPaths:
@@ -130,10 +151,7 @@ def _candidate_sources(
     ]
 
 
-def _counterpart_source(
-    origin: str,
-    broker: str | None,
-) -> Source:
+def _counterpart_source(origin: str, broker: str | None) -> Source:
     return (
         Source(origin=origin, broker=broker)
         if broker is not None
@@ -167,47 +185,91 @@ def _radius_arcsec(clause: InsideClause, *, clause_index: int) -> float:
     return clause.radius.value * _ANGLE_TO_ARCSEC[unit]
 
 
+def _first_filter_index(surface: SurfaceScript) -> int:
+    return next(
+        (
+            index
+            for index, clause in enumerate(surface.clauses)
+            if isinstance(clause, FilterClause)
+        ),
+        len(surface.clauses),
+    )
+
+
 def _candidate_search(
     surface: SurfaceScript,
+    *,
+    record_types: frozenset[str],
 ) -> tuple[SemanticSearchStep | ConeSearchStep, frozenset[int]]:
-    """Compile the candidate header plus its spatial/time preamble."""
+    """Compile candidate-scope constraints into one semantic search operation."""
 
+    first_filter = _first_filter_index(surface)
     inside: tuple[int, InsideClause] | None = None
     within: tuple[int, WithinClause] | None = None
+    latest: tuple[int, LatestClause] | None = None
+    general_where: tuple[int, WhereClause] | None = None
+    semantic_requirements: list[dict[str, object]] = []
     consumed: set[int] = set()
-    operational_seen = False
 
-    for index, clause in enumerate(surface.clauses):
-        if isinstance(clause, (InsideClause, WithinClause)):
-            if operational_seen:
+    for index, clause in enumerate(surface.clauses[:first_filter]):
+        if isinstance(clause, InsideClause):
+            if inside is not None:
                 raise SurfaceLoweringError(
-                    "inside/within are candidate-scope constraints and must precede operational clauses",
-                    code="late_candidate_constraint",
+                    "only one top-level inside constraint is currently supported",
+                    code="multiple_inside_constraints",
                     clause_index=index,
                 )
-            if isinstance(clause, InsideClause):
-                if inside is not None:
-                    raise SurfaceLoweringError(
-                        "only one top-level inside constraint is currently supported",
-                        code="multiple_inside_constraints",
-                        clause_index=index,
-                    )
-                inside = (index, clause)
-            else:
-                if within is not None:
-                    raise SurfaceLoweringError(
-                        "only one top-level within constraint is currently supported",
-                        code="multiple_time_constraints",
-                        clause_index=index,
-                    )
-                within = (index, clause)
+            inside = (index, clause)
             consumed.add(index)
-        else:
-            operational_seen = True
+        elif isinstance(clause, WithinClause):
+            if within is not None:
+                raise SurfaceLoweringError(
+                    "only one top-level within constraint is currently supported",
+                    code="multiple_time_constraints",
+                    clause_index=index,
+                )
+            within = (index, clause)
+            consumed.add(index)
+        elif isinstance(clause, LatestClause):
+            if latest is not None:
+                raise SurfaceLoweringError(
+                    "only one latest selector is currently supported",
+                    code="multiple_latest_constraints",
+                    clause_index=index,
+                )
+            latest = (index, clause)
+            consumed.add(index)
+        elif isinstance(clause, WhereClause):
+            general_where = (index, clause)
+            consumed.add(index)
+        elif isinstance(clause, RequirementClause) and clause.predicates:
+            noun = resolve_record_type(clause.product, record_types)
+            if noun is None:
+                raise SurfaceLoweringError(
+                    "scoped requirement must resolve to one ontology record type",
+                    code="unresolved_requirement",
+                    clause_index=index,
+                )
+            semantic_requirements.append(
+                {
+                    "semantic_type": noun,
+                    "producer": clause.source,
+                    "channel": clause.via or surface.candidates.broker,
+                    "method": clause.method,
+                    "predicates": list(clause.predicates),
+                }
+            )
+
+    criteria: dict[str, object] = {}
+    if general_where is not None:
+        criteria["where"] = general_where[1].condition
+    if semantic_requirements:
+        criteria["semantic_requirements"] = semantic_requirements
 
     time_context = (
         _time_context(within[1], clause_index=within[0]) if within is not None else None
     )
+    selection = SearchSelection(latest=latest[1].count) if latest is not None else None
     sources = _candidate_sources(surface)
 
     if inside is not None:
@@ -215,6 +277,8 @@ def _candidate_search(
         return (
             ConeSearchStep(
                 semantic_type="summary",
+                criteria=criteria,
+                selection=selection,
                 ra=cone.ra,
                 dec=cone.dec,
                 radius=_radius_arcsec(cone, clause_index=index),
@@ -227,7 +291,8 @@ def _candidate_search(
     return (
         SemanticSearchStep(
             semantic_type="summary",
-            criteria={},
+            criteria=criteria,
+            selection=selection,
             time_context=time_context,
             sources=sources,
         ),
@@ -253,11 +318,7 @@ def _require_plain_product(
         )
 
 
-def _reject_method(
-    clause: RequirementClause,
-    *,
-    clause_index: int,
-) -> None:
+def _reject_method(clause: RequirementClause, *, clause_index: int) -> None:
     if clause.method is not None:
         raise SurfaceLoweringError(
             "this requirement cannot yet preserve an explicit producing method in its IR operation",
@@ -266,11 +327,7 @@ def _reject_method(
         )
 
 
-def _reject_producer(
-    clause: RequirementClause,
-    *,
-    clause_index: int,
-) -> None:
+def _reject_producer(clause: RequirementClause, *, clause_index: int) -> None:
     if clause.source is not None:
         raise SurfaceLoweringError(
             "this IR retrieval operation cannot yet preserve the requested semantic producer",
@@ -312,20 +369,10 @@ def _lower_requirement(
                     clause_index=clause_index,
                 )
             return ClassifyStep(method=clause.method)
-
-        # The current GetClassificationStep has no producer field.  The common
-        # producer==broker case is lossless through the physical Source constraint;
-        # the rare cross-channel producer case remains intentionally postponed.
-        if clause.source is not None and (
-            effective_broker is None
-            or clause.source.lower() != effective_broker.lower()
-        ):
-            raise SurfaceLoweringError(
-                "classification producer differs from (or is more specific than) the physical broker; the current IR intentionally does not encode that rare extension",
-                code="unrepresentable_classification_producer",
-                clause_index=clause_index,
-            )
-        return GetClassificationStep(sources=sources)
+        return GetClassificationStep(
+            sources=sources,
+            classifier=clause.source,
+        )
 
     if noun == "lightcurve":
         _require_plain_product(clause, noun, clause_index=clause_index)
@@ -416,16 +463,12 @@ def _lower_match(
             clause_index=clause_index,
         )
 
-    params: dict[str, object] = {
-        "candidate_origins": list(surface.candidates.origins),
-    }
+    params: dict[str, object] = {"candidate_origins": list(surface.candidates.origins)}
     sources: list[Source] = []
 
     if clause.counterpart_origin is not None:
         params["counterpart_origin"] = clause.counterpart_origin
-        sources = [
-            _counterpart_source(clause.counterpart_origin, effective_broker)
-        ]
+        sources = [_counterpart_source(clause.counterpart_origin, effective_broker)]
     if clause.within is not None:
         params["max_time_delta"] = _duration(clause.within)
     if clause.on is not None:
@@ -434,10 +477,7 @@ def _lower_match(
     return MatchStep(sources=sources, params=params)
 
 
-def _validate_semantics(
-    surface: SurfaceScript,
-    semantic_paths: _SemanticPaths,
-) -> None:
+def _validate_semantics(surface: SurfaceScript, semantic_paths: _SemanticPaths) -> None:
     report = validate_surface_semantics(surface, semantic_paths=semantic_paths)
     if report.is_valid:
         return
@@ -449,56 +489,177 @@ def _validate_semantics(
     )
 
 
-def lower_surface_to_ir(
+def _signature(
+    noun: str,
+    producer: str | None,
+    channel: str | None,
+) -> tuple[str, str | None, str | None]:
+    return (
+        noun,
+        producer.lower() if producer else None,
+        channel.lower() if channel else None,
+    )
+
+
+def _requirement_signature(
+    surface: SurfaceScript,
+    clause: RequirementClause,
+    record_types: frozenset[str],
+) -> tuple[str, str | None, str | None] | None:
+    noun = resolve_record_type(clause.product, record_types)
+    if noun is None:
+        return None
+    return _signature(noun, clause.source, clause.via or surface.candidates.broker)
+
+
+def _implicit_requirements_from_where(
+    surface: SurfaceScript,
+    clause: WhereClause,
+    *,
+    record_types: frozenset[str],
+) -> tuple[RequirementClause, ...]:
+    requirements: list[RequirementClause] = []
+    for ref in extract_semantic_record_references(clause.condition, record_types):
+        if ref.noun == "summary" or ref.noun not in _IMPLICIT_GET_NOUNS:
+            continue
+        requirements.append(
+            RequirementClause(
+                product=ref.noun,
+                source=ref.producer,
+                via=ref.channel,
+            )
+        )
+    return tuple(requirements)
+
+
+def _scoped_filter_criteria(
+    surface: SurfaceScript,
+    clause: RequirementClause,
+    *,
+    noun: str,
+) -> dict[str, object]:
+    return {
+        "semantic_scope": {
+            "semantic_type": noun,
+            "producer": clause.source,
+            "channel": clause.via or surface.candidates.broker,
+            "method": clause.method,
+        },
+        "predicates": list(clause.predicates),
+    }
+
+
+def lower_surface(
     surface: SurfaceScript,
     *,
     semantic_paths: _SemanticPaths | None = None,
     name: str | None = None,
-) -> WorkflowIR:
-    """Lower an ontology-valid surface AST into canonical ordered ``WorkflowIR``.
-
-    Provider capability validation is deliberately a separate stage.  Use
-    :func:`compile_surface_to_ir` when unsupported/deferred provider requirements
-    should be rejected before lowering.
-    """
+) -> SurfaceCompilation:
+    """Lower ontology-valid surface intent into scientific IR plus view metadata."""
 
     semantic_model = semantic_paths or _semantic_path_model()
     _validate_semantics(surface, semantic_model)
 
-    candidate_step, consumed = _candidate_search(surface)
+    candidate_step, consumed = _candidate_search(
+        surface,
+        record_types=semantic_model.record_types,
+    )
     steps = [candidate_step]
+    first_filter = _first_filter_index(surface)
+    emitted: set[tuple[str, str | None, str | None]] = set()
+    view = ResultViewSpec()
+
+    # Explicit WITH requirements are authoritative for de-duplication even when a
+    # general WHERE references the same semantic material earlier in the text.
+    explicit_signatures = {
+        signature
+        for clause in surface.clauses
+        if isinstance(clause, RequirementClause)
+        for signature in [
+            _requirement_signature(surface, clause, semantic_model.record_types)
+        ]
+        if signature is not None
+    }
 
     for index, clause in enumerate(surface.clauses):
-        if index in consumed:
-            continue
-        if isinstance(clause, (WhereClause, FilterClause)):
-            steps.append(FilterStep(criteria={"expression": clause.condition}))
-        elif isinstance(clause, LatestClause):
-            steps.append(LatestStep(count=clause.count))
-        elif isinstance(clause, RequirementClause):
-            steps.append(
-                _lower_requirement(
-                    surface,
-                    clause,
-                    clause_index=index,
-                    record_types=semantic_model.record_types,
-                )
-            )
-        elif isinstance(clause, MatchClause):
-            steps.append(_lower_match(surface, clause, clause_index=index))
-        elif isinstance(clause, OrderByClause):
-            steps.append(
-                OrderStep(
+        if isinstance(clause, OrderByClause):
+            view = ResultViewSpec(
+                order_by=ResultOrderSpec(
                     expression=clause.expression,
                     direction=clause.direction,
                 )
             )
+            continue
+        if index in consumed:
+            if isinstance(clause, WhereClause):
+                for implied in _implicit_requirements_from_where(
+                    surface,
+                    clause,
+                    record_types=semantic_model.record_types,
+                ):
+                    signature = _requirement_signature(
+                        surface, implied, semantic_model.record_types
+                    )
+                    if signature is None or signature in emitted:
+                        continue
+                    if signature in explicit_signatures:
+                        continue
+                    steps.append(
+                        _lower_requirement(
+                            surface,
+                            implied,
+                            clause_index=index,
+                            record_types=semantic_model.record_types,
+                        )
+                    )
+                    emitted.add(signature)
+            continue
+
+        if isinstance(clause, RequirementClause):
+            signature = _requirement_signature(
+                surface, clause, semantic_model.record_types
+            )
+            if signature is None:
+                raise SurfaceLoweringError(
+                    "requirement must resolve to one ontology record type before lowering",
+                    code="unresolved_requirement",
+                    clause_index=index,
+                )
+            if signature not in emitted:
+                steps.append(
+                    _lower_requirement(
+                        surface,
+                        clause,
+                        clause_index=index,
+                        record_types=semantic_model.record_types,
+                    )
+                )
+                emitted.add(signature)
+
+            if clause.predicates and index >= first_filter:
+                noun = signature[0]
+                steps.append(
+                    FilterStep(
+                        criteria=_scoped_filter_criteria(
+                            surface,
+                            clause,
+                            noun=noun,
+                        )
+                    )
+                )
+        elif isinstance(clause, FilterClause):
+            steps.append(FilterStep(criteria={"expression": clause.condition}))
+        elif isinstance(clause, MatchClause):
+            steps.append(_lower_match(surface, clause, clause_index=index))
         elif isinstance(clause, RankedByClause):
             raise SurfaceLoweringError(
                 "ranked by requires a registered ranking/score semantic before it can be lowered canonically",
                 code="ranking_semantics_deferred",
                 clause_index=index,
             )
+        elif isinstance(clause, (InsideClause, WithinClause, LatestClause, WhereClause)):
+            # Candidate-scope clauses are consumed by _candidate_search.
+            continue
         else:  # pragma: no cover - discriminated surface union guards this.
             raise SurfaceLoweringError(
                 f"unsupported surface clause {type(clause).__name__}",
@@ -506,7 +667,10 @@ def lower_surface_to_ir(
                 clause_index=index,
             )
 
-    return WorkflowIR(steps=steps, name=name)
+    return SurfaceCompilation(
+        workflow=WorkflowIR(steps=steps, name=name),
+        view=view,
+    )
 
 
 def _deferred_check_is_lowerable(
@@ -519,26 +683,24 @@ def _deferred_check_is_lowerable(
     if check.subject != "requirement" or check.clause_index is None:
         return False
     clause = surface.clauses[check.clause_index]
+    if isinstance(clause, WhereClause):
+        # A deferred provider-facing semantic dependency implied by WHERE is not
+        # safe to compile: the planner does not yet have evidence for satisfying it.
+        return False
     if not isinstance(clause, RequirementClause):
         return False
     noun = resolve_record_type(clause.product, record_types)
     return clause.method is not None or noun in _LOCAL_REQUIREMENTS
 
 
-def compile_surface_to_ir(
+def compile_surface(
     surface: SurfaceScript,
     *,
     graph: CapabilityGraph | None = None,
     semantic_paths: _SemanticPaths | None = None,
     name: str | None = None,
-) -> WorkflowIR:
-    """Run ontology + capability validation and then lower to ``WorkflowIR``.
-
-    Provider-facing capability uncertainty is never silently discarded.  Deferred
-    local behavior that has an explicit IR representation (classification methods,
-    color derivations, and local matching) may proceed; dynamic/unconfirmed
-    provider capabilities remain a compile-time error.
-    """
+) -> SurfaceCompilation:
+    """Run ontology + capability validation and lower scientific/view intent."""
 
     semantic_model = semantic_paths or _semantic_path_model()
     _validate_semantics(surface, semantic_model)
@@ -568,15 +730,61 @@ def compile_surface_to_ir(
                 clause_index=check.clause_index,
             )
 
-    return lower_surface_to_ir(
+    return lower_surface(
         surface,
         semantic_paths=semantic_model,
         name=name,
     )
 
 
+def lower_surface_to_ir(
+    surface: SurfaceScript,
+    *,
+    semantic_paths: _SemanticPaths | None = None,
+    name: str | None = None,
+) -> WorkflowIR:
+    """Compatibility helper for callers that explicitly require WorkflowIR only.
+
+    It refuses to discard an ``order by`` result-view instruction silently.
+    """
+
+    compilation = lower_surface(surface, semantic_paths=semantic_paths, name=name)
+    if compilation.view.order_by is not None:
+        raise SurfaceLoweringError(
+            "surface contains result-view intent; use lower_surface() to preserve it",
+            code="result_view_present",
+        )
+    return compilation.workflow
+
+
+def compile_surface_to_ir(
+    surface: SurfaceScript,
+    *,
+    graph: CapabilityGraph | None = None,
+    semantic_paths: _SemanticPaths | None = None,
+    name: str | None = None,
+) -> WorkflowIR:
+    """Compatibility helper for capability-checked WorkflowIR-only callers."""
+
+    compilation = compile_surface(
+        surface,
+        graph=graph,
+        semantic_paths=semantic_paths,
+        name=name,
+    )
+    if compilation.view.order_by is not None:
+        raise SurfaceLoweringError(
+            "surface contains result-view intent; use compile_surface() to preserve it",
+            code="result_view_present",
+        )
+    return compilation.workflow
+
+
 __all__ = [
+    "SurfaceCompilation",
     "SurfaceLoweringError",
+    "compile_surface",
     "compile_surface_to_ir",
+    "lower_surface",
     "lower_surface_to_ir",
 ]
