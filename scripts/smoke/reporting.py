@@ -135,6 +135,13 @@ def report_data(result) -> dict[str, Any]:
             seen_execution_ids.add(execution_id)
             physical_execution_ids.append(execution_id)
 
+    portfolio_ids = [
+        portfolio["portfolio_id"]
+        for step in steps
+        for execution in step["executions"]
+        for portfolio in execution["portfolios"]
+    ]
+
     return {
         "scenario": result.name,
         "workflow": result.workflow.name,
@@ -144,9 +151,8 @@ def report_data(result) -> dict[str, Any]:
         ),
         "physical_execution_count": len(physical_execution_ids),
         "physical_execution_ids": physical_execution_ids,
-        "portfolio_count": sum(
-            len(e["portfolios"]) for s in steps for e in s["executions"]
-        ),
+        "portfolio_count": len(portfolio_ids),
+        "unique_portfolio_count": len(set(portfolio_ids)),
         "expected_failure": result.expected_error is not None,
         "failed_step_index": failed_steps[0]["step_index"] if failed_steps else None,
         "failure_error": failed_steps[0]["error"] if failed_steps else None,
@@ -213,6 +219,7 @@ def render_human(result) -> str:
     lines.append(
         "semantic execution outputs: "
         f"{data['normalized_execution_count']}; unique physical executions: "
-        f"{data['physical_execution_count']}; Portfolios: {data['portfolio_count']}"
+        f"{data['physical_execution_count']}; Portfolio occurrences: "
+        f"{data['portfolio_count']}; unique Portfolios: {data['unique_portfolio_count']}"
     )
     return "\n".join(lines)
