@@ -120,21 +120,31 @@ def _effective_residual(
 
 def _normalize_planned_execution(
     execution: ExecutionResult,
-    plan: EndpointPlan,
     residual: Predicate | None,
+    normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
     *,
     validate_semantic_model: bool,
 ) -> ExecutionPortfolioResult:
-    """Normalize one aligned execution and apply its effective residual predicate."""
+    """Reuse base normalization for one physical execution, then apply a Step view.
 
-    portfolios = normalize_execution(
-        execution,
-        validate_semantic_model=validate_semantic_model,
-    )
+    Coalesced semantic Steps carry the same physical execution ID. Normalizing that
+    execution repeatedly would manufacture distinct Portfolio identities for the
+    same physical result. The cache therefore owns the base normalized Portfolios;
+    residual pruning only selects from that shared tuple and never clones them.
+    """
+
+    execution_id = execution.internal_execution_id.value
+    portfolios = normalized_by_execution_id.get(execution_id)
+    if portfolios is None:
+        portfolios = normalize_execution(
+            execution,
+            validate_semantic_model=validate_semantic_model,
+        )
+        normalized_by_execution_id[execution_id] = portfolios
     if residual is not None:
         portfolios = prune_portfolios(portfolios, residual)
     return ExecutionPortfolioResult(
-        execution_id=execution.internal_execution_id.value,
+        execution_id=execution_id,
         portfolios=portfolios,
     )
 
@@ -143,6 +153,7 @@ def _normalize_planned_step(
     result: StepExecutionResult,
     step_run: StepRun,
     run: WorkflowRun,
+    normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
     *,
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
@@ -153,15 +164,15 @@ def _normalize_planned_step(
         executions=tuple(
             _normalize_planned_execution(
                 execution,
-                plan,
                 _effective_residual(
                     run,
                     step_run.step_index,
                     plan_index,
                 ),
+                normalized_by_execution_id,
                 validate_semantic_model=validate_semantic_model,
             )
-            for plan_index, (plan, execution) in enumerate(
+            for plan_index, (_plan, execution) in enumerate(
                 zip(step_run.endpoint_plans, result.executions)
             )
         ),
@@ -297,14 +308,16 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> WorkflowPortfolioResult:
-    """Normalize aligned executions and enforce effective residual predicates.
+    """Normalize each physical execution once, then expose Step-specific views.
 
     A reused execution inherits the residual predicate of its physical owner, so a
     later semantic enrichment cannot resurrect candidates already pruned from the
-    candidate-search result. The consumer's own residual, if any, is conjoined.
+    candidate-search result. Every semantic Step selects from the same base
+    normalized Portfolios for a shared execution ID, preserving Portfolio identity.
     """
 
     _validate_workflow_alignment(result)
+    normalized_by_execution_id: dict[str, tuple[Portfolio, ...]] = {}
     normalized_steps: list[StepPortfolioResult] = []
     for step_run, step_result in zip(result.run.steps, result.steps):
         step = result.run.step_at(step_run.step_index)
@@ -321,6 +334,7 @@ def normalize_workflow_execution(
                 step_result,
                 step_run,
                 result.run,
+                normalized_by_execution_id,
                 validate_semantic_model=validate_semantic_model,
             )
         )
