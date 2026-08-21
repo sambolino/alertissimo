@@ -104,7 +104,7 @@ def test_position_match_does_not_merge_or_connect_outside_threshold():
     assert all(not portfolio.edges for portfolio in matched.portfolios)
 
 
-def test_position_match_never_matches_within_one_origin():
+def test_position_match_allows_distinct_object_ids_within_one_origin_when_explicit():
     first = _portfolio("portfolio:a", "lsst", "LSST1", 10.0, 20.0)
     second = _portfolio("portfolio:b", "lsst", "LSST2", 10.00001, 20.0)
 
@@ -112,7 +112,7 @@ def test_position_match_never_matches_within_one_origin():
         MatchStep(
             method="position",
             params={
-                "candidate_origins": ["lsst", "ztf"],
+                "candidate_origins": ["lsst"],
                 "max_angular_separation_arcsec": 10.0,
             },
         ),
@@ -120,7 +120,13 @@ def test_position_match_never_matches_within_one_origin():
         step_index=1,
     )
 
-    assert all(not portfolio.edges for portfolio in matched.executions[0].portfolios)
+    matched_first, matched_second = matched.executions[0].portfolios
+    assert len(matched_first.edges) == len(matched_second.edges) == 1
+    assert matched_first.edges[0].internal_edge_id == matched_second.edges[0].internal_edge_id
+    assert matched_first.edges[0].edge_type == matched_second.edges[0].edge_type == "--spatially_near--"
+    assert matched_first.edges[0].target == second.internal_portfolio_id
+    assert matched_second.edges[0].target == first.internal_portfolio_id
+    assert matched_first.edges[0].fields["angular_separation"] < 10.0
 
 
 def test_position_match_rejects_ambiguous_object_summary_position():
