@@ -16,43 +16,19 @@ from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import CandidateInputRef
 
 
-CLASSIFIER = "stamp_classifier_rubin_beta_20260421"
-OBJECT_A = "170587117485817955"
-OBJECT_B = "170587117485817956"
+OBJECT_A = "ZTF21abfmbix"
+OBJECT_B = "ZTF20acpwljl"
+RA = 124.87996115142856
+DEC = -6.0205001
 
 
 def _dsl(threshold: float) -> str:
-    return f"""objects from lsst via alerce
-    where classification@{CLASSIFIER}.best.class = "SN" and classification@{CLASSIFIER}.best.probability >= 0.5
-    with classification from {CLASSIFIER}
+    return f"""objects from ztf via lasair
+    inside ({RA}, {DEC}, 5arcsec)
     with lightcurve via fink
-    filter detection@lsst:fink.quality.reliability >= {threshold}
-    with classification from fink via fink
+    filter detection@ztf:fink.quality.real_bogus >= {threshold}
+    with lightcurve via lasair
 """
-
-
-def _alerce_row(oid: str, probability: float) -> dict:
-    return {
-        "class_name": "SN",
-        "classifier_name": CLASSIFIER,
-        "classifier_version": "2.0.2",
-        "deltamjd": 18.0,
-        "firstmjd": 61217.0,
-        "lastmjd": 61235.0,
-        "meandec": -48.48,
-        "meanra": 62.45,
-        "n_det": 16,
-        "n_forced": 23,
-        "n_non_det": 0,
-        "oid": int(oid),
-        "probability": probability,
-        "ranking": 1,
-        "sid": 1,
-        "sigmadec": 4.0e-6,
-        "sigmara": 4.0e-6,
-        "stellar": None,
-        "tid": 1,
-    }
 
 
 class _FixtureExecutor:
@@ -66,37 +42,38 @@ class _FixtureExecutor:
         params = dict(params or {})
         self.calls.append((broker, origin, endpoint, params))
 
-        if (broker, origin, endpoint) == ("alerce", "lsst", "query_objects"):
+        if (broker, origin, endpoint) == ("lasair", "ztf", "cone"):
+            assert params == {"ra": RA, "dec": DEC, "radius": 5.0}
             payload = [
-                _alerce_row(OBJECT_A, 0.9),
-                _alerce_row(OBJECT_B, 0.8),
+                {"object": OBJECT_A, "separation": 0.0},
+                {"object": OBJECT_B, "separation": 0.5},
             ]
-        elif (broker, origin, endpoint) == ("fink", "lsst", "sources"):
-            assert params["diaObjectId"] == f"{OBJECT_A},{OBJECT_B}"
+        elif (broker, origin, endpoint) == ("fink", "ztf", "objects"):
+            assert params["objectId"] == f"{OBJECT_A},{OBJECT_B}"
             payload = [
-                {
-                    "r:diaObjectId": int(OBJECT_A),
-                    "r:diaSourceId": 101,
-                    "r:midpointMjdTai": 61235.0,
-                    "r:band": "r",
-                    "r:reliability": 0.91,
-                },
-                {
-                    "r:diaObjectId": int(OBJECT_B),
-                    "r:diaSourceId": 102,
-                    "r:midpointMjdTai": 61235.1,
-                    "r:band": "r",
-                    "r:reliability": 0.40,
-                },
+                {"i:objectId": OBJECT_A, "i:drb": 0.91},
+                {"i:objectId": OBJECT_B, "i:drb": 0.40},
             ]
-        elif (broker, origin, endpoint) == ("fink", "lsst", "objects"):
+        elif (broker, origin, endpoint) == ("lasair", "ztf", "lightcurves"):
             if not self.allow_downstream:
-                raise AssertionError("downstream classification must not execute for empty candidates")
-            assert params["diaObjectId"] == OBJECT_A
+                raise AssertionError(
+                    "downstream Lasair lightcurve must not execute for empty candidates"
+                )
+            assert params["objectIds"] == OBJECT_A
             payload = [
                 {
-                    "r:diaObjectId": int(OBJECT_A),
-                    "f:main_label_crossmatch": "Unknown",
+                    "objectId": OBJECT_A,
+                    "candidates": [
+                        {
+                            "candid": 1,
+                            "jd": 2459001.5,
+                            "fid": 1,
+                            "ra": 10.1,
+                            "dec": -2.1,
+                            "magpsf": 19.1,
+                            "sigmapsf": 0.1,
+                        }
+                    ],
                 }
             ]
         else:
@@ -152,53 +129,56 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
     workflow, run = _planned(0.8)
 
     assert [step.op for step in workflow.steps] == [
-        "semantic_search",
-        "get_classification",
+        "cone_search",
         "get_lightcurve",
         "filter",
-        "get_classification",
+        "get_lightcurve",
     ]
-    assert run.steps[1].endpoint_plans[0].execution_reuse_from is not None
-    assert run.steps[2].endpoint_plans[0].candidate_input_from == CandidateInputRef(
+    assert run.steps[1].endpoint_plans[0].candidate_input_from == CandidateInputRef(
         step_index=0
     )
-    assert run.steps[3].endpoint_plans == ()
-    assert run.steps[3].candidate_input_from == CandidateInputRef(step_index=2)
-    assert run.steps[4].endpoint_plans[0].candidate_input_from == CandidateInputRef(
-        step_index=3
+    assert (
+        run.steps[1].endpoint_plans[0].broker,
+        run.steps[1].endpoint_plans[0].origin,
+        run.steps[1].endpoint_plans[0].endpoint,
+    ) == ("fink", "ztf", "objects")
+    assert run.steps[2].endpoint_plans == ()
+    assert run.steps[2].candidate_input_from == CandidateInputRef(step_index=1)
+    assert run.steps[3].endpoint_plans[0].candidate_input_from == CandidateInputRef(
+        step_index=2
     )
     assert (
-        run.steps[4].endpoint_plans[0].broker,
-        run.steps[4].endpoint_plans[0].origin,
-        run.steps[4].endpoint_plans[0].endpoint,
-    ) == ("fink", "lsst", "objects")
+        run.steps[3].endpoint_plans[0].broker,
+        run.steps[3].endpoint_plans[0].origin,
+        run.steps[3].endpoint_plans[0].endpoint,
+    ) == ("lasair", "ztf", "lightcurves")
 
     executor = _FixtureExecutor()
     staged = execute_staged_workflow_run(run, EndpointRegistry(), executor)
 
     assert [(broker, origin, endpoint) for broker, origin, endpoint, _ in executor.calls] == [
-        ("alerce", "lsst", "query_objects"),
-        ("fink", "lsst", "sources"),
-        ("fink", "lsst", "objects"),
+        ("lasair", "ztf", "cone"),
+        ("fink", "ztf", "objects"),
+        ("lasair", "ztf", "lightcurves"),
     ]
-    assert staged.bindings[4].bound_calls[0].params == {"diaObjectId": OBJECT_A}
+    assert staged.bindings[3].bound_calls[0].params == {"objectIds": OBJECT_A}
 
-    assert _object_ids(staged.normalized.steps[2]) == (OBJECT_A, OBJECT_B)
+    assert _object_ids(staged.normalized.steps[1]) == (OBJECT_A, OBJECT_B)
+    assert _object_ids(staged.normalized.steps[2]) == (OBJECT_A,)
     assert _object_ids(staged.normalized.steps[3]) == (OBJECT_A,)
-    assert _object_ids(staged.normalized.steps[4]) == (OBJECT_A,)
 
     # A local filter is a semantic view, not a physical execution. It retains the
     # physical execution grouping of its source and selects the same Portfolio.
-    assert staged.run.steps[3].execution_ids == ()
-    assert staged.normalized.steps[3].executions[0].execution_id == (
-        staged.normalized.steps[2].executions[0].execution_id
+    assert staged.run.steps[2].execution_ids == ()
+    assert staged.normalized.steps[2].executions[0].execution_id == (
+        staged.normalized.steps[1].executions[0].execution_id
     )
     source_a = next(
         portfolio
-        for portfolio in staged.normalized.steps[2].executions[0].portfolios
+        for portfolio in staged.normalized.steps[1].executions[0].portfolios
         if _portfolio_object_id(portfolio) == OBJECT_A
     )
-    assert staged.normalized.steps[3].executions[0].portfolios[0] is source_a
+    assert staged.normalized.steps[2].executions[0].portfolios[0] is source_a
 
 
 def test_empty_filter_skips_downstream_provider_call_without_fabricating_execution():
@@ -208,11 +188,11 @@ def test_empty_filter_skips_downstream_provider_call_without_fabricating_executi
     staged = execute_staged_workflow_run(run, EndpointRegistry(), executor)
 
     assert [(broker, origin, endpoint) for broker, origin, endpoint, _ in executor.calls] == [
-        ("alerce", "lsst", "query_objects"),
-        ("fink", "lsst", "sources"),
+        ("lasair", "ztf", "cone"),
+        ("fink", "ztf", "objects"),
     ]
-    assert _object_ids(staged.normalized.steps[3]) == ()
-    assert staged.bindings[4].bound_calls == ()
-    assert staged.run.steps[4].state.value == "succeeded"
-    assert staged.run.steps[4].execution_ids == ()
-    assert staged.normalized.steps[4].executions == ()
+    assert _object_ids(staged.normalized.steps[2]) == ()
+    assert staged.bindings[3].bound_calls == ()
+    assert staged.run.steps[3].state.value == "succeeded"
+    assert staged.run.steps[3].execution_ids == ()
+    assert staged.normalized.steps[3].executions == ()
