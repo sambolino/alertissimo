@@ -265,7 +265,7 @@ def match_step_portfolios(
     *,
     step_index: int,
 ) -> StepPortfolioResult:
-    """Return the MatchStep semantic view with positional adjacency edges.
+    """Return the relationally filtered MatchStep semantic view.
 
     Matching operates only on normalized object-level summary identity and position.
     It never reads provider payloads and never merges Portfolios. Exact object
@@ -274,11 +274,15 @@ def match_step_portfolios(
     linked by MatchStep. Once exact identities have been grouped, every distinct
     semantic identity selected by the Match candidate origins is eligible for the
     explicit Match policy, including different object IDs from the same survey.
-    For each accepted pair, the same ``InternalEdgeId`` is projected into every
-    execution-local constituent of both semantic objects. Step-level consolidation
-    then rewrites constituent Portfolio endpoints to their final semantic IDs. The
-    returned view belongs to the MatchStep occurrence while retaining the physical
-    execution groupings of its candidate/material input.
+
+    Match is a pairwise filtering operation: only semantic objects participating in
+    at least one accepted relation survive into this Step's output. Unmatched
+    candidates remain available in the earlier Step result but do not propagate
+    through Match. For each accepted pair, the same ``InternalEdgeId`` is projected
+    into every execution-local constituent of both semantic objects. Step-level
+    consolidation then rewrites constituent Portfolio endpoints to their final
+    semantic IDs. The returned view belongs to the MatchStep occurrence while
+    retaining the physical execution groupings of its surviving candidate input.
     """
 
     origins, threshold = _position_match_contract(step)
@@ -300,10 +304,13 @@ def match_step_portfolios(
                 )
             by_id[portfolio.internal_portfolio_id] = portfolio
 
+    matched_portfolio_ids: set[InternalPortfolioId] = set()
     for left, right in combinations(groups, 2):
         separation = _angular_separation_arcsec(left.position, right.position)
         if separation > threshold:
             continue
+        matched_portfolio_ids.update(left.portfolio_ids)
+        matched_portfolio_ids.update(right.portfolio_ids)
         edge_id = _edge_id(step_index=step_index, left=left.identity, right=right.identity)
         fields = {
             "angular_separation": separation,
@@ -343,6 +350,7 @@ def match_step_portfolios(
                 portfolios=tuple(
                     by_id[portfolio.internal_portfolio_id]
                     for portfolio in execution.portfolios
+                    if portfolio.internal_portfolio_id in matched_portfolio_ids
                 ),
             )
             for execution in source.executions
