@@ -27,7 +27,7 @@ def _dsl(threshold: float) -> str:
     with classification from {CLASSIFIER}
     with lightcurve via fink
     filter detection@lsst:fink.quality.reliability >= {threshold}
-    with forced_photometry via fink
+    with classification from fink via fink
 """
 
 
@@ -56,10 +56,10 @@ def _alerce_row(oid: str, probability: float) -> dict:
 
 
 class _FixtureExecutor:
-    def __init__(self, *, allow_fp: bool = True):
+    def __init__(self, *, allow_downstream: bool = True):
         self.calls: list[tuple[str, str, str, dict]] = []
         self._ids = count(1)
-        self.allow_fp = allow_fp
+        self.allow_downstream = allow_downstream
 
     def execute(self, broker, origin, endpoint, params=None, headers=None):
         del headers
@@ -89,18 +89,14 @@ class _FixtureExecutor:
                     "r:reliability": 0.40,
                 },
             ]
-        elif (broker, origin, endpoint) == ("fink", "lsst", "fp"):
-            if not self.allow_fp:
-                raise AssertionError("forced photometry must not execute for empty candidates")
+        elif (broker, origin, endpoint) == ("fink", "lsst", "objects"):
+            if not self.allow_downstream:
+                raise AssertionError("downstream classification must not execute for empty candidates")
             assert params["diaObjectId"] == OBJECT_A
             payload = [
                 {
                     "r:diaObjectId": int(OBJECT_A),
-                    "r:diaForcedSourceId": 201,
-                    "r:midpointMjdTai": 61235.2,
-                    "r:band": "r",
-                    "r:psfFlux": 1500.0,
-                    "r:psfFluxErr": 50.0,
+                    "f:main_label_crossmatch": "Unknown",
                 }
             ]
         else:
@@ -160,7 +156,7 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
         "get_classification",
         "get_lightcurve",
         "filter",
-        "get_forced_photometry",
+        "get_classification",
     ]
     assert run.steps[1].endpoint_plans[0].execution_reuse_from is not None
     assert run.steps[2].endpoint_plans[0].candidate_input_from == CandidateInputRef(
@@ -171,6 +167,11 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
     assert run.steps[4].endpoint_plans[0].candidate_input_from == CandidateInputRef(
         step_index=3
     )
+    assert (
+        run.steps[4].endpoint_plans[0].broker,
+        run.steps[4].endpoint_plans[0].origin,
+        run.steps[4].endpoint_plans[0].endpoint,
+    ) == ("fink", "lsst", "objects")
 
     executor = _FixtureExecutor()
     staged = execute_staged_workflow_run(run, EndpointRegistry(), executor)
@@ -178,7 +179,7 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
     assert [(broker, origin, endpoint) for broker, origin, endpoint, _ in executor.calls] == [
         ("alerce", "lsst", "query_objects"),
         ("fink", "lsst", "sources"),
-        ("fink", "lsst", "fp"),
+        ("fink", "lsst", "objects"),
     ]
     assert staged.bindings[4].bound_calls[0].params == {"diaObjectId": OBJECT_A}
 
@@ -202,7 +203,7 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
 
 def test_empty_filter_skips_downstream_provider_call_without_fabricating_execution():
     _workflow, run = _planned(1.1)
-    executor = _FixtureExecutor(allow_fp=False)
+    executor = _FixtureExecutor(allow_downstream=False)
 
     staged = execute_staged_workflow_run(run, EndpointRegistry(), executor)
 
