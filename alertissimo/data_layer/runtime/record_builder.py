@@ -290,31 +290,49 @@ def _complete_minimal_summary_identity(
     request_target_ids: tuple[Any, ...],
     make_record_id: Callable[[], InternalRecordId],
 ) -> None:
-    """Seed an id-only summary for one unambiguous target-bound object retrieval.
+    """Expose object identity for target-bound retrievals without guessing.
 
-    When one requested object yields only detections, lightcurve points, or other
-    enrichment records, the requested target ID is sufficient semantic evidence for
-    the Portfolio identity. Search-result partition keys are not promoted into
-    summaries, and multi-target calls are not correlated by position or guesswork.
+    A target-bound execution supplies positive evidence that the normalized payload
+    belongs to requested objects. Prefer an explicit per-object response partition
+    identity when one exists, including for collection requests. If the response is
+    undifferentiated, only a singleton target request can safely seed identity.
+    Search-result partition keys are never promoted because those executions have no
+    target-bound request evidence.
     """
 
-    if len(request_target_ids) != 1 or len(records_by_object) != 1:
+    if not request_target_ids:
         return
-    records = next(iter(records_by_object.values()))
-    if any(
-        record.semantic_type.split("@", 1)[0] == "summary"
-        and record.get("identity.object_id") is not None
-        for record in records
-    ):
-        return
-    records.append(
-        SemanticRecord(
-            internal_record_id=make_record_id(),
-            semantic_type=f"summary@{origin}:{broker}",
-            fields={"identity.object_id": request_target_ids[0]},
-            internal_source=None,
+
+    summary_type = f"summary@{origin}:{broker}"
+    for partition_key, records in records_by_object.items():
+        if any(
+            record.semantic_type.split("@", 1)[0] == "summary"
+            and record.get("identity.object_id") is not None
+            for record in records
+        ):
+            continue
+
+        object_id: Any = _MISSING
+        if (
+            isinstance(partition_key, tuple)
+            and len(partition_key) == 2
+            and partition_key[0] == "identity"
+        ):
+            object_id = partition_key[1]
+        elif partition_key == ("single",) and len(request_target_ids) == 1:
+            object_id = request_target_ids[0]
+
+        if object_id is _MISSING:
+            continue
+
+        records.append(
+            SemanticRecord(
+                internal_record_id=make_record_id(),
+                semantic_type=summary_type,
+                fields={"identity.object_id": object_id},
+                internal_source=None,
+            )
         )
-    )
 
 
 def build_portfolios_from_execution(

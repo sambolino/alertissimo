@@ -107,22 +107,35 @@ def test_multi_target_collection_binding_and_honest_object_identity():
     assert len({p.internal_portfolio_id.value for p in all_portfolios}) == len(
         all_portfolios
     )
+    lasair_found = []
     for portfolio in lasair_output.portfolios:
-        assert not any(
-            "identity.object_id" in record.fields for record in portfolio.records
-        )
+        object_ids = [
+            str(r.fields["identity.object_id"])
+            for r in portfolio.records
+            if r.semantic_type.split("@", 1)[0] == "summary"
+            and "identity.object_id" in r.fields
+        ]
+        assert len(object_ids) == 1
+        lasair_found.append(object_ids[0])
         assert (
             portfolio.executions[0].internal_execution_id.value
             == lasair_output.execution_id
         )
         assert portfolio.executions[0].endpoint == "lightcurves"
+    assert set(lasair_found) == set(BATCH_TARGETS)
+    assert len(lasair_found) == len(set(lasair_found))
+
     report = report_data(result)
     assert report["steps"][1]["requested_target_ids"] == list(BATCH_TARGETS)
     assert all(
-        not p["object_identity_available"] and p["object_ids"] == []
+        p["object_identity_available"] and len(p["object_ids"]) == 1
         for p in report["steps"][1]["executions"][0]["portfolios"]
     )
-    assert "object identity: unavailable" in render_human(result)
+    assert {
+        p["object_ids"][0]
+        for p in report["steps"][1]["executions"][0]["portfolios"]
+    } == set(BATCH_TARGETS)
+    assert "object identity: unavailable" not in render_human(result)
 
 
 def test_expected_partial_failure_preserves_and_reports_runtime_contract():
@@ -184,7 +197,7 @@ def test_html_dir_writes_separate_portfolios_and_resolving_index(tmp_path, scena
     if scenario == "multi-provider":
         assert "lasair / ztf /" in text and "alerce / ztf /" in text
     else:
-        assert text.count("identity unavailable") == 2
+        assert "identity unavailable" not in text
         assert text.count("Open Portfolio") == 4
 
 
@@ -317,6 +330,7 @@ def test_cli_rejects_unknown_or_invalid_arguments(args, message):
     assert "usage:" in completed.stderr
     assert message in completed.stderr
 
+
 def test_html_presentation_import_does_not_require_pandas():
     completed = subprocess.run(
         [
@@ -334,6 +348,7 @@ def test_html_presentation_import_does_not_require_pandas():
         capture_output=True,
     )
     assert completed.returncode == 0, completed.stderr
+
 
 def test_cli_rejects_nonempty_html_dir_before_live_execution(
     tmp_path, monkeypatch, capsys
@@ -377,6 +392,7 @@ def test_cli_rejects_nonempty_html_dir_before_live_execution(
     assert "nonempty HTML output directory" in captured.err
     assert marker.read_text() == "do not change"
     assert list(output.iterdir()) == [marker]
+
 
 def test_html_portfolio_filename_uses_normalized_step_index(tmp_path):
     from dataclasses import replace
