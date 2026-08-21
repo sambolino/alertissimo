@@ -143,7 +143,7 @@ endpoints:
   latests:
     path: /api/v1/latests
     method: GET
-    description: Retrieve alerts from the Fink/ZTF database based on their Fink derived class
+    description: Retrieve object data from the Fink/ZTF database based on their Fink derived class
     transport:
       kind: rest
     params:
@@ -471,7 +471,7 @@ endpoints:
         - simbad
         - ssodnet
         - tns
-        description: 'Resolver among: simbad, ssodnet, tns'
+        description: 'Resolver among: `simbad`, `ssodnet`, `tns`'
       name:
         required: true
         type: string
@@ -485,7 +485,7 @@ endpoints:
         required: false
         type: integer
         default: 10
-        description: Maximum number of match to return.
+        description: Maximum number of match to return. Default is 10.
       output-format:
         required: false
         type: string
