@@ -393,6 +393,27 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             )
 
         plan_indexes = _execution_plan_indexes(step_run, step_result)
+        invalid_vacuous = tuple(
+            index
+            for index in step_run.vacuous_plan_indexes
+            if index < 0 or index >= len(step_run.endpoint_plans)
+        )
+        if invalid_vacuous:
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} vacuous endpoint plan indexes "
+                f"reference unknown plans {invalid_vacuous}"
+            )
+        non_candidate_vacuous = tuple(
+            index
+            for index in step_run.vacuous_plan_indexes
+            if step_run.endpoint_plans[index].candidate_input_from is None
+        )
+        if non_candidate_vacuous:
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} vacuous endpoint plan indexes "
+                f"must be candidate-dependent {non_candidate_vacuous}"
+            )
+
         overlap = tuple(
             sorted(set(plan_indexes) & set(step_run.vacuous_plan_indexes))
         )
