@@ -220,13 +220,17 @@ def execute_staged_workflow_run(
     Plans without runtime dependencies are bound normally. A plan carrying
     ``candidate_input_from`` receives ``target_id`` from the referenced Step's
     normalized candidate Portfolios, restricted to candidates with the same origin
-    as that physical plan. A FilterStep consumes its StepRun-level
-    ``candidate_input_from`` view locally, creates no physical execution, and its
-    surviving semantic identities may feed later provider calls.
+    as that physical plan. A candidate-dependent plan whose origin has no candidates
+    is recorded as vacuous rather than invoked with an empty target collection.
+    A FilterStep consumes its StepRun-level ``candidate_input_from`` view locally,
+    creates no physical execution, and its surviving semantic identities may feed
+    later provider calls.
 
     Required provider plans remain fail-fast. A supplementary plan may fail without
     failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
     sparse successful results retain their endpoint-plan indexes for normalization.
+    Explicit vacuous-plan indexes distinguish legitimate zero-candidate omissions
+    from missing required executions.
 
     The semantic WorkflowIR is never rewritten with discovered IDs.
     """
@@ -299,14 +303,20 @@ def execute_staged_workflow_run(
             updated_run = _updated_run(updated_run, succeeded)
             continue
 
-        candidate_references = tuple(
-            plan.candidate_input_from
-            for plan in original_step_run.endpoint_plans
+        candidate_plan_indexes = tuple(
+            plan_index
+            for plan_index, plan in enumerate(original_step_run.endpoint_plans)
             if plan.candidate_input_from is not None
         )
-        if candidate_references and all(
-            not candidate_ids_by_origin_by_step.get(reference.step_index)
-            for reference in candidate_references
+        if (
+            candidate_plan_indexes
+            and len(candidate_plan_indexes) == len(original_step_run.endpoint_plans)
+            and all(
+                not candidate_ids_by_origin_by_step.get(
+                    original_step_run.endpoint_plans[plan_index].candidate_input_from.step_index
+                )
+                for plan_index in candidate_plan_indexes
+            )
         ):
             binding = StepBindingResult(step_index=step_index, bound_calls=())
             bindings.append(binding)
@@ -316,6 +326,7 @@ def execute_staged_workflow_run(
                 update={
                     "state": StepRunState.SUCCEEDED,
                     "execution_ids": (),
+                    "vacuous_plan_indexes": candidate_plan_indexes,
                     "error": None,
                 }
             )
@@ -328,6 +339,7 @@ def execute_staged_workflow_run(
 
         calls = []
         call_plan_indexes: list[int] = []
+        vacuous_plan_indexes: list[int] = []
         for plan_index, plan in enumerate(original_step_run.endpoint_plans):
             runtime_values = None
             reference = plan.candidate_input_from
@@ -343,6 +355,7 @@ def execute_staged_workflow_run(
                     ) from error
                 candidate_ids = candidate_ids_by_origin.get(plan.origin, ())
                 if not candidate_ids:
+                    vacuous_plan_indexes.append(plan_index)
                     continue
                 runtime_values = {"target_id": candidate_ids}
             calls.append(
@@ -393,6 +406,7 @@ def execute_staged_workflow_run(
                             execution.internal_execution_id.value for execution in executions
                         ),
                         "execution_plan_indexes": tuple(execution_plan_indexes),
+                        "vacuous_plan_indexes": tuple(vacuous_plan_indexes),
                         "warnings": tuple(warnings),
                         "error": _error_description(error),
                     }
@@ -417,6 +431,7 @@ def execute_staged_workflow_run(
                     execution.internal_execution_id.value for execution in executions
                 ),
                 "execution_plan_indexes": tuple(execution_plan_indexes),
+                "vacuous_plan_indexes": tuple(vacuous_plan_indexes),
                 "warnings": tuple(warnings),
                 "error": None,
             }
