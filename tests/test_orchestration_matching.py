@@ -9,8 +9,15 @@ from alertissimo.data_layer.representations import (
     SemanticRecord,
 )
 from alertissimo.orchestration.ir import MatchStep
-from alertissimo.orchestration.matching import MatchInputError, UnsupportedMatchError, match_step_portfolios
-from alertissimo.orchestration.normalization import ExecutionPortfolioResult, StepPortfolioResult
+from alertissimo.orchestration.matching import (
+    MatchInputError,
+    UnsupportedMatchError,
+    match_step_portfolios,
+)
+from alertissimo.orchestration.normalization import (
+    ExecutionPortfolioResult,
+    StepPortfolioResult,
+)
 
 
 def _portfolio(identifier: str, origin: str, object_id: str, ra: float, dec: float) -> Portfolio:
@@ -69,6 +76,23 @@ def test_position_match_emits_symmetric_portfolio_adjacency_with_shared_edge_id(
     assert left_edge.fields["basis"] == "summary.position"
 
 
+def test_surface_style_position_predicate_executes_without_a_second_match_model():
+    lsst = _portfolio("portfolio:lsst", "lsst", "LSST1", 10.0, 20.0)
+    ztf = _portfolio("portfolio:ztf", "ztf", "ZTF1", 10.0001, 20.0)
+    step = MatchStep(
+        params={
+            "candidate_origins": ["lsst", "ztf"],
+            "predicate": "position within 1arcsec",
+        }
+    )
+
+    matched = match_step_portfolios(step, _view(lsst, ztf), step_index=1)
+
+    assert matched.step_index == 1
+    assert len(matched.portfolios) == 2
+    assert all(len(portfolio.edges) == 1 for portfolio in matched.portfolios)
+
+
 def test_position_match_does_not_merge_or_connect_outside_threshold():
     lsst = _portfolio("portfolio:lsst", "lsst", "LSST1", 10.0, 20.0)
     ztf = _portfolio("portfolio:ztf", "ztf", "ZTF1", 10.01, 20.0)
@@ -119,6 +143,25 @@ def test_position_match_rejects_ambiguous_object_summary_position():
 
     with pytest.raises(MatchInputError, match="unambiguous object-level summary position"):
         match_step_portfolios(_step(), _view(portfolio, ztf), step_index=1)
+
+
+def test_conflicting_structured_and_predicate_thresholds_are_rejected():
+    lsst = _portfolio("portfolio:lsst", "lsst", "LSST1", 10.0, 20.0)
+    ztf = _portfolio("portfolio:ztf", "ztf", "ZTF1", 10.0, 20.0)
+
+    with pytest.raises(UnsupportedMatchError, match="conflicting"):
+        match_step_portfolios(
+            MatchStep(
+                method="position",
+                params={
+                    "candidate_origins": ["lsst", "ztf"],
+                    "max_angular_separation_arcsec": 1.0,
+                    "predicate": "position within 2arcsec",
+                },
+            ),
+            _view(lsst, ztf),
+            step_index=1,
+        )
 
 
 def test_first_match_executor_refuses_temporal_and_external_semantics():
