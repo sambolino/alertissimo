@@ -7,6 +7,11 @@
 // MATCH ON remain separate semantic slots because they are not ordinary boolean
 // predicates in v0.1.
 //
+// Dimensional vocabulary is intentional: WITHIN expresses temporal extent,
+// INSIDE expresses spatial extent, and MATCH ON introduces the pairwise
+// relationship criterion. A positional Match therefore reads, for example,
+// "match on position inside 1arcsec".
+//
 // Layout rule: top-level indentation is cosmetic. Relative indentation below a
 // WITH line is semantic only for its scoped predicate block. parser.py performs
 // deterministic layout normalization before this grammar is applied.

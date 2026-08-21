@@ -2,6 +2,7 @@
 
 from .executor import (
     EndpointExecutor,
+    EndpointPaginationError,
     MissingEndpointCredentialError,
     RegistryEndpointExecutor,
 )
@@ -11,6 +12,7 @@ from .transports import PythonClientTransport, RestTransport
 
 __all__ = (
     "EndpointExecutor",
+    "EndpointPaginationError",
     "MissingEndpointCredentialError",
     "RegistryEndpointExecutor",
     "EndpointRegistry",

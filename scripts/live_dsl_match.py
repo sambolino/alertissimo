@@ -6,18 +6,22 @@ matching distinct::
 
     objects from lsst, ztf via alerce
         inside (<ra>, <dec>, <search radius>)
-        match on position within <match radius>
+        match on position inside <match radius>
 
-Search owns the two physical ALeRCE calls. MatchStep is local and runs only after
-normalization. Exact ``(origin, object_id)`` duplicates are harmonization inputs;
-after that, any distinct semantic identities selected by the explicit Match operation
-may receive ``--spatially_near--`` adjacency, whether they share an origin or not.
+Search owns the two physical ALeRCE endpoint executions; page-based transport is
+exhausted by the endpoint executor before normalization. MatchStep is local and runs
+only after normalization. Exact ``(origin, object_id)`` duplicates are harmonization
+inputs; after that, any distinct semantic identities selected by the explicit Match
+operation may receive ``--spatially_near--`` adjacency, whether they share an origin
+or not.
 """
 
 from __future__ import annotations
 
 import argparse
 from collections import Counter
+from itertools import combinations
+from math import acos, cos, radians, sin
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
@@ -48,6 +52,14 @@ def _args() -> argparse.Namespace:
     parser.add_argument(
         "--match-radius-arcsec", type=float, default=DEFAULT_MATCH_RADIUS_ARCSEC
     )
+    parser.add_argument(
+        "--expect-lsst-id",
+        help="Require this LSST object identity to be discovered and matched to --expect-ztf-id.",
+    )
+    parser.add_argument(
+        "--expect-ztf-id",
+        help="Require this ZTF object identity to be discovered and matched to --expect-lsst-id.",
+    )
     parser.add_argument("--plan-only", action="store_true")
     return parser.parse_args()
 
@@ -55,6 +67,51 @@ def _args() -> argparse.Namespace:
 def _identity(portfolio):
     identity = summary_object_identity(portfolio)
     return identity if identity is not None else ("unknown", portfolio.internal_portfolio_id.value)
+
+
+def _summary_position(portfolio):
+    positions = []
+    for record in portfolio.records:
+        if record.semantic_type.split("@", 1)[0] != "summary":
+            continue
+        ra = record.fields.get("position.ra")
+        dec = record.fields.get("position.dec")
+        if ra is not None and dec is not None:
+            point = (float(ra), float(dec))
+            if point not in positions:
+                positions.append(point)
+    return positions[0] if len(positions) == 1 else None
+
+
+def _separation_arcsec(left, right):
+    ra1, dec1 = map(radians, left)
+    ra2, dec2 = map(radians, right)
+    cosine = sin(dec1) * sin(dec2) + cos(dec1) * cos(dec2) * cos(ra1 - ra2)
+    cosine = max(-1.0, min(1.0, cosine))
+    return acos(cosine) * 206264.80624709636
+
+
+def _nearest_cross_origin_pair(identities):
+    positioned = [
+        (identity, _summary_position(portfolio))
+        for identity, portfolio in identities.items()
+    ]
+    candidates = []
+    for (left_identity, left_position), (right_identity, right_position) in combinations(
+        positioned, 2
+    ):
+        if left_position is None or right_position is None:
+            continue
+        if left_identity[0] == right_identity[0]:
+            continue
+        candidates.append(
+            (
+                _separation_arcsec(left_position, right_position),
+                left_identity,
+                right_identity,
+            )
+        )
+    return min(candidates, default=None)
 
 
 def main() -> int:
@@ -65,10 +122,12 @@ def main() -> int:
         raise SystemExit("--dec must be in [-90, 90]")
     if args.search_radius_arcsec <= 0.0 or args.match_radius_arcsec <= 0.0:
         raise SystemExit("search and match radii must be positive")
+    if bool(args.expect_lsst_id) != bool(args.expect_ztf_id):
+        raise SystemExit("--expect-lsst-id and --expect-ztf-id must be supplied together")
 
     dsl = f"""objects from lsst, ztf via alerce
 inside ({args.ra}, {args.dec}, {args.search_radius_arcsec}arcsec)
-match on position within {args.match_radius_arcsec}arcsec
+match on position inside {args.match_radius_arcsec}arcsec
 """
     print("=== DSL ===")
     print(dsl.rstrip())
@@ -133,18 +192,67 @@ match on position within {args.match_radius_arcsec}arcsec
         raise RuntimeError("MatchStep fabricated physical work")
 
     search_view = staged.normalized.steps[0]
-    origin_counts = Counter(
-        identity[0]
-        for portfolio in search_view.portfolios
-        for identity in [summary_object_identity(portfolio)]
-        if identity is not None
-    )
+    search_identity_items = [(_identity(portfolio), portfolio) for portfolio in search_view.portfolios]
+    search_identities = dict(search_identity_items)
+    origin_counts = Counter(identity[0] for identity in search_identities)
+
     print("=== DISCOVERY ===")
     print(f"semantic Portfolios: {len(search_view.portfolios)}")
     print(f"by origin: {dict(sorted(origin_counts.items()))}")
+    if len(search_identities) <= 20:
+        print("candidates:")
+        search_center = (args.ra, args.dec)
+        for identity, portfolio in sorted(search_identities.items()):
+            position = _summary_position(portfolio)
+            if position is None:
+                print(f"  {identity}: summary.position unavailable")
+                continue
+            center_distance = _separation_arcsec(search_center, position)
+            print(
+                f"  {identity}: summary.position={position!r}; "
+                f"from search center={center_distance:.6f} arcsec"
+            )
     if not origin_counts.get("lsst") or not origin_counts.get("ztf"):
         print("INCONCLUSIVE: live search did not return candidates from both origins")
         return 3
+
+    nearest = _nearest_cross_origin_pair(search_identities)
+    if nearest is not None:
+        separation, left, right = nearest
+        print(
+            "nearest cross-origin summaries: "
+            f"{left} <-> {right} = {separation:.6f} arcsec"
+        )
+
+    expected_pair = None
+    if args.expect_lsst_id and args.expect_ztf_id:
+        expected_pair = tuple(
+            sorted(
+                (
+                    ("lsst", str(args.expect_lsst_id)),
+                    ("ztf", str(args.expect_ztf_id)),
+                )
+            )
+        )
+        missing = [identity for identity in expected_pair if identity not in search_identities]
+        for identity in expected_pair:
+            portfolio = search_identities.get(identity)
+            print(
+                f"expected {identity}: "
+                + (
+                    f"FOUND summary.position={_summary_position(portfolio)!r}"
+                    if portfolio is not None
+                    else "MISSING"
+                )
+            )
+        if missing:
+            print(f"FAIL: expected candidates missing after paginated discovery: {missing!r}")
+            return 2
+        expected_separation = _separation_arcsec(
+            _summary_position(search_identities[expected_pair[0]]),
+            _summary_position(search_identities[expected_pair[1]]),
+        )
+        print(f"expected-pair summary separation: {expected_separation:.6f} arcsec")
 
     finalized = finalize_local_semantics(staged.normalized)
     if finalized.run.steps[1].state is not StepRunState.SUCCEEDED:
@@ -167,6 +275,7 @@ match on position within {args.match_radius_arcsec}arcsec
 
     edge_ids = set()
     matched_pairs = set()
+    pair_separations = {}
     for identity, portfolio in identities.items():
         for edge in portfolio.edges:
             if edge.edge_type != "--spatially_near--":
@@ -184,7 +293,9 @@ match on position within {args.match_radius_arcsec}arcsec
                 raise RuntimeError("Match edge target is not a semantic Portfolio in the Match view")
             if identity == remote:
                 raise RuntimeError("MatchStep produced a self-relation after identity harmonization")
-            matched_pairs.add(tuple(sorted((identity, remote))))
+            pair = tuple(sorted((identity, remote)))
+            matched_pairs.add(pair)
+            pair_separations[pair] = edge.fields.get("angular_separation")
 
     # Redundant projection means every scientific relation appears in both incident
     # Portfolios but carries one shared InternalEdgeId.
@@ -199,7 +310,9 @@ match on position within {args.match_radius_arcsec}arcsec
     cross_origin_pairs = matched_pairs - same_origin_pairs
 
     for left, right in sorted(matched_pairs):
-        print(f"  {left} <-> {right}")
+        separation = pair_separations[(left, right)]
+        suffix = f" ({float(separation):.6f} arcsec)" if separation is not None else ""
+        print(f"  {left} <-> {right}{suffix}")
     print(f"unique positional relationships: {len(matched_pairs)}")
     print(f"same-origin distinct-ID relationships: {len(same_origin_pairs)}")
     print(f"cross-origin relationships: {len(cross_origin_pairs)}")
@@ -207,9 +320,18 @@ match on position within {args.match_radius_arcsec}arcsec
     print("OK: MatchStep created no physical execution provenance")
     print("OK: Search output remained unchanged")
 
+    if expected_pair is not None:
+        if expected_pair not in matched_pairs:
+            print(f"FAIL: expected positional relationship was not produced: {expected_pair!r}")
+            return 2
+        print(
+            "OK: expected LSST/ZTF pair matched at "
+            f"{float(pair_separations[expected_pair]):.6f} arcsec"
+        )
+
     if not matched_pairs:
         print(
-            "INCONCLUSIVE: selected candidates were normalized correctly, but none are within "
+            "INCONCLUSIVE: selected candidates were normalized correctly, but none are inside "
             f"{args.match_radius_arcsec} arcsec"
         )
         return 3

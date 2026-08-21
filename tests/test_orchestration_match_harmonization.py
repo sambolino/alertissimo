@@ -107,7 +107,7 @@ def test_same_ztf_object_from_two_brokers_harmonizes_before_lsst_ztf_matching():
         MatchStep(
             params={
                 "candidate_origins": ["lsst", "ztf"],
-                "predicate": "position within 1arcsec",
+                "predicate": "position inside 1arcsec",
             }
         ),
         source,

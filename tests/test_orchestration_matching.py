@@ -82,7 +82,7 @@ def test_surface_style_position_predicate_executes_without_a_second_match_model(
     step = MatchStep(
         params={
             "candidate_origins": ["lsst", "ztf"],
-            "predicate": "position within 1arcsec",
+            "predicate": "position inside 1arcsec",
         }
     )
 
@@ -91,6 +91,36 @@ def test_surface_style_position_predicate_executes_without_a_second_match_model(
     assert matched.step_index == 1
     assert len(matched.portfolios) == 2
     assert all(len(portfolio.edges) == 1 for portfolio in matched.portfolios)
+
+
+def test_real_lsst_ztf_object_means_match_inside_one_arcsec():
+    lsst = _portfolio(
+        "portfolio:lsst:313936986529333309",
+        "lsst",
+        "313936986529333309",
+        150.12452060100162,
+        0.8775822607288939,
+    )
+    ztf = _portfolio(
+        "portfolio:ztf:ZTF18acurdih",
+        "ztf",
+        "ZTF18acurdih",
+        150.1245113142061,
+        0.8775865320436685,
+    )
+    step = MatchStep(
+        params={
+            "candidate_origins": ["lsst", "ztf"],
+            "predicate": "position inside 1arcsec",
+        }
+    )
+
+    matched = match_step_portfolios(step, _view(lsst, ztf), step_index=1)
+
+    left, right = matched.portfolios
+    assert len(left.edges) == len(right.edges) == 1
+    assert left.edges[0].internal_edge_id == right.edges[0].internal_edge_id
+    assert 0.03 < left.edges[0].fields["angular_separation"] < 0.05
 
 
 def test_position_match_does_not_merge_or_connect_outside_threshold():
@@ -162,7 +192,7 @@ def test_conflicting_structured_and_predicate_thresholds_are_rejected():
                 params={
                     "candidate_origins": ["lsst", "ztf"],
                     "max_angular_separation_arcsec": 1.0,
-                    "predicate": "position within 2arcsec",
+                    "predicate": "position inside 2arcsec",
                 },
             ),
             _view(lsst, ztf),
