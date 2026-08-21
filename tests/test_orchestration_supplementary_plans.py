@@ -13,9 +13,9 @@ from alertissimo.data_layer.representations import (
     InternalExecutionProvenance,
 )
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.dsl import compile_surface, parse_surface_script
 from alertissimo.orchestration.binding import bind_workflow_run
 from alertissimo.orchestration.ir import (
-    ConeSearchStep,
     GetLightcurveStep,
     Source,
     TargetSelector,
@@ -31,12 +31,25 @@ from alertissimo.orchestration.runtime import (
 )
 
 
-FIXTURE_ROOT = Path(__file__).with_name("fixtures") / "fink" / "lsst"
+FINK_FIXTURE_ROOT = Path(__file__).with_name("fixtures") / "fink" / "lsst"
+ALERCE_SEARCH_FIXTURE = (
+    Path(__file__).parents[1]
+    / "scripts"
+    / "smoke"
+    / "fixtures"
+    / "alerce_lsst_query_objects_filtered.json"
+)
 OBJECT_ID = "170587117485817955"
+CLASSIFIER = "stamp_classifier_rubin_beta_20260421"
+DSL = f"""objects from lsst via alerce
+    where classification@{CLASSIFIER}.best.class = "SN" and classification@{CLASSIFIER}.best.probability >= 0.5
+    with classification from {CLASSIFIER}
+    with lightcurve via fink
+"""
 
 
-class FinkLsstExecutor:
-    """Return authoritative Fink/LSST fixtures and optionally fail one endpoint."""
+class SupplementFixtureExecutor:
+    """Serve the proven ALeRCE->Fink acceptance flow and optionally fail one endpoint."""
 
     def __init__(self, *, fail_endpoint: str | None = None) -> None:
         self.fail_endpoint = fail_endpoint
@@ -44,22 +57,26 @@ class FinkLsstExecutor:
         self.counter = 0
 
     def execute(self, broker, origin, endpoint, params=None, headers=None):
-        assert broker == "fink"
-        assert origin == "lsst"
         assert headers is None
         supplied = dict(params or {})
         self.calls.append((broker, origin, endpoint, supplied))
         if endpoint == self.fail_endpoint:
             raise RuntimeError(f"controlled {endpoint} outage")
 
-        fixture = {
-            "conesearch": "conesearch.json",
-            "sources": "sources.json",
-            "fp": "fp.json",
-        }[endpoint]
+        if (broker, origin, endpoint) == ("alerce", "lsst", "query_objects"):
+            fixture_path = ALERCE_SEARCH_FIXTURE
+        elif (broker, origin, endpoint) == ("fink", "lsst", "sources"):
+            fixture_path = FINK_FIXTURE_ROOT / "sources.json"
+        elif (broker, origin, endpoint) == ("fink", "lsst", "fp"):
+            fixture_path = FINK_FIXTURE_ROOT / "fp.json"
+        else:  # pragma: no cover - a changed physical plan is itself a regression.
+            raise AssertionError(
+                f"unexpected endpoint call {broker}/{origin}/{endpoint} with {supplied!r}"
+            )
+
         self.counter += 1
         return ExecutionResult(
-            payload=json.loads((FIXTURE_ROOT / fixture).read_text(encoding="utf-8")),
+            payload=json.loads(fixture_path.read_text(encoding="utf-8")),
             execution_provenance=InternalExecutionProvenance(
                 internal_execution_id=InternalExecutionId(
                     f"execution:supplementary-test:{self.counter}"
@@ -75,34 +92,28 @@ class FinkLsstExecutor:
 
 
 def _targetless_workflow() -> WorkflowIR:
-    return WorkflowIR(
-        steps=[
-            ConeSearchStep(
-                semantic_type="summary",
-                ra=62.45763,
-                dec=-48.48149,
-                radius=5.0,
-                sources=[Source(broker="fink", origin="lsst")],
-            ),
-            GetLightcurveStep(
-                sources=[Source(broker="fink", origin="lsst")]
-            ),
-        ]
-    )
+    graph = build_capability_graph()
+    return compile_surface(parse_surface_script(DSL), graph=graph).workflow
 
 
 def test_staged_lightcurve_survives_failed_forced_photometry_supplement():
     graph = build_capability_graph()
-    run = plan_workflow(_targetless_workflow(), graph)
-    lightcurve = run.steps[1]
+    workflow = _targetless_workflow()
+    run = plan_workflow(workflow, graph)
 
+    assert [step.op for step in workflow.steps] == [
+        "semantic_search",
+        "get_classification",
+        "get_lightcurve",
+    ]
+    lightcurve = run.steps[2]
     assert [plan.endpoint for plan in lightcurve.endpoint_plans] == ["sources", "fp"]
     assert [plan.required for plan in lightcurve.endpoint_plans] == [True, False]
 
-    executor = FinkLsstExecutor(fail_endpoint="fp")
+    executor = SupplementFixtureExecutor(fail_endpoint="fp")
     staged = execute_staged_workflow_run(run, EndpointRegistry(), executor)
 
-    completed = staged.run.steps[1]
+    completed = staged.run.steps[2]
     assert completed.state is StepRunState.SUCCEEDED
     assert completed.error is None
     assert completed.execution_plan_indexes == (0,)
@@ -113,16 +124,17 @@ def test_staged_lightcurve_survives_failed_forced_photometry_supplement():
 
     assert [
         execution.execution_provenance.endpoint
-        for execution in staged.execution.steps[1].executions
+        for execution in staged.execution.steps[2].executions
     ] == ["sources"]
-    assert len(staged.normalized.steps[1].executions) == 1
-    assert staged.normalized.steps[1].executions[0].execution_id == completed.execution_ids[0]
+    assert len(staged.normalized.steps[2].executions) == 1
+    assert staged.normalized.steps[2].executions[0].execution_id == completed.execution_ids[0]
 
     assert [endpoint for _, _, endpoint, _ in executor.calls] == [
-        "conesearch",
+        "query_objects",
         "sources",
         "fp",
     ]
+    assert staged.run.steps[1].execution_ids == staged.run.steps[0].execution_ids
 
 
 def test_required_primary_lightcurve_failure_remains_fail_fast():
@@ -137,7 +149,7 @@ def test_required_primary_lightcurve_failure_remains_fail_fast():
     )
     run = plan_workflow(workflow, graph)
     bindings = bind_workflow_run(run, EndpointRegistry())
-    executor = FinkLsstExecutor(fail_endpoint="sources")
+    executor = SupplementFixtureExecutor(fail_endpoint="sources")
 
     with pytest.raises(WorkflowExecutionError) as caught:
         execute_workflow_run(run, bindings, executor)
@@ -163,7 +175,7 @@ def test_static_lightcurve_normalizes_primary_when_supplement_fails():
     )
     run = plan_workflow(workflow, graph)
     bindings = bind_workflow_run(run, EndpointRegistry())
-    executor = FinkLsstExecutor(fail_endpoint="fp")
+    executor = SupplementFixtureExecutor(fail_endpoint="fp")
 
     executed = execute_workflow_run(run, bindings, executor)
     normalized = normalize_workflow_execution(executed)
