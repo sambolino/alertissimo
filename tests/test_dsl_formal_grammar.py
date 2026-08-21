@@ -29,6 +29,9 @@ def test_formal_grammar_is_hand_authored_and_requirement_centric():
     assert "candidate_statement" in grammar
     assert '"objects"i "from"i' in grammar
     assert "requirement: PRODUCT from_clause? via_clause? using_clause?" in grammar
+    assert "match_on" in grammar
+    assert "WITHIN expresses temporal extent" in grammar
+    assert "INSIDE expresses spatial extent" in grammar
     assert "_INDENT" in grammar and "_DEDENT" in grammar
     assert "with_colon" in grammar and "with_where" in grammar
     assert "VERB" not in grammar
@@ -46,7 +49,7 @@ def test_static_validation_accepts_ontology_product_but_defers_capability():
     surface = parse_surface_script(
         "objects from lsst via fink\n"
         "with crossmatch from erosita via antares\n"
-        "match from icecube on position within 2deg\n"
+        "match from icecube on position inside 2deg\n"
     )
 
     report = validate_surface_semantics(
