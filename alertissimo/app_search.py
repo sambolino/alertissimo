@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import pandas as pd
 import streamlit as st
 
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
@@ -129,6 +128,61 @@ def render_selected_candidate(candidate: dict[str, Any]) -> None:
         )
 
 
+def candidate_result_key(candidate: dict[str, Any]) -> str:
+    """Return the stable key used to open one result from a cone-search page."""
+    return str(candidate.get("candidate_id", candidate["object_id"]))
+
+
+def render_cone_result_cards(matches: list[dict[str, Any]]) -> None:
+    """Render the cone-search result page and let a card open one object."""
+    st.subheader("Cone-search results")
+    st.success(f"{len(matches)} object(s) found. Select an object to open its portfolio.")
+
+    for index, candidate in enumerate(matches):
+        if index:
+            st.divider()
+        summary, action = st.columns((5, 1), vertical_alignment="center")
+        with summary:
+            st.markdown(f"### {candidate['object_id']}")
+            st.caption(
+                f"{candidate['survey']} · {candidate['separation_arcsec']:.1f} arcsec away · "
+                f"{' · '.join(candidate['brokers'])}"
+            )
+            metrics = st.columns(3)
+            metrics[0].metric("Detections", candidate["detections"])
+            metrics[1].metric("Latest mag", candidate["latest_mag"] or "—")
+            probability = candidate.get("probability")
+            metrics[2].metric(
+                "Leading class",
+                candidate["classification"],
+                None if probability is None else f"{probability:.0%}",
+            )
+        with action:
+            if st.button(
+                "Open object",
+                key=f"open-cone-result-{candidate_result_key(candidate)}",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state["cone_search_selected"] = candidate_result_key(candidate)
+                st.rerun()
+
+
+def render_cone_object_page(matches: list[dict[str, Any]], selected_key: str) -> None:
+    """Render the one-object page reached from the cone-search result page."""
+    candidate = next(
+        (item for item in matches if candidate_result_key(item) == selected_key), None
+    )
+    if candidate is None:
+        st.session_state.pop("cone_search_selected", None)
+        st.warning("The selected object is no longer in these cone-search results.")
+        return
+    if st.button("← Back to cone-search results"):
+        st.session_state.pop("cone_search_selected", None)
+        st.rerun()
+    render_selected_candidate(candidate)
+
+
 def render_id_lookup(candidates: list[dict[str, Any]], presets: dict[str, Any]) -> None:
     """Render the known-object-ID entry flow."""
     st.subheader("Look up a known object")
@@ -169,6 +223,7 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
         cone_candidates_data, _ = load_frozen_cone_candidates()
         matches = cone_candidates(candidates + cone_candidates_data, ra_deg, dec_deg, radius_arcsec)
         st.session_state["cone_search_results"] = matches
+        st.session_state.pop("cone_search_selected", None)
 
     matches = st.session_state.get("cone_search_results")
     if matches is None:
@@ -177,38 +232,11 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
         st.warning("No frozen fixture candidates fall inside this cone.")
         st.caption("Increase the radius or use the prefilled coordinates.")
         return
-    st.success(f"{len(matches)} fixture candidate(s) found.")
-    frame = pd.DataFrame(matches)[[
-        "object_id", "survey", "separation_arcsec", "last_detection", "detections",
-        "latest_mag", "classification", "probability", "status", "brokers",
-    ]]
-    frame["brokers"] = frame["brokers"].map(
-        lambda brokers: " · ".join(map(str, brokers)) if isinstance(brokers, list) else str(brokers)
-    )
-    frame = frame.rename(columns={
-        "object_id": "Object ID", "survey": "Survey", "separation_arcsec": "Separation (arcsec)",
-        "last_detection": "Last detection", "detections": "Detections", "latest_mag": "Latest mag",
-        "classification": "Leading class", "probability": "Probability", "status": "Behaviour",
-        "brokers": "Broker evidence",
-    })
-    st.dataframe(
-        frame,
-        use_container_width=True,
-        hide_index=True,
-        column_config={"Probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0%")},
-    )
-    selected_id = st.selectbox(
-        "Inspect a candidate",
-        [candidate.get("candidate_id", candidate["object_id"]) for candidate in matches],
-        format_func=lambda candidate_id: next(
-            f'{candidate["object_id"]} · {candidate.get("candidate_id", candidate["object_id"])}'
-            for candidate in matches if candidate.get("candidate_id", candidate["object_id"]) == candidate_id
-        ),
-    )
-    render_selected_candidate(next(
-        candidate for candidate in matches
-        if candidate.get("candidate_id", candidate["object_id"]) == selected_id
-    ))
+    selected_key = st.session_state.get("cone_search_selected")
+    if selected_key is None:
+        render_cone_result_cards(matches)
+    else:
+        render_cone_object_page(matches, str(selected_key))
 
 
 def render_dsl_entry(

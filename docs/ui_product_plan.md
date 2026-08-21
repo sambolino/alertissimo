@@ -15,6 +15,11 @@ The first entry page is `alertissimo/app_search.py`. It offers only known
 Object-ID lookup and coordinate cone search, backed by local demo candidates.
 Loading a saved Portfolio is intentionally deferred.
 
+A cone search first opens a dedicated multi-object results page. Each result
+is shown as a compact scientific card; selecting a card opens the separate
+single-object portfolio view. Cone-search results are not represented by a
+dropdown selector.
+
 ## Product direction
 
 Alertissimo helps astronomers collect, inspect, and combine alert information

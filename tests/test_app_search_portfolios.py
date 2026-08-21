@@ -1,4 +1,5 @@
 from alertissimo.app_search import (
+    candidate_result_key,
     cone_candidates,
     load_demo_candidate_portfolios,
     load_demo_search_data,
@@ -24,5 +25,8 @@ def test_frozen_cone_fixture_returns_all_captured_loci():
     matches = cone_candidates(candidates, **preset)
     assert len(matches) == 4
     assert {candidate["candidate_id"] for candidate in matches} == {
+        "ANT2020nb5h6", "ANT2019afwxm", "ANT2020vzg6s", "ANT2020zt2xm"
+    }
+    assert {candidate_result_key(candidate) for candidate in matches} == {
         "ANT2020nb5h6", "ANT2019afwxm", "ANT2020vzg6s", "ANT2020zt2xm"
     }
