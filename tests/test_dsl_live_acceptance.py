@@ -1,6 +1,6 @@
 """Offline tests for the all-scenarios live acceptance harness."""
 
-from scripts import live_acceptance
+from scripts import live_acceptance, live_crossmatch
 
 
 def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
@@ -30,6 +30,19 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         if scenario.name == "partial-failure-control"
     )
     assert partial_failure.live is False
+
+
+def test_crossmatch_live_scenario_is_registered_and_importable():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "crossmatch-retrieval"
+    )
+
+    assert live_crossmatch.TARGET == "ZTF20aafqubg"
+    assert live_crossmatch.CATALOG == "gaia"
+    assert live_crossmatch.EXPECTED_SEMANTIC_TYPE == "crossmatch@gaia:antares"
+    assert "live_crossmatch.py" in " ".join(scenario.command(live_acceptance.REPO_ROOT))
 
 
 def test_live_acceptance_status_classification_is_conservative():
