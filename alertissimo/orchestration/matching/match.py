@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from itertools import combinations
 from math import acos, cos, isfinite, radians, sin
+import re
 from typing import Any
 
 from alertissimo.data_layer.representations import (
@@ -33,9 +34,24 @@ class MatchInputError(ValueError):
 
 @dataclass(frozen=True)
 class _ObjectGroup:
+    """One harmonized matching entity identified by exact survey object identity."""
+
     identity: tuple[str, str]
     portfolio_ids: tuple[InternalPortfolioId, ...]
     position: tuple[float, float] | None
+
+
+_POSITION_WITHIN_RE = re.compile(
+    r"^\s*position\s+within\s+"
+    r"(?P<value>[+]?(?:\d+(?:\.\d*)?|\.\d+))\s*"
+    r"(?P<unit>deg|arcmin|arcsec)\s*$",
+    re.IGNORECASE,
+)
+_ANGLE_TO_ARCSEC = {
+    "arcsec": 1.0,
+    "arcmin": 60.0,
+    "deg": 3600.0,
+}
 
 
 def _finite_coordinate(value: Any, *, name: str) -> float:
@@ -72,6 +88,16 @@ def _summary_positions(portfolio: Portfolio) -> tuple[tuple[float, float], ...]:
 
 
 def _groups(source: StepPortfolioResult) -> tuple[_ObjectGroup, ...]:
+    """Group exact ``(origin, object_id)`` identities before any matching.
+
+    This is deliberately the harmonization boundary for MatchStep input. If the
+    same ZTF object arrived from two or more brokers, those execution-local
+    Portfolios form one matching entity. They are never compared with each other and
+    therefore can never acquire a cross-Portfolio match edge. The normal
+    ``StepPortfolioResult.portfolios`` view performs the corresponding semantic
+    Portfolio consolidation.
+    """
+
     grouped: dict[tuple[str, str], list[Portfolio]] = {}
     order: list[tuple[str, str]] = []
     for execution in source.executions:
@@ -152,6 +178,20 @@ def _append_edge(portfolio: Portfolio, edge: SemanticEdge) -> Portfolio:
     return updated
 
 
+def _predicate_position_threshold(predicate: Any) -> float | None:
+    """Read the existing semantic ``position within <angle>`` Match predicate."""
+
+    if not isinstance(predicate, str):
+        return None
+    match = _POSITION_WITHIN_RE.fullmatch(predicate)
+    if match is None:
+        return None
+    threshold = float(match.group("value")) * _ANGLE_TO_ARCSEC[
+        match.group("unit").lower()
+    ]
+    return threshold if threshold > 0.0 else None
+
+
 def _position_match_contract(
     step: MatchStep,
 ) -> tuple[tuple[str, ...], float]:
@@ -165,9 +205,15 @@ def _position_match_contract(
         raise UnsupportedMatchError(
             "temporal MatchStep execution is deferred until object-level time anchors are defined"
         )
-    if step.method != "position":
+
+    predicate_threshold = _predicate_position_threshold(step.params.get("predicate"))
+    if step.method not in (None, "position"):
         raise UnsupportedMatchError(
             "the first executable MatchStep method is exactly 'position'"
+        )
+    if step.method is None and predicate_threshold is None:
+        raise UnsupportedMatchError(
+            "the first executable MatchStep requires 'position within <angle>'"
         )
 
     raw_origins = step.params.get("candidate_origins")
@@ -180,13 +226,33 @@ def _position_match_contract(
         raise UnsupportedMatchError("candidate_origins must be non-empty and unique")
 
     threshold_value = step.params.get("max_angular_separation_arcsec")
+    if threshold_value is None:
+        threshold_value = predicate_threshold
+    elif predicate_threshold is not None:
+        try:
+            explicit = float(threshold_value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise UnsupportedMatchError(
+                "max_angular_separation_arcsec must be positive"
+            ) from exc
+        if not isfinite(explicit) or explicit <= 0.0:
+            raise UnsupportedMatchError(
+                "max_angular_separation_arcsec must be positive"
+            )
+        if abs(explicit - predicate_threshold) > 1e-12:
+            raise UnsupportedMatchError(
+                "positional MatchStep has conflicting explicit and predicate thresholds"
+            )
+        threshold_value = explicit
+
     if isinstance(threshold_value, bool):
         raise UnsupportedMatchError("max_angular_separation_arcsec must be positive")
     try:
         threshold = float(threshold_value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise UnsupportedMatchError(
-            "positional MatchStep requires max_angular_separation_arcsec"
+            "positional MatchStep requires max_angular_separation_arcsec or "
+            "a 'position within <angle>' predicate"
         ) from exc
     if not isfinite(threshold) or threshold <= 0.0:
         raise UnsupportedMatchError("max_angular_separation_arcsec must be positive")
@@ -202,12 +268,15 @@ def match_step_portfolios(
     """Return the MatchStep semantic view with positional adjacency edges.
 
     Matching operates only on normalized object-level summary identity and position.
-    It never reads provider payloads and never merges Portfolios. For each accepted
-    cross-origin pair, the same ``InternalEdgeId`` is projected into every
-    execution-local constituent of both semantic objects. Step-level consolidation
-    then rewrites constituent Portfolio endpoints to their final semantic IDs.
-    The returned view belongs to the MatchStep occurrence while retaining the
-    physical execution groupings of its candidate/material input.
+    It never reads provider payloads and never merges Portfolios. Exact same-survey
+    object identities are grouped as one matching entity before pair comparison;
+    their execution-local Portfolios are harmonized by the Step semantic view rather
+    than linked by MatchStep. For each accepted cross-origin pair, the same
+    ``InternalEdgeId`` is projected into every execution-local constituent of both
+    semantic objects. Step-level consolidation then rewrites constituent Portfolio
+    endpoints to their final semantic IDs. The returned view belongs to the
+    MatchStep occurrence while retaining the physical execution groupings of its
+    candidate/material input.
     """
 
     origins, threshold = _position_match_contract(step)
@@ -230,6 +299,9 @@ def match_step_portfolios(
             by_id[portfolio.internal_portfolio_id] = portfolio
 
     for left, right in combinations(groups, 2):
+        # Same-origin entities are intentionally outside the first cross-survey
+        # Match semantics. Exact same-object identities were already grouped above;
+        # distinct IDs from one survey are not cross-survey counterpart candidates.
         if left.identity[0] == right.identity[0]:
             continue
         separation = _angular_separation_arcsec(left.position, right.position)
