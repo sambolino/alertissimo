@@ -153,21 +153,21 @@ def test_general_where_is_not_allowed_after_filter():
 
 def test_match_can_associate_candidate_origins_without_external_counterpart():
     result = parse_surface_script(
-        "objects from lsst, ztf\nmatch on position within 1arcsec\n"
+        "objects from lsst, ztf\nmatch on position inside 1arcsec\n"
     )
 
     match = result.clauses[0]
     assert isinstance(match, MatchClause)
     assert match.counterpart_origin is None
-    assert match.on == "position within 1arcsec"
+    assert match.on == "position inside 1arcsec"
     assert result.candidates.origins == ("lsst", "ztf")
 
 
-def test_match_can_introduce_external_counterpart_without_mutating_candidate_origins():
+def test_match_temporal_within_and_spatial_inside_remain_distinct():
     result = parse_surface_script(
         "objects from lsst via fink\n"
         "filter classification = \"SN\"\n"
-        "match from icecube within 3d on position within 2deg\n"
+        "match from icecube within 3d on position inside 2deg\n"
     )
 
     match = result.clauses[1]
@@ -175,7 +175,7 @@ def test_match_can_introduce_external_counterpart_without_mutating_candidate_ori
     assert match.counterpart_origin == "icecube"
     assert match.within.value == 3
     assert match.within.unit == "d"
-    assert match.on == "position within 2deg"
+    assert match.on == "position inside 2deg"
     assert result.candidates.origins == ("lsst",)
 
 
