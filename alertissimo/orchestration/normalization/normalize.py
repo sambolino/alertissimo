@@ -388,6 +388,17 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 for plan in step_run.endpoint_plans
             )
         )
+        if (
+            not step_run.execution_plan_indexes
+            and step_result.executions
+            and len(step_run.endpoint_plans) != len(step_result.executions)
+        ):
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} endpoint plan count does not "
+                "match execution result count "
+                f"({len(step_run.endpoint_plans)} != {len(step_result.executions)})"
+            )
+
         plan_indexes = _execution_plan_indexes(step_run, step_result)
         missing_plan_indexes = set(range(len(step_run.endpoint_plans))) - set(plan_indexes)
         missing_required = tuple(
@@ -415,11 +426,10 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             if planned_identity != actual_identity:
                 raise WorkflowNormalizationAlignmentError(
                     f"step_index {step_run.step_index} execution position "
-                    f"{execution_position} (plan_index {plan_index}) endpoint identity "
-                    f"does not align: planned broker={plan.broker}, "
-                    f"origin={plan.origin}, endpoint={plan.endpoint}; actual "
-                    f"broker={provenance.broker}, origin={provenance.origin}, "
-                    f"endpoint={provenance.endpoint}"
+                    f"{execution_position} endpoint identity does not align: "
+                    f"planned broker={plan.broker}, origin={plan.origin}, "
+                    f"endpoint={plan.endpoint}; actual broker={provenance.broker}, "
+                    f"origin={provenance.origin}, endpoint={provenance.endpoint}"
                 )
             _validate_reuse_alignment(
                 result,
