@@ -45,6 +45,7 @@ def test_multi_provider_real_planning_binding_and_normalization():
         ("lasair", "ztf", "lightcurves"),
         ("alerce", "ztf", "query_forced_photometry"),
         ("alerce", "ztf", "query_lightcurve"),
+        ("alerce", "ztf", "query_forced_photometry"),
     ]
     assert [
         dict(call.params) for binding in result.bindings for call in binding.bound_calls
@@ -53,9 +54,19 @@ def test_multi_provider_real_planning_binding_and_normalization():
         {"objectIds": DEFAULT_TARGET},
         {"oid": DEFAULT_TARGET},
         {"oid": DEFAULT_TARGET},
+        {},
     ]
+    reuse = result.run.steps[2].endpoint_plans[1].execution_reuse_from
+    assert reuse is not None
+    assert (reuse.step_index, reuse.plan_index) == (1, 0)
+    assert result.run.steps[2].execution_ids[1] == result.run.steps[1].execution_ids[0]
     assert all(step.state.value == "succeeded" for step in result.run.steps)
-    assert report_data(result)["normalized_execution_count"] == 4
+
+    report = report_data(result)
+    assert report["normalized_execution_count"] == 5
+    assert report["physical_execution_count"] == 4
+    assert report["portfolio_count"] == 5
+    assert report["unique_portfolio_count"] == 4
 
 
 def test_single_target_fixture_payload_ids_match_bound_default():
@@ -173,7 +184,8 @@ def test_html_dir_writes_separate_portfolios_and_resolving_index(tmp_path, scena
     output = tmp_path / scenario
     index = write_smoke_html(run_scenario(scenario), output)
     portfolios = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
-    assert len(portfolios) == 4
+    expected_count = 5 if scenario == "multi-provider" else 4
+    assert len(portfolios) == expected_count
     assert index == output / "index.html"
 
     class Links(HTMLParser):
@@ -187,15 +199,16 @@ def test_html_dir_writes_separate_portfolios_and_resolving_index(tmp_path, scena
 
     links = Links()
     links.feed(index.read_text())
-    assert len(links.hrefs) == 4
+    assert len(links.hrefs) == expected_count
     assert all((output / href).is_file() for href in links.hrefs)
-    assert len(set(links.hrefs)) == 4
+    assert len(set(links.hrefs)) == expected_count
 
     text = index.read_text()
     assert "Fink" not in text  # provenance uses canonical lower-case broker names
     assert "fink / ztf /" in text
     if scenario == "multi-provider":
         assert "lasair / ztf /" in text and "alerce / ztf /" in text
+        assert text.count("Open Portfolio") == 5
     else:
         assert "identity unavailable" not in text
         assert text.count("Open Portfolio") == 4
