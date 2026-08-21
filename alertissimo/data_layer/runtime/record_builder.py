@@ -13,7 +13,7 @@ from uuid import uuid4
 import yaml
 
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
-from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
@@ -238,6 +238,89 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
     return value  # The mapping schema rejects unknown transform types.
 
 
+def _bound_target_ids(
+    execution: ExecutionResult,
+    *,
+    providers_root: Path,
+) -> tuple[Any, ...]:
+    """Recover target identities from the physical request contract when unambiguous."""
+
+    provenance = execution.execution_provenance
+    spec = EndpointRegistry(providers_root).resolve(
+        provenance.broker,
+        provenance.origin,
+        provenance.endpoint,
+    )
+    values: list[Any] = []
+    for physical_name, declaration in spec.params.items():
+        if not isinstance(declaration, Mapping) or declaration.get("bind") != "target_id":
+            continue
+        if physical_name not in provenance.params:
+            continue
+        raw_value = provenance.params[physical_name]
+        collection = (declaration.get("binding") or {}).get("collection")
+        if collection == "csv" and isinstance(raw_value, str):
+            candidates = tuple(
+                item.strip() for item in raw_value.split(",") if item.strip()
+            )
+        elif isinstance(raw_value, (list, tuple)):
+            candidates = tuple(raw_value)
+        else:
+            candidates = (raw_value,)
+        for candidate in candidates:
+            if candidate is None or isinstance(candidate, bool):
+                continue
+            if candidate not in values:
+                values.append(candidate)
+    return tuple(values)
+
+
+def _complete_minimal_summary_identities(
+    records_by_object: dict[Any, list[SemanticRecord]],
+    *,
+    broker: str,
+    origin: str,
+    request_target_ids: tuple[Any, ...],
+    make_record_id: Callable[[], InternalRecordId],
+) -> None:
+    """Ensure every known object partition exposes its identity semantically.
+
+    Object-specific endpoints often return only detections, lightcurve points, or
+    other enrichment records. The Portfolio still needs a semantic object identity.
+    Prefer the response partition identity; for a ``single`` partition, a singleton
+    target-bound request is safe fallback evidence. Ambiguous multi-target requests
+    are never assigned by position or guesswork.
+    """
+
+    summary_type = f"summary@{origin}:{broker}"
+    for partition_key, records in records_by_object.items():
+        object_id: Any = _MISSING
+        if (
+            isinstance(partition_key, tuple)
+            and len(partition_key) == 2
+            and partition_key[0] == "identity"
+        ):
+            object_id = partition_key[1]
+        elif partition_key == ("single",) and len(request_target_ids) == 1:
+            object_id = request_target_ids[0]
+        if object_id is _MISSING:
+            continue
+        if any(
+            record.semantic_type.split("@", 1)[0] == "summary"
+            and record.get("identity.object_id") is not None
+            for record in records
+        ):
+            continue
+        records.append(
+            SemanticRecord(
+                internal_record_id=make_record_id(),
+                semantic_type=summary_type,
+                fields={"identity.object_id": object_id},
+                internal_source=None,
+            )
+        )
+
+
 def build_portfolios_from_execution(
     execution: ExecutionResult,
     *,
@@ -249,9 +332,10 @@ def build_portfolios_from_execution(
     semantic_model: SemanticModelIndex | None = None,
 ) -> tuple[Portfolio, ...]:
     """Normalize one physical execution into execution-local object Portfolios."""
-    if mappings_path is None:
+    root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
+    mappings_from_registry = mappings_path is None
+    if mappings_from_registry:
         provenance = execution.execution_provenance
-        root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
         mappings_path = root / provenance.broker / provenance.origin / "mappings.yaml"
         if not mappings_path.is_file():
             raise PortfolioBuildError(
@@ -404,6 +488,19 @@ def build_portfolios_from_execution(
         raise PortfolioBuildError(
             f"cannot collect intrinsic semantic arrays: {error}"
         ) from error
+
+    request_target_ids = (
+        _bound_target_ids(execution, providers_root=root)
+        if mappings_from_registry
+        else ()
+    )
+    _complete_minimal_summary_identities(
+        records_by_object,
+        broker=document.get("broker", execution.execution_provenance.broker),
+        origin=document.get("origin", execution.execution_provenance.origin),
+        request_target_ids=request_target_ids,
+        make_record_id=make_record_id,
+    )
 
     if internal_portfolio_id is not None and len(records_by_object) != 1:
         raise PortfolioBuildError(
