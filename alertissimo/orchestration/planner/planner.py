@@ -537,6 +537,113 @@ def _mark_candidate_dependencies(
     return tuple(rewritten)
 
 
+def _same_forced_retrieval_input(
+    owner_step: GetForcedPhotometryStep,
+    owner_plan: EndpointPlan,
+    lightcurve_step: GetLightcurveStep,
+    supplement_plan: EndpointPlan,
+) -> bool:
+    """Prove that two forced-photometry plans address the same semantic input.
+
+    Exact explicit targets are sufficient evidence. For targetless staged workflows,
+    both plans must instead carry the same runtime candidate-input reference. Bands
+    and time constraints must also match exactly; the current automatic supplement
+    is unconstrained, so any constrained explicit forced Step cannot satisfy it.
+    """
+
+    if owner_step.bands != lightcurve_step.bands:
+        return False
+    if owner_step.time_context != lightcurve_step.time_context:
+        return False
+
+    owner_target = owner_step.target
+    lightcurve_target = lightcurve_step.target
+    if owner_target is not None or lightcurve_target is not None:
+        return (
+            owner_target is not None
+            and lightcurve_target is not None
+            and owner_target == lightcurve_target
+        )
+
+    return (
+        owner_plan.candidate_input_from is not None
+        and supplement_plan.candidate_input_from is not None
+        and owner_plan.candidate_input_from == supplement_plan.candidate_input_from
+    )
+
+
+def _mark_equivalent_forced_reuse(
+    workflow: WorkflowIR,
+    planned_steps: tuple[StepRun, ...],
+    graph: CapabilityGraph,
+) -> tuple[StepRun, ...]:
+    """Reuse earlier explicit forced retrievals for lightcurve supplements.
+
+    The semantic occurrences remain distinct: an explicit
+    ``GetForcedPhotometryStep`` still exposes its own Step output, and the later
+    ``GetLightcurveStep`` still contains forced evidence as part of its completeness
+    view. Only the physical call is coalesced. Reuse requires identical endpoint
+    identity and positive proof of identical explicit targets or identical staged
+    candidate input; endpoint coincidence alone is never sufficient.
+    """
+
+    rewritten = list(planned_steps)
+    for step_index, step in enumerate(workflow.steps):
+        if not isinstance(step, GetLightcurveStep):
+            continue
+
+        current_run = rewritten[step_index]
+        current_plans = list(current_run.endpoint_plans)
+        for plan_index, plan in enumerate(current_plans):
+            if plan.execution_reuse_from is not None:
+                continue
+            capability = _capability_for_plan(graph, plan)
+            if "forced_photometry" not in capability.operation_types:
+                continue
+
+            owner_reference: EndpointPlanRef | None = None
+            for owner_step_index in range(step_index - 1, -1, -1):
+                owner_step = workflow.steps[owner_step_index]
+                if not isinstance(owner_step, GetForcedPhotometryStep):
+                    continue
+                owner_run = rewritten[owner_step_index]
+                for owner_plan_index, owner_plan in enumerate(owner_run.endpoint_plans):
+                    if (
+                        owner_plan.broker,
+                        owner_plan.origin,
+                        owner_plan.endpoint,
+                    ) != (plan.broker, plan.origin, plan.endpoint):
+                        continue
+                    if not _same_forced_retrieval_input(
+                        owner_step,
+                        owner_plan,
+                        step,
+                        plan,
+                    ):
+                        continue
+                    owner_reference = EndpointPlanRef(
+                        step_index=owner_step_index,
+                        plan_index=owner_plan_index,
+                    )
+                    break
+                if owner_reference is not None:
+                    break
+
+            if owner_reference is not None:
+                current_plans[plan_index] = plan.model_copy(
+                    update={
+                        "execution_reuse_from": owner_reference,
+                        "candidate_input_from": None,
+                    }
+                )
+
+        rewritten[step_index] = current_run.model_copy(
+            update={"endpoint_plans": tuple(current_plans)}
+        )
+
+    return tuple(rewritten)
+
+
 def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Plan one workflow occurrence, admitting orchestrated local FilterSteps."""
 
@@ -546,7 +653,7 @@ def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPla
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
-    """Plan Steps, then mark reuse or candidate-output dependencies."""
+    """Plan Steps, then mark candidate dependencies and proven execution reuse."""
 
     pending_run = WorkflowRun.from_workflow(workflow)
     planned_steps = tuple(
@@ -560,6 +667,7 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         for step_run in pending_run.steps
     )
     planned_steps = _mark_candidate_dependencies(workflow, planned_steps, graph)
+    planned_steps = _mark_equivalent_forced_reuse(workflow, planned_steps, graph)
     return WorkflowRun(workflow=workflow, steps=planned_steps)
 
 
