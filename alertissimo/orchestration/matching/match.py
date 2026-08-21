@@ -199,13 +199,15 @@ def match_step_portfolios(
     *,
     step_index: int,
 ) -> StepPortfolioResult:
-    """Add symmetric Portfolio adjacency projections for positional matches.
+    """Return the MatchStep semantic view with positional adjacency edges.
 
     Matching operates only on normalized object-level summary identity and position.
-    It never reads provider payloads and never merges Portfolios.  For each accepted
+    It never reads provider payloads and never merges Portfolios. For each accepted
     cross-origin pair, the same ``InternalEdgeId`` is projected into every
-    execution-local constituent of both semantic objects.  Step-level consolidation
-    later rewrites constituent Portfolio endpoints to their final semantic IDs.
+    execution-local constituent of both semantic objects. Step-level consolidation
+    then rewrites constituent Portfolio endpoints to their final semantic IDs.
+    The returned view belongs to the MatchStep occurrence while retaining the
+    physical execution groupings of its candidate/material input.
     """
 
     origins, threshold = _position_match_contract(step)
@@ -265,7 +267,7 @@ def match_step_portfolios(
             )
 
     return StepPortfolioResult(
-        step_index=source.step_index,
+        step_index=step_index,
         executions=tuple(
             ExecutionPortfolioResult(
                 execution_id=execution.execution_id,
