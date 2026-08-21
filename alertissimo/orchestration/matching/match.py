@@ -91,11 +91,11 @@ def _groups(source: StepPortfolioResult) -> tuple[_ObjectGroup, ...]:
     """Group exact ``(origin, object_id)`` identities before any matching.
 
     This is deliberately the harmonization boundary for MatchStep input. If the
-    same ZTF object arrived from two or more brokers, those execution-local
-    Portfolios form one matching entity. They are never compared with each other and
-    therefore can never acquire a cross-Portfolio match edge. The normal
-    ``StepPortfolioResult.portfolios`` view performs the corresponding semantic
-    Portfolio consolidation.
+    same survey object arrived from two or more brokers/executions, those
+    execution-local Portfolios form one matching entity. They are never compared
+    with each other and therefore can never acquire a cross-Portfolio Match edge.
+    The normal ``StepPortfolioResult.portfolios`` view performs the corresponding
+    semantic Portfolio consolidation.
     """
 
     grouped: dict[tuple[str, str], list[Portfolio]] = {}
@@ -217,9 +217,9 @@ def _position_match_contract(
         )
 
     raw_origins = step.params.get("candidate_origins")
-    if not isinstance(raw_origins, (list, tuple)) or len(raw_origins) < 2:
+    if not isinstance(raw_origins, (list, tuple)) or not raw_origins:
         raise UnsupportedMatchError(
-            "positional MatchStep requires at least two explicit candidate_origins"
+            "positional MatchStep requires at least one explicit candidate origin"
         )
     origins = tuple(str(origin) for origin in raw_origins)
     if any(not origin.strip() for origin in origins) or len(set(origins)) != len(origins):
@@ -268,15 +268,17 @@ def match_step_portfolios(
     """Return the MatchStep semantic view with positional adjacency edges.
 
     Matching operates only on normalized object-level summary identity and position.
-    It never reads provider payloads and never merges Portfolios. Exact same-survey
-    object identities are grouped as one matching entity before pair comparison;
-    their execution-local Portfolios are harmonized by the Step semantic view rather
-    than linked by MatchStep. For each accepted cross-origin pair, the same
-    ``InternalEdgeId`` is projected into every execution-local constituent of both
-    semantic objects. Step-level consolidation then rewrites constituent Portfolio
-    endpoints to their final semantic IDs. The returned view belongs to the
-    MatchStep occurrence while retaining the physical execution groupings of its
-    candidate/material input.
+    It never reads provider payloads and never merges Portfolios. Exact object
+    identities are grouped as one matching entity before pair comparison; their
+    execution-local Portfolios are harmonized by the Step semantic view rather than
+    linked by MatchStep. Once exact identities have been grouped, every distinct
+    semantic identity selected by the Match candidate origins is eligible for the
+    explicit Match policy, including different object IDs from the same survey.
+    For each accepted pair, the same ``InternalEdgeId`` is projected into every
+    execution-local constituent of both semantic objects. Step-level consolidation
+    then rewrites constituent Portfolio endpoints to their final semantic IDs. The
+    returned view belongs to the MatchStep occurrence while retaining the physical
+    execution groupings of its candidate/material input.
     """
 
     origins, threshold = _position_match_contract(step)
@@ -299,11 +301,6 @@ def match_step_portfolios(
             by_id[portfolio.internal_portfolio_id] = portfolio
 
     for left, right in combinations(groups, 2):
-        # Same-origin entities are intentionally outside the first cross-survey
-        # Match semantics. Exact same-object identities were already grouped above;
-        # distinct IDs from one survey are not cross-survey counterpart candidates.
-        if left.identity[0] == right.identity[0]:
-            continue
         separation = _angular_separation_arcsec(left.position, right.position)
         if separation > threshold:
             continue
