@@ -140,9 +140,7 @@ def test_field_and_root_field_branches_combine_per_object(tmp_path):
     assert [r.internal_source.payload_index for r in result[0].records] == [0, 0, 1]
 
 
-def test_partition_identity_seeds_id_only_summary_when_only_detections_are_mapped(
-    tmp_path,
-):
+def test_partition_identity_alone_does_not_synthesize_summary(tmp_path):
     document = {
         "broker": "alerce",
         "origin": "ztf",
@@ -164,14 +162,13 @@ def test_partition_identity_seeds_id_only_summary_when_only_detections_are_mappe
     )
 
     assert len(portfolios) == 2
-    assert [
-        {
-            record.fields["identity.object_id"]
+    assert all(
+        not any(
+            record.semantic_type.split("@", 1)[0] == "summary"
             for record in portfolio.records
-            if record.semantic_type == "summary@ztf:alerce"
-        }
+        )
         for portfolio in portfolios
-    ] == [{"A"}, {"B"}]
+    )
 
 
 def test_single_target_request_seeds_id_only_summary_when_payload_has_no_object_id(
