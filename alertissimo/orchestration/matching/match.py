@@ -41,8 +41,8 @@ class _ObjectGroup:
     position: tuple[float, float] | None
 
 
-_POSITION_WITHIN_RE = re.compile(
-    r"^\s*position\s+within\s+"
+_POSITION_INSIDE_RE = re.compile(
+    r"^\s*position\s+inside\s+"
     r"(?P<value>[+]?(?:\d+(?:\.\d*)?|\.\d+))\s*"
     r"(?P<unit>deg|arcmin|arcsec)\s*$",
     re.IGNORECASE,
@@ -179,11 +179,11 @@ def _append_edge(portfolio: Portfolio, edge: SemanticEdge) -> Portfolio:
 
 
 def _predicate_position_threshold(predicate: Any) -> float | None:
-    """Read the existing semantic ``position within <angle>`` Match predicate."""
+    """Read the semantic ``position inside <angle>`` Match predicate."""
 
     if not isinstance(predicate, str):
         return None
-    match = _POSITION_WITHIN_RE.fullmatch(predicate)
+    match = _POSITION_INSIDE_RE.fullmatch(predicate)
     if match is None:
         return None
     threshold = float(match.group("value")) * _ANGLE_TO_ARCSEC[
@@ -213,7 +213,7 @@ def _position_match_contract(
         )
     if step.method is None and predicate_threshold is None:
         raise UnsupportedMatchError(
-            "the first executable MatchStep requires 'position within <angle>'"
+            "the first executable MatchStep requires 'position inside <angle>'"
         )
 
     raw_origins = step.params.get("candidate_origins")
@@ -252,7 +252,7 @@ def _position_match_contract(
     except (TypeError, ValueError, OverflowError) as exc:
         raise UnsupportedMatchError(
             "positional MatchStep requires max_angular_separation_arcsec or "
-            "a 'position within <angle>' predicate"
+            "a 'position inside <angle>' predicate"
         ) from exc
     if not isfinite(threshold) or threshold <= 0.0:
         raise UnsupportedMatchError("max_angular_separation_arcsec must be positive")
