@@ -46,11 +46,12 @@ class EndpointPlanRef(RuntimeModel):
 
 
 class CandidateInputRef(RuntimeModel):
-    """Reference to an earlier semantic Step whose output defines current candidates.
+    """Reference to an earlier semantic Step whose output defines candidate input.
 
-    Unlike :class:`EndpointPlanRef`, this does not reuse a physical execution. It
-    says that a new physical call must be bound from identities present in the
-    normalized candidate output of the referenced Step.
+    On an :class:`EndpointPlan` this supplies runtime target identities for a new
+    physical call. On a local candidate-transforming :class:`StepRun` it identifies
+    the earlier normalized semantic view that the local Step consumes. Neither use
+    mutates WorkflowIR or implies physical execution reuse.
     """
 
     step_index: int = Field(ge=0)
@@ -99,6 +100,7 @@ class StepRun(RuntimeModel):
     step_index: int = Field(ge=0)
     state: StepRunState = StepRunState.PENDING
     endpoint_plans: tuple[EndpointPlan, ...] = ()
+    candidate_input_from: CandidateInputRef | None = None
     execution_ids: tuple[str, ...] = ()
     error: str | None = None
 
@@ -119,6 +121,19 @@ class WorkflowRun(RuntimeModel):
                 f"(expected {expected}, got {actual})"
             )
         for step_run in self.steps:
+            local_candidate_reference = step_run.candidate_input_from
+            if local_candidate_reference is not None:
+                if local_candidate_reference.step_index >= step_run.step_index:
+                    raise ValueError(
+                        "local candidate input must reference an earlier Step occurrence "
+                        f"(step_index {step_run.step_index}, reference step_index "
+                        f"{local_candidate_reference.step_index})"
+                    )
+                if local_candidate_reference.step_index >= len(self.steps):
+                    raise ValueError(
+                        "local candidate input references unknown Step occurrence"
+                    )
+
             for plan_index, plan in enumerate(step_run.endpoint_plans):
                 reference = plan.execution_reuse_from
                 if reference is not None:
