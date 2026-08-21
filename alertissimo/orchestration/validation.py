@@ -11,7 +11,7 @@ It answers whether and where the registered system can satisfy provider-facing
 intent. It does not select an endpoint, translate arguments, execute requests,
 or merge results. In particular, semantic-search criteria are not evidence of
 server-side pushdown: this module validates the broad registered operation and
-explicit semantic selectors such as a requested classifier.
+explicit semantic selectors such as a requested classifier or crossmatch catalog.
 """
 
 from __future__ import annotations
@@ -88,6 +88,7 @@ _FULL_LIGHTCURVE_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
 _GEOMETRIC_SEARCH_OPERATIONS = frozenset(
     {"cone_search", "spatial_search", "catalog_conesearch", "skymap_search"}
 )
+_CROSSMATCH_RADIUS_OPERATIONS = frozenset({"crossmatch", "catalog_crossmatch"})
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
 
 
@@ -112,10 +113,12 @@ def _query(
 
 @dataclass(frozen=True)
 class _CandidateEvidence:
-    """Raw semantic matches and the subset usable for this target cardinality."""
+    """Raw semantic matches and the subset compatible with the requested intent."""
 
     raw: tuple[EndpointCapability, ...]
     compatible: tuple[EndpointCapability, ...]
+    empty_status: ValidationStatus = "unsupported"
+    empty_reason: str | None = None
 
 
 def _semantic_record_producer(semantic_record_type: str) -> str | None:
@@ -152,6 +155,48 @@ def _classification_endpoint_supports_classifier(
         ):
             return True
     return False
+
+
+def _crossmatch_catalog_relation(
+    graph: CapabilityGraph,
+    endpoint: EndpointCapability,
+    catalog: str,
+) -> Literal["exact", "dynamic", "mismatch"]:
+    """Relate one endpoint's mapped crossmatch producer to a requested catalog.
+
+    A dynamic ``{producer}`` mapping is deliberately not treated as wildcard proof.
+    It means the response can identify its producer at runtime, not that any named
+    catalog is statically guaranteed to be available from that endpoint.
+    """
+
+    requested = catalog.lower()
+    dynamic = False
+    for record in graph.records_for_endpoint(
+        endpoint.broker, endpoint.origin, endpoint.endpoint
+    ):
+        if not semantic_record_noun_matches(record.semantic_record_type, "crossmatch"):
+            continue
+        producer = _semantic_record_producer(record.semantic_record_type)
+        if producer is None:
+            continue
+        if producer.lower() == requested:
+            return "exact"
+        if _DYNAMIC_QUALIFIER.fullmatch(producer):
+            dynamic = True
+    return "dynamic" if dynamic else "mismatch"
+
+
+def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
+    """Require explicit proof that ``radius`` belongs to crossmatch semantics.
+
+    A generic cone-search radius is not interchangeable with a catalog-crossmatch
+    radius merely because both physical parameters happen to be named ``radius``.
+    """
+
+    return bool(
+        _CROSSMATCH_RADIUS_OPERATIONS.intersection(endpoint.operation_types)
+        and "radius" in endpoint.server_filters
+    )
 
 
 def _raw_candidates_for_source(
@@ -211,16 +256,75 @@ def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
     raw = _raw_candidates_for_source(step, graph, source)
+    compatible = raw
+    empty_status: ValidationStatus = "unsupported"
+    empty_reason: str | None = None
     target = _target_selector(step)
+
+    if isinstance(step, GetCrossmatchStep):
+        if target is not None:
+            compatible = tuple(
+                candidate
+                for candidate in compatible
+                if "target_id" in candidate.binding_roles
+            )
+            if raw and not compatible:
+                empty_reason = (
+                    "requested crossmatch target cannot be bound by any compatible endpoint"
+                )
+
+        if step.radius is not None and compatible:
+            compatible = tuple(
+                candidate
+                for candidate in compatible
+                if _crossmatch_endpoint_honors_radius(candidate)
+            )
+            if not compatible:
+                empty_reason = (
+                    "no registered crossmatch endpoint can honor the requested radius"
+                )
+
     ids = target.ids if target is not None else None
-    if ids is None or len(ids) <= 1:
-        return _CandidateEvidence(raw=raw, compatible=raw)
-    compatible = tuple(
-        candidate
-        for candidate in raw
-        if "target_id" in candidate.collection_binding_roles
+    if compatible and ids is not None and len(ids) > 1:
+        cardinality_compatible = tuple(
+            candidate
+            for candidate in compatible
+            if "target_id" in candidate.collection_binding_roles
+        )
+        if not cardinality_compatible:
+            empty_reason = "no compatible multi-target binding exists"
+        compatible = cardinality_compatible
+
+    if isinstance(step, GetCrossmatchStep) and step.catalog is not None and compatible:
+        exact: list[EndpointCapability] = []
+        dynamic: list[EndpointCapability] = []
+        for candidate in compatible:
+            relation = _crossmatch_catalog_relation(graph, candidate, step.catalog)
+            if relation == "exact":
+                exact.append(candidate)
+            elif relation == "dynamic":
+                dynamic.append(candidate)
+        if exact:
+            compatible = tuple(exact)
+        elif dynamic:
+            compatible = ()
+            empty_status = "deferred"
+            empty_reason = (
+                f"requested crossmatch catalog {step.catalog!r} is represented only "
+                "by a dynamic producer mapping and cannot be confirmed statically"
+            )
+        else:
+            compatible = ()
+            empty_reason = (
+                f"no compatible endpoint produces crossmatch catalog {step.catalog!r}"
+            )
+
+    return _CandidateEvidence(
+        raw=raw,
+        compatible=compatible,
+        empty_status=empty_status,
+        empty_reason=empty_reason,
     )
-    return _CandidateEvidence(raw=raw, compatible=compatible)
 
 
 def _target_selector(step: Step) -> TargetSelector | None:
@@ -297,34 +401,39 @@ def validate_step_capabilities(
         evidence = _candidate_evidence_for_source(step, graph, source)
         candidates = evidence.compatible
         target = _target_selector(step)
-        status = "supported" if candidates else "unsupported"
-        results.append(
-            SourceCapabilityResult(
-                source,
-                status,
-                candidates,
-                "matching registered endpoint capability found"
-                if candidates
-                else (
-                    "no compatible multi-target binding exists"
-                    if evidence.raw and len(target.ids if target else ()) > 1
-                    else "no compatible registered endpoint capability found"
-                ),
+        status: ValidationStatus = "supported" if candidates else evidence.empty_status
+        reason = (
+            "matching registered endpoint capability found"
+            if candidates
+            else evidence.empty_reason
+            or (
+                "no compatible multi-target binding exists"
+                if evidence.raw and len(target.ids if target else ()) > 1
+                else "no compatible registered endpoint capability found"
             )
         )
-    overall = (
-        "supported"
-        if results and all(item.status == "supported" for item in results)
-        else "unsupported"
-    )
+        results.append(SourceCapabilityResult(source, status, candidates, reason))
+
+    if any(item.status == "unsupported" for item in results):
+        overall: ValidationStatus = "unsupported"
+    elif any(item.status == "deferred" for item in results):
+        overall = "deferred"
+    else:
+        overall = "supported"
+
+    if overall == "supported":
+        overall_reason = "all requested source constraints are supported"
+    elif overall == "deferred":
+        overall_reason = "one or more requested source constraints require deferred proof"
+    else:
+        overall_reason = "one or more requested source constraints are unsupported"
+
     return CapabilityValidationResult(
         operation,
         semantic_type,
         overall,
         tuple(results),
-        "all requested source constraints are supported"
-        if overall == "supported"
-        else "one or more requested source constraints are unsupported",
+        overall_reason,
     )
 
 
