@@ -14,7 +14,7 @@ from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint
 from alertissimo.orchestration.binding.models import StepBindingResult
-from alertissimo.orchestration.ir import DeriveStep, FilterStep
+from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
     StepPortfolioResult,
@@ -224,7 +224,8 @@ def execute_staged_workflow_run(
     is recorded as vacuous rather than invoked with an empty target collection.
     A FilterStep consumes its StepRun-level ``candidate_input_from`` view locally,
     creates no physical execution, and its surviving semantic identities may feed
-    later provider calls.
+    later provider calls. DeriveStep and MatchStep likewise own no physical call;
+    they remain planned until the post-normalization local semantic phase executes.
 
     Required provider plans remain fail-fast. A supplementary plan may fail without
     failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
@@ -250,7 +251,7 @@ def execute_staged_workflow_run(
         step_index = original_step_run.step_index
         step = run.step_at(step_index)
 
-        if isinstance(step, DeriveStep):
+        if isinstance(step, (DeriveStep, MatchStep)):
             bindings.append(StepBindingResult(step_index=step_index, bound_calls=()))
             step_results.append(StepExecutionResult(step_index=step_index, executions=()))
             continue
