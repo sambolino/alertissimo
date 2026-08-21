@@ -105,9 +105,14 @@ class StepRun(RuntimeModel):
 
     ``execution_plan_indexes`` aligns successful physical results in
     ``execution_ids`` with the endpoint-plan indexes that produced them. It is
-    normally ``0..N-1``; sparse indexes occur when supplementary plans fail while
-    required plans still satisfy the semantic Step. An empty tuple remains the
-    backward-compatible representation of dense positional alignment.
+    normally ``0..N-1``; sparse indexes occur when supplementary plans fail or
+    candidate-dependent plans are vacuous while other plans still execute.
+
+    ``vacuous_plan_indexes`` records candidate-dependent physical plans that were
+    deliberately not invoked because their referenced runtime candidate partition
+    was empty. This is distinct from endpoint failure or supplementary omission and
+    lets normalization prove why a required physical plan legitimately has no
+    execution result.
     """
 
     step_index: int = Field(ge=0)
@@ -116,23 +121,43 @@ class StepRun(RuntimeModel):
     candidate_input_from: CandidateInputRef | None = None
     execution_ids: tuple[str, ...] = ()
     execution_plan_indexes: tuple[int, ...] = ()
+    vacuous_plan_indexes: tuple[int, ...] = ()
     warnings: tuple[str, ...] = ()
     error: str | None = None
 
     @model_validator(mode="after")
     def validate_execution_alignment_metadata(self) -> "StepRun":
-        if not self.execution_plan_indexes:
-            return self
-        if len(self.execution_plan_indexes) != len(self.execution_ids):
-            raise ValueError(
-                "execution_plan_indexes must align one-to-one with execution_ids"
-            )
-        if len(set(self.execution_plan_indexes)) != len(self.execution_plan_indexes):
-            raise ValueError("execution_plan_indexes must not contain duplicates")
-        if tuple(sorted(self.execution_plan_indexes)) != self.execution_plan_indexes:
-            raise ValueError("execution_plan_indexes must be in endpoint-plan order")
-        if any(index >= len(self.endpoint_plans) for index in self.execution_plan_indexes):
-            raise ValueError("execution_plan_indexes reference unknown endpoint plans")
+        if self.execution_plan_indexes:
+            if len(self.execution_plan_indexes) != len(self.execution_ids):
+                raise ValueError(
+                    "execution_plan_indexes must align one-to-one with execution_ids"
+                )
+            if len(set(self.execution_plan_indexes)) != len(self.execution_plan_indexes):
+                raise ValueError("execution_plan_indexes must not contain duplicates")
+            if tuple(sorted(self.execution_plan_indexes)) != self.execution_plan_indexes:
+                raise ValueError("execution_plan_indexes must be in endpoint-plan order")
+            if any(index >= len(self.endpoint_plans) for index in self.execution_plan_indexes):
+                raise ValueError("execution_plan_indexes reference unknown endpoint plans")
+
+        if self.vacuous_plan_indexes:
+            if len(set(self.vacuous_plan_indexes)) != len(self.vacuous_plan_indexes):
+                raise ValueError("vacuous_plan_indexes must not contain duplicates")
+            if tuple(sorted(self.vacuous_plan_indexes)) != self.vacuous_plan_indexes:
+                raise ValueError("vacuous_plan_indexes must be in endpoint-plan order")
+            if any(index >= len(self.endpoint_plans) for index in self.vacuous_plan_indexes):
+                raise ValueError("vacuous_plan_indexes reference unknown endpoint plans")
+            if set(self.execution_plan_indexes) & set(self.vacuous_plan_indexes):
+                raise ValueError(
+                    "endpoint plan cannot be both executed and vacuous"
+                )
+            if any(
+                self.endpoint_plans[index].candidate_input_from is None
+                for index in self.vacuous_plan_indexes
+            ):
+                raise ValueError(
+                    "vacuous_plan_indexes may reference only candidate-dependent endpoint plans"
+                )
+
         return self
 
 
