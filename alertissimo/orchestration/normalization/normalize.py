@@ -331,7 +331,20 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 f"step_index {step_run.step_index} is {step_run.state.value}; "
                 "workflow normalization requires succeeded state"
             )
-        if len(step_run.endpoint_plans) != len(step_result.executions):
+
+        vacuous_candidate_step = (
+            bool(step_run.endpoint_plans)
+            and not step_result.executions
+            and not step_run.execution_ids
+            and all(
+                plan.candidate_input_from is not None
+                for plan in step_run.endpoint_plans
+            )
+        )
+        if (
+            len(step_run.endpoint_plans) != len(step_result.executions)
+            and not vacuous_candidate_step
+        ):
             raise WorkflowNormalizationAlignmentError(
                 f"step_index {step_run.step_index} endpoint plan count does not "
                 "match execution result count "
