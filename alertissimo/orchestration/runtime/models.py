@@ -106,7 +106,8 @@ class StepRun(RuntimeModel):
     ``execution_plan_indexes`` aligns successful physical results in
     ``execution_ids`` with the endpoint-plan indexes that produced them. It is
     normally ``0..N-1``; sparse indexes occur when supplementary plans fail while
-    required plans still satisfy the semantic Step.
+    required plans still satisfy the semantic Step. An empty tuple remains the
+    backward-compatible representation of dense positional alignment.
     """
 
     step_index: int = Field(ge=0)
@@ -120,6 +121,8 @@ class StepRun(RuntimeModel):
 
     @model_validator(mode="after")
     def validate_execution_alignment_metadata(self) -> "StepRun":
+        if not self.execution_plan_indexes:
+            return self
         if len(self.execution_plan_indexes) != len(self.execution_ids):
             raise ValueError(
                 "execution_plan_indexes must align one-to-one with execution_ids"
