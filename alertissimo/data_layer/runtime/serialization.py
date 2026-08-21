@@ -6,7 +6,12 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from alertissimo.data_layer.representations import InternalRecordSource, Portfolio
+from alertissimo.data_layer.representations import (
+    InternalPortfolioId,
+    InternalRecordId,
+    InternalRecordSource,
+    Portfolio,
+)
 
 
 def _plain(value: Any) -> Any:
@@ -29,6 +34,14 @@ def _source_to_dict(source: InternalRecordSource | None) -> dict[str, Any] | Non
         "payload_path": source.payload_path,
         "payload_index": source.payload_index,
     }
+
+
+def _edge_endpoint_to_dict(
+    endpoint: InternalPortfolioId | InternalRecordId,
+) -> dict[str, str]:
+    if isinstance(endpoint, InternalPortfolioId):
+        return {"portfolio_id": endpoint.value}
+    return {"record_id": endpoint.value}
 
 
 def portfolio_to_dict(portfolio: Portfolio) -> dict[str, Any]:
@@ -64,8 +77,8 @@ def portfolio_to_dict(portfolio: Portfolio) -> dict[str, Any]:
     edges = [{
         "internal_edge_id": edge.internal_edge_id.value,
         "edge_type": edge.edge_type,
-        "subject_record_id": edge.subject_record_id.value,
-        "target_record_id": edge.target_record_id.value,
+        "subject": _edge_endpoint_to_dict(edge.subject),
+        "target": _edge_endpoint_to_dict(edge.target),
         "fields": _plain(edge.fields),
         "internal_source": _source_to_dict(edge.internal_source),
     } for edge in portfolio.edges]
