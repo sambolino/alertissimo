@@ -151,7 +151,7 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
     if validation.status == "not_applicable":
-        if isinstance(step, (DeriveStep, FilterStep)):
+        if isinstance(step, DeriveStep):
             return ()
         raise PlanningNotApplicableError(
             f"provider endpoint planning is not applicable ({_context(validation)}): "
@@ -378,13 +378,11 @@ def _mark_candidate_dependencies(
             current_material_index = step_index
             continue
 
-        if active_search_index is None:
-            continue
-
         if isinstance(step, FilterStep):
-            if current_material_index is None:
+            if active_search_index is None or current_material_index is None:
                 raise PlanningDeferredError(
-                    f"filter step_index {step_index} has no materialized candidate view"
+                    f"filter step_index {step_index} requires an earlier materialized "
+                    "candidate view"
                 )
             rewritten[step_index] = rewritten[step_index].model_copy(
                 update={
@@ -395,6 +393,9 @@ def _mark_candidate_dependencies(
             )
             current_candidate_index = step_index
             current_material_index = step_index
+            continue
+
+        if active_search_index is None:
             continue
 
         if not isinstance(step, GetStep) or getattr(step, "target", None) is not None:
@@ -483,6 +484,14 @@ def _mark_candidate_dependencies(
     return tuple(rewritten)
 
 
+def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
+    """Plan one workflow occurrence, admitting orchestrated local FilterSteps."""
+
+    if isinstance(step, FilterStep):
+        return ()
+    return plan_step(step, graph)
+
+
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
     """Plan Steps, then mark reuse or candidate-output dependencies."""
 
@@ -491,7 +500,9 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         StepRun(
             step_index=step_run.step_index,
             state=StepRunState.PLANNED,
-            endpoint_plans=plan_step(pending_run.step_at(step_run.step_index), graph),
+            endpoint_plans=_plan_workflow_step(
+                pending_run.step_at(step_run.step_index), graph
+            ),
         )
         for step_run in pending_run.steps
     )
