@@ -6,14 +6,18 @@ from dataclasses import dataclass
 from functools import cached_property
 from uuid import uuid4
 
-from alertissimo.data_layer.representations import InternalPortfolioId, Portfolio
+from alertissimo.data_layer.representations import (
+    InternalPortfolioId,
+    Portfolio,
+    SemanticEdge,
+)
 from alertissimo.orchestration.runtime import WorkflowRun
 
 
-def _summary_object_identity(portfolio: Portfolio) -> tuple[str, str] | None:
+def summary_object_identity(portfolio: Portfolio) -> tuple[str, str] | None:
     """Return one positively established ``(origin, object_id)`` summary identity.
 
-    Only primary ``summary`` records participate.  IDs on detections, crossmatches,
+    Only primary ``summary`` records participate. IDs on detections, crossmatches,
     or other semantic records may identify those records rather than the Portfolio's
     astronomical object and therefore are not safe consolidation evidence.
 
@@ -36,6 +40,11 @@ def _summary_object_identity(portfolio: Portfolio) -> tuple[str, str] | None:
     if len(identities) != 1:
         return None
     return next(iter(identities))
+
+
+# Backward-compatible private spelling for code written before MatchStep needed the
+# exact same identity rule outside this module.
+_summary_object_identity = summary_object_identity
 
 
 def _unique_portfolios(portfolios: list[Portfolio]) -> tuple[Portfolio, ...]:
@@ -77,18 +86,78 @@ def _unique_components(portfolios: tuple[Portfolio, ...], attribute: str, id_att
     return tuple(ordered)
 
 
-def _merge_portfolio_group(portfolios: list[Portfolio]) -> Portfolio:
-    """Merge one positively identity-equivalent Portfolio group without field fusion."""
+def _remap_portfolio_edge(
+    edge: SemanticEdge,
+    portfolio_id_map: dict[InternalPortfolioId, InternalPortfolioId],
+) -> SemanticEdge:
+    """Rewrite Portfolio-edge endpoints to their consolidated semantic IDs."""
 
-    unique = _unique_portfolios(portfolios)
-    if len(unique) == 1:
-        return unique[0]
+    if not isinstance(edge.subject, InternalPortfolioId):
+        return edge
+    subject = portfolio_id_map.get(edge.subject, edge.subject)
+    target = portfolio_id_map.get(edge.target, edge.target)
+    if subject == edge.subject and target == edge.target:
+        return edge
+    return SemanticEdge(
+        internal_edge_id=edge.internal_edge_id,
+        edge_type=edge.edge_type,
+        subject=subject,
+        target=target,
+        fields=edge.fields,
+        internal_source=edge.internal_source,
+    )
+
+
+def _unique_edges(
+    portfolios: tuple[Portfolio, ...],
+    portfolio_id_map: dict[InternalPortfolioId, InternalPortfolioId],
+) -> tuple[SemanticEdge, ...]:
+    """Union edges after rewriting any constituent Portfolio endpoints."""
+
+    by_id: dict[str, SemanticEdge] = {}
+    ordered: list[SemanticEdge] = []
+    for portfolio in portfolios:
+        for original in portfolio.edges:
+            edge = _remap_portfolio_edge(original, portfolio_id_map)
+            identifier = edge.internal_edge_id.value
+            existing = by_id.get(identifier)
+            if existing is None:
+                by_id[identifier] = edge
+                ordered.append(edge)
+            elif existing != edge:
+                raise ValueError(
+                    "cannot consolidate conflicting edges under internal ID "
+                    f"{identifier!r}"
+                )
+    return tuple(ordered)
+
+
+def _merge_portfolio_group(
+    portfolios: tuple[Portfolio, ...],
+    *,
+    final_id: InternalPortfolioId,
+    portfolio_id_map: dict[InternalPortfolioId, InternalPortfolioId],
+) -> Portfolio:
+    """Merge one positively identity-equivalent group without field fusion."""
+
+    edges = _unique_edges(portfolios, portfolio_id_map)
+    if len(portfolios) == 1:
+        portfolio = portfolios[0]
+        if portfolio.internal_portfolio_id == final_id and portfolio.edges == edges:
+            return portfolio
+        return Portfolio(
+            internal_portfolio_id=final_id,
+            records=portfolio.records,
+            edges=edges,
+            executions=portfolio.executions,
+        )
+
     return Portfolio(
-        internal_portfolio_id=InternalPortfolioId(f"portfolio:{uuid4().hex}"),
-        records=_unique_components(unique, "records", "internal_record_id"),
-        edges=_unique_components(unique, "edges", "internal_edge_id"),
+        internal_portfolio_id=final_id,
+        records=_unique_components(portfolios, "records", "internal_record_id"),
+        edges=edges,
         executions=_unique_components(
-            unique, "executions", "internal_execution_id"
+            portfolios, "executions", "internal_execution_id"
         ),
     )
 
@@ -99,17 +168,21 @@ def _consolidate_step_portfolios(
     """Build the semantic object view across all physical executions of one Step.
 
     Portfolios merge only when their primary summary records establish the same
-    ``(origin, object_id)``.  The first occurrence determines output order.
-    Unidentified or ambiguous Portfolios remain independent.  Source records,
+    ``(origin, object_id)``. The first occurrence determines output order.
+    Unidentified or ambiguous Portfolios remain independent. Source records,
     edges, and execution provenance are retained with their original internal IDs;
     no record-level semantic fields are fused or guessed.
+
+    Portfolio adjacency edges are rewritten from execution-local constituent IDs to
+    the final semantic Portfolio IDs. This keeps the connection plane valid when
+    identity-equivalent execution-local Portfolios acquire a new consolidated ID.
     """
 
     groups: dict[tuple[str, ...], list[Portfolio]] = {}
     order: list[tuple[str, ...]] = []
     for execution in executions:
         for portfolio in execution.portfolios:
-            identity = _summary_object_identity(portfolio)
+            identity = summary_object_identity(portfolio)
             if identity is None:
                 key = ("portfolio", portfolio.internal_portfolio_id.value)
             else:
@@ -118,7 +191,38 @@ def _consolidate_step_portfolios(
                 groups[key] = []
                 order.append(key)
             groups[key].append(portfolio)
-    return tuple(_merge_portfolio_group(groups[key]) for key in order)
+
+    unique_groups = {
+        key: _unique_portfolios(groups[key])
+        for key in order
+    }
+    final_ids: dict[tuple[str, ...], InternalPortfolioId] = {}
+    portfolio_id_map: dict[InternalPortfolioId, InternalPortfolioId] = {}
+    for key in order:
+        portfolios = unique_groups[key]
+        final_id = (
+            portfolios[0].internal_portfolio_id
+            if len(portfolios) == 1
+            else InternalPortfolioId(f"portfolio:{uuid4().hex}")
+        )
+        final_ids[key] = final_id
+        for portfolio in portfolios:
+            existing = portfolio_id_map.get(portfolio.internal_portfolio_id)
+            if existing is not None and existing != final_id:
+                raise ValueError(
+                    "one internal Portfolio ID cannot consolidate into multiple "
+                    "semantic Portfolio IDs"
+                )
+            portfolio_id_map[portfolio.internal_portfolio_id] = final_id
+
+    return tuple(
+        _merge_portfolio_group(
+            unique_groups[key],
+            final_id=final_ids[key],
+            portfolio_id_map=portfolio_id_map,
+        )
+        for key in order
+    )
 
 
 @dataclass(frozen=True)
@@ -134,7 +238,7 @@ class StepPortfolioResult:
     """Normalized output for one workflow Step occurrence.
 
     ``executions`` preserves the physical/audit grouping exactly as normalized from
-    provider calls.  ``portfolios`` is the semantic Step view: execution-local
+    provider calls. ``portfolios`` is the semantic Step view: execution-local
     Portfolios with the same positively established ``(origin, object_id)`` are
     consolidated into one object Portfolio while retaining all record, edge, and
     execution provenance.
@@ -162,4 +266,5 @@ __all__ = [
     "ExecutionPortfolioResult",
     "StepPortfolioResult",
     "WorkflowPortfolioResult",
+    "summary_object_identity",
 ]
