@@ -123,15 +123,32 @@ def test_real_lsst_ztf_object_means_match_inside_one_arcsec():
     assert 0.03 < left.edges[0].fields["angular_separation"] < 0.05
 
 
-def test_position_match_does_not_merge_or_connect_outside_threshold():
+def test_position_match_filters_unmatched_candidate_from_semantic_view():
+    lsst = _portfolio("portfolio:lsst", "lsst", "LSST1", 10.0, 20.0)
+    matched_ztf = _portfolio("portfolio:ztf:matched", "ztf", "ZTF1", 10.0001, 20.0)
+    unmatched_ztf = _portfolio("portfolio:ztf:unmatched", "ztf", "ZTF2", 10.01, 20.0)
+    source = _view(lsst, matched_ztf, unmatched_ztf)
+
+    matched = match_step_portfolios(_step(), source, step_index=1)
+
+    assert source.portfolios == (lsst, matched_ztf, unmatched_ztf)
+    assert matched.executions[0].portfolios == matched.portfolios
+    assert tuple(portfolio.internal_portfolio_id for portfolio in matched.portfolios) == (
+        lsst.internal_portfolio_id,
+        matched_ztf.internal_portfolio_id,
+    )
+    assert all(len(portfolio.edges) == 1 for portfolio in matched.portfolios)
+
+
+def test_position_match_with_no_accepted_pair_returns_empty_semantic_view():
     lsst = _portfolio("portfolio:lsst", "lsst", "LSST1", 10.0, 20.0)
     ztf = _portfolio("portfolio:ztf", "ztf", "ZTF1", 10.01, 20.0)
 
     matched = match_step_portfolios(_step(), _view(lsst, ztf), step_index=1)
 
-    assert matched.executions[0].portfolios == (lsst, ztf)
-    assert matched.portfolios == (lsst, ztf)
-    assert all(not portfolio.edges for portfolio in matched.portfolios)
+    assert len(matched.executions) == 1
+    assert matched.executions[0].portfolios == ()
+    assert matched.portfolios == ()
 
 
 def test_position_match_allows_distinct_object_ids_within_one_origin_when_explicit():
