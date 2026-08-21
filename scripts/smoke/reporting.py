@@ -86,6 +86,7 @@ def report_data(result) -> dict[str, Any]:
         for call in binding.bound_calls:
             plan = call.endpoint_plan
             reuse = plan.execution_reuse_from
+            candidate_input = plan.candidate_input_from
             realization = plan.predicate_realization
             calls.append(
                 {
@@ -99,6 +100,11 @@ def report_data(result) -> dict[str, Any]:
                             "plan_index": reuse.plan_index,
                         }
                         if reuse is not None
+                        else None
+                    ),
+                    "candidate_input_from": (
+                        {"step_index": candidate_input.step_index}
+                        if candidate_input is not None
                         else None
                     ),
                     "pushdown": _predicate_data(
@@ -196,6 +202,11 @@ def render_human(result) -> str:
                 f"  planned endpoint: {call['broker']}/{call['origin']}/{call['endpoint']}"
                 f"{reuse_text}"
             )
+            candidate_input = call["candidate_input_from"]
+            if candidate_input is not None:
+                lines.append(
+                    f"  candidate input: step {candidate_input['step_index']} normalized object identities"
+                )
             lines.append(f"  bound parameters: {call['params']}")
             if call["pushdown"] is not None or call["residual"] is not None:
                 lines.append(

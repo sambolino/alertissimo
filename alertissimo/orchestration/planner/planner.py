@@ -1,9 +1,10 @@
 """Deterministically select registered endpoints for provider-facing IR steps.
 
 Capability validation determines *what can* satisfy an intent; this planner chooses
-endpoint identities, records predicate realization, and may prove that a later
-semantic retrieval can reuse an earlier candidate-search execution. WorkflowIR
-Steps remain distinct even when their physical execution is shared.
+endpoint identities, records predicate realization, and may prove either that a
+later semantic retrieval can reuse an earlier candidate-search execution or that a
+new invocation can be bound from the earlier semantic candidate output. WorkflowIR
+Steps remain distinct in both cases.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ from alertissimo.orchestration.ir.predicates import (
     SemanticReference,
 )
 from alertissimo.orchestration.runtime.models import (
+    CandidateInputRef,
     EndpointPlan,
     EndpointPlanRef,
     StepRun,
@@ -312,12 +314,57 @@ def _search_execution_guarantees(
     return False
 
 
-def _mark_execution_reuse(
+def _capability_for_plan(
+    graph: CapabilityGraph, plan: EndpointPlan
+) -> EndpointCapability:
+    matches = tuple(
+        endpoint
+        for endpoint in graph.endpoint_capabilities
+        if (
+            endpoint.broker,
+            endpoint.origin,
+            endpoint.endpoint,
+        ) == (
+            plan.broker,
+            plan.origin,
+            plan.endpoint,
+        )
+    )
+    if len(matches) != 1:
+        raise PlanningDeferredError(
+            "selected endpoint cannot be resolved uniquely in the capability graph: "
+            f"{plan.broker}/{plan.origin}/{plan.endpoint}"
+        )
+    return matches[0]
+
+
+def _can_bind_candidate_ids(
+    search_step: SearchStep,
+    consumer_plan: EndpointPlan,
+    graph: CapabilityGraph,
+) -> bool:
+    endpoint = _capability_for_plan(graph, consumer_plan)
+    if "target_id" not in endpoint.binding_roles:
+        return False
+    if "target_id" in endpoint.collection_binding_roles:
+        return True
+    return search_step.selection is not None and search_step.selection.latest == 1
+
+
+def _mark_candidate_dependencies(
     workflow: WorkflowIR,
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Mark safe reuse of candidate-search executions by later enrichment Steps."""
+    """Mark physical reuse or runtime candidate-input binding for enrichments.
+
+    A targetless GetStep following candidate discovery means "retrieve this for the
+    current candidates". If the search execution already materializes the required
+    record, the plan reuses that execution. Otherwise the selected endpoint must
+    expose a real ``target_id`` binding. Unknown-cardinality candidate sets require
+    a collection-capable target binding; singular target endpoints are accepted
+    only when search selection proves there can be at most one candidate.
+    """
 
     rewritten = list(planned_steps)
     active_search_index: int | None = None
@@ -363,15 +410,38 @@ def _mark_execution_reuse(
                 ),
                 None,
             )
-            if owner_index is None:
-                current_plans.append(consumer_plan)
+            if owner_index is not None:
+                current_plans.append(
+                    consumer_plan.model_copy(
+                        update={
+                            "execution_reuse_from": EndpointPlanRef(
+                                step_index=active_search_index,
+                                plan_index=owner_index,
+                            )
+                        }
+                    )
+                )
                 continue
+
+            if not _can_bind_candidate_ids(search_step, consumer_plan, graph):
+                endpoint = _capability_for_plan(graph, consumer_plan)
+                cardinality = (
+                    "a singular target binding"
+                    if "target_id" in endpoint.binding_roles
+                    else "no target_id binding"
+                )
+                raise PlanningDeferredError(
+                    "candidate enrichment requires runtime binding from the current "
+                    f"candidate identities, but {endpoint.broker}/{endpoint.origin}/"
+                    f"{endpoint.endpoint} has {cardinality}; use a collection-capable "
+                    "target endpoint or constrain candidate selection to latest 1"
+                )
+
             current_plans.append(
                 consumer_plan.model_copy(
                     update={
-                        "execution_reuse_from": EndpointPlanRef(
-                            step_index=active_search_index,
-                            plan_index=owner_index,
+                        "candidate_input_from": CandidateInputRef(
+                            step_index=active_search_index
                         )
                     }
                 )
@@ -385,7 +455,7 @@ def _mark_execution_reuse(
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
-    """Plan semantic Steps, then mark physically reusable enrichment executions."""
+    """Plan Steps, then mark reuse or candidate-output dependencies."""
 
     pending_run = WorkflowRun.from_workflow(workflow)
     planned_steps = tuple(
@@ -396,7 +466,7 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         )
         for step_run in pending_run.steps
     )
-    planned_steps = _mark_execution_reuse(workflow, planned_steps, graph)
+    planned_steps = _mark_candidate_dependencies(workflow, planned_steps, graph)
     return WorkflowRun(workflow=workflow, steps=planned_steps)
 
 

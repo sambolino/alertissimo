@@ -4,6 +4,10 @@ IR supplies canonical semantic arguments, EndpointPlan supplies the selected
 endpoint plus any predicate realization already proven by the planner, EndpointSpec
 contains the physical contract, and BoundEndpointCall contains invocation params.
 The binder applies decisions; it does not reinterpret semantic predicates.
+
+Runtime values are an optional late-binding input for canonical roles whose values
+only become available after earlier workflow Steps have executed. They do not
+modify or get copied back into WorkflowIR.
 """
 
 from __future__ import annotations
@@ -114,10 +118,27 @@ def _set_param(
     params[physical_name] = value
 
 
+def _step_binding_value(step: Step, role: str) -> Any:
+    if role == "target_id":
+        target = getattr(step, "target", None)
+        return target.ids if target is not None else None
+    return getattr(step, role, None)
+
+
 def bind_endpoint(
-    step: Step, endpoint_plan: EndpointPlan, registry: EndpointRegistry
+    step: Step,
+    endpoint_plan: EndpointPlan,
+    registry: EndpointRegistry,
+    *,
+    runtime_values: Mapping[str, Any] | None = None,
 ) -> BoundEndpointCall:
-    """Bind one canonical Step to one resolved physical endpoint contract."""
+    """Bind one canonical Step to one resolved physical endpoint contract.
+
+    ``runtime_values`` supplies canonical binding-role values discovered during the
+    same workflow invocation, for example ``target_id`` values obtained from an
+    earlier normalized candidate search. Such values are late-bound inputs only;
+    they never mutate the Step or become a second representation of semantic intent.
+    """
 
     spec = registry.resolve(
         endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
@@ -127,12 +148,18 @@ def bind_endpoint(
     # proven that an earlier execution of this same endpoint materializes the
     # requested semantic record. Runtime validates and performs the reuse.
     if endpoint_plan.execution_reuse_from is not None:
+        if runtime_values:
+            raise UnsupportedParameterBindingError(
+                f"reused endpoint plan for {_context(endpoint_plan)} cannot accept "
+                "independent runtime binding values"
+            )
         return BoundEndpointCall(
             endpoint_plan=endpoint_plan,
             endpoint_spec=spec,
             params={},
         )
 
+    supplied_runtime = dict(runtime_values or {})
     params: dict[str, Any] = {}
 
     realization = endpoint_plan.predicate_realization
@@ -165,10 +192,15 @@ def bind_endpoint(
         if role is None:
             continue
         declared_roles.append(role)
-        value = getattr(step, role, None)
-        if role == "target_id":
-            target = getattr(step, "target", None)
-            value = target.ids if target is not None else None
+        step_value = _step_binding_value(step, role)
+        runtime_supplied = role in supplied_runtime
+        runtime_value = supplied_runtime.get(role)
+        if runtime_supplied and step_value is not None and runtime_value != step_value:
+            raise UnsupportedParameterBindingError(
+                f"runtime binding for {_context(endpoint_plan)} role {role!r} "
+                "conflicts with explicit WorkflowIR value"
+            )
+        value = runtime_value if runtime_supplied else step_value
         if value is not None:
             transformed = _transform(
                 value, declaration, endpoint_plan=endpoint_plan, role=role
@@ -186,6 +218,13 @@ def bind_endpoint(
                 coerced,
                 endpoint_plan=endpoint_plan,
             )
+
+    unknown_runtime_roles = sorted(set(supplied_runtime) - set(declared_roles))
+    if unknown_runtime_roles:
+        raise UnsupportedParameterBindingError(
+            f"runtime binding for {_context(endpoint_plan)} supplied roles not "
+            f"declared by the endpoint: {unknown_runtime_roles}"
+        )
 
     if getattr(step, "op", None) == "sql_query" and "query" not in declared_roles:
         raise UnsupportedParameterBindingError(
@@ -215,7 +254,12 @@ def bind_endpoint(
 def bind_workflow_run(
     run: WorkflowRun, registry: EndpointRegistry
 ) -> tuple[StepBindingResult, ...]:
-    """Bind every semantic Step occurrence without flattening its identity."""
+    """Bind every statically-bindable semantic Step occurrence.
+
+    Workflows containing candidate-output dependencies require staged orchestration,
+    because their runtime role values do not exist until earlier Steps have executed
+    and normalized. This helper intentionally remains the all-upfront static path.
+    """
 
     for step_run in run.steps:
         if step_run.state != StepRunState.PLANNED:

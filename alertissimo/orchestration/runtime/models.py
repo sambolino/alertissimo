@@ -45,11 +45,25 @@ class EndpointPlanRef(RuntimeModel):
     plan_index: int = Field(ge=0)
 
 
+class CandidateInputRef(RuntimeModel):
+    """Reference to an earlier semantic Step whose output defines current candidates.
+
+    Unlike :class:`EndpointPlanRef`, this does not reuse a physical execution. It
+    says that a new physical call must be bound from identities present in the
+    normalized candidate output of the referenced Step.
+    """
+
+    step_index: int = Field(ge=0)
+
+
 class EndpointPlan(RuntimeModel):
     """Physical identity selected for one semantic Step occurrence.
 
     ``execution_reuse_from`` records that this semantic plan is satisfied by an
-    earlier physical execution. It never changes or collapses WorkflowIR Steps.
+    earlier physical execution. ``candidate_input_from`` records a distinct case:
+    this plan owns a new invocation whose runtime target values come from an
+    earlier semantic candidate set. Neither relation changes or collapses
+    WorkflowIR Steps.
     """
 
     broker: str
@@ -58,6 +72,15 @@ class EndpointPlan(RuntimeModel):
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
     execution_reuse_from: EndpointPlanRef | None = None
+    candidate_input_from: CandidateInputRef | None = None
+
+    @model_validator(mode="after")
+    def require_one_dependency_mode(self) -> "EndpointPlan":
+        if self.execution_reuse_from is not None and self.candidate_input_from is not None:
+            raise ValueError(
+                "endpoint plan cannot both reuse an execution and bind from candidate output"
+            )
+        return self
 
 
 class StepRunState(StrEnum):
@@ -98,22 +121,34 @@ class WorkflowRun(RuntimeModel):
         for step_run in self.steps:
             for plan_index, plan in enumerate(step_run.endpoint_plans):
                 reference = plan.execution_reuse_from
-                if reference is None:
-                    continue
-                if reference.step_index >= step_run.step_index:
-                    raise ValueError(
-                        "execution reuse must reference an earlier Step occurrence "
-                        f"(step_index {step_run.step_index}, plan_index {plan_index}, "
-                        f"reference step_index {reference.step_index})"
-                    )
-                if reference.step_index >= len(self.steps):
-                    raise ValueError("execution reuse references unknown Step occurrence")
-                owner = self.steps[reference.step_index]
-                if reference.plan_index >= len(owner.endpoint_plans):
-                    raise ValueError(
-                        "execution reuse references unknown endpoint plan "
-                        f"({reference.step_index}, {reference.plan_index})"
-                    )
+                if reference is not None:
+                    if reference.step_index >= step_run.step_index:
+                        raise ValueError(
+                            "execution reuse must reference an earlier Step occurrence "
+                            f"(step_index {step_run.step_index}, plan_index {plan_index}, "
+                            f"reference step_index {reference.step_index})"
+                        )
+                    if reference.step_index >= len(self.steps):
+                        raise ValueError("execution reuse references unknown Step occurrence")
+                    owner = self.steps[reference.step_index]
+                    if reference.plan_index >= len(owner.endpoint_plans):
+                        raise ValueError(
+                            "execution reuse references unknown endpoint plan "
+                            f"({reference.step_index}, {reference.plan_index})"
+                        )
+
+                candidate_reference = plan.candidate_input_from
+                if candidate_reference is not None:
+                    if candidate_reference.step_index >= step_run.step_index:
+                        raise ValueError(
+                            "candidate input must reference an earlier Step occurrence "
+                            f"(step_index {step_run.step_index}, plan_index {plan_index}, "
+                            f"reference step_index {candidate_reference.step_index})"
+                        )
+                    if candidate_reference.step_index >= len(self.steps):
+                        raise ValueError(
+                            "candidate input references unknown Step occurrence"
+                        )
         return self
 
     @classmethod
@@ -133,6 +168,7 @@ class WorkflowRun(RuntimeModel):
 
 
 __all__ = [
+    "CandidateInputRef",
     "EndpointPlan",
     "EndpointPlanRef",
     "PredicateRealization",
