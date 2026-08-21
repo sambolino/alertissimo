@@ -65,10 +65,11 @@ endpoints:
       param: columns
   conesearch:
     path: /api/v1/conesearch
-    method: GET
+    method: POST
     description: Retrieve object data from the Fink/ZTF database based on their coordinates
     transport:
       kind: rest
+      request_encoding: json
     params:
       ra:
         required: true
