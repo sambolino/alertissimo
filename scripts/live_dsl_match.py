@@ -199,6 +199,19 @@ match on position inside {args.match_radius_arcsec}arcsec
     print("=== DISCOVERY ===")
     print(f"semantic Portfolios: {len(search_view.portfolios)}")
     print(f"by origin: {dict(sorted(origin_counts.items()))}")
+    if len(search_identities) <= 20:
+        print("candidates:")
+        search_center = (args.ra, args.dec)
+        for identity, portfolio in sorted(search_identities.items()):
+            position = _summary_position(portfolio)
+            if position is None:
+                print(f"  {identity}: summary.position unavailable")
+                continue
+            center_distance = _separation_arcsec(search_center, position)
+            print(
+                f"  {identity}: summary.position={position!r}; "
+                f"from search center={center_distance:.6f} arcsec"
+            )
     if not origin_counts.get("lsst") or not origin_counts.get("ztf"):
         print("INCONCLUSIVE: live search did not return candidates from both origins")
         return 3
