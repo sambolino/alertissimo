@@ -76,7 +76,8 @@ def main() -> int:
         for plan_index, plan in enumerate(step_run.endpoint_plans):
             print(
                 f"  plan {plan_index}: "
-                f"{plan.broker}/{plan.origin}/{plan.endpoint}"
+                f"{plan.broker}/{plan.origin}/{plan.endpoint} "
+                f"required={plan.required}"
             )
             print(
                 f"    execution_reuse_from={plan.execution_reuse_from!r}"
@@ -111,7 +112,7 @@ def main() -> int:
             plan = call.endpoint_plan
             print(
                 f"  {plan.broker}/{plan.origin}/{plan.endpoint} "
-                f"params={dict(call.params)}"
+                f"required={plan.required} params={dict(call.params)}"
             )
         ids = [
             execution.internal_execution_id.value
@@ -119,6 +120,10 @@ def main() -> int:
         ]
         unique_execution_ids.update(ids)
         print(f"  execution_ids={ids}")
+        completed = staged.run.steps[binding.step_index]
+        print(f"  execution_plan_indexes={list(completed.execution_plan_indexes)}")
+        for warning in completed.warnings:
+            print(f"  WARNING: {warning}")
     print()
 
     print("=== NORMALIZED OUTPUT ===")
@@ -146,7 +151,8 @@ def main() -> int:
 
     search_plan = run.steps[0].endpoint_plans[0]
     classification_plan = run.steps[1].endpoint_plans[0]
-    lightcurve_plan = run.steps[2].endpoint_plans[0]
+    lightcurve_plans = run.steps[2].endpoint_plans
+    lightcurve_plan = lightcurve_plans[0]
 
     if classification_plan.execution_reuse_from is None:
         raise RuntimeError(
@@ -156,6 +162,15 @@ def main() -> int:
     if lightcurve_plan.candidate_input_from is None:
         raise RuntimeError(
             "Fink lightcurve Step did not declare runtime candidate input"
+        )
+
+    if len(lightcurve_plans) != 2:
+        raise RuntimeError(
+            f"expected primary + forced lightcurve plans, found {len(lightcurve_plans)}"
+        )
+    if not lightcurve_plans[0].required or lightcurve_plans[1].required:
+        raise RuntimeError(
+            "lightcurve completeness policy is wrong: sources must be required and fp supplementary"
         )
 
     if getattr(workflow.steps[2], "target", None) is not None:
@@ -182,10 +197,16 @@ def main() -> int:
         f"{search_plan.broker}/{search_plan.origin}/{search_plan.endpoint}"
     )
     print("OK: Fink lightcurve target is late-bound from candidate identities")
+    print("OK: Fink sources is required and forced photometry is supplementary")
     print("OK: WorkflowIR lightcurve target remains None")
     print(
         f"OK: {len(search_ids)} candidate object(s) propagated into Fink normalization"
     )
+    if staged.run.steps[2].warnings:
+        print(
+            "OK: supplementary failure was retained as a warning without failing "
+            "the lightcurve Step"
+        )
     print(f"Unique physical execution IDs observed: {len(unique_execution_ids)}")
     print("Result ordering remains view-only:", compilation.view.model_dump())
 

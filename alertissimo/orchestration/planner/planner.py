@@ -222,7 +222,11 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
         if isinstance(step, GetLightcurveStep):
             supplement = _forced_photometry_supplement(step, endpoint, graph)
             if supplement is not None:
-                plans.append(_endpoint_plan(step, supplement, validation, graph))
+                plans.append(
+                    _endpoint_plan(step, supplement, validation, graph).model_copy(
+                        update={"required": False}
+                    )
+                )
     return tuple(plans)
 
 

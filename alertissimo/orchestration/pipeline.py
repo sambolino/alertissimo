@@ -66,6 +66,14 @@ def _error_description(error: Exception) -> str:
     return f"{type(error).__name__}: {detail}" if detail else type(error).__name__
 
 
+def _supplementary_warning(step_index: int, plan_index: int, plan, error: Exception) -> str:
+    return (
+        f"supplementary endpoint plan failed (step_index {step_index}, "
+        f"plan_index {plan_index}, {plan.broker}/{plan.origin}/{plan.endpoint}): "
+        f"{_error_description(error)}"
+    )
+
+
 def _candidate_id(portfolio: Portfolio) -> str:
     values = {
         str(value)
@@ -82,6 +90,25 @@ def _candidate_id(portfolio: Portfolio) -> str:
     return next(iter(values))
 
 
+def _execution_plan_indexes(
+    step_run: StepRun, result: StepExecutionResult
+) -> tuple[int, ...]:
+    """Resolve successful result positions to their endpoint-plan indexes."""
+
+    if step_run.execution_plan_indexes:
+        if len(step_run.execution_plan_indexes) != len(result.executions):
+            raise CandidateFlowError(
+                f"candidate source step_index {step_run.step_index} has sparse "
+                "execution metadata that does not match its execution results"
+            )
+        return step_run.execution_plan_indexes
+    if len(step_run.endpoint_plans) == len(result.executions):
+        return tuple(range(len(result.executions)))
+    raise CandidateFlowError(
+        f"candidate source step_index {step_run.step_index} is not execution-aligned"
+    )
+
+
 def _candidate_view_from_step(
     step_run: StepRun,
     result: StepExecutionResult,
@@ -90,13 +117,10 @@ def _candidate_view_from_step(
 ) -> StepPortfolioResult:
     """Build the semantic candidate view needed during staged execution."""
 
-    if len(step_run.endpoint_plans) != len(result.executions):
-        raise CandidateFlowError(
-            f"candidate source step_index {step_run.step_index} is not execution-aligned"
-        )
-
+    plan_indexes = _execution_plan_indexes(step_run, result)
     executions: list[ExecutionPortfolioResult] = []
-    for plan, execution in zip(step_run.endpoint_plans, result.executions):
+    for plan_index, execution in zip(plan_indexes, result.executions):
+        plan = step_run.endpoint_plans[plan_index]
         portfolios = normalize_execution(
             execution,
             validate_semantic_model=validate_semantic_model,
@@ -185,6 +209,10 @@ def execute_staged_workflow_run(
     ``candidate_input_from`` view locally, creates no physical execution, and its
     surviving semantic identities may feed later provider calls.
 
+    Required provider plans remain fail-fast. A supplementary plan may fail without
+    failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
+    sparse successful results retain their endpoint-plan indexes for normalization.
+
     The semantic WorkflowIR is never rewritten with discovered IDs.
     """
 
@@ -254,9 +282,6 @@ def execute_staged_workflow_run(
             updated_run = _updated_run(updated_run, succeeded)
             continue
 
-        # Every plan of a targetless candidate enrichment refers to the same
-        # semantic candidate set. If it is empty, the semantic retrieval succeeds
-        # vacuously without manufacturing a provider call.
         candidate_references = tuple(
             plan.candidate_input_from
             for plan in original_step_run.endpoint_plans
@@ -309,9 +334,12 @@ def execute_staged_workflow_run(
         bindings.append(binding)
 
         executions: list[ExecutionResult] = []
-        try:
-            for plan_index, call in enumerate(binding.bound_calls):
-                reference = call.endpoint_plan.execution_reuse_from
+        execution_plan_indexes: list[int] = []
+        warnings: list[str] = []
+        for plan_index, call in enumerate(binding.bound_calls):
+            plan = call.endpoint_plan
+            try:
+                reference = plan.execution_reuse_from
                 if reference is None:
                     execution = execute_bound_call(call, executor)  # type: ignore[arg-type]
                 else:
@@ -323,26 +351,38 @@ def execute_staged_workflow_run(
                             "reused execution is not available from its declared owner "
                             f"{key}"
                         ) from error
-                executions.append(execution)
-                execution_cache[(step_index, plan_index)] = execution
-        except Exception as error:
-            partial = StepExecutionResult(step_index=step_index, executions=tuple(executions))
-            step_results.append(partial)
-            failed = original_step_run.model_copy(
-                update={
-                    "state": StepRunState.FAILED,
-                    "execution_ids": tuple(
-                        execution.internal_execution_id.value for execution in executions
-                    ),
-                    "error": _error_description(error),
-                }
-            )
-            updated_run = _updated_run(updated_run, failed)
-            raise WorkflowExecutionError(
-                f"step_index {step_index} execution failed: {_error_description(error)}",
-                workflow_run=updated_run,
-                completed_steps=tuple(step_results),
-            ) from error
+            except Exception as error:
+                if not plan.required:
+                    warnings.append(
+                        _supplementary_warning(step_index, plan_index, plan, error)
+                    )
+                    continue
+
+                partial = StepExecutionResult(
+                    step_index=step_index, executions=tuple(executions)
+                )
+                step_results.append(partial)
+                failed = original_step_run.model_copy(
+                    update={
+                        "state": StepRunState.FAILED,
+                        "execution_ids": tuple(
+                            execution.internal_execution_id.value for execution in executions
+                        ),
+                        "execution_plan_indexes": tuple(execution_plan_indexes),
+                        "warnings": tuple(warnings),
+                        "error": _error_description(error),
+                    }
+                )
+                updated_run = _updated_run(updated_run, failed)
+                raise WorkflowExecutionError(
+                    f"step_index {step_index} execution failed: {_error_description(error)}",
+                    workflow_run=updated_run,
+                    completed_steps=tuple(step_results),
+                ) from error
+
+            executions.append(execution)
+            execution_plan_indexes.append(plan_index)
+            execution_cache[(step_index, plan_index)] = execution
 
         result = StepExecutionResult(step_index=step_index, executions=tuple(executions))
         step_results.append(result)
@@ -352,6 +392,8 @@ def execute_staged_workflow_run(
                 "execution_ids": tuple(
                     execution.internal_execution_id.value for execution in executions
                 ),
+                "execution_plan_indexes": tuple(execution_plan_indexes),
+                "warnings": tuple(warnings),
                 "error": None,
             }
         )

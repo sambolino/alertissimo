@@ -60,6 +60,11 @@ class CandidateInputRef(RuntimeModel):
 class EndpointPlan(RuntimeModel):
     """Physical identity selected for one semantic Step occurrence.
 
+    ``required`` distinguishes physical calls that are necessary to satisfy the
+    semantic Step from supplementary calls that improve completeness but may fail
+    without failing the Step. The planner owns that distinction; the executor never
+    infers optionality from endpoint names or provider behavior.
+
     ``execution_reuse_from`` records that this semantic plan is satisfied by an
     earlier physical execution. ``candidate_input_from`` records a distinct case:
     this plan owns a new invocation whose runtime target values come from an
@@ -74,6 +79,7 @@ class EndpointPlan(RuntimeModel):
     predicate_realization: PredicateRealization | None = None
     execution_reuse_from: EndpointPlanRef | None = None
     candidate_input_from: CandidateInputRef | None = None
+    required: bool = True
 
     @model_validator(mode="after")
     def require_one_dependency_mode(self) -> "EndpointPlan":
@@ -95,14 +101,39 @@ class StepRunState(StrEnum):
 
 
 class StepRun(RuntimeModel):
-    """Runtime state for one semantic Step occurrence."""
+    """Runtime state for one semantic Step occurrence.
+
+    ``execution_plan_indexes`` aligns successful physical results in
+    ``execution_ids`` with the endpoint-plan indexes that produced them. It is
+    normally ``0..N-1``; sparse indexes occur when supplementary plans fail while
+    required plans still satisfy the semantic Step. An empty tuple remains the
+    backward-compatible representation of dense positional alignment.
+    """
 
     step_index: int = Field(ge=0)
     state: StepRunState = StepRunState.PENDING
     endpoint_plans: tuple[EndpointPlan, ...] = ()
     candidate_input_from: CandidateInputRef | None = None
     execution_ids: tuple[str, ...] = ()
+    execution_plan_indexes: tuple[int, ...] = ()
+    warnings: tuple[str, ...] = ()
     error: str | None = None
+
+    @model_validator(mode="after")
+    def validate_execution_alignment_metadata(self) -> "StepRun":
+        if not self.execution_plan_indexes:
+            return self
+        if len(self.execution_plan_indexes) != len(self.execution_ids):
+            raise ValueError(
+                "execution_plan_indexes must align one-to-one with execution_ids"
+            )
+        if len(set(self.execution_plan_indexes)) != len(self.execution_plan_indexes):
+            raise ValueError("execution_plan_indexes must not contain duplicates")
+        if tuple(sorted(self.execution_plan_indexes)) != self.execution_plan_indexes:
+            raise ValueError("execution_plan_indexes must be in endpoint-plan order")
+        if any(index >= len(self.endpoint_plans) for index in self.execution_plan_indexes):
+            raise ValueError("execution_plan_indexes reference unknown endpoint plans")
+        return self
 
 
 class WorkflowRun(RuntimeModel):
