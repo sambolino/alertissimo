@@ -140,16 +140,19 @@ endpoints:
       ra:
         required: true
         type: number
+        bind: ra
         unit: deg
         description: Right ascension in decimal degrees.
       dec:
         required: true
         type: number
+        bind: dec
         unit: deg
         description: Declination in decimal degrees.
       radius:
         required: true
         type: number
+        bind: radius
         unit: arcsec
         description: Cone-search radius in arcseconds; maximum 18,000 arcsec / 5 degrees.
       n:
