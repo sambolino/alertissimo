@@ -9,6 +9,7 @@ endpoints:
       lsst_object_id:
         required: true
         type: string
+        bind: target_id
         description: LSST diaObjectId / diaObject identifier.
     output:
       type: object_or_null
