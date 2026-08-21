@@ -2,8 +2,8 @@
 
 This page deliberately uses local demo candidates. It models three ways an
 astronomer may begin work: resolving a known object identifier, searching
-around sky coordinates, or entering a future DSL expression. It does not
-contact a broker or require credentials.
+around sky coordinates, or expressing a cone search in the Alertissimo DSL.
+It does not contact a broker or require credentials.
 """
 
 from __future__ import annotations
@@ -14,6 +14,13 @@ from typing import Any
 import streamlit as st
 
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
+from alertissimo.dsl import (
+    DSLParseError,
+    SurfaceLoweringError,
+    compile_surface,
+    parse_surface_script,
+)
+from alertissimo.orchestration.ir import ConeSearchStep
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
     load_antares_ztf_cone_portfolios,
@@ -122,6 +129,7 @@ def render_selected_candidate(candidate: dict[str, Any]) -> None:
             render_object_portfolio(data, widget_key="search_result")
     with dsl_tab:
         render_dsl_entry(
+            load_demo_search_data()[0],
             title="Continue with DSL",
             context=f'Continue the survey from {candidate["object_id"]}.',
             key="survey_dsl_after_search_result",
@@ -239,23 +247,84 @@ def render_cone_search(candidates: list[dict[str, Any]], presets: dict[str, Any]
         render_cone_object_page(matches, str(selected_key))
 
 
+def compile_dsl_cone_preview(dsl_text: str) -> ConeSearchStep | None:
+    """Compile a DSL script and expose its cone selector for the local demo UI.
+
+    The search page intentionally does not plan endpoints or execute providers.
+    It may only reuse its frozen cone-result view when the compiled candidate
+    operation is a cone search.
+    """
+
+    compilation = compile_surface(parse_surface_script(dsl_text))
+    candidate_step = compilation.workflow.steps[0]
+    return candidate_step if isinstance(candidate_step, ConeSearchStep) else None
+
+
 def render_dsl_entry(
-    *, title: str = "Start with DSL", context: str | None = None, key: str = "survey_dsl"
+    candidates: list[dict[str, Any]],
+    *,
+    title: str = "Start with DSL",
+    context: str | None = None,
+    key: str = "survey_dsl",
 ) -> None:
-    """Render the optional DSL entry point without interpreting its contents yet."""
+    """Validate DSL and reuse the local cone-results view when applicable."""
+
     st.subheader(title)
-    st.write("Describe the survey in the Alertissimo DSL. Support for running DSL will be added later.")
+    st.write("Describe the survey in the Alertissimo DSL.")
     if context:
         st.caption(context)
-    dsl_text = st.text_area(
-        "DSL",
-        placeholder="Enter a DSL survey definition…",
-        height=180,
-        key=key,
-        help="Optional. This prototype stores the text locally for the current session only.",
+    with st.form(f"{key}_form"):
+        dsl_text = st.text_area(
+            "DSL",
+            value="""objects from ztf via lasair
+    inside (50.84811, 37.46784, 300.00arcsec)
+    with lightcurve via fink
+    with lightcurve via lasair
+""",
+            placeholder="Enter a DSL survey definition…",
+            height=180,
+            key=key,
+            help="The local prototype validates DSL and previews cone selectors against frozen evidence.",
+        )
+        submitted = st.form_submit_button("Run DSL", type="primary")
+
+    if not submitted:
+        return
+
+    try:
+        cone = compile_dsl_cone_preview(dsl_text)
+    except DSLParseError as error:
+        st.error(f"DSL syntax error: {error}")
+        return
+    except SurfaceLoweringError as error:
+        st.error(f"DSL cannot be compiled: {error}")
+        return
+
+    st.success("DSL syntax, semantic validation, and compilation succeeded.")
+    if cone is None:
+        st.info(
+            "This valid DSL request does not contain an `inside (...)` cone selector. "
+            "The current local search page can preview only cone results; it does not "
+            "plan endpoints or execute brokers."
+        )
+        return
+
+    cone_candidates_data, _ = load_frozen_cone_candidates()
+    matches = cone_candidates(
+        candidates + cone_candidates_data,
+        cone.ra,
+        cone.dec,
+        cone.radius,
     )
-    if dsl_text:
-        st.caption("DSL input is saved for this session. It is not parsed or executed yet.")
+    st.caption(
+        "Frozen cone preview: the compiled `inside (...)` selector is applied to "
+        "local broker evidence. Provider execution and non-spatial predicates are "
+        "not run on this page."
+    )
+    if not matches:
+        st.warning("No frozen fixture candidates fall inside this DSL cone.")
+        return
+    render_cone_result_cards(matches)
 
 
 def main() -> None:
@@ -280,7 +349,7 @@ def main() -> None:
         _, cone_presets = load_frozen_cone_candidates()
         render_cone_search(candidates, {**presets, "cone_search": cone_presets})
     else:
-        render_dsl_entry()
+        render_dsl_entry(candidates)
 
 
 if __name__ == "__main__":
