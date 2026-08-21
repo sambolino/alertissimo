@@ -5,7 +5,7 @@ from __future__ import annotations
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.orchestration.ir import DeriveStep, and_predicates
+from alertissimo.orchestration.ir import DeriveStep, FilterStep, and_predicates
 from alertissimo.orchestration.ir.predicates import Predicate
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
@@ -179,6 +179,51 @@ def _normalize_planned_step(
     )
 
 
+def _filter_candidate_view(
+    step: FilterStep,
+    step_run: StepRun,
+    normalized_steps: list[StepPortfolioResult],
+) -> StepPortfolioResult:
+    """Apply one local FilterStep to an earlier normalized semantic view.
+
+    The output carries the source execution group identities because those are the
+    physical executions from which the selected Portfolios came. It does not create
+    execution provenance or clone Portfolio objects.
+    """
+
+    reference = step_run.candidate_input_from
+    if reference is None:
+        raise WorkflowNormalizationAlignmentError(
+            f"filter step_index {step_run.step_index} has no candidate input reference"
+        )
+    try:
+        source = normalized_steps[reference.step_index]
+    except IndexError as error:
+        raise WorkflowNormalizationAlignmentError(
+            f"filter step_index {step_run.step_index} references unavailable "
+            f"candidate Step {reference.step_index}"
+        ) from error
+
+    if step.predicate is None:
+        if step.criteria:
+            raise WorkflowNormalizationAlignmentError(
+                "legacy FilterStep criteria have no defined local predicate evaluator"
+            )
+        executions = source.executions
+    else:
+        executions = tuple(
+            ExecutionPortfolioResult(
+                execution_id=execution.execution_id,
+                portfolios=prune_portfolios(execution.portfolios, step.predicate),
+            )
+            for execution in source.executions
+        )
+    return StepPortfolioResult(
+        step_index=step_run.step_index,
+        executions=executions,
+    )
+
+
 def _validate_reuse_alignment(
     result: WorkflowExecutionResult,
     *,
@@ -248,13 +293,39 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     f"derive step_index {step_run.step_index} is {step_run.state.value}; "
                     "it must remain planned until post-normalization derivation"
                 )
-            if step_run.endpoint_plans or step_run.execution_ids or step_result.executions:
+            if (
+                step_run.endpoint_plans
+                or step_run.candidate_input_from is not None
+                or step_run.execution_ids
+                or step_result.executions
+            ):
                 raise WorkflowNormalizationAlignmentError(
                     f"derive step_index {step_run.step_index} must have no physical "
+                    "endpoint plans, candidate input, execution IDs, or execution results"
+                )
+            continue
+
+        if isinstance(step, FilterStep):
+            if step_run.state is not StepRunState.SUCCEEDED:
+                raise WorkflowNormalizationAlignmentError(
+                    f"filter step_index {step_run.step_index} is {step_run.state.value}; "
+                    "it must be succeeded before workflow normalization"
+                )
+            if step_run.candidate_input_from is None:
+                raise WorkflowNormalizationAlignmentError(
+                    f"filter step_index {step_run.step_index} has no candidate input"
+                )
+            if step_run.endpoint_plans or step_run.execution_ids or step_result.executions:
+                raise WorkflowNormalizationAlignmentError(
+                    f"filter step_index {step_run.step_index} must have no physical "
                     "endpoint plans, execution IDs, or execution results"
                 )
             continue
 
+        if step_run.candidate_input_from is not None:
+            raise WorkflowNormalizationAlignmentError(
+                f"provider step_index {step_run.step_index} cannot carry local candidate input"
+            )
         if step_run.state is not StepRunState.SUCCEEDED:
             raise WorkflowNormalizationAlignmentError(
                 f"step_index {step_run.step_index} is {step_run.state.value}; "
@@ -308,12 +379,13 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
 ) -> WorkflowPortfolioResult:
-    """Normalize each physical execution once, then expose Step-specific views.
+    """Normalize physical executions once, then expose Step-specific semantic views.
 
     A reused execution inherits the residual predicate of its physical owner, so a
     later semantic enrichment cannot resurrect candidates already pruned from the
-    candidate-search result. Every semantic Step selects from the same base
-    normalized Portfolios for a shared execution ID, preserving Portfolio identity.
+    candidate-search result. FilterSteps select from an earlier normalized Step view
+    without manufacturing physical provenance. Every semantic Step therefore
+    selects from canonical Portfolio objects rather than cloning them.
     """
 
     _validate_workflow_alignment(result)
@@ -327,6 +399,11 @@ def normalize_workflow_execution(
                     step_result,
                     validate_semantic_model=validate_semantic_model,
                 )
+            )
+            continue
+        if isinstance(step, FilterStep):
+            normalized_steps.append(
+                _filter_candidate_view(step, step_run, normalized_steps)
             )
             continue
         normalized_steps.append(
