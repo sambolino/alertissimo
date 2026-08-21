@@ -10,6 +10,9 @@ on:
       - 'tests/test_semantic_record_builder.py'
       - 'tests/test_normalization_cardinality.py'
       - 'tests/test_payload_paths.py'
+      - 'tests/test_portfolio_models.py'
+      - 'tests/test_portfolio_serialization.py'
+      - 'tests/test_edge_builder.py'
       - 'tests/test_orchestration_normalization.py'
       - 'tests/test_orchestration_derivation.py'
       - 'tests/test_orchestration_ir_models.py'
@@ -68,6 +71,9 @@ jobs:
             tests/test_semantic_record_builder.py \
             tests/test_normalization_cardinality.py \
             tests/test_payload_paths.py \
+            tests/test_portfolio_models.py \
+            tests/test_portfolio_serialization.py \
+            tests/test_edge_builder.py \
             tests/test_orchestration_normalization.py \
             tests/test_orchestration_derivation.py \
             tests/test_orchestration_ir_models.py \
