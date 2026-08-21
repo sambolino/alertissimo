@@ -334,7 +334,7 @@ endpoints:
         description: Convolve the image with a kernel (gauss or box). If not specified, no kernel is applied.
     output:
       type: data_product
-      item: cutout
+    item: cutout
     notes: '- output-format=PNG or FITS returns URL to image
 
       - output-format=array returns 2D array as shown
@@ -353,7 +353,7 @@ endpoints:
   sso:
     path: /api/v1/sso
     method: GET
-    description: Retrieve Solar System data from Fink/ZTF database based on their ID
+    description: Retrieve Solar System data from the Fink/ZTF database based on their ID
     transport:
       kind: rest
     params:
