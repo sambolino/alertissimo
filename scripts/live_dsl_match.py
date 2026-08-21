@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Live cross-survey positional MatchStep acceptance through ALeRCE.
+"""Live positional MatchStep acceptance through ALeRCE.
 
 The workflow is intentionally literal DSL and keeps discovery, harmonization, and
 matching distinct::
@@ -10,7 +10,8 @@ matching distinct::
 
 Search owns the two physical ALeRCE calls. MatchStep is local and runs only after
 normalization. Exact ``(origin, object_id)`` duplicates are harmonization inputs;
-only different origins are eligible for ``--spatially_near--`` adjacency.
+after that, any distinct semantic identities selected by the explicit Match operation
+may receive ``--spatially_near--`` adjacency, whether they share an origin or not.
 """
 
 from __future__ import annotations
@@ -153,7 +154,13 @@ match on position within {args.match_radius_arcsec}arcsec
 
     match_view = finalized.steps[1]
     semantic = match_view.portfolios
-    identities = {_identity(portfolio): portfolio for portfolio in semantic}
+    identity_items = [(_identity(portfolio), portfolio) for portfolio in semantic]
+    identities = dict(identity_items)
+    if len(identities) != len(identity_items):
+        raise RuntimeError(
+            "exact (origin, object_id) duplicates survived semantic harmonization before Match"
+        )
+
     print()
     print("=== MATCH VIEW ===")
     print(f"semantic Portfolios: {len(semantic)}")
@@ -175,10 +182,8 @@ match on position within {args.match_radius_arcsec}arcsec
             )
             if remote is None:
                 raise RuntimeError("Match edge target is not a semantic Portfolio in the Match view")
-            if identity[0] == remote[0]:
-                raise RuntimeError(
-                    "same-origin objects were linked by MatchStep; harmonization/matching boundary violated"
-                )
+            if identity == remote:
+                raise RuntimeError("MatchStep produced a self-relation after identity harmonization")
             matched_pairs.add(tuple(sorted((identity, remote))))
 
     # Redundant projection means every scientific relation appears in both incident
@@ -188,16 +193,23 @@ match on position within {args.match_radius_arcsec}arcsec
             "redundant Portfolio-edge projections do not collapse to one shared ID per match"
         )
 
+    same_origin_pairs = {
+        pair for pair in matched_pairs if pair[0][0] == pair[1][0]
+    }
+    cross_origin_pairs = matched_pairs - same_origin_pairs
+
     for left, right in sorted(matched_pairs):
         print(f"  {left} <-> {right}")
-    print(f"unique cross-survey matches: {len(matched_pairs)}")
-    print("OK: no same-origin Match edges")
+    print(f"unique positional relationships: {len(matched_pairs)}")
+    print(f"same-origin distinct-ID relationships: {len(same_origin_pairs)}")
+    print(f"cross-origin relationships: {len(cross_origin_pairs)}")
+    print("OK: exact same identities were harmonized before Match")
     print("OK: MatchStep created no physical execution provenance")
     print("OK: Search output remained unchanged")
 
     if not matched_pairs:
         print(
-            "INCONCLUSIVE: both surveys returned candidates, but none are within "
+            "INCONCLUSIVE: selected candidates were normalized correctly, but none are within "
             f"{args.match_radius_arcsec} arcsec"
         )
         return 3
