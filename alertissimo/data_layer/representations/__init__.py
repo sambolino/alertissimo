@@ -1,6 +1,7 @@
 """Internal semantic data representations."""
 
 from .portfolio import (
+    InternalEdgeEndpoint,
     InternalEdgeId,
     InternalExecutionId,
     InternalExecutionProvenance,
@@ -14,7 +15,8 @@ from .portfolio import (
 )
 
 __all__ = (
-    "InternalEdgeId", "InternalExecutionId", "InternalExecutionProvenance",
-    "InternalPortfolioId", "InternalRecordId", "InternalRecordSource",
-    "Portfolio", "PortfolioModelError", "SemanticEdge", "SemanticRecord",
+    "InternalEdgeEndpoint", "InternalEdgeId", "InternalExecutionId",
+    "InternalExecutionProvenance", "InternalPortfolioId", "InternalRecordId",
+    "InternalRecordSource", "Portfolio", "PortfolioModelError", "SemanticEdge",
+    "SemanticRecord",
 )

@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from alertissimo.data_layer.representations import InternalRecordSource, Portfolio
+from alertissimo.data_layer.representations import InternalRecordId, InternalRecordSource, Portfolio
 
 
 def _plain(value: Any) -> Any:
@@ -29,6 +29,22 @@ def _source_to_dict(source: InternalRecordSource | None) -> dict[str, Any] | Non
         "payload_path": source.payload_path,
         "payload_index": source.payload_index,
     }
+
+
+def _edge_to_dict(edge) -> dict[str, Any]:
+    result = {
+        "internal_edge_id": edge.internal_edge_id.value,
+        "edge_type": edge.edge_type,
+        "fields": _plain(edge.fields),
+        "internal_source": _source_to_dict(edge.internal_source),
+    }
+    if isinstance(edge.subject, InternalRecordId):
+        result["subject_record_id"] = edge.subject.value
+        result["target_record_id"] = edge.target.value
+    else:
+        result["subject_portfolio_id"] = edge.subject.value
+        result["target_portfolio_id"] = edge.target.value
+    return result
 
 
 def portfolio_to_dict(portfolio: Portfolio) -> dict[str, Any]:
@@ -61,14 +77,7 @@ def portfolio_to_dict(portfolio: Portfolio) -> dict[str, Any]:
         "fields": _plain(record.fields),
         "internal_source": _source_to_dict(record.internal_source),
     } for record in portfolio.records]
-    edges = [{
-        "internal_edge_id": edge.internal_edge_id.value,
-        "edge_type": edge.edge_type,
-        "subject_record_id": edge.subject_record_id.value,
-        "target_record_id": edge.target_record_id.value,
-        "fields": _plain(edge.fields),
-        "internal_source": _source_to_dict(edge.internal_source),
-    } for edge in portfolio.edges]
+    edges = [_edge_to_dict(edge) for edge in portfolio.edges]
     return {
         "internal_portfolio_id": portfolio.internal_portfolio_id.value,
         "executions": executions,
