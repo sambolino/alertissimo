@@ -32,7 +32,7 @@ from alertissimo.orchestration.normalization import (
     WorkflowNormalizationAlignmentError,
     normalize_workflow_execution,
 )
-from alertissimo.orchestration.planner import plan_workflow
+from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
     EndpointPlanRef,
@@ -176,9 +176,13 @@ def test_dynamic_producer_is_not_assumed_without_positive_search_requirement():
         ]
     )
 
-    run = plan_workflow(workflow, build_capability_graph())
+    import pytest
 
-    assert run.steps[1].endpoint_plans[0].execution_reuse_from is None
+    with pytest.raises(
+        PlanningDeferredError,
+        match="candidate enrichment requires runtime binding",
+    ):
+        plan_workflow(workflow, build_capability_graph())
 
 
 def test_coalescing_proof_is_provider_neutral():
