@@ -5,7 +5,7 @@ from __future__ import annotations
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.orchestration.ir import DeriveStep, FilterStep, and_predicates
+from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep, and_predicates
 from alertissimo.orchestration.ir.predicates import Predicate
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
@@ -347,6 +347,32 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 )
             continue
 
+        if isinstance(step, MatchStep):
+            if step_run.state is not StepRunState.PLANNED:
+                raise WorkflowNormalizationAlignmentError(
+                    f"match step_index {step_run.step_index} is {step_run.state.value}; "
+                    "it must remain planned until post-normalization matching"
+                )
+            reference = step_run.candidate_input_from
+            if reference is None or reference.step_index >= step_run.step_index:
+                raise WorkflowNormalizationAlignmentError(
+                    f"match step_index {step_run.step_index} must reference an earlier "
+                    "candidate/material Step"
+                )
+            if (
+                step_run.endpoint_plans
+                or step_run.execution_ids
+                or step_run.execution_plan_indexes
+                or step_run.vacuous_plan_indexes
+                or step_result.executions
+            ):
+                raise WorkflowNormalizationAlignmentError(
+                    f"match step_index {step_run.step_index} must have no physical "
+                    "endpoint plans, execution IDs, execution-plan indexes, "
+                    "vacuous-plan indexes, or execution results"
+                )
+            continue
+
         if isinstance(step, FilterStep):
             if step_run.state is not StepRunState.SUCCEEDED:
                 raise WorkflowNormalizationAlignmentError(
@@ -483,12 +509,13 @@ def normalize_workflow_execution(
     A reused execution inherits the residual predicate of its physical owner, so a
     later semantic enrichment cannot resurrect candidates already pruned from the
     candidate-search result. FilterSteps select from an earlier normalized Step view
-    without manufacturing physical provenance. Supplementary physical plans that
-    failed are absent from the normalized Step view but remain visible as runtime
-    warnings. Candidate-dependent plans that are vacuous are likewise absent from
-    the normalized Step view, with their omission proven by runtime metadata. Every
-    successful semantic Step therefore selects from canonical Portfolio objects
-    rather than cloning them.
+    without manufacturing physical provenance. DeriveStep and MatchStep occurrences
+    retain empty normalized outputs until the ordered local semantic phase runs.
+    Supplementary physical plans that failed are absent from the normalized Step view
+    but remain visible as runtime warnings. Candidate-dependent plans that are
+    vacuous are likewise absent from the normalized Step view, with their omission
+    proven by runtime metadata. Every successful semantic Step therefore selects
+    from canonical Portfolio objects rather than cloning them.
     """
 
     _validate_workflow_alignment(result)
@@ -496,7 +523,7 @@ def normalize_workflow_execution(
     normalized_steps: list[StepPortfolioResult] = []
     for step_run, step_result in zip(result.run.steps, result.steps):
         step = result.run.step_at(step_run.step_index)
-        if isinstance(step, DeriveStep):
+        if isinstance(step, (DeriveStep, MatchStep)):
             normalized_steps.append(
                 normalize_step_execution(
                     step_result,

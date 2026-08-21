@@ -102,6 +102,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         _python_script("scripts/live_dsl_multisurvey.py"),
     ),
     Scenario(
+        "dsl-match-spatial",
+        "DSL ALeRCE LSST+ZTF discovery -> normalized local positional MatchStep adjacency",
+        _python_script("scripts/live_dsl_match.py"),
+    ),
+    Scenario(
         "dsl-cross-provider",
         "DSL Lasair/ZTF search -> late-bound Fink/ZTF + Lasair/ZTF retrieval",
         _python_script("scripts/live_dsl_complex.py"),
