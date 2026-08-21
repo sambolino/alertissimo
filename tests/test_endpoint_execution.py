@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -136,6 +137,27 @@ def test_json_remains_default_for_rest_post(monkeypatch):
     request = captured["request"]
     assert request.data == b'{"active": true}'
     assert request.get_header("Content-type") == "application/json"
+
+
+def test_fink_ztf_conesearch_uses_registered_post_json_contract(monkeypatch):
+    captured = _capture_request(monkeypatch, raw=b"[]")
+    spec = EndpointRegistry(REGISTRY).resolve("fink", "ztf", "conesearch")
+
+    assert spec.method == "POST"
+    assert spec.request_encoding == "json"
+
+    params = {
+        "ra": 124.87996115142856,
+        "dec": -6.0205001,
+        "radius": 300.0,
+    }
+    RestTransport().execute(spec, params)
+
+    request = captured["request"]
+    assert request.method == "POST"
+    assert request.full_url == "https://api.ztf.fink-portal.org/api/v1/conesearch"
+    assert request.get_header("Content-type") == "application/json"
+    assert json.loads(request.data) == params
 
 
 def test_explicit_content_type_header_takes_precedence(monkeypatch):
