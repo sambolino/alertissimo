@@ -1,4 +1,5 @@
 from alertissimo.data_layer.execution import (
+    EndpointRegistry,
     EndpointSpec,
     RegistryEndpointExecutor,
     TransportResult,
@@ -79,6 +80,14 @@ def _executor(transport):
         transports={"fixture": transport},
         execution_id_factory=lambda: InternalExecutionId("execution:paginated"),
     )
+
+
+def test_alerce_query_objects_contracts_activate_page_pagination():
+    registry = EndpointRegistry()
+
+    for origin in ("lsst", "ztf"):
+        spec = registry.resolve("alerce", origin, "query_objects")
+        assert RegistryEndpointExecutor._page_parameters(spec) == ("page", "page_size")
 
 
 def test_executor_exhausts_wrapper_pagination_as_one_logical_execution():
