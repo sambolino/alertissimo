@@ -147,6 +147,54 @@ def _endpoint_plan(
     )
 
 
+def _forced_photometry_supplement(
+    step: GetLightcurveStep,
+    primary: EndpointCapability,
+    graph: CapabilityGraph,
+) -> EndpointCapability | None:
+    """Return one proven-compatible optional forced-photometry endpoint.
+
+    ``GetLightcurveStep`` owns the semantic completeness policy; a forced endpoint
+    is only a supplementary physical realization. The supplement is deliberately
+    best-effort: absence, ambiguity, or target-cardinality incompatibility returns
+    ``None`` rather than making the primary lightcurve plan fail.
+
+    Bands and time windows are not auto-supplemented yet because the registry does
+    not currently prove equivalent constraint semantics between ordinary history
+    and forced-photometry endpoints. A targetless Step is treated conservatively as
+    potentially multi-object, so only collection-capable forced endpoints qualify.
+    """
+
+    if step.bands is not None or step.time_context is not None:
+        return None
+    if "forced_photometry" in primary.operation_types:
+        return None
+
+    primary_identity = (primary.broker, primary.origin, primary.endpoint)
+    candidates = tuple(
+        endpoint
+        for endpoint in graph.query_endpoints(
+            broker=primary.broker,
+            origin=primary.origin,
+            operation_type="forced_photometry",
+        )
+        if (endpoint.broker, endpoint.origin, endpoint.endpoint) != primary_identity
+        and "target_id" in endpoint.binding_roles
+    )
+
+    target_count = len(step.target.ids) if step.target is not None else None
+    if target_count is None or target_count > 1:
+        candidates = tuple(
+            endpoint
+            for endpoint in candidates
+            if "target_id" in endpoint.collection_binding_roles
+        )
+
+    if len(candidates) != 1:
+        return None
+    return candidates[0]
+
+
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
@@ -168,9 +216,14 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     selected = tuple(
         _select_one(validation, item) for item in validation.source_results
     )
-    return tuple(
-        _endpoint_plan(step, item, validation, graph) for item in selected
-    )
+    plans: list[EndpointPlan] = []
+    for endpoint in selected:
+        plans.append(_endpoint_plan(step, endpoint, validation, graph))
+        if isinstance(step, GetLightcurveStep):
+            supplement = _forced_photometry_supplement(step, endpoint, graph)
+            if supplement is not None:
+                plans.append(_endpoint_plan(step, supplement, validation, graph))
+    return tuple(plans)
 
 
 def _semantic_record_producer(record_type: str) -> str | None:
