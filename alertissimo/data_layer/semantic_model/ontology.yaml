@@ -1279,7 +1279,7 @@ levels:
           unit: mag
           [error]:
             description: "Large-aperture magnitude uncertainty"
-            unit: mag
+            unit:` mag
       <flags>:
         description: "Flags affecting the aperture-flux measurement"
         [failed]:
@@ -2126,7 +2126,7 @@ levels:
     description: "Whether the object has a catalog association or catalog-derived status according to the producer"
     type: boolean
   [is_first_detection]:
-    description: "Whether the object summary corresponds to the first known detection according to the producer"
+    description: "Whether the represented object summary corresponds to the first known detection according to the producer"
     type: boolean
   [is_solar_system]:
     description: "Whether the object is identified or flagged as a Solar System object"
@@ -2483,7 +2483,7 @@ levels:
 
 --host_of-->:
   $is: --edge--
-  description: "The subject portfolio is an astrophysical host or host candidate of the target portfolio"
+  description: "The subject portfolio is the astrophysical host of the target portfolio"
   [angular_separation]:
     description: "Angular separation between host and target"
     unit: arcsec
