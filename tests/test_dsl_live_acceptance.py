@@ -17,6 +17,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "color-magnitude-derivation",
         "alerce-lsst-lightcurve",
         "antares-ztf-lsst-lookups",
+        "crossmatch-retrieval",
         "lasair-ztf-portfolio-html",
         "lasair-lsst-portfolio-html",
         "fink-lsst-consolidation",
