@@ -112,16 +112,19 @@ endpoints:
       ra:
         type: number
         required: false
+        bind: ra
         unit: deg
         description: Physical ra parameter accepted by query_objects.
       dec:
         type: number
         required: false
+        bind: dec
         unit: deg
         description: Physical dec parameter accepted by query_objects.
       radius:
         type: number
         required: false
+        bind: radius
         unit: arcsec
         description: Physical radius parameter accepted by query_objects.
       page:
@@ -877,16 +880,19 @@ endpoints:
       ra:
         type: number
         required: true
+        bind: ra
         unit: deg
         description: Physical ra parameter accepted by catshtm_conesearch.
       dec:
         type: number
         required: true
+        bind: dec
         unit: deg
         description: Physical dec parameter accepted by catshtm_conesearch.
       radius:
         type: number
         required: true
+        bind: radius
         unit: arcsec
         description: Physical radius parameter accepted by catshtm_conesearch.
       catalog_name:
