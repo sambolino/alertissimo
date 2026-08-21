@@ -18,7 +18,11 @@ class _Registry:
             params={
                 "ra": {"type": "number"},
                 "page": {"type": "integer", "role": "pagination"},
-                "page_size": {"type": "integer", "role": "pagination"},
+                "page_size": {
+                    "type": "integer",
+                    "role": "pagination",
+                    "auto_page_size": 2,
+                },
             },
         )
 
@@ -82,12 +86,16 @@ def _executor(transport):
     )
 
 
-def test_alerce_query_objects_contracts_activate_page_pagination():
+def test_alerce_query_objects_contracts_activate_batched_page_pagination():
     registry = EndpointRegistry()
 
     for origin in ("lsst", "ztf"):
         spec = registry.resolve("alerce", origin, "query_objects")
         assert RegistryEndpointExecutor._page_parameters(spec) == ("page", "page_size")
+        prepared = RegistryEndpointExecutor._auto_paginated_params(
+            spec, {}, caller_supplied_page=False
+        )
+        assert prepared["page_size"] == 1000
 
 
 def test_executor_exhausts_wrapper_pagination_as_one_logical_execution():
@@ -100,8 +108,11 @@ def test_executor_exhausts_wrapper_pagination_as_one_logical_execution():
     assert [item["oid"] for item in result.payload["items"]] == ["A", "B", "C"]
     assert result.payload["next"] is None
     assert result.payload["has_next"] is False
-    assert transport.calls == [{"ra": 10.0}, {"ra": 10.0, "page": 2}]
-    assert result.execution_provenance.params == {"ra": 10.0}
+    assert transport.calls == [
+        {"ra": 10.0, "page_size": 2},
+        {"ra": 10.0, "page_size": 2, "page": 2},
+    ]
+    assert result.execution_provenance.params == {"ra": 10.0, "page_size": 2}
     assert result.execution_provenance.raw_size_bytes == 30
 
 
@@ -114,14 +125,14 @@ def test_executor_exhausts_bare_list_pages_when_client_strips_wrapper():
 
     assert [item["oid"] for item in result.payload] == ["A", "B", "C", "D", "E"]
     assert transport.calls == [
-        {"ra": 10.0},
-        {"ra": 10.0, "page": 2},
-        {"ra": 10.0, "page": 3},
+        {"ra": 10.0, "page_size": 2},
+        {"ra": 10.0, "page_size": 2, "page": 2},
+        {"ra": 10.0, "page_size": 2, "page": 3},
     ]
     assert result.execution_provenance.raw_size_bytes == 15
 
 
-def test_explicit_page_request_remains_one_page():
+def test_explicit_page_request_remains_one_page_and_keeps_provider_page_size_default():
     transport = _ListTransport()
 
     result = _executor(transport).execute(
@@ -130,3 +141,4 @@ def test_explicit_page_request_remains_one_page():
 
     assert [item["oid"] for item in result.payload] == ["C", "D"]
     assert transport.calls == [{"ra": 10.0, "page": 2}]
+    assert result.execution_provenance.params == {"ra": 10.0, "page": 2}
