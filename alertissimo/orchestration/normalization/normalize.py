@@ -84,6 +84,33 @@ def _plan_at(run: WorkflowRun, reference: EndpointPlanRef) -> EndpointPlan:
         ) from error
 
 
+def _execution_plan_indexes(
+    step_run: StepRun, step_result: StepExecutionResult
+) -> tuple[int, ...]:
+    """Return endpoint-plan indexes corresponding to successful executions.
+
+    Older/dense results may omit explicit index metadata; equal plan/result counts
+    retain their historical positional meaning. Sparse results must provide the
+    explicit indexes recorded by runtime execution.
+    """
+
+    if step_run.execution_plan_indexes:
+        if len(step_run.execution_plan_indexes) != len(step_result.executions):
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} execution-plan index count does "
+                "not match execution result count"
+            )
+        return step_run.execution_plan_indexes
+    if len(step_run.endpoint_plans) == len(step_result.executions):
+        return tuple(range(len(step_result.executions)))
+    if not step_result.executions:
+        return ()
+    raise WorkflowNormalizationAlignmentError(
+        f"step_index {step_run.step_index} has sparse execution results without "
+        "execution-plan index metadata"
+    )
+
+
 def _effective_residual(
     run: WorkflowRun,
     step_index: int,
@@ -157,8 +184,9 @@ def _normalize_planned_step(
     *,
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
-    """Normalize executions against their already-validated endpoint-plan order."""
+    """Normalize successful executions against their owning endpoint plans."""
 
+    plan_indexes = _execution_plan_indexes(step_run, result)
     return StepPortfolioResult(
         step_index=result.step_index,
         executions=tuple(
@@ -172,9 +200,7 @@ def _normalize_planned_step(
                 normalized_by_execution_id,
                 validate_semantic_model=validate_semantic_model,
             )
-            for plan_index, (_plan, execution) in enumerate(
-                zip(step_run.endpoint_plans, result.executions)
-            )
+            for plan_index, execution in zip(plan_indexes, result.executions)
         ),
     )
 
@@ -224,6 +250,22 @@ def _filter_candidate_view(
     )
 
 
+def _execution_for_plan(
+    step_run: StepRun,
+    step_result: StepExecutionResult,
+    plan_index: int,
+) -> ExecutionResult:
+    plan_indexes = _execution_plan_indexes(step_run, step_result)
+    try:
+        position = plan_indexes.index(plan_index)
+    except ValueError as error:
+        raise WorkflowNormalizationAlignmentError(
+            "execution reuse references an endpoint plan with no successful execution "
+            f"({step_run.step_index}, {plan_index})"
+        ) from error
+    return step_result.executions[position]
+
+
 def _validate_reuse_alignment(
     result: WorkflowExecutionResult,
     *,
@@ -240,14 +282,11 @@ def _validate_reuse_alignment(
             f"step_index {step_index} plan {plan_index} reuses a non-earlier Step"
         )
     owner_plan = _plan_at(result.run, reference)
+    owner_step_run = result.run.steps[reference.step_index]
     owner_step_result = result.steps[reference.step_index]
-    try:
-        owner_execution = owner_step_result.executions[reference.plan_index]
-    except IndexError as error:
-        raise WorkflowNormalizationAlignmentError(
-            "execution reuse references an unavailable execution result "
-            f"({reference.step_index}, {reference.plan_index})"
-        ) from error
+    owner_execution = _execution_for_plan(
+        owner_step_run, owner_step_result, reference.plan_index
+    )
 
     if (
         owner_plan.broker,
@@ -297,11 +336,13 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 step_run.endpoint_plans
                 or step_run.candidate_input_from is not None
                 or step_run.execution_ids
+                or step_run.execution_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
                     f"derive step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, candidate input, execution IDs, or execution results"
+                    "endpoint plans, candidate input, execution IDs, execution-plan "
+                    "indexes, or execution results"
                 )
             continue
 
@@ -315,10 +356,16 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 raise WorkflowNormalizationAlignmentError(
                     f"filter step_index {step_run.step_index} has no candidate input"
                 )
-            if step_run.endpoint_plans or step_run.execution_ids or step_result.executions:
+            if (
+                step_run.endpoint_plans
+                or step_run.execution_ids
+                or step_run.execution_plan_indexes
+                or step_result.executions
+            ):
                 raise WorkflowNormalizationAlignmentError(
                     f"filter step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, execution IDs, or execution results"
+                    "endpoint plans, execution IDs, execution-plan indexes, or "
+                    "execution results"
                 )
             continue
 
@@ -341,19 +388,23 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 for plan in step_run.endpoint_plans
             )
         )
-        if (
-            len(step_run.endpoint_plans) != len(step_result.executions)
-            and not vacuous_candidate_step
-        ):
+        plan_indexes = _execution_plan_indexes(step_run, step_result)
+        missing_plan_indexes = set(range(len(step_run.endpoint_plans))) - set(plan_indexes)
+        missing_required = tuple(
+            index
+            for index in sorted(missing_plan_indexes)
+            if step_run.endpoint_plans[index].required
+        )
+        if missing_required and not vacuous_candidate_step:
             raise WorkflowNormalizationAlignmentError(
-                f"step_index {step_run.step_index} endpoint plan count does not "
-                "match execution result count "
-                f"({len(step_run.endpoint_plans)} != "
-                f"{len(step_result.executions)})"
+                f"step_index {step_run.step_index} is missing successful execution "
+                f"results for required endpoint plan indexes {missing_required}"
             )
-        for execution_position, (plan, execution) in enumerate(
-            zip(step_run.endpoint_plans, step_result.executions)
+
+        for execution_position, (plan_index, execution) in enumerate(
+            zip(plan_indexes, step_result.executions)
         ):
+            plan = step_run.endpoint_plans[plan_index]
             provenance = execution.execution_provenance
             planned_identity = (plan.broker, plan.origin, plan.endpoint)
             actual_identity = (
@@ -364,15 +415,16 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             if planned_identity != actual_identity:
                 raise WorkflowNormalizationAlignmentError(
                     f"step_index {step_run.step_index} execution position "
-                    f"{execution_position} endpoint identity does not align: "
-                    f"planned broker={plan.broker}, origin={plan.origin}, "
-                    f"endpoint={plan.endpoint}; actual broker={provenance.broker}, "
-                    f"origin={provenance.origin}, endpoint={provenance.endpoint}"
+                    f"{execution_position} (plan_index {plan_index}) endpoint identity "
+                    f"does not align: planned broker={plan.broker}, "
+                    f"origin={plan.origin}, endpoint={plan.endpoint}; actual "
+                    f"broker={provenance.broker}, origin={provenance.origin}, "
+                    f"endpoint={provenance.endpoint}"
                 )
             _validate_reuse_alignment(
                 result,
                 step_index=step_run.step_index,
-                plan_index=execution_position,
+                plan_index=plan_index,
                 plan=plan,
                 execution=execution,
             )
@@ -397,8 +449,10 @@ def normalize_workflow_execution(
     A reused execution inherits the residual predicate of its physical owner, so a
     later semantic enrichment cannot resurrect candidates already pruned from the
     candidate-search result. FilterSteps select from an earlier normalized Step view
-    without manufacturing physical provenance. Every semantic Step therefore
-    selects from canonical Portfolio objects rather than cloning them.
+    without manufacturing physical provenance. Supplementary physical plans that
+    failed are absent from the normalized Step view but remain visible as runtime
+    warnings. Every successful semantic Step therefore selects from canonical
+    Portfolio objects rather than cloning them.
     """
 
     _validate_workflow_alignment(result)
