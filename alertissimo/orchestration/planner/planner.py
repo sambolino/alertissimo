@@ -200,7 +200,7 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
     if validation.status == "not_applicable":
-        if isinstance(step, (DeriveStep, MatchStep)):
+        if isinstance(step, DeriveStep):
             return ()
         raise PlanningNotApplicableError(
             f"provider endpoint planning is not applicable ({_context(validation)}): "
@@ -667,9 +667,9 @@ def _mark_equivalent_forced_reuse(
 
 
 def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
-    """Plan one workflow occurrence, admitting orchestrated local FilterSteps."""
+    """Plan one workflow occurrence, admitting orchestrated local steps."""
 
-    if isinstance(step, FilterStep):
+    if isinstance(step, (FilterStep, MatchStep)):
         return ()
     return plan_step(step, graph)
 
