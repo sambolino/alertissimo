@@ -73,16 +73,19 @@ endpoints:
       ra:
         required: true
         type: number
+        bind: ra
         description: Right Ascension, in decimal degree.
         unit: deg
       dec:
         required: true
         type: number
+        bind: dec
         description: Declination, in decimal degree.
         unit: deg
       radius:
         required: true
         type: number
+        bind: radius
         description: Conesearch radius in arcsec. Maximum is 18,000 arcseconds (5 degrees).
         unit: arcsec
       n:
