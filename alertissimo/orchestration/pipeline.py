@@ -90,6 +90,16 @@ def _candidate_id(portfolio: Portfolio) -> str:
     return next(iter(values))
 
 
+def _candidate_origin(portfolio: Portfolio) -> str:
+    origins = {execution.origin for execution in portfolio.executions}
+    if len(origins) != 1:
+        raise CandidateFlowError(
+            "candidate Portfolio must retain exactly one execution origin; "
+            f"found {sorted(origins)!r}"
+        )
+    return next(iter(origins))
+
+
 def _execution_plan_indexes(
     step_run: StepRun, result: StepExecutionResult
 ) -> tuple[int, ...]:
@@ -141,19 +151,23 @@ def _candidate_view_from_step(
     )
 
 
-def _candidate_ids_from_view(view: StepPortfolioResult) -> tuple[str, ...]:
-    """Read unique object identities from one normalized candidate view."""
+def _candidate_ids_by_origin_from_view(
+    view: StepPortfolioResult,
+) -> dict[str, tuple[str, ...]]:
+    """Read unique object identities grouped by their normalized execution origin."""
 
-    ids: list[str] = []
-    seen: set[str] = set()
+    ids_by_origin: dict[str, list[str]] = {}
+    seen_by_origin: dict[str, set[str]] = {}
     for execution in view.executions:
         for portfolio in execution.portfolios:
+            origin = _candidate_origin(portfolio)
             candidate_id = _candidate_id(portfolio)
+            seen = seen_by_origin.setdefault(origin, set())
             if candidate_id in seen:
                 continue
             seen.add(candidate_id)
-            ids.append(candidate_id)
-    return tuple(ids)
+            ids_by_origin.setdefault(origin, []).append(candidate_id)
+    return {origin: tuple(ids) for origin, ids in ids_by_origin.items()}
 
 
 def _filter_view(
@@ -205,7 +219,8 @@ def execute_staged_workflow_run(
 
     Plans without runtime dependencies are bound normally. A plan carrying
     ``candidate_input_from`` receives ``target_id`` from the referenced Step's
-    normalized candidate Portfolios. A FilterStep consumes its StepRun-level
+    normalized candidate Portfolios, restricted to candidates with the same origin
+    as that physical plan. A FilterStep consumes its StepRun-level
     ``candidate_input_from`` view locally, creates no physical execution, and its
     surviving semantic identities may feed later provider calls.
 
@@ -224,7 +239,7 @@ def execute_staged_workflow_run(
     step_results: list[StepExecutionResult] = []
     execution_cache: dict[tuple[int, int], ExecutionResult] = {}
     candidate_views_by_step: dict[int, StepPortfolioResult] = {}
-    candidate_ids_by_step: dict[int, tuple[str, ...]] = {}
+    candidate_ids_by_origin_by_step: dict[int, dict[str, tuple[str, ...]]] = {}
     candidate_sources = _candidate_source_indices(run)
 
     for original_step_run in run.steps:
@@ -256,7 +271,9 @@ def execute_staged_workflow_run(
                     ) from error
                 view = _filter_view(step, step_index, source_view)
                 candidate_views_by_step[step_index] = view
-                candidate_ids_by_step[step_index] = _candidate_ids_from_view(view)
+                candidate_ids_by_origin_by_step[step_index] = (
+                    _candidate_ids_by_origin_from_view(view)
+                )
             except Exception as error:
                 failed = original_step_run.model_copy(
                     update={
@@ -288,7 +305,7 @@ def execute_staged_workflow_run(
             if plan.candidate_input_from is not None
         )
         if candidate_references and all(
-            candidate_ids_by_step.get(reference.step_index) == ()
+            not candidate_ids_by_origin_by_step.get(reference.step_index)
             for reference in candidate_references
         ):
             binding = StepBindingResult(step_index=step_index, bound_calls=())
@@ -306,21 +323,27 @@ def execute_staged_workflow_run(
             if step_index in candidate_sources:
                 view = StepPortfolioResult(step_index=step_index, executions=())
                 candidate_views_by_step[step_index] = view
-                candidate_ids_by_step[step_index] = ()
+                candidate_ids_by_origin_by_step[step_index] = {}
             continue
 
         calls = []
-        for plan in original_step_run.endpoint_plans:
+        call_plan_indexes: list[int] = []
+        for plan_index, plan in enumerate(original_step_run.endpoint_plans):
             runtime_values = None
             reference = plan.candidate_input_from
             if reference is not None:
                 try:
-                    candidate_ids = candidate_ids_by_step[reference.step_index]
+                    candidate_ids_by_origin = candidate_ids_by_origin_by_step[
+                        reference.step_index
+                    ]
                 except KeyError as error:
                     raise CandidateFlowError(
                         "candidate input is not available from referenced Step "
                         f"{reference.step_index} for step_index {step_index}"
                     ) from error
+                candidate_ids = candidate_ids_by_origin.get(plan.origin, ())
+                if not candidate_ids:
+                    continue
                 runtime_values = {"target_id": candidate_ids}
             calls.append(
                 bind_endpoint(
@@ -330,13 +353,14 @@ def execute_staged_workflow_run(
                     runtime_values=runtime_values,
                 )
             )
+            call_plan_indexes.append(plan_index)
         binding = StepBindingResult(step_index=step_index, bound_calls=tuple(calls))
         bindings.append(binding)
 
         executions: list[ExecutionResult] = []
         execution_plan_indexes: list[int] = []
         warnings: list[str] = []
-        for plan_index, call in enumerate(binding.bound_calls):
+        for plan_index, call in zip(call_plan_indexes, binding.bound_calls):
             plan = call.endpoint_plan
             try:
                 reference = plan.execution_reuse_from
@@ -406,7 +430,9 @@ def execute_staged_workflow_run(
                 validate_semantic_model=validate_semantic_model,
             )
             candidate_views_by_step[step_index] = view
-            candidate_ids_by_step[step_index] = _candidate_ids_from_view(view)
+            candidate_ids_by_origin_by_step[step_index] = (
+                _candidate_ids_by_origin_from_view(view)
+            )
 
     execution_result = WorkflowExecutionResult(
         run=updated_run,
