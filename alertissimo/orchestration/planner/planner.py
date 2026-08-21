@@ -3,8 +3,8 @@
 Capability validation determines *what can* satisfy an intent; this planner chooses
 endpoint identities, records predicate realization, and may prove either that a
 later semantic retrieval can reuse an earlier candidate-search execution or that a
-new invocation can be bound from the earlier semantic candidate output. WorkflowIR
-Steps remain distinct in both cases.
+new invocation can be bound from an earlier semantic candidate view. WorkflowIR
+Steps remain distinct in every case.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
 )
 from alertissimo.orchestration.ir.models import (
     DeriveStep,
+    FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
     GetCutoutStep,
@@ -356,22 +357,42 @@ def _mark_candidate_dependencies(
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Mark physical reuse or runtime candidate-input binding for enrichments.
+    """Mark reuse, late binding, and local filtering over candidate views.
 
-    A targetless GetStep following candidate discovery means "retrieve this for the
-    current candidates". If the search execution already materializes the required
-    record, the plan reuses that execution. Otherwise the selected endpoint must
-    expose a real ``target_id`` binding. Unknown-cardinality candidate sets require
-    a collection-capable target binding; singular target endpoints are accepted
-    only when search selection proves there can be at most one candidate.
+    The candidate population is created by a SearchStep and changed only by an
+    explicit FilterStep. Provider GetSteps may materialize evidence used by a later
+    filter, but retrieval alone does not silently redefine the population. A filter
+    consumes the latest materialized semantic view and becomes the new candidate
+    population. Later targetless GetSteps bind from that filtered occurrence.
     """
 
     rewritten = list(planned_steps)
     active_search_index: int | None = None
+    current_candidate_index: int | None = None
+    current_material_index: int | None = None
 
     for step_index, step in enumerate(workflow.steps):
         if isinstance(step, SearchStep):
             active_search_index = step_index
+            current_candidate_index = step_index
+            current_material_index = step_index
+            continue
+
+        if isinstance(step, FilterStep):
+            if active_search_index is None or current_material_index is None:
+                raise PlanningNotApplicableError(
+                    f"filter step_index {step_index} requires an earlier materialized "
+                    "candidate view"
+                )
+            rewritten[step_index] = rewritten[step_index].model_copy(
+                update={
+                    "candidate_input_from": CandidateInputRef(
+                        step_index=current_material_index
+                    )
+                }
+            )
+            current_candidate_index = step_index
+            current_material_index = step_index
             continue
 
         if active_search_index is None:
@@ -379,16 +400,22 @@ def _mark_candidate_dependencies(
 
         if not isinstance(step, GetStep) or getattr(step, "target", None) is not None:
             active_search_index = None
+            current_candidate_index = None
+            current_material_index = None
             continue
 
         requirement = _get_record_requirement(step)
         if requirement is None:
             active_search_index = None
+            current_candidate_index = None
+            current_material_index = None
             continue
 
         search_step = workflow.steps[active_search_index]
-        if not isinstance(search_step, SearchStep):
+        if not isinstance(search_step, SearchStep) or current_candidate_index is None:
             active_search_index = None
+            current_candidate_index = None
+            current_material_index = None
             continue
 
         search_run = rewritten[active_search_index]
@@ -396,20 +423,22 @@ def _mark_candidate_dependencies(
         current_plans: list[EndpointPlan] = []
 
         for consumer_plan in current_run.endpoint_plans:
-            owner_index = next(
-                (
-                    plan_index
-                    for plan_index, search_plan in enumerate(search_run.endpoint_plans)
-                    if _search_execution_guarantees(
-                        search_step,
-                        search_plan,
-                        step,
-                        consumer_plan,
-                        graph,
-                    )
-                ),
-                None,
-            )
+            owner_index = None
+            if current_candidate_index == active_search_index:
+                owner_index = next(
+                    (
+                        plan_index
+                        for plan_index, search_plan in enumerate(search_run.endpoint_plans)
+                        if _search_execution_guarantees(
+                            search_step,
+                            search_plan,
+                            step,
+                            consumer_plan,
+                            graph,
+                        )
+                    ),
+                    None,
+                )
             if owner_index is not None:
                 current_plans.append(
                     consumer_plan.model_copy(
@@ -441,7 +470,7 @@ def _mark_candidate_dependencies(
                 consumer_plan.model_copy(
                     update={
                         "candidate_input_from": CandidateInputRef(
-                            step_index=active_search_index
+                            step_index=current_candidate_index
                         )
                     }
                 )
@@ -450,8 +479,17 @@ def _mark_candidate_dependencies(
         rewritten[step_index] = current_run.model_copy(
             update={"endpoint_plans": tuple(current_plans)}
         )
+        current_material_index = step_index
 
     return tuple(rewritten)
+
+
+def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
+    """Plan one workflow occurrence, admitting orchestrated local FilterSteps."""
+
+    if isinstance(step, FilterStep):
+        return ()
+    return plan_step(step, graph)
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
@@ -462,7 +500,9 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         StepRun(
             step_index=step_run.step_index,
             state=StepRunState.PLANNED,
-            endpoint_plans=plan_step(pending_run.step_at(step_run.step_index), graph),
+            endpoint_plans=_plan_workflow_step(
+                pending_run.step_at(step_run.step_index), graph
+            ),
         )
         for step_run in pending_run.steps
     )
