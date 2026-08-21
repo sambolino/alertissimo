@@ -84,7 +84,7 @@ def test_edge_fields_reject_qualified_paths():
         )
 
 
-def test_semantic_edges_are_first_class_and_require_existing_participants():
+def test_record_edges_are_first_class_and_require_existing_local_participants():
     detection = record("rec:detection", "detection@ztf:lasair", **{"time.mjd": 1.0})
     spectrum = record("rec:spectrum", "spectrum@gemini:archive", **{"identity.source_id": "s1"})
     edge = SemanticEdge(
@@ -101,8 +101,8 @@ def test_semantic_edges_are_first_class_and_require_existing_participants():
     portfolio = Portfolio(InternalPortfolioId("portfolio:edge"), (detection, spectrum), (edge,))
 
     assert portfolio.edges == (edge,)
-    assert edge.subject_record_id == spectrum.internal_record_id
-    assert edge.target_record_id == detection.internal_record_id
+    assert edge.subject == spectrum.internal_record_id
+    assert edge.target == detection.internal_record_id
     assert edge.get("basis") == "candidate workflow"
     assert edge.get("score") == 0.95
     assert edge.get("provenance.producer.name") == "Alertissimo"
@@ -116,6 +116,71 @@ def test_semantic_edges_are_first_class_and_require_existing_participants():
     )
     with pytest.raises(PortfolioModelError, match="target record"):
         Portfolio(InternalPortfolioId("portfolio:invalid"), (detection,), (missing,))
+
+
+def test_portfolio_edges_are_local_adjacency_and_other_portfolio_need_not_be_loaded():
+    local = InternalPortfolioId("portfolio:galaxy")
+    remote = InternalPortfolioId("portfolio:star")
+    edge = SemanticEdge(
+        InternalEdgeId("edge:association:1"),
+        "--association--",
+        local,
+        remote,
+        {"basis": "catalog association"},
+    )
+
+    portfolio = Portfolio(local, edges=(edge,))
+
+    assert portfolio.edges == (edge,)
+    assert edge.subject == local
+    assert edge.target == remote
+
+
+def test_nondirectional_portfolio_edge_can_be_stored_from_each_local_perspective():
+    galaxy = InternalPortfolioId("portfolio:galaxy")
+    star = InternalPortfolioId("portfolio:star")
+    edge_id = InternalEdgeId("edge:association:shared")
+
+    galaxy_view = SemanticEdge(edge_id, "--association--", galaxy, star)
+    star_view = SemanticEdge(edge_id, "--association--", star, galaxy)
+
+    assert Portfolio(galaxy, edges=(galaxy_view,)).edges == (galaxy_view,)
+    assert Portfolio(star, edges=(star_view,)).edges == (star_view,)
+    assert galaxy_view.internal_edge_id == star_view.internal_edge_id
+
+
+def test_directional_portfolio_edge_preserves_semantic_orientation_in_both_adjacency_lists():
+    galaxy = InternalPortfolioId("portfolio:galaxy")
+    transient = InternalPortfolioId("portfolio:transient")
+    edge_id = InternalEdgeId("edge:host:shared")
+
+    galaxy_view = SemanticEdge(edge_id, "--host_of-->", galaxy, transient)
+    transient_view = SemanticEdge(edge_id, "--host_of-->", galaxy, transient)
+
+    assert Portfolio(galaxy, edges=(galaxy_view,)).edges == (galaxy_view,)
+    assert Portfolio(transient, edges=(transient_view,)).edges == (transient_view,)
+
+
+def test_portfolio_edge_must_be_incident_on_the_portfolio_that_stores_it():
+    edge = SemanticEdge(
+        InternalEdgeId("edge:remote"),
+        "--association--",
+        InternalPortfolioId("portfolio:a"),
+        InternalPortfolioId("portfolio:b"),
+    )
+
+    with pytest.raises(PortfolioModelError, match="not incident"):
+        Portfolio(InternalPortfolioId("portfolio:c"), edges=(edge,))
+
+
+def test_mixed_portfolio_and_record_edge_endpoints_are_rejected():
+    with pytest.raises(PortfolioModelError, match="both be portfolio IDs or both be record IDs"):
+        SemanticEdge(
+            InternalEdgeId("edge:mixed"),
+            "--association--",
+            InternalPortfolioId("portfolio:a"),
+            InternalRecordId("record:a"),
+        )
 
 
 def test_execution_provenance_is_call_scoped_and_source_is_compact():
