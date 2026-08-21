@@ -380,7 +380,7 @@ def _mark_candidate_dependencies(
 
         if isinstance(step, FilterStep):
             if active_search_index is None or current_material_index is None:
-                raise PlanningDeferredError(
+                raise PlanningNotApplicableError(
                     f"filter step_index {step_index} requires an earlier materialized "
                     "candidate view"
                 )
