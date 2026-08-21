@@ -53,7 +53,12 @@ class _MultisurveyMatchExecutor:
                         "oid": "ZTF20match",
                         "meanra": 10.0001,
                         "meandec": 20.0,
-                    }
+                    },
+                    {
+                        "oid": "ZTF20unmatched",
+                        "meanra": 10.0008,
+                        "meandec": 20.0,
+                    },
                 ]
             }
         else:  # pragma: no cover - planner contract below fixes the two origins.
@@ -155,9 +160,9 @@ def test_literal_multisurvey_dsl_executes_search_then_local_cross_survey_match()
     assert staged.normalized.steps[1].executions == ()
 
     search_view = staged.normalized.steps[0]
-    assert len(search_view.portfolios) == 2
+    assert len(search_view.portfolios) == 3
     positions = {
-        record.semantic_type.split("@", 1)[1].split(":", 1)[0]: (
+        str(record.fields.get("identity.object_id")): (
             record.fields.get("position.ra"),
             record.fields.get("position.dec"),
         )
@@ -166,8 +171,9 @@ def test_literal_multisurvey_dsl_executes_search_then_local_cross_survey_match()
         if record.semantic_type.startswith("summary@")
     }
     assert positions == {
-        "lsst": (10.0, 20.0),
-        "ztf": (10.0001, 20.0),
+        "170000000000000001": (10.0, 20.0),
+        "ZTF20match": (10.0001, 20.0),
+        "ZTF20unmatched": (10.0008, 20.0),
     }
     assert all(not portfolio.edges for portfolio in search_view.portfolios)
 
@@ -176,11 +182,19 @@ def test_literal_multisurvey_dsl_executes_search_then_local_cross_survey_match()
     assert finalized.run.steps[1].execution_ids == ()
 
     # Historical Search output is untouched; the Match occurrence owns the
-    # adjacency-annotated semantic view.
+    # relationally filtered, adjacency-annotated semantic view.
+    assert len(finalized.steps[0].portfolios) == 3
     assert all(not portfolio.edges for portfolio in finalized.steps[0].portfolios)
     match_view = finalized.steps[1]
     assert match_view.step_index == 1
     assert len(match_view.portfolios) == 2
+    matched_object_ids = {
+        str(record.fields["identity.object_id"])
+        for portfolio in match_view.portfolios
+        for record in portfolio.records
+        if record.semantic_type.startswith("summary@")
+    }
+    assert matched_object_ids == {"170000000000000001", "ZTF20match"}
     left, right = match_view.portfolios
     assert len(left.edges) == len(right.edges) == 1
     assert left.edges[0].internal_edge_id == right.edges[0].internal_edge_id
