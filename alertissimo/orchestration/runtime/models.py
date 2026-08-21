@@ -168,7 +168,7 @@ class StepRun(RuntimeModel):
 
 
 class WorkflowRun(RuntimeModel):
-    """Runtime state for one invocation of a declarative workflow."""
+    """Runtime state for one invocation of a declarative WorkflowIR."""
 
     workflow: WorkflowIR
     steps: tuple[StepRun, ...]
