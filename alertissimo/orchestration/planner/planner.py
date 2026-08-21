@@ -27,6 +27,7 @@ from alertissimo.orchestration.ir.models import (
     GetLightcurveStep,
     GetSpectrumStep,
     GetStep,
+    MatchStep,
     SearchStep,
     Source,
     Step,
@@ -199,7 +200,7 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
     if validation.status == "not_applicable":
-        if isinstance(step, DeriveStep):
+        if isinstance(step, (DeriveStep, MatchStep)):
             return ()
         raise PlanningNotApplicableError(
             f"provider endpoint planning is not applicable ({_context(validation)}): "
@@ -414,13 +415,15 @@ def _mark_candidate_dependencies(
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Mark reuse, late binding, and local filtering over candidate views.
+    """Mark reuse, late binding, filtering, and matching over candidate views.
 
     The candidate population is created by a SearchStep and changed only by an
     explicit FilterStep. Provider GetSteps may materialize evidence used by a later
     filter, but retrieval alone does not silently redefine the population. A filter
     consumes the latest materialized semantic view and becomes the new candidate
-    population. Later targetless GetSteps bind from that filtered occurrence.
+    population. MatchStep consumes the current material view without changing the
+    candidate population. Later targetless GetSteps therefore continue to bind the
+    same candidates after a MatchStep.
     """
 
     rewritten = list(planned_steps)
@@ -450,6 +453,21 @@ def _mark_candidate_dependencies(
             )
             current_candidate_index = step_index
             current_material_index = step_index
+            continue
+
+        if isinstance(step, MatchStep):
+            if active_search_index is None or current_material_index is None:
+                raise PlanningNotApplicableError(
+                    f"match step_index {step_index} requires an earlier materialized "
+                    "candidate view"
+                )
+            rewritten[step_index] = rewritten[step_index].model_copy(
+                update={
+                    "candidate_input_from": CandidateInputRef(
+                        step_index=current_material_index
+                    )
+                }
+            )
             continue
 
         if active_search_index is None:
