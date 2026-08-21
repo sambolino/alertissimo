@@ -101,8 +101,7 @@ endpoints:
       stopdate:
         required: false
         type: string
-        default: now
-        description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+        description: Stopping date in UTC (iso, jd, or MJD). If omitted, Fink uses the current time. It restricts the search to alerts whose first detection was within the specified range of dates.
       window:
         required: false
         type: number
@@ -144,7 +143,7 @@ endpoints:
   latests:
     path: /api/v1/latests
     method: GET
-    description: Retrieve object data from the Fink/ZTF database based on their Fink derived class
+    description: Retrieve alerts from the Fink/ZTF database based on their Fink derived class
     transport:
       kind: rest
     params:
@@ -174,8 +173,7 @@ endpoints:
       stopdate:
         required: false
         type: string
-        default: now
-        description: Stopping date in UTC (iso, jd, or MJD).
+        description: Stopping date in UTC (iso, jd, or MJD). If omitted, Fink uses the current time.
       color:
         required: false
         type: boolean
@@ -234,8 +232,7 @@ endpoints:
       stop_date:
         required: false
         type: string
-        default: now
-        description: '[Optional] Stop date in UTC YYYY-MM-DD.'
+        description: '[Optional] Stop date in UTC YYYY-MM-DD. If omitted, Fink uses the current date.'
       columns:
         required: false
         type: string
@@ -474,7 +471,7 @@ endpoints:
         - simbad
         - ssodnet
         - tns
-        description: 'Resolver among: `simbad`, `ssodnet`, `tns`'
+        description: 'Resolver among: simbad, ssodnet, tns'
       name:
         required: true
         type: string
@@ -488,7 +485,7 @@ endpoints:
         required: false
         type: integer
         default: 10
-        description: Maximum number of match to return. Default is 10.
+        description: Maximum number of match to return.
       output-format:
         required: false
         type: string
