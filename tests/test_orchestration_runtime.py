@@ -293,9 +293,6 @@ def test_staged_candidate_routing_is_partitioned_by_plan_origin(
                 "ra": 124.87996115142856,
                 "dec": -6.0205001,
                 "radius": 300.0,
-                "n": 1000,
-                "kind": "within",
-                "output-format": "json",
             },
         ),
         (
@@ -306,9 +303,6 @@ def test_staged_candidate_routing_is_partitioned_by_plan_origin(
                 "ra": 124.87996115142856,
                 "dec": -6.0205001,
                 "radius": 300.0,
-                "n": 1000,
-                "startdate": "2019-11-01 00:00:00",
-                "output-format": "json",
             },
         ),
     ]
