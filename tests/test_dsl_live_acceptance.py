@@ -9,6 +9,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
     assert len(names) == len(set(names))
     assert {
         "multisurvey-discovery",
+        "dsl-match-spatial",
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
         "dsl-classification-reuse",
