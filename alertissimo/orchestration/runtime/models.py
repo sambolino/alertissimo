@@ -136,7 +136,10 @@ class StepRun(RuntimeModel):
                 raise ValueError("execution_plan_indexes must not contain duplicates")
             if tuple(sorted(self.execution_plan_indexes)) != self.execution_plan_indexes:
                 raise ValueError("execution_plan_indexes must be in endpoint-plan order")
-            if any(index >= len(self.endpoint_plans) for index in self.execution_plan_indexes):
+            if any(
+                index < 0 or index >= len(self.endpoint_plans)
+                for index in self.execution_plan_indexes
+            ):
                 raise ValueError("execution_plan_indexes reference unknown endpoint plans")
 
         if self.vacuous_plan_indexes:
@@ -144,7 +147,10 @@ class StepRun(RuntimeModel):
                 raise ValueError("vacuous_plan_indexes must not contain duplicates")
             if tuple(sorted(self.vacuous_plan_indexes)) != self.vacuous_plan_indexes:
                 raise ValueError("vacuous_plan_indexes must be in endpoint-plan order")
-            if any(index >= len(self.endpoint_plans) for index in self.vacuous_plan_indexes):
+            if any(
+                index < 0 or index >= len(self.endpoint_plans)
+                for index in self.vacuous_plan_indexes
+            ):
                 raise ValueError("vacuous_plan_indexes reference unknown endpoint plans")
             if set(self.execution_plan_indexes) & set(self.vacuous_plan_indexes):
                 raise ValueError(
@@ -162,7 +168,7 @@ class StepRun(RuntimeModel):
 
 
 class WorkflowRun(RuntimeModel):
-    """Runtime state for one invocation of a declarative WorkflowIR."""
+    """Runtime state for one invocation of a declarative workflow."""
 
     workflow: WorkflowIR
     steps: tuple[StepRun, ...]
