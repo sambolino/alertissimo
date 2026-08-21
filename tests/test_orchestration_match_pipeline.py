@@ -15,12 +15,12 @@ from alertissimo.orchestration.runtime import StepRunState
 
 DSL = """objects from lsst, ztf via alerce
 inside (10, 20, 5arcsec)
-match on position within 1arcsec
+match on position inside 1arcsec
 """
 
 SINGLE_SURVEY_DSL = """objects from lsst via alerce
 inside (10, 20, 5arcsec)
-match on position within 1arcsec
+match on position inside 1arcsec
 """
 
 
@@ -121,7 +121,7 @@ def test_literal_multisurvey_dsl_executes_search_then_local_cross_survey_match()
     assert match.method is None
     assert match.params == {
         "candidate_origins": ["lsst", "ztf"],
-        "predicate": "position within 1arcsec",
+        "predicate": "position inside 1arcsec",
     }
 
     run = plan_workflow(workflow, graph)
@@ -207,7 +207,7 @@ def test_literal_single_survey_dsl_can_match_distinct_object_ids_locally():
     assert isinstance(match, MatchStep)
     assert match.params == {
         "candidate_origins": ["lsst"],
-        "predicate": "position within 1arcsec",
+        "predicate": "position inside 1arcsec",
     }
 
     run = plan_workflow(workflow, graph)
