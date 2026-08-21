@@ -58,9 +58,11 @@ def finalize_local_semantics(
 
     No local semantic Step fabricates physical execution provenance. Derivations keep
     their established behavior of complementing earlier Portfolio views. MatchStep
-    instead exposes its own occurrence-aligned Portfolio view, copied from the
-    planner-declared candidate/material input and annotated with Portfolio adjacency
-    edges. Local steps become succeeded only after their semantic work completes.
+    instead exposes its own occurrence-aligned relationally filtered Portfolio view:
+    only candidates participating in an accepted Match relation propagate, annotated
+    with the corresponding Portfolio adjacency edges. Earlier candidate/material
+    Step views remain unchanged. Local steps become succeeded only after their
+    semantic work completes.
     """
 
     steps = list(result.steps)
