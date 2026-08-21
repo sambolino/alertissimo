@@ -146,6 +146,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         _python_script("scripts/live_smoke_antares.py"),
     ),
     Scenario(
+        "crossmatch-retrieval",
+        "GetCrossmatchStep -> ANTARES/ZTF target binding -> live Gaia crossmatch normalization",
+        _python_script("scripts/live_crossmatch.py"),
+    ),
+    Scenario(
         "lasair-ztf-portfolio-html",
         "Lasair/ZTF object -> Portfolio -> edges -> HTML presentation",
         _portfolio_command("ztf", "ZTF20acpwljl"),
