@@ -243,14 +243,21 @@ def _bound_target_ids(
     *,
     providers_root: Path,
 ) -> tuple[Any, ...]:
-    """Recover target identities from the physical request contract when unambiguous."""
+    """Recover target identities declared by the physical request contract."""
 
     provenance = execution.execution_provenance
-    spec = EndpointRegistry(providers_root).resolve(
-        provenance.broker,
-        provenance.origin,
-        provenance.endpoint,
-    )
+    try:
+        spec = EndpointRegistry(providers_root).resolve(
+            provenance.broker,
+            provenance.origin,
+            provenance.endpoint,
+        )
+    except (FileNotFoundError, KeyError):
+        # Mapping-only fixtures and custom registries are valid normalization inputs.
+        # Without an endpoint contract there is simply no request-binding evidence
+        # from which to synthesize semantic object identity.
+        return ()
+
     values: list[Any] = []
     for physical_name, declaration in spec.params.items():
         if not isinstance(declaration, Mapping) or declaration.get("bind") != "target_id":
@@ -275,7 +282,7 @@ def _bound_target_ids(
     return tuple(values)
 
 
-def _complete_minimal_summary_identities(
+def _complete_minimal_summary_identity(
     records_by_object: dict[Any, list[SemanticRecord]],
     *,
     broker: str,
@@ -283,42 +290,31 @@ def _complete_minimal_summary_identities(
     request_target_ids: tuple[Any, ...],
     make_record_id: Callable[[], InternalRecordId],
 ) -> None:
-    """Ensure every known object partition exposes its identity semantically.
+    """Seed an id-only summary for one unambiguous target-bound object retrieval.
 
-    Object-specific endpoints often return only detections, lightcurve points, or
-    other enrichment records. The Portfolio still needs a semantic object identity.
-    Prefer the response partition identity; for a ``single`` partition, a singleton
-    target-bound request is safe fallback evidence. Ambiguous multi-target requests
-    are never assigned by position or guesswork.
+    When one requested object yields only detections, lightcurve points, or other
+    enrichment records, the requested target ID is sufficient semantic evidence for
+    the Portfolio identity. Search-result partition keys are not promoted into
+    summaries, and multi-target calls are not correlated by position or guesswork.
     """
 
-    summary_type = f"summary@{origin}:{broker}"
-    for partition_key, records in records_by_object.items():
-        object_id: Any = _MISSING
-        if (
-            isinstance(partition_key, tuple)
-            and len(partition_key) == 2
-            and partition_key[0] == "identity"
-        ):
-            object_id = partition_key[1]
-        elif partition_key == ("single",) and len(request_target_ids) == 1:
-            object_id = request_target_ids[0]
-        if object_id is _MISSING:
-            continue
-        if any(
-            record.semantic_type.split("@", 1)[0] == "summary"
-            and record.get("identity.object_id") is not None
-            for record in records
-        ):
-            continue
-        records.append(
-            SemanticRecord(
-                internal_record_id=make_record_id(),
-                semantic_type=summary_type,
-                fields={"identity.object_id": object_id},
-                internal_source=None,
-            )
+    if len(request_target_ids) != 1 or len(records_by_object) != 1:
+        return
+    records = next(iter(records_by_object.values()))
+    if any(
+        record.semantic_type.split("@", 1)[0] == "summary"
+        and record.get("identity.object_id") is not None
+        for record in records
+    ):
+        return
+    records.append(
+        SemanticRecord(
+            internal_record_id=make_record_id(),
+            semantic_type=f"summary@{origin}:{broker}",
+            fields={"identity.object_id": request_target_ids[0]},
+            internal_source=None,
         )
+    )
 
 
 def build_portfolios_from_execution(
@@ -494,7 +490,7 @@ def build_portfolios_from_execution(
         if mappings_from_registry
         else ()
     )
-    _complete_minimal_summary_identities(
+    _complete_minimal_summary_identity(
         records_by_object,
         broker=document.get("broker", execution.execution_provenance.broker),
         origin=document.get("origin", execution.execution_provenance.origin),
