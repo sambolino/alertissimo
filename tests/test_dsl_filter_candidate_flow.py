@@ -27,7 +27,7 @@ def _dsl(threshold: float) -> str:
     with classification from {CLASSIFIER}
     with lightcurve via fink
     filter detection@lsst:fink.quality.reliability >= {threshold}
-    with forced-photometry via fink
+    with forced_photometry via fink
 """
 
 
