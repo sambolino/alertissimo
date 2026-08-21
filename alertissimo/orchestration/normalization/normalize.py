@@ -337,12 +337,13 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 or step_run.candidate_input_from is not None
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
+                or step_run.vacuous_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
                     f"derive step_index {step_run.step_index} must have no physical "
                     "endpoint plans, candidate input, execution IDs, execution-plan "
-                    "indexes, or execution results"
+                    "indexes, vacuous-plan indexes, or execution results"
                 )
             continue
 
@@ -360,12 +361,13 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 step_run.endpoint_plans
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
+                or step_run.vacuous_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
                     f"filter step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, execution IDs, execution-plan indexes, or "
-                    "execution results"
+                    "endpoint plans, execution IDs, execution-plan indexes, "
+                    "vacuous-plan indexes, or execution results"
                 )
             continue
 
@@ -379,15 +381,6 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 "workflow normalization requires succeeded state"
             )
 
-        vacuous_candidate_step = (
-            bool(step_run.endpoint_plans)
-            and not step_result.executions
-            and not step_run.execution_ids
-            and all(
-                plan.candidate_input_from is not None
-                for plan in step_run.endpoint_plans
-            )
-        )
         if (
             not step_run.execution_plan_indexes
             and step_result.executions
@@ -400,13 +393,44 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             )
 
         plan_indexes = _execution_plan_indexes(step_run, step_result)
+        invalid_vacuous = tuple(
+            index
+            for index in step_run.vacuous_plan_indexes
+            if index < 0 or index >= len(step_run.endpoint_plans)
+        )
+        if invalid_vacuous:
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} vacuous endpoint plan indexes "
+                f"reference unknown plans {invalid_vacuous}"
+            )
+        non_candidate_vacuous = tuple(
+            index
+            for index in step_run.vacuous_plan_indexes
+            if step_run.endpoint_plans[index].candidate_input_from is None
+        )
+        if non_candidate_vacuous:
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} vacuous endpoint plan indexes "
+                f"must be candidate-dependent {non_candidate_vacuous}"
+            )
+
+        overlap = tuple(
+            sorted(set(plan_indexes) & set(step_run.vacuous_plan_indexes))
+        )
+        if overlap:
+            raise WorkflowNormalizationAlignmentError(
+                f"step_index {step_run.step_index} endpoint plan indexes {overlap} "
+                "cannot be both executed and vacuous"
+            )
+
         missing_plan_indexes = set(range(len(step_run.endpoint_plans))) - set(plan_indexes)
         missing_required = tuple(
             index
             for index in sorted(missing_plan_indexes)
             if step_run.endpoint_plans[index].required
+            and index not in step_run.vacuous_plan_indexes
         )
-        if missing_required and not vacuous_candidate_step:
+        if missing_required:
             raise WorkflowNormalizationAlignmentError(
                 f"step_index {step_run.step_index} is missing successful execution "
                 f"results for required endpoint plan indexes {missing_required}"
@@ -461,8 +485,10 @@ def normalize_workflow_execution(
     candidate-search result. FilterSteps select from an earlier normalized Step view
     without manufacturing physical provenance. Supplementary physical plans that
     failed are absent from the normalized Step view but remain visible as runtime
-    warnings. Every successful semantic Step therefore selects from canonical
-    Portfolio objects rather than cloning them.
+    warnings. Candidate-dependent plans that are vacuous are likewise absent from
+    the normalized Step view, with their omission proven by runtime metadata. Every
+    successful semantic Step therefore selects from canonical Portfolio objects
+    rather than cloning them.
     """
 
     _validate_workflow_alignment(result)

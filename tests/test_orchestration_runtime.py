@@ -23,13 +23,19 @@ from alertissimo.orchestration.ir.models import (
     Source,
     WorkflowIR,
 )
+from alertissimo.orchestration.normalization import (
+    WorkflowNormalizationAlignmentError,
+    normalize_workflow_execution,
+)
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import (
     CandidateInputRef,
     EndpointPlan,
+    StepExecutionResult,
     StepRun,
     StepRunState,
+    WorkflowExecutionResult,
     WorkflowRun,
 )
 
@@ -71,6 +77,39 @@ def test_workflow_run_rejects_missing_duplicate_or_out_of_order_indices(steps):
 def test_step_run_rejects_negative_index():
     with pytest.raises(ValidationError):
         StepRun(step_index=-1)
+
+
+def test_step_run_vacuous_indexes_require_candidate_dependent_unexecuted_plans():
+    candidate_plan = EndpointPlan(
+        broker="fink",
+        origin="ztf",
+        endpoint="objects",
+        candidate_input_from=CandidateInputRef(step_index=0),
+    )
+    plain_plan = EndpointPlan(broker="fink", origin="ztf", endpoint="objects")
+
+    with pytest.raises(ValidationError, match="candidate-dependent"):
+        StepRun(
+            step_index=1,
+            endpoint_plans=(plain_plan,),
+            vacuous_plan_indexes=(0,),
+        )
+
+    with pytest.raises(ValidationError, match="unknown endpoint plans"):
+        StepRun(
+            step_index=1,
+            endpoint_plans=(candidate_plan,),
+            vacuous_plan_indexes=(1,),
+        )
+
+    with pytest.raises(ValidationError, match="both executed and vacuous"):
+        StepRun(
+            step_index=1,
+            endpoint_plans=(candidate_plan,),
+            execution_ids=("execution:test",),
+            execution_plan_indexes=(0,),
+            vacuous_plan_indexes=(0,),
+        )
 
 
 def test_same_operation_steps_remain_distinct_after_planning():
@@ -156,8 +195,8 @@ def _install_origin_routing_normalization(monkeypatch):
         "alertissimo.orchestration.pipeline.normalize_execution", fake_normalize
     )
     monkeypatch.setattr(
-        "alertissimo.orchestration.pipeline.normalize_workflow_execution",
-        lambda execution_result, *, validate_semantic_model=True: None,
+        "alertissimo.orchestration.normalization.normalize.normalize_execution",
+        fake_normalize,
     )
 
 
@@ -243,17 +282,24 @@ def _origin_routing_run(*, through_filter: bool = False) -> WorkflowRun:
 
 
 @pytest.mark.parametrize(
-    ("candidate_ids_by_origin", "expected_downstream", "expected_plan_indexes"),
+    (
+        "candidate_ids_by_origin",
+        "expected_downstream",
+        "expected_plan_indexes",
+        "expected_vacuous_indexes",
+    ),
     [
         (
             {"lsst": ("1701", "1702")},
             [("fink", "lsst", "sources", {"diaObjectId": "1701,1702"})],
             (0,),
+            (1,),
         ),
         (
             {"ztf": ("ZTF20abc",)},
             [("fink", "ztf", "objects", {"objectId": "ZTF20abc"})],
             (1,),
+            (0,),
         ),
         (
             {"lsst": ("1701",), "ztf": ("ZTF20abc", "ZTF21def")},
@@ -267,8 +313,9 @@ def _origin_routing_run(*, through_filter: bool = False) -> WorkflowRun:
                 ),
             ],
             (0, 1),
+            (),
         ),
-        ({}, [], ()),
+        ({}, [], (), (0, 1)),
     ],
 )
 def test_staged_candidate_routing_is_partitioned_by_plan_origin(
@@ -276,6 +323,7 @@ def test_staged_candidate_routing_is_partitioned_by_plan_origin(
     candidate_ids_by_origin,
     expected_downstream,
     expected_plan_indexes,
+    expected_vacuous_indexes,
 ):
     _install_origin_routing_normalization(monkeypatch)
     executor = _OriginRoutingExecutor(candidate_ids_by_origin)
@@ -310,9 +358,39 @@ def test_staged_candidate_routing_is_partitioned_by_plan_origin(
     downstream = staged.run.steps[1]
     assert downstream.state is StepRunState.SUCCEEDED
     assert downstream.execution_plan_indexes == expected_plan_indexes
+    assert downstream.vacuous_plan_indexes == expected_vacuous_indexes
     assert [call.endpoint_plan.origin for call in staged.bindings[1].bound_calls] == [
         call[1] for call in expected_downstream
     ]
+    assert staged.normalized.steps[1].step_index == 1
+    assert len(staged.normalized.steps[1].executions) == len(expected_downstream)
+
+
+def test_unmarked_missing_required_candidate_plan_still_fails_normalization(monkeypatch):
+    _install_origin_routing_normalization(monkeypatch)
+    staged = execute_staged_workflow_run(
+        _origin_routing_run(),
+        EndpointRegistry(),
+        _OriginRoutingExecutor({"ztf": ("ZTF20abc",)}),
+    )
+
+    downstream = staged.run.steps[1]
+    assert downstream.execution_plan_indexes == (1,)
+    assert downstream.vacuous_plan_indexes == (0,)
+    bad_downstream = downstream.model_copy(update={"vacuous_plan_indexes": ()})
+    bad_run = staged.run.model_copy(
+        update={"steps": (staged.run.steps[0], bad_downstream)}
+    )
+    inconsistent = WorkflowExecutionResult(
+        run=bad_run,
+        steps=staged.execution.steps,
+    )
+
+    with pytest.raises(
+        WorkflowNormalizationAlignmentError,
+        match=r"missing successful execution results for required endpoint plan indexes \(0,\)",
+    ):
+        normalize_workflow_execution(inconsistent)
 
 
 def test_filter_candidate_view_preserves_origin_partition(monkeypatch):
@@ -331,4 +409,7 @@ def test_filter_candidate_view_preserves_origin_partition(monkeypatch):
     ]
     assert staged.run.steps[1].state is StepRunState.SUCCEEDED
     assert staged.run.steps[1].execution_ids == ()
+    assert staged.run.steps[1].vacuous_plan_indexes == ()
     assert staged.run.steps[2].execution_plan_indexes == (0, 1)
+    assert staged.run.steps[2].vacuous_plan_indexes == ()
+    assert staged.normalized.steps[2].step_index == 2
