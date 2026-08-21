@@ -24,7 +24,13 @@ class EndpointPaginationError(RuntimeError):
 
 
 class RegistryEndpointExecutor:
-    _MAX_AUTO_PAGES = 10_000
+    # Auto-pagination is an execution concern, not a semantic limit. Use large
+    # transport batches so a complete semantic search does not devolve into the
+    # provider's often tiny interactive default (ALeRCE uses 10 rows/page).
+    # Individual endpoint contracts may override this with ``auto_page_size`` on
+    # their page_size parameter.
+    _DEFAULT_AUTO_PAGE_SIZE = 1_000
+    _MAX_AUTO_PAGES = 100
 
     def __init__(
         self,
@@ -105,6 +111,45 @@ class RegistryEndpointExecutor:
             return None
         return "page", "page_size" if "page_size" in pagination else None
 
+    @classmethod
+    def _auto_paginated_params(
+        cls,
+        spec: EndpointSpec,
+        params: Mapping[str, Any],
+        *,
+        caller_supplied_page: bool,
+    ) -> dict[str, Any]:
+        """Choose an efficient physical page size for transparent auto-pagination.
+
+        Provider defaults are intentionally left truthful in endpoint declarations.
+        When Alertissimo owns pagination, however, using a provider's interactive
+        default of only a handful of rows can require hundreds of serial calls. The
+        page-size contract may declare ``auto_page_size``; otherwise the executor's
+        conservative batch default is used. A caller selecting an explicit page keeps
+        the provider's normal one-page semantics and is not rewritten here.
+        """
+
+        prepared = dict(params)
+        page_parameters = cls._page_parameters(spec)
+        if caller_supplied_page or page_parameters is None:
+            return prepared
+        _, page_size_param = page_parameters
+        if page_size_param is None or page_size_param in prepared:
+            return prepared
+
+        contract = spec.params.get(page_size_param) or {}
+        auto_page_size = contract.get("auto_page_size", cls._DEFAULT_AUTO_PAGE_SIZE)
+        if isinstance(auto_page_size, bool):
+            raise EndpointPaginationError("auto_page_size must be a positive integer")
+        try:
+            auto_page_size = int(auto_page_size)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise EndpointPaginationError("auto_page_size must be a positive integer") from exc
+        if auto_page_size <= 0:
+            raise EndpointPaginationError("auto_page_size must be a positive integer")
+        prepared[page_size_param] = auto_page_size
+        return prepared
+
     @staticmethod
     def _call_transport(
         transport: Any,
@@ -183,8 +228,9 @@ class RegistryEndpointExecutor:
             while bool(current_payload.get("has_next")) or current_payload.get("next") is not None:
                 if len(results) >= self._MAX_AUTO_PAGES:
                     raise EndpointPaginationError(
-                        f"pagination exceeded {self._MAX_AUTO_PAGES} pages for "
-                        f"{spec.broker}/{spec.origin}/{spec.endpoint}"
+                        f"automatic pagination exceeded {self._MAX_AUTO_PAGES} pages for "
+                        f"{spec.broker}/{spec.origin}/{spec.endpoint}; refuse to continue "
+                        "an unexpectedly large physical scan"
                     )
                 next_page = current_payload.get("next")
                 if next_page is None:
@@ -251,8 +297,9 @@ class RegistryEndpointExecutor:
             while len(previous_payload) >= effective_page_size:
                 if len(results) >= self._MAX_AUTO_PAGES:
                     raise EndpointPaginationError(
-                        f"pagination exceeded {self._MAX_AUTO_PAGES} pages for "
-                        f"{spec.broker}/{spec.origin}/{spec.endpoint}"
+                        f"automatic pagination exceeded {self._MAX_AUTO_PAGES} pages for "
+                        f"{spec.broker}/{spec.origin}/{spec.endpoint}; refuse to continue "
+                        "an unexpectedly large physical scan"
                     )
                 page_number += 1
                 page_params = dict(params)
@@ -292,6 +339,12 @@ class RegistryEndpointExecutor:
         spec = self.registry.resolve(broker, origin, endpoint)
         supplied = dict(params or {})
         validated = self._validated_params(spec, supplied)
+        caller_supplied_page = "page" in supplied
+        validated = self._auto_paginated_params(
+            spec,
+            validated,
+            caller_supplied_page=caller_supplied_page,
+        )
         resolved_headers = self._resolved_headers(spec, headers)
         execution_id = self.execution_id_factory()
         started = datetime.now(timezone.utc)
@@ -302,7 +355,7 @@ class RegistryEndpointExecutor:
             spec,
             validated,
             resolved_headers,
-            caller_supplied_page="page" in supplied,
+            caller_supplied_page=caller_supplied_page,
         )
         elapsed_ms = (perf_counter() - timer) * 1000
         finished = datetime.now(timezone.utc)
