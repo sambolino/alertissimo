@@ -16,7 +16,7 @@ from alertissimo.orchestration.binding.models import (
     BoundEndpointCall,
     StepBindingResult,
 )
-from alertissimo.orchestration.ir.models import DeriveStep
+from alertissimo.orchestration.ir.models import DeriveStep, MatchStep
 
 from .models import EndpointPlan, StepRun, StepRunState, WorkflowRun
 
@@ -164,6 +164,10 @@ def execute_workflow_run(
     marked ``required=False`` is retained as a StepRun warning and execution
     continues. Successful results record the endpoint-plan indexes that produced
     them so later normalization never has to guess across a sparse plan/result set.
+
+    Post-normalization semantic operations such as DeriveStep and MatchStep own no
+    physical call. They remain planned here and are completed by the local semantic
+    phase after normalized Portfolio data exists.
     """
 
     _validate_alignment(run, bindings)
@@ -173,7 +177,7 @@ def execute_workflow_run(
 
     for step_run, binding in zip(run.steps, bindings):
         step = run.step_at(step_run.step_index)
-        if isinstance(step, DeriveStep):
+        if isinstance(step, (DeriveStep, MatchStep)):
             step_results.append(
                 StepExecutionResult(step_index=step_run.step_index, executions=())
             )
