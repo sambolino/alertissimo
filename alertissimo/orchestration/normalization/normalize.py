@@ -21,6 +21,7 @@ from .models import (
     ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
+    consolidate_portfolios,
 )
 from .predicate import prune_portfolios
 
@@ -205,6 +206,43 @@ def _normalize_planned_step(
     )
 
 
+def _materialize_enrichment_view(
+    step_run: StepRun,
+    own: StepPortfolioResult,
+    normalized_steps: list[StepPortfolioResult],
+) -> StepPortfolioResult:
+    """Combine inherited semantic material with this Step's newly normalized data.
+
+    The StepRun-level ``candidate_input_from`` is the semantic view this targetless
+    provider enrichment extends. Physical EndpointPlan candidate references remain a
+    separate concern and continue to determine which object IDs are sent to provider
+    calls. Historical source Steps are never mutated.
+    """
+
+    reference = step_run.candidate_input_from
+    if reference is None:
+        return own
+    try:
+        source = normalized_steps[reference.step_index]
+    except IndexError as error:
+        raise WorkflowNormalizationAlignmentError(
+            f"provider step_index {step_run.step_index} references unavailable "
+            f"material Step {reference.step_index}"
+        ) from error
+    if reference.step_index >= step_run.step_index:
+        raise WorkflowNormalizationAlignmentError(
+            f"provider step_index {step_run.step_index} material input must reference "
+            "an earlier Step"
+        )
+    return StepPortfolioResult(
+        step_index=own.step_index,
+        executions=own.executions,
+        materialized_portfolios=consolidate_portfolios(
+            source.portfolios + own.portfolios
+        ),
+    )
+
+
 def _filter_candidate_view(
     step: FilterStep,
     step_run: StepRun,
@@ -212,9 +250,10 @@ def _filter_candidate_view(
 ) -> StepPortfolioResult:
     """Apply one local FilterStep to an earlier normalized semantic view.
 
-    The output carries the source execution group identities because those are the
-    physical executions from which the selected Portfolios came. It does not create
-    execution provenance or clone Portfolio objects.
+    ``executions`` retains the historical execution grouping behavior for backward
+    compatibility. ``materialized_portfolios`` is authoritative when the source is
+    an accumulated semantic snapshot, so filtering never discards inherited evidence
+    needed by later local or provider Steps.
     """
 
     reference = step_run.candidate_input_from
@@ -236,6 +275,7 @@ def _filter_candidate_view(
                 "legacy FilterStep criteria have no defined local predicate evaluator"
             )
         executions = source.executions
+        materialized = source.portfolios
     else:
         executions = tuple(
             ExecutionPortfolioResult(
@@ -244,9 +284,11 @@ def _filter_candidate_view(
             )
             for execution in source.executions
         )
+        materialized = prune_portfolios(source.portfolios, step.predicate)
     return StepPortfolioResult(
         step_index=step_run.step_index,
         executions=executions,
+        materialized_portfolios=materialized,
     )
 
 
@@ -398,9 +440,12 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             continue
 
         if step_run.candidate_input_from is not None:
-            raise WorkflowNormalizationAlignmentError(
-                f"provider step_index {step_run.step_index} cannot carry local candidate input"
-            )
+            reference = step_run.candidate_input_from
+            if reference.step_index >= step_run.step_index:
+                raise WorkflowNormalizationAlignmentError(
+                    f"provider step_index {step_run.step_index} material input must "
+                    "reference an earlier Step"
+                )
         if step_run.state is not StepRunState.SUCCEEDED:
             raise WorkflowNormalizationAlignmentError(
                 f"step_index {step_run.step_index} is {step_run.state.value}; "
@@ -508,14 +553,14 @@ def normalize_workflow_execution(
 
     A reused execution inherits the residual predicate of its physical owner, so a
     later semantic enrichment cannot resurrect candidates already pruned from the
-    candidate-search result. FilterSteps select from an earlier normalized Step view
-    without manufacturing physical provenance. DeriveStep and MatchStep occurrences
-    retain empty normalized outputs until the ordered local semantic phase runs.
-    Supplementary physical plans that failed are absent from the normalized Step view
-    but remain visible as runtime warnings. Candidate-dependent plans that are
-    vacuous are likewise absent from the normalized Step view, with their omission
-    proven by runtime metadata. Every successful semantic Step therefore selects
-    from canonical Portfolio objects rather than cloning them.
+    candidate-search result. Targetless provider enrichment keeps its own physical
+    executions occurrence-local while materializing an immutable semantic snapshot
+    that combines the preceding material view with newly normalized evidence.
+    FilterSteps select from an earlier normalized Step view without manufacturing
+    physical provenance. DeriveStep and MatchStep occurrences retain empty normalized
+    outputs until the ordered local semantic phase runs. Supplementary physical plans
+    that failed remain visible as runtime warnings; candidate-dependent vacuous plans
+    remain proven by runtime metadata.
     """
 
     _validate_workflow_alignment(result)
@@ -536,14 +581,15 @@ def normalize_workflow_execution(
                 _filter_candidate_view(step, step_run, normalized_steps)
             )
             continue
+        own = _normalize_planned_step(
+            step_result,
+            step_run,
+            result.run,
+            normalized_by_execution_id,
+            validate_semantic_model=validate_semantic_model,
+        )
         normalized_steps.append(
-            _normalize_planned_step(
-                step_result,
-                step_run,
-                result.run,
-                normalized_by_execution_id,
-                validate_semantic_model=validate_semantic_model,
-            )
+            _materialize_enrichment_view(step_run, own, normalized_steps)
         )
 
     return WorkflowPortfolioResult(
