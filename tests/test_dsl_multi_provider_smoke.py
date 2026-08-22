@@ -1,6 +1,6 @@
 """End-to-end DSL candidate discovery feeding cross-provider enrichment."""
 
-from alertissimo.orchestration.runtime import CandidateInputRef
+from alertissimo.orchestration.runtime import CandidateInputRef, MaterialInputRef
 from scripts.smoke.reporting import report_data
 from scripts.smoke.scenarios import DSL_MULTI_PROVIDER_SOURCE, run_scenario
 
@@ -69,10 +69,12 @@ def test_dsl_multi_provider_discovers_candidate_then_late_binds_enrichments():
     assert fink_plan.candidate_input_from == CandidateInputRef(step_index=0)
     assert lasair_plan.candidate_input_from == CandidateInputRef(step_index=0)
 
-    # Step-level input tracks a different lineage: which semantic material snapshot
-    # each targetless Get enriches. Fink extends Search; Lasair extends Search+Fink.
-    assert result.run.steps[1].candidate_input_from == CandidateInputRef(step_index=0)
-    assert result.run.steps[2].candidate_input_from == CandidateInputRef(step_index=1)
+    # Semantic material lineage is a separate runtime relation. Fink extends Search;
+    # Lasair extends the already accumulated Search+Fink snapshot.
+    assert result.run.steps[1].candidate_input_from is None
+    assert result.run.steps[2].candidate_input_from is None
+    assert result.run.steps[1].material_input_from == MaterialInputRef(step_index=0)
+    assert result.run.steps[2].material_input_from == MaterialInputRef(step_index=1)
     assert fink_plan.execution_reuse_from is None
     assert lasair_plan.execution_reuse_from is None
 
