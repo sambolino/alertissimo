@@ -484,9 +484,6 @@ def _mark_candidate_dependencies(
             rewritten[step_index] = current_run.model_copy(
                 update={
                     "endpoint_plans": tuple(current_plans),
-                    "candidate_input_from": CandidateInputRef(
-                        step_index=current_material_index
-                    ),
                     "material_input_from": MaterialInputRef(
                         step_index=current_material_index
                     ),
