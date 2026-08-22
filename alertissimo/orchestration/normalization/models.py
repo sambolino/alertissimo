@@ -162,51 +162,45 @@ def _merge_portfolio_group(
     )
 
 
-def _consolidate_step_portfolios(
-    executions: tuple["ExecutionPortfolioResult", ...],
-) -> tuple[Portfolio, ...]:
-    """Build the semantic object view across all physical executions of one Step.
+def consolidate_portfolios(portfolios: tuple[Portfolio, ...]) -> tuple[Portfolio, ...]:
+    """Consolidate one semantic Portfolio material view by exact object identity.
+
+    The operation is intentionally independent of workflow-Step ownership. It is
+    used both for the ordinary semantic view of one Step's own normalized physical
+    executions and for an explicitly materialized snapshot that combines inherited
+    semantic material with evidence retrieved by the current Step.
 
     Portfolios merge only when their primary summary records establish the same
-    ``(origin, object_id)``. The first occurrence determines output order.
-    Unidentified or ambiguous Portfolios remain independent. Source records,
-    edges, and execution provenance are retained with their original internal IDs;
-    no record-level semantic fields are fused or guessed.
-
-    Portfolio adjacency edges are rewritten from execution-local constituent IDs to
-    the final semantic Portfolio IDs. This keeps the connection plane valid when
-    identity-equivalent execution-local Portfolios acquire a new consolidated ID.
+    ``(origin, object_id)``. Unidentified or ambiguous Portfolios remain distinct.
+    Records, edges, and execution provenance are unioned by their immutable internal
+    IDs; no record-level fields are fused or guessed.
     """
 
     groups: dict[tuple[str, ...], list[Portfolio]] = {}
     order: list[tuple[str, ...]] = []
-    for execution in executions:
-        for portfolio in execution.portfolios:
-            identity = summary_object_identity(portfolio)
-            if identity is None:
-                key = ("portfolio", portfolio.internal_portfolio_id.value)
-            else:
-                key = ("identity", *identity)
-            if key not in groups:
-                groups[key] = []
-                order.append(key)
-            groups[key].append(portfolio)
+    for portfolio in portfolios:
+        identity = summary_object_identity(portfolio)
+        if identity is None:
+            key = ("portfolio", portfolio.internal_portfolio_id.value)
+        else:
+            key = ("identity", *identity)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(portfolio)
 
-    unique_groups = {
-        key: _unique_portfolios(groups[key])
-        for key in order
-    }
+    unique_groups = {key: _unique_portfolios(groups[key]) for key in order}
     final_ids: dict[tuple[str, ...], InternalPortfolioId] = {}
     portfolio_id_map: dict[InternalPortfolioId, InternalPortfolioId] = {}
     for key in order:
-        portfolios = unique_groups[key]
+        grouped = unique_groups[key]
         final_id = (
-            portfolios[0].internal_portfolio_id
-            if len(portfolios) == 1
+            grouped[0].internal_portfolio_id
+            if len(grouped) == 1
             else InternalPortfolioId(f"portfolio:{uuid4().hex}")
         )
         final_ids[key] = final_id
-        for portfolio in portfolios:
+        for portfolio in grouped:
             existing = portfolio_id_map.get(portfolio.internal_portfolio_id)
             if existing is not None and existing != final_id:
                 raise ValueError(
@@ -225,6 +219,20 @@ def _consolidate_step_portfolios(
     )
 
 
+def _consolidate_step_portfolios(
+    executions: tuple["ExecutionPortfolioResult", ...],
+) -> tuple[Portfolio, ...]:
+    """Build one Step's semantic view from that Step's own physical executions."""
+
+    return consolidate_portfolios(
+        tuple(
+            portfolio
+            for execution in executions
+            for portfolio in execution.portfolios
+        )
+    )
+
+
 @dataclass(frozen=True)
 class ExecutionPortfolioResult:
     """Zero or more object Portfolios produced by one physical execution."""
@@ -237,20 +245,26 @@ class ExecutionPortfolioResult:
 class StepPortfolioResult:
     """Normalized output for one workflow Step occurrence.
 
-    ``executions`` preserves the physical/audit grouping exactly as normalized from
-    provider calls. ``portfolios`` is the semantic Step view: execution-local
-    Portfolios with the same positively established ``(origin, object_id)`` are
-    consolidated into one object Portfolio while retaining all record, edge, and
-    execution provenance.
+    ``executions`` preserves the physical/audit grouping owned by this Step exactly
+    as normalized from its provider calls. ``portfolios`` is the semantic Step view.
+
+    Normally the semantic view is consolidated directly from ``executions``. When a
+    Step enriches or locally transforms an earlier semantic view,
+    ``materialized_portfolios`` stores that immutable occurrence-aligned snapshot.
+    This keeps historical Step views unchanged while avoiding the false claim that
+    inherited provider executions physically belong to the later Step.
     """
 
     step_index: int
     executions: tuple[ExecutionPortfolioResult, ...]
+    materialized_portfolios: tuple[Portfolio, ...] | None = None
 
     @cached_property
     def portfolios(self) -> tuple[Portfolio, ...]:
-        """Return the cached per-object semantic view across this Step's executions."""
+        """Return the cached per-object semantic view for this Step occurrence."""
 
+        if self.materialized_portfolios is not None:
+            return consolidate_portfolios(self.materialized_portfolios)
         return _consolidate_step_portfolios(self.executions)
 
 
@@ -266,5 +280,6 @@ __all__ = [
     "ExecutionPortfolioResult",
     "StepPortfolioResult",
     "WorkflowPortfolioResult",
+    "consolidate_portfolios",
     "summary_object_identity",
 ]

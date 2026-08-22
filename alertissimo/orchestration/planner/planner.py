@@ -45,6 +45,7 @@ from alertissimo.orchestration.runtime.models import (
     CandidateInputRef,
     EndpointPlan,
     EndpointPlanRef,
+    MaterialInputRef,
     StepRun,
     StepRunState,
     WorkflowRun,
@@ -415,16 +416,19 @@ def _mark_candidate_dependencies(
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Mark reuse, late binding, filtering, and matching over candidate views.
+    """Mark candidate and semantic-material lineage through one staged workflow.
 
     The candidate population is created by a SearchStep and may be reduced by an
-    explicit FilterStep or MatchStep. Provider GetSteps may materialize evidence
-    used by a later local operation, but retrieval alone does not silently redefine
-    the population. FilterStep consumes the latest materialized semantic view and
-    keeps only candidates satisfying its unary predicate. MatchStep consumes the
-    latest materialized semantic view and keeps only candidates participating in an
-    accepted pairwise relation. Each filtering operation becomes the candidate owner
-    for later targetless GetSteps.
+    explicit FilterStep or MatchStep. A targetless provider GetStep does not change
+    that population: each physical plan binds IDs from the current candidate owner.
+    The Step occurrence separately records the latest semantic material view it
+    enriches. Its semantic output can therefore be an immutable accumulated snapshot
+    while its physical execution list remains occurrence-local.
+
+    FilterStep consumes the latest materialized semantic view and keeps only
+    candidates satisfying its unary predicate. MatchStep does the analogous pairwise
+    filtering. Each filtering operation then becomes both the candidate owner and
+    the latest materialized view for subsequent Steps.
     """
 
     rewritten = list(planned_steps)
@@ -490,7 +494,11 @@ def _mark_candidate_dependencies(
             continue
 
         search_step = workflow.steps[active_search_index]
-        if not isinstance(search_step, SearchStep) or current_candidate_index is None:
+        if (
+            not isinstance(search_step, SearchStep)
+            or current_candidate_index is None
+            or current_material_index is None
+        ):
             active_search_index = None
             current_candidate_index = None
             current_material_index = None
@@ -555,7 +563,12 @@ def _mark_candidate_dependencies(
             )
 
         rewritten[step_index] = current_run.model_copy(
-            update={"endpoint_plans": tuple(current_plans)}
+            update={
+                "endpoint_plans": tuple(current_plans),
+                "material_input_from": MaterialInputRef(
+                    step_index=current_material_index
+                ),
+            }
         )
         current_material_index = step_index
 

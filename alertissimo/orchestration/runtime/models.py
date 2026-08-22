@@ -46,12 +46,23 @@ class EndpointPlanRef(RuntimeModel):
 
 
 class CandidateInputRef(RuntimeModel):
-    """Reference to an earlier semantic Step whose output defines candidate input.
+    """Reference to an earlier Step whose surviving objects supply target IDs.
 
-    On an :class:`EndpointPlan` this supplies runtime target identities for a new
-    physical call. On a local candidate-transforming :class:`StepRun` it identifies
-    the earlier normalized semantic view that the local Step consumes. Neither use
-    mutates WorkflowIR or implies physical execution reuse.
+    On an :class:`EndpointPlan` this is a physical binding dependency. On a local
+    candidate-transforming :class:`StepRun` it identifies the earlier candidate
+    population consumed by Filter/Match. It says nothing about provider execution
+    reuse or semantic evidence accumulation.
+    """
+
+    step_index: int = Field(ge=0)
+
+
+class MaterialInputRef(RuntimeModel):
+    """Reference to an earlier Step semantic view that a later Step enriches.
+
+    This is deliberately distinct from :class:`CandidateInputRef`: a provider Get
+    may bind target IDs from an older Search/Match candidate owner while extending
+    the immediately preceding accumulated semantic Portfolio snapshot.
     """
 
     step_index: int = Field(ge=0)
@@ -103,6 +114,11 @@ class StepRunState(StrEnum):
 class StepRun(RuntimeModel):
     """Runtime state for one semantic Step occurrence.
 
+    ``candidate_input_from`` is reserved for local candidate-transforming Steps such
+    as Filter and Match. ``material_input_from`` is orthogonal: a targetless provider
+    retrieval may preserve the same candidate population while extending an earlier
+    semantic Portfolio snapshot.
+
     ``execution_plan_indexes`` aligns successful physical results in
     ``execution_ids`` with the endpoint-plan indexes that produced them. It is
     normally ``0..N-1``; sparse indexes occur when supplementary plans fail or
@@ -119,6 +135,7 @@ class StepRun(RuntimeModel):
     state: StepRunState = StepRunState.PENDING
     endpoint_plans: tuple[EndpointPlan, ...] = ()
     candidate_input_from: CandidateInputRef | None = None
+    material_input_from: MaterialInputRef | None = None
     execution_ids: tuple[str, ...] = ()
     execution_plan_indexes: tuple[int, ...] = ()
     vacuous_plan_indexes: tuple[int, ...] = ()
@@ -183,18 +200,27 @@ class WorkflowRun(RuntimeModel):
                 f"(expected {expected}, got {actual})"
             )
         for step_run in self.steps:
-            local_candidate_reference = step_run.candidate_input_from
-            if local_candidate_reference is not None:
-                if local_candidate_reference.step_index >= step_run.step_index:
+            candidate_reference = step_run.candidate_input_from
+            if candidate_reference is not None:
+                if candidate_reference.step_index >= step_run.step_index:
                     raise ValueError(
-                        "local candidate input must reference an earlier Step occurrence "
+                        "candidate input must reference an earlier Step occurrence "
                         f"(step_index {step_run.step_index}, reference step_index "
-                        f"{local_candidate_reference.step_index})"
+                        f"{candidate_reference.step_index})"
                     )
-                if local_candidate_reference.step_index >= len(self.steps):
+                if candidate_reference.step_index >= len(self.steps):
+                    raise ValueError("candidate input references unknown Step occurrence")
+
+            material_reference = step_run.material_input_from
+            if material_reference is not None:
+                if material_reference.step_index >= step_run.step_index:
                     raise ValueError(
-                        "local candidate input references unknown Step occurrence"
+                        "material input must reference an earlier Step occurrence "
+                        f"(step_index {step_run.step_index}, reference step_index "
+                        f"{material_reference.step_index})"
                     )
+                if material_reference.step_index >= len(self.steps):
+                    raise ValueError("material input references unknown Step occurrence")
 
             for plan_index, plan in enumerate(step_run.endpoint_plans):
                 reference = plan.execution_reuse_from
@@ -223,9 +249,7 @@ class WorkflowRun(RuntimeModel):
                             f"reference step_index {candidate_reference.step_index})"
                         )
                     if candidate_reference.step_index >= len(self.steps):
-                        raise ValueError(
-                            "candidate input references unknown Step occurrence"
-                        )
+                        raise ValueError("candidate input references unknown Step occurrence")
         return self
 
     @classmethod
@@ -248,6 +272,7 @@ __all__ = [
     "CandidateInputRef",
     "EndpointPlan",
     "EndpointPlanRef",
+    "MaterialInputRef",
     "PredicateRealization",
     "StepRun",
     "StepRunState",
