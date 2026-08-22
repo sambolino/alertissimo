@@ -15,6 +15,7 @@ from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint
 from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep
+from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
     StepPortfolioResult,
@@ -222,10 +223,16 @@ def execute_staged_workflow_run(
     normalized candidate Portfolios, restricted to candidates with the same origin
     as that physical plan. A candidate-dependent plan whose origin has no candidates
     is recorded as vacuous rather than invoked with an empty target collection.
-    A FilterStep consumes its StepRun-level ``candidate_input_from`` view locally,
+
+    FilterStep consumes its StepRun-level ``candidate_input_from`` view locally,
     creates no physical execution, and its surviving semantic identities may feed
-    later provider calls. DeriveStep and MatchStep likewise own no physical call;
-    they remain planned until the post-normalization local semantic phase executes.
+    later provider calls. MatchStep also owns no physical call. When a later Step
+    depends on Match's filtered population, the staged runner evaluates that local
+    relation just far enough to expose the surviving candidate identities. The
+    Match Step itself remains planned with an empty execution slot so the normal
+    post-normalization local semantic phase still owns its occurrence-aligned view,
+    edges, and final succeeded state. Terminal MatchSteps are not evaluated twice.
+    DeriveStep remains entirely deferred to that post-normalization phase.
 
     Required provider plans remain fail-fast. A supplementary plan may fail without
     failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
@@ -251,9 +258,52 @@ def execute_staged_workflow_run(
         step_index = original_step_run.step_index
         step = run.step_at(step_index)
 
-        if isinstance(step, (DeriveStep, MatchStep)):
+        if isinstance(step, DeriveStep):
             bindings.append(StepBindingResult(step_index=step_index, bound_calls=()))
             step_results.append(StepExecutionResult(step_index=step_index, executions=()))
+            continue
+
+        if isinstance(step, MatchStep):
+            bindings.append(StepBindingResult(step_index=step_index, bound_calls=()))
+            step_results.append(StepExecutionResult(step_index=step_index, executions=()))
+            if step_index not in candidate_sources:
+                continue
+            try:
+                reference = original_step_run.candidate_input_from
+                if reference is None:
+                    raise CandidateFlowError(
+                        f"match step_index {step_index} has no candidate input reference"
+                    )
+                try:
+                    source_view = candidate_views_by_step[reference.step_index]
+                except KeyError as error:
+                    raise CandidateFlowError(
+                        "match candidate input is not available from referenced Step "
+                        f"{reference.step_index} for step_index {step_index}"
+                    ) from error
+                view = match_step_portfolios(
+                    step,
+                    source_view,
+                    step_index=step_index,
+                )
+                candidate_views_by_step[step_index] = view
+                candidate_ids_by_origin_by_step[step_index] = (
+                    _candidate_ids_by_origin_from_view(view)
+                )
+            except Exception as error:
+                failed = original_step_run.model_copy(
+                    update={
+                        "state": StepRunState.FAILED,
+                        "execution_ids": (),
+                        "error": _error_description(error),
+                    }
+                )
+                updated_run = _updated_run(updated_run, failed)
+                raise WorkflowExecutionError(
+                    f"step_index {step_index} execution failed: {_error_description(error)}",
+                    workflow_run=updated_run,
+                    completed_steps=tuple(step_results),
+                ) from error
             continue
 
         if isinstance(step, FilterStep):
