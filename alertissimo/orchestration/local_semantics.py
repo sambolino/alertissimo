@@ -74,7 +74,7 @@ def _rematerialize_provider_step(
     the finalized Filter/Match/derivation state rather than an earlier placeholder.
     """
 
-    reference = step_run.candidate_input_from
+    reference = step_run.material_input_from
     if reference is None or not step_run.endpoint_plans:
         return
     if reference.step_index >= step_index:
