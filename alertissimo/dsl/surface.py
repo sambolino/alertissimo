@@ -144,11 +144,12 @@ class FilterClause(SurfaceModel):
 
 
 class RequirementClause(SurfaceModel):
-    """Semantic requirement, optionally carrying one scoped predicate expression.
+    """Semantic requirement, optionally carrying one scoped predicate block.
 
-    A predicate-bearing requirement means both "ensure this semantic product" and
-    "select/refine candidates using this condition". Whether the provider can
-    satisfy both in one call is a planner concern.
+    ``predicates`` are conjunctive conditions over the requested product. A
+    predicate-bearing requirement therefore means both "ensure this semantic
+    product" and "select/refine candidates using these conditions". Whether the
+    provider can satisfy both in one call is a planner concern.
     """
 
     kind: Literal["with"] = "with"
