@@ -1,15 +1,19 @@
-"""Provider-independent endpoint eligibility for existence confirmation."""
+"""Provider-independent endpoint eligibility for confirmation."""
 
 from __future__ import annotations
+
+import re
 
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
     semantic_record_noun_matches,
 )
+from alertissimo.orchestration.ir.predicates import Predicate, iter_semantic_references
 
 
 _HISTORY_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
+_DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
 
 
 def _emits_object_evidence(
@@ -25,20 +29,81 @@ def _emits_object_evidence(
     )
 
 
+def _record_parts(semantic_type: str) -> tuple[str, str | None, str | None]:
+    noun, at, qualifiers = semantic_type.partition("@")
+    if not at:
+        return noun, None, None
+    producer, colon, channel = qualifiers.partition(":")
+    return noun, producer or None, (channel or None) if colon else None
+
+
+def _qualifier_matches(actual: str | None, requested: str | None) -> bool:
+    if requested is None:
+        return True
+    if actual is None:
+        return False
+    return actual.lower() == requested.lower() or bool(_DYNAMIC_QUALIFIER.fullmatch(actual))
+
+
+def _emits_reference(
+    graph: CapabilityGraph,
+    endpoint: EndpointCapability,
+    *,
+    noun: str,
+    producer: str | None,
+    channel: str | None,
+) -> bool:
+    for record in graph.records_for_endpoint(
+        endpoint.broker, endpoint.origin, endpoint.endpoint
+    ):
+        actual_noun, actual_producer, actual_channel = _record_parts(
+            record.semantic_record_type
+        )
+        if actual_noun != noun:
+            continue
+        if not _qualifier_matches(actual_producer, producer):
+            continue
+        if not _qualifier_matches(actual_channel, channel):
+            continue
+        return True
+    return False
+
+
+def _emits_predicate_evidence(
+    graph: CapabilityGraph,
+    endpoint: EndpointCapability,
+    predicate: Predicate,
+) -> bool:
+    """Return whether one endpoint can materialize every predicate record selector."""
+
+    references = tuple(iter_semantic_references(predicate))
+    return bool(references) and all(
+        _emits_reference(
+            graph,
+            endpoint,
+            noun=reference.semantic_type,
+            producer=reference.producer,
+            channel=reference.channel,
+        )
+        for reference in references
+    )
+
+
 def confirmation_endpoints(
     graph: CapabilityGraph,
     *,
     broker: str | None,
     origin: str | None,
+    predicate: Predicate | None = None,
 ) -> tuple[EndpointCapability, ...]:
-    """Return the best registered exact-object evidence endpoints for one source.
+    """Return the best registered target-bound evidence endpoints for one source.
 
-    Confirmation needs a target-bindable provider call whose normalized result can
-    attest the current canonical object identity. Prefer explicit object lookups.
-    If a provider has no target-bindable object lookup, a complete target-bound
-    lightcurve/history operation is an acceptable representation because it carries
-    the same object's normalized summary/detection evidence. A final semantic-
-    evidence tier remains for registries whose operation naming is less specific.
+    Bare confirmation asks only whether the exact candidate exists, so it prefers
+    explicit object lookups and otherwise accepts target-bound history/object
+    evidence. Predicate confirmation is stricter: a participating endpoint must be
+    able to materialize every semantic record selector referenced by the canonical
+    predicate. Missing predicate capability is therefore not interpreted as a
+    negative vote.
 
     The tiers are semantic/provider-contract driven; no broker or endpoint name is
     special-cased here.
@@ -49,6 +114,20 @@ def confirmation_endpoints(
         for endpoint in graph.query_endpoints(broker=broker, origin=origin)
         if "target_id" in endpoint.binding_roles
     )
+
+    if predicate is not None:
+        compatible = tuple(
+            endpoint
+            for endpoint in bindable
+            if _emits_predicate_evidence(graph, endpoint, predicate)
+        )
+        object_lookup = tuple(
+            endpoint
+            for endpoint in compatible
+            if "object_lookup" in endpoint.operation_types
+        )
+        return object_lookup or compatible
+
     object_lookup = tuple(
         endpoint
         for endpoint in bindable
