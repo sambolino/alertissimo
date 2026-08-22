@@ -379,11 +379,11 @@ def main() -> int:
     except Exception as error:
         status = _exception_status(error)
         print(f"{status}: {type(error).__name__}: {error}")
-        return 1 if status == "FAIL" else 0
+        return 1
 
     if not confirmed:
         print(f"INCONCLUSIVE: {detail}")
-        return 0
+        return 3
 
     print(f"PASS: {detail}")
     return 0

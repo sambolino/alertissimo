@@ -12,6 +12,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "dsl-match-spatial",
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
+        "dsl-confirm-existence-quorum",
         "dsl-classification-reuse",
         "explicit-multi-provider",
         "explicit-multi-target",
@@ -31,6 +32,19 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         if scenario.name == "partial-failure-control"
     )
     assert partial_failure.live is False
+
+
+def test_confirm_live_scenario_is_registered_as_the_real_live_script():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-confirm-existence-quorum"
+    )
+
+    command = scenario.command(live_acceptance.REPO_ROOT)
+    assert scenario.live is True
+    assert scenario.required_env == ()
+    assert "live_dsl_confirm.py" in " ".join(command)
 
 
 def test_crossmatch_live_scenario_is_registered_and_importable():
