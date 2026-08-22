@@ -419,10 +419,16 @@ class UtilityScoreStep(AnalyzeStep):
 
 
 class ConfirmStep(Step):
-    """Require corroboration from distinct brokers over the selected semantic target."""
+    """Require corroboration from distinct brokers over an entity or proposition.
+
+    ``predicate=None`` is existence confirmation for the selected semantic target.
+    When ``predicate`` is present, each broker contributes a vote only when its own
+    normalized evidence satisfies that canonical predicate.
+    """
 
     op: Literal["confirm"] = "confirm"
     target: TargetSelector | None = None
+    predicate: Predicate | None = None
     required_agreement: Annotated[int, Field(ge=1)] = 1
 
     @model_validator(mode="after")
