@@ -10,7 +10,7 @@ The literal DSL is::
     objects from lsst, ztf via alerce
     inside (<ra>, <dec>, <search radius>)
     match on position inside <match radius>
-    with lightcurve via fink
+    with lightcurve from ztf via fink
 
 ALeRCE performs the live LSST+ZTF discovery. MatchStep executes locally over
 normalized semantic positions. Fink/ZTF then receives only the matched ZTF
@@ -101,7 +101,7 @@ def main() -> int:
     dsl = f"""objects from lsst, ztf via alerce
 inside ({args.ra}, {args.dec}, {args.search_radius_arcsec}arcsec)
 match on position inside {args.match_radius_arcsec}arcsec
-with lightcurve via fink
+with lightcurve from ztf via fink
 """
     print("=== DSL ===")
     print(dsl.rstrip())
@@ -136,7 +136,7 @@ with lightcurve via fink
 
     get_plans = get_run.endpoint_plans
     if len(get_plans) != 1:
-        raise RuntimeError(f"expected one downstream Fink plan, found {len(get_plans)}")
+        raise RuntimeError(f"expected one downstream Fink/ZTF plan, found {len(get_plans)}")
     get_plan = get_plans[0]
     if (get_plan.broker, get_plan.origin, get_plan.endpoint) != (
         "fink",
@@ -164,7 +164,7 @@ with lightcurve via fink
                 f"  {plan.broker}/{plan.origin}/{plan.endpoint} "
                 f"candidate_input_from={plan.candidate_input_from!r}"
             )
-    print("OK: downstream Fink plan depends on MatchStep, not Search")
+    print("OK: downstream Fink/ZTF plan depends on MatchStep, not Search")
     print()
 
     if args.plan_only:
