@@ -213,13 +213,13 @@ def _materialize_enrichment_view(
 ) -> StepPortfolioResult:
     """Combine inherited semantic material with this Step's newly normalized data.
 
-    The StepRun-level ``candidate_input_from`` is the semantic view this targetless
-    provider enrichment extends. Physical EndpointPlan candidate references remain a
-    separate concern and continue to determine which object IDs are sent to provider
-    calls. Historical source Steps are never mutated.
+    ``material_input_from`` is the semantic view this targetless provider enrichment
+    extends. Physical EndpointPlan candidate references remain a separate concern
+    and continue to determine which object IDs are sent to provider calls. Historical
+    source Steps are never mutated.
     """
 
-    reference = step_run.candidate_input_from
+    reference = step_run.material_input_from
     if reference is None:
         return own
     try:
@@ -377,6 +377,7 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             if (
                 step_run.endpoint_plans
                 or step_run.candidate_input_from is not None
+                or step_run.material_input_from is not None
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
                 or step_run.vacuous_plan_indexes
@@ -384,8 +385,8 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             ):
                 raise WorkflowNormalizationAlignmentError(
                     f"derive step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, candidate input, execution IDs, execution-plan "
-                    "indexes, vacuous-plan indexes, or execution results"
+                    "endpoint plans, candidate/material input, execution IDs, "
+                    "execution-plan indexes, vacuous-plan indexes, or execution results"
                 )
             continue
 
@@ -402,16 +403,17 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     "candidate/material Step"
                 )
             if (
-                step_run.endpoint_plans
+                step_run.material_input_from is not None
+                or step_run.endpoint_plans
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
                 or step_run.vacuous_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
-                    f"match step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, execution IDs, execution-plan indexes, "
-                    "vacuous-plan indexes, or execution results"
+                    f"match step_index {step_run.step_index} must have no material "
+                    "input, physical endpoint plans, execution IDs, execution-plan "
+                    "indexes, vacuous-plan indexes, or execution results"
                 )
             continue
 
@@ -426,21 +428,27 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     f"filter step_index {step_run.step_index} has no candidate input"
                 )
             if (
-                step_run.endpoint_plans
+                step_run.material_input_from is not None
+                or step_run.endpoint_plans
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
                 or step_run.vacuous_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
-                    f"filter step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, execution IDs, execution-plan indexes, "
-                    "vacuous-plan indexes, or execution results"
+                    f"filter step_index {step_run.step_index} must have no material "
+                    "input, physical endpoint plans, execution IDs, execution-plan "
+                    "indexes, vacuous-plan indexes, or execution results"
                 )
             continue
 
         if step_run.candidate_input_from is not None:
-            reference = step_run.candidate_input_from
+            raise WorkflowNormalizationAlignmentError(
+                f"provider step_index {step_run.step_index} must not carry a StepRun "
+                "candidate input; candidate IDs belong on EndpointPlans"
+            )
+        if step_run.material_input_from is not None:
+            reference = step_run.material_input_from
             if reference.step_index >= step_run.step_index:
                 raise WorkflowNormalizationAlignmentError(
                     f"provider step_index {step_run.step_index} material input must "
