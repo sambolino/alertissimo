@@ -20,9 +20,11 @@ from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
+    consolidate_portfolios,
     normalize_execution,
     normalize_workflow_execution,
     prune_portfolios,
+    summary_object_identity,
 )
 from alertissimo.orchestration.runtime import (
     StepExecutionResult,
@@ -124,9 +126,10 @@ def _candidate_view_from_step(
     step_run: StepRun,
     result: StepExecutionResult,
     *,
+    material_source: StepPortfolioResult | None = None,
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
-    """Build the semantic candidate view needed during staged execution."""
+    """Build the semantic candidate/material view needed during staged execution."""
 
     plan_indexes = _execution_plan_indexes(step_run, result)
     executions: list[ExecutionPortfolioResult] = []
@@ -146,28 +149,40 @@ def _candidate_view_from_step(
                 portfolios=portfolios,
             )
         )
-    return StepPortfolioResult(
+    own = StepPortfolioResult(
         step_index=step_run.step_index,
         executions=tuple(executions),
+    )
+    if material_source is None:
+        return own
+    return StepPortfolioResult(
+        step_index=step_run.step_index,
+        executions=own.executions,
+        materialized_portfolios=consolidate_portfolios(
+            material_source.portfolios + own.portfolios
+        ),
     )
 
 
 def _candidate_ids_by_origin_from_view(
     view: StepPortfolioResult,
 ) -> dict[str, tuple[str, ...]]:
-    """Read unique object identities grouped by their normalized execution origin."""
+    """Read unique object identities from the Step's semantic Portfolio view."""
 
     ids_by_origin: dict[str, list[str]] = {}
     seen_by_origin: dict[str, set[str]] = {}
-    for execution in view.executions:
-        for portfolio in execution.portfolios:
-            origin = _candidate_origin(portfolio)
-            candidate_id = _candidate_id(portfolio)
-            seen = seen_by_origin.setdefault(origin, set())
-            if candidate_id in seen:
-                continue
-            seen.add(candidate_id)
-            ids_by_origin.setdefault(origin, []).append(candidate_id)
+    for portfolio in view.portfolios:
+        identity = summary_object_identity(portfolio)
+        if identity is None:
+            raise CandidateFlowError(
+                "candidate Portfolio must expose one unambiguous summary object identity"
+            )
+        origin, candidate_id = identity
+        seen = seen_by_origin.setdefault(origin, set())
+        if candidate_id in seen:
+            continue
+        seen.add(candidate_id)
+        ids_by_origin.setdefault(origin, []).append(candidate_id)
     return {origin: tuple(ids) for origin, ids in ids_by_origin.items()}
 
 
@@ -182,6 +197,7 @@ def _filter_view(
                 "legacy FilterStep criteria have no defined local predicate evaluator"
             )
         executions = source.executions
+        materialized = source.portfolios
     else:
         executions = tuple(
             ExecutionPortfolioResult(
@@ -190,7 +206,12 @@ def _filter_view(
             )
             for execution in source.executions
         )
-    return StepPortfolioResult(step_index=step_index, executions=executions)
+        materialized = prune_portfolios(source.portfolios, step.predicate)
+    return StepPortfolioResult(
+        step_index=step_index,
+        executions=executions,
+        materialized_portfolios=materialized,
+    )
 
 
 def _candidate_source_indices(run: WorkflowRun) -> frozenset[int]:
@@ -224,15 +245,21 @@ def execute_staged_workflow_run(
     as that physical plan. A candidate-dependent plan whose origin has no candidates
     is recorded as vacuous rather than invoked with an empty target collection.
 
-    FilterStep consumes its StepRun-level ``candidate_input_from`` view locally,
-    creates no physical execution, and its surviving semantic identities may feed
-    later provider calls. MatchStep also owns no physical call. When a later Step
-    depends on Match's filtered population, the staged runner evaluates that local
-    relation just far enough to expose the surviving candidate identities. The
-    Match Step itself remains planned with an empty execution slot so the normal
-    post-normalization local semantic phase still owns its occurrence-aligned view,
-    edges, and final succeeded state. Terminal MatchSteps are not evaluated twice.
-    DeriveStep remains entirely deferred to that post-normalization phase.
+    A provider StepRun-level ``candidate_input_from`` has a different, semantic
+    role: it identifies the preceding materialized Portfolio view that this Step
+    enriches. Candidate IDs still come only from each EndpointPlan's reference. This
+    distinction lets sequential Gets accumulate evidence without redefining the
+    candidate population or claiming inherited calls as current physical work.
+
+    FilterStep consumes its StepRun-level view locally, creates no physical execution,
+    and its surviving semantic identities may feed later provider calls. MatchStep
+    also owns no physical call. When a later Step depends on Match's filtered
+    population, the staged runner evaluates that local relation just far enough to
+    expose the surviving candidate identities. The Match Step itself remains planned
+    with an empty execution slot so the normal post-normalization local semantic
+    phase still owns its occurrence-aligned view, edges, and final succeeded state.
+    Terminal MatchSteps are not evaluated twice. DeriveStep remains entirely
+    deferred to that post-normalization phase.
 
     Required provider plans remain fail-fast. A supplementary plan may fail without
     failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
@@ -383,9 +410,23 @@ def execute_staged_workflow_run(
             )
             updated_run = _updated_run(updated_run, succeeded)
             if step_index in candidate_sources:
-                view = StepPortfolioResult(step_index=step_index, executions=())
+                material_source = None
+                reference = succeeded.candidate_input_from
+                if reference is not None:
+                    material_source = candidate_views_by_step.get(reference.step_index)
+                view = StepPortfolioResult(
+                    step_index=step_index,
+                    executions=(),
+                    materialized_portfolios=(
+                        material_source.portfolios if material_source is not None else None
+                    ),
+                )
                 candidate_views_by_step[step_index] = view
-                candidate_ids_by_origin_by_step[step_index] = {}
+                candidate_ids_by_origin_by_step[step_index] = (
+                    _candidate_ids_by_origin_from_view(view)
+                    if view.portfolios
+                    else {}
+                )
             continue
 
         calls = []
@@ -490,9 +531,20 @@ def execute_staged_workflow_run(
         updated_run = _updated_run(updated_run, succeeded)
 
         if step_index in candidate_sources:
+            material_source = None
+            reference = succeeded.candidate_input_from
+            if reference is not None:
+                try:
+                    material_source = candidate_views_by_step[reference.step_index]
+                except KeyError as error:
+                    raise CandidateFlowError(
+                        "semantic material input is not available from referenced Step "
+                        f"{reference.step_index} for step_index {step_index}"
+                    ) from error
             view = _candidate_view_from_step(
                 succeeded,
                 result,
+                material_source=material_source,
                 validate_semantic_model=validate_semantic_model,
             )
             candidate_views_by_step[step_index] = view
