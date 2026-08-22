@@ -8,12 +8,28 @@ from scripts.smoke.scenarios import DSL_MULTI_PROVIDER_SOURCE, run_scenario
 def _object_ids(step_output):
     return {
         str(value)
-        for execution in step_output.executions
-        for portfolio in execution.portfolios
+        for portfolio in step_output.portfolios
         for record in portfolio.records
         if record.semantic_type.split("@", 1)[0] == "summary"
         for key, value in record.fields.items()
         if key == "identity.object_id" and value is not None
+    }
+
+
+def _semantic_execution_endpoints(step_output):
+    return {
+        (execution.broker, execution.origin, execution.endpoint)
+        for portfolio in step_output.portfolios
+        for execution in portfolio.executions
+    }
+
+
+def _own_execution_endpoints(step_output):
+    return {
+        (execution.broker, execution.origin, execution.endpoint)
+        for execution_group in step_output.executions
+        for portfolio in execution_group.portfolios
+        for execution in portfolio.executions
     }
 
 
@@ -47,8 +63,16 @@ def test_dsl_multi_provider_discovers_candidate_then_late_binds_enrichments():
         lasair_plan.origin,
         lasair_plan.endpoint,
     ) == ("lasair", "ztf", "lightcurves")
+
+    # Physical target IDs keep coming from the candidate owner: neither retrieval
+    # silently redefines the object population.
     assert fink_plan.candidate_input_from == CandidateInputRef(step_index=0)
     assert lasair_plan.candidate_input_from == CandidateInputRef(step_index=0)
+
+    # Step-level input tracks a different lineage: which semantic material snapshot
+    # each targetless Get enriches. Fink extends Search; Lasair extends Search+Fink.
+    assert result.run.steps[1].candidate_input_from == CandidateInputRef(step_index=0)
+    assert result.run.steps[2].candidate_input_from == CandidateInputRef(step_index=1)
     assert fink_plan.execution_reuse_from is None
     assert lasair_plan.execution_reuse_from is None
 
@@ -62,9 +86,32 @@ def test_dsl_multi_provider_discovers_candidate_then_late_binds_enrichments():
     }
 
     assert result.normalized is not None
-    assert _object_ids(result.normalized.steps[0]) == {"ZTF20acpwljl"}
-    assert _object_ids(result.normalized.steps[1]) == {"ZTF20acpwljl"}
-    assert _object_ids(result.normalized.steps[2]) == {"ZTF20acpwljl"}
+    search_view, fink_view, lasair_view = result.normalized.steps
+    assert _object_ids(search_view) == {"ZTF20acpwljl"}
+    assert _object_ids(fink_view) == {"ZTF20acpwljl"}
+    assert _object_ids(lasair_view) == {"ZTF20acpwljl"}
+
+    # Historical occurrence views remain immutable, while each enrichment exposes
+    # the full semantic material available at that point in the workflow.
+    assert _semantic_execution_endpoints(search_view) == {
+        ("lasair", "ztf", "cone")
+    }
+    assert _semantic_execution_endpoints(fink_view) == {
+        ("lasair", "ztf", "cone"),
+        ("fink", "ztf", "objects"),
+    }
+    assert _semantic_execution_endpoints(lasair_view) == {
+        ("lasair", "ztf", "cone"),
+        ("fink", "ztf", "objects"),
+        ("lasair", "ztf", "lightcurves"),
+    }
+
+    # Physical ownership does not get rewritten to make those snapshots possible.
+    assert _own_execution_endpoints(search_view) == {("lasair", "ztf", "cone")}
+    assert _own_execution_endpoints(fink_view) == {("fink", "ztf", "objects")}
+    assert _own_execution_endpoints(lasair_view) == {
+        ("lasair", "ztf", "lightcurves")
+    }
 
     report = report_data(result)
     assert report["physical_execution_count"] == 3
