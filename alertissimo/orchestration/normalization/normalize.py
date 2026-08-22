@@ -556,6 +556,7 @@ def normalize_workflow_execution(
     result: WorkflowExecutionResult,
     *,
     validate_semantic_model: bool = True,
+    normalized_execution_cache: dict[str, tuple[Portfolio, ...]] | None = None,
 ) -> WorkflowPortfolioResult:
     """Normalize physical executions once, then expose Step-specific semantic views.
 
@@ -569,10 +570,20 @@ def normalize_workflow_execution(
     outputs until the ordered local semantic phase runs. Supplementary physical plans
     that failed remain visible as runtime warnings; candidate-dependent vacuous plans
     remain proven by runtime metadata.
+
+    ``normalized_execution_cache`` may carry base, unpruned normalization already
+    produced earlier in the same staged workflow invocation. Reusing that tuple is
+    essential for one-shot provider iterators and also preserves stable internal
+    Portfolio identities. Residual predicates remain Step-specific views and are
+    never stored back as the base normalization.
     """
 
     _validate_workflow_alignment(result)
-    normalized_by_execution_id: dict[str, tuple[Portfolio, ...]] = {}
+    normalized_by_execution_id = (
+        normalized_execution_cache
+        if normalized_execution_cache is not None
+        else {}
+    )
     normalized_steps: list[StepPortfolioResult] = []
     for step_run, step_result in zip(result.run.steps, result.steps):
         step = result.run.step_at(step_run.step_index)
