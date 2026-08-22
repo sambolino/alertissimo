@@ -35,6 +35,7 @@ from .parser import grammar_text, parse_surface_script
 from .surface import (
     AngularRadius,
     CandidateSet,
+    ConfirmClause,
     DSLParseError,
     Duration,
     FilterClause,
@@ -65,6 +66,7 @@ __all__ = (
     "BooleanExpression",
     "CandidateSet",
     "ComparisonExpression",
+    "ConfirmClause",
     "DSLParseError",
     "Duration",
     "ExistsExpression",
