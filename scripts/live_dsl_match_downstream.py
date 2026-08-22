@@ -10,11 +10,13 @@ The literal DSL is::
     objects from lsst, ztf via alerce
     inside (<ra>, <dec>, <search radius>)
     match on position inside <match radius>
-    with lightcurve from ztf via fink
+    with lightcurve via fink
 
-ALeRCE performs the live LSST+ZTF discovery. MatchStep executes locally over
-normalized semantic positions. Fink/ZTF then receives only the matched ZTF
-identities, because a Fink/ZTF endpoint cannot consume LSST object IDs.
+ALeRCE performs live LSST+ZTF discovery. MatchStep executes locally over normalized
+semantic positions. The downstream GetLightcurve is then realized by the registered
+Fink capabilities for both origins: LSST sources plus its optional forced-photometry
+supplement, and ZTF objects. Every physical plan must receive only Match survivors
+from its own origin.
 """
 
 from __future__ import annotations
@@ -38,12 +40,18 @@ DEFAULT_DEC = 0.8775815301
 DEFAULT_SEARCH_RADIUS_ARCSEC = 5.0
 DEFAULT_MATCH_RADIUS_ARCSEC = 1.0
 
+EXPECTED_FINK_PLANS = {
+    ("fink", "lsst", "sources"): ("lsst", "diaObjectId", True),
+    ("fink", "lsst", "fp"): ("lsst", "diaObjectId", False),
+    ("fink", "ztf", "objects"): ("ztf", "objectId", True),
+}
+
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run live ALeRCE LSST+ZTF discovery, local positional MatchStep, then "
-            "verify that Fink lightcurve retrieval receives only matched ZTF IDs."
+            "verify that Fink lightcurve retrieval receives only matched IDs."
         )
     )
     parser.add_argument("--ra", type=float, default=DEFAULT_RA)
@@ -56,11 +64,11 @@ def _args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--expect-lsst-id",
-        help="Require this LSST identity to survive Match.",
+        help="Require this LSST identity to survive Match and propagate to Fink/LSST.",
     )
     parser.add_argument(
         "--expect-ztf-id",
-        help="Require this ZTF identity to survive Match and propagate to Fink.",
+        help="Require this ZTF identity to survive Match and propagate to Fink/ZTF.",
     )
     parser.add_argument("--plan-only", action="store_true")
     return parser.parse_args()
@@ -75,16 +83,28 @@ def _identity_set(step_view) -> set[tuple[str, str]]:
     return identities
 
 
-def _csv_ids(value) -> tuple[str, ...]:
+def _ids_by_origin(identities: set[tuple[str, str]]) -> dict[str, set[str]]:
+    grouped: dict[str, set[str]] = {}
+    for origin, object_id in identities:
+        grouped.setdefault(origin, set()).add(object_id)
+    return grouped
+
+
+def _csv_ids(value, *, physical_name: str) -> tuple[str, ...]:
     if not isinstance(value, str):
         raise RuntimeError(
-            "Fink/ZTF objects binding did not materialize objectId as a CSV string: "
-            f"{value!r}"
+            f"Fink binding {physical_name!r} did not materialize as a CSV string: {value!r}"
         )
     values = tuple(item.strip() for item in value.split(",") if item.strip())
     if len(values) != len(set(values)):
-        raise RuntimeError(f"downstream objectId binding contains duplicates: {values!r}")
+        raise RuntimeError(
+            f"downstream {physical_name} binding contains duplicates: {values!r}"
+        )
     return values
+
+
+def _plan_key(plan) -> tuple[str, str, str]:
+    return plan.broker, plan.origin, plan.endpoint
 
 
 def main() -> int:
@@ -101,7 +121,7 @@ def main() -> int:
     dsl = f"""objects from lsst, ztf via alerce
 inside ({args.ra}, {args.dec}, {args.search_radius_arcsec}arcsec)
 match on position inside {args.match_radius_arcsec}arcsec
-with lightcurve from ztf via fink
+with lightcurve via fink
 """
     print("=== DSL ===")
     print(dsl.rstrip())
@@ -123,10 +143,7 @@ with lightcurve from ztf via fink
         ("alerce", "lsst", "query_objects"),
         ("alerce", "ztf", "query_objects"),
     }
-    actual_search = {
-        (plan.broker, plan.origin, plan.endpoint)
-        for plan in search_run.endpoint_plans
-    }
+    actual_search = {_plan_key(plan) for plan in search_run.endpoint_plans}
     if actual_search != expected_search:
         raise RuntimeError(f"unexpected physical search plan: {sorted(actual_search)!r}")
     if match_run.endpoint_plans:
@@ -134,23 +151,23 @@ with lightcurve from ztf via fink
     if match_run.candidate_input_from is None or match_run.candidate_input_from.step_index != 0:
         raise RuntimeError("MatchStep does not consume the Search semantic view")
 
-    get_plans = get_run.endpoint_plans
-    if len(get_plans) != 1:
-        raise RuntimeError(f"expected one downstream Fink/ZTF plan, found {len(get_plans)}")
-    get_plan = get_plans[0]
-    if (get_plan.broker, get_plan.origin, get_plan.endpoint) != (
-        "fink",
-        "ztf",
-        "objects",
-    ):
+    get_plans = {_plan_key(plan): plan for plan in get_run.endpoint_plans}
+    if set(get_plans) != set(EXPECTED_FINK_PLANS):
         raise RuntimeError(
-            "unexpected downstream physical endpoint: "
-            f"{get_plan.broker}/{get_plan.origin}/{get_plan.endpoint}"
+            "unexpected downstream Fink plan set: "
+            f"{sorted(get_plans)!r}; expected {sorted(EXPECTED_FINK_PLANS)!r}"
         )
-    if get_plan.candidate_input_from is None or get_plan.candidate_input_from.step_index != 1:
-        raise RuntimeError(
-            "downstream GetLightcurve is not bound from the MatchStep candidate population"
-        )
+    for key, plan in get_plans.items():
+        _, _, expected_required = EXPECTED_FINK_PLANS[key]
+        if plan.required is not expected_required:
+            raise RuntimeError(
+                f"downstream plan {key!r} required={plan.required!r}; "
+                f"expected {expected_required!r}"
+            )
+        if plan.candidate_input_from is None or plan.candidate_input_from.step_index != 1:
+            raise RuntimeError(
+                f"downstream plan {key!r} is not bound from the MatchStep population"
+            )
 
     print("=== PLAN ===")
     for step_run in run.steps:
@@ -160,11 +177,12 @@ with lightcurve from ztf via fink
             f"candidate_input_from={step_run.candidate_input_from!r}"
         )
         for plan in step_run.endpoint_plans:
+            requirement = "required" if plan.required else "supplementary"
             print(
                 f"  {plan.broker}/{plan.origin}/{plan.endpoint} "
-                f"candidate_input_from={plan.candidate_input_from!r}"
+                f"candidate_input_from={plan.candidate_input_from!r} {requirement}"
             )
-    print("OK: downstream Fink/ZTF plan depends on MatchStep, not Search")
+    print("OK: every downstream Fink plan depends on MatchStep, not Search")
     print()
 
     if args.plan_only:
@@ -192,6 +210,7 @@ with lightcurve from ztf via fink
     search_view = staged.normalized.steps[0]
     search_identities = _identity_set(search_view)
     search_counts = Counter(origin for origin, _ in search_identities)
+    search_by_origin = _ids_by_origin(search_identities)
 
     finalized = finalize_local_semantics(staged.normalized)
     if finalized.run.steps[1].state is not StepRunState.SUCCEEDED:
@@ -199,13 +218,7 @@ with lightcurve from ztf via fink
     match_view = finalized.steps[1]
     match_identities = _identity_set(match_view)
     match_counts = Counter(origin for origin, _ in match_identities)
-
-    expected_downstream_ids = {
-        object_id for origin, object_id in match_identities if origin == "ztf"
-    }
-    search_ztf_ids = {
-        object_id for origin, object_id in search_identities if origin == "ztf"
-    }
+    match_by_origin = _ids_by_origin(match_identities)
 
     print("=== POPULATIONS ===")
     print(
@@ -216,66 +229,86 @@ with lightcurve from ztf via fink
         f"Match:  {len(match_identities)} semantic Portfolios "
         f"{dict(sorted(match_counts.items()))}"
     )
-    print(f"matched ZTF candidates eligible for Fink: {len(expected_downstream_ids)}")
     print()
 
     if not match_identities:
         if staged.bindings[2].bound_calls:
-            raise RuntimeError("empty Match unexpectedly produced a downstream provider call")
+            raise RuntimeError("empty Match unexpectedly produced downstream provider calls")
         print("INCONCLUSIVE: Match produced no survivors; vacuous downstream behavior was correct")
         return 3
-    if not expected_downstream_ids:
-        if staged.bindings[2].bound_calls:
-            raise RuntimeError("Match has no ZTF survivors but Fink was still called")
-        print("INCONCLUSIVE: Match produced survivors, but none are ZTF candidates for Fink")
-        return 3
 
-    if len(staged.bindings[2].bound_calls) != 1:
-        raise RuntimeError(
-            "expected exactly one downstream Fink call for non-empty matched ZTF population"
+    calls_by_key = {
+        _plan_key(call.endpoint_plan): call for call in staged.bindings[2].bound_calls
+    }
+    if len(calls_by_key) != len(staged.bindings[2].bound_calls):
+        raise RuntimeError("duplicate downstream Fink physical calls share one endpoint identity")
+
+    actual_bound_by_origin: dict[str, set[str]] = {"lsst": set(), "ztf": set()}
+    print("=== DOWNSTREAM BINDINGS ===")
+    for key in sorted(EXPECTED_FINK_PLANS):
+        origin, physical_name, required = EXPECTED_FINK_PLANS[key]
+        expected_ids = match_by_origin.get(origin, set())
+        call = calls_by_key.get(key)
+
+        if not expected_ids:
+            if call is not None:
+                raise RuntimeError(
+                    f"{key!r} was called even though Match has no {origin!r} survivors"
+                )
+            print(f"{key[0]}/{key[1]}/{key[2]}: vacuous (0 matched {origin} IDs)")
+            continue
+
+        if call is None:
+            raise RuntimeError(
+                f"{key!r} has {len(expected_ids)} matched {origin} candidates but no bound call"
+            )
+        actual_ids = set(
+            _csv_ids(call.params.get(physical_name), physical_name=physical_name)
         )
-    bound_call = staged.bindings[2].bound_calls[0]
-    actual_downstream_ids = set(_csv_ids(bound_call.params.get("objectId")))
+        if actual_ids != expected_ids:
+            missing = sorted(expected_ids - actual_ids)
+            leaked = sorted(actual_ids - expected_ids)
+            raise RuntimeError(
+                f"downstream propagation mismatch for {key!r}: "
+                f"missing matched IDs={missing!r}; leaked non-match IDs={leaked!r}"
+            )
 
-    if actual_downstream_ids != expected_downstream_ids:
-        missing = sorted(expected_downstream_ids - actual_downstream_ids)
-        leaked = sorted(actual_downstream_ids - expected_downstream_ids)
-        raise RuntimeError(
-            "downstream candidate propagation mismatch: "
-            f"missing matched IDs={missing!r}; leaked non-match IDs={leaked!r}"
+        search_ids = search_by_origin.get(origin, set())
+        if not actual_ids.issubset(search_ids):
+            raise RuntimeError(
+                f"{key!r} binding contains an ID absent from the {origin} Search population"
+            )
+        unmatched_search_ids = search_ids - expected_ids
+        leaked_unmatched = actual_ids.intersection(unmatched_search_ids)
+        if leaked_unmatched:
+            raise RuntimeError(
+                f"unmatched {origin} Search candidates leaked into {key!r}: "
+                f"{sorted(leaked_unmatched)!r}"
+            )
+
+        actual_bound_by_origin.setdefault(origin, set()).update(actual_ids)
+        requirement = "required" if required else "supplementary"
+        print(
+            f"{key[0]}/{key[1]}/{key[2]}: {len(actual_ids)} IDs, {requirement}; "
+            f"excluded {len(unmatched_search_ids)} unmatched {origin} Search IDs"
         )
-    if not actual_downstream_ids.issubset(search_ztf_ids):
-        raise RuntimeError("downstream binding contains an ID absent from the Search population")
-
-    unmatched_search_ztf = search_ztf_ids - expected_downstream_ids
-    leaked_unmatched = actual_downstream_ids.intersection(unmatched_search_ztf)
-    if leaked_unmatched:
-        raise RuntimeError(
-            f"unmatched Search candidates leaked downstream: {sorted(leaked_unmatched)!r}"
-        )
-
-    print("=== DOWNSTREAM BINDING ===")
-    print("physical endpoint: fink/ztf/objects")
-    print(f"bound objectId count: {len(actual_downstream_ids)}")
-    if len(actual_downstream_ids) <= 30:
-        for object_id in sorted(actual_downstream_ids):
-            print(f"  {object_id}")
-    else:
-        print("  (ID list suppressed; more than 30 matched ZTF candidates)")
-    print(f"unmatched Search ZTF candidates excluded: {len(unmatched_search_ztf)}")
+        if len(actual_ids) <= 20:
+            for object_id in sorted(actual_ids):
+                print(f"  {object_id}")
 
     downstream_view = staged.normalized.steps[2]
     returned_identities = _identity_set(downstream_view)
-    returned_ztf_ids = {
-        object_id for origin, object_id in returned_identities if origin == "ztf"
-    }
-    unexpected_returns = returned_ztf_ids - actual_downstream_ids
+    unexpected_returns = returned_identities - match_identities
     if unexpected_returns:
         raise RuntimeError(
-            "Fink normalized output contains IDs outside the bound Match population: "
+            "Fink normalized output contains identities outside the Match population: "
             f"{sorted(unexpected_returns)!r}"
         )
     print(f"Fink returned semantic Portfolios: {len(downstream_view.portfolios)}")
+    if staged.run.steps[2].warnings:
+        print("supplementary warnings:")
+        for warning in staged.run.steps[2].warnings:
+            print(f"  {warning}")
 
     if args.expect_lsst_id and args.expect_ztf_id:
         expected_lsst = ("lsst", str(args.expect_lsst_id))
@@ -288,16 +321,23 @@ with lightcurve from ztf via fink
         if missing_survivors:
             print(f"FAIL: expected identities did not survive Match: {missing_survivors!r}")
             return 2
-        if str(args.expect_ztf_id) not in actual_downstream_ids:
-            print("FAIL: expected matched ZTF identity did not propagate to Fink")
+        if str(args.expect_lsst_id) not in actual_bound_by_origin.get("lsst", set()):
+            print("FAIL: expected matched LSST identity did not propagate to Fink/LSST")
             return 2
-        print(
-            "OK: expected LSST/ZTF identities survived Match and the ZTF identity "
-            "propagated to Fink"
-        )
+        if str(args.expect_ztf_id) not in actual_bound_by_origin.get("ztf", set()):
+            print("FAIL: expected matched ZTF identity did not propagate to Fink/ZTF")
+            return 2
+        print("OK: expected LSST/ZTF identities both propagated through Match to Fink")
 
-    print("OK: Search output remained broader than the Match filter where applicable")
-    print("OK: no unmatched Search ZTF identity leaked into downstream binding")
+    for origin in ("lsst", "ztf"):
+        expected_ids = match_by_origin.get(origin, set())
+        if expected_ids and actual_bound_by_origin.get(origin, set()) != expected_ids:
+            raise RuntimeError(
+                f"not every matched {origin} identity reached a downstream Fink plan"
+            )
+
+    print("OK: Search output remained unchanged and broader than Match where applicable")
+    print("OK: no unmatched Search identity leaked into downstream Fink bindings")
     print("OK: MatchStep created no physical execution")
     print("MATCHSTEP DOWNSTREAM LIVE ACCEPTANCE PASSED")
     return 0
