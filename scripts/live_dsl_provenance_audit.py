@@ -2,10 +2,17 @@
 """Audit end-to-end provenance on live accumulated DSL Portfolios.
 
 This is a provenance probe, not a new provenance model. It reuses the cross-broker
-material-lineage scenarios and asks whether each final semantic record can be traced
-either to a physical execution plus raw-payload location, or (for the deliberately
-synthesized minimal summary identity) to one unique target-bound request execution,
-while inherited evidence remains unchanged across Step snapshots.
+material-lineage scenarios and distinguishes three honest provenance bases:
+
+* payload-derived records: one ``InternalRecordSource`` identifies a raw payload surface;
+* request-derived minimal identities: target binding proves an object identity even when
+  the payload contains no summary row;
+* execution-derived aggregates: one semantic record is collected from multiple raw
+  payload surfaces belonging to the same uniquely matching physical execution.
+
+The third case deliberately does not invent a fake ``InternalRecordSource``. The audit
+reports that the execution remains traceable while raw-coordinate granularity has been
+collapsed by semantic aggregation.
 
 Run from the repository root::
 
@@ -47,6 +54,15 @@ OPTIONAL_REPRO_FIELDS = (
     "payload_fingerprint",
     "registry_version",
     "adapter_version",
+)
+_INTRINSIC_LIGHTCURVE_ARRAYS = frozenset(
+    {
+        "points",
+        "forced_photometry_points",
+        "magnitude_rate_points",
+        "color_points",
+        "feature_vector_points",
+    }
 )
 
 
@@ -111,7 +127,7 @@ def _known_secret_values() -> tuple[str, ...]:
 
 
 def _bound_target_ids(execution) -> tuple[str, ...]:
-    """Recover target IDs from the execution's declarative endpoint contract."""
+    """Recover target IDs from an execution's declarative endpoint contract."""
 
     try:
         spec = EndpointRegistry().resolve(
@@ -149,14 +165,12 @@ def _bound_target_ids(execution) -> tuple[str, ...]:
 
 
 def _request_identity_execution(record, executions):
-    """Resolve the one allowed source-less record form to its request execution.
+    """Resolve the deliberately source-less minimal summary identity.
 
-    ``record_builder._complete_minimal_summary_identity`` deliberately synthesizes
-    only ``summary@origin:broker.identity.object_id`` from positive target-binding
-    evidence when a target-bound payload has no summary record of its own. That
-    record has no ``InternalRecordSource`` because there is no raw payload coordinate.
-    The audit accepts it only when exactly one stored execution's declarative
-    target-id binding proves the same object identity.
+    ``record_builder._complete_minimal_summary_identity`` synthesizes only
+    ``summary@origin:broker.identity.object_id`` from positive target-binding evidence
+    when a target-bound payload has no summary record of its own. There is no raw
+    payload coordinate, so the audit resolves it to exactly one matching execution.
     """
 
     if record.semantic_type.split("@", 1)[0] != "summary":
@@ -186,30 +200,91 @@ def _request_identity_execution(record, executions):
     return matches[0] if matches else None
 
 
+def _execution_aggregate_execution(record, executions, portfolio_identity):
+    """Resolve one intrinsic-array aggregate to its uniquely matching execution.
+
+    ``collect_intrinsic_array_records`` combines row-wise fragments into one semantic
+    lightcurve. When all fragments share an execution but span different payload keys
+    or paths (for example ALeRCE ``detections[]`` + ``non_detections[]``), a single
+    ``InternalRecordSource`` would falsely claim one raw surface and is therefore
+    omitted. The aggregate remains attributable to one physical call.
+
+    Keep this acceptance narrow: only source-less intrinsic lightcurve arrays whose
+    semantic origin/channel and target-bound object identity identify exactly one
+    stored execution qualify. Arbitrary source-less records still fail.
+    """
+
+    if record.semantic_type.split("@", 1)[0] != "lightcurve":
+        return None
+    if not any(field in _INTRINSIC_LIGHTCURVE_ARRAYS for field in record.fields):
+        return None
+    if portfolio_identity is None:
+        return None
+
+    origin, channel = _semantic_qualifiers(record.semantic_type)
+    portfolio_origin, object_id = portfolio_identity
+    if origin is None or channel is None or str(origin) != str(portfolio_origin):
+        return None
+
+    matches = []
+    for execution in executions.values():
+        if execution.origin != origin or execution.broker != channel:
+            continue
+        if str(object_id) in _bound_target_ids(execution):
+            matches.append(execution)
+
+    if len(matches) > 1:
+        raise RuntimeError(
+            f"execution-derived aggregate {record.internal_record_id.value} "
+            f"({record.semantic_type}) matches multiple target-bound executions; "
+            "exact call provenance is ambiguous"
+        )
+    return matches[0] if matches else None
+
+
 def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str, object]:
-    """Validate payload- and request-derived provenance inside one Portfolio."""
+    """Validate payload-, request-, and execution-derived provenance."""
 
     executions = _execution_map(portfolio)
+    identity = summary_object_identity(portfolio)
+    portfolio_identity = (
+        (str(identity[0]), str(identity[1])) if identity is not None else None
+    )
+
     referenced: Counter[str] = Counter()
     records_by_execution: Counter[str] = Counter()
     payload_records_by_execution: Counter[str] = Counter()
     request_records_by_execution: Counter[str] = Counter()
+    aggregate_records_by_execution: Counter[str] = Counter()
     semantic_types_by_execution: dict[str, Counter[str]] = defaultdict(Counter)
 
     for record in portfolio.records:
         source = record.internal_source
         if source is None:
             execution = _request_identity_execution(record, executions)
+            basis = "request"
+            if execution is None:
+                execution = _execution_aggregate_execution(
+                    record,
+                    executions,
+                    portfolio_identity,
+                )
+                basis = "aggregate"
             if execution is None:
                 raise RuntimeError(
                     f"source-less record {record.internal_record_id.value} "
-                    f"({record.semantic_type}) is not a uniquely traceable "
-                    "request-derived minimal summary identity"
+                    f"({record.semantic_type}) is neither a uniquely traceable "
+                    "request-derived minimal identity nor an execution-derived "
+                    "intrinsic-array aggregate"
                 )
+
             execution_id = execution.internal_execution_id.value
             referenced[execution_id] += 1
             records_by_execution[execution_id] += 1
-            request_records_by_execution[execution_id] += 1
+            if basis == "request":
+                request_records_by_execution[execution_id] += 1
+            else:
+                aggregate_records_by_execution[execution_id] += 1
             semantic_types_by_execution[execution_id][record.semantic_type] += 1
             continue
 
@@ -241,8 +316,7 @@ def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str
         source = edge.internal_source
         if source is None:
             # Local semantic edges such as Match relations legitimately have no
-            # provider payload source. This audit only requires referential integrity
-            # when an edge claims an InternalRecordSource.
+            # provider payload source.
             continue
         execution_id = source.internal_execution_id.value
         if execution_id not in executions:
@@ -286,6 +360,7 @@ def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str
         "records_by_execution": records_by_execution,
         "payload_records_by_execution": payload_records_by_execution,
         "request_records_by_execution": request_records_by_execution,
+        "aggregate_records_by_execution": aggregate_records_by_execution,
         "semantic_types_by_execution": semantic_types_by_execution,
         "missing_optional": missing_optional,
     }
@@ -377,12 +452,22 @@ def audit_accumulation(staged, *, expected_object_id: str | None) -> tuple[bool,
             for field in missing
         }
     )
-    detail = (
-        f"{len(candidate_ids)} candidate(s); every final record resolves either to "
-        "a stored physical execution + raw payload coordinate or to one uniquely "
-        "matching target-bound request; inherited record/execution provenance "
-        f"remained immutable across {len(steps)} Step views"
+    aggregate_count = sum(
+        sum(report["aggregate_records_by_execution"].values())
+        for report in final_report.values()
     )
+
+    detail = (
+        f"{len(candidate_ids)} candidate(s); every final record resolves to an exact "
+        "payload coordinate, one uniquely matching target-bound request, or one "
+        "uniquely matching execution-derived aggregate; inherited record/execution "
+        f"provenance remained immutable across {len(steps)} Step views"
+    )
+    if aggregate_count:
+        detail += (
+            f"; {aggregate_count} aggregate record(s) retain execution provenance "
+            "but collapse multiple raw payload coordinates"
+        )
     if optional_gaps:
         detail += "; optional reproducibility metadata absent: " + ", ".join(optional_gaps)
     return expected_found, detail
@@ -404,6 +489,7 @@ def _print_audit(staged) -> None:
             missing = report["missing_optional"][execution_id]
             payload_count = report["payload_records_by_execution"][execution_id]
             request_count = report["request_records_by_execution"][execution_id]
+            aggregate_count = report["aggregate_records_by_execution"][execution_id]
             print(
                 f"    {execution_id}: {execution.broker}/{execution.origin}/{execution.endpoint} "
                 f"status={execution.status!r} transport={execution.transport!r} "
@@ -411,8 +497,14 @@ def _print_audit(staged) -> None:
             )
             print(
                 f"      provenance: payload_records={payload_count} "
-                f"request_derived_records={request_count}"
+                f"request_derived_records={request_count} "
+                f"aggregate_derived_records={aggregate_count}"
             )
+            if aggregate_count:
+                print(
+                    "      aggregate note: exact execution retained; multiple raw "
+                    "payload coordinates collapsed at collection"
+                )
             print(f"      semantic types: {type_summary or 'edge-only'}")
             print(
                 f"      audit: started={execution.started_at is not None} "
