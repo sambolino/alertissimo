@@ -20,6 +20,7 @@ from alertissimo.orchestration.ir import (
     ColorColorStep,
     ColorMagnitudeStep,
     ConeSearchStep,
+    ConfirmStep,
     FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
@@ -45,6 +46,7 @@ from .capability_validation import (
 )
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .surface import (
+    ConfirmClause,
     Duration,
     FilterClause,
     InsideClause,
@@ -526,6 +528,18 @@ def _lower_match(
     return MatchStep(sources=sources, params=params)
 
 
+def _lower_confirm(surface: SurfaceScript, clause: ConfirmClause) -> ConfirmStep:
+    sources = [
+        Source(origin=origin, broker=broker)
+        for origin in surface.candidates.origins
+        for broker in clause.brokers
+    ]
+    return ConfirmStep(
+        sources=sources,
+        required_agreement=clause.required_agreement,
+    )
+
+
 def _validate_semantics(surface: SurfaceScript, semantic_paths: _SemanticPaths) -> None:
     report = validate_surface_semantics(surface, semantic_paths=semantic_paths)
     if report.is_valid:
@@ -686,6 +700,8 @@ def lower_surface(
                     )
                 )
             )
+        elif isinstance(clause, ConfirmClause):
+            steps.append(_lower_confirm(surface, clause))
         elif isinstance(clause, MatchClause):
             steps.append(_lower_match(surface, clause, clause_index=index))
         elif isinstance(clause, RankedByClause):
