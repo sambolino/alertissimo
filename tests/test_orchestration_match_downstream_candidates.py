@@ -12,7 +12,7 @@ from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.orchestration.local_semantics import finalize_local_semantics
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
-from alertissimo.orchestration.runtime import StepRunState
+from alertissimo.orchestration.runtime import CandidateInputRef, StepRunState
 
 
 DSL = """objects from ztf via alerce
@@ -57,6 +57,9 @@ class _MatchThenLightcurveExecutor:
         elif (broker, origin, endpoint) == ("fink", "ztf", "objects"):
             assert self.matched
             assert params["objectId"] == "ZTF20matcha,ZTF20matchb"
+            # Deliberately return no semantic rows. The final GetStep Portfolio view
+            # must still inherit the matched semantic material rather than collapse
+            # to an empty provider-response snapshot.
             payload = []
         else:  # pragma: no cover - planner contract fixes the calls above.
             raise AssertionError(f"unexpected endpoint {(broker, origin, endpoint)!r}")
@@ -85,7 +88,16 @@ def _planned_workflow():
     return workflow, plan_workflow(workflow, graph)
 
 
-def test_downstream_get_binds_only_match_survivors():
+def _summary_ids(step_view):
+    return {
+        str(record.fields["identity.object_id"])
+        for portfolio in step_view.portfolios
+        for record in portfolio.records
+        if record.semantic_type.startswith("summary@")
+    }
+
+
+def test_downstream_get_binds_only_match_survivors_and_inherits_match_material():
     workflow, run = _planned_workflow()
     assert [step.op for step in workflow.steps] == [
         "cone_search",
@@ -95,11 +107,16 @@ def test_downstream_get_binds_only_match_survivors():
 
     match_run = run.steps[1]
     get_run = run.steps[2]
-    assert match_run.candidate_input_from is not None
-    assert match_run.candidate_input_from.step_index == 0
+    assert match_run.candidate_input_from == CandidateInputRef(step_index=0)
     assert len(get_run.endpoint_plans) == 1
-    assert get_run.endpoint_plans[0].candidate_input_from is not None
-    assert get_run.endpoint_plans[0].candidate_input_from.step_index == 1
+
+    # The physical call takes candidate IDs from Match, and the semantic Step itself
+    # also extends the Match material view. These two references intentionally agree
+    # here, although in Search -> Get -> Get workflows they need not.
+    assert get_run.endpoint_plans[0].candidate_input_from == CandidateInputRef(
+        step_index=1
+    )
+    assert get_run.candidate_input_from == CandidateInputRef(step_index=1)
 
     executor = _MatchThenLightcurveExecutor(matched=True)
     staged = execute_staged_workflow_run(
@@ -120,19 +137,34 @@ def test_downstream_get_binds_only_match_survivors():
     assert staged.run.steps[1].state is StepRunState.PLANNED
     assert staged.run.steps[2].state is StepRunState.SUCCEEDED
 
+    # Fink returned an empty payload: the Step owns one physical execution but that
+    # execution normalized no object Portfolios. Semantic inheritance is therefore
+    # the only possible source of the final Step-2 object view.
+    assert len(staged.normalized.steps[2].executions) == 1
+    assert staged.normalized.steps[2].executions[0].portfolios == ()
+
     finalized = finalize_local_semantics(staged.normalized)
     assert len(finalized.steps[0].portfolios) == 3
     assert len(finalized.steps[1].portfolios) == 2
-    matched_ids = {
-        str(record.fields["identity.object_id"])
-        for portfolio in finalized.steps[1].portfolios
-        for record in portfolio.records
-        if record.semantic_type.startswith("summary@")
+    assert _summary_ids(finalized.steps[1]) == {"ZTF20matcha", "ZTF20matchb"}
+
+    downstream_view = finalized.steps[2]
+    assert _summary_ids(downstream_view) == {"ZTF20matcha", "ZTF20matchb"}
+    assert len(downstream_view.portfolios) == 2
+    assert all(len(portfolio.edges) == 1 for portfolio in downstream_view.portfolios)
+    assert {
+        portfolio.edges[0].internal_edge_id
+        for portfolio in downstream_view.portfolios
+    } == {
+        finalized.steps[1].portfolios[0].edges[0].internal_edge_id
     }
-    assert matched_ids == {"ZTF20matcha", "ZTF20matchb"}
+    # Step-2 physical ownership remains its one Fink execution, not the inherited
+    # ALeRCE Search execution or the local Match occurrence.
+    assert len(downstream_view.executions) == 1
+    assert downstream_view.executions[0].portfolios == ()
 
 
-def test_empty_match_makes_downstream_get_vacuous():
+def test_empty_match_makes_downstream_get_vacuous_and_material_view_empty():
     _, run = _planned_workflow()
     executor = _MatchThenLightcurveExecutor(matched=False)
 
@@ -153,3 +185,5 @@ def test_empty_match_makes_downstream_get_vacuous():
 
     finalized = finalize_local_semantics(staged.normalized)
     assert finalized.steps[1].portfolios == ()
+    assert finalized.steps[2].portfolios == ()
+    assert finalized.steps[2].executions == ()
