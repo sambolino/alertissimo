@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 """Live Search -> Match -> downstream GetLightcurve candidate propagation acceptance.
 
-This script exercises the behavior that a terminal Match-only smoke test cannot:
-MatchStep is a relational filter, so a later targetless provider retrieval must bind
-only the identities that survive Match, not the earlier Search population.
-
-The literal DSL is::
+The workflow is intentionally literal DSL::
 
     objects from lsst, ztf via alerce
     inside (<ra>, <dec>, <search radius>)
     match on position inside <match radius>
     with lightcurve via fink
 
-ALeRCE performs live LSST+ZTF discovery. MatchStep executes locally over normalized
-semantic positions. The downstream GetLightcurve is then realized by the registered
-Fink capabilities for both origins: LSST sources plus its optional forced-photometry
-supplement, and ZTF objects. Every physical plan must receive only Match survivors
-from its own origin.
+ALeRCE discovery is live. MatchStep executes locally over normalized semantic
+positions. Downstream binding is then checked for every registered Fink lightcurve
+plan. Fink/ZTF is contacted live. Fink/LSST is currently known unavailable, so its
+physical calls are skipped by default after binding; their real bound ``diaObjectId``
+values are still verified against the LSST Match survivors. Pass ``--live-fink-lsst``
+to contact those endpoints when that service is available again.
 """
 
 from __future__ import annotations
@@ -24,7 +21,15 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 
-from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
+from alertissimo.data_layer.execution import (
+    EndpointRegistry,
+    ExecutionResult,
+    RegistryEndpointExecutor,
+)
+from alertissimo.data_layer.representations import (
+    InternalExecutionId,
+    InternalExecutionProvenance,
+)
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.orchestration.ir import MatchStep
@@ -47,11 +52,50 @@ EXPECTED_FINK_PLANS = {
 }
 
 
+class _HybridLiveExecutor:
+    """Delegate real calls except known-offline Fink/LSST endpoints.
+
+    The staged orchestrator still performs the real planner/binder path before this
+    executor is called. Returning an empty successful payload for Fink/LSST therefore
+    avoids making the external request without weakening the candidate-binding check.
+    """
+
+    def __init__(self, delegate: RegistryEndpointExecutor, *, live_fink_lsst: bool):
+        self._delegate = delegate
+        self.live_fink_lsst = live_fink_lsst
+        self.skipped_fink_lsst: list[tuple[str, dict]] = []
+
+    def execute(self, broker, origin, endpoint, params=None, headers=None):
+        if broker == "fink" and origin == "lsst" and not self.live_fink_lsst:
+            bound_params = dict(params or {})
+            self.skipped_fink_lsst.append((endpoint, bound_params))
+            return ExecutionResult(
+                payload=[],
+                execution_provenance=InternalExecutionProvenance(
+                    internal_execution_id=InternalExecutionId(
+                        f"execution:live-match-downstream:offline-fink-lsst:{endpoint}"
+                    ),
+                    broker=broker,
+                    origin=origin,
+                    endpoint=endpoint,
+                    params=bound_params,
+                    status="skipped-known-offline",
+                ),
+            )
+        return self._delegate.execute(
+            broker,
+            origin,
+            endpoint,
+            params=params,
+            headers=headers,
+        )
+
+
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run live ALeRCE LSST+ZTF discovery, local positional MatchStep, then "
-            "verify that Fink lightcurve retrieval receives only matched IDs."
+            "verify that downstream Fink bindings contain only Match survivors."
         )
     )
     parser.add_argument("--ra", type=float, default=DEFAULT_RA)
@@ -64,11 +108,16 @@ def _args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--expect-lsst-id",
-        help="Require this LSST identity to survive Match and propagate to Fink/LSST.",
+        help="Require this LSST identity to survive Match and reach Fink/LSST binding.",
     )
     parser.add_argument(
         "--expect-ztf-id",
-        help="Require this ZTF identity to survive Match and propagate to Fink/ZTF.",
+        help="Require this ZTF identity to survive Match and reach live Fink/ZTF binding.",
+    )
+    parser.add_argument(
+        "--live-fink-lsst",
+        action="store_true",
+        help="Actually contact Fink/LSST sources/fp instead of skipping the known-offline service.",
     )
     parser.add_argument("--plan-only", action="store_true")
     return parser.parse_args()
@@ -93,7 +142,7 @@ def _ids_by_origin(identities: set[tuple[str, str]]) -> dict[str, set[str]]:
 def _csv_ids(value, *, physical_name: str) -> tuple[str, ...]:
     if not isinstance(value, str):
         raise RuntimeError(
-            f"Fink binding {physical_name!r} did not materialize as a CSV string: {value!r}"
+            f"binding {physical_name!r} did not materialize as a CSV string: {value!r}"
         )
     values = tuple(item.strip() for item in value.split(",") if item.strip())
     if len(values) != len(set(values)):
@@ -183,6 +232,8 @@ with lightcurve via fink
                 f"candidate_input_from={plan.candidate_input_from!r} {requirement}"
             )
     print("OK: every downstream Fink plan depends on MatchStep, not Search")
+    if not args.live_fink_lsst:
+        print("NOTE: Fink/LSST is known offline; its bound calls will be checked but not sent")
     print()
 
     if args.plan_only:
@@ -190,7 +241,8 @@ with lightcurve via fink
         return 0
 
     registry = EndpointRegistry()
-    executor = RegistryEndpointExecutor(registry=registry)
+    delegate = RegistryEndpointExecutor(registry=registry)
+    executor = _HybridLiveExecutor(delegate, live_fink_lsst=args.live_fink_lsst)
     staged = execute_staged_workflow_run(
         run,
         registry,
@@ -288,13 +340,19 @@ with lightcurve via fink
 
         actual_bound_by_origin.setdefault(origin, set()).update(actual_ids)
         requirement = "required" if required else "supplementary"
+        contact = "live" if origin == "ztf" or args.live_fink_lsst else "binding-only; service skipped"
         print(
-            f"{key[0]}/{key[1]}/{key[2]}: {len(actual_ids)} IDs, {requirement}; "
+            f"{key[0]}/{key[1]}/{key[2]}: {len(actual_ids)} IDs, {requirement}, {contact}; "
             f"excluded {len(unmatched_search_ids)} unmatched {origin} Search IDs"
         )
         if len(actual_ids) <= 20:
             for object_id in sorted(actual_ids):
                 print(f"  {object_id}")
+
+    if executor.skipped_fink_lsst:
+        print("skipped known-offline Fink/LSST transports:")
+        for endpoint, _ in executor.skipped_fink_lsst:
+            print(f"  fink/lsst/{endpoint}")
 
     downstream_view = staged.normalized.steps[2]
     returned_identities = _identity_set(downstream_view)
@@ -304,7 +362,7 @@ with lightcurve via fink
             "Fink normalized output contains identities outside the Match population: "
             f"{sorted(unexpected_returns)!r}"
         )
-    print(f"Fink returned semantic Portfolios: {len(downstream_view.portfolios)}")
+    print(f"live downstream returned semantic Portfolios: {len(downstream_view.portfolios)}")
     if staged.run.steps[2].warnings:
         print("supplementary warnings:")
         for warning in staged.run.steps[2].warnings:
@@ -322,18 +380,21 @@ with lightcurve via fink
             print(f"FAIL: expected identities did not survive Match: {missing_survivors!r}")
             return 2
         if str(args.expect_lsst_id) not in actual_bound_by_origin.get("lsst", set()):
-            print("FAIL: expected matched LSST identity did not propagate to Fink/LSST")
+            print("FAIL: expected matched LSST identity did not reach Fink/LSST binding")
             return 2
         if str(args.expect_ztf_id) not in actual_bound_by_origin.get("ztf", set()):
-            print("FAIL: expected matched ZTF identity did not propagate to Fink/ZTF")
+            print("FAIL: expected matched ZTF identity did not reach live Fink/ZTF binding")
             return 2
-        print("OK: expected LSST/ZTF identities both propagated through Match to Fink")
+        print(
+            "OK: expected LSST/ZTF identities both propagated from Match; "
+            "ZTF was retrieved live and LSST binding was verified"
+        )
 
     for origin in ("lsst", "ztf"):
         expected_ids = match_by_origin.get(origin, set())
         if expected_ids and actual_bound_by_origin.get(origin, set()) != expected_ids:
             raise RuntimeError(
-                f"not every matched {origin} identity reached a downstream Fink plan"
+                f"not every matched {origin} identity reached a downstream Fink binding"
             )
 
     print("OK: Search output remained unchanged and broader than Match where applicable")
