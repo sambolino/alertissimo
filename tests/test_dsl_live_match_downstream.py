@@ -32,5 +32,5 @@ def test_live_match_downstream_plan_only_uses_match_as_candidate_owner():
     assert "Step 1: op=match" in completed.stdout
     assert "Step 2: op=get_lightcurve" in completed.stdout
     assert "fink/ztf/objects candidate_input_from=CandidateInputRef(step_index=1)" in completed.stdout
-    assert "OK: downstream Fink plan depends on MatchStep, not Search" in completed.stdout
+    assert "OK: downstream Fink/ZTF plan depends on MatchStep, not Search" in completed.stdout
     assert "Plan-only mode: no provider APIs contacted." in completed.stdout
