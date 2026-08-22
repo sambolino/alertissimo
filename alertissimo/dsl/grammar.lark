@@ -22,6 +22,7 @@ script: _NL* candidate_statement (_NL clause*)?
 
 candidate_statement: "objects"i "from"i origin_list via_clause?
 origin_list: NAME ("," NAME)*
+broker_list: NAME ("," NAME)*
 
 ?clause: simple_clause _NL
        | with_clause _NL
@@ -31,6 +32,7 @@ origin_list: NAME ("," NAME)*
               | latest_clause
               | where_clause
               | filter_clause
+              | confirm_clause
               | match_clause
               | order_clause
               | ranked_clause
@@ -43,6 +45,7 @@ within_clause: "within"i duration                       -> within_relative
 latest_clause: "latest"i INT
 where_clause: "where"i TEXT
 filter_clause: "filter"i TEXT
+confirm_clause: "confirm"i "by"i INT "via"i broker_list
 
 // WITH predicates are inline and explicit. There is no indentation-based scope
 // and no implicit conjunction between physical lines.
