@@ -54,7 +54,30 @@
       function plainText(editor) {
         const copy = editor.cloneNode(true);
         copy.querySelectorAll(".inline-choice").forEach((item) => item.remove());
-        return copy.innerText.replace(/\n$/, "");
+        // textContent retains literal newlines that we render for highlighting,
+        // while contenteditable browsers represent Enter as DIV/P/BR nodes.
+        // Serialize both forms explicitly; innerText may collapse these breaks
+        // to spaces depending on browser layout and CSS.
+        function read(node) {
+          let text = "";
+          node.childNodes.forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              text += child.textContent;
+              return;
+            }
+            if (child.nodeType !== Node.ELEMENT_NODE) return;
+            if (child.tagName === "BR") {
+              text += "\n";
+              return;
+            }
+            const block = /^(DIV|P|LI|PRE)$/.test(child.tagName);
+            if (block && text && !text.endsWith("\n")) text += "\n";
+            text += read(child);
+            if (block && !text.endsWith("\n")) text += "\n";
+          });
+          return text;
+        }
+        return read(copy).replace(/\n$/, "");
       }
       function optionMarkup(values, label) {
         return `<span class="inline-choice" contenteditable="false"><span class="prompt">${label}</span><select id="choice"><option value="">Select…</option>${values.map((value) => `<option value="${value}">${value}</option>`).join("")}</select></span>`;
@@ -240,6 +263,13 @@
           button.addEventListener("click", () => insertDraft(button.dataset.draft));
         });
         run.addEventListener("click", () => sendSubmit(plainText(dsl)));
+        dsl.addEventListener("keydown", (event) => {
+          if (event.key !== "Tab") return;
+          event.preventDefault();
+          // Keep Tab inside the editor instead of moving focus to the next UI
+          // control. Four spaces match the DSL's canonical scoped indentation.
+          document.execCommand("insertText", false, "    ");
+        });
         dsl.addEventListener("input", () => {
           const offset = cursorOffset();
           const current = plainText(dsl);

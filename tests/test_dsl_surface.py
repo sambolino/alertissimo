@@ -82,6 +82,18 @@ def test_requirement_can_select_explicit_method_without_changing_candidate_scope
     assert result.candidates.origins == ("lsst",)
 
 
+def test_complete_multiline_script_does_not_require_a_final_newline():
+    result = parse_surface_script(
+        "objects from ztf via lasair\n"
+        "    inside (124.87996115142856, -6.0205001, 5arcsec)\n"
+        "    with lightcurve via fink\n"
+        "    with lightcurve via lasair"
+    )
+
+    assert isinstance(result.clauses[0], InsideClause)
+    assert [clause.via for clause in result.clauses[1:]] == ["fink", "lasair"]
+
+
 def test_colon_scopes_multiple_conjunctive_predicates_to_with():
     result = parse_surface_script(
         """objects from lsst via alerce

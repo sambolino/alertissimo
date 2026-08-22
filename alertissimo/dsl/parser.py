@@ -290,7 +290,10 @@ def _canonicalize_layout(script: str) -> str:
             scope_indent = indent
             scope_mode = "colon" if stripped.endswith(":") else "where"
 
-    return "\n".join(out) + ("\n" if script.endswith("\n") else "")
+    # The formal grammar uses newline tokens to terminate clauses.  Browser
+    # editors and API callers often omit the final line ending, which is only
+    # a transport detail and must not make a complete final clause invalid.
+    return "\n".join(out) + "\n"
 
 
 def _meaningful_top_level_lines(script: str) -> list[tuple[int, str]]:
