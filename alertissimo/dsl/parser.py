@@ -9,7 +9,6 @@ from typing import Literal
 
 from lark import Lark, Transformer, UnexpectedInput
 from lark.exceptions import VisitError
-from lark.indenter import Indenter
 
 from .surface import (
     AngularRadius,
@@ -48,15 +47,6 @@ _CLAUSE_PREFIXES = (
 )
 
 
-class _DSLIndenter(Indenter):
-    NL_type = "_NL"
-    OPEN_PAREN_types: list[str] = []
-    CLOSE_PAREN_types: list[str] = []
-    INDENT_type = "_INDENT"
-    DEDENT_type = "_DEDENT"
-    tab_len = 8
-
-
 def grammar_text() -> str:
     """Return the version-controlled formal grammar used by the parser."""
 
@@ -71,7 +61,6 @@ def _lark_parser() -> Lark:
         grammar_text(),
         parser="lalr",
         lexer="contextual",
-        postlex=_DSLIndenter(),
         propagate_positions=True,
     )
 
@@ -111,7 +100,7 @@ def _with_predicates(
     requirement: RequirementClause,
     predicates: tuple[str, ...],
 ) -> RequirementClause:
-    """Rebuild a requirement so Pydantic validates newly attached predicates.
+    """Rebuild a requirement so Pydantic validates attached predicates.
 
     ``model_copy(update=...)`` deliberately skips validation in Pydantic v2 and
     must not be used at this syntax boundary: scoped predicates need to pass the
@@ -190,21 +179,13 @@ class _SurfaceTransformer(Transformer):
             method=qualifiers.get("using"),
         )
 
-    def scoped_bare(self, items):
-        return str(items[0]).strip()
-
     def scoped_where(self, items):
         return str(items[0]).strip()
 
-    def with_plain(self, items):
-        return items[0]
-
-    def with_colon(self, items):
+    def with_clause(self, items):
         requirement = items[0]
-        return _with_predicates(requirement, tuple(items[1:]))
-
-    def with_where(self, items):
-        requirement = items[0]
+        if len(items) == 1:
+            return requirement
         return _with_predicates(requirement, (items[1],))
 
     def match_from(self, items):
@@ -237,74 +218,36 @@ class _SurfaceTransformer(Transformer):
 _TRANSFORMER = _SurfaceTransformer()
 
 
-def _indent_width(raw: str) -> int:
-    prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
-    return len(prefix.expandtabs(8))
-
-
 def _canonicalize_layout(script: str) -> str:
-    """Normalize cosmetic top-level indentation while retaining WITH scopes.
+    """Erase indentation as syntax while preserving line-oriented diagnostics.
 
-    Existing DSL examples freely indent top-level clauses for readability. The
-    only indentation with semantic force in v0.1 is indentation relative to a
-    preceding ``with`` line: after ``with ...:`` it introduces a conjunctive
-    predicate block; after plain ``with ...`` it may introduce one scoped
-    ``where`` line. Blank and comment-only lines preserve line count for
-    diagnostics but never carry indentation state into Lark's indenter.
+    Alertissimo DSL does not use indentation to establish scope. Every meaningful
+    line is normalized to the same layout level before parsing. Predicate grouping
+    must therefore be expressed with explicit boolean syntax, and WITH-scoped
+    predicates must be written inline as ``with ... where <expression>``.
+    Blank and comment-only lines preserve line count for diagnostics.
     """
 
-    lines = script.splitlines()
     out: list[str] = []
-    scope_mode: Literal["colon", "where"] | None = None
-    scope_indent = -1
-
-    for raw in lines:
+    for raw in script.splitlines():
         stripped = raw.strip()
         if not stripped:
             out.append("")
-            continue
-        if raw.lstrip().startswith("#"):
+        else:
             out.append(stripped)
-            continue
-
-        indent = _indent_width(raw)
-        lowered = stripped.lower()
-
-        if scope_mode == "colon" and indent > scope_indent:
-            out.append("    " + stripped)
-            continue
-        if (
-            scope_mode == "where"
-            and indent > scope_indent
-            and lowered.startswith("where ")
-        ):
-            out.append("    " + stripped)
-            scope_mode = None
-            continue
-
-        scope_mode = None
-        scope_indent = -1
-        out.append(stripped)
-
-        if lowered.startswith("with "):
-            scope_indent = indent
-            scope_mode = "colon" if stripped.endswith(":") else "where"
-
     return "\n".join(out) + ("\n" if script.endswith("\n") else "")
 
 
-def _meaningful_top_level_lines(script: str) -> list[tuple[int, str]]:
+def _meaningful_lines(script: str) -> list[tuple[int, str]]:
     return [
         (number, raw.strip())
         for number, raw in enumerate(script.splitlines(), start=1)
-        if raw.strip()
-        and not raw.lstrip().startswith("#")
-        and raw == raw.lstrip(" \t")
+        if raw.strip() and not raw.lstrip().startswith("#")
     ]
 
 
 def _preflight_structure(script: str) -> None:
-    lines = _meaningful_top_level_lines(script)
+    lines = _meaningful_lines(script)
     if not lines:
         raise DSLParseError("DSL script is empty")
 
@@ -317,6 +260,7 @@ def _preflight_structure(script: str) -> None:
         )
 
     filter_seen = False
+    with_seen = False
     where_count = 0
     for line_no, text in lines[1:]:
         lowered = text.lower()
@@ -337,6 +281,13 @@ def _preflight_structure(script: str) -> None:
                     "latest requires a positive integer count",
                     line=line_no,
                 )
+        if lowered.startswith("with "):
+            with_seen = True
+            if text.endswith(":"):
+                raise DSLParseError(
+                    "with predicates are inline; use 'with <requirement> where <expression>'",
+                    line=line_no,
+                )
         if lowered.startswith("filter "):
             filter_seen = True
         elif lowered.startswith("where "):
@@ -344,6 +295,12 @@ def _preflight_structure(script: str) -> None:
             if where_count > 1:
                 raise DSLParseError(
                     "only one general where clause is allowed",
+                    line=line_no,
+                )
+            if with_seen:
+                raise DSLParseError(
+                    "general where must precede with clauses; scoped with predicates "
+                    "must be inline as 'with <requirement> where <expression>'",
                     line=line_no,
                 )
             if filter_seen:
