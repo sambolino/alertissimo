@@ -14,11 +14,19 @@ from typing import Any
 import streamlit as st
 
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
+from alertissimo.dsl_block_canvas import render_dsl_block_canvas
 from alertissimo.dsl import (
     DSLParseError,
+    SurfaceCapabilityStatus,
     SurfaceLoweringError,
     compile_surface,
     parse_surface_script,
+    validate_surface_capabilities,
+)
+from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
+from alertissimo.data_layer.runtime.capability_graph import (
+    CapabilityGraph,
+    build_capability_graph,
 )
 from alertissimo.orchestration.ir import ConeSearchStep
 from alertissimo.ui_portfolios import (
@@ -141,7 +149,9 @@ def candidate_result_key(candidate: dict[str, Any]) -> str:
     return str(candidate.get("candidate_id", candidate["object_id"]))
 
 
-def render_cone_result_cards(matches: list[dict[str, Any]]) -> None:
+def render_cone_result_cards(
+    matches: list[dict[str, Any]], *, selection_state_key: str = "cone_search_selected"
+) -> None:
     """Render the cone-search result page and let a card open one object."""
     st.subheader("Cone-search results")
     st.success(f"{len(matches)} object(s) found. Select an object to open its portfolio.")
@@ -172,21 +182,29 @@ def render_cone_result_cards(matches: list[dict[str, Any]]) -> None:
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state["cone_search_selected"] = candidate_result_key(candidate)
+                st.session_state[selection_state_key] = candidate_result_key(candidate)
                 st.rerun()
 
 
-def render_cone_object_page(matches: list[dict[str, Any]], selected_key: str) -> None:
+def render_cone_object_page(
+    matches: list[dict[str, Any]],
+    selected_key: str,
+    *,
+    selection_state_key: str = "cone_search_selected",
+) -> None:
     """Render the one-object page reached from the cone-search result page."""
     candidate = next(
         (item for item in matches if candidate_result_key(item) == selected_key), None
     )
     if candidate is None:
-        st.session_state.pop("cone_search_selected", None)
+        st.session_state.pop(selection_state_key, None)
         st.warning("The selected object is no longer in these cone-search results.")
         return
-    if st.button("← Back to cone-search results"):
-        st.session_state.pop("cone_search_selected", None)
+    if st.button(
+        "← Back to cone-search results",
+        key=f"back-to-cone-results-{selection_state_key}",
+    ):
+        st.session_state.pop(selection_state_key, None)
         st.rerun()
     render_selected_candidate(candidate)
 
@@ -260,6 +278,95 @@ def compile_dsl_cone_preview(dsl_text: str) -> ConeSearchStep | None:
     return candidate_step if isinstance(candidate_step, ConeSearchStep) else None
 
 
+@st.cache_resource
+def load_block_capability_graph() -> CapabilityGraph:
+    """Load the local registry used to constrain the visual DSL blocks."""
+    return build_capability_graph()
+
+
+def block_discovery_brokers(
+    graph: CapabilityGraph, origins: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Return only brokers that can run a spatial summary search for every origin."""
+    brokers = sorted({endpoint.broker for endpoint in graph.endpoint_capabilities})
+    supported = []
+    for broker in brokers:
+        surface = parse_surface_script(
+            render_block_dsl(
+                origins=origins,
+                broker=broker,
+                ra_deg=0,
+                dec_deg=0,
+                radius=1,
+                radius_unit="arcsec",
+            )
+        )
+        if validate_surface_capabilities(surface, graph=graph).status is SurfaceCapabilityStatus.SUPPORTED:
+            supported.append(broker)
+    return tuple(supported)
+
+
+def block_requirement_brokers(
+    graph: CapabilityGraph,
+    *,
+    origins: tuple[str, ...],
+    discovery_broker: str,
+    product: str,
+) -> tuple[str, ...]:
+    """Offer a product/broker pair only when the registry supports it."""
+    options = []
+    for broker in sorted({endpoint.broker for endpoint in graph.endpoint_capabilities}):
+        script = render_block_dsl(
+            origins=origins,
+            broker=discovery_broker,
+            ra_deg=0,
+            dec_deg=0,
+            radius=1,
+            radius_unit="arcsec",
+            requirements=(BlockRequirement(product=product, broker=broker),),
+        )
+        surface = parse_surface_script(script)
+        report = validate_surface_capabilities(surface, graph=graph)
+        if report.status is SurfaceCapabilityStatus.SUPPORTED:
+            options.append(broker)
+    return tuple(options)
+
+
+def render_dsl_block_input(*, key: str) -> tuple[str, bool]:
+    """Render one syntax-highlighted DSL editor without external value controls."""
+    text_state_key = f"{key}_block_dsl"
+    submit_state_key = f"{key}_block_last_submit"
+    graph = load_block_capability_graph()
+    origins = sorted({endpoint.origin for endpoint in graph.endpoint_capabilities})
+    brokers_by_origin = {
+        origin: block_discovery_brokers(graph, (origin,)) for origin in origins
+    }
+    products = sorted(
+        {
+            record.semantic_record_type.partition("@")[0]
+            for record in graph.semantic_record_capabilities
+            if record.semantic_record_type.partition("@")[0] != "summary"
+        }
+    )
+    brokers = sorted({endpoint.broker for endpoint in graph.endpoint_capabilities})
+    event = render_dsl_block_canvas(
+        key=f"{key}_block_canvas_component",
+        dsl_text=str(st.session_state.get(text_state_key, "")),
+        origins=origins,
+        brokers_by_origin=brokers_by_origin,
+        products=products,
+        brokers=brokers,
+    )
+    if event and event.get("submit") and isinstance(event.get("text"), str):
+        nonce = event.get("nonce")
+        if nonce != st.session_state.get(submit_state_key):
+            st.session_state[submit_state_key] = nonce
+            st.session_state[text_state_key] = event["text"]
+            return event["text"], True
+    dsl_text = str(st.session_state.get(text_state_key, ""))
+    return dsl_text, False
+
+
 def render_dsl_entry(
     candidates: list[dict[str, Any]],
     *,
@@ -269,53 +376,48 @@ def render_dsl_entry(
 ) -> None:
     """Validate DSL and reuse the local cone-results view when applicable."""
 
+    results_state_key = f"{key}_cone_results"
+    selection_state_key = f"{key}_cone_selected"
+
     st.subheader(title)
     st.write("Describe the survey in the Alertissimo DSL.")
     if context:
         st.caption(context)
-    with st.form(f"{key}_form"):
-        dsl_text = st.text_area(
-            "DSL",
-            value="""objects from ztf via lasair
-    inside (50.84811, 37.46784, 300.00arcsec)
-    with lightcurve via fink
-    with lightcurve via lasair
-""",
-            placeholder="Enter a DSL survey definition…",
-            height=180,
-            key=key,
-            help="The local prototype validates DSL and previews cone selectors against frozen evidence.",
+    dsl_text, submitted = render_dsl_block_input(key=key)
+
+    if submitted:
+        try:
+            cone = compile_dsl_cone_preview(dsl_text)
+        except DSLParseError as error:
+            st.error(f"DSL syntax error: {error}")
+            return
+        except SurfaceLoweringError as error:
+            st.error(f"DSL cannot be compiled: {error}")
+            return
+
+        st.success("DSL syntax, semantic validation, and compilation succeeded.")
+        if cone is None:
+            st.session_state.pop(results_state_key, None)
+            st.session_state.pop(selection_state_key, None)
+            st.info(
+                "This valid DSL request does not contain an `inside (...)` cone selector. "
+                "The current local search page can preview only cone results; it does not "
+                "plan endpoints or execute brokers."
+            )
+            return
+
+        cone_candidates_data, _ = load_frozen_cone_candidates()
+        st.session_state[results_state_key] = cone_candidates(
+            candidates + cone_candidates_data,
+            cone.ra,
+            cone.dec,
+            cone.radius,
         )
-        submitted = st.form_submit_button("Run DSL", type="primary")
+        st.session_state.pop(selection_state_key, None)
 
-    if not submitted:
+    matches = st.session_state.get(results_state_key)
+    if matches is None:
         return
-
-    try:
-        cone = compile_dsl_cone_preview(dsl_text)
-    except DSLParseError as error:
-        st.error(f"DSL syntax error: {error}")
-        return
-    except SurfaceLoweringError as error:
-        st.error(f"DSL cannot be compiled: {error}")
-        return
-
-    st.success("DSL syntax, semantic validation, and compilation succeeded.")
-    if cone is None:
-        st.info(
-            "This valid DSL request does not contain an `inside (...)` cone selector. "
-            "The current local search page can preview only cone results; it does not "
-            "plan endpoints or execute brokers."
-        )
-        return
-
-    cone_candidates_data, _ = load_frozen_cone_candidates()
-    matches = cone_candidates(
-        candidates + cone_candidates_data,
-        cone.ra,
-        cone.dec,
-        cone.radius,
-    )
     st.caption(
         "Frozen cone preview: the compiled `inside (...)` selector is applied to "
         "local broker evidence. Provider execution and non-spatial predicates are "
@@ -324,7 +426,15 @@ def render_dsl_entry(
     if not matches:
         st.warning("No frozen fixture candidates fall inside this DSL cone.")
         return
-    render_cone_result_cards(matches)
+    selected_key = st.session_state.get(selection_state_key)
+    if selected_key is None:
+        render_cone_result_cards(matches, selection_state_key=selection_state_key)
+    else:
+        render_cone_object_page(
+            matches,
+            str(selected_key),
+            selection_state_key=selection_state_key,
+        )
 
 
 def main() -> None:

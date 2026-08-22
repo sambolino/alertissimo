@@ -4,6 +4,9 @@ headless = true
 [runner]
 magicEnabled = true
 
+[browser]
+gatherUsageStats = false
+
 [theme]
 base = "light"
 backgroundColor = "#ffffff"
