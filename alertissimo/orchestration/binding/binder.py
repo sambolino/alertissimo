@@ -10,18 +10,24 @@ only become available after earlier workflow Steps have executed. They do not
 modify or get copied back into WorkflowIR.
 
 Most physical parameters bind one canonical role directly. A registry declaration
-may additionally name a local binding adapter, optionally over multiple canonical
-roles, when a provider client requires a composite/native Python value. The generic
-binder loads that adapter declaratively; it contains no provider dispatch.
+may additionally name a pure request-side adapter, optionally over multiple
+canonical roles, when a physical client requires a composite/native value. Generic
+value transformation lives in the data-layer transform package; orchestration owns
+only role resolution, conflicts, and endpoint-call construction.
 """
 
 from __future__ import annotations
 
-import importlib
-from collections.abc import Callable
 from typing import Any, Mapping
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
+from alertissimo.data_layer.transforms.request import (
+    RequestTransformError,
+    UnsupportedRequestTransformError,
+    apply_binding_adapter,
+    coerce_physical_type,
+    transform_collection,
+)
 from alertissimo.orchestration.ir.models import Step
 from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
@@ -77,49 +83,21 @@ def _binding_roles(declaration: Mapping[str, Any]) -> tuple[str, ...]:
     return (role,)
 
 
-def _load_binding_adapter(path: str) -> Callable[..., Any]:
-    """Load one trusted local callable named by an endpoint binding declaration."""
-
-    module_name, separator, attribute = path.partition(":")
-    if not separator or not module_name or not attribute:
-        raise ParameterBindingError(
-            "binding.adapter must use 'package.module:callable' syntax"
-        )
-    module = importlib.import_module(module_name)
-    adapter = getattr(module, attribute, None)
-    if not callable(adapter):
-        raise ParameterBindingError(
-            f"binding.adapter {path!r} does not resolve to a callable"
-        )
-    return adapter
-
-
 def _transform(
     value: Any, declaration: Mapping[str, Any], *, endpoint_plan: EndpointPlan, role: str
 ) -> Any:
-    binding = declaration.get("binding") or {}
-    collection = binding.get("collection")
-    values = value if isinstance(value, (list, tuple)) else None
-    if collection is None:
-        if values is not None:
-            if len(values) != 1:
-                raise UnsupportedParameterBindingError(
-                    f"unsupported parameter binding for {_context(endpoint_plan)}: "
-                    f"binding role {role!r} is singular but received cardinality {len(values)}"
-                )
-            return values[0]
-        return value
-    if collection == "csv":
-        values = values if values is not None else (value,)
-        max_items = binding.get("max_items")
-        if max_items is not None and len(values) > max_items:
-            raise UnsupportedParameterBindingError(
-                f"unsupported parameter binding for {_context(endpoint_plan)}: "
-                f"binding role {role!r} exceeds declared limit {max_items} "
-                f"with cardinality {len(values)}"
-            )
-        return ",".join(str(item) for item in values)
-    raise ParameterBindingError(f"unknown binding collection transform {collection!r}")
+    """Apply generic request representation transforms with orchestration context."""
+
+    try:
+        return transform_collection(value, declaration, role=role)
+    except UnsupportedRequestTransformError as error:
+        raise UnsupportedParameterBindingError(
+            f"unsupported parameter binding for {_context(endpoint_plan)}: {error}"
+        ) from error
+    except RequestTransformError as error:
+        raise ParameterBindingError(
+            f"cannot transform parameter for {_context(endpoint_plan)}: {error}"
+        ) from error
 
 
 def _coerce_physical_type(
@@ -130,29 +108,14 @@ def _coerce_physical_type(
     physical_name: str,
     role: str,
 ) -> Any:
-    declared_type = declaration.get("type")
+    """Apply generic physical type coercion with orchestration endpoint context."""
+
     try:
-        if declared_type == "integer":
-            if isinstance(value, bool):
-                raise ValueError("booleans are not integer parameter values")
-            converted = int(value)
-            if isinstance(value, float) and not value.is_integer():
-                raise ValueError("non-integral number")
-            return converted
-        if declared_type == "number":
-            if isinstance(value, bool):
-                raise ValueError("booleans are not numeric parameter values")
-            return float(value)
-        if declared_type == "string":
-            return str(value)
-        if declared_type is None:
-            return value
-        raise ValueError(f"unsupported declared physical type {declared_type!r}")
-    except (TypeError, ValueError, OverflowError) as error:
+        return coerce_physical_type(value, declaration, role=role)
+    except RequestTransformError as error:
         raise ParameterBindingError(
             f"cannot bind parameter for {_context(endpoint_plan)}: physical parameter "
-            f"{physical_name!r} declares type {declared_type!r}, but binding role "
-            f"{role!r} produced value {value!r}"
+            f"{physical_name!r} {error}"
         ) from error
 
 
@@ -228,13 +191,12 @@ def _bind_declared_parameter(
             raise ParameterBindingError(
                 "binding.adapter and binding.collection cannot be combined"
             )
-        adapter = _load_binding_adapter(adapter_path)
         try:
-            return adapter(**values)
-        except Exception as error:
+            return apply_binding_adapter(adapter_path, values)
+        except RequestTransformError as error:
             raise ParameterBindingError(
-                f"binding adapter {adapter_path!r} failed for {_context(endpoint_plan)} "
-                f"physical parameter {physical_name!r}: {type(error).__name__}: {error}"
+                f"{error} for {_context(endpoint_plan)} physical parameter "
+                f"{physical_name!r}"
             ) from error
 
     if len(roles) != 1:

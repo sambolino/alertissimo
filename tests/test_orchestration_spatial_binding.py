@@ -115,12 +115,12 @@ def test_antares_cone_contract_keeps_native_types_with_declarative_adapters():
         assert "bind" not in center
         assert center["binding"] == {
             "roles": ["ra", "dec"],
-            "adapter": "alertissimo.data_layer.providers.antares_binding:skycoord_icrs_degrees",
+            "adapter": "alertissimo.data_layer.transforms.astropy:skycoord_icrs_degrees",
         }
 
         radius = spec.params["radius"]
         assert radius["type"] == "Angle"
         assert radius["bind"] == "radius"
         assert radius["binding"] == {
-            "adapter": "alertissimo.data_layer.providers.antares_binding:angle_arcsec",
+            "adapter": "alertissimo.data_layer.transforms.astropy:angle_arcsec",
         }
