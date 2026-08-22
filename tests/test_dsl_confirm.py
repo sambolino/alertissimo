@@ -45,6 +45,7 @@ def test_adjacent_where_attaches_its_canonical_predicate_to_confirm():
     )
     workflow = lower_surface(surface).workflow
 
+    assert [step.op for step in workflow.steps] == ["semantic_search", "confirm"]
     search = workflow.steps[0]
     assert isinstance(search, SemanticSearchStep)
     confirm = next(step for step in workflow.steps if isinstance(step, ConfirmStep))
@@ -65,6 +66,11 @@ def test_nonadjacent_where_does_not_turn_later_confirm_into_predicate_quorum():
     )
     workflow = lower_surface(surface).workflow
 
+    assert [step.op for step in workflow.steps] == [
+        "semantic_search",
+        "get_classification",
+        "confirm",
+    ]
     search = workflow.steps[0]
     assert isinstance(search, SemanticSearchStep)
     assert search.predicate is not None
@@ -92,6 +98,25 @@ def test_predicate_confirm_requires_broker_endpoint_that_can_materialize_predica
         (candidate.broker, candidate.endpoint)
         for candidate in result.candidates
     } == {("fink", "objects"), ("lasair", "objects")}
+
+
+def test_surface_capability_validation_uses_the_adjacent_proposition_too():
+    graph = build_capability_graph()
+    surface = parse_surface_script(
+        "objects from ztf via alerce\n"
+        'where classification.best.class = "SN"\n'
+        "confirm by 2 via fink, lasair\n"
+    )
+
+    report = validate_surface_capabilities(surface, graph=graph)
+    checks = [check for check in report.checks if check.subject == "confirm"]
+
+    assert len(checks) == 2
+    assert all(check.status is SurfaceCapabilityStatus.SUPPORTED for check in checks)
+    assert {
+        (check.broker, check.evidence[0].endpoints)
+        for check in checks
+    } == {("fink", ("objects",)), ("lasair", ("objects",))}
 
 
 def test_real_ztf_brokers_expose_confirmable_object_evidence():
