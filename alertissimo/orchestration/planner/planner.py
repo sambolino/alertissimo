@@ -417,13 +417,14 @@ def _mark_candidate_dependencies(
 ) -> tuple[StepRun, ...]:
     """Mark reuse, late binding, filtering, and matching over candidate views.
 
-    The candidate population is created by a SearchStep and changed only by an
-    explicit FilterStep. Provider GetSteps may materialize evidence used by a later
-    filter, but retrieval alone does not silently redefine the population. A filter
-    consumes the latest materialized semantic view and becomes the new candidate
-    population. MatchStep consumes the current material view without changing the
-    candidate population. Later targetless GetSteps therefore continue to bind the
-    same candidates after a MatchStep.
+    The candidate population is created by a SearchStep and may be reduced by an
+    explicit FilterStep or MatchStep. Provider GetSteps may materialize evidence
+    used by a later local operation, but retrieval alone does not silently redefine
+    the population. FilterStep consumes the latest materialized semantic view and
+    keeps only candidates satisfying its unary predicate. MatchStep consumes the
+    latest materialized semantic view and keeps only candidates participating in an
+    accepted pairwise relation. Each filtering operation becomes the candidate owner
+    for later targetless GetSteps.
     """
 
     rewritten = list(planned_steps)
@@ -468,6 +469,8 @@ def _mark_candidate_dependencies(
                     )
                 }
             )
+            current_candidate_index = step_index
+            current_material_index = step_index
             continue
 
         if active_search_index is None:
