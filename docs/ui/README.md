@@ -46,6 +46,12 @@ filter classification@fink.best.probability >= 0.5
 
 Order matters because later clauses may operate on material produced by earlier clauses.
 
+### Layout rule
+
+Indentation is **never semantic** in the Alertissimo DSL. The parser treats leading indentation as cosmetic everywhere.
+
+Do not use indentation, line breaks, or a trailing `:` to express predicate grouping or scope. Boolean grouping must be explicit with `AND`, `OR`, `NOT`, and parentheses.
+
 ---
 
 ## 3. Recommended UI blocks
@@ -144,12 +150,14 @@ Predicate syntax supports:
 <
 >=
 <=
-and
-or
-not
+AND
+OR
+NOT
 exists
 (...)
 ```
+
+Keywords are parsed case-insensitively, but the UI should emit uppercase `AND` / `OR` / `NOT` for readability.
 
 Examples:
 
@@ -158,8 +166,7 @@ classification@fink.best.probability >= 0.5
 ```
 
 ```text
-classification@fink.best.class = "SN"
-and classification@fink.best.probability >= 0.5
+classification@fink.best.class = "SN" AND classification@fink.best.probability >= 0.5
 ```
 
 ```text
@@ -200,15 +207,28 @@ with classification from stamp_classifier_rubin_beta_20260421
 with crossmatch from gaia_dr3
 ```
 
-There are also scoped predicates:
+A requirement may carry one scoped boolean expression on the **same physical line**:
 
 ```text
-with classification from stamp_classifier_rubin_beta_20260421:
+with classification from stamp_classifier_rubin_beta_20260421 where best.class = "SN" AND best.probability >= 0.5
+```
+
+The following old Python-like forms are invalid:
+
+```text
+with classification from classifier_x:
     best.class = "SN"
     best.probability >= 0.5
 ```
 
-The indented predicates are implicitly conjunctive.
+```text
+with classification from classifier_x
+    where best.class = "SN" AND best.probability >= 0.5
+```
+
+A newline never implies `AND`. If several conditions belong to one predicate, join them explicitly with `AND` / `OR` or parentheses.
+
+A general top-level `where` belongs to the initial candidate pass and must precede `with` clauses. A predicate that belongs specifically to one `with` requirement must therefore use the inline form above.
 
 ### Important: `from` is contextual
 
