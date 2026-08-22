@@ -8,10 +8,17 @@ The binder applies decisions; it does not reinterpret semantic predicates.
 Runtime values are an optional late-binding input for canonical roles whose values
 only become available after earlier workflow Steps have executed. They do not
 modify or get copied back into WorkflowIR.
+
+Most physical parameters bind one canonical role directly. A registry declaration
+may additionally name a local binding adapter, optionally over multiple canonical
+roles, when a provider client requires a composite/native Python value. The generic
+binder loads that adapter declaratively; it contains no provider dispatch.
 """
 
 from __future__ import annotations
 
+import importlib
+from collections.abc import Callable
 from typing import Any, Mapping
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
@@ -39,6 +46,52 @@ class UnsupportedParameterBindingError(ParameterBindingError):
 
 def _context(plan: EndpointPlan) -> str:
     return f"{plan.broker}/{plan.origin}/{plan.endpoint}"
+
+
+def _binding_roles(declaration: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return canonical roles feeding one physical parameter declaration."""
+
+    binding = declaration.get("binding") or {}
+    raw_roles = binding.get("roles")
+    if raw_roles is not None:
+        if (
+            not isinstance(raw_roles, list)
+            or not raw_roles
+            or any(not isinstance(role, str) or not role for role in raw_roles)
+            or len(set(raw_roles)) != len(raw_roles)
+        ):
+            raise ParameterBindingError(
+                "binding.roles must be a non-empty list of unique role names"
+            )
+        if declaration.get("bind") is not None:
+            raise ParameterBindingError(
+                "physical parameter declaration cannot use both bind and binding.roles"
+            )
+        return tuple(raw_roles)
+
+    role = declaration.get("bind")
+    if role is None:
+        return ()
+    if not isinstance(role, str) or not role:
+        raise ParameterBindingError("bind must be a non-empty role name")
+    return (role,)
+
+
+def _load_binding_adapter(path: str) -> Callable[..., Any]:
+    """Load one trusted local callable named by an endpoint binding declaration."""
+
+    module_name, separator, attribute = path.partition(":")
+    if not separator or not module_name or not attribute:
+        raise ParameterBindingError(
+            "binding.adapter must use 'package.module:callable' syntax"
+        )
+    module = importlib.import_module(module_name)
+    adapter = getattr(module, attribute, None)
+    if not callable(adapter):
+        raise ParameterBindingError(
+            f"binding.adapter {path!r} does not resolve to a callable"
+        )
+    return adapter
 
 
 def _transform(
@@ -125,6 +178,83 @@ def _step_binding_value(step: Step, role: str) -> Any:
     return getattr(step, role, None)
 
 
+def _role_value(
+    step: Step,
+    role: str,
+    supplied_runtime: Mapping[str, Any],
+    *,
+    endpoint_plan: EndpointPlan,
+) -> Any:
+    step_value = _step_binding_value(step, role)
+    runtime_supplied = role in supplied_runtime
+    runtime_value = supplied_runtime.get(role)
+    if runtime_supplied and step_value is not None and runtime_value != step_value:
+        raise UnsupportedParameterBindingError(
+            f"runtime binding for {_context(endpoint_plan)} role {role!r} "
+            "conflicts with explicit WorkflowIR value"
+        )
+    return runtime_value if runtime_supplied else step_value
+
+
+def _bind_declared_parameter(
+    step: Step,
+    declaration: Mapping[str, Any],
+    roles: tuple[str, ...],
+    supplied_runtime: Mapping[str, Any],
+    *,
+    endpoint_plan: EndpointPlan,
+    physical_name: str,
+) -> Any | None:
+    """Resolve direct or adapter-backed canonical roles for one physical parameter."""
+
+    values = {
+        role: _role_value(
+            step,
+            role,
+            supplied_runtime,
+            endpoint_plan=endpoint_plan,
+        )
+        for role in roles
+    }
+    if any(value is None for value in values.values()):
+        return None
+
+    binding = declaration.get("binding") or {}
+    adapter_path = binding.get("adapter")
+    if adapter_path is not None:
+        if not isinstance(adapter_path, str) or not adapter_path:
+            raise ParameterBindingError("binding.adapter must be a non-empty string")
+        if binding.get("collection") is not None:
+            raise ParameterBindingError(
+                "binding.adapter and binding.collection cannot be combined"
+            )
+        adapter = _load_binding_adapter(adapter_path)
+        try:
+            return adapter(**values)
+        except Exception as error:
+            raise ParameterBindingError(
+                f"binding adapter {adapter_path!r} failed for {_context(endpoint_plan)} "
+                f"physical parameter {physical_name!r}: {type(error).__name__}: {error}"
+            ) from error
+
+    if len(roles) != 1:
+        raise UnsupportedParameterBindingError(
+            f"unsupported parameter binding for {_context(endpoint_plan)}: physical "
+            f"parameter {physical_name!r} composes roles {roles!r} but declares no adapter"
+        )
+    role = roles[0]
+    transformed = _transform(
+        values[role], declaration, endpoint_plan=endpoint_plan, role=role
+    )
+    return _coerce_physical_type(
+        transformed,
+        declaration,
+        endpoint_plan=endpoint_plan,
+        physical_name=physical_name,
+        role=role,
+    )
+
+
 def bind_endpoint(
     step: Step,
     endpoint_plan: EndpointPlan,
@@ -188,34 +318,23 @@ def bind_endpoint(
     declared_roles: list[str] = []
     for physical_name, raw_declaration in spec.params.items():
         declaration = raw_declaration or {}
-        role = declaration.get("bind")
-        if role is None:
+        roles = _binding_roles(declaration)
+        if not roles:
             continue
-        declared_roles.append(role)
-        step_value = _step_binding_value(step, role)
-        runtime_supplied = role in supplied_runtime
-        runtime_value = supplied_runtime.get(role)
-        if runtime_supplied and step_value is not None and runtime_value != step_value:
-            raise UnsupportedParameterBindingError(
-                f"runtime binding for {_context(endpoint_plan)} role {role!r} "
-                "conflicts with explicit WorkflowIR value"
-            )
-        value = runtime_value if runtime_supplied else step_value
+        declared_roles.extend(roles)
+        value = _bind_declared_parameter(
+            step,
+            declaration,
+            roles,
+            supplied_runtime,
+            endpoint_plan=endpoint_plan,
+            physical_name=physical_name,
+        )
         if value is not None:
-            transformed = _transform(
-                value, declaration, endpoint_plan=endpoint_plan, role=role
-            )
-            coerced = _coerce_physical_type(
-                transformed,
-                declaration,
-                endpoint_plan=endpoint_plan,
-                physical_name=physical_name,
-                role=role,
-            )
             _set_param(
                 params,
                 physical_name,
-                coerced,
+                value,
                 endpoint_plan=endpoint_plan,
             )
 
@@ -240,10 +359,11 @@ def bind_endpoint(
             continue
         if "default" in declaration:
             continue
-        role = declaration.get("bind")
+        roles = _binding_roles(declaration)
+        expected = roles[0] if len(roles) == 1 else roles or None
         raise MissingBoundParameterError(
             f"missing required parameter for {_context(endpoint_plan)}: physical "
-            f"parameter {physical_name!r}, expected binding role {role!r}"
+            f"parameter {physical_name!r}, expected binding role {expected!r}"
         )
 
     return BoundEndpointCall(

@@ -27,6 +27,32 @@ def test_portfolio_serialization_is_plain_and_excludes_raw_payload():
     assert json.loads(portfolio_to_json(portfolio)) == result
 
 
+def test_native_python_client_parameters_serialize_as_stable_text():
+    class NativeCoordinate:
+        def __str__(self):
+            return "ICRS(124.88deg,-6.02deg)"
+
+    execution = InternalExecutionProvenance(
+        InternalExecutionId("exec:native"),
+        "antares",
+        "ztf",
+        "cone_search",
+        {"center": NativeCoordinate(), "radius": 1.0},
+        status="success",
+    )
+    portfolio = Portfolio(
+        InternalPortfolioId("portfolio:native"),
+        executions=(execution,),
+    )
+
+    result = portfolio_to_dict(portfolio)
+    assert result["executions"][0]["params"] == {
+        "center": "ICRS(124.88deg,-6.02deg)",
+        "radius": 1.0,
+    }
+    assert json.loads(portfolio_to_json(portfolio)) == result
+
+
 def test_record_edge_serialization_keeps_existing_endpoint_keys():
     first = SemanticRecord(InternalRecordId("record:1"), "summary@ztf:lasair", {})
     second = SemanticRecord(InternalRecordId("record:2"), "detection@ztf:lasair", {})

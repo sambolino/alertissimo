@@ -1,4 +1,4 @@
-"""Contracts for semantic cone coordinates binding into scalar provider endpoints."""
+"""Contracts for semantic cone coordinates binding into provider endpoints."""
 
 import pytest
 
@@ -101,15 +101,26 @@ def test_fink_multisurvey_cone_plan_binds_same_semantic_coordinates_per_origin()
     ]
 
 
-def test_antares_cone_contract_is_not_misrepresented_as_scalar_binding():
-    """ANTARES needs a future ra/dec -> SkyCoord and arcsec -> Angle transform."""
+def test_antares_cone_contract_keeps_native_types_with_declarative_adapters():
+    """ANTARES stays physically SkyCoord/Angle while canonical roles remain explicit."""
 
     registry = EndpointRegistry()
     for origin in ("lsst", "ztf"):
         spec = registry.resolve("antares", origin, "cone_search")
         assert "ra" not in spec.params
         assert "dec" not in spec.params
-        assert spec.params["center"]["type"] == "SkyCoord"
-        assert spec.params["radius"]["type"] == "Angle"
-        assert "bind" not in spec.params["center"]
-        assert "bind" not in spec.params["radius"]
+
+        center = spec.params["center"]
+        assert center["type"] == "SkyCoord"
+        assert "bind" not in center
+        assert center["binding"] == {
+            "roles": ["ra", "dec"],
+            "adapter": "alertissimo.data_layer.providers.antares_binding:skycoord_icrs_degrees",
+        }
+
+        radius = spec.params["radius"]
+        assert radius["type"] == "Angle"
+        assert radius["bind"] == "radius"
+        assert radius["binding"] == {
+            "adapter": "alertissimo.data_layer.providers.antares_binding:angle_arcsec",
+        }
