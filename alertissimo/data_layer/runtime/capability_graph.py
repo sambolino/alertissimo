@@ -242,6 +242,23 @@ def _strings(value: Any, where: str) -> tuple[str, ...]:
     return tuple(sorted(value))
 
 
+def _parameter_binding_roles(declaration: Any) -> tuple[str, ...]:
+    """Return every canonical role declared for one physical parameter."""
+
+    if not isinstance(declaration, dict):
+        return ()
+    roles: set[str] = set()
+    direct = declaration.get("bind")
+    if isinstance(direct, str):
+        roles.add(direct)
+    binding = declaration.get("binding")
+    if isinstance(binding, dict):
+        composite = binding.get("roles")
+        if isinstance(composite, list):
+            roles.update(role for role in composite if isinstance(role, str))
+    return tuple(sorted(roles))
+
+
 def build_capability_graph(registry_root: Path | str | None = None) -> CapabilityGraph:
     """Build a deterministic graph from every data-layer provider declaration."""
     root = Path(registry_root) if registry_root is not None else PROVIDERS_ROOT
@@ -298,26 +315,27 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             output_type = output.get("type")
             if output_type is not None and not isinstance(output_type, str):
                 raise CapabilityGraphError(f"{endpoint_path}: output type must be a string")
+            binding_roles = tuple(sorted({
+                role
+                for declaration in params.values()
+                for role in _parameter_binding_roles(declaration)
+            }))
+            collection_binding_roles = tuple(sorted({
+                role
+                for declaration in params.values()
+                if isinstance(declaration, dict)
+                and isinstance(declaration.get("binding"), dict)
+                and declaration["binding"].get("collection") is not None
+                for role in _parameter_binding_roles(declaration)
+            }))
             endpoint_items.append(EndpointCapability(
                 broker, origin, endpoint, path, method,
                 _strings(spec.get("operation_types"), f"{endpoint_path}: operation_types"),
                 tuple(sorted(params)),
                 _strings(spec.get("server_filters"), f"{endpoint_path}: server_filters"),
                 projection_param, supports_projection, output_type,
-                tuple(sorted({
-                    declaration.get("bind")
-                    for declaration in params.values()
-                    if isinstance(declaration, dict)
-                    and isinstance(declaration.get("bind"), str)
-                })),
-                tuple(sorted({
-                    declaration.get("bind")
-                    for declaration in params.values()
-                    if isinstance(declaration, dict)
-                    and isinstance(declaration.get("bind"), str)
-                    and isinstance(declaration.get("binding"), dict)
-                    and declaration["binding"].get("collection") is not None
-                })),
+                binding_roles,
+                collection_binding_roles,
             ))
 
         payload_defs = _dict(mappings_doc.get("payloads"), f"{mapping_path}: payloads")
