@@ -17,6 +17,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
+    ConfirmStep,
     DeriveStep,
     FilterStep,
     GetClassificationStep,
@@ -154,19 +155,6 @@ def _forced_photometry_supplement(
     primary: EndpointCapability,
     graph: CapabilityGraph,
 ) -> EndpointCapability | None:
-    """Return one proven-compatible optional forced-photometry endpoint.
-
-    ``GetLightcurveStep`` owns the semantic completeness policy; a forced endpoint
-    is only a supplementary physical realization. The supplement is deliberately
-    best-effort: absence, ambiguity, or target-cardinality incompatibility returns
-    ``None`` rather than making the primary lightcurve plan fail.
-
-    Bands and time windows are not auto-supplemented yet because the registry does
-    not currently prove equivalent constraint semantics between ordinary history
-    and forced-photometry endpoints. A targetless Step is treated conservatively as
-    potentially multi-object, so only collection-capable forced endpoints qualify.
-    """
-
     if step.bands is not None or step.time_context is not None:
         return None
     if "forced_photometry" in primary.operation_types:
@@ -241,13 +229,6 @@ def _semantic_record_producer(record_type: str) -> str | None:
 
 
 def _get_record_requirement(step: GetStep) -> SemanticReference | None:
-    """Return the semantic record a targetless GetStep requires from candidates.
-
-    This intentionally models only whole-record retrieval cases whose current Step
-    fields add no extra retrieval semantics. More specific requests remain separate
-    executions until their equivalence can be proved.
-    """
-
     if getattr(step, "target", None) is not None:
         return None
     if isinstance(step, GetClassificationStep):
@@ -284,12 +265,6 @@ def _get_record_requirement(step: GetStep) -> SemanticReference | None:
 
 
 def _positive_references(predicate: Predicate | None) -> tuple[SemanticReference, ...]:
-    """References whose existence is positively required by a predicate.
-
-    AND preserves positive evidence. OR and NOT do not: neither proves that a
-    particular referenced semantic record must be present in every accepted result.
-    """
-
     if predicate is None:
         return ()
     if isinstance(predicate, ComparisonPredicate):
@@ -416,20 +391,7 @@ def _mark_candidate_dependencies(
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Mark candidate and semantic-material lineage through one staged workflow.
-
-    The candidate population is created by a SearchStep and may be reduced by an
-    explicit FilterStep or MatchStep. A targetless provider GetStep does not change
-    that population: each physical plan binds IDs from the current candidate owner.
-    The Step occurrence separately records the latest semantic material view it
-    enriches. Its semantic output can therefore be an immutable accumulated snapshot
-    while its physical execution list remains occurrence-local.
-
-    FilterStep consumes the latest materialized semantic view and keeps only
-    candidates satisfying its unary predicate. MatchStep does the analogous pairwise
-    filtering. Each filtering operation then becomes both the candidate owner and
-    the latest materialized view for subsequent Steps.
-    """
+    """Mark candidate and semantic-material lineage through one staged workflow."""
 
     rewritten = list(planned_steps)
     active_search_index: int | None = None
@@ -480,6 +442,60 @@ def _mark_candidate_dependencies(
         if active_search_index is None:
             continue
 
+        search_step = workflow.steps[active_search_index]
+        if not isinstance(search_step, SearchStep):
+            active_search_index = None
+            current_candidate_index = None
+            current_material_index = None
+            continue
+
+        if isinstance(step, ConfirmStep) and step.target is None:
+            if current_candidate_index is None or current_material_index is None:
+                raise PlanningNotApplicableError(
+                    f"confirm step_index {step_index} requires an earlier materialized "
+                    "candidate view"
+                )
+            current_run = rewritten[step_index]
+            current_plans: list[EndpointPlan] = []
+            for plan in current_run.endpoint_plans:
+                if not _can_bind_candidate_ids(search_step, plan, graph):
+                    endpoint = _capability_for_plan(graph, plan)
+                    cardinality = (
+                        "a singular target binding"
+                        if "target_id" in endpoint.binding_roles
+                        else "no target_id binding"
+                    )
+                    raise PlanningDeferredError(
+                        "candidate confirmation requires runtime binding from the "
+                        f"current candidate identities, but {endpoint.broker}/"
+                        f"{endpoint.origin}/{endpoint.endpoint} has {cardinality}; "
+                        "use collection-capable confirmation endpoints or constrain "
+                        "candidate selection to latest 1"
+                    )
+                current_plans.append(
+                    plan.model_copy(
+                        update={
+                            "candidate_input_from": CandidateInputRef(
+                                step_index=current_candidate_index
+                            )
+                        }
+                    )
+                )
+            rewritten[step_index] = current_run.model_copy(
+                update={
+                    "endpoint_plans": tuple(current_plans),
+                    "candidate_input_from": CandidateInputRef(
+                        step_index=current_material_index
+                    ),
+                    "material_input_from": MaterialInputRef(
+                        step_index=current_material_index
+                    ),
+                }
+            )
+            current_candidate_index = step_index
+            current_material_index = step_index
+            continue
+
         if not isinstance(step, GetStep) or getattr(step, "target", None) is not None:
             active_search_index = None
             current_candidate_index = None
@@ -493,12 +509,7 @@ def _mark_candidate_dependencies(
             current_material_index = None
             continue
 
-        search_step = workflow.steps[active_search_index]
-        if (
-            not isinstance(search_step, SearchStep)
-            or current_candidate_index is None
-            or current_material_index is None
-        ):
+        if current_candidate_index is None or current_material_index is None:
             active_search_index = None
             current_candidate_index = None
             current_material_index = None
@@ -581,14 +592,6 @@ def _same_forced_retrieval_input(
     lightcurve_step: GetLightcurveStep,
     supplement_plan: EndpointPlan,
 ) -> bool:
-    """Prove that two forced-photometry plans address the same semantic input.
-
-    Exact explicit targets are sufficient evidence. For targetless staged workflows,
-    both plans must instead carry the same runtime candidate-input reference. Bands
-    and time constraints must also match exactly; the current automatic supplement
-    is unconstrained, so any constrained explicit forced Step cannot satisfy it.
-    """
-
     if owner_step.bands != lightcurve_step.bands:
         return False
     if owner_step.time_context != lightcurve_step.time_context:
@@ -615,16 +618,6 @@ def _mark_equivalent_forced_reuse(
     planned_steps: tuple[StepRun, ...],
     graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
-    """Reuse earlier explicit forced retrievals for lightcurve supplements.
-
-    The semantic occurrences remain distinct: an explicit
-    ``GetForcedPhotometryStep`` still exposes its own Step output, and the later
-    ``GetLightcurveStep`` still contains forced evidence as part of its completeness
-    view. Only the physical call is coalesced. Reuse requires identical endpoint
-    identity and positive proof of identical explicit targets or identical staged
-    candidate input; endpoint coincidence alone is never sufficient.
-    """
-
     rewritten = list(planned_steps)
     for step_index, step in enumerate(workflow.steps):
         if not isinstance(step, GetLightcurveStep):
