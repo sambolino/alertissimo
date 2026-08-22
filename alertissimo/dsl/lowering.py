@@ -641,7 +641,11 @@ def lower_surface(
             )
             continue
         if index in consumed:
-            if isinstance(clause, WhereClause):
+            adjacent_confirm = (
+                index + 1 < len(surface.clauses)
+                and isinstance(surface.clauses[index + 1], ConfirmClause)
+            )
+            if isinstance(clause, WhereClause) and not adjacent_confirm:
                 for implied in _implicit_requirements_from_where(
                     surface,
                     clause,
