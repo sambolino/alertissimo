@@ -45,6 +45,7 @@ from alertissimo.orchestration.runtime.models import (
     CandidateInputRef,
     EndpointPlan,
     EndpointPlanRef,
+    MaterialInputRef,
     StepRun,
     StepRunState,
     WorkflowRun,
@@ -420,9 +421,9 @@ def _mark_candidate_dependencies(
     The candidate population is created by a SearchStep and may be reduced by an
     explicit FilterStep or MatchStep. A targetless provider GetStep does not change
     that population: each physical plan binds IDs from the current candidate owner.
-    The Step occurrence itself, however, records the latest materialized semantic
-    view it enriches. Its semantic output can therefore be an immutable accumulated
-    snapshot while its physical execution list remains occurrence-local.
+    The Step occurrence separately records the latest semantic material view it
+    enriches. Its semantic output can therefore be an immutable accumulated snapshot
+    while its physical execution list remains occurrence-local.
 
     FilterStep consumes the latest materialized semantic view and keeps only
     candidates satisfying its unary predicate. MatchStep does the analogous pairwise
@@ -564,7 +565,7 @@ def _mark_candidate_dependencies(
         rewritten[step_index] = current_run.model_copy(
             update={
                 "endpoint_plans": tuple(current_plans),
-                "candidate_input_from": CandidateInputRef(
+                "material_input_from": MaterialInputRef(
                     step_index=current_material_index
                 ),
             }
