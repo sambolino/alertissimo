@@ -528,7 +528,12 @@ def _lower_match(
     return MatchStep(sources=sources, params=params)
 
 
-def _lower_confirm(surface: SurfaceScript, clause: ConfirmClause) -> ConfirmStep:
+def _lower_confirm(
+    surface: SurfaceScript,
+    clause: ConfirmClause,
+    *,
+    predicate: Predicate | None = None,
+) -> ConfirmStep:
     sources = [
         Source(origin=origin, broker=broker)
         for origin in surface.candidates.origins
@@ -536,6 +541,7 @@ def _lower_confirm(surface: SurfaceScript, clause: ConfirmClause) -> ConfirmStep
     ]
     return ConfirmStep(
         sources=sources,
+        predicate=predicate,
         required_agreement=clause.required_agreement,
     )
 
@@ -635,7 +641,11 @@ def lower_surface(
             )
             continue
         if index in consumed:
-            if isinstance(clause, WhereClause):
+            adjacent_confirm = (
+                index + 1 < len(surface.clauses)
+                and isinstance(surface.clauses[index + 1], ConfirmClause)
+            )
+            if isinstance(clause, WhereClause) and not adjacent_confirm:
                 for implied in _implicit_requirements_from_where(
                     surface,
                     clause,
@@ -701,7 +711,21 @@ def lower_surface(
                 )
             )
         elif isinstance(clause, ConfirmClause):
-            steps.append(_lower_confirm(surface, clause))
+            attached_predicate = None
+            if index > 0 and isinstance(surface.clauses[index - 1], WhereClause):
+                previous = surface.clauses[index - 1]
+                attached_predicate = _semantic_predicate(
+                    previous.condition,
+                    record_types=semantic_model.record_types,
+                    clause_index=index - 1,
+                )
+            steps.append(
+                _lower_confirm(
+                    surface,
+                    clause,
+                    predicate=attached_predicate,
+                )
+            )
         elif isinstance(clause, MatchClause):
             steps.append(_lower_match(surface, clause, clause_index=index))
         elif isinstance(clause, RankedByClause):

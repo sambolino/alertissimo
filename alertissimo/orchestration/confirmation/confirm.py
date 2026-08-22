@@ -1,7 +1,7 @@
-"""Existence-quorum semantics for ``ConfirmStep``.
+"""Existence- and proposition-quorum semantics for ``ConfirmStep``.
 
-A Confirm occurrence owns real provider lookup executions, then evaluates a local
-quorum over the normalized evidence from those executions.  One broker contributes
+A Confirm occurrence owns real provider lookup/evidence executions, then evaluates a
+local quorum over those normalized execution-local Portfolios. One broker contributes
 at most one vote for one exact semantic object identity, regardless of how many
 records or execution-local Portfolios that broker returned.
 """
@@ -17,6 +17,7 @@ from alertissimo.orchestration.normalization.models import (
     consolidate_portfolios,
     summary_object_identity,
 )
+from alertissimo.orchestration.normalization.predicate import evaluate_portfolio_predicate
 
 
 class ConfirmExecutionError(ValueError):
@@ -42,6 +43,12 @@ def _declared_brokers(step: ConfirmStep) -> frozenset[str]:
     return frozenset(source.broker for source in step.sources if source.broker is not None)
 
 
+def _portfolio_attests(step: ConfirmStep, portfolio: Portfolio) -> bool:
+    if step.predicate is None:
+        return True
+    return evaluate_portfolio_predicate(portfolio, step.predicate)
+
+
 def confirm_step_portfolios(
     step: ConfirmStep,
     source: StepPortfolioResult,
@@ -49,12 +56,14 @@ def confirm_step_portfolios(
     *,
     step_index: int,
 ) -> StepPortfolioResult:
-    """Return the Confirm occurrence view after distinct-broker existence quorum.
+    """Return the Confirm occurrence view after distinct-broker quorum.
 
     ``source`` is the immutable candidate/material view entering Confirm. ``own``
-    contains only this Confirm occurrence's normalized physical executions. A vote
-    is evidence that one of those executions produced a Portfolio with the same
-    exact ``(origin, object_id)`` identity as an entering candidate.
+    contains only this Confirm occurrence's normalized physical executions. For bare
+    confirmation, a vote means that one execution produced the same exact
+    ``(origin, object_id)`` identity as an entering candidate. For proposition
+    confirmation, that execution-local Portfolio must additionally satisfy
+    ``step.predicate``.
 
     The resulting Step keeps all of Confirm's occurrence-local physical execution
     groups for audit, while ``materialized_portfolios`` contains only candidates
@@ -83,7 +92,11 @@ def confirm_step_portfolios(
             )
         for portfolio in execution.portfolios:
             identity = summary_object_identity(portfolio)
-            if identity is not None and identity in candidate_identities:
+            if (
+                identity is not None
+                and identity in candidate_identities
+                and _portfolio_attests(step, portfolio)
+            ):
                 votes[identity].add(broker)
 
     survivors = {

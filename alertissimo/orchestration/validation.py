@@ -216,6 +216,7 @@ def _raw_candidates_for_source(
             graph,
             broker=source.broker if source else None,
             origin=source.origin if source else None,
+            predicate=step.predicate,
         )
     if isinstance(step, GetLightcurveStep):
         return tuple(

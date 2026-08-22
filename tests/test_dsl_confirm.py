@@ -13,6 +13,7 @@ from alertissimo.dsl import (
 from alertissimo.orchestration.ir import ConfirmStep, SemanticSearchStep
 from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
 from alertissimo.orchestration.runtime import CandidateInputRef, MaterialInputRef
+from alertissimo.orchestration.validation import validate_step_capabilities
 
 
 def test_confirm_surface_requires_explicit_unique_broker_quorum():
@@ -36,24 +37,86 @@ def test_confirm_surface_requires_explicit_unique_broker_quorum():
         )
 
 
-def test_confirm_lowers_to_first_class_existence_step_not_where_predicate_quorum():
+def test_adjacent_where_attaches_its_canonical_predicate_to_confirm():
     surface = parse_surface_script(
         "objects from ztf via alerce\n"
-        "where summary.time.last_mjd > 60000\n"
-        "confirm by 2 via fink, lasair, antares\n"
+        'where classification.best.class = "SN"\n'
+        "confirm by 2 via fink, lasair\n"
     )
     workflow = lower_surface(surface).workflow
 
-    assert isinstance(workflow.steps[0], SemanticSearchStep)
-    confirm = workflow.steps[-1]
-    assert isinstance(confirm, ConfirmStep)
+    assert [step.op for step in workflow.steps] == ["semantic_search", "confirm"]
+    search = workflow.steps[0]
+    assert isinstance(search, SemanticSearchStep)
+    confirm = next(step for step in workflow.steps if isinstance(step, ConfirmStep))
+    assert confirm.predicate == search.predicate
     assert confirm.required_agreement == 2
     assert {(source.origin, source.broker) for source in confirm.sources} == {
         ("ztf", "fink"),
         ("ztf", "lasair"),
-        ("ztf", "antares"),
     }
-    assert not hasattr(confirm, "predicate")
+
+
+def test_nonadjacent_where_does_not_turn_later_confirm_into_predicate_quorum():
+    surface = parse_surface_script(
+        "objects from ztf via alerce\n"
+        'where classification.best.class = "SN"\n'
+        "latest 1\n"
+        "confirm by 2 via fink, lasair\n"
+    )
+    workflow = lower_surface(surface).workflow
+
+    assert [step.op for step in workflow.steps] == [
+        "semantic_search",
+        "get_classification",
+        "confirm",
+    ]
+    search = workflow.steps[0]
+    assert isinstance(search, SemanticSearchStep)
+    assert search.predicate is not None
+    confirm = next(step for step in workflow.steps if isinstance(step, ConfirmStep))
+    assert confirm.predicate is None
+
+
+def test_predicate_confirm_requires_broker_endpoint_that_can_materialize_predicate():
+    graph = build_capability_graph()
+    workflow = lower_surface(
+        parse_surface_script(
+            "objects from ztf via alerce\n"
+            'where classification.best.class = "SN"\n'
+            "confirm by 2 via fink, lasair\n"
+        )
+    ).workflow
+    confirm = next(step for step in workflow.steps if isinstance(step, ConfirmStep))
+
+    result = validate_step_capabilities(confirm, graph)
+
+    assert result.status == "supported"
+    assert {item.source.broker for item in result.source_results} == {"fink", "lasair"}
+    assert all(item.candidates for item in result.source_results)
+    assert {
+        (candidate.broker, candidate.endpoint)
+        for candidate in result.candidates
+    } == {("fink", "objects"), ("lasair", "objects")}
+
+
+def test_surface_capability_validation_uses_the_adjacent_proposition_too():
+    graph = build_capability_graph()
+    surface = parse_surface_script(
+        "objects from ztf via alerce\n"
+        'where classification.best.class = "SN"\n'
+        "confirm by 2 via fink, lasair\n"
+    )
+
+    report = validate_surface_capabilities(surface, graph=graph)
+    checks = [check for check in report.checks if check.subject == "confirm"]
+
+    assert len(checks) == 2
+    assert all(check.status is SurfaceCapabilityStatus.SUPPORTED for check in checks)
+    assert {
+        (check.broker, check.evidence[0].endpoints)
+        for check in checks
+    } == {("fink", ("objects",)), ("lasair", ("objects",))}
 
 
 def test_real_ztf_brokers_expose_confirmable_object_evidence():
