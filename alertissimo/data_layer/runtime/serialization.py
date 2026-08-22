@@ -10,14 +10,24 @@ from alertissimo.data_layer.representations import InternalRecordId, InternalRec
 
 
 def _plain(value: Any) -> Any:
-    """Recursively copy immutable model values into JSON-compatible containers."""
+    """Recursively copy model/audit values into JSON-compatible data.
+
+    Provider Python clients may require native request objects (for example Astropy
+    coordinate/angle values). Those objects belong to the physical invocation, but
+    exported Portfolio audit data must remain browser/JSON safe. Primitive values
+    retain their native JSON types; unrecognized physical objects fall back to their
+    stable human-readable string representation.
+    """
+
     if isinstance(value, Mapping):
         return {key: _plain(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
         return [_plain(item) for item in value]
     if hasattr(value, "value") and value.__class__.__name__.startswith("Internal"):
         return value.value
-    return value
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
 
 
 def _source_to_dict(source: InternalRecordSource | None) -> dict[str, Any] | None:
