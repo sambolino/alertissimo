@@ -69,7 +69,7 @@ def test_predicate_confirm_live_script_compiles_the_adjacent_quorum_contract():
 
     live_dsl_confirm_predicate.assert_plan_contract(workflow, run)
 
-    assert "where exists(classification.best.class)\nconfirm by 2" in dsl
+    assert "where exists classification.best.class\nconfirm by 2" in dsl
     assert [step.op for step in workflow.steps] == [
         "cone_search",
         "confirm",
