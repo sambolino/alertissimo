@@ -106,16 +106,16 @@ def _apply_confirmation(
 ) -> None:
     """Apply quorum to Confirm's own provider evidence without losing audit ownership."""
 
-    reference = step_run.candidate_input_from
+    reference = step_run.material_input_from
     if reference is None or reference.step_index >= step_index:
         raise LocalSemanticExecutionError(
-            f"confirm step_index {step_index} must reference an earlier candidate/material Step"
+            f"confirm step_index {step_index} must reference an earlier material Step"
         )
     try:
         source = steps[reference.step_index]
     except IndexError as exc:
         raise LocalSemanticExecutionError(
-            f"confirm step_index {step_index} references unavailable Step "
+            f"confirm step_index {step_index} references unavailable material Step "
             f"{reference.step_index}"
         ) from exc
     current = steps[step_index]
