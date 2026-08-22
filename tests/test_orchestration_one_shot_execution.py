@@ -122,10 +122,15 @@ def test_staged_candidate_read_reuses_base_antares_normalization():
         summary_object_identity(portfolio) for portfolio in filtered.portfolios
     }
 
-    assert len(search.portfolios) == 4
-    assert filtered_identities == search_identities
-    assert len(filtered.portfolios) == 4
+    # The authoritative ANTARES fixture normalizes into four execution-local
+    # Portfolios. Two pairs share the same exact ZTF object identity, so the Step's
+    # semantic view correctly consolidates them into two Portfolios.
     assert len(search.executions) == 1
+    assert len(search.executions[0].portfolios) == 4
+    assert len(search.portfolios) == 2
+    assert len(search_identities) == 2
+    assert filtered_identities == search_identities
+    assert len(filtered.portfolios) == 2
     assert search.executions[0].execution_id == "exec:one-shot"
     assert executor.calls == [
         (
