@@ -96,7 +96,7 @@ def test_confirm_becomes_candidate_and_material_owner_for_downstream_steps():
     confirm = run.steps[1]
     assert isinstance(workflow.steps[1], ConfirmStep)
     assert len(confirm.endpoint_plans) == 4
-    assert confirm.candidate_input_from == CandidateInputRef(step_index=0)
+    assert confirm.candidate_input_from is None
     assert confirm.material_input_from == MaterialInputRef(step_index=0)
     assert all(
         plan.candidate_input_from == CandidateInputRef(step_index=0)
