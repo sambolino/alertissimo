@@ -144,12 +144,11 @@ class FilterClause(SurfaceModel):
 
 
 class RequirementClause(SurfaceModel):
-    """Semantic requirement, optionally carrying one scoped predicate block.
+    """Semantic requirement, optionally carrying one scoped predicate expression.
 
-    ``predicates`` are conjunctive conditions over the requested product. A
-    predicate-bearing requirement therefore means both "ensure this semantic
-    product" and "select/refine candidates using these conditions". Whether the
-    provider can satisfy both in one call is a planner concern.
+    A predicate-bearing requirement means both "ensure this semantic product" and
+    "select/refine candidates using this condition". Whether the provider can
+    satisfy both in one call is a planner concern.
     """
 
     kind: Literal["with"] = "with"
@@ -175,6 +174,24 @@ class RequirementClause(SurfaceModel):
         return tuple(
             _predicate_text(item, context="with predicate") for item in value
         )
+
+
+class ConfirmClause(SurfaceModel):
+    """Require an existence quorum from explicitly named independent brokers."""
+
+    kind: Literal["confirm"] = "confirm"
+    required_agreement: int = Field(ge=1)
+    brokers: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def validate_quorum(self) -> "ConfirmClause":
+        if not self.brokers:
+            raise ValueError("confirm requires at least one broker after via")
+        if len(set(self.brokers)) != len(self.brokers):
+            raise ValueError("confirm brokers must be unique")
+        if self.required_agreement > len(self.brokers):
+            raise ValueError("confirm quorum cannot exceed the broker count")
+        return self
 
 
 class MatchClause(SurfaceModel):
@@ -214,6 +231,7 @@ SurfaceClause = Annotated[
     | WhereClause
     | FilterClause
     | RequirementClause
+    | ConfirmClause
     | MatchClause
     | OrderByClause
     | RankedByClause,
@@ -249,6 +267,7 @@ def parse_surface_script(script: str) -> SurfaceScript:
 __all__ = [
     "AngularRadius",
     "CandidateSet",
+    "ConfirmClause",
     "DSLParseError",
     "Duration",
     "FilterClause",
