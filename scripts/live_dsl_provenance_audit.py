@@ -8,11 +8,12 @@ material-lineage scenarios and distinguishes three honest provenance bases:
 * request-derived minimal identities: target binding proves an object identity even when
   the payload contains no summary row;
 * execution-derived aggregates: one semantic record is collected from multiple raw
-  payload surfaces belonging to the same uniquely matching physical execution.
+  payload surfaces belonging to one physical execution.
 
-The third case deliberately does not invent a fake ``InternalRecordSource``. The audit
-reports that the execution remains traceable while raw-coordinate granularity has been
-collapsed by semantic aggregation.
+For source-less derived records, exact call ownership comes from the existing
+``StepPortfolioResult.executions`` execution-local Portfolios. Consolidation preserves
+record IDs, so that occurrence-local ownership remains valid in later cumulative views.
+No fake raw-payload coordinate is invented for a multisurface aggregate.
 
 Run from the repository root::
 
@@ -30,7 +31,7 @@ import argparse
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 import os
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Mapping
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.orchestration.normalization import summary_object_identity
@@ -106,6 +107,38 @@ def _record_map(portfolio):
     }
 
 
+def _step_record_execution_owners(step_output) -> dict[str, str]:
+    """Map immutable record IDs to the physical execution group that produced them."""
+
+    owners: dict[str, str] = {}
+    for group in step_output.executions:
+        for portfolio in group.portfolios:
+            for record in portfolio.records:
+                record_id = record.internal_record_id.value
+                previous = owners.get(record_id)
+                if previous is not None and previous != group.execution_id:
+                    raise RuntimeError(
+                        f"record {record_id!r} appears in multiple physical execution "
+                        f"groups: {previous!r}, {group.execution_id!r}"
+                    )
+                owners[record_id] = group.execution_id
+    return owners
+
+
+def _cumulative_record_execution_owners(steps) -> dict[str, str]:
+    owners: dict[str, str] = {}
+    for step_output in steps:
+        for record_id, execution_id in _step_record_execution_owners(step_output).items():
+            previous = owners.get(record_id)
+            if previous is not None and previous != execution_id:
+                raise RuntimeError(
+                    f"record {record_id!r} changes physical owner from {previous!r} "
+                    f"to {execution_id!r}"
+                )
+            owners[record_id] = execution_id
+    return owners
+
+
 def _semantic_qualifiers(semantic_type: str) -> tuple[str | None, str | None]:
     _family, at, qualifier = semantic_type.partition("@")
     if not at:
@@ -164,14 +197,27 @@ def _bound_target_ids(execution) -> tuple[str, ...]:
     return tuple(values)
 
 
-def _request_identity_execution(record, executions):
-    """Resolve the deliberately source-less minimal summary identity.
+def _declared_owner_execution(
+    record,
+    executions,
+    record_execution_owners: Mapping[str, str] | None,
+):
+    if record_execution_owners is None:
+        return None
+    execution_id = record_execution_owners.get(record.internal_record_id.value)
+    if execution_id is None:
+        return None
+    execution = executions.get(execution_id)
+    if execution is None:
+        raise RuntimeError(
+            f"record {record.internal_record_id.value} is owned by execution "
+            f"{execution_id!r}, but that execution is absent from the Portfolio"
+        )
+    return execution
 
-    ``record_builder._complete_minimal_summary_identity`` synthesizes only
-    ``summary@origin:broker.identity.object_id`` from positive target-binding evidence
-    when a target-bound payload has no summary record of its own. There is no raw
-    payload coordinate, so the audit resolves it to exactly one matching execution.
-    """
+
+def _request_identity_execution(record, executions, *, declared_owner=None):
+    """Resolve the deliberately source-less minimal summary identity."""
 
     if record.semantic_type.split("@", 1)[0] != "summary":
         return None
@@ -182,37 +228,41 @@ def _request_identity_execution(record, executions):
         return None
 
     origin, channel = _semantic_qualifiers(record.semantic_type)
-    matches = []
-    for execution in executions.values():
-        if origin is not None and execution.origin != origin:
-            continue
-        if channel is not None and execution.broker != channel:
-            continue
-        if str(object_id) in _bound_target_ids(execution):
-            matches.append(execution)
 
-    if len(matches) > 1:
+    def matches(execution) -> bool:
+        return (
+            (origin is None or execution.origin == origin)
+            and (channel is None or execution.broker == channel)
+            and str(object_id) in _bound_target_ids(execution)
+        )
+
+    if declared_owner is not None:
+        if not matches(declared_owner):
+            raise RuntimeError(
+                f"request-derived identity record {record.internal_record_id.value} "
+                "has occurrence-local execution ownership inconsistent with its "
+                "semantic identity or target binding"
+            )
+        return declared_owner
+
+    candidates = [execution for execution in executions.values() if matches(execution)]
+    if len(candidates) > 1:
         raise RuntimeError(
             f"request-derived identity record {record.internal_record_id.value} "
             f"({record.semantic_type}) matches multiple target-bound executions; "
-            "exact call provenance is ambiguous"
+            "occurrence-local ownership is required"
         )
-    return matches[0] if matches else None
+    return candidates[0] if candidates else None
 
 
-def _execution_aggregate_execution(record, executions, portfolio_identity):
-    """Resolve one intrinsic-array aggregate to its uniquely matching execution.
-
-    ``collect_intrinsic_array_records`` combines row-wise fragments into one semantic
-    lightcurve. When all fragments share an execution but span different payload keys
-    or paths (for example ALeRCE ``detections[]`` + ``non_detections[]``), a single
-    ``InternalRecordSource`` would falsely claim one raw surface and is therefore
-    omitted. The aggregate remains attributable to one physical call.
-
-    Keep this acceptance narrow: only source-less intrinsic lightcurve arrays whose
-    semantic origin/channel and target-bound object identity identify exactly one
-    stored execution qualify. Arbitrary source-less records still fail.
-    """
+def _execution_aggregate_execution(
+    record,
+    executions,
+    portfolio_identity,
+    *,
+    declared_owner=None,
+):
+    """Resolve a multisurface intrinsic-array aggregate to its owning execution."""
 
     if record.semantic_type.split("@", 1)[0] != "lightcurve":
         return None
@@ -226,23 +276,38 @@ def _execution_aggregate_execution(record, executions, portfolio_identity):
     if origin is None or channel is None or str(origin) != str(portfolio_origin):
         return None
 
-    matches = []
-    for execution in executions.values():
-        if execution.origin != origin or execution.broker != channel:
-            continue
-        if str(object_id) in _bound_target_ids(execution):
-            matches.append(execution)
+    def matches(execution) -> bool:
+        return (
+            execution.origin == origin
+            and execution.broker == channel
+            and str(object_id) in _bound_target_ids(execution)
+        )
 
-    if len(matches) > 1:
+    if declared_owner is not None:
+        if not matches(declared_owner):
+            raise RuntimeError(
+                f"execution-derived aggregate {record.internal_record_id.value} "
+                "has occurrence-local execution ownership inconsistent with its "
+                "semantic origin/channel or target binding"
+            )
+        return declared_owner
+
+    candidates = [execution for execution in executions.values() if matches(execution)]
+    if len(candidates) > 1:
         raise RuntimeError(
             f"execution-derived aggregate {record.internal_record_id.value} "
             f"({record.semantic_type}) matches multiple target-bound executions; "
-            "exact call provenance is ambiguous"
+            "occurrence-local ownership is required"
         )
-    return matches[0] if matches else None
+    return candidates[0] if candidates else None
 
 
-def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str, object]:
+def audit_portfolio(
+    portfolio,
+    *,
+    secret_values: Iterable[str] = (),
+    record_execution_owners: Mapping[str, str] | None = None,
+) -> dict[str, object]:
     """Validate payload-, request-, and execution-derived provenance."""
 
     executions = _execution_map(portfolio)
@@ -260,22 +325,32 @@ def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str
 
     for record in portfolio.records:
         source = record.internal_source
+        declared_owner = _declared_owner_execution(
+            record,
+            executions,
+            record_execution_owners,
+        )
+
         if source is None:
-            execution = _request_identity_execution(record, executions)
+            execution = _request_identity_execution(
+                record,
+                executions,
+                declared_owner=declared_owner,
+            )
             basis = "request"
             if execution is None:
                 execution = _execution_aggregate_execution(
                     record,
                     executions,
                     portfolio_identity,
+                    declared_owner=declared_owner,
                 )
                 basis = "aggregate"
             if execution is None:
                 raise RuntimeError(
                     f"source-less record {record.internal_record_id.value} "
-                    f"({record.semantic_type}) is neither a uniquely traceable "
-                    "request-derived minimal identity nor an execution-derived "
-                    "intrinsic-array aggregate"
+                    f"({record.semantic_type}) is neither a traceable request-derived "
+                    "minimal identity nor an execution-derived intrinsic-array aggregate"
                 )
 
             execution_id = execution.internal_execution_id.value
@@ -295,6 +370,13 @@ def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str
                 f"record {record.internal_record_id.value} references missing execution "
                 f"{execution_id!r}"
             )
+        if declared_owner is not None and declared_owner is not execution:
+            if declared_owner.internal_execution_id.value != execution_id:
+                raise RuntimeError(
+                    f"record {record.internal_record_id.value} InternalRecordSource "
+                    f"points to {execution_id!r}, but occurrence-local ownership is "
+                    f"{declared_owner.internal_execution_id.value!r}"
+                )
         if source.payload_index is not None and source.payload_index < 0:
             raise RuntimeError(
                 f"record {record.internal_record_id.value} has negative payload_index"
@@ -315,8 +397,6 @@ def audit_portfolio(portfolio, *, secret_values: Iterable[str] = ()) -> dict[str
     for edge in portfolio.edges:
         source = edge.internal_source
         if source is None:
-            # Local semantic edges such as Match relations legitimately have no
-            # provider payload source.
             continue
         execution_id = source.internal_execution_id.value
         if execution_id not in executions:
@@ -392,14 +472,43 @@ def audit_accumulation(staged, *, expected_object_id: str | None) -> tuple[bool,
 
     secret_values = _known_secret_values()
     final_report: dict[tuple[str, str], dict[str, object]] = {}
+    cumulative_owners: dict[str, str] = {}
+
+    for step_index, identities in enumerate(step_maps):
+        for record_id, execution_id in _step_record_execution_owners(steps[step_index]).items():
+            previous = cumulative_owners.get(record_id)
+            if previous is not None and previous != execution_id:
+                raise RuntimeError(
+                    f"record {record_id!r} changes physical owner from {previous!r} "
+                    f"to {execution_id!r}"
+                )
+            cumulative_owners[record_id] = execution_id
+
+        own_runtime_ids = set(staged.run.steps[step_index].execution_ids)
+        own_group_ids = {
+            group.execution_id for group in steps[step_index].executions
+        }
+        if own_runtime_ids != own_group_ids:
+            raise RuntimeError(
+                f"Step {step_index} runtime execution ownership differs from "
+                "normalized execution groups"
+            )
 
     for identity in sorted(candidate_ids):
         previous_records = {}
         previous_executions = {}
 
         for step_index, identities in enumerate(step_maps):
+            # Only owners from this Step and earlier are valid for its snapshot.
+            owners_through_step = _cumulative_record_execution_owners(
+                steps[: step_index + 1]
+            )
             portfolio = identities[identity]
-            report = audit_portfolio(portfolio, secret_values=secret_values)
+            report = audit_portfolio(
+                portfolio,
+                secret_values=secret_values,
+                record_execution_owners=owners_through_step,
+            )
             records = _record_map(portfolio)
             executions = _execution_map(portfolio)
 
@@ -429,16 +538,6 @@ def audit_accumulation(staged, *, expected_object_id: str | None) -> tuple[bool,
                         f"{execution_id!r} for {identity!r}"
                     )
 
-            own_runtime_ids = set(staged.run.steps[step_index].execution_ids)
-            own_group_ids = {
-                group.execution_id for group in steps[step_index].executions
-            }
-            if own_runtime_ids != own_group_ids:
-                raise RuntimeError(
-                    f"Step {step_index} runtime execution ownership differs from "
-                    "normalized execution groups"
-                )
-
             previous_records = records
             previous_executions = executions
             if step_index == len(steps) - 1:
@@ -459,13 +558,13 @@ def audit_accumulation(staged, *, expected_object_id: str | None) -> tuple[bool,
 
     detail = (
         f"{len(candidate_ids)} candidate(s); every final record resolves to an exact "
-        "payload coordinate, one uniquely matching target-bound request, or one "
-        "uniquely matching execution-derived aggregate; inherited record/execution "
-        f"provenance remained immutable across {len(steps)} Step views"
+        "payload coordinate, a target-bound request, or its occurrence-local physical "
+        "execution; inherited record/execution provenance remained immutable across "
+        f"{len(steps)} Step views"
     )
     if aggregate_count:
         detail += (
-            f"; {aggregate_count} aggregate record(s) retain execution provenance "
+            f"; {aggregate_count} aggregate record(s) retain exact execution ownership "
             "but collapse multiple raw payload coordinates"
         )
     if optional_gaps:
@@ -475,10 +574,15 @@ def audit_accumulation(staged, *, expected_object_id: str | None) -> tuple[bool,
 
 def _print_audit(staged) -> None:
     final = staged.normalized.steps[-1]
+    owners = _cumulative_record_execution_owners(staged.normalized.steps)
     print("final Portfolio provenance:")
     for identity, portfolio in sorted(_identity_map(final).items()):
         print(f"  {identity[0]}/{identity[1]}: {len(portfolio.records)} records")
-        report = audit_portfolio(portfolio, secret_values=_known_secret_values())
+        report = audit_portfolio(
+            portfolio,
+            secret_values=_known_secret_values(),
+            record_execution_owners=owners,
+        )
         executions = _execution_map(portfolio)
         for execution_id, execution in executions.items():
             types = report["semantic_types_by_execution"][execution_id]
