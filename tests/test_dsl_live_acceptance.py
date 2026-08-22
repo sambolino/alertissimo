@@ -13,6 +13,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
         "dsl-confirm-existence-quorum",
+        "dsl-confirm-predicate-quorum",
         "dsl-classification-reuse",
         "explicit-multi-provider",
         "explicit-multi-target",
@@ -34,17 +35,28 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
     assert partial_failure.live is False
 
 
-def test_confirm_live_scenario_is_registered_as_the_real_live_script():
-    scenario = next(
+def test_confirm_live_scenarios_cover_existence_and_predicate_modes():
+    existence = next(
         scenario
         for scenario in live_acceptance.SCENARIOS
         if scenario.name == "dsl-confirm-existence-quorum"
     )
+    predicate = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-confirm-predicate-quorum"
+    )
 
-    command = scenario.command(live_acceptance.REPO_ROOT)
-    assert scenario.live is True
-    assert scenario.required_env == ()
-    assert "live_dsl_confirm.py" in " ".join(command)
+    existence_command = " ".join(existence.command(live_acceptance.REPO_ROOT))
+    predicate_command = " ".join(predicate.command(live_acceptance.REPO_ROOT))
+
+    assert existence.live is True
+    assert existence.required_env == ()
+    assert "live_dsl_confirm.py" in existence_command
+
+    assert predicate.live is True
+    assert predicate.required_env == ("LASAIR_ZTF_TOKEN",)
+    assert "live_dsl_confirm_predicate.py" in predicate_command
 
 
 def test_crossmatch_live_scenario_is_registered_and_importable():
