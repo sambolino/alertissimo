@@ -256,11 +256,9 @@ def test_general_where_is_candidate_search_predicate_not_filter_step():
 
 def test_scoped_classification_predicate_implies_search_condition_and_requirement():
     compilation = _lower(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     assert [type(step) for step in compilation.workflow.steps] == [
@@ -296,12 +294,11 @@ with classification from lc_classifier:
     ]
 
 
-def test_nested_with_where_has_same_scoped_search_semantics():
+def test_inline_with_where_has_scoped_search_semantics():
     compilation = _lower(
-        """objects from lsst via alerce
-with classification from lc_classifier
-    where best.class = "LPV" and best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "LPV" AND '
+        "best.probability >= 0.8\n"
     )
 
     search = compilation.workflow.steps[0]
@@ -357,12 +354,10 @@ def test_explicit_with_deduplicates_requirement_implied_by_general_where():
 
 def test_second_pass_scoped_with_enriches_then_filters_current_candidates():
     compilation = _lower(
-        """objects from lsst via alerce
-filter summary.time.last_mjd > 60000
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        "filter summary.time.last_mjd > 60000\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     assert [type(step) for step in compilation.workflow.steps] == [
@@ -494,11 +489,9 @@ def test_search_selection_classifier_and_predicate_round_trip_through_workflow_u
 
 def test_compile_supports_alerce_dynamic_classifier_when_selector_is_registered():
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     compilation = compile_surface(

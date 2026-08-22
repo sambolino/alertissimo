@@ -72,11 +72,9 @@ def _portfolio(portfolio_id: str, records: list[tuple[str, str, dict]]) -> Portf
 
 def test_real_alerce_lsst_search_predicate_is_fully_pushable():
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
     compilation = lower_surface(surface)
     search = compilation.workflow.steps[0]
@@ -211,11 +209,9 @@ def test_endpoint_without_request_semantics_leaves_whole_predicate_residual():
 
 def test_alerce_unsupported_probability_direction_remains_residual():
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability < 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability < 0.8\n"
     )
     search = lower_surface(surface).workflow.steps[0]
     plan = plan_step(search, build_capability_graph())[0]

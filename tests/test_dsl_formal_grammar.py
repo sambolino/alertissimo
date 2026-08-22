@@ -23,7 +23,7 @@ class _FakeSemanticPaths:
         }
 
 
-def test_formal_grammar_is_hand_authored_and_requirement_centric():
+def test_formal_grammar_is_hand_authored_requirement_centric_and_indentless():
     grammar = grammar_text()
 
     assert "candidate_statement" in grammar
@@ -32,8 +32,10 @@ def test_formal_grammar_is_hand_authored_and_requirement_centric():
     assert "match_on" in grammar
     assert "WITHIN expresses temporal extent" in grammar
     assert "INSIDE expresses spatial extent" in grammar
-    assert "_INDENT" in grammar and "_DEDENT" in grammar
-    assert "with_colon" in grammar and "with_where" in grammar
+    assert "indentation is cosmetic everywhere" in grammar
+    assert "scoped_where" in grammar
+    assert "_INDENT" not in grammar and "_DEDENT" not in grammar
+    assert "with_colon" not in grammar and "with_where" not in grammar
     assert "VERB" not in grammar
     assert "AUTO-GENERATED" not in grammar
 
@@ -63,11 +65,9 @@ def test_static_validation_accepts_ontology_product_but_defers_capability():
 
 def test_scoped_classification_paths_are_validated_relative_to_requirement():
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     report = validate_surface_semantics(surface, semantic_paths=_FakeSemanticPaths())
@@ -77,10 +77,8 @@ with classification from lc_classifier:
 
 def test_invalid_scoped_path_fails_ontology_validation():
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.nonsense = "SN"
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.nonsense = "SN"\n'
     )
 
     report = validate_surface_semantics(surface, semantic_paths=_FakeSemanticPaths())
