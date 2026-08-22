@@ -110,7 +110,7 @@ def test_confirm_quorum_survivor_is_bound_to_downstream_get():
         ("lasair", "objects"),
         ("fink", "objects"),
     ]
-    assert staged.bindings[3].bound_calls[0].params["objectId"] == TARGET
+    assert staged.bindings[2].bound_calls[0].params["objectId"] == TARGET
     assert _summary_ids(finalized.steps[1]) == {TARGET}
     assert _summary_ids(finalized.steps[2]) == {TARGET}
     assert len(finalized.steps[1].executions) == 2
@@ -124,7 +124,7 @@ def test_below_quorum_makes_downstream_get_vacuous():
         ("fink", "objects"),
         ("lasair", "objects"),
     ]
-    assert staged.bindings[3].bound_calls == ()
-    assert staged.run.steps[3].vacuous_plan_indexes == (0,)
+    assert staged.bindings[2].bound_calls == ()
+    assert staged.run.steps[2].vacuous_plan_indexes == (0,)
     assert finalized.steps[1].portfolios == ()
     assert finalized.steps[2].portfolios == ()
