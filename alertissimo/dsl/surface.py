@@ -177,6 +177,24 @@ class RequirementClause(SurfaceModel):
         )
 
 
+class ConfirmClause(SurfaceModel):
+    """Require an existence quorum from explicitly named independent brokers."""
+
+    kind: Literal["confirm"] = "confirm"
+    required_agreement: int = Field(ge=1)
+    brokers: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def validate_quorum(self) -> "ConfirmClause":
+        if not self.brokers:
+            raise ValueError("confirm requires at least one broker after via")
+        if len(set(self.brokers)) != len(self.brokers):
+            raise ValueError("confirm brokers must be unique")
+        if self.required_agreement > len(self.brokers):
+            raise ValueError("confirm quorum cannot exceed the broker count")
+        return self
+
+
 class MatchClause(SurfaceModel):
     """Association request; counterpart origins never mutate candidate origins."""
 
@@ -214,6 +232,7 @@ SurfaceClause = Annotated[
     | WhereClause
     | FilterClause
     | RequirementClause
+    | ConfirmClause
     | MatchClause
     | OrderByClause
     | RankedByClause,
@@ -249,6 +268,7 @@ def parse_surface_script(script: str) -> SurfaceScript:
 __all__ = [
     "AngularRadius",
     "CandidateSet",
+    "ConfirmClause",
     "DSLParseError",
     "Duration",
     "FilterClause",

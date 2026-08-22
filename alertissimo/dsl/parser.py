@@ -13,6 +13,7 @@ from lark.exceptions import VisitError
 from .surface import (
     AngularRadius,
     CandidateSet,
+    ConfirmClause,
     DSLParseError,
     Duration,
     FilterClause,
@@ -41,6 +42,7 @@ _CLAUSE_PREFIXES = (
     "where ",
     "filter ",
     "with ",
+    "confirm ",
     "match",
     "order by ",
     "ranked by ",
@@ -127,6 +129,9 @@ class _SurfaceTransformer(Transformer):
     def origin_list(self, items):
         return tuple(str(item).lower() for item in items)
 
+    def broker_list(self, items):
+        return tuple(str(item).lower() for item in items)
+
     def via_clause(self, items):
         return "via", str(items[0]).lower()
 
@@ -168,6 +173,12 @@ class _SurfaceTransformer(Transformer):
 
     def filter_clause(self, items):
         return FilterClause(condition=str(items[0]).strip())
+
+    def confirm_clause(self, items):
+        return ConfirmClause(
+            required_agreement=int(str(items[0])),
+            brokers=items[1],
+        )
 
     def requirement(self, items):
         product = str(items[0]).strip()

@@ -168,7 +168,7 @@ def test_crossmatch_radius_must_be_positive():
 def test_confirmation_validates_required_agreement():
     with pytest.raises(ValidationError):
         ConfirmStep(required_agreement=0)
-    with pytest.raises(ValidationError, match="source count"):
+    with pytest.raises(ValidationError, match="distinct explicit broker count"):
         ConfirmStep(required_agreement=2, sources=[Source(broker="fink")])
     assert ConfirmStep(required_agreement=3).sources == []
 
