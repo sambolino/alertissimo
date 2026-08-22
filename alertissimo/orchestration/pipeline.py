@@ -227,6 +227,11 @@ def _candidate_source_indices(run: WorkflowRun) -> frozenset[int]:
         for step_run in run.steps
         if step_run.candidate_input_from is not None
     )
+    indices.update(
+        step_run.material_input_from.step_index
+        for step_run in run.steps
+        if step_run.material_input_from is not None
+    )
     return frozenset(indices)
 
 
@@ -239,27 +244,26 @@ def execute_staged_workflow_run(
 ) -> StagedWorkflowResult:
     """Bind and execute a planned workflow as runtime values become available.
 
-    Plans without runtime dependencies are bound normally. A plan carrying
+    Plans without runtime dependencies are bound normally. An EndpointPlan carrying
     ``candidate_input_from`` receives ``target_id`` from the referenced Step's
     normalized candidate Portfolios, restricted to candidates with the same origin
     as that physical plan. A candidate-dependent plan whose origin has no candidates
     is recorded as vacuous rather than invoked with an empty target collection.
 
-    A provider StepRun-level ``candidate_input_from`` has a different, semantic
-    role: it identifies the preceding materialized Portfolio view that this Step
-    enriches. Candidate IDs still come only from each EndpointPlan's reference. This
-    distinction lets sequential Gets accumulate evidence without redefining the
-    candidate population or claiming inherited calls as current physical work.
+    A provider StepRun-level ``material_input_from`` is orthogonal: it identifies the
+    preceding semantic Portfolio snapshot that this Step enriches. This distinction
+    lets sequential Gets accumulate evidence without redefining the candidate
+    population or claiming inherited calls as current physical work.
 
-    FilterStep consumes its StepRun-level view locally, creates no physical execution,
-    and its surviving semantic identities may feed later provider calls. MatchStep
-    also owns no physical call. When a later Step depends on Match's filtered
-    population, the staged runner evaluates that local relation just far enough to
-    expose the surviving candidate identities. The Match Step itself remains planned
-    with an empty execution slot so the normal post-normalization local semantic
-    phase still owns its occurrence-aligned view, edges, and final succeeded state.
-    Terminal MatchSteps are not evaluated twice. DeriveStep remains entirely
-    deferred to that post-normalization phase.
+    FilterStep consumes its StepRun-level candidate view locally, creates no physical
+    execution, and its surviving semantic identities may feed later provider calls.
+    MatchStep also owns no physical call. When a later Step depends on Match's
+    filtered population, the staged runner evaluates that local relation just far
+    enough to expose the surviving candidate identities. The Match Step itself
+    remains planned with an empty execution slot so the normal post-normalization
+    local semantic phase still owns its occurrence-aligned view, edges, and final
+    succeeded state. Terminal MatchSteps are not evaluated twice. DeriveStep remains
+    entirely deferred to that post-normalization phase.
 
     Required provider plans remain fail-fast. A supplementary plan may fail without
     failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
@@ -411,7 +415,7 @@ def execute_staged_workflow_run(
             updated_run = _updated_run(updated_run, succeeded)
             if step_index in candidate_sources:
                 material_source = None
-                reference = succeeded.candidate_input_from
+                reference = succeeded.material_input_from
                 if reference is not None:
                     material_source = candidate_views_by_step.get(reference.step_index)
                 view = StepPortfolioResult(
@@ -532,7 +536,7 @@ def execute_staged_workflow_run(
 
         if step_index in candidate_sources:
             material_source = None
-            reference = succeeded.candidate_input_from
+            reference = succeeded.material_input_from
             if reference is not None:
                 try:
                     material_source = candidate_views_by_step[reference.step_index]
