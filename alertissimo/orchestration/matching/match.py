@@ -87,32 +87,42 @@ def _summary_positions(portfolio: Portfolio) -> tuple[tuple[float, float], ...]:
     return tuple(positions)
 
 
-def _groups(source: StepPortfolioResult) -> tuple[_ObjectGroup, ...]:
-    """Group exact ``(origin, object_id)`` identities before any matching.
+def _matching_portfolios(source: StepPortfolioResult) -> tuple[Portfolio, ...]:
+    """Return the semantic objects Match is allowed to inspect.
 
-    This is deliberately the harmonization boundary for MatchStep input. If the
-    same survey object arrived from two or more brokers/executions, those
-    execution-local Portfolios form one matching entity. They are never compared
-    with each other and therefore can never acquire a cross-Portfolio Match edge.
-    The normal ``StepPortfolioResult.portfolios`` view performs the corresponding
-    semantic Portfolio consolidation.
+    Legacy direct-normalization views retain their execution-local constituents so
+    the established Match projection contract remains unchanged. Once a Step carries
+    an explicit materialized snapshot, that snapshot is authoritative: it already
+    harmonizes exact identities and may contain evidence inherited from earlier
+    retrieval Steps that is absent from the current Step's own physical executions.
     """
+
+    if source.materialized_portfolios is not None:
+        return source.portfolios
+    return tuple(
+        portfolio
+        for execution in source.executions
+        for portfolio in execution.portfolios
+    )
+
+
+def _groups(source: StepPortfolioResult) -> tuple[_ObjectGroup, ...]:
+    """Group exact ``(origin, object_id)`` identities before any matching."""
 
     grouped: dict[tuple[str, str], list[Portfolio]] = {}
     order: list[tuple[str, str]] = []
-    for execution in source.executions:
-        for portfolio in execution.portfolios:
-            identity = summary_object_identity(portfolio)
-            if identity is None:
-                continue
-            if identity not in grouped:
-                grouped[identity] = []
-                order.append(identity)
-            if all(
-                item.internal_portfolio_id != portfolio.internal_portfolio_id
-                for item in grouped[identity]
-            ):
-                grouped[identity].append(portfolio)
+    for portfolio in _matching_portfolios(source):
+        identity = summary_object_identity(portfolio)
+        if identity is None:
+            continue
+        if identity not in grouped:
+            grouped[identity] = []
+            order.append(identity)
+        if all(
+            item.internal_portfolio_id != portfolio.internal_portfolio_id
+            for item in grouped[identity]
+        ):
+            grouped[identity].append(portfolio)
 
     result: list[_ObjectGroup] = []
     for identity in order:
@@ -267,22 +277,15 @@ def match_step_portfolios(
 ) -> StepPortfolioResult:
     """Return the relationally filtered MatchStep semantic view.
 
-    Matching operates only on normalized object-level summary identity and position.
-    It never reads provider payloads and never merges Portfolios. Exact object
-    identities are grouped as one matching entity before pair comparison; their
-    execution-local Portfolios are harmonized by the Step semantic view rather than
-    linked by MatchStep. Once exact identities have been grouped, every distinct
-    semantic identity selected by the Match candidate origins is eligible for the
-    explicit Match policy, including different object IDs from the same survey.
+    Matching reads only the source Step's normalized semantic material. For a plain
+    source this preserves the established execution-local projection contract. For
+    an accumulated source, the explicit materialized Portfolio snapshot is
+    authoritative, allowing Match to use evidence retrieved by earlier Steps even
+    though those executions do not belong physically to the immediately preceding
+    provider Step.
 
-    Match is a pairwise filtering operation: only semantic objects participating in
-    at least one accepted relation survive into this Step's output. Unmatched
-    candidates remain available in the earlier Step result but do not propagate
-    through Match. For each accepted pair, the same ``InternalEdgeId`` is projected
-    into every execution-local constituent of both semantic objects. Step-level
-    consolidation then rewrites constituent Portfolio endpoints to their final
-    semantic IDs. The returned view belongs to the MatchStep occurrence while
-    retaining the physical execution groupings of its surviving candidate input.
+    Match remains a pairwise filter: only semantic objects participating in at least
+    one accepted relation survive. Earlier Step views are never mutated.
     """
 
     origins, threshold = _position_match_contract(step)
@@ -293,16 +296,16 @@ def match_step_portfolios(
         if group.identity[0] in allowed_origins and group.position is not None
     )
 
+    matching_portfolios = _matching_portfolios(source)
     by_id: dict[InternalPortfolioId, Portfolio] = {}
-    for execution in source.executions:
-        for portfolio in execution.portfolios:
-            existing = by_id.get(portfolio.internal_portfolio_id)
-            if existing is not None and existing != portfolio:
-                raise MatchInputError(
-                    "conflicting Portfolio content shares internal portfolio ID "
-                    f"{portfolio.internal_portfolio_id.value!r}"
-                )
-            by_id[portfolio.internal_portfolio_id] = portfolio
+    for portfolio in matching_portfolios:
+        existing = by_id.get(portfolio.internal_portfolio_id)
+        if existing is not None and existing != portfolio:
+            raise MatchInputError(
+                "conflicting Portfolio content shares internal portfolio ID "
+                f"{portfolio.internal_portfolio_id.value!r}"
+            )
+        by_id[portfolio.internal_portfolio_id] = portfolio
 
     matched_portfolio_ids: set[InternalPortfolioId] = set()
     for left, right in combinations(groups, 2):
@@ -341,6 +344,18 @@ def match_step_portfolios(
                     fields,
                 ),
             )
+
+    if source.materialized_portfolios is not None:
+        materialized = tuple(
+            by_id[portfolio.internal_portfolio_id]
+            for portfolio in source.portfolios
+            if portfolio.internal_portfolio_id in matched_portfolio_ids
+        )
+        return StepPortfolioResult(
+            step_index=step_index,
+            executions=(),
+            materialized_portfolios=materialized,
+        )
 
     return StepPortfolioResult(
         step_index=step_index,
