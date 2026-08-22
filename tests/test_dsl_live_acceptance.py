@@ -1,6 +1,6 @@
 """Offline tests for the all-scenarios live acceptance harness."""
 
-from scripts import live_acceptance, live_crossmatch
+from scripts import live_acceptance, live_crossmatch, live_dsl_confirm_predicate
 
 
 def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
@@ -57,6 +57,26 @@ def test_confirm_live_scenarios_cover_existence_and_predicate_modes():
     assert predicate.live is True
     assert predicate.required_env == ("LASAIR_ZTF_TOKEN",)
     assert "live_dsl_confirm_predicate.py" in predicate_command
+
+
+def test_predicate_confirm_live_script_compiles_the_adjacent_quorum_contract():
+    dsl, workflow, run = live_dsl_confirm_predicate.compile_and_plan(
+        ra=live_dsl_confirm_predicate.DEFAULT_RA,
+        dec=live_dsl_confirm_predicate.DEFAULT_DEC,
+        radius_arcsec=live_dsl_confirm_predicate.DEFAULT_RADIUS_ARCSEC,
+        quorum=live_dsl_confirm_predicate.DEFAULT_QUORUM,
+    )
+
+    live_dsl_confirm_predicate.assert_plan_contract(workflow, run)
+
+    assert "where exists(classification.best.class)\nconfirm by 2" in dsl
+    assert [step.op for step in workflow.steps] == [
+        "cone_search",
+        "confirm",
+        "get_lightcurve",
+    ]
+    assert [plan.broker for plan in run.steps[1].endpoint_plans] == ["fink", "lasair"]
+    assert [plan.endpoint for plan in run.steps[1].endpoint_plans] == ["objects", "objects"]
 
 
 def test_crossmatch_live_scenario_is_registered_and_importable():
