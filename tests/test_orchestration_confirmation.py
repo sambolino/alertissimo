@@ -1,3 +1,5 @@
+import pytest
+
 from alertissimo.data_layer.representations import (
     InternalExecutionId,
     InternalExecutionProvenance,
@@ -53,6 +55,26 @@ def _portfolio(
 
 def _execution(execution_id: str, portfolio: Portfolio) -> ExecutionPortfolioResult:
     return ExecutionPortfolioResult(execution_id=execution_id, portfolios=(portfolio,))
+
+
+def test_confirm_ir_quorum_counts_distinct_brokers_not_source_entries():
+    with pytest.raises(ValueError, match="distinct explicit broker count"):
+        ConfirmStep(
+            sources=[
+                Source(broker="fink", origin="ztf"),
+                Source(broker="fink", origin="lsst"),
+            ],
+            required_agreement=2,
+        )
+
+    step = ConfirmStep(
+        sources=[
+            Source(broker="fink", origin="ztf"),
+            Source(broker="fink", origin="lsst"),
+        ],
+        required_agreement=1,
+    )
+    assert step.required_agreement == 1
 
 
 def test_confirm_counts_distinct_brokers_not_records():
