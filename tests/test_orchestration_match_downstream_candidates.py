@@ -12,7 +12,11 @@ from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.orchestration.local_semantics import finalize_local_semantics
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
-from alertissimo.orchestration.runtime import CandidateInputRef, StepRunState
+from alertissimo.orchestration.runtime import (
+    CandidateInputRef,
+    MaterialInputRef,
+    StepRunState,
+)
 
 
 DSL = """objects from ztf via alerce
@@ -110,13 +114,14 @@ def test_downstream_get_binds_only_match_survivors_and_inherits_match_material()
     assert match_run.candidate_input_from == CandidateInputRef(step_index=0)
     assert len(get_run.endpoint_plans) == 1
 
-    # The physical call takes candidate IDs from Match, and the semantic Step itself
-    # also extends the Match material view. These two references intentionally agree
-    # here, although in Search -> Get -> Get workflows they need not.
+    # The physical call takes candidate IDs from Match. Independently, the semantic
+    # GetStep extends the Match material snapshot. They point at the same occurrence
+    # here, although Search -> Get -> Get workflows demonstrate that they need not.
     assert get_run.endpoint_plans[0].candidate_input_from == CandidateInputRef(
         step_index=1
     )
-    assert get_run.candidate_input_from == CandidateInputRef(step_index=1)
+    assert get_run.candidate_input_from is None
+    assert get_run.material_input_from == MaterialInputRef(step_index=1)
 
     executor = _MatchThenLightcurveExecutor(matched=True)
     staged = execute_staged_workflow_run(
