@@ -176,11 +176,9 @@ def test_dynamic_crossmatch_producer_mapping_remains_deferred_not_wildcard():
 
 def test_dynamic_classification_producer_is_supported_with_explicit_classifier_selector():
     report = _validate(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     requirement = next(
@@ -306,11 +304,9 @@ def test_real_registry_rejects_unregistered_erosita_crossmatch_via_antares():
 def test_real_alerce_lsst_classifier_selector_supports_scoped_classification():
     graph = build_capability_graph()
     surface = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     report = validate_surface_capabilities(surface, graph=graph)
