@@ -127,25 +127,37 @@ def _candidate_view_from_step(
     result: StepExecutionResult,
     *,
     material_source: StepPortfolioResult | None = None,
+    normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
-    """Build the semantic candidate/material view needed during staged execution."""
+    """Build the semantic candidate/material view needed during staged execution.
+
+    Base normalization is cached by physical execution ID for the lifetime of this
+    staged workflow. A later occurrence-aligned normalization pass must reuse the
+    same tuple rather than consume the provider payload again; some Python clients
+    expose one-shot iterators. Residual pruning remains a Step-specific view over
+    the cached base tuple.
+    """
 
     plan_indexes = _execution_plan_indexes(step_run, result)
     executions: list[ExecutionPortfolioResult] = []
     for plan_index, execution in zip(plan_indexes, result.executions):
         plan = step_run.endpoint_plans[plan_index]
-        portfolios = normalize_execution(
-            execution,
-            validate_semantic_model=validate_semantic_model,
-        )
+        execution_id = execution.internal_execution_id.value
+        portfolios = normalized_execution_cache.get(execution_id)
+        if portfolios is None:
+            portfolios = normalize_execution(
+                execution,
+                validate_semantic_model=validate_semantic_model,
+            )
+            normalized_execution_cache[execution_id] = portfolios
         realization = plan.predicate_realization
         residual = realization.residual if realization is not None else None
         if residual is not None:
             portfolios = prune_portfolios(portfolios, residual)
         executions.append(
             ExecutionPortfolioResult(
-                execution_id=execution.internal_execution_id.value,
+                execution_id=execution_id,
                 portfolios=portfolios,
             )
         )
@@ -271,6 +283,11 @@ def execute_staged_workflow_run(
     Explicit vacuous-plan indexes distinguish legitimate zero-candidate omissions
     from missing required executions.
 
+    Physical executions normalized early for runtime candidate/material dependencies
+    retain one base normalized Portfolio tuple for this workflow invocation. Final
+    occurrence-aligned normalization reuses that tuple, so one-shot provider payloads
+    are never consumed twice and internal Portfolio identities remain stable.
+
     The semantic WorkflowIR is never rewritten with discovered IDs.
     """
 
@@ -281,6 +298,7 @@ def execute_staged_workflow_run(
     bindings: list[StepBindingResult] = []
     step_results: list[StepExecutionResult] = []
     execution_cache: dict[tuple[int, int], ExecutionResult] = {}
+    normalized_execution_cache: dict[str, tuple[Portfolio, ...]] = {}
     candidate_views_by_step: dict[int, StepPortfolioResult] = {}
     candidate_ids_by_origin_by_step: dict[int, dict[str, tuple[str, ...]]] = {}
     candidate_sources = _candidate_source_indices(run)
@@ -549,6 +567,7 @@ def execute_staged_workflow_run(
                 succeeded,
                 result,
                 material_source=material_source,
+                normalized_execution_cache=normalized_execution_cache,
                 validate_semantic_model=validate_semantic_model,
             )
             candidate_views_by_step[step_index] = view
@@ -563,6 +582,7 @@ def execute_staged_workflow_run(
     normalized = normalize_workflow_execution(
         execution_result,
         validate_semantic_model=validate_semantic_model,
+        normalized_execution_cache=normalized_execution_cache,
     )
     return StagedWorkflowResult(
         execution=execution_result,
