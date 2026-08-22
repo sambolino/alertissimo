@@ -50,6 +50,7 @@ def _emits_reference(
     endpoint: EndpointCapability,
     *,
     noun: str,
+    field_path: str,
     producer: str | None,
     channel: str | None,
 ) -> bool:
@@ -60,6 +61,8 @@ def _emits_reference(
             record.semantic_record_type
         )
         if actual_noun != noun:
+            continue
+        if field_path and field_path not in record.fields:
             continue
         if not _qualifier_matches(actual_producer, producer):
             continue
@@ -82,6 +85,7 @@ def _emits_predicate_evidence(
             graph,
             endpoint,
             noun=reference.semantic_type,
+            field_path=reference.field_path,
             producer=reference.producer,
             channel=reference.channel,
         )
@@ -101,9 +105,8 @@ def confirmation_endpoints(
     Bare confirmation asks only whether the exact candidate exists, so it prefers
     explicit object lookups and otherwise accepts target-bound history/object
     evidence. Predicate confirmation is stricter: a participating endpoint must be
-    able to materialize every semantic record selector referenced by the canonical
-    predicate. Missing predicate capability is therefore not interpreted as a
-    negative vote.
+    able to materialize every semantic field referenced by the canonical predicate.
+    Missing predicate capability is therefore not interpreted as a negative vote.
 
     The tiers are semantic/provider-contract driven; no broker or endpoint name is
     special-cased here.
