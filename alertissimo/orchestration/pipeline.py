@@ -406,10 +406,10 @@ def execute_staged_workflow_run(
                     ),
                 )
                 if isinstance(step, ConfirmStep):
-                    source_reference = succeeded.candidate_input_from
+                    source_reference = succeeded.material_input_from
                     if source_reference is None:
                         raise CandidateFlowError(
-                            f"confirm step_index {step_index} has no candidate input reference"
+                            f"confirm step_index {step_index} has no material input reference"
                         )
                     source_view = candidate_views_by_step[source_reference.step_index]
                     view = confirm_step_portfolios(
@@ -546,16 +546,16 @@ def execute_staged_workflow_run(
                 validate_semantic_model=validate_semantic_model,
             )
             if isinstance(step, ConfirmStep):
-                source_reference = succeeded.candidate_input_from
+                source_reference = succeeded.material_input_from
                 if source_reference is None:
                     raise CandidateFlowError(
-                        f"confirm step_index {step_index} has no candidate input reference"
+                        f"confirm step_index {step_index} has no material input reference"
                     )
                 try:
                     source_view = candidate_views_by_step[source_reference.step_index]
                 except KeyError as error:
                     raise CandidateFlowError(
-                        "confirm candidate input is not available from referenced Step "
+                        "confirm material input is not available from referenced Step "
                         f"{source_reference.step_index} for step_index {step_index}"
                     ) from error
                 view = confirm_step_portfolios(
