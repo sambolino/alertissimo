@@ -1,25 +1,21 @@
-"""One-shot Python-client payloads remain stable across staged normalization reads."""
+"""One-shot Python-client payloads normalize once across a staged workflow."""
 
 import json
 from pathlib import Path
 
-from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.execution import EndpointSpec, ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalExecutionId,
     InternalExecutionProvenance,
 )
-from alertissimo.orchestration.ir import ConeSearchStep, Source, WorkflowIR
-from alertissimo.orchestration.normalization import (
-    normalize_execution,
-    normalize_workflow_execution,
-    summary_object_identity,
-)
+from alertissimo.orchestration.ir import ConeSearchStep, FilterStep, Source, WorkflowIR
+from alertissimo.orchestration.normalization import summary_object_identity
+from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.runtime import (
+    CandidateInputRef,
     EndpointPlan,
-    StepExecutionResult,
     StepRun,
     StepRunState,
-    WorkflowExecutionResult,
     WorkflowRun,
 )
 
@@ -27,45 +23,53 @@ from alertissimo.orchestration.runtime import (
 FIXTURE = Path(__file__).parent / "fixtures/antares/ztf/cone_search.json"
 
 
-def _execution(payload) -> ExecutionResult:
-    return ExecutionResult(
-        payload=payload,
-        execution_provenance=InternalExecutionProvenance(
-            internal_execution_id=InternalExecutionId("exec:one-shot"),
-            broker="antares",
-            origin="ztf",
-            endpoint="cone_search",
-        ),
-    )
+class _Registry:
+    """Bind canonical cone values without importing the live ANTARES client stack."""
+
+    def resolve(self, broker, origin, endpoint):
+        assert (broker, origin, endpoint) == ("antares", "ztf", "cone_search")
+        return EndpointSpec(
+            broker=broker,
+            origin=origin,
+            endpoint=endpoint,
+            transport_kind="python_client",
+            method="python",
+            params={
+                "ra": {"required": True, "type": "number", "bind": "ra"},
+                "dec": {"required": True, "type": "number", "bind": "dec"},
+                "radius": {"required": True, "type": "number", "bind": "radius"},
+            },
+        )
 
 
-def test_execution_result_wraps_iterator_lazily_and_replays_rows():
-    consumed: list[int] = []
+class _Executor:
+    def __init__(self):
+        self.calls = []
+        self.consumed = 0
 
-    def rows():
-        for value in (1, 2, 3):
-            consumed.append(value)
-            yield value
+    def execute(self, broker, origin, endpoint, params=None, headers=None):
+        del headers
+        self.calls.append((broker, origin, endpoint, dict(params or {})))
+        frozen_rows = json.loads(FIXTURE.read_text())
 
-    execution = _execution(rows())
-    assert consumed == []
-    assert tuple(execution.payload) == (1, 2, 3)
-    assert consumed == [1, 2, 3]
-    assert tuple(execution.payload) == (1, 2, 3)
-    assert consumed == [1, 2, 3]
+        def rows():
+            for row in frozen_rows:
+                self.consumed += 1
+                yield row
+
+        return ExecutionResult(
+            payload=rows(),
+            execution_provenance=InternalExecutionProvenance(
+                internal_execution_id=InternalExecutionId("exec:one-shot"),
+                broker=broker,
+                origin=origin,
+                endpoint=endpoint,
+                params=dict(params or {}),
+            ),
+        )
 
 
-def test_staged_candidate_read_does_not_empty_final_antares_normalization():
-    frozen_rows = json.loads(FIXTURE.read_text())
-    execution = _execution((row for row in frozen_rows))
-
-    # Staged orchestration performs this first read to expose runtime candidate IDs.
-    staged_portfolios = normalize_execution(execution, validate_semantic_model=True)
-    staged_identities = {
-        summary_object_identity(portfolio) for portfolio in staged_portfolios
-    }
-    assert len(staged_portfolios) == 4
-
+def test_staged_candidate_read_reuses_base_antares_normalization():
     workflow = WorkflowIR(
         steps=[
             ConeSearchStep(
@@ -74,37 +78,63 @@ def test_staged_candidate_read_does_not_empty_final_antares_normalization():
                 dec=37.46783501531417,
                 radius=1.0,
                 sources=[Source(broker="antares", origin="ztf")],
-            )
+            ),
+            FilterStep(),
         ]
-    )
-    plan = EndpointPlan(
-        broker="antares",
-        origin="ztf",
-        endpoint="cone_search",
-        semantic_type="summary",
     )
     run = WorkflowRun(
         workflow=workflow,
         steps=(
             StepRun(
                 step_index=0,
-                state=StepRunState.SUCCEEDED,
-                endpoint_plans=(plan,),
-                execution_ids=("exec:one-shot",),
-                execution_plan_indexes=(0,),
+                state=StepRunState.PLANNED,
+                endpoint_plans=(
+                    EndpointPlan(
+                        broker="antares",
+                        origin="ztf",
+                        endpoint="cone_search",
+                        semantic_type="summary",
+                    ),
+                ),
+            ),
+            StepRun(
+                step_index=1,
+                state=StepRunState.PLANNED,
+                candidate_input_from=CandidateInputRef(step_index=0),
             ),
         ),
     )
-    result = WorkflowExecutionResult(
-        run=run,
-        steps=(StepExecutionResult(step_index=0, executions=(execution,)),),
+    executor = _Executor()
+
+    staged = execute_staged_workflow_run(
+        run,
+        _Registry(),
+        executor,
+        validate_semantic_model=True,
     )
 
-    final = normalize_workflow_execution(result, validate_semantic_model=True)
-    final_portfolios = final.steps[0].portfolios
-    final_identities = {
-        summary_object_identity(portfolio) for portfolio in final_portfolios
+    search = staged.normalized.steps[0]
+    filtered = staged.normalized.steps[1]
+    search_identities = {
+        summary_object_identity(portfolio) for portfolio in search.portfolios
+    }
+    filtered_identities = {
+        summary_object_identity(portfolio) for portfolio in filtered.portfolios
     }
 
-    assert len(final_portfolios) == 4
-    assert final_identities == staged_identities
+    assert len(search.portfolios) == 4
+    assert filtered_identities == search_identities
+    assert len(filtered.portfolios) == 4
+    assert len(search.executions) == 1
+    assert search.executions[0].execution_id == "exec:one-shot"
+    assert executor.calls == [
+        (
+            "antares",
+            "ztf",
+            "cone_search",
+            {"ra": 50.84810593071894, "dec": 37.46783501531417, "radius": 1.0},
+        )
+    ]
+    # The provider generator is traversed once. Final workflow normalization reuses
+    # the base Portfolio tuple instead of touching the physical payload again.
+    assert executor.consumed == len(json.loads(FIXTURE.read_text()))
