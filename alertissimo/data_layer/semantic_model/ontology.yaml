@@ -2432,7 +2432,7 @@ levels:
 --edge--:
   abstract: true
   level: L6
-  description: "Abstract connection between semantic records"
+  description: "Abstract connection between semantic records or portfolios"
   [score]:
     description: "Confidence, agreement, or relevance score for the edge"
     type: float
@@ -2450,7 +2450,7 @@ levels:
 
 --association--:
   $is: --edge--
-  description: "The participating records are scientifically associated"
+  description: "The participating records or portfolios are scientifically associated"
   [spatial_probability]:
     description: "Probability or score from spatial overlap"
     type: float
@@ -2465,6 +2465,30 @@ levels:
     range: [0, 1]
   [chance_coincidence_probability]:
     description: "Estimated probability of a chance association"
+    type: float
+    range: [0, 1]
+
+--spatially_near--:
+  $is: --edge--
+  description: "The participating portfolios are spatially near without asserting object identity"
+  [angular_separation]:
+    description: "Angular separation between the participating portfolios"
+    unit: arcsec
+  [normalized_separation]:
+    description: "Angular separation normalized by the positional-uncertainty model used to establish the relation"
+
+--possible_counterpart--:
+  $is: --edge--
+  description: "The participating portfolios are candidate scientific counterparts without asserting object identity"
+
+--host_of-->:
+  $is: --edge--
+  description: "The subject portfolio is the astrophysical host of the target portfolio"
+  [angular_separation]:
+    description: "Angular separation between host and target"
+    unit: arcsec
+  [association_probability]:
+    description: "Probability or score assigned to the host association"
     type: float
     range: [0, 1]
 
@@ -2576,3 +2600,8 @@ levels:
   $refs: <data_product>@{producer}:{channel}
   $refs: <classification>@{producer}:{channel}
   $refs: <survey>@{producer}:{channel}
+  $edges:
+    --association-- <portfolio>
+    --spatially_near-- <portfolio>
+    --possible_counterpart-- <portfolio>
+    --host_of--> <portfolio>

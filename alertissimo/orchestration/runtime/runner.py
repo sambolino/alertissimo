@@ -1,11 +1,9 @@
 """Synchronous execution control for already planned and bound workflows.
 
-The orchestration runtime drives Step occurrence lifecycle while delegating each
-physical call to ``RegistryEndpointExecutor``.  ``WorkflowRun`` retains only
-lifecycle facts and execution IDs; raw payload and complete call provenance stay
-in the transient ``ExecutionResult`` values returned here for a later semantic
-normalization and Portfolio-composition layer.  DeriveStep occurrences deliberately
-remain planned here: they own no physical call and run only after normalization.
+The runtime preserves semantic Step occurrences while allowing an EndpointPlan to
+reuse a physical execution already owned by an earlier Step. Reuse is a planner
+decision and never collapses WorkflowIR. Required physical plans remain fail-fast;
+supplementary plans may fail without failing an otherwise satisfied semantic Step.
 """
 
 from __future__ import annotations
@@ -18,14 +16,14 @@ from alertissimo.orchestration.binding.models import (
     BoundEndpointCall,
     StepBindingResult,
 )
-from alertissimo.orchestration.ir.models import DeriveStep
+from alertissimo.orchestration.ir.models import DeriveStep, MatchStep
 
-from .models import StepRun, StepRunState, WorkflowRun
+from .models import EndpointPlan, StepRun, StepRunState, WorkflowRun
 
 
 @dataclass(frozen=True)
 class StepExecutionResult:
-    """Successful physical executions belonging to one Step occurrence."""
+    """Physical execution results satisfying one semantic Step occurrence."""
 
     step_index: int
     executions: tuple[ExecutionResult, ...]
@@ -61,7 +59,7 @@ class WorkflowExecutionError(RuntimeError):
 def execute_bound_call(
     call: BoundEndpointCall, executor: RegistryEndpointExecutor
 ) -> ExecutionResult:
-    """Delegate one bound call to the physical endpoint executor."""
+    """Delegate one independently owned bound call to the physical executor."""
 
     plan = call.endpoint_plan
     return executor.execute(
@@ -70,6 +68,10 @@ def execute_bound_call(
         endpoint=plan.endpoint,
         params=call.params,
     )
+
+
+def _plan_identity(plan: EndpointPlan) -> tuple[str, str, str]:
+    return plan.broker, plan.origin, plan.endpoint
 
 
 def _validate_alignment(
@@ -98,6 +100,7 @@ def _validate_alignment(
                 "endpoint plan count "
                 f"({len(binding.bound_calls)} != {len(step_run.endpoint_plans)})"
             )
+
         for call_position, (call, owned_plan) in enumerate(
             zip(binding.bound_calls, step_run.endpoint_plans)
         ):
@@ -105,6 +108,27 @@ def _validate_alignment(
                 raise WorkflowExecutionAlignmentError(
                     f"step_index {step_run.step_index} bound call {call_position} "
                     "does not match its owned EndpointPlan"
+                )
+            reference = owned_plan.execution_reuse_from
+            if reference is None:
+                continue
+            if reference.step_index >= step_run.step_index:
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse must reference an earlier Step occurrence"
+                )
+            owner_step = run.steps[reference.step_index]
+            if reference.plan_index >= len(owner_step.endpoint_plans):
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse references an unavailable endpoint plan"
+                )
+            owner_plan = owner_step.endpoint_plans[reference.plan_index]
+            if _plan_identity(owner_plan) != _plan_identity(owned_plan):
+                raise WorkflowExecutionAlignmentError(
+                    "execution reuse requires identical physical endpoint identity"
+                )
+            if call.params:
+                raise WorkflowExecutionAlignmentError(
+                    "reused endpoint plan must not own independent invocation params"
                 )
 
 
@@ -119,50 +143,103 @@ def _error_description(error: Exception) -> str:
     return f"{type(error).__name__}: {detail}" if detail else type(error).__name__
 
 
+def _supplementary_warning(
+    *, step_index: int, plan_index: int, plan: EndpointPlan, error: Exception
+) -> str:
+    return (
+        f"supplementary endpoint plan failed (step_index {step_index}, "
+        f"plan_index {plan_index}, {plan.broker}/{plan.origin}/{plan.endpoint}): "
+        f"{_error_description(error)}"
+    )
+
+
 def execute_workflow_run(
     run: WorkflowRun,
     bindings: tuple[StepBindingResult, ...],
     executor: RegistryEndpointExecutor,
 ) -> WorkflowExecutionResult:
-    """Execute physical calls sequentially; leave DeriveSteps for Portfolio phase."""
+    """Execute independent calls once and reuse proven earlier executions.
+
+    A failure of a required EndpointPlan remains fail-fast. A failure of a plan
+    marked ``required=False`` is retained as a StepRun warning and execution
+    continues. Successful results record the endpoint-plan indexes that produced
+    them so later normalization never has to guess across a sparse plan/result set.
+
+    Post-normalization semantic operations such as DeriveStep and MatchStep own no
+    physical call. They remain planned here and are completed by the local semantic
+    phase after normalized Portfolio data exists.
+    """
 
     _validate_alignment(run, bindings)
     updated_run = run
     step_results: list[StepExecutionResult] = []
+    execution_cache: dict[tuple[int, int], ExecutionResult] = {}
 
     for step_run, binding in zip(run.steps, bindings):
         step = run.step_at(step_run.step_index)
-        if isinstance(step, DeriveStep):
+        if isinstance(step, (DeriveStep, MatchStep)):
             step_results.append(
                 StepExecutionResult(step_index=step_run.step_index, executions=())
             )
             continue
 
         executions: list[ExecutionResult] = []
-        try:
-            for call in binding.bound_calls:
-                executions.append(execute_bound_call(call, executor))
-        except Exception as error:
-            partial_result = StepExecutionResult(
-                step_index=step_run.step_index, executions=tuple(executions)
-            )
-            step_results.append(partial_result)
-            failed_step = step_run.model_copy(
-                update={
-                    "state": StepRunState.FAILED,
-                    "execution_ids": tuple(
-                        item.internal_execution_id.value for item in executions
-                    ),
-                    "error": _error_description(error),
-                }
-            )
-            updated_run = _updated_run(updated_run, failed_step)
-            raise WorkflowExecutionError(
-                f"step_index {step_run.step_index} execution failed: "
-                f"{_error_description(error)}",
-                workflow_run=updated_run,
-                completed_steps=tuple(step_results),
-            ) from error
+        execution_plan_indexes: list[int] = []
+        warnings: list[str] = []
+
+        for plan_index, call in enumerate(binding.bound_calls):
+            plan = call.endpoint_plan
+            try:
+                reference = plan.execution_reuse_from
+                if reference is None:
+                    execution = execute_bound_call(call, executor)
+                else:
+                    cache_key = (reference.step_index, reference.plan_index)
+                    try:
+                        execution = execution_cache[cache_key]
+                    except KeyError as error:
+                        raise WorkflowExecutionAlignmentError(
+                            "reused execution is not available from its declared owner "
+                            f"{cache_key}"
+                        ) from error
+            except Exception as error:
+                if not plan.required:
+                    warnings.append(
+                        _supplementary_warning(
+                            step_index=step_run.step_index,
+                            plan_index=plan_index,
+                            plan=plan,
+                            error=error,
+                        )
+                    )
+                    continue
+
+                partial_result = StepExecutionResult(
+                    step_index=step_run.step_index, executions=tuple(executions)
+                )
+                step_results.append(partial_result)
+                failed_step = step_run.model_copy(
+                    update={
+                        "state": StepRunState.FAILED,
+                        "execution_ids": tuple(
+                            item.internal_execution_id.value for item in executions
+                        ),
+                        "execution_plan_indexes": tuple(execution_plan_indexes),
+                        "warnings": tuple(warnings),
+                        "error": _error_description(error),
+                    }
+                )
+                updated_run = _updated_run(updated_run, failed_step)
+                raise WorkflowExecutionError(
+                    f"step_index {step_run.step_index} execution failed: "
+                    f"{_error_description(error)}",
+                    workflow_run=updated_run,
+                    completed_steps=tuple(step_results),
+                ) from error
+
+            executions.append(execution)
+            execution_plan_indexes.append(plan_index)
+            execution_cache[(step_run.step_index, plan_index)] = execution
 
         step_results.append(
             StepExecutionResult(
@@ -175,6 +252,8 @@ def execute_workflow_run(
                 "execution_ids": tuple(
                     item.internal_execution_id.value for item in executions
                 ),
+                "execution_plan_indexes": tuple(execution_plan_indexes),
+                "warnings": tuple(warnings),
                 "error": None,
             }
         )

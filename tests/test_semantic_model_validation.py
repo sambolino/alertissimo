@@ -72,7 +72,24 @@ def test_real_ontology_builds_lexical_index():
     assert {"detection", "summary", "classification", "crossmatch"} <= index.containers
     assert "source_id" in index.fields
     assert index.edge_types
-    assert "--association--" in index.edge_types
+    assert {
+        "--association--",
+        "--spatially_near--",
+        "--possible_counterpart--",
+        "--host_of-->",
+    } <= index.edge_types
+
+
+def test_portfolio_declares_starter_adjacency_edges():
+    ontology = (Path(__file__).parents[1] / "alertissimo/data_layer/semantic_model/ontology.yaml").read_text()
+    portfolio = ontology.split("<portfolio>:", 1)[1]
+
+    assert "$edges:" in portfolio
+    assert "--association-- <portfolio>" in portfolio
+    assert "--spatially_near-- <portfolio>" in portfolio
+    assert "--possible_counterpart-- <portfolio>" in portfolio
+    assert "--host_of--> <portfolio>" in portfolio
+    assert "same_object" not in portfolio
 
 
 def test_temporary_ontology_index_ignores_dynamic_declarations(tmp_path):

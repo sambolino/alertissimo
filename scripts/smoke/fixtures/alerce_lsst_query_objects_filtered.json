@@ -1,0 +1,23 @@
+[
+  {
+    "class_name": "SN",
+    "classifier_name": "stamp_classifier_rubin_beta_20260421",
+    "classifier_version": "2.0.2",
+    "deltamjd": 17.998003615379275,
+    "firstmjd": 61217.42118006405,
+    "lastmjd": 61235.41918367943,
+    "meandec": -48.481492749718534,
+    "meanra": 62.45763123249455,
+    "n_det": 16,
+    "n_forced": 23,
+    "n_non_det": 0,
+    "oid": 170587117485817955,
+    "probability": 0.76939845,
+    "ranking": 1,
+    "sid": 1,
+    "sigmadec": 3.97436696170811e-06,
+    "sigmara": 4.146258333646398e-06,
+    "stellar": null,
+    "tid": 1
+  }
+]

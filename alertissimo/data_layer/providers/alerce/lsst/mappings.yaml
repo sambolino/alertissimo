@@ -8,7 +8,7 @@ payloads:
       mode: field
       field: oid
     endpoint: query_objects
-    description: Classification-bearing object-search rows; each row emits minimal object identity alongside its independent classifier result.
+    description: Classification-bearing object-search rows; each row emits object identity and position alongside its independent classifier result.
   query_object:
     path: '.'
     object_partition:
@@ -68,8 +68,10 @@ mappings:
   - query_objects#oid
   - query_object#oid
   summary@lsst:alerce.position.ra:
+  - query_objects#meanra
   - query_object#meanra
   summary@lsst:alerce.position.dec:
+  - query_objects#meandec
   - query_object#meandec
   summary@lsst:alerce.position.ra_error:
   - query_object#sigmara

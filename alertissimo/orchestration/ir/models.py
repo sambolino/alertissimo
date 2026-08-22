@@ -182,7 +182,50 @@ class GetStep(Step):
 
 
 class GetLightcurveStep(GetStep):
-    """Retrieve an existing lightcurve; LightcurveStep constructs a local one."""
+    """Retrieve the available provider lightcurve evidence for selected objects.
+
+    ``GetLightcurveStep`` is the semantic retrieval requested by surface
+    ``with lightcurve``. It deliberately does not mean "call exactly one endpoint
+    whose physical operation is named lightcurve". For the current v0.1 policy,
+    the scientifically useful provider lightcurve is treated as the available
+    photometric history, including forced-photometry measurements when a provider
+    exposes them separately and the planner can prove that the supplementary
+    endpoint is compatible with the same target population.
+
+    Consequently one semantic ``GetLightcurveStep`` may own more than one physical
+    ``EndpointPlan``. For example Fink/LSST can be planned as its ordinary
+    ``sources`` history plus its separate ``fp`` forced-photometry retrieval. This
+    is an orchestration decomposition only: WorkflowIR still contains one semantic
+    lightcurve requirement, and providers that already combine the evidence need
+    only one physical execution.
+
+    IMPORTANT / PROVISIONAL COMPATIBILITY POLICY:
+    standalone forced-photometry selection is currently unsupported by the public
+    DSL. We intentionally do not expose ``with forced_photometry`` (nor invent a
+    modifier such as ``with lightcurve --forced``) yet. In the current ontology,
+    forced photometry is represented inside detection/summary photometric structure
+    rather than as a first-level Portfolio record type, so presenting it as a
+    separate surface product would commit us to semantics that have not been
+    decided. ``GetForcedPhotometryStep`` remains in the canonical IR as an
+    internal/provider-facing retrieval operation for direct programmatic workflows
+    and for a future DSL decision.
+
+    The future decision should be made together with analogous product-completeness
+    cases. It needs to define whether the DSL eventually needs general concepts such
+    as ``including``, ``only`` or ``without``; how explicit forced-photometry intent
+    composes with bands and time windows; and how to treat providers whose ordinary
+    lightcurve endpoint already includes some or all forced measurements.
+
+    Automatic forced photometry is therefore strictly supplementary. Its absence,
+    ambiguity, incompatible target cardinality, or inability to prove compatibility
+    must never make an otherwise satisfiable ``GetLightcurveStep`` unsupported.
+    Constrained requests (currently ``bands`` or ``time_context``) are not
+    auto-supplemented until equivalent constraint handling can be proven for the
+    forced-photometry endpoint.
+
+    ``LightcurveStep`` is different: it constructs an Alertissimo-derived
+    lightcurve locally from already available evidence.
+    """
 
     op: Literal["get_lightcurve"] = "get_lightcurve"
     bands: list[NonEmptyStr] | None = None
@@ -204,9 +247,13 @@ class GetCutoutStep(GetStep):
 
 
 class GetForcedPhotometryStep(GetStep):
-    """Retrieve existing forced photometry, never request its generation.
+    """Retrieve existing forced photometry without requesting its generation.
 
-    Generation belongs to FollowupRequestStep because it causes a new product.
+    This provider-facing IR operation is intentionally retained even though forced
+    photometry is not currently a standalone public DSL product. The ordinary DSL
+    path is ``with lightcurve``; see ``GetLightcurveStep`` for the provisional
+    automatic-inclusion and future compatibility policy. Generation belongs to
+    ``FollowupRequestStep`` because it causes a new product.
     """
 
     op: Literal["get_forced_photometry"] = "get_forced_photometry"

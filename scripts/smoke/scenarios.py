@@ -1,14 +1,12 @@
-"""Python-created WorkflowIR scenarios and their real orchestration pipeline."""
+"""Offline-first orchestration smoke scenarios and their real pipeline."""
 
 from __future__ import annotations
-
-from alertissimo.orchestration.ir import TargetSelector
 
 from dataclasses import dataclass
 from typing import Callable
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
-from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph, build_capability_graph
 from alertissimo.orchestration.binding import bind_workflow_run
 from alertissimo.orchestration.derivation import derive_workflow_portfolios
 from alertissimo.orchestration.ir import (
@@ -16,9 +14,11 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     Source,
+    TargetSelector,
     WorkflowIR,
 )
 from alertissimo.orchestration.normalization import normalize_workflow_execution
+from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import (
     WorkflowExecutionError,
@@ -29,6 +29,17 @@ from .executors import FixtureEndpointExecutor, fixture_key
 
 DEFAULT_TARGET = "ZTF18abbuksn"
 BATCH_TARGETS = ("ZTF21abfmbix", "ZTF20acpwljl")
+DSL_PIPELINE_CLASSIFIER = "stamp_classifier_rubin_beta_20260421"
+DSL_PIPELINE_SOURCE = f"""objects from lsst via alerce
+    where classification@{DSL_PIPELINE_CLASSIFIER}.best.class = \"SN\" and classification@{DSL_PIPELINE_CLASSIFIER}.best.probability >= 0.5
+    with classification from {DSL_PIPELINE_CLASSIFIER}
+"""
+DSL_MULTI_PROVIDER_SOURCE = """objects from ztf via lasair
+    inside (124.87996115142856, -6.0205001, 5arcsec)
+    with lightcurve via fink
+    with lightcurve via lasair
+"""
+DSL_SCENARIOS = frozenset({"dsl-pipeline", "dsl-multi-provider"})
 
 
 @dataclass(frozen=True)
@@ -39,6 +50,7 @@ class ScenarioResult:
     bindings: tuple
     normalized: object | None
     expected_error: WorkflowExecutionError | None = None
+    dsl_source: str | None = None
 
 
 def multi_provider_workflow(targets: tuple[str, ...] = (DEFAULT_TARGET,)) -> WorkflowIR:
@@ -56,10 +68,12 @@ def multi_provider_workflow(targets: tuple[str, ...] = (DEFAULT_TARGET,)) -> Wor
                 ],
             ),
             GetForcedPhotometryStep(
-                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"),
+                sources=[Source(broker="alerce", origin="ztf")],
             ),
             GetLightcurveStep(
-                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"),
+                sources=[Source(broker="alerce", origin="ztf")],
             ),
         ],
     )
@@ -92,7 +106,8 @@ def multi_target_workflow(targets: tuple[str, ...] = BATCH_TARGETS) -> WorkflowI
         name="multi-target batch retrieval",
         steps=[
             GetLightcurveStep(
-                target=TargetSelector(ids=list(targets), kind="object"), sources=[Source(broker="fink", origin="ztf")]
+                target=TargetSelector(ids=list(targets), kind="object"),
+                sources=[Source(broker="fink", origin="ztf")],
             ),
             GetLightcurveStep(
                 target=TargetSelector(ids=list(targets), kind="object"),
@@ -112,7 +127,8 @@ def partial_failure_workflow(
         name="expected fail-fast partial execution",
         steps=[
             GetLightcurveStep(
-                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="fink", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"),
+                sources=[Source(broker="fink", origin="ztf")],
             ),
             GetLightcurveStep(
                 target=TargetSelector(ids=[target], kind="object"),
@@ -122,9 +138,54 @@ def partial_failure_workflow(
                 ],
             ),
             GetForcedPhotometryStep(
-                target=TargetSelector(ids=[target], kind="object"), sources=[Source(broker="alerce", origin="ztf")]
+                target=TargetSelector(ids=[target], kind="object"),
+                sources=[Source(broker="alerce", origin="ztf")],
             ),
         ],
+    )
+
+
+def _compile_dsl_workflow(
+    source: str,
+    *,
+    graph: CapabilityGraph,
+    name: str,
+) -> WorkflowIR:
+    # Keep Lark/DSL optional for every non-DSL smoke consumer. The semantic-registry
+    # workflow intentionally does not install DSL dependencies.
+    from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
+
+    surface = parse_surface_script(source)
+    return compile_surface_to_ir(surface, graph=graph, name=name)
+
+
+def dsl_pipeline_workflow(
+    targets: tuple[str, ...] = (), *, graph: CapabilityGraph | None = None
+) -> WorkflowIR:
+    """Compile the single-provider literal DSL acceptance scenario."""
+
+    if targets:
+        raise ValueError("dsl-pipeline defines its candidates in DSL and accepts no target IDs")
+    return _compile_dsl_workflow(
+        DSL_PIPELINE_SOURCE,
+        graph=graph or build_capability_graph(),
+        name="DSL end-to-end classification search",
+    )
+
+
+def dsl_multi_provider_workflow(
+    targets: tuple[str, ...] = (), *, graph: CapabilityGraph | None = None
+) -> WorkflowIR:
+    """Compile candidate discovery plus cross-provider enrichment from literal DSL."""
+
+    if targets:
+        raise ValueError(
+            "dsl-multi-provider defines its candidates in DSL and accepts no target IDs"
+        )
+    return _compile_dsl_workflow(
+        DSL_MULTI_PROVIDER_SOURCE,
+        graph=graph or build_capability_graph(),
+        name="DSL multi-provider candidate enrichment",
     )
 
 
@@ -133,10 +194,42 @@ SCENARIOS: dict[str, Callable[[tuple[str, ...]], WorkflowIR]] = {
     "color-magnitude": color_magnitude_workflow,
     "multi-target": multi_target_workflow,
     "partial-failure": partial_failure_workflow,
+    "dsl-pipeline": dsl_pipeline_workflow,
+    "dsl-multi-provider": dsl_multi_provider_workflow,
 }
 
 
-def _fixtures(targets: tuple[str, ...]):
+def _fixtures(name: str, targets: tuple[str, ...]):
+    if name == "dsl-pipeline":
+        return {
+            fixture_key(
+                "alerce",
+                "lsst",
+                "query_objects",
+                classifier=DSL_PIPELINE_CLASSIFIER,
+                class_name="SN",
+                probability=0.5,
+            ): "alerce_lsst_query_objects_filtered.json"
+        }
+    if name == "dsl-multi-provider":
+        candidate_id = "ZTF20acpwljl"
+        return {
+            fixture_key(
+                "lasair",
+                "ztf",
+                "cone",
+                ra=124.87996115142856,
+                dec=-6.0205001,
+                radius=5.0,
+            ): "../../../tests/fixtures/lasair/ztf/capture_20260813T110413Z/cone_all.json",
+            fixture_key(
+                "fink", "ztf", "objects", objectId=candidate_id
+            ): "fink_objects_ztf20acpwljl.json",
+            fixture_key(
+                "lasair", "ztf", "lightcurves", objectIds=candidate_id
+            ): "lasair_lightcurves_ztf20acpwljl.json",
+        }
+
     csv = ",".join(targets)
     fixtures = {
         fixture_key("fink", "ztf", "objects", objectId=csv): (
@@ -165,27 +258,51 @@ def _fixtures(targets: tuple[str, ...]):
 def run_scenario(
     name: str, *, live: bool = False, targets: tuple[str, ...] | None = None
 ) -> ScenarioResult:
+    if name in DSL_SCENARIOS and targets:
+        raise ValueError(f"{name} accepts no --target overrides")
     if targets is not None and not live:
         raise ValueError(
             "custom targets require live=True because fixture scenarios use fixed payload identifiers"
         )
     if live and name == "partial-failure":
         raise ValueError("partial-failure is intentionally fixture-only")
-    factory = SCENARIOS[name]
-    selected = targets or (
-        BATCH_TARGETS if name == "multi-target" else (DEFAULT_TARGET,)
+
+    selected = () if name in DSL_SCENARIOS else (
+        targets
+        or (BATCH_TARGETS if name == "multi-target" else (DEFAULT_TARGET,))
     )
-    workflow = factory(selected)
+    graph = build_capability_graph()
+    factory = SCENARIOS[name]
+    if name == "dsl-pipeline":
+        workflow = dsl_pipeline_workflow(selected, graph=graph)
+    elif name == "dsl-multi-provider":
+        workflow = dsl_multi_provider_workflow(selected, graph=graph)
+    else:
+        workflow = factory(selected)
     registry = EndpointRegistry()
-    run = plan_workflow(workflow, build_capability_graph())
-    bindings = bind_workflow_run(run, registry)
+    run = plan_workflow(workflow, graph)
     executor = (
         RegistryEndpointExecutor(registry=registry)
         if live
         else FixtureEndpointExecutor(
-            _fixtures(selected), fail_call=3 if name == "partial-failure" else None
+            _fixtures(name, selected),
+            fail_call=3 if name == "partial-failure" else None,
         )
     )
+
+    if name == "dsl-multi-provider":
+        staged = execute_staged_workflow_run(run, registry, executor)
+        normalized = derive_workflow_portfolios(staged.normalized)
+        return ScenarioResult(
+            name,
+            workflow,
+            normalized.run,
+            staged.bindings,
+            normalized,
+            dsl_source=DSL_MULTI_PROVIDER_SOURCE,
+        )
+
+    bindings = bind_workflow_run(run, registry)
     try:
         executed = execute_workflow_run(run, bindings, executor)
     except WorkflowExecutionError as error:
@@ -210,4 +327,11 @@ def run_scenario(
     if name == "partial-failure":
         raise RuntimeError("partial-failure scenario unexpectedly succeeded")
     normalized = derive_workflow_portfolios(normalize_workflow_execution(executed))
-    return ScenarioResult(name, workflow, normalized.run, bindings, normalized)
+    return ScenarioResult(
+        name,
+        workflow,
+        normalized.run,
+        bindings,
+        normalized,
+        dsl_source=DSL_PIPELINE_SOURCE if name == "dsl-pipeline" else None,
+    )

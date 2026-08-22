@@ -43,6 +43,7 @@ OLD_HELPER_KEYS = {
     "sources", "attribute_inventory", "mapping_policy", "availability",
     "source_fields", "field_status", "record_type", "object_summary", "endpoints",
 }
+BINDING_KEYS = {"collection", "max_items", "roles", "adapter"}
 
 
 def _load_yaml(path: Path) -> Any:
@@ -114,6 +115,77 @@ def _validate_raw_reference(reference: Any, payloads: set[str], where: str) -> N
         raise MappingSchemaError(f"{where} references unknown payload {payload_key!r}")
 
 
+def _validate_binding(binding: dict[Any, Any], param: dict[Any, Any], where: str) -> None:
+    """Validate collection and native/composite request-binding metadata."""
+
+    _allowed_keys(binding, BINDING_KEYS, where)
+    collection = binding.get("collection")
+    max_items = binding.get("max_items")
+    roles = binding.get("roles")
+    adapter = binding.get("adapter")
+    direct_role = param.get("bind")
+
+    if roles is not None:
+        if (
+            not isinstance(roles, list)
+            or not roles
+            or any(not isinstance(role, str) or not role.strip() for role in roles)
+            or len(set(roles)) != len(roles)
+        ):
+            raise MappingSchemaError(
+                f"{where}: roles must be a non-empty list of unique non-empty strings"
+            )
+        if direct_role is not None:
+            raise MappingSchemaError(
+                f"{where}: bind and binding.roles are mutually exclusive"
+            )
+
+    if adapter is not None:
+        adapter = _nonempty_string(adapter, f"{where}: adapter")
+        module, separator, attribute = adapter.partition(":")
+        if not separator or not module or not attribute:
+            raise MappingSchemaError(
+                f"{where}: adapter must use 'package.module:callable' syntax"
+            )
+        if direct_role is None and roles is None:
+            raise MappingSchemaError(
+                f"{where}: adapter requires bind or binding.roles"
+            )
+
+    if roles is not None and adapter is None:
+        raise MappingSchemaError(
+            f"{where}: binding.roles requires an adapter"
+        )
+
+    if collection is not None:
+        if direct_role is None:
+            raise MappingSchemaError(
+                f"{where}: collection metadata requires an explicit canonical bind"
+            )
+        if roles is not None:
+            raise MappingSchemaError(
+                f"{where}: collection binding cannot compose binding.roles"
+            )
+        if adapter is not None:
+            raise MappingSchemaError(
+                f"{where}: binding.adapter and binding.collection cannot be combined"
+            )
+        if collection != "csv":
+            raise MappingSchemaError(f"{where}: unknown collection transform {collection!r}")
+    elif max_items is not None:
+        raise MappingSchemaError(f"{where}: max_items requires a collection binding")
+
+    if max_items is not None and (
+        isinstance(max_items, bool) or not isinstance(max_items, int) or max_items <= 0
+    ):
+        raise MappingSchemaError(f"{where}: max_items must be a positive integer")
+
+    if collection is None and roles is None and adapter is None:
+        raise MappingSchemaError(
+            f"{where}: binding metadata must declare collection, roles, or adapter"
+        )
+
+
 def _validate_endpoints(path: Path, endpoints_used: list[tuple[str, str]]) -> None:
     if not path.exists():
         return
@@ -127,17 +199,8 @@ def _validate_endpoints(path: Path, endpoints_used: list[tuple[str, str]]) -> No
             binding = param.get("binding")
             if binding is None:
                 continue
-            binding = _mapping(binding, f"{path}: endpoint {endpoint_name!r} param {param_name!r} binding")
-            if "bind" not in param:
-                raise MappingSchemaError(f"{path}: collection metadata requires an explicit canonical bind")
-            collection = binding.get("collection")
-            if collection is None and "max_items" in binding:
-                raise MappingSchemaError(f"{path}: max_items requires a collection binding")
-            if collection != "csv":
-                raise MappingSchemaError(f"{path}: unknown collection transform {collection!r}")
-            max_items = binding.get("max_items")
-            if max_items is not None and (isinstance(max_items, bool) or not isinstance(max_items, int) or max_items <= 0):
-                raise MappingSchemaError(f"{path}: max_items must be a positive integer")
+            where = f"{path}: endpoint {endpoint_name!r} param {param_name!r} binding"
+            _validate_binding(_mapping(binding, where), param, where)
     for payload_key, endpoint in endpoints_used:
         if endpoint not in endpoints:
             raise MappingSchemaError(

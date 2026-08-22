@@ -22,6 +22,19 @@ def test_graph_builds_for_all_normalized_registries():
         for origin in ("lsst", "ztf")
     }
 
+
+def test_antares_cone_composite_binding_roles_are_visible_to_capabilities():
+    graph = build_capability_graph()
+    for origin in ("ztf", "lsst"):
+        endpoint = next(
+            item
+            for item in graph.endpoints_for("antares", origin)
+            if item.endpoint == "cone_search"
+        )
+        assert endpoint.binding_roles == ("dec", "ra", "radius")
+        assert endpoint.collection_binding_roles == ()
+
+
 def test_fink_lsst_skip_null_only_directives_are_not_transform_capabilities():
     graph = build_capability_graph()
 
@@ -49,6 +62,7 @@ def test_fink_lsst_skip_null_only_directives_are_not_transform_capabilities():
     }
 
     assert skip_null_only_refs.isdisjoint(graph_transforms)
+
 
 def test_lasair_ztf_endpoint_capabilities_and_projection():
     graph = build_capability_graph()

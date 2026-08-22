@@ -9,6 +9,8 @@ from .models import (
     ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
+    consolidate_portfolios,
+    summary_object_identity,
 )
 from .normalize import (
     WorkflowNormalizationAlignmentError,
@@ -23,9 +25,11 @@ __all__ = [
     "StepPortfolioResult",
     "WorkflowNormalizationAlignmentError",
     "WorkflowPortfolioResult",
+    "consolidate_portfolios",
     "evaluate_portfolio_predicate",
     "normalize_execution",
     "normalize_step_execution",
     "normalize_workflow_execution",
     "prune_portfolios",
+    "summary_object_identity",
 ]
