@@ -125,7 +125,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     ),
     Scenario(
         "dsl-confirm-predicate-quorum",
-        "DSL ALeRCE where exists(classification.best.class) -> 2-of-2 Fink/Lasair Confirm -> survivor-bound Fink Get",
+        "DSL ALeRCE where exists classification.best.class -> 2-of-2 Fink/Lasair Confirm -> survivor-bound Fink Get",
         _python_script("scripts/live_dsl_confirm_predicate.py"),
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
