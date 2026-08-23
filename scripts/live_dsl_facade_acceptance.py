@@ -186,16 +186,21 @@ def main() -> int:
     for index, scenario in enumerate(selected, start=1):
         print(f"[{index:02d}/{len(selected):02d}] {scenario.name} ...", end="", flush=True)
         started = monotonic()
+        validate_elapsed = 0.0
+        execute_elapsed = 0.0
+        json_elapsed = 0.0
         missing = [name for name in scenario.required_env if not os.environ.get(name)]
         if missing:
             status: Status = "SKIP"
             detail = "missing credential(s): " + ", ".join(missing)
         else:
             try:
+                phase_started = monotonic()
                 validation = validate_dsl(
                     scenario.source,
                     name=f"facade acceptance: {scenario.name}",
                 )
+                validate_elapsed = monotonic() - phase_started
                 if not validation.is_runnable:
                     detail = (
                         f"DSL validation failed: parse={validation.parse_error!r} "
@@ -204,11 +209,17 @@ def main() -> int:
                     )
                     status = "FAIL"
                 else:
+                    phase_started = monotonic()
                     execution = execute_dsl(
                         scenario.source,
                         name=f"facade acceptance: {scenario.name}",
                     )
+                    execute_elapsed = monotonic() - phase_started
+
+                    phase_started = monotonic()
                     json_text = execution.to_json()
+                    json_elapsed = monotonic() - phase_started
+
                     payload = json.loads(json_text)
                     if payload.get("result_step_index") != execution.result_step_index:
                         raise RuntimeError(
@@ -220,6 +231,9 @@ def main() -> int:
                         )
                     status = "PASS"
                     detail = (
+                        f"validate={validate_elapsed:.2f}s "
+                        f"execute={execute_elapsed:.2f}s "
+                        f"json={json_elapsed:.2f}s "
                         f"steps={len(execution.result.steps)} "
                         f"result_step={execution.result_step_index} "
                         f"portfolios={len(execution.portfolios)} "
@@ -229,8 +243,15 @@ def main() -> int:
                         print()
                         print(json_text)
             except Exception as error:
+                if execute_elapsed == 0.0 and 'phase_started' in locals():
+                    execute_elapsed = monotonic() - phase_started
                 status = _exception_status(error)
-                detail = f"{type(error).__name__}: {error}"
+                detail = (
+                    f"validate={validate_elapsed:.2f}s "
+                    f"execute={execute_elapsed:.2f}s "
+                    f"json={json_elapsed:.2f}s "
+                    f"{type(error).__name__}: {error}"
+                )
 
         elapsed = monotonic() - started
         counts[status] += 1
