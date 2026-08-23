@@ -3,6 +3,7 @@ name: DSL compiler
 on:
   pull_request:
     paths:
+      - 'alertissimo/api.py'
       - 'alertissimo/dsl/**'
       - 'alertissimo/data_layer/runtime/capability_graph.py'
       - 'alertissimo/data_layer/providers/**/request_mappings.yaml'
