@@ -15,10 +15,12 @@ Programmatic-IR, presentation, and offline-control scenarios from
 from __future__ import annotations
 
 import argparse
+import cProfile
 from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+import pstats
 import re
 from time import monotonic
 from typing import Literal
@@ -129,6 +131,17 @@ _AUTH_PATTERNS = (
     re.compile(r"credential.*(?:missing|not found|required)", re.IGNORECASE),
 )
 
+_PROFILE_FUNCTIONS = (
+    ("compile", "compile_surface"),
+    ("plan", "plan_workflow"),
+    ("bind", "bind_endpoint"),
+    ("provider", "execute_bound_call"),
+    ("normalize", "normalize_execution"),
+    ("final_normalize", "normalize_workflow_execution"),
+    ("local", "finalize_local_semantics"),
+    ("staged", "execute_staged_workflow_run"),
+)
+
 
 def _exception_status(error: Exception) -> Status:
     text = f"{type(error).__name__}: {error}"
@@ -137,6 +150,27 @@ def _exception_status(error: Exception) -> Status:
     if any(p.search(text) for p in _TRANSIENT_PATTERNS):
         return "UNAVAILABLE"
     return "FAIL"
+
+
+def _profile_summary(profiler: cProfile.Profile | None) -> str:
+    """Return cumulative timings for existing execution-layer function boundaries.
+
+    These values are intentionally diagnostic and non-additive: for example,
+    ``staged`` contains provider and normalization work, while ``final_normalize``
+    may contain calls to ``normalize_execution``. The point is attribution, not a
+    synthetic accounting total.
+    """
+
+    if profiler is None:
+        return ""
+    stats = pstats.Stats(profiler)
+    cumulative_by_name: dict[str, float] = {}
+    for (_filename, _line, function_name), values in stats.stats.items():
+        cumulative_by_name[function_name] = cumulative_by_name.get(function_name, 0.0) + values[3]
+    return " profile[" + " ".join(
+        f"{label}={cumulative_by_name.get(function_name, 0.0):.2f}s"
+        for label, function_name in _PROFILE_FUNCTIONS
+    ) + "]"
 
 
 def _args() -> argparse.Namespace:
@@ -153,6 +187,14 @@ def _args() -> argparse.Namespace:
         "--print-json",
         action="store_true",
         help="print the browser-safe JSON emitted by each successful execution",
+    )
+    parser.add_argument(
+        "--profile-execute",
+        action="store_true",
+        help=(
+            "profile execute_dsl and report cumulative compile/plan/bind/provider/"
+            "normalization/local-semantic timings"
+        ),
     )
     return parser.parse_args()
 
@@ -189,6 +231,8 @@ def main() -> int:
         validate_elapsed = 0.0
         execute_elapsed = 0.0
         json_elapsed = 0.0
+        profiler: cProfile.Profile | None = None
+        profile_detail = ""
         missing = [name for name in scenario.required_env if not os.environ.get(name)]
         if missing:
             status: Status = "SKIP"
@@ -209,12 +253,20 @@ def main() -> int:
                     )
                     status = "FAIL"
                 else:
+                    profiler = cProfile.Profile() if args.profile_execute else None
                     phase_started = monotonic()
-                    execution = execute_dsl(
-                        scenario.source,
-                        name=f"facade acceptance: {scenario.name}",
-                    )
+                    if profiler is not None:
+                        profiler.enable()
+                    try:
+                        execution = execute_dsl(
+                            scenario.source,
+                            name=f"facade acceptance: {scenario.name}",
+                        )
+                    finally:
+                        if profiler is not None:
+                            profiler.disable()
                     execute_elapsed = monotonic() - phase_started
+                    profile_detail = _profile_summary(profiler)
 
                     phase_started = monotonic()
                     json_text = execution.to_json()
@@ -238,11 +290,15 @@ def main() -> int:
                         f"result_step={execution.result_step_index} "
                         f"portfolios={len(execution.portfolios)} "
                         f"json_bytes={len(json_text.encode('utf-8'))}"
+                        f"{profile_detail}"
                     )
                     if args.print_json:
                         print()
                         print(json_text)
             except Exception as error:
+                if profiler is not None:
+                    profiler.disable()
+                    profile_detail = _profile_summary(profiler)
                 if execute_elapsed == 0.0 and 'phase_started' in locals():
                     execute_elapsed = monotonic() - phase_started
                 status = _exception_status(error)
@@ -251,6 +307,7 @@ def main() -> int:
                     f"execute={execute_elapsed:.2f}s "
                     f"json={json_elapsed:.2f}s "
                     f"{type(error).__name__}: {error}"
+                    f"{profile_detail}"
                 )
 
         elapsed = monotonic() - started
