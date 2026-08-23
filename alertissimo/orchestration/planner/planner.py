@@ -439,14 +439,33 @@ def _mark_candidate_dependencies(
             current_material_index = step_index
             continue
 
+        if isinstance(step, DeriveStep):
+            if current_material_index is None:
+                raise PlanningNotApplicableError(
+                    f"derive step_index {step_index} requires an earlier materialized view"
+                )
+            rewritten[step_index] = rewritten[step_index].model_copy(
+                update={
+                    "material_input_from": MaterialInputRef(
+                        step_index=current_material_index
+                    )
+                }
+            )
+            current_material_index = step_index
+            continue
+
         if active_search_index is None:
+            if rewritten[step_index].endpoint_plans:
+                current_material_index = step_index
             continue
 
         search_step = workflow.steps[active_search_index]
         if not isinstance(search_step, SearchStep):
             active_search_index = None
             current_candidate_index = None
-            current_material_index = None
+            current_material_index = (
+                step_index if rewritten[step_index].endpoint_plans else None
+            )
             continue
 
         if isinstance(step, ConfirmStep) and step.target is None:
@@ -496,20 +515,26 @@ def _mark_candidate_dependencies(
         if not isinstance(step, GetStep) or getattr(step, "target", None) is not None:
             active_search_index = None
             current_candidate_index = None
-            current_material_index = None
+            current_material_index = (
+                step_index if rewritten[step_index].endpoint_plans else None
+            )
             continue
 
         requirement = _get_record_requirement(step)
         if requirement is None:
             active_search_index = None
             current_candidate_index = None
-            current_material_index = None
+            current_material_index = (
+                step_index if rewritten[step_index].endpoint_plans else None
+            )
             continue
 
         if current_candidate_index is None or current_material_index is None:
             active_search_index = None
             current_candidate_index = None
-            current_material_index = None
+            current_material_index = (
+                step_index if rewritten[step_index].endpoint_plans else None
+            )
             continue
 
         search_run = rewritten[active_search_index]

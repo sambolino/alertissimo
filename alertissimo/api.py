@@ -8,12 +8,16 @@ and post-normalization semantic finalization themselves.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
+from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     build_capability_graph,
 )
+from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 from alertissimo.dsl import (
     DSLParseError,
     SurfaceCapabilityReport,
@@ -96,6 +100,46 @@ class DSLExecutionResult:
     @property
     def run(self) -> WorkflowRun:
         return self.result.run
+
+    @property
+    def result_step_index(self) -> int | None:
+        """Step occurrence that owns the final semantic material view."""
+
+        return self.result.steps[-1].step_index if self.result.steps else None
+
+    @property
+    def portfolios(self) -> tuple[Portfolio, ...]:
+        """Final workflow result as occurrence-owned semantic Portfolios."""
+
+        return self.result.steps[-1].portfolios if self.result.steps else ()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the browser-safe final semantic result plus workflow metadata.
+
+        Portfolio payloads reuse the canonical ``portfolio_to_dict`` serializer used
+        by ``.ui-fixtures`` so live execution and offline UI fixtures share exactly
+        the same Portfolio/SemanticRecord wire format. Historical Step Portfolio
+        snapshots remain available on the Python ``result`` object but are not
+        duplicated into the primary UI payload. Raw provider payloads are not
+        exported.
+        """
+
+        return {
+            "source": self.source,
+            "surface": self.surface.model_dump(mode="json"),
+            "workflow": self.workflow.model_dump(mode="json"),
+            "view": self.view.model_dump(mode="json"),
+            "run": self.run.model_dump(mode="json", exclude={"workflow"}),
+            "result_step_index": self.result_step_index,
+            "portfolios": [
+                portfolio_to_dict(portfolio) for portfolio in self.portfolios
+            ],
+        }
+
+    def to_json(self, *, indent: int = 2) -> str:
+        """Serialize the final DSL result as deterministic browser-friendly JSON."""
+
+        return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
 def validate_dsl(
