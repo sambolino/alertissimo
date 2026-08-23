@@ -8,12 +8,15 @@ and post-normalization semantic finalization themselves.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     build_capability_graph,
 )
+from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 from alertissimo.dsl import (
     DSLParseError,
     SurfaceCapabilityReport,
@@ -96,6 +99,37 @@ class DSLExecutionResult:
     @property
     def run(self) -> WorkflowRun:
         return self.result.run
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a browser-safe representation of the complete DSL turn.
+
+        Portfolio payloads reuse the canonical ``portfolio_to_dict`` serializer used
+        by ``.ui-fixtures`` so live execution and offline UI fixtures share exactly
+        the same Portfolio/SemanticRecord wire format. Raw provider payloads are not
+        exported.
+        """
+
+        return {
+            "source": self.source,
+            "surface": self.surface.model_dump(mode="json"),
+            "workflow": self.workflow.model_dump(mode="json"),
+            "view": self.view.model_dump(mode="json"),
+            "run": self.run.model_dump(mode="json", exclude={"workflow"}),
+            "steps": [
+                {
+                    "step_index": step.step_index,
+                    "portfolios": [
+                        portfolio_to_dict(portfolio) for portfolio in step.portfolios
+                    ],
+                }
+                for step in self.result.steps
+            ],
+        }
+
+    def to_json(self, *, indent: int = 2) -> str:
+        """Serialize the complete DSL turn as deterministic browser-friendly JSON."""
+
+        return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
 def validate_dsl(
