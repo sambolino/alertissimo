@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import alertissimo.api as api
+from scripts import live_dsl_api
 
 
 VALID_DSL = """\
@@ -124,3 +125,20 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
     assert result.staged is staged
     assert result.result is finalized
     assert result.run is final_run
+
+
+def test_public_facade_live_script_static_contract_is_offline():
+    dsl = live_dsl_api.build_dsl(
+        ra=live_dsl_api.DEFAULT_RA,
+        dec=live_dsl_api.DEFAULT_DEC,
+        radius_arcsec=live_dsl_api.DEFAULT_RADIUS_ARCSEC,
+    )
+    validation = api.validate_dsl(dsl, name="public facade offline acceptance")
+
+    live_dsl_api.assert_static_contract(validation)
+
+    assert validation.compilation is not None
+    assert [step.op for step in validation.compilation.workflow.steps] == [
+        "cone_search",
+        "get_lightcurve",
+    ]
