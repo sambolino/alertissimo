@@ -46,7 +46,6 @@ def test_validate_dsl_returns_syntax_failure_as_data():
 def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
     source = "objects from ztf via alerce"
     graph = object()
-    semantic_paths = object()
     registry = object()
     executor = object()
     surface = object()
@@ -90,7 +89,6 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
         source,
         name="UI execution",
         graph=graph,
-        semantic_paths=semantic_paths,
         registry=registry,
         executor=executor,
         validate_semantic_model=False,
@@ -103,7 +101,6 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
             surface,
             {
                 "graph": graph,
-                "semantic_paths": semantic_paths,
                 "name": "UI execution",
             },
         ),
