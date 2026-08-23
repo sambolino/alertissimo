@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
-from alertissimo.orchestration.derivation import derive_portfolio
+from alertissimo.orchestration.derivation import derive_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
-    ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
     consolidate_portfolios,
@@ -32,33 +31,28 @@ def _apply_derivation(
     step: DeriveStep,
     *,
     step_index: int,
+    step_run,
     steps: list[StepPortfolioResult],
 ) -> None:
-    """Complement all earlier semantic views, preserving their material snapshots."""
+    """Materialize Derive's own immutable semantic output from its declared input."""
 
-    for prior_index in range(step_index):
-        prior = steps[prior_index]
-        derived_executions = tuple(
-            ExecutionPortfolioResult(
-                execution_id=execution.execution_id,
-                portfolios=tuple(
-                    derive_portfolio(step, portfolio, step_index=step_index)
-                    for portfolio in execution.portfolios
-                ),
-            )
-            for execution in prior.executions
+    reference = step_run.material_input_from
+    if reference is None or reference.step_index >= step_index:
+        raise LocalSemanticExecutionError(
+            f"derive step_index {step_index} must reference an earlier material Step"
         )
-        materialized = None
-        if prior.materialized_portfolios is not None:
-            materialized = tuple(
-                derive_portfolio(step, portfolio, step_index=step_index)
-                for portfolio in prior.portfolios
-            )
-        steps[prior_index] = StepPortfolioResult(
-            step_index=prior.step_index,
-            executions=derived_executions,
-            materialized_portfolios=materialized,
-        )
+    try:
+        source = steps[reference.step_index]
+    except IndexError as exc:
+        raise LocalSemanticExecutionError(
+            f"derive step_index {step_index} references unavailable material Step "
+            f"{reference.step_index}"
+        ) from exc
+    steps[step_index] = derive_step_portfolios(
+        step,
+        source,
+        step_index=step_index,
+    )
 
 
 def _rematerialize_provider_step(
@@ -133,10 +127,13 @@ def finalize_local_semantics(
 ) -> WorkflowPortfolioResult:
     """Finalize local operations and semantic material lineage in workflow order.
 
-    Filter/Match remain execution-free local candidate operations. Confirm is a
-    hybrid semantic Step: its real provider executions are already normalized, then
-    the local distinct-broker quorum determines its occurrence-aligned surviving
-    Portfolio view. Later provider Steps inherit that finalized Confirm view.
+    Filter/Match remain execution-free local candidate operations. Derive is an
+    execution-free material transform that owns a new occurrence-aligned Portfolio
+    snapshot while leaving its input Step unchanged. Confirm is a hybrid semantic
+    Step: its real provider executions are already normalized, then the local
+    distinct-broker quorum determines its occurrence-aligned surviving Portfolio
+    view. Later provider Steps inherit whichever finalized material Step precedes
+    them through explicit material lineage.
     """
 
     steps = list(result.steps)
@@ -172,7 +169,12 @@ def finalize_local_semantics(
             )
 
         if isinstance(step, DeriveStep):
-            _apply_derivation(step, step_index=step_index, steps=steps)
+            _apply_derivation(
+                step,
+                step_index=step_index,
+                step_run=step_run,
+                steps=steps,
+            )
         else:
             reference = step_run.candidate_input_from
             if reference is None or reference.step_index >= step_index:
