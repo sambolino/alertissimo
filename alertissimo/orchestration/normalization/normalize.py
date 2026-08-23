@@ -374,19 +374,25 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     f"derive step_index {step_run.step_index} is {step_run.state.value}; "
                     "it must remain planned until post-normalization derivation"
                 )
+            reference = step_run.material_input_from
+            if reference is None or reference.step_index >= step_run.step_index:
+                raise WorkflowNormalizationAlignmentError(
+                    f"derive step_index {step_run.step_index} must reference an earlier "
+                    "material Step"
+                )
             if (
                 step_run.endpoint_plans
                 or step_run.candidate_input_from is not None
-                or step_run.material_input_from is not None
                 or step_run.execution_ids
                 or step_run.execution_plan_indexes
                 or step_run.vacuous_plan_indexes
                 or step_result.executions
             ):
                 raise WorkflowNormalizationAlignmentError(
-                    f"derive step_index {step_run.step_index} must have no physical "
-                    "endpoint plans, candidate/material input, execution IDs, "
-                    "execution-plan indexes, vacuous-plan indexes, or execution results"
+                    f"derive step_index {step_run.step_index} must have one earlier "
+                    "material input but no physical endpoint plans, candidate input, "
+                    "execution IDs, execution-plan indexes, vacuous-plan indexes, or "
+                    "execution results"
                 )
             continue
 
@@ -567,9 +573,10 @@ def normalize_workflow_execution(
     that combines the preceding material view with newly normalized evidence.
     FilterSteps select from an earlier normalized Step view without manufacturing
     physical provenance. DeriveStep and MatchStep occurrences retain empty normalized
-    outputs until the ordered local semantic phase runs. Supplementary physical plans
-    that failed remain visible as runtime warnings; candidate-dependent vacuous plans
-    remain proven by runtime metadata.
+    outputs until the ordered local semantic phase runs; Derive's planned material
+    reference already records which immutable earlier snapshot it will transform.
+    Supplementary physical plans that failed remain visible as runtime warnings;
+    candidate-dependent vacuous plans remain proven by runtime metadata.
 
     ``normalized_execution_cache`` may carry base, unpruned normalization already
     produced earlier in the same staged workflow invocation. Reusing that tuple is
