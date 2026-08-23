@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import re
 from collections.abc import Iterator, Mapping
@@ -40,6 +41,65 @@ class PortfolioBuildError(ValueError):
 
 
 _MISSING = object()
+
+
+@dataclass(frozen=True)
+class _PreparedRawReference:
+    """One payload-local raw reference prepared outside the per-item hot loop."""
+
+    raw_field: str
+    specification: Mapping[str, Any] | None
+    object_key: str | None
+
+
+@dataclass(frozen=True)
+class _PreparedSemanticMapping:
+    """One semantic field plus only the raw references relevant to one payload."""
+
+    semantic_type: str
+    relative_field: str
+    references: tuple[_PreparedRawReference, ...]
+
+
+def _prepare_mappings_by_payload(
+    mappings: Mapping[str, Any],
+    transforms: Mapping[str, Any],
+) -> dict[str, tuple[_PreparedSemanticMapping, ...]]:
+    """Index mapping work by payload before walking potentially large result sets.
+
+    The YAML mapping order and per-field fallback/composition reference order remain
+    unchanged.  This only moves invariant parsing and dictionary lookups out of the
+    per-object normalization loop.
+    """
+
+    prepared: dict[str, list[_PreparedSemanticMapping]] = {}
+    for semantic_path, raw_references in mappings.items():
+        semantic_type, relative_field = split_semantic_path(semantic_path)
+        specifications = transforms.get(semantic_path, {})
+        references_by_payload: dict[str, list[_PreparedRawReference]] = {}
+        for raw_reference in raw_references:
+            payload_key, raw_field = raw_reference.split("#", 1)
+            specification = specifications.get(raw_reference)
+            object_key = specification.get("object_key") if specification else None
+            references_by_payload.setdefault(payload_key, []).append(
+                _PreparedRawReference(
+                    raw_field=raw_field,
+                    specification=specification,
+                    object_key=object_key,
+                )
+            )
+        for payload_key, references in references_by_payload.items():
+            prepared.setdefault(payload_key, []).append(
+                _PreparedSemanticMapping(
+                    semantic_type=semantic_type,
+                    relative_field=relative_field,
+                    references=tuple(references),
+                )
+            )
+    return {
+        payload_key: tuple(payload_mappings)
+        for payload_key, payload_mappings in prepared.items()
+    }
 
 
 SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
@@ -371,6 +431,7 @@ def build_portfolios_from_execution(
     payload_definitions = document["payloads"]
     mappings = document["mappings"]
     transforms = document.get("transforms", {})
+    mappings_by_payload = _prepare_mappings_by_payload(mappings, transforms)
     records_by_object: dict[Any, list[SemanticRecord]] = {}
     make_record_id = record_id_factory or new_internal_record_id
 
@@ -393,6 +454,7 @@ def build_portfolios_from_execution(
         # validation, but cannot create an astronomical-object Portfolio.
         if partition["mode"] == "none":
             continue
+        payload_mappings = mappings_by_payload.get(payload_key, ())
         items = resolve_payload_items(
             payload,
             payload_key=payload_key,
@@ -425,16 +487,15 @@ def build_portfolios_from_execution(
                 # Field and root-field declarations intentionally share identity.
                 partition_key = ("identity", partition_value)
             fields_by_type: dict[str, dict[str, Any]] = {}
-            for semantic_path, references in mappings.items():
-                semantic_type, relative_field = split_semantic_path(semantic_path)
+            for prepared_mapping in payload_mappings:
+                semantic_type = prepared_mapping.semantic_type
+                relative_field = prepared_mapping.relative_field
                 ordinary_value: Any = _MISSING
                 composed_entries: dict[str, Any] = {}
-                for raw_reference in references:
-                    ref_payload_key, raw_field = raw_reference.split("#", 1)
-                    if ref_payload_key != payload_key:
-                        continue
-                    specification = transforms.get(semantic_path, {}).get(raw_reference)
-                    object_key = specification.get("object_key") if specification else None
+                for prepared_reference in prepared_mapping.references:
+                    raw_field = prepared_reference.raw_field
+                    specification = prepared_reference.specification
+                    object_key = prepared_reference.object_key
                     # Once an ordinary fallback succeeds, only composition
                     # references still need evaluation for conflict detection.
                     if object_key is None and ordinary_value is not _MISSING:
