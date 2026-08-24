@@ -12,6 +12,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "dsl-match-spatial",
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
+        "dsl-incremental-continuation",
         "dsl-confirm-existence-quorum",
         "dsl-confirm-predicate-quorum",
         "dsl-classification-reuse",
@@ -57,6 +58,19 @@ def test_confirm_live_scenarios_cover_existence_and_predicate_modes():
     assert predicate.live is True
     assert predicate.required_env == ("LASAIR_ZTF_TOKEN",)
     assert "live_dsl_confirm_predicate.py" in predicate_command
+
+
+def test_incremental_continuation_is_registered_as_a_live_facade_scenario():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-incremental-continuation"
+    )
+
+    command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+    assert scenario.live is True
+    assert scenario.required_env == ("LASAIR_ZTF_TOKEN",)
+    assert "live_dsl_continuation.py" in command
 
 
 def test_predicate_confirm_live_script_compiles_the_adjacent_quorum_contract():
