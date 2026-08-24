@@ -8,6 +8,7 @@ on:
       - 'alertissimo/data_layer/runtime/capability_graph.py'
       - 'alertissimo/data_layer/providers/**/request_mappings.yaml'
       - 'alertissimo/orchestration/ir/**'
+      - 'alertissimo/orchestration/incremental.py'
       - 'alertissimo/orchestration/planner/**'
       - 'alertissimo/orchestration/binding/**'
       - 'alertissimo/orchestration/runtime/**'
@@ -15,6 +16,7 @@ on:
       - 'alertissimo/orchestration/results/**'
       - 'alertissimo/orchestration/validation.py'
       - 'tests/test_dsl_*.py'
+      - 'tests/test_api_continuation.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_orchestration_*.py'
       - '.github/workflows/dsl.yml'
@@ -36,5 +38,6 @@ jobs:
         run: |
           PYTHONPATH=. pytest -q \
             tests/test_dsl_*.py \
+            tests/test_api_continuation.py \
             tests/test_capability_graph.py \
             tests/test_orchestration_*.py
