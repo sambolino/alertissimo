@@ -82,6 +82,19 @@ def test_requirement_can_select_explicit_method_without_changing_candidate_scope
     assert result.candidates.origins == ("lsst",)
 
 
+def test_last_clause_does_not_require_a_trailing_newline():
+    result = parse_surface_script(
+        "objects from ztf via lasair\n"
+        "inside (124.87996115142856, -6.0205001, 5arcsec)\n"
+        "with lightcurve via fink\n"
+        "with lightcurve via lasair"
+    )
+
+    assert len(result.clauses) == 3
+    assert isinstance(result.clauses[-1], RequirementClause)
+    assert result.clauses[-1].via == "lasair"
+
+
 def test_with_scoped_predicate_is_inline_and_uses_explicit_boolean_logic():
     result = parse_surface_script(
         "objects from lsst via alerce\n"
