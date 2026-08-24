@@ -32,13 +32,10 @@ def validate_portfolio_against_semantic_model(
 ) -> None:
     """Validate only declarations and syntax understood by the lexical MVP."""
     model = semantic_model or load_semantic_model_index()
-    public_containers = {
-        container for container in model.containers if not container.startswith("_")
-    }
 
     for record in portfolio.records:
         base_type = record.semantic_type.split("@", 1)[0]
-        if base_type not in public_containers:
+        if base_type.startswith("_") or base_type not in model.containers:
             raise SemanticModelValidationError(
                 f"unknown semantic record type {base_type!r} "
                 f"(from {record.semantic_type!r})"
