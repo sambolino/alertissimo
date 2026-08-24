@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+from threading import Lock
 from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
@@ -45,6 +46,14 @@ from alertissimo.orchestration.pipeline import (
 from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.results import ResultViewSpec
 from alertissimo.orchestration.runtime import WorkflowRun
+from alertissimo.orchestration.state import (
+    InMemoryWorkflowStateRepository,
+    WorkflowNotFoundError,
+    WorkflowSnapshot,
+    WorkflowStateError,
+    WorkflowStateRepository,
+    WorkflowVersionConflictError,
+)
 
 
 @dataclass(frozen=True)
@@ -308,10 +317,146 @@ def execute_dsl(
     )
 
 
+class DSLWorkflowService:
+    """Stateful system facade over the stateless DSL execution core.
+
+    The service owns workflow snapshots and execution dependencies. A caller sends
+    only a continuation fragment, ``workflow_id``, and ``base_version``; the prior
+    ``DSLExecutionResult`` never crosses the service boundary. State remains explicit
+    and addressable rather than being inferred from a global "current workflow".
+    """
+
+    def __init__(
+        self,
+        *,
+        repository: WorkflowStateRepository[DSLExecutionResult] | None = None,
+        graph: CapabilityGraph | None = None,
+        registry: EndpointRegistry | None = None,
+        executor: EndpointExecutor | None = None,
+        validate_semantic_model: bool = True,
+    ) -> None:
+        self.repository = (
+            repository
+            if repository is not None
+            else InMemoryWorkflowStateRepository()
+        )
+        self.graph = graph if graph is not None else build_capability_graph()
+        self.registry = registry if registry is not None else EndpointRegistry()
+        self.executor = (
+            executor
+            if executor is not None
+            else RegistryEndpointExecutor(registry=self.registry)
+        )
+        self.validate_semantic_model = validate_semantic_model
+        self._workflow_locks: dict[str, Lock] = {}
+        self._workflow_locks_guard = Lock()
+
+    def _workflow_lock(self, workflow_id: str) -> Lock:
+        with self._workflow_locks_guard:
+            return self._workflow_locks.setdefault(workflow_id, Lock())
+
+    @staticmethod
+    def _require_context(
+        workflow_id: str | None,
+        base_version: int | None,
+    ) -> None:
+        if workflow_id is None and base_version is not None:
+            raise WorkflowStateError(
+                "base_version cannot be supplied without workflow_id"
+            )
+        if workflow_id is not None and base_version is None:
+            raise WorkflowStateError(
+                "base_version is required when workflow_id is supplied"
+            )
+
+    def _load_base(
+        self,
+        workflow_id: str,
+        base_version: int,
+    ) -> WorkflowSnapshot[DSLExecutionResult]:
+        previous = self.repository.latest(workflow_id)
+        if previous.version != base_version:
+            raise WorkflowVersionConflictError(
+                f"workflow {workflow_id!r} is at version {previous.version}, "
+                f"not requested base_version {base_version}"
+            )
+        return previous
+
+    def validate_dsl(
+        self,
+        source: str,
+        *,
+        workflow_id: str | None = None,
+        base_version: int | None = None,
+        name: str | None = None,
+    ) -> DSLValidationResult:
+        """Validate a fresh program or a fragment against stored workflow state."""
+
+        self._require_context(workflow_id, base_version)
+        if workflow_id is None:
+            return validate_dsl(source, graph=self.graph, name=name)
+        assert base_version is not None
+        with self._workflow_lock(workflow_id):
+            previous = self._load_base(workflow_id, base_version)
+            return validate_dsl(
+                source,
+                graph=self.graph,
+                name=name,
+                continue_from=previous.result,
+            )
+
+    def execute_dsl(
+        self,
+        source: str,
+        *,
+        workflow_id: str | None = None,
+        base_version: int | None = None,
+        name: str | None = None,
+    ) -> WorkflowSnapshot[DSLExecutionResult]:
+        """Execute a fresh program or continue one backend-owned workflow."""
+
+        self._require_context(workflow_id, base_version)
+        if workflow_id is None:
+            execution = execute_dsl(
+                source,
+                name=name,
+                graph=self.graph,
+                registry=self.registry,
+                executor=self.executor,
+                validate_semantic_model=self.validate_semantic_model,
+            )
+            return self.repository.create(execution)
+
+        assert base_version is not None
+        with self._workflow_lock(workflow_id):
+            previous = self._load_base(workflow_id, base_version)
+            execution = execute_dsl(
+                source,
+                name=name,
+                graph=self.graph,
+                registry=self.registry,
+                executor=self.executor,
+                validate_semantic_model=self.validate_semantic_model,
+                continue_from=previous.result,
+            )
+            return self.repository.append(
+                workflow_id,
+                expected_version=base_version,
+                result=execution,
+            )
+
+
 __all__ = [
+    "DSLWorkflowService",
     "DSLExecutionResult",
     "DSLValidationResult",
+    "InMemoryWorkflowStateRepository",
     "IncrementalExecutionError",
+    "WorkflowNotFoundError",
+    "WorkflowSnapshot",
+    "WorkflowStateError",
+    "WorkflowStateRepository",
+    "WorkflowVersionConflictError",
     "execute_dsl",
     "validate_dsl",
 ]
