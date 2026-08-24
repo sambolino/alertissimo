@@ -134,14 +134,15 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
     previous_result = SimpleNamespace(portfolios=(object(),))
     calls = []
     nested = []
+    editor_modes = []
     original_render = app_search.render_dsl_entry
 
     monkeypatch.setattr(app_search, "st", FakeStreamlit())
-    monkeypatch.setattr(
-        app_search,
-        "render_dsl_block_input",
-        lambda *, key: ("filter classification.best.probability >= 0.8", True),
-    )
+    def filter_editor(*, key, filter_only=False):
+        editor_modes.append((key, filter_only))
+        return "filter classification.best.probability >= 0.8", True
+
+    monkeypatch.setattr(app_search, "render_dsl_block_input", filter_editor)
     monkeypatch.setattr(
         app_search,
         "execute_dsl",
@@ -162,7 +163,8 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
     assert calls == [
         (
             "filter classification.best.probability >= 0.8",
-            {"name": "interactive DSL: parent", "continue_from": parent},
+            {"name": "interactive DSL: parent"},
         )
     ]
     assert nested[0]["continue_from"] is previous_result
+    assert editor_modes == [("parent", True)]

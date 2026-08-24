@@ -22,14 +22,18 @@ def render_dsl_block_canvas(
     brokers_by_origin: Mapping[str, Sequence[str]],
     products: Sequence[str],
     brokers: Sequence[str],
+    mode: str = "workflow",
 ) -> dict[str, Any] | None:
-    """Render the textarea-like block editor and return its latest edit event."""
+    """Render the block editor in full-workflow or local-filter mode."""
+    if mode not in {"workflow", "filter"}:
+        raise ValueError("mode must be 'workflow' or 'filter'")
     value = _CANVAS(
         dsl_text=dsl_text,
         origins=list(origins),
         brokers_by_origin={name: list(values) for name, values in brokers_by_origin.items()},
         products=list(products),
         brokers=list(brokers),
+        mode=mode,
         default=None,
         key=key,
     )

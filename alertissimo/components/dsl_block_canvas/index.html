@@ -97,8 +97,10 @@
         }
         const serverText = event.data.args.dsl_text || "";
         const text = pendingText === null ? serverText : pendingText;
-        root.innerHTML = `<div class="shell">
-          <div class="toolbar">
+        const filterOnly = event.data.args.mode === "filter";
+        const toolbar = filterOnly
+          ? '<button class="block" data-draft="filter" type="button">filter</button>'
+          : `
             <button class="block" data-block="objects from " type="button">objects from</button>
             <button class="block" data-draft="inside" type="button">inside</button>
             <button class="block" data-draft="within" type="button">within</button>
@@ -109,9 +111,15 @@
             <button class="block" data-draft="with-predicate" type="button">with predicate</button>
             <button class="block" data-draft="match" type="button">match</button>
             <button class="block" data-draft="order" type="button">order by</button>
-            <button class="block" data-draft="ranked" type="button">ranked by</button>
+            <button class="block" data-draft="ranked" type="button">ranked by</button>`;
+        const placeholder = filterOnly
+          ? "Choose filter, then enter an expression."
+          : "Click a block, then complete its values.";
+        root.innerHTML = `<div class="shell">
+          <div class="toolbar">
+            ${toolbar}
           </div>
-          <div id="dsl" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Block DSL editor" data-placeholder="Click a block, then complete its values."></div>
+          <div id="dsl" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Block DSL editor" data-placeholder="${placeholder}"></div>
           <div class="actions"><button id="run" class="run" type="button">Run DSL</button></div>
         </div>`;
         const run = document.getElementById("run");

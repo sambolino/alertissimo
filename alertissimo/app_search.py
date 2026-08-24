@@ -411,7 +411,7 @@ def block_requirement_brokers(
     return tuple(options)
 
 
-def render_dsl_block_input(*, key: str) -> tuple[str, bool]:
+def render_dsl_block_input(*, key: str, filter_only: bool = False) -> tuple[str, bool]:
     """Render one syntax-highlighted DSL editor without external value controls."""
     text_state_key = f"{key}_block_dsl"
     submit_state_key = f"{key}_block_last_submit"
@@ -435,6 +435,7 @@ def render_dsl_block_input(*, key: str) -> tuple[str, bool]:
         brokers_by_origin=brokers_by_origin,
         products=products,
         brokers=brokers,
+        mode="filter" if filter_only else "workflow",
     )
     if event and event.get("submit") and isinstance(event.get("text"), str):
         nonce = event.get("nonce")
@@ -471,7 +472,10 @@ def render_dsl_entry(
         )
     if context:
         st.caption(context)
-    dsl_text, submitted = render_dsl_block_input(key=key)
+    dsl_text, submitted = render_dsl_block_input(
+        key=key,
+        filter_only=continue_from is not None,
+    )
 
     if submitted:
         try:
@@ -479,7 +483,6 @@ def render_dsl_entry(
                 execution = execute_dsl(
                     dsl_text,
                     name=f"interactive DSL: {key}",
-                    continue_from=continue_from,
                 )
         except DSLParseError as error:
             st.error(f"DSL syntax error: {error}")
