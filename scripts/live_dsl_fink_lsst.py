@@ -20,7 +20,11 @@ from alertissimo.orchestration.planner import plan_workflow
 
 
 CLASSIFIER = "stamp_classifier_rubin_beta_20260421"
+LSST_SAMPLE_RA = 62.45763123249455
+LSST_SAMPLE_DEC = -48.481492749718534
+LSST_SAMPLE_RADIUS_ARCSEC = 1.0
 DSL = f"""objects from lsst via alerce
+    inside ({LSST_SAMPLE_RA}, {LSST_SAMPLE_DEC}, {LSST_SAMPLE_RADIUS_ARCSEC}arcsec)
     where classification@{CLASSIFIER}.best.class = "SN" and classification@{CLASSIFIER}.best.probability >= 0.5
     with classification from {CLASSIFIER}
     with lightcurve via fink

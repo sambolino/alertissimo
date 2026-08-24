@@ -30,7 +30,11 @@ from .executors import FixtureEndpointExecutor, fixture_key
 DEFAULT_TARGET = "ZTF18abbuksn"
 BATCH_TARGETS = ("ZTF21abfmbix", "ZTF20acpwljl")
 DSL_PIPELINE_CLASSIFIER = "stamp_classifier_rubin_beta_20260421"
+DSL_PIPELINE_RA = 62.45763123249455
+DSL_PIPELINE_DEC = -48.481492749718534
+DSL_PIPELINE_RADIUS_ARCSEC = 1.0
 DSL_PIPELINE_SOURCE = f"""objects from lsst via alerce
+    inside ({DSL_PIPELINE_RA}, {DSL_PIPELINE_DEC}, {DSL_PIPELINE_RADIUS_ARCSEC}arcsec)
     where classification@{DSL_PIPELINE_CLASSIFIER}.best.class = \"SN\" and classification@{DSL_PIPELINE_CLASSIFIER}.best.probability >= 0.5
     with classification from {DSL_PIPELINE_CLASSIFIER}
 """
@@ -209,6 +213,9 @@ def _fixtures(name: str, targets: tuple[str, ...]):
                 classifier=DSL_PIPELINE_CLASSIFIER,
                 class_name="SN",
                 probability=0.5,
+                ra=DSL_PIPELINE_RA,
+                dec=DSL_PIPELINE_DEC,
+                radius=DSL_PIPELINE_RADIUS_ARCSEC,
             ): "alerce_lsst_query_objects_filtered.json"
         }
     if name == "dsl-multi-provider":
