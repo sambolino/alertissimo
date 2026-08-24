@@ -7,6 +7,7 @@ from .capability_validation import (
     SurfaceCapabilityStatus,
     SurfaceCapabilityValidationError,
     validate_surface_capabilities,
+    validate_surface_fragment_capabilities,
 )
 from .expression import (
     BooleanExpression,
@@ -27,11 +28,12 @@ from .lowering import (
     SurfaceCompilation,
     SurfaceLoweringError,
     compile_surface,
+    compile_surface_fragment,
     compile_surface_to_ir,
     lower_surface,
     lower_surface_to_ir,
 )
-from .parser import grammar_text, parse_surface_script
+from .parser import grammar_text, parse_surface_fragment, parse_surface_script
 from .surface import (
     AngularRadius,
     CandidateSet,
@@ -46,6 +48,7 @@ from .surface import (
     RankedByClause,
     RequirementClause,
     SurfaceClause,
+    SurfaceFragment,
     SurfaceScript,
     WhereClause,
     WithinClause,
@@ -58,6 +61,7 @@ from .validation import (
     extract_semantic_record_references,
     resolve_expression_references,
     resolve_record_type,
+    validate_surface_fragment_semantics,
     validate_surface_semantics,
 )
 
@@ -92,6 +96,7 @@ __all__ = (
     "SurfaceCapabilityValidationError",
     "SurfaceClause",
     "SurfaceCompilation",
+    "SurfaceFragment",
     "SurfaceLoweringError",
     "SurfaceScript",
     "SurfaceValidationIssue",
@@ -100,6 +105,7 @@ __all__ = (
     "WhereClause",
     "WithinClause",
     "compile_surface",
+    "compile_surface_fragment",
     "compile_surface_to_ir",
     "expression_grammar_text",
     "extract_semantic_record_references",
@@ -108,9 +114,12 @@ __all__ = (
     "lower_surface",
     "lower_surface_to_ir",
     "parse_expression",
+    "parse_surface_fragment",
     "parse_surface_script",
     "resolve_expression_references",
     "resolve_record_type",
     "validate_surface_capabilities",
+    "validate_surface_fragment_capabilities",
+    "validate_surface_fragment_semantics",
     "validate_surface_semantics",
 )

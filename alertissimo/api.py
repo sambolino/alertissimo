@@ -23,12 +23,17 @@ from alertissimo.dsl import (
     DSLParseError,
     SurfaceCapabilityReport,
     SurfaceCompilation,
+    SurfaceFragment,
     SurfaceLoweringError,
     SurfaceScript,
     SurfaceValidationReport,
     compile_surface,
+    compile_surface_fragment,
+    parse_surface_fragment,
     parse_surface_script,
     validate_surface_capabilities,
+    validate_surface_fragment_capabilities,
+    validate_surface_fragment_semantics,
     validate_surface_semantics,
 )
 from alertissimo.orchestration.incremental import (
@@ -59,7 +64,7 @@ class DSLValidationResult:
     """
 
     source: str
-    surface: SurfaceScript | None = None
+    surface: SurfaceScript | SurfaceFragment | None = None
     semantic: SurfaceValidationReport | None = None
     capabilities: SurfaceCapabilityReport | None = None
     compilation: SurfaceCompilation | None = None
@@ -89,7 +94,7 @@ class DSLExecutionResult:
     """One complete DSL turn from parsed surface to finalized semantic result."""
 
     source: str
-    surface: SurfaceScript
+    surface: SurfaceScript | SurfaceFragment
     compilation: SurfaceCompilation
     staged: StagedWorkflowResult
     result: WorkflowPortfolioResult
@@ -147,66 +152,36 @@ class DSLExecutionResult:
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
-# The UI facade currently models one browser tab and therefore one active workflow.
-# A complete DSL program replaces this state; a clause-only fragment continues it.
-# Session-scoped storage can replace these two process-local values later without
-# changing validate_dsl()/execute_dsl() or the browser's JSON result contract.
-_active_dsl_execution: DSLExecutionResult | None = None
+# The initial UI facade models one browser tab and therefore one active generic
+# orchestration state. No DSL source, surface object, or DSL response envelope is
+# retained here. Session-scoped storage can replace this process-local reference
+# later without changing validate_dsl()/execute_dsl().
+_active_workflow: StagedWorkflowResult | None = None
 _active_dsl_lock = RLock()
 
 
-def _continuation_source(
-    source: str,
-    continue_from: DSLExecutionResult | None,
-) -> str:
-    """Return a complete DSL program for a fresh or incremental turn.
-
-    The supplied fragment is appended to the exact previously executed DSL program,
-    so the ordinary parser/lowering/planner continue to define semantics.
-    """
-
-    if continue_from is None:
-        return source
-    fragment = source.strip()
-    if not fragment:
-        raise DSLParseError("DSL continuation is empty")
-    return continue_from.source.rstrip() + "\n" + fragment
+def _is_complete_program(source: str) -> bool:
+    for raw in source.splitlines():
+        text = raw.strip()
+        if text and not text.startswith("#"):
+            return text.lower().startswith("objects from ")
+    return False
 
 
 def _parse_dsl_turn(
     source: str,
-    continue_from: DSLExecutionResult | None,
-) -> tuple[str, SurfaceScript, DSLExecutionResult | None]:
-    """Parse one complete program or continue the active workflow with a fragment."""
+) -> tuple[SurfaceScript | SurfaceFragment, StagedWorkflowResult | None]:
+    """Parse a complete program or an IR-contextual continuation fragment."""
 
-    if continue_from is not None:
-        effective_source = _continuation_source(source, continue_from)
-        return effective_source, parse_surface_script(effective_source), continue_from
-
-    try:
-        return source, parse_surface_script(source), None
-    except DSLParseError as standalone_error:
-        if _active_dsl_execution is None:
-            raise standalone_error
-        effective_source = _continuation_source(source, _active_dsl_execution)
-        return (
-            effective_source,
-            parse_surface_script(effective_source),
-            _active_dsl_execution,
+    if _is_complete_program(source):
+        return parse_surface_script(source), None
+    fragment = parse_surface_fragment(source)
+    if _active_workflow is None:
+        raise DSLParseError(
+            "DSL continuation requires an already executed workflow; the first "
+            "request must begin with 'objects from'"
         )
-
-
-def _require_semantic_extension(
-    previous: DSLExecutionResult,
-    compilation: SurfaceCompilation,
-) -> None:
-    previous_steps = tuple(previous.workflow.steps)
-    if tuple(compilation.workflow.steps[: len(previous_steps)]) != previous_steps:
-        raise SurfaceLoweringError(
-            "continuation changes previously executed semantic Steps; start a fresh "
-            "DSL execution instead",
-            code="continuation_changes_prior_workflow",
-        )
+    return fragment, _active_workflow
 
 
 def validate_dsl(
@@ -214,7 +189,6 @@ def validate_dsl(
     *,
     graph: CapabilityGraph | None = None,
     name: str | None = None,
-    continue_from: DSLExecutionResult | None = None,
 ) -> DSLValidationResult:
     """Validate DSL without contacting provider APIs.
 
@@ -222,41 +196,60 @@ def validate_dsl(
     validation, and canonical lowering. Errors expected during interactive DSL
     construction are returned as data rather than raised.
 
-    A complete program validates independently. If ``source`` is a clause-only
-    fragment, it is appended to the active workflow established by the latest
-    successful ``execute_dsl`` call. Validation reads but never changes that state.
-    ``continue_from`` remains available for explicit backward-compatible use.
+    A complete program validates independently. A clause-only fragment is compiled
+    directly against the canonical WorkflowIR inside the active staged workflow.
+    Validation reads but never changes that generic orchestration state.
     """
 
     with _active_dsl_lock:
         try:
-            effective_source, surface, previous = _parse_dsl_turn(
-                source, continue_from
-            )
+            surface, previous = _parse_dsl_turn(source)
         except DSLParseError as error:
             return DSLValidationResult(source=source, parse_error=error)
 
-        semantic = validate_surface_semantics(surface)
+        semantic = (
+            validate_surface_semantics(surface)
+            if previous is None
+            else validate_surface_fragment_semantics(
+                surface,
+                previous.run.workflow,
+            )
+        )
         if not semantic.is_valid:
             return DSLValidationResult(
-                source=effective_source,
+                source=source,
                 surface=surface,
                 semantic=semantic,
             )
 
         effective_graph = graph if graph is not None else build_capability_graph()
-        capabilities = validate_surface_capabilities(surface, graph=effective_graph)
-        try:
-            compilation = compile_surface(
+        capabilities = (
+            validate_surface_capabilities(surface, graph=effective_graph)
+            if previous is None
+            else validate_surface_fragment_capabilities(
                 surface,
+                previous.run.workflow,
                 graph=effective_graph,
-                name=name,
             )
-            if previous is not None:
-                _require_semantic_extension(previous, compilation)
+        )
+        try:
+            compilation = (
+                compile_surface(
+                    surface,
+                    graph=effective_graph,
+                    name=name,
+                )
+                if previous is None
+                else compile_surface_fragment(
+                    surface,
+                    previous.run.workflow,
+                    graph=effective_graph,
+                    name=name,
+                )
+            )
         except SurfaceLoweringError as error:
             return DSLValidationResult(
-                source=effective_source,
+                source=source,
                 surface=surface,
                 semantic=semantic,
                 capabilities=capabilities,
@@ -264,7 +257,7 @@ def validate_dsl(
             )
 
         return DSLValidationResult(
-            source=effective_source,
+            source=source,
             surface=surface,
             semantic=semantic,
             capabilities=capabilities,
@@ -280,33 +273,33 @@ def execute_dsl(
     registry: EndpointRegistry | None = None,
     executor: EndpointExecutor | None = None,
     validate_semantic_model: bool = True,
-    continue_from: DSLExecutionResult | None = None,
 ) -> DSLExecutionResult:
     """Execute a complete DSL program or continue the one active workflow.
 
-    A standalone complete program starts and stores a fresh active workflow. If the
-    source is a clause-only fragment, it is appended automatically to the latest
-    successful execution. The cumulative workflow is planned again, while the
-    incremental runtime replays the exact old physical prefix and executes only new
-    provider work. A later complete program replaces the active workflow.
-
-    This initial facade intentionally represents one process-local browser workflow.
-    ``continue_from`` remains available for explicit backward-compatible use.
+    A complete program starts a fresh generic workflow. A clause-only fragment is
+    lowered directly onto the active WorkflowIR, then incremental execution replays
+    the exact old physical prefix and executes only new provider work. Only the
+    resulting ``StagedWorkflowResult`` is retained; DSL artifacts remain response-only.
     """
 
-    global _active_dsl_execution
+    global _active_workflow
     with _active_dsl_lock:
         effective_graph = graph if graph is not None else build_capability_graph()
-        effective_source, surface, previous = _parse_dsl_turn(
-            source, continue_from
+        surface, previous = _parse_dsl_turn(source)
+        compilation = (
+            compile_surface(
+                surface,
+                graph=effective_graph,
+                name=name,
+            )
+            if previous is None
+            else compile_surface_fragment(
+                surface,
+                previous.run.workflow,
+                graph=effective_graph,
+                name=name,
+            )
         )
-        compilation = compile_surface(
-            surface,
-            graph=effective_graph,
-            name=name,
-        )
-        if previous is not None:
-            _require_semantic_extension(previous, compilation)
         run = plan_workflow(compilation.workflow, effective_graph)
 
         effective_registry = registry if registry is not None else EndpointRegistry()
@@ -325,7 +318,7 @@ def execute_dsl(
         else:
             staged = execute_incremental_workflow_run(
                 run,
-                previous.staged,
+                previous,
                 effective_registry,
                 effective_executor,
                 validate_semantic_model=validate_semantic_model,
@@ -333,13 +326,13 @@ def execute_dsl(
         result = finalize_local_semantics(staged.normalized)
 
         execution = DSLExecutionResult(
-            source=effective_source,
+            source=source,
             surface=surface,
             compilation=compilation,
             staged=staged,
             result=result,
         )
-        _active_dsl_execution = execution
+        _active_workflow = staged
         return execution
 
 

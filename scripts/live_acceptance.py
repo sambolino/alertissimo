@@ -120,7 +120,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     ),
     Scenario(
         "dsl-incremental-continuation",
-        "public facade first pass -> continued Filter -> survivor-bound Lasair Get",
+        "two UI DSL calls -> IR fragment extension -> survivor-bound Lasair Get",
         _python_script("scripts/live_dsl_continuation.py"),
         required_env=("LASAIR_ZTF_TOKEN",),
     ),

@@ -1,7 +1,8 @@
 import pytest
 
 import alertissimo.api as api
-from alertissimo.dsl import DSLParseError
+from alertissimo.dsl import DSLParseError, SurfaceFragment
+from alertissimo.orchestration.pipeline import StagedWorkflowResult
 from scripts.smoke.executors import FixtureEndpointExecutor, fixture_key
 
 
@@ -45,15 +46,22 @@ def test_public_execute_dsl_retains_one_active_workflow_for_ui_continuation():
     first = api.execute_dsl(FIRST_PASS, executor=executor)
     assert len(first.portfolios) == 1
     assert len(executor.calls) == 2
+    active_before_validation = api._active_workflow
 
     validation = api.validate_dsl(CONTINUATION)
     assert validation.is_valid
     assert validation.is_runnable
     assert len(executor.calls) == 2
+    assert api._active_workflow is active_before_validation
+    assert validation.compilation is not None
+    assert validation.compilation.workflow.steps[: len(first.workflow.steps)] == list(
+        first.workflow.steps
+    )
 
     second = api.execute_dsl(CONTINUATION, executor=executor)
 
-    assert second.source == FIRST_PASS.rstrip() + "\n" + CONTINUATION.strip()
+    assert second.source == CONTINUATION
+    assert isinstance(second.surface, SurfaceFragment)
     assert [step.op for step in second.workflow.steps] == [
         "cone_search",
         "get_lightcurve",
@@ -67,6 +75,11 @@ def test_public_execute_dsl_retains_one_active_workflow_for_ui_continuation():
         "lightcurves",
         {"objectIds": CANDIDATE_ID},
     )
+    assert api._active_workflow is second.staged
+    assert isinstance(api._active_workflow, StagedWorkflowResult)
+    assert api._active_workflow.run.workflow == second.workflow
+    assert not hasattr(api._active_workflow, "source")
+    assert not hasattr(api._active_workflow, "surface")
 
 
 def test_complete_program_replaces_the_active_workflow():
@@ -86,7 +99,7 @@ def test_complete_program_replaces_the_active_workflow():
 
 def test_filter_cannot_be_the_first_turn_without_an_active_workflow(monkeypatch):
     executor = _executor()
-    monkeypatch.setattr(api, "_active_dsl_execution", None)
+    monkeypatch.setattr(api, "_active_workflow", None)
 
     validation = api.validate_dsl(CONTINUATION)
     assert not validation.is_valid

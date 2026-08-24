@@ -78,14 +78,15 @@ def test_continuation_replays_prior_provider_calls_and_executes_only_new_enrichm
     assert replayed_execution_ids == first_execution_ids
 
 
-def test_continuation_does_not_accept_a_second_candidate_statement():
+def test_complete_candidate_program_is_valid_as_a_fresh_workflow():
     executor = _executor()
-    first = execute_dsl(FIRST_PASS, executor=executor)
+    execute_dsl(FIRST_PASS, executor=executor)
 
-    validation = validate_dsl(
-        "objects from ztf via alerce",
-        continue_from=first,
-    )
+    validation = validate_dsl("objects from ztf via alerce")
 
-    assert not validation.is_valid
-    assert validation.parse_error is not None
+    assert validation.is_valid
+    assert validation.is_runnable
+    assert validation.compilation is not None
+    assert [step.op for step in validation.compilation.workflow.steps] == [
+        "semantic_search"
+    ]
