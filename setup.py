@@ -43,9 +43,4 @@ setup(
         "alerce>=2.3.0",
         "numpy>=2.0.0,<2.1.0",  # Allow NumPy 2.0.x but not 2.1+
     ],
-    entry_points={
-        "console_scripts": [
-            "alertissimo = alertissimo.app_dsl:main",
-        ],
-    },
 )
