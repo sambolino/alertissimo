@@ -82,25 +82,11 @@ def test_requirement_can_select_explicit_method_without_changing_candidate_scope
     assert result.candidates.origins == ("lsst",)
 
 
-def test_complete_multiline_script_does_not_require_a_final_newline():
+def test_with_scoped_predicate_is_inline_and_uses_explicit_boolean_logic():
     result = parse_surface_script(
-        "objects from ztf via lasair\n"
-        "    inside (124.87996115142856, -6.0205001, 5arcsec)\n"
-        "    with lightcurve via fink\n"
-        "    with lightcurve via lasair"
-    )
-
-    assert isinstance(result.clauses[0], InsideClause)
-    assert [clause.via for clause in result.clauses[1:]] == ["fink", "lasair"]
-
-
-def test_colon_scopes_multiple_conjunctive_predicates_to_with():
-    result = parse_surface_script(
-        """objects from lsst via alerce
-with classification from lc_classifier:
-    best.class = "SN"
-    best.probability >= 0.8
-"""
+        "objects from lsst via alerce\n"
+        'with classification from lc_classifier where best.class = "SN" AND '
+        "best.probability >= 0.8\n"
     )
 
     requirement = result.clauses[0]
@@ -108,24 +94,28 @@ with classification from lc_classifier:
     assert requirement.product == "classification"
     assert requirement.source == "lc_classifier"
     assert requirement.predicates == (
-        'best.class = "SN"',
-        "best.probability >= 0.8",
+        'best.class = "SN" AND best.probability >= 0.8',
     )
 
 
-def test_nested_where_is_equivalent_single_requirement_predicate():
-    result = parse_surface_script(
-        """objects from lsst via alerce
-    with classification from lc_classifier
-        where best.class = "LPV" and best.probability >= 0.8
+def test_old_colon_scoped_with_syntax_is_rejected():
+    with pytest.raises(DSLParseError, match="with predicates are inline"):
+        parse_surface_script(
+            """objects from lsst via alerce
+with classification from lc_classifier:
+    best.class = "SN" AND best.probability >= 0.8
 """
-    )
+        )
 
-    requirement = result.clauses[0]
-    assert isinstance(requirement, RequirementClause)
-    assert requirement.predicates == (
-        'best.class = "LPV" and best.probability >= 0.8',
-    )
+
+def test_newline_where_after_with_is_not_treated_as_scoped_predicate():
+    with pytest.raises(DSLParseError, match="scoped with predicates must be inline"):
+        parse_surface_script(
+            """objects from lsst via alerce
+with classification from lc_classifier
+    where best.class = "LPV" AND best.probability >= 0.8
+"""
+        )
 
 
 def test_filter_then_with_remains_top_level_when_indentation_is_cosmetic():
@@ -160,6 +150,13 @@ def test_general_where_is_not_allowed_after_filter():
     ):
         parse_surface_script(
             "objects from lsst\nfilter decline_rate > 0.3\nwhere x = 1\n"
+        )
+
+
+def test_general_where_is_not_allowed_after_with():
+    with pytest.raises(DSLParseError, match="general where must precede with"):
+        parse_surface_script(
+            "objects from lsst\nwith lightcurve\nwhere summary.time.last_mjd > 60000\n"
         )
 
 

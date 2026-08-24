@@ -419,16 +419,30 @@ class UtilityScoreStep(AnalyzeStep):
 
 
 class ConfirmStep(Step):
-    """Require corroboration while its future relationship to Compare/Match remains open."""
+    """Require corroboration from distinct brokers over an entity or proposition.
+
+    ``predicate=None`` is existence confirmation for the selected semantic target.
+    When ``predicate`` is present, each broker contributes a vote only when its own
+    normalized evidence satisfies that canonical predicate.
+    """
 
     op: Literal["confirm"] = "confirm"
     target: TargetSelector | None = None
+    predicate: Predicate | None = None
     required_agreement: Annotated[int, Field(ge=1)] = 1
 
     @model_validator(mode="after")
-    def validate_explicit_source_count(self) -> "ConfirmStep":
-        if self.sources and self.required_agreement > len(self.sources):
-            raise ValueError("required_agreement cannot exceed the explicit source count")
+    def validate_distinct_broker_quorum(self) -> "ConfirmStep":
+        if not self.sources:
+            return self
+        explicit_brokers = [source.broker for source in self.sources if source.broker is not None]
+        if len(explicit_brokers) != len(self.sources):
+            return self
+        distinct_brokers = set(explicit_brokers)
+        if self.required_agreement > len(distinct_brokers):
+            raise ValueError(
+                "required_agreement cannot exceed the distinct explicit broker count"
+            )
         return self
 
 

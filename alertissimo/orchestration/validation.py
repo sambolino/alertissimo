@@ -25,11 +25,13 @@ from alertissimo.data_layer.runtime.capability_graph import (
     EndpointCapability,
     semantic_record_noun_matches,
 )
+from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
 
 from .ir.models import (
     ActionStep,
     AnalyzeStep,
     ConeSearchStep,
+    ConfirmStep,
     DeriveStep,
     FilterStep,
     GetClassificationStep,
@@ -162,13 +164,6 @@ def _crossmatch_catalog_relation(
     endpoint: EndpointCapability,
     catalog: str,
 ) -> Literal["exact", "dynamic", "mismatch"]:
-    """Relate one endpoint's mapped crossmatch producer to a requested catalog.
-
-    A dynamic ``{producer}`` mapping is deliberately not treated as wildcard proof.
-    It means the response can identify its producer at runtime, not that any named
-    catalog is statically guaranteed to be available from that endpoint.
-    """
-
     requested = catalog.lower()
     dynamic = False
     for record in graph.records_for_endpoint(
@@ -187,12 +182,6 @@ def _crossmatch_catalog_relation(
 
 
 def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
-    """Require explicit proof that ``radius`` belongs to crossmatch semantics.
-
-    A generic cone-search radius is not interchangeable with a catalog-crossmatch
-    radius merely because both physical parameters happen to be named ``radius``.
-    """
-
     return bool(
         _CROSSMATCH_RADIUS_OPERATIONS.intersection(endpoint.operation_types)
         and "radius" in endpoint.server_filters
@@ -221,6 +210,13 @@ def _raw_candidates_for_source(
                 or op.endswith("_filter")
                 for op in endpoint.operation_types
             )
+        )
+    if isinstance(step, ConfirmStep):
+        return confirmation_endpoints(
+            graph,
+            broker=source.broker if source else None,
+            origin=source.origin if source else None,
+            predicate=step.predicate,
         )
     if isinstance(step, GetLightcurveStep):
         return tuple(
@@ -335,7 +331,6 @@ def _target_selector(step: Step) -> TargetSelector | None:
 def candidate_capabilities(
     step: Step, graph: CapabilityGraph
 ) -> tuple[EndpointCapability, ...]:
-    """Discover all candidates without choosing among them."""
     keyed = {
         (item.broker, item.origin, item.endpoint): item
         for source in _sources(step)
@@ -440,7 +435,6 @@ def validate_step_capabilities(
 def validate_workflow_capabilities(
     workflow: WorkflowIR, graph: CapabilityGraph
 ) -> tuple[CapabilityValidationResult, ...]:
-    """Validate workflow steps in their deterministic declared order."""
     return tuple(validate_step_capabilities(step, graph) for step in workflow.steps)
 
 

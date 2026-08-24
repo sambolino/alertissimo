@@ -20,6 +20,7 @@ from alertissimo.orchestration.ir import (
     ColorColorStep,
     ColorMagnitudeStep,
     ConeSearchStep,
+    ConfirmStep,
     FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
@@ -45,6 +46,7 @@ from .capability_validation import (
 )
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .surface import (
+    ConfirmClause,
     Duration,
     FilterClause,
     InsideClause,
@@ -526,6 +528,24 @@ def _lower_match(
     return MatchStep(sources=sources, params=params)
 
 
+def _lower_confirm(
+    surface: SurfaceScript,
+    clause: ConfirmClause,
+    *,
+    predicate: Predicate | None = None,
+) -> ConfirmStep:
+    sources = [
+        Source(origin=origin, broker=broker)
+        for origin in surface.candidates.origins
+        for broker in clause.brokers
+    ]
+    return ConfirmStep(
+        sources=sources,
+        predicate=predicate,
+        required_agreement=clause.required_agreement,
+    )
+
+
 def _validate_semantics(surface: SurfaceScript, semantic_paths: _SemanticPaths) -> None:
     report = validate_surface_semantics(surface, semantic_paths=semantic_paths)
     if report.is_valid:
@@ -621,7 +641,11 @@ def lower_surface(
             )
             continue
         if index in consumed:
-            if isinstance(clause, WhereClause):
+            adjacent_confirm = (
+                index + 1 < len(surface.clauses)
+                and isinstance(surface.clauses[index + 1], ConfirmClause)
+            )
+            if isinstance(clause, WhereClause) and not adjacent_confirm:
                 for implied in _implicit_requirements_from_where(
                     surface,
                     clause,
@@ -684,6 +708,22 @@ def lower_surface(
                         record_types=semantic_model.record_types,
                         clause_index=index,
                     )
+                )
+            )
+        elif isinstance(clause, ConfirmClause):
+            attached_predicate = None
+            if index > 0 and isinstance(surface.clauses[index - 1], WhereClause):
+                previous = surface.clauses[index - 1]
+                attached_predicate = _semantic_predicate(
+                    previous.condition,
+                    record_types=semantic_model.record_types,
+                    clause_index=index - 1,
+                )
+            steps.append(
+                _lower_confirm(
+                    surface,
+                    clause,
+                    predicate=attached_predicate,
                 )
             )
         elif isinstance(clause, MatchClause):

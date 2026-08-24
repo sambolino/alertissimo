@@ -185,6 +185,5 @@ def test_scoped_with_predicate_uses_expression_grammar_as_actual_syntax_gate():
     with pytest.raises(DSLParseError, match="invalid expression syntax"):
         parse_surface_script(
             "objects from lsst via alerce\n"
-            "with classification from lc_classifier:\n"
-            "    best.probability >>> 0.8\n"
+            "with classification from lc_classifier where best.probability >>> 0.8\n"
         )

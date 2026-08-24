@@ -11,6 +11,7 @@ from alertissimo.data_layer.representations import InternalExecutionId, Internal
 
 from .ids import new_internal_execution_id
 from .models import EndpointSpec, ExecutionResult, TransportResult
+from .policy import ExecutionPolicy, load_execution_policy
 from .registry import EndpointRegistry
 from .transports import PythonClientTransport, RestTransport
 
@@ -23,20 +24,17 @@ class EndpointPaginationError(RuntimeError):
     """A declared page-based endpoint could not be exhausted safely."""
 
 
-class RegistryEndpointExecutor:
-    # Auto-pagination is an execution concern, not a semantic limit. Use large
-    # transport batches so a complete semantic search does not devolve into the
-    # provider's often tiny interactive default (ALeRCE uses 10 rows/page).
-    # Individual endpoint contracts may override this with ``auto_page_size`` on
-    # their page_size parameter.
-    _DEFAULT_AUTO_PAGE_SIZE = 1_000
-    _MAX_AUTO_PAGES = 100
+class ExecutionPolicyLimitError(EndpointPaginationError):
+    """A physical execution reached a configured operational safety limit."""
 
+
+class RegistryEndpointExecutor:
     def __init__(
         self,
         registry: EndpointRegistry | None = None,
         transports: Mapping[str, Any] | None = None,
         execution_id_factory: Callable[[], InternalExecutionId] = new_internal_execution_id,
+        policy: ExecutionPolicy | None = None,
     ) -> None:
         self.registry = registry or EndpointRegistry()
         self.transports = {
@@ -45,6 +43,7 @@ class RegistryEndpointExecutor:
             **dict(transports or {}),
         }
         self.execution_id_factory = execution_id_factory
+        self.policy = policy or load_execution_policy()
 
     @staticmethod
     def _validated_params(
@@ -111,9 +110,8 @@ class RegistryEndpointExecutor:
             return None
         return "page", "page_size" if "page_size" in pagination else None
 
-    @classmethod
     def _auto_paginated_params(
-        cls,
+        self,
         spec: EndpointSpec,
         params: Mapping[str, Any],
         *,
@@ -123,14 +121,14 @@ class RegistryEndpointExecutor:
 
         Provider defaults are intentionally left truthful in endpoint declarations.
         When Alertissimo owns pagination, however, using a provider's interactive
-        default of only a handful of rows can require hundreds of serial calls. The
-        page-size contract may declare ``auto_page_size``; otherwise the executor's
-        conservative batch default is used. A caller selecting an explicit page keeps
-        the provider's normal one-page semantics and is not rewritten here.
+        default of only a handful of rows can require many serial calls. The
+        page-size contract may declare ``auto_page_size``; otherwise the declarative
+        execution policy supplies the global fallback. A caller selecting an explicit
+        page keeps the provider's normal one-page semantics and is not rewritten here.
         """
 
         prepared = dict(params)
-        page_parameters = cls._page_parameters(spec)
+        page_parameters = self._page_parameters(spec)
         if caller_supplied_page or page_parameters is None:
             return prepared
         _, page_size_param = page_parameters
@@ -138,7 +136,9 @@ class RegistryEndpointExecutor:
             return prepared
 
         contract = spec.params.get(page_size_param) or {}
-        auto_page_size = contract.get("auto_page_size", cls._DEFAULT_AUTO_PAGE_SIZE)
+        auto_page_size = contract.get(
+            "auto_page_size", self.policy.default_auto_page_size
+        )
         if isinstance(auto_page_size, bool):
             raise EndpointPaginationError("auto_page_size must be a positive integer")
         try:
@@ -193,6 +193,15 @@ class RegistryEndpointExecutor:
             size is not None for size in sizes
         ) else None
 
+    def _policy_limit_error(self, spec: EndpointSpec) -> ExecutionPolicyLimitError:
+        return ExecutionPolicyLimitError(
+            "automatic pagination reached configured execution-policy limit "
+            f"max_auto_pages={self.policy.max_auto_pages} for "
+            f"{spec.broker}/{spec.origin}/{spec.endpoint}; policy source: "
+            f"{self.policy.source_path}. Refine the query or deliberately change "
+            "the physical execution policy; results are not silently truncated."
+        )
+
     def _execute_with_pagination(
         self,
         transport: Any,
@@ -226,12 +235,8 @@ class RegistryEndpointExecutor:
             seen_pages = {current_page}
 
             while bool(current_payload.get("has_next")) or current_payload.get("next") is not None:
-                if len(results) >= self._MAX_AUTO_PAGES:
-                    raise EndpointPaginationError(
-                        f"automatic pagination exceeded {self._MAX_AUTO_PAGES} pages for "
-                        f"{spec.broker}/{spec.origin}/{spec.endpoint}; refuse to continue "
-                        "an unexpectedly large physical scan"
-                    )
+                if len(results) >= self.policy.max_auto_pages:
+                    raise self._policy_limit_error(spec)
                 next_page = current_payload.get("next")
                 if next_page is None:
                     try:
@@ -295,12 +300,8 @@ class RegistryEndpointExecutor:
             page_number = 1
             previous_payload = payload
             while len(previous_payload) >= effective_page_size:
-                if len(results) >= self._MAX_AUTO_PAGES:
-                    raise EndpointPaginationError(
-                        f"automatic pagination exceeded {self._MAX_AUTO_PAGES} pages for "
-                        f"{spec.broker}/{spec.origin}/{spec.endpoint}; refuse to continue "
-                        "an unexpectedly large physical scan"
-                    )
+                if len(results) >= self.policy.max_auto_pages:
+                    raise self._policy_limit_error(spec)
                 page_number += 1
                 page_params = dict(params)
                 page_params[page_param] = page_number

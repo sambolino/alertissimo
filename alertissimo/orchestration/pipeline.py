@@ -14,7 +14,8 @@ from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint
 from alertissimo.orchestration.binding.models import StepBindingResult
-from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep
+from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
+from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
@@ -106,8 +107,6 @@ def _candidate_origin(portfolio: Portfolio) -> str:
 def _execution_plan_indexes(
     step_run: StepRun, result: StepExecutionResult
 ) -> tuple[int, ...]:
-    """Resolve successful result positions to their endpoint-plan indexes."""
-
     if step_run.execution_plan_indexes:
         if len(step_run.execution_plan_indexes) != len(result.executions):
             raise CandidateFlowError(
@@ -130,14 +129,7 @@ def _candidate_view_from_step(
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
     validate_semantic_model: bool,
 ) -> StepPortfolioResult:
-    """Build the semantic candidate/material view needed during staged execution.
-
-    Base normalization is cached by physical execution ID for the lifetime of this
-    staged workflow. A later occurrence-aligned normalization pass must reuse the
-    same tuple rather than consume the provider payload again; some Python clients
-    expose one-shot iterators. Residual pruning remains a Step-specific view over
-    the cached base tuple.
-    """
+    """Build the semantic candidate/material view needed during staged execution."""
 
     plan_indexes = _execution_plan_indexes(step_run, result)
     executions: list[ExecutionPortfolioResult] = []
@@ -179,8 +171,6 @@ def _candidate_view_from_step(
 def _candidate_ids_by_origin_from_view(
     view: StepPortfolioResult,
 ) -> dict[str, tuple[str, ...]]:
-    """Read unique object identities from the Step's semantic Portfolio view."""
-
     ids_by_origin: dict[str, list[str]] = {}
     seen_by_origin: dict[str, set[str]] = {}
     for portfolio in view.portfolios:
@@ -256,39 +246,11 @@ def execute_staged_workflow_run(
 ) -> StagedWorkflowResult:
     """Bind and execute a planned workflow as runtime values become available.
 
-    Plans without runtime dependencies are bound normally. An EndpointPlan carrying
-    ``candidate_input_from`` receives ``target_id`` from the referenced Step's
-    normalized candidate Portfolios, restricted to candidates with the same origin
-    as that physical plan. A candidate-dependent plan whose origin has no candidates
-    is recorded as vacuous rather than invoked with an empty target collection.
-
-    A provider StepRun-level ``material_input_from`` is orthogonal: it identifies the
-    preceding semantic Portfolio snapshot that this Step enriches. This distinction
-    lets sequential Gets accumulate evidence without redefining the candidate
-    population or claiming inherited calls as current physical work.
-
-    FilterStep consumes its StepRun-level candidate view locally, creates no physical
-    execution, and its surviving semantic identities may feed later provider calls.
-    MatchStep also owns no physical call. When a later Step depends on Match's
-    filtered population, the staged runner evaluates that local relation just far
-    enough to expose the surviving candidate identities. The Match Step itself
-    remains planned with an empty execution slot so the normal post-normalization
-    local semantic phase still owns its occurrence-aligned view, edges, and final
-    succeeded state. Terminal MatchSteps are not evaluated twice. DeriveStep remains
-    entirely deferred to that post-normalization phase.
-
-    Required provider plans remain fail-fast. A supplementary plan may fail without
-    failing the semantic Step; its failure is retained in ``StepRun.warnings`` and
-    sparse successful results retain their endpoint-plan indexes for normalization.
-    Explicit vacuous-plan indexes distinguish legitimate zero-candidate omissions
-    from missing required executions.
-
-    Physical executions normalized early for runtime candidate/material dependencies
-    retain one base normalized Portfolio tuple for this workflow invocation. Final
-    occurrence-aligned normalization reuses that tuple, so one-shot provider payloads
-    are never consumed twice and internal Portfolio identities remain stable.
-
-    The semantic WorkflowIR is never rewritten with discovered IDs.
+    Filter and Match may expose local candidate views early when a downstream call
+    depends on them. Confirm is hybrid: its registered provider calls execute first,
+    their normalized evidence is evaluated by the distinct-broker quorum, and only
+    Confirm survivors become runtime targets for later provider calls. Final
+    occurrence-aligned semantic views remain owned by the normal finalization phase.
     """
 
     if any(step.state is not StepRunState.PLANNED for step in run.steps):
@@ -443,6 +405,19 @@ def execute_staged_workflow_run(
                         material_source.portfolios if material_source is not None else None
                     ),
                 )
+                if isinstance(step, ConfirmStep):
+                    source_reference = succeeded.material_input_from
+                    if source_reference is None:
+                        raise CandidateFlowError(
+                            f"confirm step_index {step_index} has no material input reference"
+                        )
+                    source_view = candidate_views_by_step[source_reference.step_index]
+                    view = confirm_step_portfolios(
+                        step,
+                        source_view,
+                        StepPortfolioResult(step_index=step_index, executions=()),
+                        step_index=step_index,
+                    )
                 candidate_views_by_step[step_index] = view
                 candidate_ids_by_origin_by_step[step_index] = (
                     _candidate_ids_by_origin_from_view(view)
@@ -570,6 +545,28 @@ def execute_staged_workflow_run(
                 normalized_execution_cache=normalized_execution_cache,
                 validate_semantic_model=validate_semantic_model,
             )
+            if isinstance(step, ConfirmStep):
+                source_reference = succeeded.material_input_from
+                if source_reference is None:
+                    raise CandidateFlowError(
+                        f"confirm step_index {step_index} has no material input reference"
+                    )
+                try:
+                    source_view = candidate_views_by_step[source_reference.step_index]
+                except KeyError as error:
+                    raise CandidateFlowError(
+                        "confirm material input is not available from referenced Step "
+                        f"{source_reference.step_index} for step_index {step_index}"
+                    ) from error
+                view = confirm_step_portfolios(
+                    step,
+                    source_view,
+                    StepPortfolioResult(
+                        step_index=step_index,
+                        executions=view.executions,
+                    ),
+                    step_index=step_index,
+                )
             candidate_views_by_step[step_index] = view
             candidate_ids_by_origin_by_step[step_index] = (
                 _candidate_ids_by_origin_from_view(view)

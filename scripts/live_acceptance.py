@@ -119,6 +119,17 @@ SCENARIOS: tuple[Scenario, ...] = (
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
     Scenario(
+        "dsl-confirm-existence-quorum",
+        "DSL ALeRCE discovery -> 2-of-3 Fink/ALeRCE/ANTARES Confirm -> survivor-bound Fink Get",
+        _python_script("scripts/live_dsl_confirm.py"),
+    ),
+    Scenario(
+        "dsl-confirm-predicate-quorum",
+        "DSL ALeRCE where exists classification.best.class -> 2-of-2 Fink/Lasair Confirm -> survivor-bound Fink Get",
+        _python_script("scripts/live_dsl_confirm_predicate.py"),
+        required_env=("LASAIR_ZTF_TOKEN",),
+    ),
+    Scenario(
         "dsl-classification-reuse",
         "literal DSL ALeRCE/LSST classifier search -> semantic execution reuse",
         _python_module("scripts.smoke", "dsl-pipeline", "--live"),

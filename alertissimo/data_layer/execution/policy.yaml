@@ -1,0 +1,11 @@
+version: 1
+
+pagination:
+  # Default transport batch when Alertissimo owns transparent pagination.
+  # Provider endpoint declarations may override this with auto_page_size.
+  default_auto_page_size: 1000
+
+  # Hard safety boundary on automatically-followed provider pages for one
+  # physical endpoint execution. Reaching the limit is an error, never silent
+  # truncation; callers should refine the scientific query instead.
+  max_auto_pages: 3

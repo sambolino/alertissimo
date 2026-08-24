@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from alertissimo.orchestration.derivation import derive_portfolio
-from alertissimo.orchestration.ir import DeriveStep, MatchStep
+from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
+from alertissimo.orchestration.derivation import derive_step_portfolios
+from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
-    ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
     consolidate_portfolios,
@@ -31,33 +31,28 @@ def _apply_derivation(
     step: DeriveStep,
     *,
     step_index: int,
+    step_run,
     steps: list[StepPortfolioResult],
 ) -> None:
-    """Complement all earlier semantic views, preserving their material snapshots."""
+    """Materialize Derive's own immutable semantic output from its declared input."""
 
-    for prior_index in range(step_index):
-        prior = steps[prior_index]
-        derived_executions = tuple(
-            ExecutionPortfolioResult(
-                execution_id=execution.execution_id,
-                portfolios=tuple(
-                    derive_portfolio(step, portfolio, step_index=step_index)
-                    for portfolio in execution.portfolios
-                ),
-            )
-            for execution in prior.executions
+    reference = step_run.material_input_from
+    if reference is None or reference.step_index >= step_index:
+        raise LocalSemanticExecutionError(
+            f"derive step_index {step_index} must reference an earlier material Step"
         )
-        materialized = None
-        if prior.materialized_portfolios is not None:
-            materialized = tuple(
-                derive_portfolio(step, portfolio, step_index=step_index)
-                for portfolio in prior.portfolios
-            )
-        steps[prior_index] = StepPortfolioResult(
-            step_index=prior.step_index,
-            executions=derived_executions,
-            materialized_portfolios=materialized,
-        )
+    try:
+        source = steps[reference.step_index]
+    except IndexError as exc:
+        raise LocalSemanticExecutionError(
+            f"derive step_index {step_index} references unavailable material Step "
+            f"{reference.step_index}"
+        ) from exc
+    steps[step_index] = derive_step_portfolios(
+        step,
+        source,
+        step_index=step_index,
+    )
 
 
 def _rematerialize_provider_step(
@@ -66,13 +61,7 @@ def _rematerialize_provider_step(
     step_run,
     steps: list[StepPortfolioResult],
 ) -> None:
-    """Rebuild one provider Step snapshot from its now-finalized semantic input.
-
-    Initial normalization may run before a preceding MatchStep has produced its local
-    semantic view. Replaying only semantic materialization here keeps physical
-    execution ownership untouched while ensuring downstream provider Steps inherit
-    the finalized Filter/Match/derivation state rather than an earlier placeholder.
-    """
+    """Rebuild one provider Step snapshot from its now-finalized semantic input."""
 
     reference = step_run.material_input_from
     if reference is None or not step_run.endpoint_plans:
@@ -102,18 +91,49 @@ def _rematerialize_provider_step(
     )
 
 
+def _apply_confirmation(
+    step: ConfirmStep,
+    *,
+    step_index: int,
+    step_run,
+    steps: list[StepPortfolioResult],
+) -> None:
+    """Apply quorum to Confirm's own provider evidence without losing audit ownership."""
+
+    reference = step_run.material_input_from
+    if reference is None or reference.step_index >= step_index:
+        raise LocalSemanticExecutionError(
+            f"confirm step_index {step_index} must reference an earlier material Step"
+        )
+    try:
+        source = steps[reference.step_index]
+    except IndexError as exc:
+        raise LocalSemanticExecutionError(
+            f"confirm step_index {step_index} references unavailable material Step "
+            f"{reference.step_index}"
+        ) from exc
+    current = steps[step_index]
+    own = StepPortfolioResult(step_index=step_index, executions=current.executions)
+    steps[step_index] = confirm_step_portfolios(
+        step,
+        source,
+        own,
+        step_index=step_index,
+    )
+
+
 def finalize_local_semantics(
     result: WorkflowPortfolioResult,
 ) -> WorkflowPortfolioResult:
     """Finalize local operations and semantic material lineage in workflow order.
 
-    No local semantic Step fabricates physical execution provenance. Derivations keep
-    their established behavior of complementing earlier Portfolio views. MatchStep
-    exposes its own occurrence-aligned relationally filtered Portfolio view: only
-    candidates participating in an accepted Match relation propagate, annotated with
-    the corresponding Portfolio adjacency edges. A later provider Step then
-    rematerializes its semantic snapshot from that finalized local view plus only its
-    own newly normalized physical output.
+    Filter/Match remain execution-free local candidate operations. Derive is an
+    execution-free material transform that owns a new occurrence-aligned Portfolio
+    snapshot while leaving its input Step unchanged. Confirm is a hybrid semantic
+    Step: its real provider executions are already normalized, then the local
+    distinct-broker quorum determines its occurrence-aligned surviving Portfolio
+    view. Later provider Steps inherit whichever finalized material Step precedes
+    them through explicit material lineage.
     """
 
     steps = list(result.steps)
@@ -121,6 +141,19 @@ def finalize_local_semantics(
 
     for step_index, step in enumerate(run.workflow.steps):
         step_run = run.steps[step_index]
+
+        if isinstance(step, ConfirmStep):
+            if step_run.state is not StepRunState.SUCCEEDED:
+                raise LocalSemanticExecutionError(
+                    f"confirm step_index {step_index} must finish provider execution before quorum"
+                )
+            _apply_confirmation(
+                step,
+                step_index=step_index,
+                step_run=step_run,
+                steps=steps,
+            )
+            continue
 
         if not isinstance(step, (DeriveStep, MatchStep)):
             _rematerialize_provider_step(
@@ -136,7 +169,12 @@ def finalize_local_semantics(
             )
 
         if isinstance(step, DeriveStep):
-            _apply_derivation(step, step_index=step_index, steps=steps)
+            _apply_derivation(
+                step,
+                step_index=step_index,
+                step_run=step_run,
+                steps=steps,
+            )
         else:
             reference = step_run.candidate_input_from
             if reference is None or reference.step_index >= step_index:

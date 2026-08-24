@@ -19,8 +19,11 @@ from alertissimo.data_layer.runtime.capability_graph import (
     SemanticRecordCapability,
     build_capability_graph,
 )
+from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
 
+from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .surface import (
+    ConfirmClause,
     InsideClause,
     MatchClause,
     RankedByClause,
@@ -53,8 +56,6 @@ class SurfaceCapabilityStatus(str, Enum):
 
 
 class SurfaceCapabilityEvidence(BaseModel):
-    """Registered provider evidence supporting one surface capability check."""
-
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     broker: str
@@ -64,13 +65,12 @@ class SurfaceCapabilityEvidence(BaseModel):
 
 
 class SurfaceCapabilityCheck(BaseModel):
-    """One explainable capability decision for candidate or clause intent."""
-
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     subject: Literal[
         "candidates",
         "requirement",
+        "confirm",
         "match_counterpart",
         "match_local",
         "ranking",
@@ -87,8 +87,6 @@ class SurfaceCapabilityCheck(BaseModel):
 
 
 class SurfaceCapabilityReport(BaseModel):
-    """Ordered, non-executing capability results for one surface script."""
-
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     checks: tuple[SurfaceCapabilityCheck, ...] = ()
@@ -264,12 +262,6 @@ def _candidate_checks(
                 )
             )
         supported = bool(endpoints)
-        if spatial_required:
-            positive = "registered spatial-search object capability found"
-            negative = "no registered spatial-search object capability found"
-        else:
-            positive = "registered object-summary capability found"
-            negative = "no registered object-summary capability found"
         checks.append(
             SurfaceCapabilityCheck(
                 subject="candidates",
@@ -278,7 +270,15 @@ def _candidate_checks(
                     if supported
                     else SurfaceCapabilityStatus.UNSUPPORTED
                 ),
-                reason=positive if supported else negative,
+                reason=(
+                    "registered spatial-search object capability found"
+                    if supported and spatial_required
+                    else "no registered spatial-search object capability found"
+                    if spatial_required
+                    else "registered object-summary capability found"
+                    if supported
+                    else "no registered object-summary capability found"
+                ),
                 origin=origin,
                 broker=surface.candidates.broker,
                 semantic_noun="summary",
@@ -315,13 +315,6 @@ def _dynamic_records_are_selectable(
     noun: str,
     graph: CapabilityGraph,
 ) -> bool:
-    """Return true when a dynamic qualifier has an explicit provider selector.
-
-    A dynamic semantic mapping alone is not wildcard proof. Classification is a
-    deliberate exception when one of the mapped endpoints explicitly exposes a
-    ``classifier`` server filter/parameter, as ALeRCE ``query_objects`` does.
-    """
-
     if noun != "classification":
         return False
     endpoint_keys = {
@@ -464,6 +457,74 @@ def _requirement_checks(
     return tuple(checks)
 
 
+def _adjacent_confirm_predicate(
+    surface: SurfaceScript,
+    *,
+    clause_index: int,
+    record_types: frozenset[str],
+):
+    if clause_index == 0 or not isinstance(surface.clauses[clause_index - 1], WhereClause):
+        return None
+    where = surface.clauses[clause_index - 1]
+    try:
+        return lower_expression_predicate(where.condition, record_types)
+    except PredicateLoweringError as exc:  # semantic validation should normally guard this
+        raise SurfaceCapabilityValidationError(
+            f"cannot lower adjacent where predicate for confirmation: {exc}"
+        ) from exc
+
+
+def _confirm_checks(
+    surface: SurfaceScript,
+    clause: ConfirmClause,
+    *,
+    clause_index: int,
+    graph: CapabilityGraph,
+    record_types: frozenset[str],
+) -> tuple[SurfaceCapabilityCheck, ...]:
+    predicate = _adjacent_confirm_predicate(
+        surface,
+        clause_index=clause_index,
+        record_types=record_types,
+    )
+    checks: list[SurfaceCapabilityCheck] = []
+    for origin in surface.candidates.origins:
+        for broker in clause.brokers:
+            endpoints = confirmation_endpoints(
+                graph,
+                broker=broker,
+                origin=origin,
+                predicate=predicate,
+            )
+            supported = bool(endpoints)
+            if predicate is None:
+                positive_reason = "registered target-bindable object evidence capability found"
+                negative_reason = "no registered target-bindable object evidence capability found"
+                semantic_noun = "summary"
+            else:
+                positive_reason = "registered target-bindable proposition evidence capability found"
+                negative_reason = "no target-bindable endpoint can materialize the confirmed proposition"
+                semantic_noun = None
+            checks.append(
+                SurfaceCapabilityCheck(
+                    subject="confirm",
+                    status=(
+                        SurfaceCapabilityStatus.SUPPORTED
+                        if supported
+                        else SurfaceCapabilityStatus.UNSUPPORTED
+                    ),
+                    reason=positive_reason if supported else negative_reason,
+                    clause_index=clause_index,
+                    origin=origin,
+                    broker=broker,
+                    semantic_noun=semantic_noun,
+                    channel=broker,
+                    evidence=_endpoint_evidence(endpoints),
+                )
+            )
+    return tuple(checks)
+
+
 def _match_checks(
     surface: SurfaceScript,
     clause: MatchClause,
@@ -520,17 +581,7 @@ def validate_surface_capabilities(
     graph: CapabilityGraph | None = None,
     semantic_paths: _SemanticPaths | None = None,
 ) -> SurfaceCapabilityReport:
-    """Validate provider-facing surface intent against registered capabilities.
-
-    The function performs no network/provider I/O. Candidate origins remain fixed;
-    a clause-level ``via`` only overrides the broker for that clause. Semantic
-    ``from`` qualifiers are matched against the producer part of qualified
-    semantic record types and never mutate the physical origin.
-
-    A general ``where`` may itself imply semantic requirements through qualified
-    ontology paths; those implicit requirements are capability-checked just like
-    explicit ``with`` clauses.
-    """
+    """Validate provider-facing surface intent against registered capabilities."""
 
     semantic_model = semantic_paths or _semantic_path_model()
     semantic_report = validate_surface_semantics(
@@ -595,6 +646,16 @@ def validate_surface_capabilities(
                         record_types=semantic_model.record_types,
                     )
                 )
+        elif isinstance(clause, ConfirmClause):
+            checks.extend(
+                _confirm_checks(
+                    surface,
+                    clause,
+                    clause_index=index,
+                    graph=capability_graph,
+                    record_types=semantic_model.record_types,
+                )
+            )
         elif isinstance(clause, MatchClause):
             checks.extend(
                 _match_checks(

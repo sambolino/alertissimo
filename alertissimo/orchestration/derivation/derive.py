@@ -20,7 +20,6 @@ from alertissimo.orchestration.ir import (
     LightcurveStep,
 )
 from alertissimo.orchestration.normalization.models import (
-    ExecutionPortfolioResult,
     StepPortfolioResult,
     WorkflowPortfolioResult,
 )
@@ -221,6 +220,29 @@ def derive_portfolio(
     )
 
 
+def derive_step_portfolios(
+    step: DeriveStep,
+    source: StepPortfolioResult,
+    *,
+    step_index: int,
+) -> StepPortfolioResult:
+    """Create Derive's own material view without claiming physical executions.
+
+    The input Step remains immutable. The output Portfolios retain the inherited
+    records, edges, and real execution provenance contained in the semantic
+    material, while the Derive occurrence itself owns zero physical executions.
+    """
+
+    return StepPortfolioResult(
+        step_index=step_index,
+        executions=(),
+        materialized_portfolios=tuple(
+            derive_portfolio(step, portfolio, step_index=step_index)
+            for portfolio in source.portfolios
+        ),
+    )
+
+
 def _mark_derive_succeeded(run, step_index: int):
     step_run = run.steps[step_index].model_copy(
         update={"state": StepRunState.SUCCEEDED, "execution_ids": (), "error": None}
@@ -231,12 +253,12 @@ def _mark_derive_succeeded(run, step_index: int):
 
 
 def derive_workflow_portfolios(result: WorkflowPortfolioResult) -> WorkflowPortfolioResult:
-    """Run DeriveSteps after normalization, complementing earlier Portfolios.
+    """Run DeriveSteps as occurrence-owned post-normalization material transforms.
 
-    Physical execution provenance is never fabricated for a local derivation.
-    Derive occurrences retain their empty StepPortfolioResult and become succeeded
-    only after this phase completes.  Each derivation sees Portfolio material from
-    earlier workflow occurrences, including records added by earlier derivations.
+    Physical execution provenance is never fabricated for a local derivation. Each
+    DeriveStep consumes exactly the earlier semantic view declared by its
+    ``material_input_from`` reference, produces a new immutable Step Portfolio view,
+    and leaves every historical Step snapshot unchanged.
     """
 
     steps = list(result.steps)
@@ -250,26 +272,24 @@ def derive_workflow_portfolios(result: WorkflowPortfolioResult) -> WorkflowPortf
             raise UnsupportedDerivationError(
                 f"derive step_index {step_index} must be planned before derivation"
             )
-
-        for prior_index in range(step_index):
-            prior = steps[prior_index]
-            executions = []
-            for execution in prior.executions:
-                portfolios = tuple(
-                    derive_portfolio(step, portfolio, step_index=step_index)
-                    for portfolio in execution.portfolios
-                )
-                executions.append(
-                    ExecutionPortfolioResult(
-                        execution_id=execution.execution_id,
-                        portfolios=portfolios,
-                    )
-                )
-            steps[prior_index] = StepPortfolioResult(
-                step_index=prior.step_index,
-                executions=tuple(executions),
+        reference = step_run.material_input_from
+        if reference is None or reference.step_index >= step_index:
+            raise UnsupportedDerivationError(
+                f"derive step_index {step_index} must reference an earlier material Step"
             )
+        try:
+            source = steps[reference.step_index]
+        except IndexError as exc:
+            raise UnsupportedDerivationError(
+                f"derive step_index {step_index} references unavailable material Step "
+                f"{reference.step_index}"
+            ) from exc
 
+        steps[step_index] = derive_step_portfolios(
+            step,
+            source,
+            step_index=step_index,
+        )
         run = _mark_derive_succeeded(run, step_index)
 
     return WorkflowPortfolioResult(run=run, steps=tuple(steps))
@@ -278,5 +298,6 @@ def derive_workflow_portfolios(result: WorkflowPortfolioResult) -> WorkflowPortf
 __all__ = [
     "UnsupportedDerivationError",
     "derive_portfolio",
+    "derive_step_portfolios",
     "derive_workflow_portfolios",
 ]
