@@ -88,11 +88,12 @@ def _executor(transport):
 
 def test_alerce_query_objects_contracts_activate_batched_page_pagination():
     registry = EndpointRegistry()
+    executor = RegistryEndpointExecutor(registry=registry)
 
     for origin in ("lsst", "ztf"):
         spec = registry.resolve("alerce", origin, "query_objects")
         assert RegistryEndpointExecutor._page_parameters(spec) == ("page", "page_size")
-        prepared = RegistryEndpointExecutor._auto_paginated_params(
+        prepared = executor._auto_paginated_params(
             spec, {}, caller_supplied_page=False
         )
         assert prepared["page_size"] == 1000

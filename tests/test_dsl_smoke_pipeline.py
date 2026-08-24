@@ -6,6 +6,9 @@ from alertissimo.orchestration.runtime import EndpointPlanRef
 from scripts.smoke.reporting import report_data
 from scripts.smoke.scenarios import (
     DSL_PIPELINE_CLASSIFIER,
+    DSL_PIPELINE_DEC,
+    DSL_PIPELINE_RA,
+    DSL_PIPELINE_RADIUS_ARCSEC,
     DSL_PIPELINE_SOURCE,
     run_scenario,
 )
@@ -26,7 +29,7 @@ def test_dsl_pipeline_fixture_compiles_coalesces_executes_and_normalizes():
 
     assert result.dsl_source == DSL_PIPELINE_SOURCE
     assert [step.op for step in result.workflow.steps] == [
-        "semantic_search",
+        "cone_search",
         "get_classification",
     ]
 
@@ -49,7 +52,12 @@ def test_dsl_pipeline_fixture_compiles_coalesces_executes_and_normalizes():
         "class_name": "SN",
         "probability": 0.5,
     }
-    assert result.bindings[0].bound_calls[0].params == realization.params
+    assert result.bindings[0].bound_calls[0].params == {
+        **realization.params,
+        "ra": DSL_PIPELINE_RA,
+        "dec": DSL_PIPELINE_DEC,
+        "radius": DSL_PIPELINE_RADIUS_ARCSEC,
+    }
     assert result.bindings[1].bound_calls[0].params == {}
 
     execution_ids = [
