@@ -20,14 +20,17 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
+from alertissimo.orchestration.ir import WorkflowIR
 
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
+from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
     InsideClause,
     MatchClause,
     RankedByClause,
     RequirementClause,
+    SurfaceFragment,
     SurfaceScript,
     WhereClause,
 )
@@ -681,6 +684,26 @@ def validate_surface_capabilities(
     return SurfaceCapabilityReport(checks=tuple(checks))
 
 
+def validate_surface_fragment_capabilities(
+    fragment: SurfaceFragment,
+    base_workflow: WorkflowIR,
+    *,
+    graph: CapabilityGraph | None = None,
+    semantic_paths: _SemanticPaths | None = None,
+) -> SurfaceCapabilityReport:
+    """Validate only newly requested capabilities against canonical IR context."""
+
+    context = fragment_surface_context(fragment, base_workflow)
+    report = validate_surface_capabilities(
+        context,
+        graph=graph,
+        semantic_paths=semantic_paths,
+    )
+    return SurfaceCapabilityReport(
+        checks=tuple(check for check in report.checks if check.subject != "candidates")
+    )
+
+
 __all__ = [
     "SurfaceCapabilityCheck",
     "SurfaceCapabilityEvidence",
@@ -688,4 +711,5 @@ __all__ = [
     "SurfaceCapabilityStatus",
     "SurfaceCapabilityValidationError",
     "validate_surface_capabilities",
+    "validate_surface_fragment_capabilities",
 ]

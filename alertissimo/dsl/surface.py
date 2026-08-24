@@ -257,12 +257,48 @@ class SurfaceScript(SurfaceModel):
         return self
 
 
+class SurfaceFragment(SurfaceModel):
+    """Additional surface intent applied to an existing canonical WorkflowIR."""
+
+    clauses: tuple[SurfaceClause, ...]
+
+    @model_validator(mode="after")
+    def require_continuation_clauses(self) -> "SurfaceFragment":
+        if not self.clauses:
+            raise ValueError("DSL continuation fragment is empty")
+        forbidden = tuple(
+            clause.kind
+            for clause in self.clauses
+            if isinstance(
+                clause,
+                (InsideClause, WithinClause, LatestClause, WhereClause),
+            )
+        )
+        if forbidden:
+            raise ValueError(
+                "continuation cannot change initial candidate constraints: "
+                + ", ".join(forbidden)
+            )
+        order_count = sum(isinstance(clause, OrderByClause) for clause in self.clauses)
+        if order_count > 1:
+            raise ValueError("only one order by clause is allowed")
+        return self
+
+
 def parse_surface_script(script: str) -> SurfaceScript:
     """Compatibility entry point; the production implementation is Lark-backed."""
 
     from .parser import parse_surface_script as parse
 
     return parse(script)
+
+
+def parse_surface_fragment(fragment: str) -> SurfaceFragment:
+    """Compatibility entry point for a continuation-only DSL fragment."""
+
+    from .parser import parse_surface_fragment as parse
+
+    return parse(fragment)
 
 
 __all__ = [
@@ -279,8 +315,10 @@ __all__ = [
     "RankedByClause",
     "RequirementClause",
     "SurfaceClause",
+    "SurfaceFragment",
     "SurfaceScript",
     "WhereClause",
     "WithinClause",
+    "parse_surface_fragment",
     "parse_surface_script",
 ]

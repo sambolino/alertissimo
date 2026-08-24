@@ -42,8 +42,10 @@ from alertissimo.orchestration.results import ResultOrderSpec, ResultViewSpec
 
 from .capability_validation import (
     SurfaceCapabilityCheck,
+    validate_surface_fragment_capabilities,
     validate_surface_capabilities,
 )
+from .fragment import fragment_surface_context
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .surface import (
     ConfirmClause,
@@ -55,6 +57,7 @@ from .surface import (
     OrderByClause,
     RankedByClause,
     RequirementClause,
+    SurfaceFragment,
     SurfaceScript,
     WhereClause,
     WithinClause,
@@ -811,6 +814,123 @@ def compile_surface(
     )
 
 
+def compile_surface_fragment(
+    fragment: SurfaceFragment,
+    base_workflow: WorkflowIR,
+    *,
+    graph: CapabilityGraph | None = None,
+    semantic_paths: _SemanticPaths | None = None,
+    name: str | None = None,
+) -> SurfaceCompilation:
+    """Lower additional DSL clauses directly onto canonical WorkflowIR intent."""
+
+    semantic_model = semantic_paths or _semantic_path_model()
+    try:
+        context = fragment_surface_context(fragment, base_workflow)
+    except ValueError as error:
+        raise SurfaceLoweringError(
+            str(error),
+            code="invalid_fragment_base_workflow",
+        ) from error
+
+    _validate_semantics(context, semantic_model)
+    capability_report = validate_surface_fragment_capabilities(
+        fragment,
+        base_workflow,
+        graph=graph,
+        semantic_paths=semantic_model,
+    )
+    if capability_report.unsupported:
+        first = capability_report.unsupported[0]
+        raise SurfaceLoweringError(
+            first.reason,
+            code="unsupported_capability",
+            clause_index=first.clause_index,
+        )
+    for check in capability_report.deferred:
+        if not _deferred_check_is_lowerable(
+            context,
+            check,
+            semantic_model.record_types,
+        ):
+            raise SurfaceLoweringError(
+                check.reason,
+                code="deferred_capability",
+                clause_index=check.clause_index,
+            )
+
+    steps = list(base_workflow.steps)
+    view = ResultViewSpec()
+    for index, clause in enumerate(fragment.clauses):
+        if isinstance(clause, OrderByClause):
+            view = ResultViewSpec(
+                order_by=ResultOrderSpec(
+                    expression=clause.expression,
+                    direction=clause.direction,
+                )
+            )
+            continue
+        if isinstance(clause, RequirementClause):
+            step = _lower_requirement(
+                context,
+                clause,
+                clause_index=index,
+                record_types=semantic_model.record_types,
+            )
+            if step not in steps:
+                steps.append(step)
+            if clause.predicates:
+                noun = resolve_record_type(clause.product, semantic_model.record_types)
+                assert noun is not None
+                scoped = _scoped_requirement_predicate(
+                    context,
+                    clause,
+                    noun=noun,
+                    record_types=semantic_model.record_types,
+                    clause_index=index,
+                )
+                if scoped is not None:
+                    steps.append(FilterStep(predicate=scoped))
+            continue
+        if isinstance(clause, FilterClause):
+            steps.append(
+                FilterStep(
+                    predicate=_semantic_predicate(
+                        clause.condition,
+                        record_types=semantic_model.record_types,
+                        clause_index=index,
+                    )
+                )
+            )
+            continue
+        if isinstance(clause, ConfirmClause):
+            steps.append(_lower_confirm(context, clause))
+            continue
+        if isinstance(clause, MatchClause):
+            steps.append(_lower_match(context, clause, clause_index=index))
+            continue
+        if isinstance(clause, RankedByClause):
+            raise SurfaceLoweringError(
+                "ranked by requires a registered ranking/score semantic before it can be lowered canonically",
+                code="ranking_semantics_deferred",
+                clause_index=index,
+            )
+        raise SurfaceLoweringError(
+            f"unsupported continuation clause {type(clause).__name__}",
+            code="invalid_continuation_clause",
+            clause_index=index,
+        )
+
+    return SurfaceCompilation(
+        workflow=WorkflowIR(
+            steps=steps,
+            name=name if name is not None else base_workflow.name,
+            description=base_workflow.description,
+        ),
+        view=view,
+    )
+
+
 def lower_surface_to_ir(
     surface: SurfaceScript,
     *,
@@ -858,6 +978,7 @@ __all__ = [
     "SurfaceCompilation",
     "SurfaceLoweringError",
     "compile_surface",
+    "compile_surface_fragment",
     "compile_surface_to_ir",
     "lower_surface",
     "lower_surface_to_ir",

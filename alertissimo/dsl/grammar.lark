@@ -22,6 +22,18 @@ start: script
 // clause without one.
 script: _NL* candidate_statement (_NL clause)* _NL*
 
+// A continuation is parsed independently from a complete script. It contains only
+// operations over an already-materialized workflow; initial candidate constraints
+// cannot be retroactively changed here.
+fragment: _NL* continuation_clause (_NL continuation_clause)* _NL*
+
+?continuation_clause: filter_clause
+                    | with_clause
+                    | confirm_clause
+                    | match_clause
+                    | order_clause
+                    | ranked_clause
+
 candidate_statement: "objects"i "from"i origin_list via_clause?
 origin_list: NAME ("," NAME)*
 broker_list: NAME ("," NAME)*
