@@ -21,7 +21,7 @@ from typing import Any, Mapping
 
 from dotenv import load_dotenv
 
-from alertissimo.api import execute_dsl, validate_dsl
+from alertissimo.api import DSLWorkflowService
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.orchestration.normalization import summary_object_identity
 
@@ -126,12 +126,12 @@ with lightcurve via lasair
     executor = RecordingEndpointExecutor(
         RegistryEndpointExecutor(registry=registry)
     )
-    first = execute_dsl(
+    service = DSLWorkflowService(registry=registry, executor=executor)
+    first_state = service.execute_dsl(
         first_source,
         name="live incremental continuation: first pass",
-        registry=registry,
-        executor=executor,
     )
+    first = first_state.result
     first_calls = tuple(executor.calls)
 
     if [step.op for step in first.workflow.steps] != [
@@ -150,7 +150,11 @@ with lightcurve via lasair
     print(continuation_source.rstrip())
     print()
 
-    validation = validate_dsl(continuation_source, continue_from=first)
+    validation = service.validate_dsl(
+        continuation_source,
+        workflow_id=first_state.workflow_id,
+        base_version=first_state.version,
+    )
     if not validation.is_valid or not validation.is_runnable:
         raise RuntimeError(
             "continuation validation failed: "
@@ -161,14 +165,19 @@ with lightcurve via lasair
     if tuple(executor.calls) != first_calls:
         raise RuntimeError("continuation validation contacted a provider")
 
-    second = execute_dsl(
+    second_state = service.execute_dsl(
         continuation_source,
+        workflow_id=first_state.workflow_id,
+        base_version=first_state.version,
         name="live incremental continuation: cumulative result",
-        registry=registry,
-        executor=executor,
-        continue_from=first,
     )
+    second = second_state.result
     new_calls = tuple(executor.calls[len(first_calls) :])
+
+    if second_state.workflow_id != first_state.workflow_id:
+        raise RuntimeError("continuation changed the backend workflow identifier")
+    if second_state.version != first_state.version + 1:
+        raise RuntimeError("continuation did not advance the workflow version once")
 
     expected_ops = [
         "cone_search",
@@ -201,6 +210,8 @@ with lightcurve via lasair
     downstream_ids = _object_ids(second.result.steps[3])
 
     print("=== INCREMENTAL PHYSICAL CALLS ===")
+    print(f"Workflow:         {second_state.workflow_id}")
+    print(f"Versions:         {first_state.version} -> {second_state.version}")
     print(f"First-pass calls: {len(first_calls)}")
     for call in first_calls:
         print(f"  {call.broker}/{call.origin}/{call.endpoint} params={call.params}")
