@@ -42,11 +42,11 @@ def test_continuation_replays_prior_provider_calls_and_executes_only_new_enrichm
     assert len(executor.calls) == 2
     assert len(first.portfolios) == 1
 
-    validation = validate_dsl(SECOND_PASS, continue_from=first)
+    validation = validate_dsl(SECOND_PASS)
     assert validation.is_valid
     assert validation.is_runnable
 
-    second = execute_dsl(SECOND_PASS, continue_from=first, executor=executor)
+    second = execute_dsl(SECOND_PASS, executor=executor)
 
     assert len(executor.calls) == 3
     assert executor.calls[-1] == (

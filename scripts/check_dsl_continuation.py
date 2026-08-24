@@ -67,14 +67,13 @@ def main() -> int:
 
     print("--- second pass fragment ---")
     print(SECOND_PASS.rstrip())
-    validation = validate_dsl(SECOND_PASS, continue_from=first)
+    validation = validate_dsl(SECOND_PASS)
     if not validation.is_valid or not validation.is_runnable:
         raise RuntimeError(f"continuation validation failed: {validation!r}")
 
     calls_before = tuple(executor.calls)
     second = execute_dsl(
         SECOND_PASS,
-        continue_from=first,
         executor=executor,
     )
 

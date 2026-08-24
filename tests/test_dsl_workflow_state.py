@@ -1,12 +1,7 @@
 import pytest
 
-from alertissimo.api import DSLWorkflowService
-from alertissimo.orchestration.state import (
-    InMemoryWorkflowStateRepository,
-    WorkflowNotFoundError,
-    WorkflowStateError,
-    WorkflowVersionConflictError,
-)
+import alertissimo.api as api
+from alertissimo.dsl import DSLParseError
 from scripts.smoke.executors import FixtureEndpointExecutor, fixture_key
 
 
@@ -44,41 +39,27 @@ def _executor() -> FixtureEndpointExecutor:
     )
 
 
-def _service():
+def test_public_execute_dsl_retains_one_active_workflow_for_ui_continuation():
     executor = _executor()
-    repository = InMemoryWorkflowStateRepository(
-        workflow_id_factory=iter(("workflow:test", "workflow:second")).__next__
-    )
-    return DSLWorkflowService(repository=repository, executor=executor), executor
 
-
-def test_service_owns_state_and_continues_by_id_and_version_only():
-    service, executor = _service()
-
-    first = service.execute_dsl(FIRST_PASS)
-    assert first.workflow_id == "workflow:test"
-    assert first.version == 1
-    assert len(first.result.portfolios) == 1
+    first = api.execute_dsl(FIRST_PASS, executor=executor)
+    assert len(first.portfolios) == 1
     assert len(executor.calls) == 2
 
-    validation = service.validate_dsl(
-        CONTINUATION,
-        workflow_id=first.workflow_id,
-        base_version=first.version,
-    )
+    validation = api.validate_dsl(CONTINUATION)
     assert validation.is_valid
     assert validation.is_runnable
     assert len(executor.calls) == 2
 
-    second = service.execute_dsl(
-        CONTINUATION,
-        workflow_id=first.workflow_id,
-        base_version=first.version,
-    )
+    second = api.execute_dsl(CONTINUATION, executor=executor)
 
-    assert second.workflow_id == first.workflow_id
-    assert second.version == 2
-    assert len(second.result.portfolios) == 1
+    assert second.source == FIRST_PASS.rstrip() + "\n" + CONTINUATION.strip()
+    assert [step.op for step in second.workflow.steps] == [
+        "cone_search",
+        "get_lightcurve",
+        "filter",
+        "get_lightcurve",
+    ]
     assert len(executor.calls) == 3
     assert executor.calls[-1] == (
         "lasair",
@@ -86,54 +67,32 @@ def test_service_owns_state_and_continues_by_id_and_version_only():
         "lightcurves",
         {"objectIds": CANDIDATE_ID},
     )
-    assert service.repository.latest(first.workflow_id) is second
 
 
-def test_service_rejects_ambiguous_or_unknown_continuation_context():
-    service, executor = _service()
+def test_complete_program_replaces_the_active_workflow():
+    first_executor = _executor()
+    second_executor = _executor()
 
-    with pytest.raises(WorkflowStateError, match="without workflow_id"):
-        service.execute_dsl(FIRST_PASS, base_version=1)
-    with pytest.raises(WorkflowStateError, match="base_version is required"):
-        service.execute_dsl(CONTINUATION, workflow_id="workflow:test")
-    with pytest.raises(WorkflowNotFoundError, match="unknown workflow_id"):
-        service.execute_dsl(
-            CONTINUATION,
-            workflow_id="workflow:missing",
-            base_version=1,
-        )
+    api.execute_dsl(FIRST_PASS, executor=first_executor)
+    replacement = api.execute_dsl(FIRST_PASS, executor=second_executor)
+
+    assert replacement.source == FIRST_PASS
+    assert [step.op for step in replacement.workflow.steps] == [
+        "cone_search",
+        "get_lightcurve",
+    ]
+    assert len(second_executor.calls) == 2
+
+
+def test_filter_cannot_be_the_first_turn_without_an_active_workflow(monkeypatch):
+    executor = _executor()
+    monkeypatch.setattr(api, "_active_dsl_execution", None)
+
+    validation = api.validate_dsl(CONTINUATION)
+    assert not validation.is_valid
+    assert validation.parse_error is not None
+
+    with pytest.raises(DSLParseError):
+        api.execute_dsl(CONTINUATION, executor=executor)
 
     assert not executor.calls
-
-
-def test_stale_version_fails_before_any_new_provider_call():
-    service, executor = _service()
-    first = service.execute_dsl(FIRST_PASS)
-    second = service.execute_dsl(
-        CONTINUATION,
-        workflow_id=first.workflow_id,
-        base_version=first.version,
-    )
-    calls_after_second = tuple(executor.calls)
-
-    with pytest.raises(WorkflowVersionConflictError, match="version 2"):
-        service.execute_dsl(
-            "with lightcurve via fink",
-            workflow_id=first.workflow_id,
-            base_version=first.version,
-        )
-
-    assert second.version == 2
-    assert tuple(executor.calls) == calls_after_second
-
-
-def test_fresh_executions_create_independent_workflow_ids():
-    service, _executor_instance = _service()
-
-    first = service.execute_dsl(FIRST_PASS)
-    second = service.execute_dsl(FIRST_PASS)
-
-    assert first.workflow_id == "workflow:test"
-    assert second.workflow_id == "workflow:second"
-    assert first.workflow_id != second.workflow_id
-    assert first.version == second.version == 1

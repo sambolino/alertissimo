@@ -9,7 +9,6 @@ on:
       - 'alertissimo/data_layer/providers/**/request_mappings.yaml'
       - 'alertissimo/orchestration/ir/**'
       - 'alertissimo/orchestration/incremental.py'
-      - 'alertissimo/orchestration/state.py'
       - 'alertissimo/orchestration/planner/**'
       - 'alertissimo/orchestration/binding/**'
       - 'alertissimo/orchestration/runtime/**'
