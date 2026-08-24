@@ -606,11 +606,12 @@ def render_provenance(data: dict[str, Any]) -> None:
 
 
 def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single") -> None:
-    """Render a rich, single-object scientific portfolio from local demo data."""
+    """Render a rich, single-object scientific portfolio."""
+    evidence_label = data.get("evidenceLabel", "frozen broker evidence")
     if not data.get("lightCurve"):
         object_name = data.get("diaObjectId") or "Object"
         st.subheader(f"{object_name} — object portfolio")
-        st.caption("Frozen cone-search evidence · summary-level Portfolio")
+        st.caption(f"{evidence_label} · summary-level Portfolio")
         st.info("This cone result contains a summary record only; no light-curve endpoint was captured for this locus.")
         summary, records, provenance = st.tabs(["Summary", "Semantic Records", "Provenance"])
         with summary:
@@ -629,7 +630,7 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
         return
     object_name = data.get("tns", {}).get("name") or data.get("diaObjectId") or "Object"
     st.subheader(f"{object_name} — object portfolio")
-    st.caption(f'Object ID {data.get("diaObjectId", "—")} · frozen broker evidence')
+    st.caption(f'Object ID {data.get("diaObjectId", "—")} · {evidence_label}')
     first, last, brightest, count = st.columns(4)
     first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
     last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))

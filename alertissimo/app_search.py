@@ -221,6 +221,73 @@ def render_cone_object_page(
     render_selected_candidate(candidate)
 
 
+def render_live_portfolio_cards(
+    displays: list[dict[str, Any]], *, selection_state_key: str
+) -> None:
+    """Render live DSL results in the same card-and-detail pattern as cone search."""
+
+    st.subheader("Live DSL results")
+    st.success(f"{len(displays)} object(s) found. Select an object to open its portfolio.")
+    for index, display in enumerate(displays):
+        if index:
+            st.divider()
+        summary, action = st.columns((5, 1), vertical_alignment="center")
+        lightcurve = display.get("lightCurve", [])
+        latest = lightcurve[-1].get("magnitude") if lightcurve else None
+        classifications = display.get("classifications", [])
+        leading = classifications[0] if classifications else {}
+        brokers = [
+            str(item.get("broker"))
+            for item in display.get("brokerCoverage", [])
+            if item.get("broker")
+        ]
+        with summary:
+            st.markdown(f"### {display.get('diaObjectId', 'Object')}")
+            st.caption(
+                f"{display.get('survey', '—')} · "
+                f"{' · '.join(dict.fromkeys(brokers)) or 'broker evidence'}"
+            )
+            metrics = st.columns(3)
+            metrics[0].metric("Detections", len(lightcurve))
+            metrics[1].metric(
+                "Latest mag", "—" if latest is None else f"{float(latest):.2f}"
+            )
+            probability = leading.get("probability")
+            metrics[2].metric(
+                "Leading class",
+                leading.get("class") or "—",
+                f"{float(probability):.0%}"
+                if isinstance(probability, (int, float))
+                else None,
+            )
+        with action:
+            if st.button(
+                "Open object",
+                key=f"open-live-result-{selection_state_key}-{index}",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state[selection_state_key] = index
+                st.rerun()
+
+
+def render_live_portfolio_page(
+    displays: list[dict[str, Any]], selected_index: int, *, selection_state_key: str, key: str
+) -> None:
+    """Render one live Portfolio selected from the live DSL result cards."""
+
+    if not 0 <= selected_index < len(displays):
+        st.session_state.pop(selection_state_key, None)
+        st.warning("The selected object is no longer in these live DSL results.")
+        return
+    if st.button("← Back to live DSL results", key=f"back-to-live-results-{key}"):
+        st.session_state.pop(selection_state_key, None)
+        st.rerun()
+    render_object_portfolio(
+        displays[selected_index], widget_key=f"{key}_live_portfolio_{selected_index}"
+    )
+
+
 def render_id_lookup(candidates: list[dict[str, Any]], presets: dict[str, Any]) -> None:
     """Render the known-object-ID entry flow."""
     st.subheader("Look up a known object")
@@ -391,6 +458,7 @@ def render_dsl_entry(
     results_state_key = f"{key}_cone_results"
     selection_state_key = f"{key}_cone_selected"
     execution_state_key = f"{key}_dsl_execution"
+    live_selection_state_key = f"{key}_live_portfolio_selected"
 
     st.subheader(title)
     st.write("Describe the survey in the Alertissimo DSL.")
@@ -421,6 +489,7 @@ def render_dsl_entry(
         st.session_state[execution_state_key] = execution
         st.session_state.pop(results_state_key, None)
         st.session_state.pop(selection_state_key, None)
+        st.session_state.pop(live_selection_state_key, None)
 
     execution = st.session_state.get(execution_state_key)
     if execution is not None:
@@ -432,9 +501,27 @@ def render_dsl_entry(
             "Results are normalized through the provider mappings. Raw broker payloads "
             "are not displayed."
         )
-        for index, portfolio in enumerate(execution.portfolios, start=1):
-            with st.expander(f"Portfolio {index}", expanded=index == 1):
-                st.json(portfolio_to_dict(portfolio))
+        if not execution.portfolios:
+            st.info("The live query completed successfully but returned no objects.")
+            return
+        displays = []
+        for portfolio in execution.portfolios:
+            display = load_lightcurve_document(portfolio_to_dict(portfolio))
+            display["evidenceLabel"] = "live broker execution"
+            displays.append(display)
+
+        selected_index = st.session_state.get(live_selection_state_key)
+        if selected_index is None:
+            render_live_portfolio_cards(
+                displays, selection_state_key=live_selection_state_key
+            )
+        else:
+            render_live_portfolio_page(
+                displays,
+                int(selected_index),
+                selection_state_key=live_selection_state_key,
+                key=key,
+            )
         return
 
     matches = st.session_state.get(results_state_key)
