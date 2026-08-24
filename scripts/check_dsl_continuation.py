@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Prove that a second DSL pass reuses prior provider work and appends new work only."""
+"""Offline acceptance for the two-call UI DSL workflow contract."""
 
 from __future__ import annotations
 
-from alertissimo.api import execute_dsl, validate_dsl
+import json
+
+import alertissimo.api as api
+from alertissimo.dsl import SurfaceFragment, SurfaceScript
+from alertissimo.orchestration.pipeline import StagedWorkflowResult
 from scripts.smoke.executors import FixtureEndpointExecutor, fixture_key
 
 
@@ -52,10 +56,38 @@ def _executor() -> FixtureEndpointExecutor:
 def main() -> int:
     executor = _executor()
 
-    print("=== ALERTISSIMO DSL CONTINUATION CHECK ===")
+    print("=== ALERTISSIMO UI DSL TWO-CALL ACCEPTANCE ===")
+
+    initial_fragment = api.validate_dsl(SECOND_PASS)
+    if initial_fragment.is_valid or initial_fragment.parse_error is None:
+        raise RuntimeError("a fragment was accepted before any workflow existed")
+    print("PASS: fragment-first request rejected without provider calls")
+
     print("--- first pass ---")
     print(FIRST_PASS.rstrip())
-    first = execute_dsl(FIRST_PASS, executor=executor)
+    first_validation = api.validate_dsl(FIRST_PASS)
+    if not first_validation.is_valid or not first_validation.is_runnable:
+        raise RuntimeError(f"first-pass validation failed: {first_validation!r}")
+    if executor.calls:
+        raise RuntimeError("first-pass validation contacted a provider")
+
+    first = api.execute_dsl(FIRST_PASS, executor=executor)
+    first_payload = json.loads(first.to_json())
+    if not isinstance(first.surface, SurfaceScript):
+        raise RuntimeError("first pass did not parse as a complete DSL script")
+    if first_payload["source"] != FIRST_PASS:
+        raise RuntimeError("first JSON payload did not preserve submitted DSL text")
+    if [step["op"] for step in first_payload["workflow"]["steps"]] != [
+        "cone_search",
+        "get_lightcurve",
+    ]:
+        raise RuntimeError("first JSON payload does not expose the canonical WorkflowIR")
+    if api._active_workflow is not first.staged:
+        raise RuntimeError("execute_dsl did not retain its generic staged state")
+    if not isinstance(api._active_workflow, StagedWorkflowResult):
+        raise RuntimeError("active state is not a StagedWorkflowResult")
+    if hasattr(api._active_workflow, "source") or hasattr(api._active_workflow, "surface"):
+        raise RuntimeError("active middle-layer state leaked DSL artifacts")
     if len(executor.calls) != 2:
         raise RuntimeError(
             f"first pass expected 2 physical calls, observed {len(executor.calls)}"
@@ -64,19 +96,39 @@ def main() -> int:
         raise RuntimeError(
             f"first pass expected one Portfolio, observed {len(first.portfolios)}"
         )
+    first_calls = tuple(executor.calls)
 
     print("--- second pass fragment ---")
     print(SECOND_PASS.rstrip())
-    validation = validate_dsl(SECOND_PASS, continue_from=first)
+    validation = api.validate_dsl(SECOND_PASS)
     if not validation.is_valid or not validation.is_runnable:
         raise RuntimeError(f"continuation validation failed: {validation!r}")
+    if not isinstance(validation.surface, SurfaceFragment):
+        raise RuntimeError("second pass did not parse as a DSL fragment")
+    if tuple(validation.compilation.workflow.steps[: len(first.workflow.steps)]) != tuple(
+        first.workflow.steps
+    ):
+        raise RuntimeError("fragment validation changed the canonical prior IR prefix")
+    if tuple(executor.calls) != first_calls:
+        raise RuntimeError("fragment validation contacted a provider")
 
-    calls_before = tuple(executor.calls)
-    second = execute_dsl(
+    calls_before = first_calls
+    second = api.execute_dsl(
         SECOND_PASS,
-        continue_from=first,
         executor=executor,
     )
+    second_payload = json.loads(second.to_json())
+    if second_payload["source"] != SECOND_PASS:
+        raise RuntimeError("second JSON payload should contain only the submitted fragment")
+    if [step["op"] for step in second_payload["workflow"]["steps"]] != [
+        "cone_search",
+        "get_lightcurve",
+        "filter",
+        "get_lightcurve",
+    ]:
+        raise RuntimeError("second JSON payload does not expose the extended WorkflowIR")
+    if api._active_workflow is not second.staged:
+        raise RuntimeError("second execute_dsl call did not replace active staged state")
 
     new_calls = tuple(executor.calls[len(calls_before) :])
     if len(new_calls) != 1:
@@ -125,6 +177,7 @@ def main() -> int:
     print(f"new call:                   {broker}/{origin}/{endpoint} {params}")
     print(f"final portfolios:           {len(second.portfolios)}")
     print(f"prior execution IDs reused: {len(first_execution_ids)}")
+    print("PASS: UI calls stayed simple and middle-layer state stayed DSL-independent")
     print("PASS: second DSL pass filtered prior material and added only new enrichment")
     return 0
 

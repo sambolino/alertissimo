@@ -23,6 +23,7 @@ from .surface import (
     OrderByClause,
     RankedByClause,
     RequirementClause,
+    SurfaceFragment,
     SurfaceScript,
     WhereClause,
     WithinClause,
@@ -64,6 +65,7 @@ def _lark_parser() -> Lark:
         parser="lalr",
         lexer="contextual",
         propagate_positions=True,
+        start=["start", "fragment"],
     )
 
 
@@ -125,6 +127,9 @@ class _SurfaceTransformer(Transformer):
 
     def script(self, items):
         return SurfaceScript(candidates=items[0], clauses=tuple(items[1:]))
+
+    def fragment(self, items):
+        return SurfaceFragment(clauses=tuple(items))
 
     def origin_list(self, items):
         return tuple(str(item).lower() for item in items)
@@ -327,6 +332,28 @@ def _preflight_structure(script: str) -> None:
             )
 
 
+def _preflight_fragment(fragment: str) -> None:
+    lines = _meaningful_lines(fragment)
+    if not lines:
+        raise DSLParseError("DSL continuation fragment is empty")
+    allowed = ("filter ", "with ", "confirm ", "match", "order by ", "ranked by ")
+    for line_no, text in lines:
+        lowered = text.lower()
+        if lowered.startswith("objects "):
+            raise DSLParseError(
+                "continuation cannot introduce a new objects statement",
+                line=line_no,
+            )
+        if not any(
+            lowered == prefix.rstrip() or lowered.startswith(prefix)
+            for prefix in allowed
+        ):
+            raise DSLParseError(
+                f"clause is not valid in a continuation fragment: {text!r}",
+                line=line_no,
+            )
+
+
 def parse_surface_script(script: str) -> SurfaceScript:
     """Parse declarative DSL text into a surface AST without orchestration lowering."""
 
@@ -336,7 +363,9 @@ def parse_surface_script(script: str) -> SurfaceScript:
     _preflight_structure(normalized)
 
     try:
-        result = _TRANSFORMER.transform(_lark_parser().parse(normalized))
+        result = _TRANSFORMER.transform(
+            _lark_parser().parse(normalized, start="start")
+        )
     except VisitError as exc:
         if isinstance(exc.orig_exc, DSLParseError):
             raise exc.orig_exc from exc
@@ -355,4 +384,34 @@ def parse_surface_script(script: str) -> SurfaceScript:
     return result
 
 
-__all__ = ["grammar_text", "parse_surface_script"]
+def parse_surface_fragment(fragment: str) -> SurfaceFragment:
+    """Parse clauses that extend an already-existing workflow."""
+
+    if not fragment or not fragment.strip():
+        raise DSLParseError("DSL continuation fragment is empty")
+    normalized = _canonicalize_layout(fragment)
+    _preflight_fragment(normalized)
+
+    try:
+        result = _TRANSFORMER.transform(
+            _lark_parser().parse(normalized, start="fragment")
+        )
+    except VisitError as exc:
+        if isinstance(exc.orig_exc, DSLParseError):
+            raise exc.orig_exc from exc
+        raise DSLParseError(str(exc.orig_exc)) from exc
+    except UnexpectedInput as exc:
+        raise DSLParseError(
+            "syntax error",
+            line=getattr(exc, "line", None),
+            column=getattr(exc, "column", None),
+        ) from exc
+    except ValueError as exc:
+        raise DSLParseError(str(exc)) from exc
+
+    if not isinstance(result, SurfaceFragment):
+        raise DSLParseError("parser did not produce a surface fragment")
+    return result
+
+
+__all__ = ["grammar_text", "parse_surface_fragment", "parse_surface_script"]

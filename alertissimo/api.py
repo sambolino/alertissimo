@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-from threading import Lock
+from threading import RLock
 from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
@@ -23,12 +23,17 @@ from alertissimo.dsl import (
     DSLParseError,
     SurfaceCapabilityReport,
     SurfaceCompilation,
+    SurfaceFragment,
     SurfaceLoweringError,
     SurfaceScript,
     SurfaceValidationReport,
     compile_surface,
+    compile_surface_fragment,
+    parse_surface_fragment,
     parse_surface_script,
     validate_surface_capabilities,
+    validate_surface_fragment_capabilities,
+    validate_surface_fragment_semantics,
     validate_surface_semantics,
 )
 from alertissimo.orchestration.incremental import (
@@ -46,14 +51,6 @@ from alertissimo.orchestration.pipeline import (
 from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.results import ResultViewSpec
 from alertissimo.orchestration.runtime import WorkflowRun
-from alertissimo.orchestration.state import (
-    InMemoryWorkflowStateRepository,
-    WorkflowNotFoundError,
-    WorkflowSnapshot,
-    WorkflowStateError,
-    WorkflowStateRepository,
-    WorkflowVersionConflictError,
-)
 
 
 @dataclass(frozen=True)
@@ -67,7 +64,7 @@ class DSLValidationResult:
     """
 
     source: str
-    surface: SurfaceScript | None = None
+    surface: SurfaceScript | SurfaceFragment | None = None
     semantic: SurfaceValidationReport | None = None
     capabilities: SurfaceCapabilityReport | None = None
     compilation: SurfaceCompilation | None = None
@@ -97,7 +94,7 @@ class DSLExecutionResult:
     """One complete DSL turn from parsed surface to finalized semantic result."""
 
     source: str
-    surface: SurfaceScript
+    surface: SurfaceScript | SurfaceFragment
     compilation: SurfaceCompilation
     staged: StagedWorkflowResult
     result: WorkflowPortfolioResult
@@ -155,38 +152,36 @@ class DSLExecutionResult:
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
-def _continuation_source(
+# The initial UI facade models one browser tab and therefore one active generic
+# orchestration state. No DSL source, surface object, or DSL response envelope is
+# retained here. Session-scoped storage can replace this process-local reference
+# later without changing validate_dsl()/execute_dsl().
+_active_workflow: StagedWorkflowResult | None = None
+_active_dsl_lock = RLock()
+
+
+def _is_complete_program(source: str) -> bool:
+    for raw in source.splitlines():
+        text = raw.strip()
+        if text and not text.startswith("#"):
+            return text.lower().startswith("objects from ")
+    return False
+
+
+def _parse_dsl_turn(
     source: str,
-    continue_from: DSLExecutionResult | None,
-) -> str:
-    """Return a complete DSL program for a fresh or incremental turn.
+) -> tuple[SurfaceScript | SurfaceFragment, StagedWorkflowResult | None]:
+    """Parse a complete program or an IR-contextual continuation fragment."""
 
-    Continuation is explicit caller state, not hidden facade state.  The supplied
-    fragment is appended to the exact previously executed DSL program, so the
-    ordinary parser/lowering/planner continue to define semantics.  A second
-    ``objects from`` statement is therefore rejected by the existing grammar and
-    structural validation rather than being assigned special continuation meaning.
-    """
-
-    if continue_from is None:
-        return source
-    fragment = source.strip()
-    if not fragment:
-        raise DSLParseError("DSL continuation is empty")
-    return continue_from.source.rstrip() + "\n" + fragment
-
-
-def _require_semantic_extension(
-    previous: DSLExecutionResult,
-    compilation: SurfaceCompilation,
-) -> None:
-    previous_steps = tuple(previous.workflow.steps)
-    if tuple(compilation.workflow.steps[: len(previous_steps)]) != previous_steps:
-        raise SurfaceLoweringError(
-            "continuation changes previously executed semantic Steps; start a fresh "
-            "DSL execution instead",
-            code="continuation_changes_prior_workflow",
+    if _is_complete_program(source):
+        return parse_surface_script(source), None
+    fragment = parse_surface_fragment(source)
+    if _active_workflow is None:
+        raise DSLParseError(
+            "DSL continuation requires an already executed workflow; the first "
+            "request must begin with 'objects from'"
         )
+    return fragment, _active_workflow
 
 
 def validate_dsl(
@@ -194,7 +189,6 @@ def validate_dsl(
     *,
     graph: CapabilityGraph | None = None,
     name: str | None = None,
-    continue_from: DSLExecutionResult | None = None,
 ) -> DSLValidationResult:
     """Validate DSL without contacting provider APIs.
 
@@ -202,51 +196,73 @@ def validate_dsl(
     validation, and canonical lowering. Errors expected during interactive DSL
     construction are returned as data rather than raised.
 
-    When ``continue_from`` is supplied, ``source`` is a clause-only continuation
-    fragment. It is appended to the exact previous DSL program for validation; the
-    resulting workflow must preserve the previous semantic Steps as an exact prefix.
+    A complete program validates independently. A clause-only fragment is compiled
+    directly against the canonical WorkflowIR inside the active staged workflow.
+    Validation reads but never changes that generic orchestration state.
     """
 
-    try:
-        effective_source = _continuation_source(source, continue_from)
-        surface = parse_surface_script(effective_source)
-    except DSLParseError as error:
-        return DSLValidationResult(source=source, parse_error=error)
+    with _active_dsl_lock:
+        try:
+            surface, previous = _parse_dsl_turn(source)
+        except DSLParseError as error:
+            return DSLValidationResult(source=source, parse_error=error)
 
-    semantic = validate_surface_semantics(surface)
-    if not semantic.is_valid:
-        return DSLValidationResult(
-            source=effective_source,
-            surface=surface,
-            semantic=semantic,
+        semantic = (
+            validate_surface_semantics(surface)
+            if previous is None
+            else validate_surface_fragment_semantics(
+                surface,
+                previous.run.workflow,
+            )
         )
+        if not semantic.is_valid:
+            return DSLValidationResult(
+                source=source,
+                surface=surface,
+                semantic=semantic,
+            )
 
-    effective_graph = graph if graph is not None else build_capability_graph()
-    capabilities = validate_surface_capabilities(surface, graph=effective_graph)
-    try:
-        compilation = compile_surface(
-            surface,
-            graph=effective_graph,
-            name=name,
+        effective_graph = graph if graph is not None else build_capability_graph()
+        capabilities = (
+            validate_surface_capabilities(surface, graph=effective_graph)
+            if previous is None
+            else validate_surface_fragment_capabilities(
+                surface,
+                previous.run.workflow,
+                graph=effective_graph,
+            )
         )
-        if continue_from is not None:
-            _require_semantic_extension(continue_from, compilation)
-    except SurfaceLoweringError as error:
+        try:
+            compilation = (
+                compile_surface(
+                    surface,
+                    graph=effective_graph,
+                    name=name,
+                )
+                if previous is None
+                else compile_surface_fragment(
+                    surface,
+                    previous.run.workflow,
+                    graph=effective_graph,
+                    name=name,
+                )
+            )
+        except SurfaceLoweringError as error:
+            return DSLValidationResult(
+                source=source,
+                surface=surface,
+                semantic=semantic,
+                capabilities=capabilities,
+                lowering_error=error,
+            )
+
         return DSLValidationResult(
-            source=effective_source,
+            source=source,
             surface=surface,
             semantic=semantic,
             capabilities=capabilities,
-            lowering_error=error,
+            compilation=compilation,
         )
-
-    return DSLValidationResult(
-        source=effective_source,
-        surface=surface,
-        semantic=semantic,
-        capabilities=capabilities,
-        compilation=compilation,
-    )
 
 
 def execute_dsl(
@@ -257,206 +273,73 @@ def execute_dsl(
     registry: EndpointRegistry | None = None,
     executor: EndpointExecutor | None = None,
     validate_semantic_model: bool = True,
-    continue_from: DSLExecutionResult | None = None,
 ) -> DSLExecutionResult:
-    """Execute a fresh DSL program or append a continuation to a prior result.
+    """Execute a complete DSL program or continue the one active workflow.
 
-    Fresh execution follows the ordinary parser -> compiler -> planner -> staged
-    runtime pipeline.  With ``continue_from``, ``source`` is appended as new DSL
-    clauses to the exact prior program. The cumulative workflow is planned again,
-    but the generic incremental runtime proves that the old semantic/physical plan
-    remains an exact prefix and replays its existing physical executions. Only newly
-    appended provider work reaches the underlying executor.
-
-    No session state is stored inside the facade: callers explicitly retain and pass
-    the prior ``DSLExecutionResult``. This keeps continuation deterministic and lets
-    UI, notebook, or service clients decide how long a result remains available.
+    A complete program starts a fresh generic workflow. A clause-only fragment is
+    lowered directly onto the active WorkflowIR, then incremental execution replays
+    the exact old physical prefix and executes only new provider work. Only the
+    resulting ``StagedWorkflowResult`` is retained; DSL artifacts remain response-only.
     """
 
-    effective_graph = graph if graph is not None else build_capability_graph()
-    effective_source = _continuation_source(source, continue_from)
-    surface = parse_surface_script(effective_source)
-    compilation = compile_surface(
-        surface,
-        graph=effective_graph,
-        name=name,
-    )
-    if continue_from is not None:
-        _require_semantic_extension(continue_from, compilation)
-    run = plan_workflow(compilation.workflow, effective_graph)
-
-    effective_registry = registry if registry is not None else EndpointRegistry()
-    effective_executor = (
-        executor
-        if executor is not None
-        else RegistryEndpointExecutor(registry=effective_registry)
-    )
-    if continue_from is None:
-        staged = execute_staged_workflow_run(
-            run,
-            effective_registry,
-            effective_executor,
-            validate_semantic_model=validate_semantic_model,
+    global _active_workflow
+    with _active_dsl_lock:
+        effective_graph = graph if graph is not None else build_capability_graph()
+        surface, previous = _parse_dsl_turn(source)
+        compilation = (
+            compile_surface(
+                surface,
+                graph=effective_graph,
+                name=name,
+            )
+            if previous is None
+            else compile_surface_fragment(
+                surface,
+                previous.run.workflow,
+                graph=effective_graph,
+                name=name,
+            )
         )
-    else:
-        staged = execute_incremental_workflow_run(
-            run,
-            continue_from.staged,
-            effective_registry,
-            effective_executor,
-            validate_semantic_model=validate_semantic_model,
-        )
-    result = finalize_local_semantics(staged.normalized)
+        run = plan_workflow(compilation.workflow, effective_graph)
 
-    return DSLExecutionResult(
-        source=effective_source,
-        surface=surface,
-        compilation=compilation,
-        staged=staged,
-        result=result,
-    )
-
-
-class DSLWorkflowService:
-    """Stateful system facade over the stateless DSL execution core.
-
-    The service owns workflow snapshots and execution dependencies. A caller sends
-    only a continuation fragment, ``workflow_id``, and ``base_version``; the prior
-    ``DSLExecutionResult`` never crosses the service boundary. State remains explicit
-    and addressable rather than being inferred from a global "current workflow".
-    """
-
-    def __init__(
-        self,
-        *,
-        repository: WorkflowStateRepository[DSLExecutionResult] | None = None,
-        graph: CapabilityGraph | None = None,
-        registry: EndpointRegistry | None = None,
-        executor: EndpointExecutor | None = None,
-        validate_semantic_model: bool = True,
-    ) -> None:
-        self.repository = (
-            repository
-            if repository is not None
-            else InMemoryWorkflowStateRepository()
-        )
-        self.graph = graph if graph is not None else build_capability_graph()
-        self.registry = registry if registry is not None else EndpointRegistry()
-        self.executor = (
+        effective_registry = registry if registry is not None else EndpointRegistry()
+        effective_executor = (
             executor
             if executor is not None
-            else RegistryEndpointExecutor(registry=self.registry)
+            else RegistryEndpointExecutor(registry=effective_registry)
         )
-        self.validate_semantic_model = validate_semantic_model
-        self._workflow_locks: dict[str, Lock] = {}
-        self._workflow_locks_guard = Lock()
-
-    def _workflow_lock(self, workflow_id: str) -> Lock:
-        with self._workflow_locks_guard:
-            return self._workflow_locks.setdefault(workflow_id, Lock())
-
-    @staticmethod
-    def _require_context(
-        workflow_id: str | None,
-        base_version: int | None,
-    ) -> None:
-        if workflow_id is None and base_version is not None:
-            raise WorkflowStateError(
-                "base_version cannot be supplied without workflow_id"
+        if previous is None:
+            staged = execute_staged_workflow_run(
+                run,
+                effective_registry,
+                effective_executor,
+                validate_semantic_model=validate_semantic_model,
             )
-        if workflow_id is not None and base_version is None:
-            raise WorkflowStateError(
-                "base_version is required when workflow_id is supplied"
+        else:
+            staged = execute_incremental_workflow_run(
+                run,
+                previous,
+                effective_registry,
+                effective_executor,
+                validate_semantic_model=validate_semantic_model,
             )
+        result = finalize_local_semantics(staged.normalized)
 
-    def _load_base(
-        self,
-        workflow_id: str,
-        base_version: int,
-    ) -> WorkflowSnapshot[DSLExecutionResult]:
-        previous = self.repository.latest(workflow_id)
-        if previous.version != base_version:
-            raise WorkflowVersionConflictError(
-                f"workflow {workflow_id!r} is at version {previous.version}, "
-                f"not requested base_version {base_version}"
-            )
-        return previous
-
-    def validate_dsl(
-        self,
-        source: str,
-        *,
-        workflow_id: str | None = None,
-        base_version: int | None = None,
-        name: str | None = None,
-    ) -> DSLValidationResult:
-        """Validate a fresh program or a fragment against stored workflow state."""
-
-        self._require_context(workflow_id, base_version)
-        if workflow_id is None:
-            return validate_dsl(source, graph=self.graph, name=name)
-        assert base_version is not None
-        with self._workflow_lock(workflow_id):
-            previous = self._load_base(workflow_id, base_version)
-            return validate_dsl(
-                source,
-                graph=self.graph,
-                name=name,
-                continue_from=previous.result,
-            )
-
-    def execute_dsl(
-        self,
-        source: str,
-        *,
-        workflow_id: str | None = None,
-        base_version: int | None = None,
-        name: str | None = None,
-    ) -> WorkflowSnapshot[DSLExecutionResult]:
-        """Execute a fresh program or continue one backend-owned workflow."""
-
-        self._require_context(workflow_id, base_version)
-        if workflow_id is None:
-            execution = execute_dsl(
-                source,
-                name=name,
-                graph=self.graph,
-                registry=self.registry,
-                executor=self.executor,
-                validate_semantic_model=self.validate_semantic_model,
-            )
-            return self.repository.create(execution)
-
-        assert base_version is not None
-        with self._workflow_lock(workflow_id):
-            previous = self._load_base(workflow_id, base_version)
-            execution = execute_dsl(
-                source,
-                name=name,
-                graph=self.graph,
-                registry=self.registry,
-                executor=self.executor,
-                validate_semantic_model=self.validate_semantic_model,
-                continue_from=previous.result,
-            )
-            return self.repository.append(
-                workflow_id,
-                expected_version=base_version,
-                result=execution,
-            )
+        execution = DSLExecutionResult(
+            source=source,
+            surface=surface,
+            compilation=compilation,
+            staged=staged,
+            result=result,
+        )
+        _active_workflow = staged
+        return execution
 
 
 __all__ = [
-    "DSLWorkflowService",
     "DSLExecutionResult",
     "DSLValidationResult",
-    "InMemoryWorkflowStateRepository",
     "IncrementalExecutionError",
-    "WorkflowNotFoundError",
-    "WorkflowSnapshot",
-    "WorkflowStateError",
-    "WorkflowStateRepository",
-    "WorkflowVersionConflictError",
     "execute_dsl",
     "validate_dsl",
 ]

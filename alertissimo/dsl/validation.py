@@ -6,6 +6,8 @@ from enum import Enum
 import re
 from typing import Protocol
 
+from alertissimo.orchestration.ir import WorkflowIR
+
 from pydantic import BaseModel, ConfigDict
 
 from .expression import (
@@ -16,11 +18,13 @@ from .expression import (
     iter_references,
     parse_expression,
 )
+from .fragment import fragment_surface_context
 from .surface import (
     FilterClause,
     OrderByClause,
     RequirementClause,
     SurfaceScript,
+    SurfaceFragment,
     WhereClause,
 )
 
@@ -440,6 +444,20 @@ def validate_surface_semantics(
     return SurfaceValidationReport(issues=tuple(issues))
 
 
+def validate_surface_fragment_semantics(
+    fragment: SurfaceFragment,
+    base_workflow: WorkflowIR,
+    *,
+    semantic_paths: _SemanticPaths | None = None,
+) -> SurfaceValidationReport:
+    """Validate fragment ontology references using context derived only from IR."""
+
+    return validate_surface_semantics(
+        fragment_surface_context(fragment, base_workflow),
+        semantic_paths=semantic_paths,
+    )
+
+
 __all__ = [
     "SemanticRecordReference",
     "SurfaceValidationIssue",
@@ -449,4 +467,5 @@ __all__ = [
     "resolve_expression_references",
     "resolve_record_type",
     "validate_surface_semantics",
+    "validate_surface_fragment_semantics",
 ]

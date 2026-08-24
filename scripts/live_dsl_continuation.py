@@ -21,9 +21,11 @@ from typing import Any, Mapping
 
 from dotenv import load_dotenv
 
-from alertissimo.api import DSLWorkflowService
+import alertissimo.api as api
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
+from alertissimo.dsl import SurfaceFragment
 from alertissimo.orchestration.normalization import summary_object_identity
+from alertissimo.orchestration.pipeline import StagedWorkflowResult
 
 
 DEFAULT_RA = 124.87996115142856
@@ -126,13 +128,26 @@ with lightcurve via lasair
     executor = RecordingEndpointExecutor(
         RegistryEndpointExecutor(registry=registry)
     )
-    service = DSLWorkflowService(registry=registry, executor=executor)
-    first_state = service.execute_dsl(
+    first_validation = api.validate_dsl(first_source)
+    if not first_validation.is_valid or not first_validation.is_runnable:
+        raise RuntimeError(f"first-pass validation failed: {first_validation!r}")
+    if executor.calls:
+        raise RuntimeError("first-pass validation contacted a provider")
+
+    first = api.execute_dsl(
         first_source,
         name="live incremental continuation: first pass",
+        registry=registry,
+        executor=executor,
     )
-    first = first_state.result
     first_calls = tuple(executor.calls)
+
+    if api._active_workflow is not first.staged:
+        raise RuntimeError("first pass did not retain its generic staged workflow")
+    if not isinstance(api._active_workflow, StagedWorkflowResult):
+        raise RuntimeError("active state is not a StagedWorkflowResult")
+    if hasattr(api._active_workflow, "source") or hasattr(api._active_workflow, "surface"):
+        raise RuntimeError("active middle-layer state leaked DSL artifacts")
 
     if [step.op for step in first.workflow.steps] != [
         "cone_search",
@@ -150,11 +165,7 @@ with lightcurve via lasair
     print(continuation_source.rstrip())
     print()
 
-    validation = service.validate_dsl(
-        continuation_source,
-        workflow_id=first_state.workflow_id,
-        base_version=first_state.version,
-    )
+    validation = api.validate_dsl(continuation_source)
     if not validation.is_valid or not validation.is_runnable:
         raise RuntimeError(
             "continuation validation failed: "
@@ -164,20 +175,25 @@ with lightcurve via lasair
         )
     if tuple(executor.calls) != first_calls:
         raise RuntimeError("continuation validation contacted a provider")
+    if not isinstance(validation.surface, SurfaceFragment):
+        raise RuntimeError("continuation was not parsed by the DSL fragment grammar")
+    if validation.compilation is None or tuple(
+        validation.compilation.workflow.steps[: len(first.workflow.steps)]
+    ) != tuple(first.workflow.steps):
+        raise RuntimeError("fragment compilation changed the prior WorkflowIR prefix")
 
-    second_state = service.execute_dsl(
+    second = api.execute_dsl(
         continuation_source,
-        workflow_id=first_state.workflow_id,
-        base_version=first_state.version,
         name="live incremental continuation: cumulative result",
+        registry=registry,
+        executor=executor,
     )
-    second = second_state.result
     new_calls = tuple(executor.calls[len(first_calls) :])
 
-    if second_state.workflow_id != first_state.workflow_id:
-        raise RuntimeError("continuation changed the backend workflow identifier")
-    if second_state.version != first_state.version + 1:
-        raise RuntimeError("continuation did not advance the workflow version once")
+    if second.source != continuation_source:
+        raise RuntimeError("DSL response source is not the submitted fragment")
+    if api._active_workflow is not second.staged:
+        raise RuntimeError("continuation did not replace the active staged workflow")
 
     expected_ops = [
         "cone_search",
@@ -210,8 +226,7 @@ with lightcurve via lasair
     downstream_ids = _object_ids(second.result.steps[3])
 
     print("=== INCREMENTAL PHYSICAL CALLS ===")
-    print(f"Workflow:         {second_state.workflow_id}")
-    print(f"Versions:         {first_state.version} -> {second_state.version}")
+    print("Workflow state:   retained by execute_dsl")
     print(f"First-pass calls: {len(first_calls)}")
     for call in first_calls:
         print(f"  {call.broker}/{call.origin}/{call.endpoint} params={call.params}")
