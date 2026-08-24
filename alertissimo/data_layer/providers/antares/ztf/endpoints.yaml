@@ -14,7 +14,7 @@ endpoints:
     output:
       type: object_or_null
       item: locus
-    operation_types: [object_lookup, locus_lookup, object_summary]
+    operation_types: [object_lookup, locus_lookup, object_summary, lightcurve_lookup]
     server_filters: [ztf_object_id]
     post_filter: false
     projection:

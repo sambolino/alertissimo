@@ -416,6 +416,70 @@ mappings:
   detection@lsst:lasair.forced_photometry.{filter}:
   - diaSourcesList#band
   - diaForcedSourcesList#band
+  lightcurve@lsst:lasair.points.identity.source_id:
+  - diaSourcesList#diaSourceId
+  lightcurve@lsst:lasair.points.identity.visit_id:
+  - diaSourcesList#visit
+  lightcurve@lsst:lasair.points.identity.detector_id:
+  - diaSourcesList#detector
+  lightcurve@lsst:lasair.points.time.mjd:
+  - diaSourcesList#midpointMjdTai
+  lightcurve@lsst:lasair.points.time.processed_mjd:
+  - diaSourcesList#timeProcessedMjdTai
+  lightcurve@lsst:lasair.points.time.invalidated_mjd:
+  - diaSourcesList#timeWithdrawnMjdTai
+  lightcurve@lsst:lasair.points.time.exposure:
+  - diaSourcesList#exposureTime
+  lightcurve@lsst:lasair.points.quality.reliability:
+  - diaSourcesList#reliability
+  lightcurve@lsst:lasair.points.quality.reliability.version:
+  - diaSourcesList#reliabilityVersion
+  lightcurve@lsst:lasair.points.quality.signal_to_noise:
+  - diaSourcesList#snr
+  lightcurve@lsst:lasair.points.photometry.{filter}:
+  - diaSourcesList#band
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flux:
+  - diaSourcesList#psfFlux
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flux.error:
+  - diaSourcesList#psfFluxErr
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.fit_chi2:
+  - diaSourcesList#psfChi2
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.fit_log_likelihood:
+  - diaSourcesList#psfLnL
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.fit_ndata:
+  - diaSourcesList#psfNdata
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.failed:
+  - diaSourcesList#psfFlux_flag
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.edge:
+  - diaSourcesList#psfFlux_flag_edge
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.no_good_pixels:
+  - diaSourcesList#psfFlux_flag_noGoodPixels
+  lightcurve@lsst:lasair.points.photometry.{filter}.aperture.flux:
+  - diaSourcesList#apFlux
+  lightcurve@lsst:lasair.points.photometry.{filter}.aperture.flux.error:
+  - diaSourcesList#apFluxErr
+  lightcurve@lsst:lasair.points.photometry.{filter}.aperture.flags.failed:
+  - diaSourcesList#apFlux_flag
+  lightcurve@lsst:lasair.points.photometry.{filter}.aperture.flags.aperture_truncated:
+  - diaSourcesList#apFlux_flag_apertureTruncated
+  lightcurve@lsst:lasair.forced_photometry_points.identity.source_id:
+  - diaForcedSourcesList#diaForcedSourceId
+  lightcurve@lsst:lasair.forced_photometry_points.identity.visit_id:
+  - diaForcedSourcesList#visit
+  lightcurve@lsst:lasair.forced_photometry_points.identity.detector_id:
+  - diaForcedSourcesList#detector
+  lightcurve@lsst:lasair.forced_photometry_points.time.mjd:
+  - diaForcedSourcesList#midpointMjdTai
+  lightcurve@lsst:lasair.forced_photometry_points.time.processed_mjd:
+  - diaForcedSourcesList#timeProcessedMjdTai
+  lightcurve@lsst:lasair.forced_photometry_points.time.invalidated_mjd:
+  - diaForcedSourcesList#timeWithdrawnMjdTai
+  lightcurve@lsst:lasair.forced_photometry_points.forced_photometry.{filter}:
+  - diaForcedSourcesList#band
+  lightcurve@lsst:lasair.forced_photometry_points.forced_photometry.{filter}.psf.flux:
+  - diaForcedSourcesList#psfFlux
+  lightcurve@lsst:lasair.forced_photometry_points.forced_photometry.{filter}.psf.flux.error:
+  - diaForcedSourcesList#psfFluxErr
   crossmatch@tns:lasair.identity.object_id:
   - object#lasairData.TNS.name
   crossmatch@tns:lasair.position.ra:
@@ -612,6 +676,30 @@ mappings:
   - sherlock_object_crossmatches#KErr
   - sherlock_position_crossmatches#KErr
 transforms:
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.failed:
+    diaSourcesList#psfFlux_flag:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.edge:
+    diaSourcesList#psfFlux_flag_edge:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
+  lightcurve@lsst:lasair.points.photometry.{filter}.psf.flags.no_good_pixels:
+    diaSourcesList#psfFlux_flag_noGoodPixels:
+      type: value_map
+      map:
+        0: false
+        1: true
+      default: null
+      skip_null: true
   detection@lsst:lasair.solar_system.identity.object_id:
     diaSourcesList#ssObjectId:
       type: value_map

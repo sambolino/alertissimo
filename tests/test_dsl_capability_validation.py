@@ -1,3 +1,5 @@
+import pytest
+
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
@@ -215,6 +217,31 @@ def test_lightcurve_can_be_supported_by_registered_operation_fallback():
     )
     assert requirement.status is SurfaceCapabilityStatus.SUPPORTED
     assert requirement.evidence[0].endpoints == ("sources",)
+
+
+@pytest.mark.parametrize(
+    ("origin", "broker", "endpoint"),
+    [
+        ("lsst", "lasair", "object"),
+        ("ztf", "antares", "get_by_ztf_object_id"),
+        ("lsst", "antares", "get_by_lsst_dia_object_id"),
+    ],
+)
+def test_provider_object_histories_support_dsl_lightcurve_requirements(
+    origin, broker, endpoint
+):
+    report = validate_surface_capabilities(
+        parse_surface_script(
+            f"objects from {origin} via {broker}\nwith lightcurve via {broker}\n"
+        ),
+        graph=build_capability_graph(),
+        semantic_paths=_FakeSemanticPaths(),
+    )
+    requirement = next(
+        check for check in report.checks if check.subject == "requirement"
+    )
+    assert requirement.status is SurfaceCapabilityStatus.SUPPORTED
+    assert requirement.evidence[0].endpoints == (endpoint,)
 
 
 def test_explicit_algorithm_is_deferred_to_local_method_capabilities():

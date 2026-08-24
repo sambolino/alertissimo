@@ -92,6 +92,25 @@ def test_full_lightcurve_does_not_accept_a_component_only_endpoint():
     assert {item.endpoint for item in real.candidates} == {"lightcurves"}
 
 
+@pytest.mark.parametrize(
+    ("broker", "origin", "endpoint"),
+    [
+        ("lasair", "lsst", "object"),
+        ("antares", "ztf", "get_by_ztf_object_id"),
+        ("antares", "lsst", "get_by_lsst_dia_object_id"),
+    ],
+)
+def test_object_history_endpoints_can_realize_full_lightcurves(
+    broker, origin, endpoint
+):
+    result = validate_step_capabilities(
+        GetLightcurveStep(sources=[Source(broker=broker, origin=origin)]),
+        build_capability_graph(),
+    )
+    assert result.status == "supported"
+    assert {item.endpoint for item in result.candidates} == {endpoint}
+
+
 def test_alerce_lsst_classification_retrieval_is_supported():
     graph = build_capability_graph()
     classification = validate_step_capabilities(
