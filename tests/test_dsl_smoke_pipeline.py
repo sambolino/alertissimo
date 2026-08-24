@@ -51,11 +51,13 @@ def test_dsl_pipeline_fixture_compiles_coalesces_executes_and_normalizes():
         "classifier": DSL_PIPELINE_CLASSIFIER,
         "class_name": "SN",
         "probability": 0.5,
+    }
+    assert result.bindings[0].bound_calls[0].params == {
+        **realization.params,
         "ra": DSL_PIPELINE_RA,
         "dec": DSL_PIPELINE_DEC,
         "radius": DSL_PIPELINE_RADIUS_ARCSEC,
     }
-    assert result.bindings[0].bound_calls[0].params == realization.params
     assert result.bindings[1].bound_calls[0].params == {}
 
     execution_ids = [
