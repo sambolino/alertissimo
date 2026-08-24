@@ -76,14 +76,14 @@ def _verify_wheel(wheel: Path) -> int:
         if not any(requirement.lower().startswith("pyyaml") for requirement in requirements):
             raise RuntimeError("wheel metadata does not declare the PyYAML runtime dependency")
 
-        entry_point_names = [
-            name for name in names if name.endswith(".dist-info/entry_points.txt")
-        ]
-        if len(entry_point_names) != 1:
-            raise RuntimeError("wheel must contain exactly one entry_points.txt")
-        entry_points = archive.read(entry_point_names[0]).decode("utf-8")
-        if "alertissimo = alertissimo.app_dsl:main" not in entry_points:
-            raise RuntimeError("wheel does not expose the expected alertissimo console script")
+        for name in names:
+            if not name.endswith(".dist-info/entry_points.txt"):
+                continue
+            entry_points = archive.read(name).decode("utf-8")
+            if "alertissimo = alertissimo.app_dsl:main" in entry_points:
+                raise RuntimeError(
+                    "wheel still exposes the Streamlit renderer as a console command"
+                )
 
     return len(expected_resources)
 
@@ -126,8 +126,8 @@ if policy.max_auto_pages != 3:
     raise RuntimeError(f"unexpected packaged execution policy: {policy.max_auto_pages}")
 
 semantic_model = load_semantic_model_index()
-if not semantic_model:
-    raise RuntimeError("packaged semantic ontology did not load")
+if not semantic_model.containers or not semantic_model.fields:
+    raise RuntimeError("packaged semantic ontology did not load substantive declarations")
 
 registry = EndpointRegistry()
 registry.resolve("alerce", "lsst", "query_objects")
@@ -167,6 +167,7 @@ def main() -> int:
         print(f"wheel:             {wheel.name}")
         print(f"runtime resources: {resource_count} packaged")
         print(f"installed import:  {installed_path}")
+        print("public API:        alertissimo.api")
         print("static DSL:        VALID / RUNNABLE")
         print("provider APIs:     not contacted")
         print("PASS: Alertissimo 0.9.0 wheel is self-contained for declarative runtime data")
