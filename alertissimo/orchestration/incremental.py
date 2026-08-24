@@ -1,19 +1,20 @@
 """Resume an extended workflow without repeating prior physical provider calls.
 
-Incremental execution is intentionally input-interface agnostic.  A DSL, visual,
+Incremental execution is intentionally input-interface agnostic. A DSL, visual,
 NLP, or programmatic client may extend a previously executed canonical workflow,
 plan the extended WorkflowIR normally, and pass the resulting WorkflowRun here.
 The previous physical executions are replayed from the prior staged result while
 only newly appended work reaches the underlying endpoint executor.
 
 The extended workflow must preserve the previous workflow as an exact semantic and
-physical-plan prefix.  If appending new intent would retroactively change an older
+physical-plan prefix. If appending new intent would retroactively change an older
 Step or its plan, continuation is refused rather than silently re-running providers.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.orchestration.pipeline import (
@@ -49,23 +50,78 @@ def _execution_plan_indexes(
     )
 
 
-def _physical_executions(previous: StagedWorkflowResult) -> tuple[ExecutionResult, ...]:
-    """Return only executions that represented real provider invocations.
+@dataclass(frozen=True)
+class _ReplayCall:
+    broker: str
+    origin: str
+    endpoint: str
+    params: dict[str, Any]
+    execution: ExecutionResult
 
-    A later semantic Step may carry an earlier ExecutionResult through
-    ``execution_reuse_from``.  That occurrence must not be replayed as another
-    provider call during incremental execution.
+
+def _physical_calls(previous: StagedWorkflowResult) -> tuple[_ReplayCall, ...]:
+    """Return real prior invocations with their pre-executor bound parameters.
+
+    Execution provenance contains executor-expanded defaults/fixed parameters, while
+    an incremental replay arrives at the same boundary as the original bound call.
+    The previous ``StepBindingResult`` is therefore the authoritative comparison
+    point. Semantic execution reuse is deliberately skipped because it never caused
+    another physical invocation in the previous run.
     """
 
-    physical: list[ExecutionResult] = []
-    for step_run, step_result in zip(previous.run.steps, previous.execution.steps):
-        for plan_index, execution in zip(
-            _execution_plan_indexes(step_run, step_result),
-            step_result.executions,
-        ):
-            plan = step_run.endpoint_plans[plan_index]
-            if plan.execution_reuse_from is None:
-                physical.append(execution)
+    physical: list[_ReplayCall] = []
+    for step_run, binding, step_result in zip(
+        previous.run.steps,
+        previous.bindings,
+        previous.execution.steps,
+    ):
+        plan_indexes = _execution_plan_indexes(step_run, step_result)
+        successful = dict(zip(plan_indexes, step_result.executions))
+        bound_calls = iter(binding.bound_calls)
+
+        for plan_index, plan in enumerate(step_run.endpoint_plans):
+            if plan_index in step_run.vacuous_plan_indexes:
+                continue
+            try:
+                call = next(bound_calls)
+            except StopIteration as error:
+                raise IncrementalExecutionError(
+                    f"previous step_index {step_run.step_index} binding does not "
+                    "cover its non-vacuous endpoint plans"
+                ) from error
+            if call.endpoint_plan != plan:
+                raise IncrementalExecutionError(
+                    f"previous step_index {step_run.step_index} binding is not "
+                    f"aligned at plan_index {plan_index}"
+                )
+            if plan.execution_reuse_from is not None:
+                continue
+            try:
+                execution = successful[plan_index]
+            except KeyError as error:
+                raise IncrementalExecutionError(
+                    "previous physical plan has no successful execution at "
+                    f"step_index {step_run.step_index}, plan_index {plan_index}"
+                ) from error
+            physical.append(
+                _ReplayCall(
+                    broker=plan.broker,
+                    origin=plan.origin,
+                    endpoint=plan.endpoint,
+                    params=dict(call.params),
+                    execution=execution,
+                )
+            )
+
+        try:
+            next(bound_calls)
+        except StopIteration:
+            pass
+        else:
+            raise IncrementalExecutionError(
+                f"previous step_index {step_run.step_index} has extra bound calls"
+            )
+
     return tuple(physical)
 
 
@@ -124,21 +180,16 @@ def _call_description(
 class _PrefixReplayExecutor:
     """Replay the previous physical-call prefix, then delegate genuinely new work."""
 
-    previous_executions: tuple[ExecutionResult, ...]
+    previous_calls: tuple[_ReplayCall, ...]
     delegate: EndpointExecutor
     replayed: int = 0
 
     def execute(self, broker: str, origin: str, endpoint: str, params=None, headers=None):
-        if self.replayed < len(self.previous_executions):
-            previous = self.previous_executions[self.replayed]
-            provenance = previous.execution_provenance
-            expected_identity = (
-                provenance.broker,
-                provenance.origin,
-                provenance.endpoint,
-            )
-            actual_identity = (broker, origin, endpoint)
-            expected_params = dict(provenance.params or {})
+        if self.replayed < len(self.previous_calls):
+            previous = self.previous_calls[self.replayed]
+            expected_identity = previous.broker, previous.origin, previous.endpoint
+            actual_identity = broker, origin, endpoint
+            expected_params = previous.params
             actual_params = dict(params or {})
             if expected_identity != actual_identity or expected_params != actual_params:
                 raise IncrementalExecutionError(
@@ -148,7 +199,7 @@ class _PrefixReplayExecutor:
                     f"{_call_description(*actual_identity, actual_params)}"
                 )
             self.replayed += 1
-            return previous
+            return previous.execution
 
         return self.delegate.execute(
             broker=broker,
@@ -159,10 +210,10 @@ class _PrefixReplayExecutor:
         )
 
     def require_complete_replay(self) -> None:
-        if self.replayed != len(self.previous_executions):
+        if self.replayed != len(self.previous_calls):
             raise IncrementalExecutionError(
                 "extended workflow did not consume the complete previous physical-call "
-                f"prefix ({self.replayed}/{len(self.previous_executions)} replayed)"
+                f"prefix ({self.replayed}/{len(self.previous_calls)} replayed)"
             )
 
 
@@ -177,13 +228,13 @@ def execute_incremental_workflow_run(
     """Execute an extended planned workflow while replaying its prior call prefix.
 
     Planning and normalization intentionally run again over the cumulative workflow
-    so the returned result is a complete immutable semantic snapshot.  Physical
+    so the returned result is a complete immutable semantic snapshot. Physical
     provider calls from ``previous`` are not repeated; after the exact old prefix
     has been replayed, only newly appended work is delegated to ``executor``.
     """
 
     _require_extension_prefix(previous, run)
-    replay = _PrefixReplayExecutor(_physical_executions(previous), executor)
+    replay = _PrefixReplayExecutor(_physical_calls(previous), executor)
     staged = execute_staged_workflow_run(
         run,
         registry,
