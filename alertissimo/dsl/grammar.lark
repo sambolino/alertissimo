@@ -18,14 +18,16 @@
 // explicit AND/OR rather than indentation or line breaks.
 
 start: script
-script: _NL* candidate_statement (_NL clause*)?
+// A trailing newline is optional: text areas and APIs commonly submit the last
+// clause without one.
+script: _NL* candidate_statement (_NL clause)* _NL*
 
 candidate_statement: "objects"i "from"i origin_list via_clause?
 origin_list: NAME ("," NAME)*
 broker_list: NAME ("," NAME)*
 
-?clause: simple_clause _NL
-       | with_clause _NL
+?clause: simple_clause
+       | with_clause
 
 ?simple_clause: inside_clause
               | within_clause
