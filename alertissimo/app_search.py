@@ -1,19 +1,24 @@
 """Streamlit prototype for starting a transient investigation.
 
-This page deliberately uses local demo candidates. It models three ways an
-astronomer may begin work: resolving a known object identifier, searching
-around sky coordinates, or expressing a cone search in the Alertissimo DSL.
-It does not contact a broker or require credentials.
+This page models three ways an astronomer may begin work: resolving a known
+object identifier, searching around sky coordinates, or executing an
+Alertissimo DSL request against broker services. The ID and basic cone-search
+views remain local demos; DSL execution is live and uses provider credentials.
 """
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
+from dotenv import load_dotenv
 
+from alertissimo.api import execute_dsl
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
+from alertissimo.data_layer.execution import MissingEndpointCredentialError
+from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 from alertissimo.dsl_block_canvas import render_dsl_block_canvas
 from alertissimo.dsl import (
     DSLParseError,
@@ -29,12 +34,19 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.orchestration.ir import ConeSearchStep
+from alertissimo.orchestration.runtime import WorkflowExecutionError
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
     portfolio_to_display,
 )
+
+
+# The local Streamlit entry point is often run directly rather than through
+# ``alertissimo.app``.  Load repository-local credentials for live provider calls
+# without overriding credentials supplied by the deployment environment.
+load_dotenv(Path(__file__).parents[1] / ".env", override=False)
 
 
 @st.cache_data
@@ -374,10 +386,11 @@ def render_dsl_entry(
     context: str | None = None,
     key: str = "survey_dsl",
 ) -> None:
-    """Validate DSL and reuse the local cone-results view when applicable."""
+    """Execute DSL against providers and display normalized semantic results."""
 
     results_state_key = f"{key}_cone_results"
     selection_state_key = f"{key}_cone_selected"
+    execution_state_key = f"{key}_dsl_execution"
 
     st.subheader(title)
     st.write("Describe the survey in the Alertissimo DSL.")
@@ -387,33 +400,42 @@ def render_dsl_entry(
 
     if submitted:
         try:
-            cone = compile_dsl_cone_preview(dsl_text)
+            with st.spinner("Executing DSL against broker services…"):
+                execution = execute_dsl(dsl_text, name=f"interactive DSL: {key}")
         except DSLParseError as error:
             st.error(f"DSL syntax error: {error}")
             return
         except SurfaceLoweringError as error:
             st.error(f"DSL cannot be compiled: {error}")
             return
-
-        st.success("DSL syntax, semantic validation, and compilation succeeded.")
-        if cone is None:
-            st.session_state.pop(results_state_key, None)
-            st.session_state.pop(selection_state_key, None)
-            st.info(
-                "This valid DSL request does not contain an `inside (...)` cone selector. "
-                "The current local search page can preview only cone results; it does not "
-                "plan endpoints or execute brokers."
-            )
+        except MissingEndpointCredentialError as error:
+            st.error(f"DSL requires a broker credential: {error}")
+            return
+        except WorkflowExecutionError as error:
+            st.error(f"A broker request failed: {error}")
+            return
+        except Exception as error:
+            st.error(f"Live DSL execution failed: {type(error).__name__}: {error}")
             return
 
-        cone_candidates_data, _ = load_frozen_cone_candidates()
-        st.session_state[results_state_key] = cone_candidates(
-            candidates + cone_candidates_data,
-            cone.ra,
-            cone.dec,
-            cone.radius,
-        )
+        st.session_state[execution_state_key] = execution
+        st.session_state.pop(results_state_key, None)
         st.session_state.pop(selection_state_key, None)
+
+    execution = st.session_state.get(execution_state_key)
+    if execution is not None:
+        st.success(
+            f"Live DSL execution completed: {len(execution.portfolios)} semantic "
+            "portfolio(s) returned."
+        )
+        st.caption(
+            "Results are normalized through the provider mappings. Raw broker payloads "
+            "are not displayed."
+        )
+        for index, portfolio in enumerate(execution.portfolios, start=1):
+            with st.expander(f"Portfolio {index}", expanded=index == 1):
+                st.json(portfolio_to_dict(portfolio))
+        return
 
     matches = st.session_state.get(results_state_key)
     if matches is None:
@@ -440,7 +462,10 @@ def render_dsl_entry(
 def main() -> None:
     st.set_page_config(page_title="Alertissimo · Find a candidate", page_icon="🔭", layout="wide")
     st.title("Start a transient investigation")
-    st.caption("Local UI prototype — rendered from frozen broker evidence; no broker request is made.")
+    st.caption(
+        "ID and cone-search views use frozen broker evidence. DSL runs execute live "
+        "provider requests and return normalized semantic portfolios."
+    )
     try:
         candidates, presets = load_demo_search_data()
     except (OSError, ValueError, json.JSONDecodeError) as error:

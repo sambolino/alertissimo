@@ -33,6 +33,12 @@
     <div id="root"></div>
     <script>
       const root = document.getElementById("root");
+      // Streamlit reruns the Python script when the component submits.  Keep
+      // edits made in the browser until the server has rendered that exact
+      // value back, so a rerun cannot replace a just-edited DSL with stale
+      // component arguments.
+      let pendingText = null;
+      let lastServerText = "";
       function sendMessage(type, data) {
         window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type }, data), "*");
       }
@@ -84,7 +90,13 @@
       }
       function render(event) {
         if (event.data.type !== "streamlit:render") return;
-        const text = event.data.args.dsl_text || "";
+        const existingEditor = document.getElementById("dsl");
+        if (existingEditor) {
+          const currentText = plainText(existingEditor);
+          if (currentText !== lastServerText) pendingText = currentText;
+        }
+        const serverText = event.data.args.dsl_text || "";
+        const text = pendingText === null ? serverText : pendingText;
         root.innerHTML = `<div class="shell">
           <div class="toolbar">
             <button class="block" data-block="objects from " type="button">objects from</button>
@@ -109,6 +121,8 @@
         const products = event.data.args.products || [];
         const brokers = event.data.args.brokers || [];
         dsl.innerHTML = highlighted(text);
+        if (pendingText === serverText) pendingText = null;
+        lastServerText = serverText;
         function focusEnd() {
           dsl.focus();
           const selection = window.getSelection();
