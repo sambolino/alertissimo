@@ -168,6 +168,22 @@ SCENARIOS: tuple[Scenario, ...] = (
         _python_script("scripts/live_smoke_antares.py"),
     ),
     Scenario(
+        "lasair-lsst-lightcurve",
+        "GetLightcurve -> Lasair/LSST object history -> detected + forced canonical points",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "lasair-lsst"),
+        required_env=("LASAIR_LSST_TOKEN",),
+    ),
+    Scenario(
+        "antares-ztf-lightcurve",
+        "GetLightcurve -> ANTARES/ZTF alerts -> detections + upper limits",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "antares-ztf"),
+    ),
+    Scenario(
+        "antares-lsst-lightcurve",
+        "GetLightcurve -> ANTARES/LSST alerts -> canonical flux points",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "antares-lsst"),
+    ),
+    Scenario(
         "crossmatch-retrieval",
         "GetCrossmatchStep -> ANTARES/ZTF target binding -> live Gaia crossmatch normalization",
         _python_script("scripts/live_crossmatch.py"),

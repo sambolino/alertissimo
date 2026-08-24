@@ -21,6 +21,7 @@ endpoints:
       objectId:
         required: true
         type: string
+        bind: target_id
         description: LSST diaObjectId.
       lasair_added:
         required: false
@@ -31,6 +32,7 @@ endpoints:
       type: object
     operation_types:
     - object_lookup
+    - lightcurve_lookup
     server_filters:
     - objectId
     - lasair_added

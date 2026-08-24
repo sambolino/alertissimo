@@ -204,18 +204,10 @@ unmapped:
     reason: structural_measurement_semantics
     candidate_meaning: Rubin DiaObject scienceFlux aggregate is distinct from the existing forced-photometry aggregate; retain
       debt until aggregate image-plane structure is modeled without collision.
-- diaSourcesList#exposureTime:
-    reason: authoritative_field_deferred
-    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
-      path was selected; no ontology extension is introduced here.
 - diaSourcesList#parentDiaSourceId:
     reason: relationship_requires_edge
     candidate_meaning: Rubin parent DiaSource identity is a relationship and belongs on the edge plane rather than intrinsic
       detection identity.
-- diaSourcesList#reliabilityVersion:
-    reason: authoritative_field_deferred
-    candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic
-      path was selected; no ontology extension is introduced here.
 - diaSourcesList#trailAlgorithm:
     reason: authoritative_field_deferred
     candidate_meaning: Observed authoritative Lasair/LSST field intentionally deferred because no exact existing semantic

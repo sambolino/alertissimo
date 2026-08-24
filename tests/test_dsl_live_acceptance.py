@@ -21,6 +21,9 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "color-magnitude-derivation",
         "alerce-lsst-lightcurve",
         "antares-ztf-lsst-lookups",
+        "lasair-lsst-lightcurve",
+        "antares-ztf-lightcurve",
+        "antares-lsst-lightcurve",
         "crossmatch-retrieval",
         "lasair-ztf-portfolio-html",
         "lasair-lsst-portfolio-html",
@@ -34,6 +37,21 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         if scenario.name == "partial-failure-control"
     )
     assert partial_failure.live is False
+
+
+def test_provider_history_lightcurve_scenarios_are_independently_runnable():
+    expected = {
+        "lasair-lsst-lightcurve": ("lasair-lsst", ("LASAIR_LSST_TOKEN",)),
+        "antares-ztf-lightcurve": ("antares-ztf", ()),
+        "antares-lsst-lightcurve": ("antares-lsst", ()),
+    }
+    available = {scenario.name: scenario for scenario in live_acceptance.SCENARIOS}
+    for name, (case, credentials) in expected.items():
+        scenario = available[name]
+        command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+        assert "live_provider_lightcurves.py" in command
+        assert f"--case {case}" in command
+        assert scenario.required_env == credentials
 
 
 def test_confirm_live_scenarios_cover_existence_and_predicate_modes():

@@ -264,6 +264,46 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_trail_flag_edge
   detection@lsst:antares.image_metrics.is_positive:
   - locus_alerts#properties.lsst_diaSource_isNegative
+  lightcurve@lsst:antares.points.identity.alert_id:
+  - locus_alerts#alert_id
+  lightcurve@lsst:antares.points.identity.source_id:
+  - locus_alerts#properties.lsst_diaSource_diaSourceId
+  lightcurve@lsst:antares.points.identity.visit_id:
+  - locus_alerts#properties.lsst_diaSource_visit
+  lightcurve@lsst:antares.points.identity.detector_id:
+  - locus_alerts#properties.lsst_diaSource_detector
+  lightcurve@lsst:antares.points.time.mjd:
+  - locus_alerts#properties.lsst_diaSource_midpointMjdTai
+  lightcurve@lsst:antares.points.time.processed_mjd:
+  - locus_alerts#properties.lsst_diaSource_timeProcessedMjdTai
+  lightcurve@lsst:antares.points.quality.reliability:
+  - locus_alerts#properties.lsst_diaSource_reliability
+  lightcurve@lsst:antares.points.quality.signal_to_noise:
+  - locus_alerts#properties.lsst_diaSource_snr
+  lightcurve@lsst:antares.points.photometry.{filter}:
+  - locus_alerts#properties.lsst_diaSource_band
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.flux:
+  - locus_alerts#properties.lsst_diaSource_psfFlux
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.flux.error:
+  - locus_alerts#properties.lsst_diaSource_psfFluxErr
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.fit_chi2:
+  - locus_alerts#properties.lsst_diaSource_psfChi2
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.fit_ndata:
+  - locus_alerts#properties.lsst_diaSource_psfNdata
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.flags.edge:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_edge
+  lightcurve@lsst:antares.points.photometry.{filter}.psf.flags.no_good_pixels:
+  - locus_alerts#properties.lsst_diaSource_psfFlux_flag_noGoodPixels
+  lightcurve@lsst:antares.points.photometry.{filter}.aperture.flux:
+  - locus_alerts#properties.lsst_diaSource_apFlux
+  lightcurve@lsst:antares.points.photometry.{filter}.aperture.flux.error:
+  - locus_alerts#properties.lsst_diaSource_apFluxErr
+  lightcurve@lsst:antares.points.photometry.{filter}.aperture.flags.failed:
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag
+  lightcurve@lsst:antares.points.photometry.{filter}.aperture.flags.aperture_truncated:
+  - locus_alerts#properties.lsst_diaSource_apFlux_flag_apertureTruncated
   crossmatch@allwise:antares.identity.object_id:
   - locus_catalog_allwise#source_id
   crossmatch@allwise:antares.position.ra:
@@ -688,6 +728,17 @@ mappings:
   crossmatch@ned:antares.classification.assessment.catalogue.class:
   - locus_catalog_ned#Type
 transforms:
+  lightcurve@lsst:antares.points.photometry.{filter}:
+    locus_alerts#properties.lsst_diaSource_band:
+      type: value_map
+      map:
+        g: g
+        r: r
+        i: i
+        z: z
+      default: null
+      skip_null: true
+      note: Strict observed LSST band binding.
   detection@lsst:antares.solar_system.identity.object_id:
     locus_alerts#properties.lsst_diaSource_ssObjectId:
       type: value_map
