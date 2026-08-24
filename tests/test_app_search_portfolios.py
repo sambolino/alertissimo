@@ -1,4 +1,6 @@
 from pathlib import Path
+from types import SimpleNamespace
+from contextlib import nullcontext
 
 from streamlit.testing.v1 import AppTest
 
@@ -15,6 +17,7 @@ from alertissimo.app_search import (
 )
 from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
 from alertissimo.orchestration.ir import ConeSearchStep
+import alertissimo.app_search as app_search
 
 
 def test_every_demo_search_result_has_a_distinct_portfolio_fixture():
@@ -102,3 +105,64 @@ def test_dsl_entry_uses_only_the_block_editor():
     assert not app.tabs
     assert not app.text_area
     assert not app.exception
+
+
+def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
+    """The nested filter editor must extend, rather than restart, its parent run."""
+
+    class FakeStreamlit:
+        session_state: dict[str, object] = {}
+
+        def subheader(self, *_args, **_kwargs):
+            pass
+
+        def write(self, *_args, **_kwargs):
+            pass
+
+        def caption(self, *_args, **_kwargs):
+            pass
+
+        def success(self, *_args, **_kwargs):
+            pass
+
+        def spinner(self, *_args, **_kwargs):
+            return nullcontext()
+
+        def divider(self):
+            pass
+
+    previous_result = SimpleNamespace(portfolios=(object(),))
+    calls = []
+    nested = []
+    original_render = app_search.render_dsl_entry
+
+    monkeypatch.setattr(app_search, "st", FakeStreamlit())
+    monkeypatch.setattr(
+        app_search,
+        "render_dsl_block_input",
+        lambda *, key: ("filter classification.best.probability >= 0.8", True),
+    )
+    monkeypatch.setattr(
+        app_search,
+        "execute_dsl",
+        lambda source, **kwargs: calls.append((source, kwargs)) or previous_result,
+    )
+    monkeypatch.setattr(app_search, "portfolio_to_dict", lambda _portfolio: {})
+    monkeypatch.setattr(app_search, "load_lightcurve_document", lambda _payload: {})
+    monkeypatch.setattr(app_search, "render_live_portfolio_cards", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        app_search,
+        "render_dsl_entry",
+        lambda *_args, **kwargs: nested.append(kwargs),
+    )
+
+    parent = SimpleNamespace()
+    original_render([], key="parent", continue_from=parent)
+
+    assert calls == [
+        (
+            "filter classification.best.probability >= 0.8",
+            {"name": "interactive DSL: parent", "continue_from": parent},
+        )
+    ]
+    assert nested[0]["continue_from"] is previous_result

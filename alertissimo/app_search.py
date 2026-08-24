@@ -15,7 +15,7 @@ from typing import Any
 import streamlit as st
 from dotenv import load_dotenv
 
-from alertissimo.api import execute_dsl
+from alertissimo.api import DSLExecutionResult, execute_dsl
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
 from alertissimo.data_layer.execution import MissingEndpointCredentialError
 from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
@@ -452,8 +452,9 @@ def render_dsl_entry(
     title: str = "Start with DSL",
     context: str | None = None,
     key: str = "survey_dsl",
+    continue_from: DSLExecutionResult | None = None,
 ) -> None:
-    """Execute DSL against providers and display normalized semantic results."""
+    """Execute a fresh DSL program or extend an already materialized result."""
 
     results_state_key = f"{key}_cone_results"
     selection_state_key = f"{key}_cone_selected"
@@ -461,7 +462,13 @@ def render_dsl_entry(
     live_selection_state_key = f"{key}_live_portfolio_selected"
 
     st.subheader(title)
-    st.write("Describe the survey in the Alertissimo DSL.")
+    if continue_from is None:
+        st.write("Describe the survey in the Alertissimo DSL.")
+    else:
+        st.write(
+            "Filter or enrich the portfolios above. Enter continuation clauses only; "
+            "do not repeat `objects from ...`."
+        )
     if context:
         st.caption(context)
     dsl_text, submitted = render_dsl_block_input(key=key)
@@ -469,7 +476,11 @@ def render_dsl_entry(
     if submitted:
         try:
             with st.spinner("Executing DSL against broker services…"):
-                execution = execute_dsl(dsl_text, name=f"interactive DSL: {key}")
+                execution = execute_dsl(
+                    dsl_text,
+                    name=f"interactive DSL: {key}",
+                    continue_from=continue_from,
+                )
         except DSLParseError as error:
             st.error(f"DSL syntax error: {error}")
             return
@@ -514,6 +525,17 @@ def render_dsl_entry(
         if selected_index is None:
             render_live_portfolio_cards(
                 displays, selection_state_key=live_selection_state_key
+            )
+            st.divider()
+            render_dsl_entry(
+                candidates,
+                title="Filter DSL query",
+                context=(
+                    "Example: `filter classification.best.probability >= 0.8`. "
+                    "This is evaluated against the results above."
+                ),
+                key=f"{key}_next",
+                continue_from=execution,
             )
         else:
             render_live_portfolio_page(
