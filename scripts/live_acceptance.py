@@ -119,6 +119,12 @@ SCENARIOS: tuple[Scenario, ...] = (
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
     Scenario(
+        "dsl-incremental-continuation",
+        "public facade first pass -> continued Filter -> survivor-bound Lasair Get",
+        _python_script("scripts/live_dsl_continuation.py"),
+        required_env=("LASAIR_ZTF_TOKEN",),
+    ),
+    Scenario(
         "dsl-confirm-existence-quorum",
         "DSL ALeRCE discovery -> 2-of-3 Fink/ALeRCE/ANTARES Confirm -> survivor-bound Fink Get",
         _python_script("scripts/live_dsl_confirm.py"),
