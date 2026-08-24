@@ -22,7 +22,10 @@ from alertissimo.data_layer.representations import (
     Portfolio,
     SemanticRecord,
 )
-from alertissimo.data_layer.semantic_model.index import SemanticModelIndex
+from alertissimo.data_layer.semantic_model.index import (
+    SemanticModelIndex,
+    load_semantic_model_index,
+)
 from alertissimo.data_layer.semantic_model.validation import (
     validate_portfolio_against_semantic_model,
 )
@@ -592,8 +595,12 @@ def build_portfolios_from_execution(
         for records in records_by_object.values()
     )
     if validate_semantic_model:
+        effective_semantic_model = semantic_model or load_semantic_model_index()
         for portfolio in portfolios:
-            validate_portfolio_against_semantic_model(portfolio, semantic_model)
+            validate_portfolio_against_semantic_model(
+                portfolio,
+                effective_semantic_model,
+            )
     return portfolios
 
 
