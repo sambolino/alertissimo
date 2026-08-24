@@ -1,6 +1,11 @@
 """Offline tests for the all-scenarios live acceptance harness."""
 
-from scripts import live_acceptance, live_crossmatch, live_dsl_confirm_predicate
+from scripts import (
+    live_acceptance,
+    live_crossmatch,
+    live_dsl_confirm_predicate,
+    live_provider_lightcurves,
+)
 
 
 def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
@@ -52,6 +57,29 @@ def test_provider_history_lightcurve_scenarios_are_independently_runnable():
         assert "live_provider_lightcurves.py" in command
         assert f"--case {case}" in command
         assert scenario.required_env == credentials
+
+
+def test_direct_provider_lightcurve_cli_loads_dotenv(monkeypatch):
+    loaded = []
+    executed = []
+    monkeypatch.setattr(
+        live_provider_lightcurves,
+        "load_dotenv",
+        lambda *, override: loaded.append(override),
+    )
+    monkeypatch.setattr(
+        live_provider_lightcurves,
+        "run",
+        lambda case: executed.append(case.name),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["live_provider_lightcurves.py", "--case", "lasair-lsst"],
+    )
+
+    assert live_provider_lightcurves.main() == 0
+    assert loaded == [False]
+    assert executed == ["lasair-lsst"]
 
 
 def test_confirm_live_scenarios_cover_existence_and_predicate_modes():

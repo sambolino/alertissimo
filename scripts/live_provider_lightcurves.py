@@ -18,6 +18,8 @@ import argparse
 from dataclasses import dataclass
 from typing import Any
 
+from dotenv import load_dotenv
+
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.orchestration.binding import bind_workflow_run
@@ -164,6 +166,9 @@ def run(case: Case) -> None:
 
 
 def main() -> int:
+    # Match the other live entry points: exported credentials take precedence,
+    # while repository-local development credentials may come from .env.
+    load_dotenv(override=False)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", required=True, choices=sorted(CASES))
     args = parser.parse_args()
