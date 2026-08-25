@@ -28,6 +28,8 @@ def test_formal_grammar_is_hand_authored_requirement_centric_and_indentless():
 
     assert "candidate_statement" in grammar
     assert '"objects"i "from"i' in grammar
+    assert "object_lookup_statement" in grammar
+    assert "alerts_lookup_statement" in grammar
     assert "requirement: PRODUCT from_clause? via_clause? using_clause?" in grammar
     assert "match_on" in grammar
     assert "WITHIN expresses temporal extent" in grammar

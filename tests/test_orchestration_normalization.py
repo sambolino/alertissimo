@@ -73,7 +73,9 @@ def _workflow_result(
 ) -> WorkflowExecutionResult:
     workflow = WorkflowIR(
         steps=tuple(
-            LookupStep(id=f"target-{index}")
+            LookupStep(
+                target=TargetSelector(ids=[f"target-{index}"], kind="object")
+            )
             for index in range(len(executions_by_step))
         )
     )

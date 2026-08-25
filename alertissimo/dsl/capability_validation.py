@@ -27,6 +27,7 @@ from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
     InsideClause,
+    LookupCandidateSet,
     MatchClause,
     RankedByClause,
     RequirementClause,
@@ -246,6 +247,55 @@ def _candidate_checks(
     surface: SurfaceScript,
     graph: CapabilityGraph,
 ) -> tuple[SurfaceCapabilityCheck, ...]:
+    if isinstance(surface.candidates, LookupCandidateSet):
+        candidates = surface.candidates
+        endpoints = tuple(
+            endpoint
+            for endpoint in graph.query_endpoints(
+                broker=candidates.broker,
+                origin=candidates.origin,
+                operation_type=f"{candidates.target_kind}_lookup",
+            )
+            if "target_id" in endpoint.binding_roles
+        )
+        if len(candidates.ids) == 1:
+            singular = tuple(
+                endpoint
+                for endpoint in endpoints
+                if "target_id" not in endpoint.collection_binding_roles
+            )
+            endpoints = singular or endpoints
+        else:
+            collection = tuple(
+                endpoint
+                for endpoint in endpoints
+                if "target_id" in endpoint.collection_binding_roles
+            )
+            endpoints = collection or endpoints
+        supported = bool(endpoints)
+        return (
+            SurfaceCapabilityCheck(
+                subject="candidates",
+                status=(
+                    SurfaceCapabilityStatus.SUPPORTED
+                    if supported
+                    else SurfaceCapabilityStatus.UNSUPPORTED
+                ),
+                reason=(
+                    f"registered {candidates.target_kind}-identifier lookup capability found"
+                    if supported
+                    else f"no registered {candidates.target_kind}-identifier lookup capability found"
+                ),
+                origin=candidates.origin,
+                broker=candidates.broker,
+                semantic_noun=(
+                    "summary" if candidates.target_kind == "object" else "detection"
+                ),
+                channel=candidates.broker,
+                evidence=_endpoint_evidence(endpoints),
+            ),
+        )
+
     spatial_required = any(
         isinstance(clause, InsideClause) for clause in surface.clauses
     )

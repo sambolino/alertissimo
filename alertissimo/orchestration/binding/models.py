@@ -32,6 +32,13 @@ class StepBindingResult:
 
     step_index: int
     bound_calls: tuple[BoundEndpointCall, ...]
+    plan_indexes: tuple[int, ...] = ()
+
+    def __post_init__(self) -> None:
+        if any(index < 0 for index in self.plan_indexes):
+            raise ValueError("plan_indexes must be non-negative")
+        if tuple(sorted(self.plan_indexes)) != self.plan_indexes:
+            raise ValueError("plan_indexes must be in endpoint-plan order")
 
 
 __all__ = ["BoundEndpointCall", "StepBindingResult"]

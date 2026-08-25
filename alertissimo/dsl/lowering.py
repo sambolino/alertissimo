@@ -29,11 +29,13 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
+    LookupStep,
     MatchStep,
     Predicate,
     SearchSelection,
     SemanticSearchStep,
     Source,
+    TargetSelector,
     TimeContext,
     WorkflowIR,
     and_predicates,
@@ -53,6 +55,7 @@ from .surface import (
     FilterClause,
     InsideClause,
     LatestClause,
+    LookupCandidateSet,
     MatchClause,
     OrderByClause,
     RankedByClause,
@@ -354,6 +357,28 @@ def _candidate_search(
     )
 
 
+def _candidate_operation(
+    surface: SurfaceScript,
+    *,
+    record_types: frozenset[str],
+) -> tuple[LookupStep | SemanticSearchStep | ConeSearchStep, frozenset[int]]:
+    """Lower the initial named population or scientific candidate search."""
+
+    if isinstance(surface.candidates, LookupCandidateSet):
+        candidates = surface.candidates
+        return (
+            LookupStep(
+                target=TargetSelector(
+                    ids=list(candidates.ids),
+                    kind=candidates.target_kind,
+                ),
+                sources=_candidate_sources(surface),
+            ),
+            frozenset(),
+        )
+    return _candidate_search(surface, record_types=record_types)
+
+
 def _normalized_product(product: str) -> str:
     return re.sub(r"[-\s]+", "_", product.strip().lower())
 
@@ -615,7 +640,7 @@ def lower_surface(
     semantic_model = semantic_paths or _semantic_path_model()
     _validate_semantics(surface, semantic_model)
 
-    candidate_step, consumed = _candidate_search(
+    candidate_step, consumed = _candidate_operation(
         surface,
         record_types=semantic_model.record_types,
     )

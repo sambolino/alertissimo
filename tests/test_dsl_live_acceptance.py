@@ -1,9 +1,12 @@
 """Offline tests for the all-scenarios live acceptance harness."""
 
+from alertissimo.api import validate_dsl
+
 from scripts import (
     live_acceptance,
     live_crossmatch,
     live_dsl_confirm_predicate,
+    live_dsl_lookup,
     live_provider_lightcurves,
 )
 
@@ -18,6 +21,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
         "dsl-incremental-continuation",
+        "dsl-object-lookup",
         "dsl-confirm-existence-quorum",
         "dsl-confirm-predicate-quorum",
         "dsl-classification-reuse",
@@ -117,6 +121,27 @@ def test_incremental_continuation_is_registered_as_a_live_facade_scenario():
     assert scenario.live is True
     assert scenario.required_env == ("LASAIR_ZTF_TOKEN",)
     assert "live_dsl_continuation.py" in command
+
+
+def test_object_lookup_is_registered_as_two_call_public_facade_acceptance():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-object-lookup"
+    )
+
+    command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+    assert scenario.live is True
+    assert scenario.required_env == ()
+    assert "live_dsl_lookup.py" in command
+
+    validation = validate_dsl(live_dsl_lookup.FIRST_DSL)
+    assert validation.is_runnable
+    assert validation.compilation is not None
+    lookup = validation.compilation.workflow.steps[0]
+    assert lookup.op == "lookup"
+    assert lookup.target.kind == "object"
+    assert lookup.target.ids == [live_dsl_lookup.TARGET]
 
 
 def test_predicate_confirm_live_script_compiles_the_adjacent_quorum_contract():

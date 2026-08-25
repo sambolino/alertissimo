@@ -125,6 +125,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
     Scenario(
+        "dsl-object-lookup",
+        "explicit object ID -> LookupStep -> second UI call reuses ANTARES lightcurve evidence",
+        _python_script("scripts/live_dsl_lookup.py"),
+    ),
+    Scenario(
         "dsl-confirm-existence-quorum",
         "DSL ALeRCE discovery -> 2-of-3 Fink/ALeRCE/ANTARES Confirm -> survivor-bound Fink Get",
         _python_script("scripts/live_dsl_confirm.py"),

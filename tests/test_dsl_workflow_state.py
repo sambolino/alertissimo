@@ -97,6 +97,40 @@ def test_complete_program_replaces_the_active_workflow():
     assert len(second_executor.calls) == 2
 
 
+def test_object_lookup_starts_workflow_and_continuation_reuses_its_execution():
+    target = "ZTF20aafqubg"
+    executor = FixtureEndpointExecutor(
+        {
+            fixture_key(
+                "antares",
+                "ztf",
+                "get_by_ztf_object_id",
+                ztf_object_id=target,
+            ): "../../../tests/fixtures/antares/ztf/get_by_ztf_object_id.json",
+        }
+    )
+
+    first = api.execute_dsl(
+        f"object {target} from ztf via antares\n",
+        executor=executor,
+    )
+    assert [step.op for step in first.workflow.steps] == ["lookup"]
+    assert len(executor.calls) == 1
+
+    validation = api.validate_dsl("with lightcurve via antares\n")
+    assert validation.is_valid
+    assert validation.is_runnable
+
+    second = api.execute_dsl("with lightcurve via antares\n", executor=executor)
+
+    assert [step.op for step in second.workflow.steps] == [
+        "lookup",
+        "get_lightcurve",
+    ]
+    assert len(executor.calls) == 1
+    assert second.run.steps[1].execution_ids == first.run.steps[0].execution_ids
+
+
 def test_filter_cannot_be_the_first_turn_without_an_active_workflow(monkeypatch):
     executor = _executor()
     monkeypatch.setattr(api, "_active_workflow", None)

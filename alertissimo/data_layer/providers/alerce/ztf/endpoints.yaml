@@ -219,6 +219,7 @@ endpoints:
       oid:
         type: string
         required: true
+        bind: target_id
         description: Physical oid parameter accepted by query_object.
       format:
         type: string

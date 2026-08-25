@@ -211,13 +211,31 @@ def test_known_and_missing_data_products_report_cleanly():
     assert "no compatible" in spectrum.source_results[0].reason
 
 
-def test_lookup_and_local_steps_are_not_falsely_rejected():
+def test_typed_lookup_is_supported_or_rejected_from_exact_capabilities():
     graph = build_capability_graph()
     lookup = validate_step_capabilities(
-        LookupStep(id="namespace-not-yet-known", sources=[Source(broker="lasair")]), graph
+        LookupStep(
+            target=TargetSelector(ids=["ZTF20abc"], kind="object"),
+            sources=[Source(broker="lasair", origin="ztf")],
+        ),
+        graph,
     )
-    assert lookup.status == "deferred"
-    assert "identifier" in lookup.reason
+    assert lookup.status == "supported"
+    assert {item.endpoint for item in lookup.candidates} == {"object"}
+
+    alert = validate_step_capabilities(
+        LookupStep(
+            target=TargetSelector(ids=["123"], kind="alert"),
+            sources=[Source(broker="lasair", origin="ztf")],
+        ),
+        graph,
+    )
+    assert alert.status == "unsupported"
+    assert alert.candidates == ()
+
+
+def test_local_steps_are_not_falsely_rejected():
+    graph = build_capability_graph()
 
     local_steps = [
         FilterStep(criteria={"x": 1}), LightcurveStep(), MatchStep(),
@@ -250,28 +268,28 @@ def test_workflow_validation_preserves_step_order():
     ]
 
 
-def test_multi_target_requires_explicit_collection_binding_evidence():
+def test_multi_target_prefers_collection_but_allows_singular_fanout():
     graph = build_capability_graph()
     supported = validate_step_capabilities(
         GetLightcurveStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker="fink", origin="lsst")]), graph
     )
-    rejected = validate_step_capabilities(
+    fanned_out = validate_step_capabilities(
         GetLightcurveStep(target=TargetSelector(ids=["1", "2"], kind="object"), sources=[Source(broker="alerce", origin="lsst")]), graph
     )
     assert supported.status == "supported"
     assert {item.endpoint for item in supported.candidates} == {"sources"}
-    assert rejected.status == "unsupported"
-    assert "multi-target binding" in rejected.source_results[0].reason
+    assert fanned_out.status == "supported"
+    assert {item.endpoint for item in fanned_out.candidates} == {"query_lightcurve"}
 
 
-def test_cardinality_filter_applies_to_cutout_and_data_product():
+def test_singular_endpoints_remain_supported_through_physical_fanout():
     graph = build_capability_graph()
     one = GetCutoutStep(target=TargetSelector(ids=["A"], kind="object"), sources=[Source(broker="fink", origin="ztf")])
     many = GetCutoutStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=one.sources)
     assert validate_step_capabilities(one, graph).status == "supported"
-    rejected = validate_step_capabilities(many, graph)
-    assert rejected.status == "unsupported"
-    assert "multi-target binding" in rejected.source_results[0].reason
+    result = validate_step_capabilities(many, graph)
+    assert result.status == "supported"
+    assert {item.endpoint for item in result.candidates} == {"cutouts"}
 
     singular_product = EndpointCapability(
         "test", "ztf", "product", "/product", "GET",
@@ -283,8 +301,8 @@ def test_cardinality_filter_applies_to_cutout_and_data_product():
         target=TargetSelector(ids=["A", "B"], kind="object"), sources=[Source(broker="test", origin="ztf")]
     )
     product_result = validate_step_capabilities(product, product_graph)
-    assert product_result.status == "unsupported"
-    assert "multi-target binding" in product_result.source_results[0].reason
+    assert product_result.status == "supported"
+    assert {item.endpoint for item in product_result.candidates} == {"product"}
 
 
 def _semantic_target_graph(noun):
@@ -321,9 +339,9 @@ def test_semantic_gets_filter_singular_candidates_for_multiple_targets(step_type
             "test", "ztf", noun, (f"{noun}_one",), ()
         ),
     ))
-    rejected = validate_step_capabilities(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), singular_graph)
-    assert rejected.status == "unsupported"
-    assert "multi-target binding" in rejected.source_results[0].reason
+    fanned_out = validate_step_capabilities(step_type(target=TargetSelector(ids=["A", "B"], kind="object"), sources=source), singular_graph)
+    assert fanned_out.status == "supported"
+    assert {item.endpoint for item in fanned_out.candidates} == {f"{noun}_one"}
 
 
 def test_multi_target_spectrum_retains_semantic_absence_reason():
