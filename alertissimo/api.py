@@ -164,7 +164,13 @@ def _is_complete_program(source: str) -> bool:
     for raw in source.splitlines():
         text = raw.strip()
         if text and not text.startswith("#"):
-            return text.lower().startswith("objects from ")
+            head = text.lower()
+            return head.startswith("objects from ") or head.split(maxsplit=1)[0] in {
+                "object",
+                "objects",
+                "alert",
+                "alerts",
+            }
     return False
 
 
@@ -179,7 +185,7 @@ def _parse_dsl_turn(
     if _active_workflow is None:
         raise DSLParseError(
             "DSL continuation requires an already executed workflow; the first "
-            "request must begin with 'objects from'"
+            "request must begin with a candidate search or explicit object/alert lookup"
         )
     return fragment, _active_workflow
 

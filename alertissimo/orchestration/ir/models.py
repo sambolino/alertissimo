@@ -85,15 +85,22 @@ class TargetSelector(IRModel):
 
 
 class LookupStep(Step):
-    """Resolve an already-known identifier rather than discover by constraints.
+    """Resolve already-known identifiers rather than discover by constraints.
 
-    Object, alert, source, and detection identifiers may resolve to different
-    semantic entity families. Consequently lookup remains outside SearchStep and
-    does not require ``semantic_type`` until identifier namespaces are formalized.
+    The explicit target kind is part of the semantic intent: object identifiers
+    must never be guessed to be alert identifiers (or vice versa) from their text.
+    Lookup remains outside SearchStep because it materializes named entities rather
+    than discovering candidates through scientific constraints.
     """
 
     op: Literal["lookup"] = "lookup"
-    id: NonEmptyStr
+    target: TargetSelector
+
+    @model_validator(mode="after")
+    def require_lookup_target_kind(self) -> "LookupStep":
+        if self.target.kind not in {"object", "alert"}:
+            raise ValueError("lookup target kind must be 'object' or 'alert'")
+        return self
 
 
 class SearchSelection(IRModel):

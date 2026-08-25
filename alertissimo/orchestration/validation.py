@@ -191,6 +191,12 @@ def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
 def _raw_candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
+    if isinstance(step, LookupStep):
+        return _query(
+            graph,
+            source,
+            operation=f"{step.target.kind}_lookup",
+        )
     if isinstance(step, ConeSearchStep):
         semantic = _query(graph, source, noun=step.semantic_type)
         return tuple(
@@ -257,6 +263,18 @@ def _candidate_evidence_for_source(
     empty_reason: str | None = None
     target = _target_selector(step)
 
+    if isinstance(step, LookupStep):
+        compatible = tuple(
+            candidate
+            for candidate in compatible
+            if "target_id" in candidate.binding_roles
+        )
+        if raw and not compatible:
+            empty_reason = (
+                f"registered {step.target.kind}-lookup endpoints do not declare "
+                "target_id binding"
+            )
+
     if isinstance(step, GetCrossmatchStep):
         if target is not None:
             compatible = tuple(
@@ -281,15 +299,23 @@ def _candidate_evidence_for_source(
                 )
 
     ids = target.ids if target is not None else None
-    if compatible and ids is not None and len(ids) > 1:
-        cardinality_compatible = tuple(
-            candidate
-            for candidate in compatible
-            if "target_id" in candidate.collection_binding_roles
-        )
-        if not cardinality_compatible:
-            empty_reason = "no compatible multi-target binding exists"
-        compatible = cardinality_compatible
+    if compatible and ids is not None:
+        if len(ids) == 1 and isinstance(step, LookupStep):
+            singular = tuple(
+                candidate
+                for candidate in compatible
+                if "target_id" not in candidate.collection_binding_roles
+            )
+            compatible = singular or compatible
+        elif len(ids) > 1:
+            collection = tuple(
+                candidate
+                for candidate in compatible
+                if "target_id" in candidate.collection_binding_roles
+            )
+            # A singular endpoint remains semantically compatible: the binder
+            # realizes the explicit plural target as one physical call per ID.
+            compatible = collection or compatible
 
     if isinstance(step, GetCrossmatchStep) and step.catalog is not None and compatible:
         exact: list[EndpointCapability] = []
@@ -345,31 +371,8 @@ def validate_step_capabilities(
     """Validate one step against provider declarations without any I/O."""
     operation = getattr(step, "op", type(step).__name__)
     semantic_type = getattr(step, "semantic_type", None)
-
     if isinstance(step, LookupStep):
-        results = []
-        for source in _sources(step):
-            endpoints = _query(graph, source)
-            status: ValidationStatus = "deferred" if endpoints else "unsupported"
-            reason = (
-                "source exists; object-vs-alert capability resolution is deferred "
-                "until identifier namespaces are resolved"
-                if endpoints
-                else "requested source has no registered endpoints"
-            )
-            results.append(SourceCapabilityResult(source, status, endpoints, reason))
-        overall: ValidationStatus = (
-            "unsupported"
-            if any(item.status == "unsupported" for item in results)
-            else "deferred"
-        )
-        return CapabilityValidationResult(
-            operation,
-            None,
-            overall,
-            tuple(results),
-            "lookup target semantics cannot be inferred safely from the identifier",
-        )
+        semantic_type = "summary" if step.target.kind == "object" else "detection"
 
     if isinstance(
         step,
@@ -402,9 +405,7 @@ def validate_step_capabilities(
             if candidates
             else evidence.empty_reason
             or (
-                "no compatible multi-target binding exists"
-                if evidence.raw and len(target.ids if target else ()) > 1
-                else "no compatible registered endpoint capability found"
+                "no compatible registered endpoint capability found"
             )
         )
         results.append(SourceCapabilityResult(source, status, candidates, reason))

@@ -34,7 +34,17 @@ fragment: _NL* continuation_clause (_NL continuation_clause)* _NL*
                     | order_clause
                     | ranked_clause
 
-candidate_statement: "objects"i "from"i origin_list via_clause?
+?candidate_statement: search_statement
+                    | object_lookup_statement
+                    | objects_lookup_statement
+                    | alert_lookup_statement
+                    | alerts_lookup_statement
+search_statement: "objects"i "from"i origin_list via_clause?
+object_lookup_statement: "object"i lookup_id_list "from"i NAME via_clause?
+objects_lookup_statement: "objects"i lookup_id_list "from"i NAME via_clause?
+alert_lookup_statement: "alert"i lookup_id_list "from"i NAME via_clause?
+alerts_lookup_statement: "alerts"i lookup_id_list "from"i NAME via_clause?
+lookup_id_list: LOOKUP_ID ("," LOOKUP_ID)*
 origin_list: NAME ("," NAME)*
 broker_list: NAME ("," NAME)*
 
@@ -90,6 +100,7 @@ METHOD: /[A-Za-z][A-Za-z0-9_.:-]*/
 NAME: /[A-Za-z][A-Za-z0-9_.-]*/
 NUMBER: /[+-]?(?:\d+(?:\.\d*)?|\.\d+)/
 INT: /\d+/
+LOOKUP_ID: /[A-Za-z0-9][A-Za-z0-9_.:\/+\-]*/
 
 COMMENT: /#[^\n]*/
 _NL: /(\r?\n[\t ]*)+/

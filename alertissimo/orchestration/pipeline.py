@@ -12,7 +12,7 @@ from typing import Protocol
 
 from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
-from alertissimo.orchestration.binding import bind_endpoint
+from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
@@ -259,7 +259,7 @@ def execute_staged_workflow_run(
     updated_run = run
     bindings: list[StepBindingResult] = []
     step_results: list[StepExecutionResult] = []
-    execution_cache: dict[tuple[int, int], ExecutionResult] = {}
+    execution_cache: dict[tuple[int, int], list[ExecutionResult]] = {}
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]] = {}
     candidate_views_by_step: dict[int, StepPortfolioResult] = {}
     candidate_ids_by_origin_by_step: dict[int, dict[str, tuple[str, ...]]] = {}
@@ -447,16 +447,19 @@ def execute_staged_workflow_run(
                     vacuous_plan_indexes.append(plan_index)
                     continue
                 runtime_values = {"target_id": candidate_ids}
-            calls.append(
-                bind_endpoint(
-                    step,
-                    plan,
-                    registry,
-                    runtime_values=runtime_values,
-                )
+            bound = bind_endpoint_calls(
+                step,
+                plan,
+                registry,
+                runtime_values=runtime_values,
             )
-            call_plan_indexes.append(plan_index)
-        binding = StepBindingResult(step_index=step_index, bound_calls=tuple(calls))
+            calls.extend(bound)
+            call_plan_indexes.extend([plan_index] * len(bound))
+        binding = StepBindingResult(
+            step_index=step_index,
+            bound_calls=tuple(calls),
+            plan_indexes=tuple(call_plan_indexes),
+        )
         bindings.append(binding)
 
         executions: list[ExecutionResult] = []
@@ -467,11 +470,11 @@ def execute_staged_workflow_run(
             try:
                 reference = plan.execution_reuse_from
                 if reference is None:
-                    execution = execute_bound_call(call, executor)  # type: ignore[arg-type]
+                    produced = (execute_bound_call(call, executor),)  # type: ignore[arg-type]
                 else:
                     key = (reference.step_index, reference.plan_index)
                     try:
-                        execution = execution_cache[key]
+                        produced = tuple(execution_cache[key])
                     except KeyError as error:
                         raise CandidateFlowError(
                             "reused execution is not available from its declared owner "
@@ -507,9 +510,10 @@ def execute_staged_workflow_run(
                     completed_steps=tuple(step_results),
                 ) from error
 
-            executions.append(execution)
-            execution_plan_indexes.append(plan_index)
-            execution_cache[(step_index, plan_index)] = execution
+            executions.extend(produced)
+            execution_plan_indexes.extend([plan_index] * len(produced))
+            if reference is None:
+                execution_cache.setdefault((step_index, plan_index), []).extend(produced)
 
         result = StepExecutionResult(step_index=step_index, executions=tuple(executions))
         step_results.append(result)

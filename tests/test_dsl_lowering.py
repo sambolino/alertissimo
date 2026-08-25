@@ -24,6 +24,7 @@ from alertissimo.orchestration.ir import (
     FilterStep,
     GetClassificationStep,
     GetCrossmatchStep,
+    LookupStep,
     MatchStep,
     PredicateLiteral,
     SearchSelection,
@@ -63,6 +64,8 @@ def _endpoint(
     *operations: str,
     params: tuple[str, ...] = (),
     server_filters: tuple[str, ...] = (),
+    binding_roles: tuple[str, ...] = (),
+    collection_binding_roles: tuple[str, ...] = (),
 ) -> EndpointCapability:
     return EndpointCapability(
         broker=broker,
@@ -76,6 +79,8 @@ def _endpoint(
         projection_param=None,
         supports_projection=False,
         output_type="array",
+        binding_roles=binding_roles,
+        collection_binding_roles=collection_binding_roles,
     )
 
 
@@ -104,6 +109,35 @@ def _supported_graph() -> CapabilityGraph:
         _record("antares", "ztf", "crossmatch@gaia:antares", "object"),
     )
     return CapabilityGraph(endpoints, (), (), (), records)
+
+
+def test_explicit_identifier_population_lowers_to_typed_lookup_step():
+    workflow = lower_surface_to_ir(
+        parse_surface_script(
+            "objects ZTF20abc, ZTF21def from ztf via lasair\n"
+            "with lightcurve via fink\n"
+        ),
+        semantic_paths=_FakeSemanticPaths(),
+    )
+
+    lookup = workflow.steps[0]
+    assert isinstance(lookup, LookupStep)
+    assert lookup.target.ids == ["ZTF20abc", "ZTF21def"]
+    assert lookup.target.kind == "object"
+    assert [(source.broker, source.origin) for source in lookup.sources] == [
+        ("lasair", "ztf")
+    ]
+
+
+def test_alert_spelling_lowers_to_alert_lookup_before_capability_planning():
+    workflow = lower_surface_to_ir(
+        parse_surface_script("alert 123456 from ztf via fink\n"),
+        semantic_paths=_FakeSemanticPaths(),
+    )
+    lookup = workflow.steps[0]
+    assert isinstance(lookup, LookupStep)
+    assert lookup.target.ids == ["123456"]
+    assert lookup.target.kind == "alert"
 
 
 def _dynamic_crossmatch_graph() -> CapabilityGraph:

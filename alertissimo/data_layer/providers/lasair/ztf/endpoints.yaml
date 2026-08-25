@@ -22,6 +22,7 @@ endpoints:
       objectId:
         required: true
         type: string
+        bind: target_id
         description: ZTF objectId.
       lasair_added:
         required: false
