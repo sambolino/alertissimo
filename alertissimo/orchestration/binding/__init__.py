@@ -5,6 +5,7 @@ from .binder import (
     ParameterBindingError,
     UnsupportedParameterBindingError,
     bind_endpoint,
+    bind_endpoint_calls,
     bind_workflow_run,
 )
 from .models import BoundEndpointCall, StepBindingResult
@@ -16,5 +17,6 @@ __all__ = [
     "StepBindingResult",
     "UnsupportedParameterBindingError",
     "bind_endpoint",
+    "bind_endpoint_calls",
     "bind_workflow_run",
 ]

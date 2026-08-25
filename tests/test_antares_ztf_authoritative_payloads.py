@@ -94,15 +94,19 @@ def test_alert_aliases_and_lightcurve_secondary_evidence():
     assert sum(r['alert_id'].startswith('ztf_candidate:') for r in light)==56
     portfolio=build('get_by_ztf_object_id',rich_locus())
     assert len(records(portfolio,'detection@ztf:antares'))==316
-    assert not any(r.semantic_type=='lightcurve' for r in portfolio.records)
+    lightcurves=records(portfolio,'lightcurve@ztf:antares');assert len(lightcurves)==1
+    points=lightcurves[0].fields['points'];assert len(points)==len(alerts)==316
+    assert sum(any(k.endswith('.upper_limit') and v is True for k,v in point.items()) for point in points)==246
+    assert sum(any(k.endswith('.upper_limit') and v is False for k,v in point.items()) for point in points)==70
 
-def test_lightcurve_is_not_registered_as_a_runtime_payload():
+def test_secondary_lightcurve_is_not_registered_as_a_runtime_payload():
     registry=yaml.safe_load(MAPPINGS.read_text())
     assert all('lightcurve' not in payload['path'] for payload in registry['payloads'].values())
     raw_references={raw for references in registry['mappings'].values() for raw in references}
     assert not any(raw.startswith('lightcurve_secondary#') for raw in raw_references)
     portfolio=build('get_by_ztf_object_id',LazyLightcurveLocus(rich_locus()))
     assert len(records(portfolio,'detection@ztf:antares'))==316
+    assert len(records(portfolio,'lightcurve@ztf:antares')[0].fields['points'])==316
 
 def test_direct_catalog_rows_build_six_crossmatches():
     portfolio=build('get_by_ztf_object_id',rich_locus())

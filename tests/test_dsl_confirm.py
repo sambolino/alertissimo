@@ -11,7 +11,7 @@ from alertissimo.dsl import (
     validate_surface_capabilities,
 )
 from alertissimo.orchestration.ir import ConfirmStep, SemanticSearchStep
-from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
+from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import CandidateInputRef, MaterialInputRef
 from alertissimo.orchestration.validation import validate_step_capabilities
 
@@ -173,7 +173,7 @@ def test_confirm_becomes_candidate_and_material_owner_for_downstream_steps():
     assert downstream.material_input_from == MaterialInputRef(step_index=1)
 
 
-def test_singular_confirm_endpoint_requires_latest_one_until_generic_fanout_exists():
+def test_singular_confirm_endpoint_uses_generic_runtime_fanout():
     graph = build_capability_graph()
     workflow = compile_surface_to_ir(
         parse_surface_script(
@@ -184,5 +184,11 @@ def test_singular_confirm_endpoint_requires_latest_one_until_generic_fanout_exis
         graph=graph,
     )
 
-    with pytest.raises(PlanningDeferredError, match="latest 1"):
-        plan_workflow(workflow, graph)
+    run = plan_workflow(workflow, graph)
+
+    assert [plan.endpoint for plan in run.steps[1].endpoint_plans] == [
+        "get_by_ztf_object_id"
+    ]
+    assert run.steps[1].endpoint_plans[0].candidate_input_from == CandidateInputRef(
+        step_index=0
+    )

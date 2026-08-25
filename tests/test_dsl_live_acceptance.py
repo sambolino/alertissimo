@@ -1,6 +1,14 @@
 """Offline tests for the all-scenarios live acceptance harness."""
 
-from scripts import live_acceptance, live_crossmatch, live_dsl_confirm_predicate
+from alertissimo.api import validate_dsl
+
+from scripts import (
+    live_acceptance,
+    live_crossmatch,
+    live_dsl_confirm_predicate,
+    live_dsl_lookup,
+    live_provider_lightcurves,
+)
 
 
 def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
@@ -13,6 +21,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "dsl-cross-provider",
         "dsl-filter-candidate-flow",
         "dsl-incremental-continuation",
+        "dsl-object-lookup",
         "dsl-confirm-existence-quorum",
         "dsl-confirm-predicate-quorum",
         "dsl-classification-reuse",
@@ -21,6 +30,9 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "color-magnitude-derivation",
         "alerce-lsst-lightcurve",
         "antares-ztf-lsst-lookups",
+        "lasair-lsst-lightcurve",
+        "antares-ztf-lightcurve",
+        "antares-lsst-lightcurve",
         "crossmatch-retrieval",
         "lasair-ztf-portfolio-html",
         "lasair-lsst-portfolio-html",
@@ -34,6 +46,44 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         if scenario.name == "partial-failure-control"
     )
     assert partial_failure.live is False
+
+
+def test_provider_history_lightcurve_scenarios_are_independently_runnable():
+    expected = {
+        "lasair-lsst-lightcurve": ("lasair-lsst", ("LASAIR_LSST_TOKEN",)),
+        "antares-ztf-lightcurve": ("antares-ztf", ()),
+        "antares-lsst-lightcurve": ("antares-lsst", ()),
+    }
+    available = {scenario.name: scenario for scenario in live_acceptance.SCENARIOS}
+    for name, (case, credentials) in expected.items():
+        scenario = available[name]
+        command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+        assert "live_provider_lightcurves.py" in command
+        assert f"--case {case}" in command
+        assert scenario.required_env == credentials
+
+
+def test_direct_provider_lightcurve_cli_loads_dotenv(monkeypatch):
+    loaded = []
+    executed = []
+    monkeypatch.setattr(
+        live_provider_lightcurves,
+        "load_dotenv",
+        lambda *, override: loaded.append(override),
+    )
+    monkeypatch.setattr(
+        live_provider_lightcurves,
+        "run",
+        lambda case: executed.append(case.name),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["live_provider_lightcurves.py", "--case", "lasair-lsst"],
+    )
+
+    assert live_provider_lightcurves.main() == 0
+    assert loaded == [False]
+    assert executed == ["lasair-lsst"]
 
 
 def test_confirm_live_scenarios_cover_existence_and_predicate_modes():
@@ -71,6 +121,27 @@ def test_incremental_continuation_is_registered_as_a_live_facade_scenario():
     assert scenario.live is True
     assert scenario.required_env == ("LASAIR_ZTF_TOKEN",)
     assert "live_dsl_continuation.py" in command
+
+
+def test_object_lookup_is_registered_as_two_call_public_facade_acceptance():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-object-lookup"
+    )
+
+    command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+    assert scenario.live is True
+    assert scenario.required_env == ()
+    assert "live_dsl_lookup.py" in command
+
+    validation = validate_dsl(live_dsl_lookup.FIRST_DSL)
+    assert validation.is_runnable
+    assert validation.compilation is not None
+    lookup = validation.compilation.workflow.steps[0]
+    assert lookup.op == "lookup"
+    assert lookup.target.kind == "object"
+    assert lookup.target.ids == [live_dsl_lookup.TARGET]
 
 
 def test_predicate_confirm_live_script_compiles_the_adjacent_quorum_contract():

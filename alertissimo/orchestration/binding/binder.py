@@ -134,8 +134,14 @@ def _set_param(
     params[physical_name] = value
 
 
-def _step_binding_value(step: Step, role: str) -> Any:
+def _step_binding_value(
+    step: Step,
+    role: str,
+    target_ids_override: tuple[str, ...] | None,
+) -> Any:
     if role == "target_id":
+        if target_ids_override is not None:
+            return target_ids_override
         target = getattr(step, "target", None)
         return target.ids if target is not None else None
     return getattr(step, role, None)
@@ -147,10 +153,13 @@ def _role_value(
     supplied_runtime: Mapping[str, Any],
     *,
     endpoint_plan: EndpointPlan,
+    target_ids_override: tuple[str, ...] | None,
 ) -> Any:
-    step_value = _step_binding_value(step, role)
+    step_value = _step_binding_value(step, role, target_ids_override)
     runtime_supplied = role in supplied_runtime
     runtime_value = supplied_runtime.get(role)
+    if role == "target_id" and target_ids_override is not None:
+        return target_ids_override
     if runtime_supplied and step_value is not None and runtime_value != step_value:
         raise UnsupportedParameterBindingError(
             f"runtime binding for {_context(endpoint_plan)} role {role!r} "
@@ -167,6 +176,7 @@ def _bind_declared_parameter(
     *,
     endpoint_plan: EndpointPlan,
     physical_name: str,
+    target_ids_override: tuple[str, ...] | None,
 ) -> Any | None:
     """Resolve direct or adapter-backed canonical roles for one physical parameter."""
 
@@ -176,6 +186,7 @@ def _bind_declared_parameter(
             role,
             supplied_runtime,
             endpoint_plan=endpoint_plan,
+            target_ids_override=target_ids_override,
         )
         for role in roles
     }
@@ -223,6 +234,7 @@ def bind_endpoint(
     registry: EndpointRegistry,
     *,
     runtime_values: Mapping[str, Any] | None = None,
+    _target_ids_override: tuple[str, ...] | None = None,
 ) -> BoundEndpointCall:
     """Bind one canonical Step to one resolved physical endpoint contract.
 
@@ -291,6 +303,7 @@ def bind_endpoint(
             supplied_runtime,
             endpoint_plan=endpoint_plan,
             physical_name=physical_name,
+            target_ids_override=_target_ids_override,
         )
         if value is not None:
             _set_param(
@@ -333,6 +346,96 @@ def bind_endpoint(
     )
 
 
+def bind_endpoint_calls(
+    step: Step,
+    endpoint_plan: EndpointPlan,
+    registry: EndpointRegistry,
+    *,
+    runtime_values: Mapping[str, Any] | None = None,
+) -> tuple[BoundEndpointCall, ...]:
+    """Bind one plan to one or more calls according to target cardinality.
+
+    Collection declarations remain authoritative. A declared maximum produces
+    deterministic chunks; a singular declaration produces one call per target ID.
+    The semantic Step and EndpointPlan stay singular while physical invocations may
+    be plural.
+    """
+
+    spec = registry.resolve(
+        endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
+    )
+    supplied_runtime = dict(runtime_values or {})
+    target = getattr(step, "target", None)
+    explicit_ids = tuple(target.ids) if target is not None else None
+    runtime_ids_raw = supplied_runtime.get("target_id")
+    runtime_ids = (
+        tuple(runtime_ids_raw)
+        if isinstance(runtime_ids_raw, (list, tuple))
+        else (runtime_ids_raw,)
+        if runtime_ids_raw is not None
+        else None
+    )
+    if runtime_ids is not None and explicit_ids is not None and runtime_ids != explicit_ids:
+        raise UnsupportedParameterBindingError(
+            f"runtime binding for {_context(endpoint_plan)} role 'target_id' "
+            "conflicts with explicit WorkflowIR value"
+        )
+    target_ids = runtime_ids if runtime_ids is not None else explicit_ids
+    if target_ids is None or len(target_ids) <= 1:
+        return (
+            bind_endpoint(
+                step,
+                endpoint_plan,
+                registry,
+                runtime_values=runtime_values,
+            ),
+        )
+
+    declarations = []
+    for declaration in spec.params.values():
+        declaration = declaration or {}
+        if "target_id" in _binding_roles(declaration):
+            declarations.append(declaration)
+    if not declarations:
+        return (
+            bind_endpoint(
+                step,
+                endpoint_plan,
+                registry,
+                runtime_values=runtime_values,
+            ),
+        )
+    if len(declarations) != 1:
+        raise UnsupportedParameterBindingError(
+            f"unsupported parameter binding for {_context(endpoint_plan)}: "
+            "target_id must feed exactly one physical parameter"
+        )
+
+    binding = declarations[0].get("binding") or {}
+    if binding.get("collection") is None:
+        chunk_size = 1
+    else:
+        declared_max = binding.get("max_items")
+        chunk_size = int(declared_max) if declared_max is not None else len(target_ids)
+    if chunk_size <= 0:
+        raise ParameterBindingError(
+            f"invalid target collection size for {_context(endpoint_plan)}"
+        )
+
+    runtime_without_target = dict(supplied_runtime)
+    runtime_without_target.pop("target_id", None)
+    return tuple(
+        bind_endpoint(
+            step,
+            endpoint_plan,
+            registry,
+            runtime_values=runtime_without_target,
+            _target_ids_override=tuple(target_ids[index : index + chunk_size]),
+        )
+        for index in range(0, len(target_ids), chunk_size)
+    )
+
+
 def bind_workflow_run(
     run: WorkflowRun, registry: EndpointRegistry
 ) -> tuple[StepBindingResult, ...]:
@@ -350,16 +453,23 @@ def bind_workflow_run(
                 "binding requires planned state"
             )
 
-    return tuple(
-        StepBindingResult(
-            step_index=step_run.step_index,
-            bound_calls=tuple(
-                bind_endpoint(run.step_at(step_run.step_index), plan, registry)
-                for plan in step_run.endpoint_plans
-            ),
+    results = []
+    for step_run in run.steps:
+        calls = []
+        plan_indexes = []
+        step = run.step_at(step_run.step_index)
+        for plan_index, plan in enumerate(step_run.endpoint_plans):
+            bound = bind_endpoint_calls(step, plan, registry)
+            calls.extend(bound)
+            plan_indexes.extend([plan_index] * len(bound))
+        results.append(
+            StepBindingResult(
+                step_index=step_run.step_index,
+                bound_calls=tuple(calls),
+                plan_indexes=tuple(plan_indexes),
+            )
         )
-        for step_run in run.steps
-    )
+    return tuple(results)
 
 
 __all__ = [
@@ -367,5 +477,6 @@ __all__ = [
     "ParameterBindingError",
     "UnsupportedParameterBindingError",
     "bind_endpoint",
+    "bind_endpoint_calls",
     "bind_workflow_run",
 ]

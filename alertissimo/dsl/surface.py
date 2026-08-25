@@ -71,6 +71,38 @@ class CandidateSet(SurfaceModel):
         return value
 
 
+class LookupCandidateSet(SurfaceModel):
+    """Initial population named by explicit object or alert identifiers."""
+
+    kind: Literal["lookup"] = "lookup"
+    target_kind: Literal["object", "alert"]
+    ids: tuple[str, ...]
+    origin: str
+    broker: str | None = None
+    singular: bool = False
+
+    @field_validator("ids")
+    @classmethod
+    def require_unique_ids(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if not value or any(not item.strip() for item in value):
+            raise ValueError("lookup requires at least one non-empty identifier")
+        if len(set(value)) != len(value):
+            raise ValueError("lookup identifiers must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def enforce_singular_spelling(self) -> "LookupCandidateSet":
+        if self.singular and len(self.ids) != 1:
+            raise ValueError("singular object/alert lookup requires exactly one identifier")
+        return self
+
+    @property
+    def origins(self) -> tuple[str, ...]:
+        """Expose the common candidate-origin interface used by later clauses."""
+
+        return (self.origin,)
+
+
 class AngularRadius(SurfaceModel):
     value: float = Field(gt=0)
     unit: Literal["deg", "arcmin", "arcsec"] | None = None
@@ -243,11 +275,25 @@ SurfaceClause = Annotated[
 class SurfaceScript(SurfaceModel):
     """Ordered user intent before capability resolution and WorkflowIR lowering."""
 
-    candidates: CandidateSet
+    candidates: CandidateSet | LookupCandidateSet
     clauses: tuple[SurfaceClause, ...] = ()
 
     @model_validator(mode="after")
     def validate_single_general_where_and_view_order(self) -> "SurfaceScript":
+        if isinstance(self.candidates, LookupCandidateSet):
+            forbidden = tuple(
+                clause.kind
+                for clause in self.clauses
+                if isinstance(
+                    clause,
+                    (InsideClause, WithinClause, LatestClause, WhereClause),
+                )
+            )
+            if forbidden:
+                raise ValueError(
+                    "lookup candidates cannot carry search constraints: "
+                    + ", ".join(forbidden)
+                )
         where_count = sum(isinstance(clause, WhereClause) for clause in self.clauses)
         if where_count > 1:
             raise ValueError("only one general where clause is allowed")
@@ -310,6 +356,7 @@ __all__ = [
     "FilterClause",
     "InsideClause",
     "LatestClause",
+    "LookupCandidateSet",
     "MatchClause",
     "OrderByClause",
     "RankedByClause",

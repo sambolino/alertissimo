@@ -125,6 +125,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
     Scenario(
+        "dsl-object-lookup",
+        "explicit object ID -> LookupStep -> second UI call reuses ANTARES lightcurve evidence",
+        _python_script("scripts/live_dsl_lookup.py"),
+    ),
+    Scenario(
         "dsl-confirm-existence-quorum",
         "DSL ALeRCE discovery -> 2-of-3 Fink/ALeRCE/ANTARES Confirm -> survivor-bound Fink Get",
         _python_script("scripts/live_dsl_confirm.py"),
@@ -166,6 +171,22 @@ SCENARIOS: tuple[Scenario, ...] = (
         "antares-ztf-lsst-lookups",
         "ANTARES ZTF + LSST authoritative lookups -> semantic normalization",
         _python_script("scripts/live_smoke_antares.py"),
+    ),
+    Scenario(
+        "lasair-lsst-lightcurve",
+        "GetLightcurve -> Lasair/LSST object history -> detected + forced canonical points",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "lasair-lsst"),
+        required_env=("LASAIR_LSST_TOKEN",),
+    ),
+    Scenario(
+        "antares-ztf-lightcurve",
+        "GetLightcurve -> ANTARES/ZTF alerts -> detections + upper limits",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "antares-ztf"),
+    ),
+    Scenario(
+        "antares-lsst-lightcurve",
+        "GetLightcurve -> ANTARES/LSST alerts -> canonical flux points",
+        _python_script("scripts/live_provider_lightcurves.py", "--case", "antares-lsst"),
     ),
     Scenario(
         "crossmatch-retrieval",

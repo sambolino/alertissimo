@@ -149,8 +149,6 @@ class StepRun(RuntimeModel):
                 raise ValueError(
                     "execution_plan_indexes must align one-to-one with execution_ids"
                 )
-            if len(set(self.execution_plan_indexes)) != len(self.execution_plan_indexes):
-                raise ValueError("execution_plan_indexes must not contain duplicates")
             if tuple(sorted(self.execution_plan_indexes)) != self.execution_plan_indexes:
                 raise ValueError("execution_plan_indexes must be in endpoint-plan order")
             if any(

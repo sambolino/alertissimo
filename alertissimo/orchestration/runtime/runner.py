@@ -74,6 +74,36 @@ def _plan_identity(plan: EndpointPlan) -> tuple[str, str, str]:
     return plan.broker, plan.origin, plan.endpoint
 
 
+def _binding_plan_indexes(
+    binding: StepBindingResult, endpoint_plan_count: int
+) -> tuple[int, ...]:
+    if binding.plan_indexes:
+        indexes = binding.plan_indexes
+    elif len(binding.bound_calls) == endpoint_plan_count:
+        indexes = tuple(range(endpoint_plan_count))
+    elif not binding.bound_calls and endpoint_plan_count == 0:
+        indexes = ()
+    else:
+        raise WorkflowExecutionAlignmentError(
+            f"step_index {binding.step_index} fan-out bindings require explicit "
+            "plan_indexes"
+        )
+    if len(indexes) != len(binding.bound_calls):
+        raise WorkflowExecutionAlignmentError(
+            f"step_index {binding.step_index} plan index count does not match "
+            "bound call count"
+        )
+    if any(index >= endpoint_plan_count for index in indexes):
+        raise WorkflowExecutionAlignmentError(
+            f"step_index {binding.step_index} binding references unavailable endpoint plan"
+        )
+    if set(indexes) != set(range(endpoint_plan_count)):
+        raise WorkflowExecutionAlignmentError(
+            f"step_index {binding.step_index} bindings do not cover every endpoint plan"
+        )
+    return indexes
+
+
 def _validate_alignment(
     run: WorkflowRun, bindings: tuple[StepBindingResult, ...]
 ) -> None:
@@ -94,16 +124,11 @@ def _validate_alignment(
                 f"binding at position {position} has step_index {binding.step_index}; "
                 f"expected {step_run.step_index}"
             )
-        if len(binding.bound_calls) != len(step_run.endpoint_plans):
-            raise WorkflowExecutionAlignmentError(
-                f"step_index {step_run.step_index} bound call count does not match "
-                "endpoint plan count "
-                f"({len(binding.bound_calls)} != {len(step_run.endpoint_plans)})"
-            )
-
-        for call_position, (call, owned_plan) in enumerate(
-            zip(binding.bound_calls, step_run.endpoint_plans)
+        plan_indexes = _binding_plan_indexes(binding, len(step_run.endpoint_plans))
+        for call_position, (plan_index, call) in enumerate(
+            zip(plan_indexes, binding.bound_calls)
         ):
+            owned_plan = step_run.endpoint_plans[plan_index]
             if call.endpoint_plan != owned_plan:
                 raise WorkflowExecutionAlignmentError(
                     f"step_index {step_run.step_index} bound call {call_position} "
@@ -173,7 +198,7 @@ def execute_workflow_run(
     _validate_alignment(run, bindings)
     updated_run = run
     step_results: list[StepExecutionResult] = []
-    execution_cache: dict[tuple[int, int], ExecutionResult] = {}
+    execution_cache: dict[tuple[int, int], list[ExecutionResult]] = {}
 
     for step_run, binding in zip(run.steps, bindings):
         step = run.step_at(step_run.step_index)
@@ -187,16 +212,19 @@ def execute_workflow_run(
         execution_plan_indexes: list[int] = []
         warnings: list[str] = []
 
-        for plan_index, call in enumerate(binding.bound_calls):
+        binding_plan_indexes = _binding_plan_indexes(
+            binding, len(step_run.endpoint_plans)
+        )
+        for plan_index, call in zip(binding_plan_indexes, binding.bound_calls):
             plan = call.endpoint_plan
             try:
                 reference = plan.execution_reuse_from
                 if reference is None:
-                    execution = execute_bound_call(call, executor)
+                    produced = (execute_bound_call(call, executor),)
                 else:
                     cache_key = (reference.step_index, reference.plan_index)
                     try:
-                        execution = execution_cache[cache_key]
+                        produced = tuple(execution_cache[cache_key])
                     except KeyError as error:
                         raise WorkflowExecutionAlignmentError(
                             "reused execution is not available from its declared owner "
@@ -237,9 +265,12 @@ def execute_workflow_run(
                     completed_steps=tuple(step_results),
                 ) from error
 
-            executions.append(execution)
-            execution_plan_indexes.append(plan_index)
-            execution_cache[(step_run.step_index, plan_index)] = execution
+            executions.extend(produced)
+            execution_plan_indexes.extend([plan_index] * len(produced))
+            if reference is None:
+                execution_cache.setdefault(
+                    (step_run.step_index, plan_index), []
+                ).extend(produced)
 
         step_results.append(
             StepExecutionResult(

@@ -43,6 +43,21 @@ def test_validate_dsl_returns_syntax_failure_as_data():
     assert validation.lowering_error is None
 
 
+def test_validate_dsl_accepts_object_lookup_as_a_fresh_program():
+    validation = api.validate_dsl(
+        "object ZTF20aafqubg from ztf via antares\n"
+        "with lightcurve via antares\n"
+    )
+
+    assert validation.is_valid
+    assert validation.is_runnable
+    assert validation.compilation is not None
+    lookup = validation.compilation.workflow.steps[0]
+    assert lookup.op == "lookup"
+    assert lookup.target.kind == "object"
+    assert lookup.target.ids == ["ZTF20aafqubg"]
+
+
 def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
     source = "objects from ztf via alerce"
     graph = object()

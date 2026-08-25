@@ -15,7 +15,7 @@ from alertissimo.data_layer.representations import (
 )
 from alertissimo.orchestration.binding import bind_workflow_run
 from alertissimo.orchestration.binding.models import StepBindingResult
-from alertissimo.orchestration.ir import GetLightcurveStep, WorkflowIR
+from alertissimo.orchestration.ir import GetLightcurveStep, LookupStep, WorkflowIR
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
     StepRun,
@@ -223,3 +223,46 @@ def test_multi_id_step_remains_one_physical_execution():
     assert len(bindings[0].bound_calls) == 1
     assert len(result.steps[0].executions) == 1
     assert executor.calls == [("lasair", "ztf", "lightcurves", {"objectIds": "A,B"})]
+
+
+def test_plural_lookup_fanout_executes_many_calls_for_one_endpoint_plan():
+    workflow = WorkflowIR(
+        steps=[
+            LookupStep(
+                target=TargetSelector(ids=["ZTF-A", "ZTF-B"], kind="object"),
+            )
+        ]
+    )
+    endpoint = _plan("antares", "ztf", "get_by_ztf_object_id")
+    run = WorkflowRun(
+        workflow=workflow,
+        steps=(
+            StepRun(
+                step_index=0,
+                state=StepRunState.PLANNED,
+                endpoint_plans=(endpoint,),
+            ),
+        ),
+    )
+    bindings = bind_workflow_run(run, EndpointRegistry())
+    executor = FakeExecutor()
+
+    result = execute_workflow_run(run, bindings, executor)
+
+    assert executor.calls == [
+        (
+            "antares",
+            "ztf",
+            "get_by_ztf_object_id",
+            {"ztf_object_id": "ZTF-A"},
+        ),
+        (
+            "antares",
+            "ztf",
+            "get_by_ztf_object_id",
+            {"ztf_object_id": "ZTF-B"},
+        ),
+    ]
+    assert result.run.steps[0].execution_plan_indexes == (0, 0)
+    assert result.run.steps[0].execution_ids == ("execution:1", "execution:2")
+    assert len(result.steps[0].executions) == 2

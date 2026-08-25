@@ -162,8 +162,19 @@ def test_unconstrained_multiple_candidates_are_ambiguous_and_deterministic(graph
 def test_unsupported_deferred_and_local_statuses_are_distinct(graph):
     with pytest.raises(UnsupportedStepError, match="get_spectrum"):
         plan_step(GetSpectrumStep(), graph)
-    with pytest.raises(PlanningDeferredError, match="identifier"):
-        plan_step(LookupStep(id="ZTF20abc"), graph)
+    lookup = LookupStep(
+        target=TargetSelector(ids=["ZTF20abc"], kind="object"),
+        sources=[Source(broker="antares", origin="ztf")],
+    )
+    assert plan_step(lookup, graph)[0].endpoint == "get_by_ztf_object_id"
+    with pytest.raises(UnsupportedStepError, match="lookup"):
+        plan_step(
+            LookupStep(
+                target=TargetSelector(ids=["123"], kind="alert"),
+                sources=[Source(broker="antares", origin="ztf")],
+            ),
+            graph,
+        )
     for step in (
         ClassifyStep(),
         FilterStep(criteria={}),
@@ -245,14 +256,14 @@ def test_multi_target_planning_uses_collection_capable_endpoints(graph):
         assert len(plans) == 1
         assert plans[0].endpoint == endpoint
 
-    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
-        plan_step(
-            GetLightcurveStep(
-                target=TargetSelector(ids=["1", "2"], kind="object"),
-                sources=[Source(broker="alerce", origin="lsst")],
-            ),
-            graph,
-        )
+    fanout = plan_step(
+        GetLightcurveStep(
+            target=TargetSelector(ids=["1", "2"], kind="object"),
+            sources=[Source(broker="alerce", origin="lsst")],
+        ),
+        graph,
+    )
+    assert [plan.endpoint for plan in fanout] == ["query_lightcurve"]
 
 
 def test_multi_target_multiple_sources_remain_one_plan_each_without_supplements(graph):
@@ -357,7 +368,7 @@ def test_constrained_lightcurve_does_not_guess_forced_photometry_equivalence():
     )
 
 
-def test_singular_cutout_accepts_one_collection_item_but_rejects_many(graph):
+def test_singular_cutout_accepts_multiple_targets_through_fanout(graph):
     source = [Source(broker="fink", origin="ztf")]
     assert plan_step(
         GetCutoutStep(
@@ -365,16 +376,15 @@ def test_singular_cutout_accepts_one_collection_item_but_rejects_many(graph):
         ),
         graph,
     )[0].endpoint == "cutouts"
-    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
-        plan_step(
-            GetCutoutStep(
-                target=TargetSelector(ids=["A", "B"], kind="object"), sources=source
-            ),
-            graph,
-        )
+    assert plan_step(
+        GetCutoutStep(
+            target=TargetSelector(ids=["A", "B"], kind="object"), sources=source
+        ),
+        graph,
+    )[0].endpoint == "cutouts"
 
 
-def test_singular_data_product_is_not_planned_for_multiple_targets():
+def test_singular_data_product_can_be_fanned_out_for_multiple_targets():
     capability = EndpointCapability(
         "test", "ztf", "product", "/product", "GET",
         ("data_product_lookup",), (), (), None, False, "object",
@@ -385,9 +395,8 @@ def test_singular_data_product_is_not_planned_for_multiple_targets():
         target=TargetSelector(ids=["A", "B"], kind="object"),
         sources=[Source(broker="test")],
     )
-    assert validate_step_capabilities(step, graph).status == "unsupported"
-    with pytest.raises(UnsupportedStepError, match="multi-target binding"):
-        plan_step(step, graph)
+    assert validate_step_capabilities(step, graph).status == "supported"
+    assert plan_step(step, graph)[0].endpoint == "product"
 
 
 def test_multi_target_spectrum_planning_reports_missing_capability(graph):

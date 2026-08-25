@@ -23,6 +23,41 @@ def test_objects_require_fixed_candidate_origins_and_optional_default_broker():
     assert result.clauses == ()
 
 
+@pytest.mark.parametrize(
+    ("source", "kind", "ids", "singular"),
+    [
+        ("object ZTF20abc from ztf via antares", "object", ("ZTF20abc",), True),
+        (
+            "objects ZTF20abc, ZTF21def from ztf via lasair",
+            "object",
+            ("ZTF20abc", "ZTF21def"),
+            False,
+        ),
+        ("alert 123456 from ztf via fink", "alert", ("123456",), True),
+        ("alerts 123, 456 from lsst via alerce", "alert", ("123", "456"), False),
+    ],
+)
+def test_identifier_candidate_forms_are_unambiguous_lookups(
+    source, kind, ids, singular
+):
+    result = parse_surface_script(source)
+    assert result.candidates.kind == "lookup"
+    assert result.candidates.target_kind == kind
+    assert result.candidates.ids == ids
+    assert result.candidates.singular is singular
+
+
+def test_singular_lookup_spelling_requires_exactly_one_id():
+    with pytest.raises(DSLParseError, match="exactly one"):
+        parse_surface_script("object A, B from ztf via fink")
+
+
+@pytest.mark.parametrize("clause", ["inside (1, 2, 3arcsec)", "latest 2", "where x = 1"])
+def test_lookup_population_rejects_search_only_constraints(clause):
+    with pytest.raises(DSLParseError, match="lookup candidates"):
+        parse_surface_script(f"object ZTF20abc from ztf via fink\n{clause}\n")
+
+
 def test_objects_without_origin_are_rejected():
     with pytest.raises(DSLParseError, match="first statement must be"):
         parse_surface_script("objects via fink")

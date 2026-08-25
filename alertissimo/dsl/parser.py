@@ -19,6 +19,7 @@ from .surface import (
     FilterClause,
     InsideClause,
     LatestClause,
+    LookupCandidateSet,
     MatchClause,
     OrderByClause,
     RankedByClause,
@@ -146,10 +147,37 @@ class _SurfaceTransformer(Transformer):
     def using_clause(self, items):
         return "using", str(items[0])
 
-    def candidate_statement(self, items):
+    def search_statement(self, items):
         origins = items[0]
         broker = items[1][1] if len(items) > 1 else None
         return CandidateSet(origins=origins, broker=broker)
+
+    def lookup_id_list(self, items):
+        return tuple(str(item) for item in items)
+
+    def _lookup_candidates(self, items, *, target_kind, singular):
+        ids = items[0]
+        origin = str(items[1]).lower()
+        broker = items[2][1] if len(items) > 2 else None
+        return LookupCandidateSet(
+            target_kind=target_kind,
+            ids=ids,
+            origin=origin,
+            broker=broker,
+            singular=singular,
+        )
+
+    def object_lookup_statement(self, items):
+        return self._lookup_candidates(items, target_kind="object", singular=True)
+
+    def objects_lookup_statement(self, items):
+        return self._lookup_candidates(items, target_kind="object", singular=False)
+
+    def alert_lookup_statement(self, items):
+        return self._lookup_candidates(items, target_kind="alert", singular=True)
+
+    def alerts_lookup_statement(self, items):
+        return self._lookup_candidates(items, target_kind="alert", singular=False)
 
     def duration(self, items):
         return _parse_duration(str(items[0]))
@@ -268,10 +296,14 @@ def _preflight_structure(script: str) -> None:
         raise DSLParseError("DSL script is empty")
 
     first_line, first = lines[0]
-    if not first.lower().startswith("objects from "):
+    first_lower = first.lower()
+    lookup_prefix = re.match(
+        r"^(?:object|objects|alert|alerts)\s+\S.*\sfrom\s+\S", first_lower
+    )
+    if not first_lower.startswith("objects from ") and lookup_prefix is None:
         raise DSLParseError(
-            "first statement must be 'objects from <origin>[, <origin> ...] "
-            "[via <broker>]'",
+            "first statement must be a search with 'objects from ...' or a lookup "
+            "'object(s)/alert(s) <id>[, <id> ...] from <origin> [via <broker>]'",
             line=first_line,
         )
 
@@ -280,9 +312,9 @@ def _preflight_structure(script: str) -> None:
     where_count = 0
     for line_no, text in lines[1:]:
         lowered = text.lower()
-        if lowered.startswith("objects "):
+        if lowered.startswith(("object ", "objects ", "alert ", "alerts ")):
             raise DSLParseError(
-                "candidate origins are fixed by the first objects statement",
+                "candidate origins are fixed by the first candidate population statement",
                 line=line_no,
             )
         if not any(

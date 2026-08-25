@@ -155,6 +155,50 @@ mappings:
   - locus_alerts#properties.ztf_chinr
   detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
   - locus_alerts#properties.ztf_sharpnr
+  lightcurve@ztf:antares.points.identity.alert_id:
+  - locus_alerts#alert_id
+  lightcurve@ztf:antares.points.identity.source_id:
+  - locus_alerts#properties.ztf_candid
+  lightcurve@ztf:antares.points.time.mjd:
+  - locus_alerts#mjd
+  lightcurve@ztf:antares.points.time.exposure:
+  - locus_alerts#properties.ztf_exptime
+  lightcurve@ztf:antares.points.photometry.{filter}:
+  - locus_alerts#properties.ant_passband
+  lightcurve@ztf:antares.points.photometry.{filter}.psf.mag:
+  - locus_alerts#properties.ant_mag
+  lightcurve@ztf:antares.points.photometry.{filter}.psf.mag.error:
+  - locus_alerts#properties.ant_magerr
+  lightcurve@ztf:antares.points.photometry.{filter}.limit.mag:
+  - locus_alerts#properties.ant_maglim
+  lightcurve@ztf:antares.points.photometry.{filter}.upper_limit:
+  - locus_alerts#properties.ant_survey
+  lightcurve@ztf:antares.points.photometry.{filter}.aperture.mag:
+  - locus_alerts#properties.ztf_magap
+  lightcurve@ztf:antares.points.photometry.{filter}.aperture.mag.error:
+  - locus_alerts#properties.ztf_sigmagap
+  lightcurve@ztf:antares.points.photometry.{filter}.aperture.large.mag:
+  - locus_alerts#properties.ztf_magapbig
+  lightcurve@ztf:antares.points.photometry.{filter}.aperture.large.mag.error:
+  - locus_alerts#properties.ztf_sigmagapbig
+  lightcurve@ztf:antares.points.provenance.processing_id:
+  - locus_alerts#properties.ztf_pid
+  lightcurve@ztf:antares.points.provenance.night_id:
+  - locus_alerts#properties.ztf_nid
+  lightcurve@ztf:antares.points.provenance.reference_image_id:
+  - locus_alerts#properties.ztf_rfid
+  lightcurve@ztf:antares.points.provenance.producer.program.field:
+  - locus_alerts#properties.ztf_field
+  lightcurve@ztf:antares.points.provenance.producer.program.id:
+  - locus_alerts#properties.ztf_programid
+  lightcurve@ztf:antares.points.quality.rf_real_bogus:
+  - locus_alerts#properties.ztf_rb
+  lightcurve@ztf:antares.points.quality.rf_real_bogus.version:
+  - locus_alerts#properties.ztf_rbversion
+  lightcurve@ztf:antares.points.quality.real_bogus:
+  - locus_alerts#properties.ztf_drb
+  lightcurve@ztf:antares.points.quality.real_bogus.version:
+  - locus_alerts#properties.ztf_drbversion
   crossmatch@twomass:antares.identity.object_id:
   - locus_catalog_2mass#designation
   crossmatch@twomass:antares.position.ra:
@@ -242,6 +286,24 @@ mappings:
   crossmatch@twomass:antares.photometry.K.mag.error:
   - locus_catalog_2mass#k_cmsig
 transforms:
+  lightcurve@ztf:antares.points.photometry.{filter}:
+    locus_alerts#properties.ant_passband:
+      type: value_map
+      map:
+        R: r
+        g: g
+      default: null
+      skip_null: true
+      note: Strict authoritative ANTARES passband normalization.
+  lightcurve@ztf:antares.points.photometry.{filter}.upper_limit:
+    locus_alerts#properties.ant_survey:
+      type: value_map
+      map:
+        1: false
+        2: true
+      default: null
+      skip_null: true
+      note: 'ANTARES survey discriminator: candidate=1, upper limit=2.'
   detection@ztf:antares.photometry.{filter}:
     locus_alerts#properties.ant_passband:
       type: value_map

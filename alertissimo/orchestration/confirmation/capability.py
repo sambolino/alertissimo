@@ -16,6 +16,19 @@ _HISTORY_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
 
 
+def _prefer_collection(
+    endpoints: tuple[EndpointCapability, ...],
+) -> tuple[EndpointCapability, ...]:
+    """Prefer batch confirmation, while retaining singular-only provider support."""
+
+    collection = tuple(
+        endpoint
+        for endpoint in endpoints
+        if "target_id" in endpoint.collection_binding_roles
+    )
+    return collection or endpoints
+
+
 def _emits_object_evidence(
     graph: CapabilityGraph,
     endpoint: EndpointCapability,
@@ -129,7 +142,7 @@ def confirmation_endpoints(
             for endpoint in compatible
             if "object_lookup" in endpoint.operation_types
         )
-        return object_lookup or compatible
+        return _prefer_collection(object_lookup or compatible)
 
     object_lookup = tuple(
         endpoint
@@ -138,7 +151,7 @@ def confirmation_endpoints(
         and _emits_object_evidence(graph, endpoint)
     )
     if object_lookup:
-        return object_lookup
+        return _prefer_collection(object_lookup)
 
     history = tuple(
         endpoint
@@ -147,10 +160,12 @@ def confirmation_endpoints(
         and _emits_object_evidence(graph, endpoint)
     )
     if history:
-        return history
+        return _prefer_collection(history)
 
-    return tuple(
-        endpoint for endpoint in bindable if _emits_object_evidence(graph, endpoint)
+    return _prefer_collection(
+        tuple(
+            endpoint for endpoint in bindable if _emits_object_evidence(graph, endpoint)
+        )
     )
 
 

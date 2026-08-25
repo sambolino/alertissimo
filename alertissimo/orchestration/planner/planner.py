@@ -28,6 +28,7 @@ from alertissimo.orchestration.ir.models import (
     GetLightcurveStep,
     GetSpectrumStep,
     GetStep,
+    LookupStep,
     MatchStep,
     SearchStep,
     Source,
@@ -300,9 +301,9 @@ def _predicate_requires_reference(
     return False
 
 
-def _search_execution_guarantees(
-    search_step: SearchStep,
-    search_plan: EndpointPlan,
+def _candidate_execution_guarantees(
+    candidate_step: SearchStep | LookupStep,
+    candidate_plan: EndpointPlan,
     consumer_step: GetStep,
     consumer_plan: EndpointPlan,
     graph: CapabilityGraph,
@@ -311,9 +312,9 @@ def _search_execution_guarantees(
     if requirement is None:
         return False
     if (
-        search_plan.broker,
-        search_plan.origin,
-        search_plan.endpoint,
+        candidate_plan.broker,
+        candidate_plan.origin,
+        candidate_plan.endpoint,
     ) != (
         consumer_plan.broker,
         consumer_plan.origin,
@@ -322,7 +323,7 @@ def _search_execution_guarantees(
         return False
 
     records = graph.records_for_endpoint(
-        search_plan.broker, search_plan.origin, search_plan.endpoint
+        candidate_plan.broker, candidate_plan.origin, candidate_plan.endpoint
     )
     matching = tuple(
         record
@@ -343,7 +344,8 @@ def _search_execution_guarantees(
         if (
             producer is not None
             and _DYNAMIC_QUALIFIER.fullmatch(producer)
-            and _predicate_requires_reference(search_step.predicate, requirement)
+            and isinstance(candidate_step, SearchStep)
+            and _predicate_requires_reference(candidate_step.predicate, requirement)
         ):
             return True
     return False
@@ -374,16 +376,16 @@ def _capability_for_plan(
 
 
 def _can_bind_candidate_ids(
-    search_step: SearchStep,
+    candidate_step: SearchStep | LookupStep,
     consumer_plan: EndpointPlan,
     graph: CapabilityGraph,
 ) -> bool:
     endpoint = _capability_for_plan(graph, consumer_plan)
     if "target_id" not in endpoint.binding_roles:
         return False
-    if "target_id" in endpoint.collection_binding_roles:
-        return True
-    return search_step.selection is not None and search_step.selection.latest == 1
+    # Collection endpoints bind once. Singular endpoints are realized as one
+    # physical call per surviving ID by the binder/runtime alignment layer.
+    return True
 
 
 def _mark_candidate_dependencies(
@@ -399,7 +401,7 @@ def _mark_candidate_dependencies(
     current_material_index: int | None = None
 
     for step_index, step in enumerate(workflow.steps):
-        if isinstance(step, SearchStep):
+        if isinstance(step, (SearchStep, LookupStep)):
             active_search_index = step_index
             current_candidate_index = step_index
             current_material_index = step_index
@@ -460,7 +462,7 @@ def _mark_candidate_dependencies(
             continue
 
         search_step = workflow.steps[active_search_index]
-        if not isinstance(search_step, SearchStep):
+        if not isinstance(search_step, (SearchStep, LookupStep)):
             active_search_index = None
             current_candidate_index = None
             current_material_index = (
@@ -487,9 +489,7 @@ def _mark_candidate_dependencies(
                     raise PlanningDeferredError(
                         "candidate confirmation requires runtime binding from the "
                         f"current candidate identities, but {endpoint.broker}/"
-                        f"{endpoint.origin}/{endpoint.endpoint} has {cardinality}; "
-                        "use collection-capable confirmation endpoints or constrain "
-                        "candidate selection to latest 1"
+                        f"{endpoint.origin}/{endpoint.endpoint} has {cardinality}"
                     )
                 current_plans.append(
                     plan.model_copy(
@@ -548,7 +548,7 @@ def _mark_candidate_dependencies(
                     (
                         plan_index
                         for plan_index, search_plan in enumerate(search_run.endpoint_plans)
-                        if _search_execution_guarantees(
+                        if _candidate_execution_guarantees(
                             search_step,
                             search_plan,
                             step,
@@ -581,8 +581,7 @@ def _mark_candidate_dependencies(
                 raise PlanningDeferredError(
                     "candidate enrichment requires runtime binding from the current "
                     f"candidate identities, but {endpoint.broker}/{endpoint.origin}/"
-                    f"{endpoint.endpoint} has {cardinality}; use a collection-capable "
-                    "target endpoint or constrain candidate selection to latest 1"
+                    f"{endpoint.endpoint} has {cardinality}"
                 )
 
             current_plans.append(
