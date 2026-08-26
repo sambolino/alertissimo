@@ -40,6 +40,7 @@ from alertissimo.ui_portfolios import (
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
     portfolio_to_display,
+    records_by_family,
 )
 
 
@@ -161,6 +162,32 @@ def candidate_result_key(candidate: dict[str, Any]) -> str:
     return str(candidate.get("candidate_id", candidate["object_id"]))
 
 
+def reported_detection_caption(display: dict[str, Any]) -> str:
+    """Format provider-labelled counts directly from summary SemanticRecords."""
+
+    reported: list[tuple[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for record in records_by_family(display, "summary"):
+        semantic_type = str(record.get("semantic_type", ""))
+        qualifier = semantic_type.partition("@")[2]
+        broker = qualifier.partition(":")[2] or "unknown provider"
+        fields = record.get("fields")
+        if not isinstance(fields, dict):
+            continue
+        count = fields.get("detection_count")
+        if count is None:
+            continue
+        key = (broker, str(count))
+        if key in seen:
+            continue
+        seen.add(key)
+        reported.append((broker, count))
+    if not reported:
+        return "Reported detections — not provided"
+    values = " · ".join(f"{broker}: {count}" for broker, count in reported)
+    return f"Reported detections — {values}"
+
+
 def render_cone_result_cards(
     matches: list[dict[str, Any]], *, selection_state_key: str = "cone_search_selected"
 ) -> None:
@@ -179,7 +206,7 @@ def render_cone_result_cards(
                 f"{' · '.join(candidate['brokers'])}"
             )
             metrics = st.columns(3)
-            metrics[0].metric("Detections", candidate["detections"])
+            metrics[0].metric("Loaded points", candidate["detections"])
             metrics[1].metric("Latest mag", candidate["latest_mag"] or "—")
             probability = candidate.get("probability")
             metrics[2].metric(
@@ -248,7 +275,7 @@ def render_live_portfolio_cards(
                 f"{' · '.join(dict.fromkeys(brokers)) or 'broker evidence'}"
             )
             metrics = st.columns(3)
-            metrics[0].metric("Detections", len(lightcurve))
+            metrics[0].metric("Loaded points", len(lightcurve))
             metrics[1].metric(
                 "Latest mag", "—" if latest is None else f"{float(latest):.2f}"
             )
@@ -260,6 +287,7 @@ def render_live_portfolio_cards(
                 if isinstance(probability, (int, float))
                 else None,
             )
+            st.caption(reported_detection_caption(display))
         with action:
             if st.button(
                 "Open object",

@@ -76,6 +76,46 @@ def _first(records: list[dict[str, Any]], family: str) -> dict[str, Any]:
     return next((_fields(record) for record in records if _family(record) == family), {})
 
 
+def records_by_family(data: dict[str, Any], family: str) -> tuple[dict[str, Any], ...]:
+    """Select existing semantic records from a UI Portfolio projection.
+
+    This is intentionally only a view over ``semantic_records``.  It does not
+    construct or cache another scientific record representation.
+    """
+
+    records = data.get("semantic_records")
+    if not isinstance(records, list):
+        return ()
+    return tuple(
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("family") == family
+    )
+
+
+def _summary_identity(records: list[dict[str, Any]]) -> tuple[str, str] | None:
+    """Validate and return the one identity established by summary records."""
+
+    identities: set[tuple[str, str]] = set()
+    for record in records:
+        if _family(record) != "summary":
+            continue
+        semantic_type = str(record.get("semantic_type", ""))
+        _family_name, separator, qualifier = semantic_type.partition("@")
+        origin, producer_separator, _producer = qualifier.partition(":")
+        object_id = _fields(record).get("identity.object_id")
+        if separator and producer_separator and origin and object_id is not None:
+            identities.add((origin, str(object_id)))
+    if len(identities) > 1:
+        formatted = ", ".join(
+            f"{origin}/{object_id}" for origin, object_id in sorted(identities)
+        )
+        raise ValueError(
+            "Portfolio contains conflicting summary object identities: " + formatted
+        )
+    return next(iter(identities)) if identities else None
+
+
 def _magnitude(fields: dict[str, Any]) -> tuple[str, float, float] | None:
     for key, value in fields.items():
         match = re.fullmatch(r"photometry\.([a-zA-Z0-9]+)\.psf\.mag", key)
@@ -104,6 +144,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
     available in the Semantic Records tab.
     """
     records = [record for record in portfolio["records"] if isinstance(record, dict)]
+    summary_identity = _summary_identity(records)
     summary = _first(records, "summary")
     detections = [record for record in records if _family(record) == "detection"]
     points = []
@@ -121,7 +162,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
         })
     points.sort(key=lambda point: point["mjd"])
 
-    object_id = summary.get("identity.object_id") or next(
+    object_id = (summary_identity[1] if summary_identity is not None else None) or next(
         (_fields(record).get("identity.object_id") for record in detections if _fields(record).get("identity.object_id") is not None),
         "Object",
     )
