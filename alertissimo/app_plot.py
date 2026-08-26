@@ -11,7 +11,12 @@ import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 
-from alertissimo.ui_portfolios import DEFAULT_PORTFOLIO, load_ui_portfolio, portfolio_to_display
+from alertissimo.ui_portfolios import (
+    DEFAULT_PORTFOLIO,
+    load_ui_portfolio,
+    portfolio_to_display,
+    records_by_family,
+)
 
 
 DEFAULT_IMAGE_PATH = (
@@ -430,6 +435,48 @@ def render_semantic_record_browser(data: dict[str, Any], *, widget_key: str) -> 
     st.json(selected["fields"], expanded=False)
 
 
+def summary_table_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build transient table rows directly from summary SemanticRecord fields."""
+
+    rows = []
+    for record in records_by_family(data, "summary"):
+        semantic_type = str(record.get("semantic_type", ""))
+        qualifier = semantic_type.partition("@")[2]
+        survey, separator, broker = qualifier.partition(":")
+        fields = record.get("fields")
+        if not isinstance(fields, dict):
+            fields = {}
+
+        def display(path: str) -> Any:
+            value = fields.get(path)
+            return "—" if value is None else value
+
+        rows.append(
+            {
+                "Provider": broker if separator and broker else "—",
+                "Survey": survey if separator and survey else "—",
+                "Object ID": display("identity.object_id"),
+                "RA": display("position.ra"),
+                "Dec": display("position.dec"),
+                "Reported detections": display("detection_count"),
+                "First MJD": display("time.first_mjd"),
+                "Last MJD": display("time.last_mjd"),
+            }
+        )
+    return rows
+
+
+def render_summary_records(data: dict[str, Any]) -> None:
+    """Render every provider summary without selecting an authoritative one."""
+
+    st.markdown("#### Provider summaries")
+    rows = summary_table_rows(data)
+    if not rows:
+        st.info("No summary SemanticRecords are present in this portfolio.")
+        return
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
 def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
     """Render identity, quality, coverage, and decision-relevant object context."""
     coordinates = data.get("coordinates", {})
@@ -438,7 +485,13 @@ def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
     with left:
         st.markdown("#### Identity and sky position")
         st.write(f"**Survey:** {data.get('survey', '—')}")
-        st.write(f"**RA / Dec:** {coordinates.get('ra', '—')}°, {coordinates.get('dec', '—')}°")
+        summaries = records_by_family(data, "summary")
+        if len(summaries) == 1:
+            st.write(f"**RA / Dec:** {coordinates.get('ra', '—')}°, {coordinates.get('dec', '—')}°")
+        elif summaries:
+            st.write("**RA / Dec:** provider-specific positions are listed below")
+        else:
+            st.write("**RA / Dec:** —")
         st.write(f"**TNS type:** {data.get('tns', {}).get('type', 'Unclassified')}")
         st.write(f"**Candidate status:** {data.get('candidateStatus', 'No assessment')}")
     with middle:
@@ -446,6 +499,8 @@ def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
         st.write(quality.get("photometryStatus", "No local quality summary."))
         st.write(f"**Alert quality:** {quality.get('alertQuality', '—')}")
         st.write(f"**Last local refresh:** {quality.get('lastUpdated', '—')}")
+
+    render_summary_records(data)
 
     st.markdown("#### Broker coverage")
     coverage = pd.DataFrame(_rows(data, "brokerCoverage"))
@@ -472,7 +527,7 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
     """Render the existing interactive light-curve view and measurement table."""
     st.markdown("#### Light curve")
     detection_col, upper_col, forced_col, band_col = st.columns(4)
-    detection_col.metric("Detections", len(frame))
+    detection_col.metric("Plotted points", len(frame))
     record_counts = data.get("record_counts", {})
     upper_col.metric("Non-detections", record_counts.get("non_detection", "—"))
     forced_col.metric("Forced photometry", record_counts.get("forced_photometry", "—"))
@@ -520,7 +575,7 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             else:
                 st.caption("Click a detection point to inspect its SemanticRecord.")
     st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source.")
-    st.caption("Counts and plotted measurements come from normalized frozen broker records.")
+    st.caption("Counts and plotted measurements come from normalized semantic records.")
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
     render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}")
@@ -617,8 +672,18 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
         with summary:
             st.markdown("#### Identity and sky position")
             st.write(f"**Survey:** {data.get('survey', '—')}")
-            coordinates = data.get("coordinates", {})
-            st.write(f"**RA / Dec:** {coordinates.get('ra', '—')}°, {coordinates.get('dec', '—')}°")
+            summaries = records_by_family(data, "summary")
+            if len(summaries) == 1:
+                coordinates = data.get("coordinates", {})
+                st.write(
+                    f"**RA / Dec:** {coordinates.get('ra', '—')}°, "
+                    f"{coordinates.get('dec', '—')}°"
+                )
+            elif summaries:
+                st.write("**RA / Dec:** provider-specific positions are listed below")
+            else:
+                st.write("**RA / Dec:** —")
+            render_summary_records(data)
         with records:
             render_semantic_record_browser(data, widget_key=widget_key)
         with provenance:
