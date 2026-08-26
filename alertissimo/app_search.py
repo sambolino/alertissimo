@@ -162,8 +162,8 @@ def candidate_result_key(candidate: dict[str, Any]) -> str:
     return str(candidate.get("candidate_id", candidate["object_id"]))
 
 
-def reported_detection_caption(display: dict[str, Any]) -> str:
-    """Format provider-labelled counts directly from summary SemanticRecords."""
+def reported_detection_metric(display: dict[str, Any]) -> str:
+    """Format provider-labelled summary counts for a discovery card."""
 
     reported: list[tuple[str, Any]] = []
     seen: set[tuple[str, str]] = set()
@@ -183,9 +183,8 @@ def reported_detection_caption(display: dict[str, Any]) -> str:
         seen.add(key)
         reported.append((broker, count))
     if not reported:
-        return "Reported detections — not provided"
-    values = " · ".join(f"{broker}: {count}" for broker, count in reported)
-    return f"Reported detections — {values}"
+        return "—"
+    return " · ".join(f"{broker}: {count}" for broker, count in reported)
 
 
 def render_cone_result_cards(
@@ -275,7 +274,14 @@ def render_live_portfolio_cards(
                 f"{' · '.join(dict.fromkeys(brokers)) or 'broker evidence'}"
             )
             metrics = st.columns(3)
-            metrics[0].metric("Loaded points", len(lightcurve))
+            metrics[0].metric(
+                "Reported detections",
+                reported_detection_metric(display),
+                help=(
+                    "Counts reported by provider summary records; — means the "
+                    "search response did not provide one."
+                ),
+            )
             metrics[1].metric(
                 "Latest mag", "—" if latest is None else f"{float(latest):.2f}"
             )
@@ -287,7 +293,6 @@ def render_live_portfolio_cards(
                 if isinstance(probability, (int, float))
                 else None,
             )
-            st.caption(reported_detection_caption(display))
         with action:
             if st.button(
                 "Open object",
