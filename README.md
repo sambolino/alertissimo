@@ -75,6 +75,12 @@ python -m streamlit run alertissimo/app_dsl.py
 
 It is not exposed as a console command in the 0.9.0 package; the supported integration boundary is `alertissimo.api`.
 
+## Local Qwen3 QLoRA model
+
+Instructions for installing Ollama, creating the fine-tuned local model,
+evaluating it, and sharing it with colleagues are in
+[`docs/ollama_qlora.md`](docs/ollama_qlora.md).
+
 ## Release package check
 
 Before tagging a release, build and inspect the wheel and run static DSL validation from the installed wheel copy:

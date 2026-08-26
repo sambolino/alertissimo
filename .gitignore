@@ -10,3 +10,5 @@ alertissimo.egg-info/
 .python-version
 .ui-fixtures/
 .models/
+models/
+wandb/

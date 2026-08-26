@@ -1,0 +1,10 @@
+# Optional dependencies for scripts/train_qlora.py.
+# Keep these separate from the Alertissimo runtime requirements.
+accelerate>=1.2
+bitsandbytes>=0.45
+datasets>=3.2
+peft>=0.14
+sentencepiece>=0.2
+torch>=2.4
+transformers>=4.47
+trl>=0.12

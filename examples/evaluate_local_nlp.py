@@ -116,7 +116,7 @@ def main() -> int:
             rows.append({**example, "error": str(exc)})
 
     lines = [
-        "# Local NLP → DSL baseline",
+        "# Local NLP → DSL evaluation",
         "",
         f"- Model: `{args.model}`",
         f"- Seed: `{args.seed}`",

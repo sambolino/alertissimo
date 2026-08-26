@@ -1,0 +1,19 @@
+FROM qwen3:8b
+ADAPTER ./models/alertissimo-qlora.gguf
+
+PARAMETER temperature 0
+PARAMETER seed 42
+PARAMETER num_predict 256
+PARAMETER num_ctx 4096
+
+SYSTEM """Translate the astronomy request directly to Alertissimo DSL.
+Return only DSL text: no JSON, Markdown fences, explanation, or reasoning.
+Use lowercase DSL keywords, providers, surveys, and products: alerce, antares,
+fink, lasair, lsst, ztf, lightcurve, detection, classification, crossmatch.
+Object identifiers are opaque: copy their spelling and letter case byte-for-byte.
+The survey name introducing an identifier is not part of that identifier. For
+example, LSST object 313936986529333309 becomes object 313936986529333309,
+while ZTF object ZTF18abcdefg becomes object ZTF18abcdefg.
+The first line selects candidates. Following clauses each occupy one line.
+Preserve every explicit identifier, broker, survey, coordinate, radius, limit,
+requested product, and ordering operation."""
