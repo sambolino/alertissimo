@@ -15,7 +15,7 @@ from alertissimo.app_search import (
     load_demo_search_data,
     load_frozen_cone_candidates,
     load_block_capability_graph,
-    reported_detection_caption,
+    reported_detection_metric,
 )
 from alertissimo.app_plot import summary_table_rows
 from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
@@ -87,9 +87,7 @@ def test_provider_summaries_are_read_directly_without_new_ui_records():
 
     assert "summaryEvidence" not in display
     assert len(records_by_family(display, "summary")) == 2
-    assert reported_detection_caption(display) == (
-        "Reported detections — alerce: 1044 · fink: 1037"
-    )
+    assert reported_detection_metric(display) == "alerce: 1044 · fink: 1037"
     assert summary_table_rows(display) == [
         {
             "Provider": "alerce",
@@ -124,8 +122,63 @@ def test_missing_reported_detection_count_is_not_rendered_as_zero():
         )
     )
 
-    assert reported_detection_caption(display) == "Reported detections — not provided"
+    assert reported_detection_metric(display) == "—"
     assert summary_table_rows(display)[0]["Reported detections"] == "—"
+
+
+def test_live_result_card_leads_with_reported_not_loaded_detections(monkeypatch):
+    display = portfolio_to_display(
+        serialized_summary_portfolio(
+            ("summary@ztf:lasair", {"identity.object_id": "ZTF-test"})
+        )
+    )
+
+    class Column:
+        def __init__(self, owner):
+            self.owner = owner
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def metric(self, label, value, *args, **kwargs):
+            self.owner.metrics.append((label, value))
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.metrics = []
+
+        def columns(self, spec, **_kwargs):
+            count = spec if isinstance(spec, int) else len(spec)
+            return [Column(self) for _ in range(count)]
+
+        def subheader(self, *_args, **_kwargs):
+            pass
+
+        def success(self, *_args, **_kwargs):
+            pass
+
+        def divider(self, *_args, **_kwargs):
+            pass
+
+        def markdown(self, *_args, **_kwargs):
+            pass
+
+        def caption(self, *_args, **_kwargs):
+            pass
+
+        def button(self, *_args, **_kwargs):
+            return False
+
+    fake_streamlit = FakeStreamlit()
+    monkeypatch.setattr(app_search, "st", fake_streamlit)
+
+    app_search.render_live_portfolio_cards([display], selection_state_key="selected")
+
+    assert fake_streamlit.metrics[0] == ("Reported detections", "—")
+    assert all(label != "Loaded points" for label, _value in fake_streamlit.metrics)
 
 
 def test_conflicting_summary_identities_are_rejected_instead_of_selecting_first():
