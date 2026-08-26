@@ -9,3 +9,4 @@ alertissimo.egg-info/
 .venv/
 .python-version
 .ui-fixtures/
+.models/
