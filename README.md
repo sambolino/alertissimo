@@ -75,6 +75,13 @@ python -m streamlit run alertissimo/app_dsl.py
 
 It is not exposed as a console command in the 0.9.0 package; the supported integration boundary is `alertissimo.api`.
 
+Natural-language entry page (uses the local Ollama QLoRA model and then the
+same DSL execution flow as the search page):
+
+```bash
+python -m streamlit run alertissimo/app_nlp_search.py
+```
+
 ## Local Qwen3 QLoRA model
 
 Instructions for installing Ollama, creating the fine-tuned local model,
