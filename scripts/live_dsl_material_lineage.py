@@ -45,7 +45,12 @@ from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
-from alertissimo.orchestration.runtime import CandidateInputRef, MaterialInputRef, StepRunState
+from alertissimo.orchestration.runtime import (
+    CandidateInputRef,
+    MaterialInputRef,
+    PlanCandidateInputRef,
+    StepRunState,
+)
 
 
 Status = Literal["PASS", "INCONCLUSIVE", "UNAVAILABLE", "SKIP", "FAIL"]
@@ -62,7 +67,7 @@ class MatrixScenario:
     description: str
     discovery_broker: str
     enrichments: tuple[tuple[str, str], ...]
-    expected_endpoints: tuple[tuple[str, str, str], ...]
+    expected_endpoints: tuple[tuple[tuple[str, str, str], ...], ...]
     required_env: tuple[str, ...] = ()
 
 
@@ -73,9 +78,9 @@ SCENARIOS: tuple[MatrixScenario, ...] = (
         discovery_broker="lasair",
         enrichments=(("lightcurve", "fink"), ("crossmatch", "antares")),
         expected_endpoints=(
-            ("lasair", "ztf", "cone"),
-            ("fink", "ztf", "objects"),
-            ("antares", "ztf", "get_by_ztf_object_id"),
+            (("lasair", "ztf", "cone"), ("lasair", "ztf", "query")),
+            (("fink", "ztf", "objects"),),
+            (("antares", "ztf", "get_by_ztf_object_id"),),
         ),
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
@@ -85,9 +90,9 @@ SCENARIOS: tuple[MatrixScenario, ...] = (
         discovery_broker="alerce",
         enrichments=(("lightcurve", "fink"), ("lightcurve", "lasair")),
         expected_endpoints=(
-            ("alerce", "ztf", "query_objects"),
-            ("fink", "ztf", "objects"),
-            ("lasair", "ztf", "lightcurves"),
+            (("alerce", "ztf", "query_objects"),),
+            (("fink", "ztf", "objects"),),
+            (("lasair", "ztf", "lightcurves"),),
         ),
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
@@ -97,9 +102,9 @@ SCENARIOS: tuple[MatrixScenario, ...] = (
         discovery_broker="fink",
         enrichments=(("lightcurve", "alerce"), ("crossmatch", "antares")),
         expected_endpoints=(
-            ("fink", "ztf", "conesearch"),
-            ("alerce", "ztf", "query_lightcurve"),
-            ("antares", "ztf", "get_by_ztf_object_id"),
+            (("fink", "ztf", "conesearch"),),
+            (("alerce", "ztf", "query_lightcurve"),),
+            (("antares", "ztf", "get_by_ztf_object_id"),),
         ),
     ),
     MatrixScenario(
@@ -108,9 +113,9 @@ SCENARIOS: tuple[MatrixScenario, ...] = (
         discovery_broker="antares",
         enrichments=(("lightcurve", "fink"), ("lightcurve", "alerce")),
         expected_endpoints=(
-            ("antares", "ztf", "cone_search"),
-            ("fink", "ztf", "objects"),
-            ("alerce", "ztf", "query_lightcurve"),
+            (("antares", "ztf", "cone_search"),),
+            (("fink", "ztf", "objects"),),
+            (("alerce", "ztf", "query_lightcurve"),),
         ),
     ),
 )
@@ -196,27 +201,32 @@ def assert_plan_contract(scenario: MatrixScenario, workflow, run) -> None:
 
     for index, expected in enumerate(scenario.expected_endpoints):
         step_run = run.steps[index]
-        if len(step_run.endpoint_plans) != 1:
-            raise RuntimeError(
-                f"Step {index} expected exactly one physical plan, got "
-                f"{len(step_run.endpoint_plans)}"
-            )
-        plan = step_run.endpoint_plans[0]
-        actual = (plan.broker, plan.origin, plan.endpoint)
+        actual = tuple(
+            (plan.broker, plan.origin, plan.endpoint)
+            for plan in step_run.endpoint_plans
+        )
         if actual != expected:
             raise RuntimeError(
                 f"Step {index} physical plan mismatch: expected {expected!r}, got {actual!r}"
             )
 
         if index == 0:
-            if plan.candidate_input_from is not None:
-                raise RuntimeError("Search physical plan unexpectedly has candidate input")
+            primary = step_run.endpoint_plans[0]
+            if primary.candidate_input_from is not None:
+                raise RuntimeError("Search primary plan unexpectedly has candidate input")
+            for plan_index, plan in enumerate(step_run.endpoint_plans[1:], start=1):
+                if plan.candidate_input_from_plan != PlanCandidateInputRef(plan_index=0):
+                    raise RuntimeError(
+                        f"Search supplementary plan {plan_index} must bind from plan 0; "
+                        f"got {plan.candidate_input_from_plan!r}"
+                    )
             if step_run.candidate_input_from is not None:
                 raise RuntimeError("Search StepRun unexpectedly has candidate input")
             if step_run.material_input_from is not None:
                 raise RuntimeError("Search StepRun unexpectedly has material input")
             continue
 
+        plan = step_run.endpoint_plans[0]
         if getattr(workflow.steps[index], "target", None) is not None:
             raise RuntimeError(f"Step {index} leaked a runtime target into WorkflowIR")
         if plan.candidate_input_from != CandidateInputRef(step_index=0):
@@ -374,12 +384,14 @@ def _print_plan(scenario: MatrixScenario, dsl: str, run) -> None:
         print(f"  {line}")
     print("plan:")
     for step_run in run.steps:
-        plan = step_run.endpoint_plans[0]
-        print(
-            f"  Step {step_run.step_index}: {plan.broker}/{plan.origin}/{plan.endpoint} "
-            f"candidate={plan.candidate_input_from!r} "
-            f"material={step_run.material_input_from!r}"
-        )
+        for plan_index, plan in enumerate(step_run.endpoint_plans):
+            print(
+                f"  Step {step_run.step_index} plan {plan_index}: "
+                f"{plan.broker}/{plan.origin}/{plan.endpoint} "
+                f"candidate={plan.candidate_input_from!r} "
+                f"same_step_candidate={plan.candidate_input_from_plan!r} "
+                f"material={step_run.material_input_from!r}"
+            )
 
 
 def run_scenario(

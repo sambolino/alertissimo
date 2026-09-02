@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from .astropy import angle_arcsec, skycoord_icrs_degrees
+from .sql import string_membership_condition
 
 
 class RequestTransformError(ValueError):
@@ -26,6 +27,9 @@ _REQUEST_ADAPTERS: Mapping[str, Callable[..., Any]] = {
         skycoord_icrs_degrees
     ),
     "alertissimo.data_layer.transforms.astropy:angle_arcsec": angle_arcsec,
+    "alertissimo.data_layer.transforms.sql:string_membership_condition": (
+        string_membership_condition
+    ),
 }
 
 
@@ -52,12 +56,17 @@ def load_binding_adapter(path: str) -> Callable[..., Any]:
         ) from error
 
 
-def apply_binding_adapter(path: str, values: Mapping[str, Any]) -> Any:
+def apply_binding_adapter(
+    path: str,
+    values: Mapping[str, Any],
+    *,
+    options: Mapping[str, Any] | None = None,
+) -> Any:
     """Apply one registered pure request transform to canonical role values."""
 
     adapter = load_binding_adapter(path)
     try:
-        return adapter(**dict(values))
+        return adapter(**dict(values), **dict(options or {}))
     except Exception as error:
         raise RequestTransformError(
             f"binding adapter {path!r} failed: {type(error).__name__}: {error}"
