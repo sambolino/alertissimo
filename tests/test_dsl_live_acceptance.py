@@ -6,6 +6,7 @@ from scripts import (
     live_acceptance,
     live_crossmatch,
     live_dsl_confirm_predicate,
+    live_dsl_lasair_summary,
     live_dsl_lookup,
     live_provider_lightcurves,
 )
@@ -19,6 +20,7 @@ def test_live_acceptance_scenario_names_are_unique_and_cover_current_surface():
         "multisurvey-discovery",
         "dsl-match-spatial",
         "dsl-cross-provider",
+        "dsl-lasair-compact-summary",
         "dsl-filter-candidate-flow",
         "dsl-incremental-continuation",
         "dsl-object-lookup",
@@ -121,6 +123,30 @@ def test_incremental_continuation_is_registered_as_a_live_facade_scenario():
     assert scenario.live is True
     assert scenario.required_env == ("LASAIR_ZTF_TOKEN",)
     assert "live_dsl_continuation.py" in command
+
+
+def test_lasair_compact_summary_is_registered_and_keeps_one_semantic_step():
+    scenario = next(
+        scenario
+        for scenario in live_acceptance.SCENARIOS
+        if scenario.name == "dsl-lasair-compact-summary"
+    )
+    command = " ".join(scenario.command(live_acceptance.REPO_ROOT))
+    assert scenario.required_env == ("LASAIR_ZTF_TOKEN",)
+    assert "live_dsl_lasair_summary.py" in command
+
+    graph = live_dsl_lasair_summary.build_capability_graph()
+    dsl = f"""objects from ztf via lasair
+inside ({live_dsl_lasair_summary.DEFAULT_RA}, {live_dsl_lasair_summary.DEFAULT_DEC}, 5arcsec)
+"""
+    workflow = live_dsl_lasair_summary.compile_surface_to_ir(
+        live_dsl_lasair_summary.parse_surface_script(dsl),
+        graph=graph,
+    )
+    run = live_dsl_lasair_summary.plan_workflow(workflow, graph)
+
+    live_dsl_lasair_summary._assert_plan(workflow, run)
+    assert [step.op for step in workflow.steps] == ["cone_search"]
 
 
 def test_object_lookup_is_registered_as_two_call_public_facade_acceptance():

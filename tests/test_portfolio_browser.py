@@ -15,7 +15,7 @@ def test_browser_renders_content_and_escapes_values():
     assert "<script>alert(1)</script>" not in page
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page
     for expected in (
-        "Alertissimo Portfolio", "Transient portfolio", "Records", "Edges", "Provenance",
+        "Alertissimo Portfolio", "Transient dossier", "Records", "Edges", "Provenance",
         "Dot-path data browser", "Expand all", "Collapse all", "Search field paths",
         "photometry", "g", "psf", "mag", "photometry.g.psf.mag",
     ):

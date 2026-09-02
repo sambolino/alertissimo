@@ -127,6 +127,14 @@ endpoints:
       conditions:
         required: true
         type: string
+        bind: target_id
+        binding:
+          collection: adapter
+          max_items: 100
+          adapter: alertissimo.data_layer.transforms.sql:string_membership_condition
+          adapter_options:
+            column: objects.objectId
+            value_pattern: '^ZTF\d{2}[a-z]{7}$'
         description: SQL WHERE criteria without the WHERE keyword.
       limit:
         required: false

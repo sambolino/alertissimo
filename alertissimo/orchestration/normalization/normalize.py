@@ -492,6 +492,7 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
             index
             for index in step_run.vacuous_plan_indexes
             if step_run.endpoint_plans[index].candidate_input_from is None
+            and step_run.endpoint_plans[index].candidate_input_from_plan is None
         )
         if non_candidate_vacuous:
             raise WorkflowNormalizationAlignmentError(

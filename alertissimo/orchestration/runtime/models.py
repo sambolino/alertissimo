@@ -57,6 +57,18 @@ class CandidateInputRef(RuntimeModel):
     step_index: int = Field(ge=0)
 
 
+class PlanCandidateInputRef(RuntimeModel):
+    """Reference to an earlier physical plan in the same semantic Step.
+
+    Composite physical realizations may first discover candidate identities and
+    then use those normalized identities in a supplementary request. This
+    relation remains runtime-only: it neither creates nor rewrites WorkflowIR
+    Steps.
+    """
+
+    plan_index: int = Field(ge=0)
+
+
 class MaterialInputRef(RuntimeModel):
     """Reference to an earlier Step semantic view that a later Step enriches.
 
@@ -79,7 +91,9 @@ class EndpointPlan(RuntimeModel):
     ``execution_reuse_from`` records that this semantic plan is satisfied by an
     earlier physical execution. ``candidate_input_from`` records a distinct case:
     this plan owns a new invocation whose runtime target values come from an
-    earlier semantic candidate set. Neither relation changes or collapses
+    earlier semantic candidate set. ``candidate_input_from_plan`` is the local
+    composite equivalent: its values come from an earlier physical plan belonging
+    to this same semantic Step. None of these relations changes or collapses
     WorkflowIR Steps.
     """
 
@@ -88,15 +102,22 @@ class EndpointPlan(RuntimeModel):
     endpoint: str
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
+    request_params: dict[str, Any] = Field(default_factory=dict)
     execution_reuse_from: EndpointPlanRef | None = None
     candidate_input_from: CandidateInputRef | None = None
+    candidate_input_from_plan: PlanCandidateInputRef | None = None
     required: bool = True
 
     @model_validator(mode="after")
     def require_one_dependency_mode(self) -> "EndpointPlan":
-        if self.execution_reuse_from is not None and self.candidate_input_from is not None:
+        dependencies = (
+            self.execution_reuse_from,
+            self.candidate_input_from,
+            self.candidate_input_from_plan,
+        )
+        if sum(item is not None for item in dependencies) > 1:
             raise ValueError(
-                "endpoint plan cannot both reuse an execution and bind from candidate output"
+                "endpoint plan cannot combine execution reuse with candidate inputs"
             )
         return self
 
@@ -173,6 +194,7 @@ class StepRun(RuntimeModel):
                 )
             if any(
                 self.endpoint_plans[index].candidate_input_from is None
+                and self.endpoint_plans[index].candidate_input_from_plan is None
                 for index in self.vacuous_plan_indexes
             ):
                 raise ValueError(
@@ -248,6 +270,14 @@ class WorkflowRun(RuntimeModel):
                         )
                     if candidate_reference.step_index >= len(self.steps):
                         raise ValueError("candidate input references unknown Step occurrence")
+
+                plan_reference = plan.candidate_input_from_plan
+                if plan_reference is not None and plan_reference.plan_index >= plan_index:
+                    raise ValueError(
+                        "same-step candidate input must reference an earlier endpoint "
+                        f"plan (step_index {step_run.step_index}, plan_index {plan_index}, "
+                        f"reference plan_index {plan_reference.plan_index})"
+                    )
         return self
 
     @classmethod
@@ -271,6 +301,7 @@ __all__ = [
     "EndpointPlan",
     "EndpointPlanRef",
     "MaterialInputRef",
+    "PlanCandidateInputRef",
     "PredicateRealization",
     "StepRun",
     "StepRunState",
