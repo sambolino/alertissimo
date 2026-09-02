@@ -6,6 +6,16 @@ CANDIDATE_ID = "ZTF20acpwljl"
 RA = 124.87996115142856
 DEC = -6.0205001
 RADIUS_ARCSEC = 5.0
+LASAIR_SUMMARY_PARAMS = {
+    "selected": (
+        "objects.objectId,objects.ramean,objects.decmean,objects.ncand,"
+        "objects.jdmin,objects.jdmax"
+    ),
+    "tables": "objects",
+    "limit": 100,
+    "offset": 0,
+    "conditions": f'objects.objectId IN ("{CANDIDATE_ID}")',
+}
 FIRST_PASS = f"""objects from ztf via lasair
 inside ({RA}, {DEC}, {RADIUS_ARCSEC}arcsec)
 with lightcurve via fink
@@ -30,6 +40,9 @@ def _executor() -> FixtureEndpointExecutor:
                 "fink", "ztf", "objects", objectId=CANDIDATE_ID
             ): "fink_objects_ztf20acpwljl_quality.json",
             fixture_key(
+                "lasair", "ztf", "query", **LASAIR_SUMMARY_PARAMS
+            ): "../../../tests/fixtures/lasair/ztf/capture_20260813T110413Z/query_core.json",
+            fixture_key(
                 "lasair", "ztf", "lightcurves", objectIds=CANDIDATE_ID
             ): "lasair_lightcurves_ztf20acpwljl.json",
         }
@@ -39,7 +52,7 @@ def _executor() -> FixtureEndpointExecutor:
 def test_continuation_replays_prior_provider_calls_and_executes_only_new_enrichment():
     executor = _executor()
     first = execute_dsl(FIRST_PASS, executor=executor)
-    assert len(executor.calls) == 2
+    assert len(executor.calls) == 3
     assert len(first.portfolios) == 1
 
     validation = validate_dsl(SECOND_PASS)
@@ -48,7 +61,7 @@ def test_continuation_replays_prior_provider_calls_and_executes_only_new_enrichm
 
     second = execute_dsl(SECOND_PASS, executor=executor)
 
-    assert len(executor.calls) == 3
+    assert len(executor.calls) == 4
     assert executor.calls[-1] == (
         "lasair",
         "ztf",

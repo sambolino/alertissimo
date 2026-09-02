@@ -48,6 +48,21 @@ class _FixtureExecutor:
                 {"object": OBJECT_A, "separation": 0.0},
                 {"object": OBJECT_B, "separation": 0.5},
             ]
+        elif (broker, origin, endpoint) == ("lasair", "ztf", "query"):
+            assert params["conditions"] == (
+                f'objects.objectId IN ("{OBJECT_A}","{OBJECT_B}")'
+            )
+            payload = [
+                {
+                    "objectId": object_id,
+                    "ramean": 124.87996115142856,
+                    "decmean": -6.0205001,
+                    "ncand": detection_count,
+                    "jdmin": 2459000.5,
+                    "jdmax": 2459001.5,
+                }
+                for object_id, detection_count in ((OBJECT_A, 2), (OBJECT_B, 1))
+            ]
         elif (broker, origin, endpoint) == ("fink", "ztf", "objects"):
             assert params["objectId"] == f"{OBJECT_A},{OBJECT_B}"
             payload = [
@@ -158,6 +173,7 @@ def test_filter_becomes_runtime_candidate_view_and_downstream_binding_uses_survi
 
     assert [(broker, origin, endpoint) for broker, origin, endpoint, _ in executor.calls] == [
         ("lasair", "ztf", "cone"),
+        ("lasair", "ztf", "query"),
         ("fink", "ztf", "objects"),
         ("lasair", "ztf", "lightcurves"),
     ]
@@ -189,6 +205,7 @@ def test_empty_filter_skips_downstream_provider_call_without_fabricating_executi
 
     assert [(broker, origin, endpoint) for broker, origin, endpoint, _ in executor.calls] == [
         ("lasair", "ztf", "cone"),
+        ("lasair", "ztf", "query"),
         ("fink", "ztf", "objects"),
     ]
     assert _object_ids(staged.normalized.steps[2]) == ()

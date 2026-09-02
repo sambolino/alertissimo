@@ -188,6 +188,43 @@ def _candidate_ids_by_origin_from_view(
     return {origin: tuple(ids) for origin, ids in ids_by_origin.items()}
 
 
+def _candidate_view_from_plan_executions(
+    step_run: StepRun,
+    plan_index: int,
+    executions: tuple[ExecutionResult, ...],
+    *,
+    normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
+    validate_semantic_model: bool,
+) -> StepPortfolioResult:
+    """Normalize one physical plan early for a same-Step dependent plan."""
+
+    plan = step_run.endpoint_plans[plan_index]
+    normalized: list[ExecutionPortfolioResult] = []
+    for execution in executions:
+        execution_id = execution.internal_execution_id.value
+        portfolios = normalized_execution_cache.get(execution_id)
+        if portfolios is None:
+            portfolios = normalize_execution(
+                execution,
+                validate_semantic_model=validate_semantic_model,
+            )
+            normalized_execution_cache[execution_id] = portfolios
+        realization = plan.predicate_realization
+        residual = realization.residual if realization is not None else None
+        if residual is not None:
+            portfolios = prune_portfolios(portfolios, residual)
+        normalized.append(
+            ExecutionPortfolioResult(
+                execution_id=execution_id,
+                portfolios=portfolios,
+            )
+        )
+    return StepPortfolioResult(
+        step_index=step_run.step_index,
+        executions=tuple(normalized),
+    )
+
+
 def _filter_view(
     step: FilterStep,
     step_index: int,
@@ -429,6 +466,11 @@ def execute_staged_workflow_run(
         calls = []
         call_plan_indexes: list[int] = []
         vacuous_plan_indexes: list[int] = []
+        executions: list[ExecutionResult] = []
+        execution_plan_indexes: list[int] = []
+        warnings: list[str] = []
+        candidate_ids_by_origin_by_plan: dict[int, dict[str, tuple[str, ...]]] = {}
+
         for plan_index, plan in enumerate(original_step_run.endpoint_plans):
             runtime_values = None
             reference = plan.candidate_input_from
@@ -447,39 +489,32 @@ def execute_staged_workflow_run(
                     vacuous_plan_indexes.append(plan_index)
                     continue
                 runtime_values = {"target_id": candidate_ids}
-            bound = bind_endpoint_calls(
-                step,
-                plan,
-                registry,
-                runtime_values=runtime_values,
-            )
-            calls.extend(bound)
-            call_plan_indexes.extend([plan_index] * len(bound))
-        binding = StepBindingResult(
-            step_index=step_index,
-            bound_calls=tuple(calls),
-            plan_indexes=tuple(call_plan_indexes),
-        )
-        bindings.append(binding)
 
-        executions: list[ExecutionResult] = []
-        execution_plan_indexes: list[int] = []
-        warnings: list[str] = []
-        for plan_index, call in zip(call_plan_indexes, binding.bound_calls):
-            plan = call.endpoint_plan
+            plan_reference = plan.candidate_input_from_plan
+            if plan_reference is not None:
+                try:
+                    candidate_ids_by_origin = candidate_ids_by_origin_by_plan[
+                        plan_reference.plan_index
+                    ]
+                except KeyError as error:
+                    raise CandidateFlowError(
+                        "candidate input is not available from referenced endpoint "
+                        f"plan {plan_reference.plan_index} for step_index {step_index}, "
+                        f"plan_index {plan_index}"
+                    ) from error
+                candidate_ids = candidate_ids_by_origin.get(plan.origin, ())
+                if not candidate_ids:
+                    vacuous_plan_indexes.append(plan_index)
+                    continue
+                runtime_values = {"target_id": candidate_ids}
+
             try:
-                reference = plan.execution_reuse_from
-                if reference is None:
-                    produced = (execute_bound_call(call, executor),)  # type: ignore[arg-type]
-                else:
-                    key = (reference.step_index, reference.plan_index)
-                    try:
-                        produced = tuple(execution_cache[key])
-                    except KeyError as error:
-                        raise CandidateFlowError(
-                            "reused execution is not available from its declared owner "
-                            f"{key}"
-                        ) from error
+                bound = bind_endpoint_calls(
+                    step,
+                    plan,
+                    registry,
+                    runtime_values=runtime_values,
+                )
             except Exception as error:
                 if not plan.required:
                     warnings.append(
@@ -495,7 +530,8 @@ def execute_staged_workflow_run(
                     update={
                         "state": StepRunState.FAILED,
                         "execution_ids": tuple(
-                            execution.internal_execution_id.value for execution in executions
+                            execution.internal_execution_id.value
+                            for execution in executions
                         ),
                         "execution_plan_indexes": tuple(execution_plan_indexes),
                         "vacuous_plan_indexes": tuple(vacuous_plan_indexes),
@@ -505,15 +541,98 @@ def execute_staged_workflow_run(
                 )
                 updated_run = _updated_run(updated_run, failed)
                 raise WorkflowExecutionError(
-                    f"step_index {step_index} execution failed: {_error_description(error)}",
+                    f"step_index {step_index} execution failed: "
+                    f"{_error_description(error)}",
                     workflow_run=updated_run,
                     completed_steps=tuple(step_results),
                 ) from error
+            calls.extend(bound)
+            call_plan_indexes.extend([plan_index] * len(bound))
 
-            executions.extend(produced)
-            execution_plan_indexes.extend([plan_index] * len(produced))
-            if reference is None:
-                execution_cache.setdefault((step_index, plan_index), []).extend(produced)
+            plan_executions: list[ExecutionResult] = []
+            for call in bound:
+                try:
+                    reuse_reference = plan.execution_reuse_from
+                    if reuse_reference is None:
+                        produced = (execute_bound_call(call, executor),)  # type: ignore[arg-type]
+                    else:
+                        key = (
+                            reuse_reference.step_index,
+                            reuse_reference.plan_index,
+                        )
+                        try:
+                            produced = tuple(execution_cache[key])
+                        except KeyError as error:
+                            raise CandidateFlowError(
+                                "reused execution is not available from its declared "
+                                f"owner {key}"
+                            ) from error
+                except Exception as error:
+                    if not plan.required:
+                        warnings.append(
+                            _supplementary_warning(
+                                step_index, plan_index, plan, error
+                            )
+                        )
+                        continue
+
+                    partial = StepExecutionResult(
+                        step_index=step_index, executions=tuple(executions)
+                    )
+                    step_results.append(partial)
+                    failed = original_step_run.model_copy(
+                        update={
+                            "state": StepRunState.FAILED,
+                            "execution_ids": tuple(
+                                execution.internal_execution_id.value
+                                for execution in executions
+                            ),
+                            "execution_plan_indexes": tuple(execution_plan_indexes),
+                            "vacuous_plan_indexes": tuple(vacuous_plan_indexes),
+                            "warnings": tuple(warnings),
+                            "error": _error_description(error),
+                        }
+                    )
+                    updated_run = _updated_run(updated_run, failed)
+                    raise WorkflowExecutionError(
+                        f"step_index {step_index} execution failed: "
+                        f"{_error_description(error)}",
+                        workflow_run=updated_run,
+                        completed_steps=tuple(step_results),
+                    ) from error
+
+                executions.extend(produced)
+                plan_executions.extend(produced)
+                execution_plan_indexes.extend([plan_index] * len(produced))
+                if reuse_reference is None:
+                    execution_cache.setdefault((step_index, plan_index), []).extend(
+                        produced
+                    )
+
+            if any(
+                later.candidate_input_from_plan is not None
+                and later.candidate_input_from_plan.plan_index == plan_index
+                for later in original_step_run.endpoint_plans[plan_index + 1 :]
+            ):
+                view = _candidate_view_from_plan_executions(
+                    original_step_run,
+                    plan_index,
+                    tuple(plan_executions),
+                    normalized_execution_cache=normalized_execution_cache,
+                    validate_semantic_model=validate_semantic_model,
+                )
+                candidate_ids_by_origin_by_plan[plan_index] = (
+                    _candidate_ids_by_origin_from_view(view)
+                    if view.portfolios
+                    else {}
+                )
+
+        binding = StepBindingResult(
+            step_index=step_index,
+            bound_calls=tuple(calls),
+            plan_indexes=tuple(call_plan_indexes),
+        )
+        bindings.append(binding)
 
         result = StepExecutionResult(step_index=step_index, executions=tuple(executions))
         step_results.append(result)

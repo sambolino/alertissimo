@@ -10,6 +10,16 @@ CANDIDATE_ID = "ZTF20acpwljl"
 RA = 124.87996115142856
 DEC = -6.0205001
 RADIUS_ARCSEC = 5.0
+LASAIR_SUMMARY_PARAMS = {
+    "selected": (
+        "objects.objectId,objects.ramean,objects.decmean,objects.ncand,"
+        "objects.jdmin,objects.jdmax"
+    ),
+    "tables": "objects",
+    "limit": 100,
+    "offset": 0,
+    "conditions": f'objects.objectId IN ("{CANDIDATE_ID}")',
+}
 FIRST_PASS = f"""objects from ztf via lasair
 inside ({RA}, {DEC}, {RADIUS_ARCSEC}arcsec)
 with lightcurve via fink
@@ -34,6 +44,9 @@ def _executor() -> FixtureEndpointExecutor:
                 "fink", "ztf", "objects", objectId=CANDIDATE_ID
             ): "fink_objects_ztf20acpwljl_quality.json",
             fixture_key(
+                "lasair", "ztf", "query", **LASAIR_SUMMARY_PARAMS
+            ): "../../../tests/fixtures/lasair/ztf/capture_20260813T110413Z/query_core.json",
+            fixture_key(
                 "lasair", "ztf", "lightcurves", objectIds=CANDIDATE_ID
             ): "lasair_lightcurves_ztf20acpwljl.json",
         }
@@ -45,13 +58,13 @@ def test_public_execute_dsl_retains_one_active_workflow_for_ui_continuation():
 
     first = api.execute_dsl(FIRST_PASS, executor=executor)
     assert len(first.portfolios) == 1
-    assert len(executor.calls) == 2
+    assert len(executor.calls) == 3
     active_before_validation = api._active_workflow
 
     validation = api.validate_dsl(CONTINUATION)
     assert validation.is_valid
     assert validation.is_runnable
-    assert len(executor.calls) == 2
+    assert len(executor.calls) == 3
     assert api._active_workflow is active_before_validation
     assert validation.compilation is not None
     assert validation.compilation.workflow.steps[: len(first.workflow.steps)] == list(
@@ -68,7 +81,7 @@ def test_public_execute_dsl_retains_one_active_workflow_for_ui_continuation():
         "filter",
         "get_lightcurve",
     ]
-    assert len(executor.calls) == 3
+    assert len(executor.calls) == 4
     assert executor.calls[-1] == (
         "lasair",
         "ztf",
@@ -94,7 +107,7 @@ def test_complete_program_replaces_the_active_workflow():
         "cone_search",
         "get_lightcurve",
     ]
-    assert len(second_executor.calls) == 2
+    assert len(second_executor.calls) == 3
 
 
 def test_object_lookup_starts_workflow_and_continuation_reuses_its_execution():

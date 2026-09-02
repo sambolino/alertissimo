@@ -17,6 +17,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
+    ConeSearchStep,
     ConfirmStep,
     DeriveStep,
     FilterStep,
@@ -48,6 +49,7 @@ from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
     EndpointPlanRef,
     MaterialInputRef,
+    PlanCandidateInputRef,
     StepRun,
     StepRunState,
     WorkflowRun,
@@ -186,6 +188,34 @@ def _forced_photometry_supplement(
     return candidates[0]
 
 
+def _lasair_ztf_cone_summary_supplement(
+    step: Step,
+    primary: EndpointCapability,
+    graph: CapabilityGraph,
+) -> EndpointCapability | None:
+    """Select the compact Lasair query paired with its thin ZTF cone search."""
+
+    if not isinstance(step, ConeSearchStep):
+        return None
+    if (primary.broker, primary.origin, primary.endpoint) != (
+        "lasair",
+        "ztf",
+        "cone",
+    ):
+        return None
+    matches = tuple(
+        endpoint
+        for endpoint in graph.endpoints_for("lasair", "ztf")
+        if endpoint.endpoint == "query"
+    )
+    if len(matches) != 1:
+        raise PlanningDeferredError(
+            "Lasair/ZTF cone summary realization requires exactly one registered "
+            "query endpoint"
+        )
+    return matches[0]
+
+
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
@@ -209,7 +239,29 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     )
     plans: list[EndpointPlan] = []
     for endpoint in selected:
+        primary_index = len(plans)
         plans.append(_endpoint_plan(step, endpoint, validation, graph))
+        cone_summary = _lasair_ztf_cone_summary_supplement(step, endpoint, graph)
+        if cone_summary is not None:
+            plans.append(
+                _endpoint_plan(step, cone_summary, validation, graph).model_copy(
+                    update={
+                        "candidate_input_from_plan": PlanCandidateInputRef(
+                            plan_index=primary_index
+                        ),
+                        "request_params": {
+                            "selected": (
+                                "objects.objectId,objects.ramean,objects.decmean,"
+                                "objects.ncand,objects.jdmin,objects.jdmax"
+                            ),
+                            "tables": "objects",
+                            "limit": 100,
+                            "offset": 0,
+                        },
+                        "required": False,
+                    }
+                )
+            )
         if isinstance(step, GetLightcurveStep):
             supplement = _forced_photometry_supplement(step, endpoint, graph)
             if supplement is not None:

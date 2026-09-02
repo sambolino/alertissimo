@@ -43,7 +43,13 @@ OLD_HELPER_KEYS = {
     "sources", "attribute_inventory", "mapping_policy", "availability",
     "source_fields", "field_status", "record_type", "object_summary", "endpoints",
 }
-BINDING_KEYS = {"collection", "max_items", "roles", "adapter"}
+BINDING_KEYS = {
+    "collection",
+    "max_items",
+    "roles",
+    "adapter",
+    "adapter_options",
+}
 
 
 def _load_yaml(path: Path) -> Any:
@@ -123,6 +129,7 @@ def _validate_binding(binding: dict[Any, Any], param: dict[Any, Any], where: str
     max_items = binding.get("max_items")
     roles = binding.get("roles")
     adapter = binding.get("adapter")
+    adapter_options = binding.get("adapter_options")
     direct_role = param.get("bind")
 
     if roles is not None:
@@ -152,6 +159,20 @@ def _validate_binding(binding: dict[Any, Any], param: dict[Any, Any], where: str
                 f"{where}: adapter requires bind or binding.roles"
             )
 
+    if adapter_options is not None:
+        if adapter is None:
+            raise MappingSchemaError(
+                f"{where}: adapter_options requires an adapter"
+            )
+        if not isinstance(adapter_options, dict):
+            raise MappingSchemaError(
+                f"{where}: adapter_options must be a mapping"
+            )
+        if any(not isinstance(key, str) or not key for key in adapter_options):
+            raise MappingSchemaError(
+                f"{where}: adapter_options keys must be non-empty strings"
+            )
+
     if roles is not None and adapter is None:
         raise MappingSchemaError(
             f"{where}: binding.roles requires an adapter"
@@ -166,12 +187,16 @@ def _validate_binding(binding: dict[Any, Any], param: dict[Any, Any], where: str
             raise MappingSchemaError(
                 f"{where}: collection binding cannot compose binding.roles"
             )
-        if adapter is not None:
-            raise MappingSchemaError(
-                f"{where}: binding.adapter and binding.collection cannot be combined"
-            )
-        if collection != "csv":
+        if collection not in {"csv", "adapter"}:
             raise MappingSchemaError(f"{where}: unknown collection transform {collection!r}")
+        if collection == "csv" and adapter is not None:
+            raise MappingSchemaError(
+                f"{where}: csv collection cannot declare an adapter"
+            )
+        if collection == "adapter" and adapter is None:
+            raise MappingSchemaError(
+                f"{where}: adapter collection requires an adapter"
+            )
     elif max_items is not None:
         raise MappingSchemaError(f"{where}: max_items requires a collection binding")
 

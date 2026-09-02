@@ -113,6 +113,12 @@ SCENARIOS: tuple[Scenario, ...] = (
         required_env=("LASAIR_ZTF_TOKEN",),
     ),
     Scenario(
+        "dsl-lasair-compact-summary",
+        "one Lasair/ZTF cone Step -> ID-bound compact SQL summary enrichment",
+        _python_script("scripts/live_dsl_lasair_summary.py"),
+        required_env=("LASAIR_ZTF_TOKEN",),
+    ),
+    Scenario(
         "dsl-filter-candidate-flow",
         "DSL Search -> Fink evidence -> local Filter -> survivor-bound Lasair Get",
         _python_script("scripts/live_dsl_filter.py"),

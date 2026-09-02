@@ -198,12 +198,15 @@ def _bind_declared_parameter(
     if adapter_path is not None:
         if not isinstance(adapter_path, str) or not adapter_path:
             raise ParameterBindingError("binding.adapter must be a non-empty string")
-        if binding.get("collection") is not None:
-            raise ParameterBindingError(
-                "binding.adapter and binding.collection cannot be combined"
-            )
+        adapter_options = binding.get("adapter_options") or {}
+        if not isinstance(adapter_options, Mapping):
+            raise ParameterBindingError("binding.adapter_options must be a mapping")
         try:
-            return apply_binding_adapter(adapter_path, values)
+            return apply_binding_adapter(
+                adapter_path,
+                values,
+                options=adapter_options,
+            )
         except RequestTransformError as error:
             raise ParameterBindingError(
                 f"{error} for {_context(endpoint_plan)} physical parameter "
@@ -265,6 +268,27 @@ def bind_endpoint(
 
     supplied_runtime = dict(runtime_values or {})
     params: dict[str, Any] = {}
+
+    for physical_name, value in endpoint_plan.request_params.items():
+        if physical_name not in spec.params:
+            raise UnsupportedParameterBindingError(
+                f"request parameters for {_context(endpoint_plan)} reference "
+                f"undeclared physical parameter {physical_name!r}"
+            )
+        declaration = spec.params[physical_name] or {}
+        coerced = _coerce_physical_type(
+            value,
+            declaration,
+            endpoint_plan=endpoint_plan,
+            physical_name=physical_name,
+            role="planned_request",
+        )
+        _set_param(
+            params,
+            physical_name,
+            coerced,
+            endpoint_plan=endpoint_plan,
+        )
 
     realization = endpoint_plan.predicate_realization
     if realization is not None:
