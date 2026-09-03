@@ -52,6 +52,18 @@ The evaluation split is made by canonical DSL answer rather than by individual
 row, preventing paraphrases of the same DSL program from appearing in both
 splits. The default split is 85/15 and is deterministic with `--seed`.
 
-For a smaller smoke run, use `--epochs 0.1 --logging-steps 1`. QLoRA requires a
-CUDA GPU; use `--help` to adjust batch size, sequence length, and checkpoint
-resumption for the available card.
+For a smaller smoke run, use `--epochs 0.1 --logging-steps 1`. Checkpoints are
+saved every 50 optimizer steps by default, including the optimizer and trainer
+state needed for resumption. To continue an interrupted run, pass the latest
+checkpoint directory, for example:
+
+```bash
+python scripts/train_qlora.py \
+  --model Qwen/Qwen3-8B \
+  --dataset dataset/nlp_finetune_train.jsonl \
+  --output /path/to/alertissimo-qlora-v2 \
+  --resume-from-checkpoint /path/to/alertissimo-qlora-v2/checkpoint-150
+```
+
+QLoRA requires a CUDA GPU; use `--save-steps` to choose a more frequent or less
+frequent checkpoint interval for the available storage and runtime.

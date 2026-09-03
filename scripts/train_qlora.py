@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import inspect
 from pathlib import Path
 import random
 from typing import Any
@@ -90,11 +89,19 @@ def main() -> int:
     parser.add_argument("--learning-rate", type=float, default=2e-4)
     parser.add_argument("--max-seq-length", type=int, default=1024)
     parser.add_argument("--logging-steps", type=int, default=5)
+    parser.add_argument(
+        "--save-steps",
+        type=int,
+        default=50,
+        help="Save a resumable checkpoint every N optimizer steps.",
+    )
     parser.add_argument("--resume-from-checkpoint", type=Path)
     args = parser.parse_args()
 
     if not 0 < args.eval_ratio < 1:
         parser.error("--eval-ratio must be between 0 and 1")
+    if args.save_steps < 1:
+        parser.error("--save-steps must be at least 1")
 
     try:
         import torch
@@ -130,7 +137,7 @@ def main() -> int:
         args.model,
         quantization_config=quantization,
         device_map="auto",
-        torch_dtype=compute_dtype,
+        dtype=compute_dtype,
     )
     model.config.use_cache = False
     model = prepare_model_for_kbit_training(model)
@@ -151,8 +158,13 @@ def main() -> int:
         gradient_accumulation_steps=args.gradient_accumulation,
         learning_rate=args.learning_rate,
         logging_steps=args.logging_steps,
-        eval_strategy="epoch",
-        save_strategy="epoch",
+        # Keep evaluation and saving on the same schedule so that
+        # load_best_model_at_end remains valid. Step checkpoints make an
+        # interrupted Colab session resumable before the epoch completes.
+        eval_strategy="steps",
+        eval_steps=args.save_steps,
+        save_strategy="steps",
+        save_steps=args.save_steps,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
@@ -161,16 +173,18 @@ def main() -> int:
         gradient_checkpointing=True,
         optim="paged_adamw_8bit",
         dataset_text_field="text",
-        packing=False,
+        # The NLP requests are short and the DSL targets are short.  Packing
+        # multiple examples into each sequence avoids wasting most of a batch
+        # on padding and is substantially faster on a T4.
+        packing=True,
         seed=args.seed,
         report_to="none",
     )
-    # TRL renamed this option between releases; keep the setup usable across
-    # the supported TRL line without changing the training semantics.
-    if "max_length" in inspect.signature(SFTConfig).parameters:
-        training_kwargs["max_length"] = args.max_seq_length
-    else:
-        training_kwargs["max_seq_length"] = args.max_seq_length
+    # Current TRL uses max_length and processing_class.  The old
+    # max_seq_length/tokenizer spellings are intentionally not used here.
+    training_kwargs["max_length"] = args.max_seq_length
+    training_kwargs["gradient_checkpointing_kwargs"] = {"use_reentrant": False}
+    training_kwargs["save_total_limit"] = 2
     training = SFTConfig(**training_kwargs)
     trainer_kwargs: dict[str, Any] = dict(
         model=model,
@@ -179,10 +193,7 @@ def main() -> int:
         eval_dataset=eval_dataset,
         peft_config=lora,
     )
-    if "processing_class" in inspect.signature(SFTTrainer).parameters:
-        trainer_kwargs["processing_class"] = tokenizer
-    else:
-        trainer_kwargs["tokenizer"] = tokenizer
+    trainer_kwargs["processing_class"] = tokenizer
     trainer = SFTTrainer(
         **trainer_kwargs,
     )

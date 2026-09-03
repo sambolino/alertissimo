@@ -71,7 +71,7 @@ def main() -> int:
         args.base_model,
         quantization_config=quantization,
         device_map="auto",
-        torch_dtype=dtype,
+        dtype=dtype,
     )
     model = PeftModel.from_pretrained(base_model, args.adapter)
     model.eval()

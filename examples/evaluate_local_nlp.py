@@ -10,34 +10,14 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from alertissimo.api import validate_dsl
+from alertissimo.nlp.prompt import NLP_TO_DSL_SYSTEM_PROMPT
 
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE / "nlp_local_dev.jsonl"
 DEFAULT_OUTPUT = HERE / "nlp_local_dev_results.md"
 
-SYSTEM_PROMPT = """\
-Translate the astronomy request directly to Alertissimo DSL.
-Return only DSL text: no JSON, Markdown fences, explanation, or reasoning.
-Use lowercase DSL keywords, providers, surveys, and products: alerce, antares,
-fink, lasair, lsst, ztf, lightcurve, detection, classification, crossmatch.
-Object identifiers are opaque: copy their spelling and letter case byte-for-byte.
-The survey name introducing an identifier is not part of that identifier. For
-example, "LSST object 313936986529333309" becomes `object 313936986529333309`,
-while "ZTF object ZTF18abcdefg" becomes `object ZTF18abcdefg`.
-The first line selects candidates, for example:
-object ZTF20abc from ztf via antares
-objects from ztf via alerce
-Following clauses each occupy one line, for example:
-inside (124.88, -6.02, 5arcsec)
-latest 3
-with lightcurve via antares
-with detection via alerce
-with crossmatch from gaia via antares
-A candidate survey belongs only in the first line. Never write `from lsst` or
-`from ztf` in a `with` clause. Preserve every explicit identifier, broker,
-survey, coordinate, radius, limit, requested product, and ordering operation.
-"""
+SYSTEM_PROMPT = NLP_TO_DSL_SYSTEM_PROMPT
 
 
 def _examples(path: Path) -> list[dict[str, str]]:

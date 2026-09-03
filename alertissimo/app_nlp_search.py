@@ -12,21 +12,12 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from alertissimo.app_search import load_demo_search_data, render_dsl_entry
+from alertissimo.nlp.prompt import NLP_TO_DSL_SYSTEM_PROMPT
 
 
 load_dotenv(Path(__file__).parents[1] / ".env", override=False)
 
-SYSTEM_PROMPT = """\
-Translate the astronomy request directly to Alertissimo DSL.
-Return only DSL text: no JSON, Markdown fences, explanation, or reasoning.
-Use lowercase DSL keywords, providers, surveys, and products: alerce, antares,
-fink, lasair, lsst, ztf, lightcurve, detection, classification, crossmatch.
-Object identifiers are opaque: copy their spelling and letter case byte-for-byte.
-The survey name introducing an identifier is not part of that identifier.
-The first line selects candidates. Following clauses each occupy one line.
-Preserve every explicit identifier, broker, survey, coordinate, radius, limit,
-requested product, and ordering operation.
-"""
+SYSTEM_PROMPT = NLP_TO_DSL_SYSTEM_PROMPT
 
 
 def translate_to_dsl(*, host: str, model: str, request_text: str) -> str:
