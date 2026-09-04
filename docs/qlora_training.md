@@ -1,7 +1,7 @@
 # QLoRA training
 
-The checked-in dataset is `dataset/nlp_finetune_train.jsonl`. It contains 720
-validated English-to-Alertissimo-DSL examples in chat format.
+The checked-in dataset is `dataset/nlp_finetune_train.jsonl`. It contains
+13,400 validated English-to-Alertissimo-DSL examples in chat format.
 
 Install the optional GPU dependencies in an environment with a CUDA-enabled
 PyTorch build:
@@ -53,7 +53,7 @@ row, preventing paraphrases of the same DSL program from appearing in both
 splits. The default split is 85/15 and is deterministic with `--seed`.
 
 For a smaller smoke run, use `--epochs 0.1 --logging-steps 1`. Checkpoints are
-saved every 50 optimizer steps by default, including the optimizer and trainer
+saved every 25 optimizer steps by default, including the optimizer and trainer
 state needed for resumption. To continue an interrupted run, pass the latest
 checkpoint directory, for example:
 

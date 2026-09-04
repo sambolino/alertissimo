@@ -92,7 +92,7 @@ def main() -> int:
     parser.add_argument(
         "--save-steps",
         type=int,
-        default=50,
+        default=25,
         help="Save a resumable checkpoint every N optimizer steps.",
     )
     parser.add_argument("--resume-from-checkpoint", type=Path)
