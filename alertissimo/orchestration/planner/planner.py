@@ -17,7 +17,6 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
-    ConeSearchStep,
     ConfirmStep,
     DeriveStep,
     FilterStep,
@@ -50,6 +49,7 @@ from alertissimo.orchestration.runtime.models import (
     EndpointPlanRef,
     MaterialInputRef,
     PlanCandidateInputRef,
+    SearchSelectionRealization,
     StepRun,
     StepRunState,
     WorkflowRun,
@@ -136,6 +136,9 @@ def _endpoint_plan(
     endpoint: EndpointCapability,
     validation: CapabilityValidationResult,
     graph: CapabilityGraph,
+    *,
+    allow_selection_pushdown: bool = False,
+    include_selection: bool = True,
 ) -> EndpointPlan:
     realization = None
     if isinstance(step, SearchStep) and step.predicate is not None:
@@ -144,12 +147,35 @@ def _endpoint_plan(
             endpoint=endpoint,
             graph=graph,
         )
+    selection_realization = None
+    if include_selection and isinstance(step, SearchStep) and step.selection is not None:
+        pushdown = None
+        params = {}
+        latest = endpoint.latest_selection
+        if (
+            allow_selection_pushdown
+            and (realization is None or realization.residual is None)
+            and step.selection.latest is not None
+            and latest is not None
+            and latest.exact
+        ):
+            pushdown = step.selection
+            params = {
+                **dict(latest.fixed_params),
+                latest.count_parameter: step.selection.latest,
+            }
+        selection_realization = SearchSelectionRealization(
+            pushdown=pushdown,
+            residual=step.selection,
+            params=params,
+        )
     return EndpointPlan(
         broker=endpoint.broker,
         origin=endpoint.origin,
         endpoint=endpoint.endpoint,
         semantic_type=validation.semantic_type,
         predicate_realization=realization,
+        selection_realization=selection_realization,
     )
 
 
@@ -188,30 +214,22 @@ def _forced_photometry_supplement(
     return candidates[0]
 
 
-def _lasair_ztf_cone_summary_supplement(
-    step: Step,
+def _declared_supplement_endpoint(
     primary: EndpointCapability,
+    endpoint_name: str,
     graph: CapabilityGraph,
-) -> EndpointCapability | None:
-    """Select the compact Lasair query paired with its thin ZTF cone search."""
+) -> EndpointCapability:
+    """Resolve one provider-local supplement without embedding provider identities."""
 
-    if not isinstance(step, ConeSearchStep):
-        return None
-    if (primary.broker, primary.origin, primary.endpoint) != (
-        "lasair",
-        "ztf",
-        "cone",
-    ):
-        return None
     matches = tuple(
         endpoint
-        for endpoint in graph.endpoints_for("lasair", "ztf")
-        if endpoint.endpoint == "query"
+        for endpoint in graph.endpoints_for(primary.broker, primary.origin)
+        if endpoint.endpoint == endpoint_name
     )
     if len(matches) != 1:
         raise PlanningDeferredError(
-            "Lasair/ZTF cone summary realization requires exactly one registered "
-            "query endpoint"
+            "declared endpoint supplement cannot be resolved uniquely: "
+            f"{primary.broker}/{primary.origin}/{endpoint_name}"
         )
     return matches[0]
 
@@ -237,28 +255,37 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     selected = tuple(
         _select_one(validation, item) for item in validation.source_results
     )
+    allow_selection_pushdown = len(selected) == 1
     plans: list[EndpointPlan] = []
     for endpoint in selected:
         primary_index = len(plans)
-        plans.append(_endpoint_plan(step, endpoint, validation, graph))
-        cone_summary = _lasair_ztf_cone_summary_supplement(step, endpoint, graph)
-        if cone_summary is not None:
+        plans.append(
+            _endpoint_plan(
+                step,
+                endpoint,
+                validation,
+                graph,
+                allow_selection_pushdown=allow_selection_pushdown,
+            )
+        )
+        for declaration in endpoint.supplements:
+            supplement = _declared_supplement_endpoint(
+                endpoint, declaration.endpoint, graph
+            )
             plans.append(
-                _endpoint_plan(step, cone_summary, validation, graph).model_copy(
+                _endpoint_plan(
+                    step,
+                    supplement,
+                    validation,
+                    graph,
+                    include_selection=False,
+                ).model_copy(
                     update={
                         "candidate_input_from_plan": PlanCandidateInputRef(
                             plan_index=primary_index
                         ),
-                        "request_params": {
-                            "selected": (
-                                "objects.objectId,objects.ramean,objects.decmean,"
-                                "objects.ncand,objects.jdmin,objects.jdmax"
-                            ),
-                            "tables": "objects",
-                            "limit": 100,
-                            "offset": 0,
-                        },
-                        "required": False,
+                        "request_params": dict(declaration.request_params),
+                        "required": declaration.required,
                     }
                 )
             )

@@ -35,8 +35,8 @@ from scripts import live_dsl_confirm as existence_live
 
 DEFAULT_RA = existence_live.DEFAULT_RA
 DEFAULT_DEC = existence_live.DEFAULT_DEC
-DEFAULT_RADIUS_ARCSEC = existence_live.DEFAULT_RADIUS_ARCSEC
-DEFAULT_EXPECTED_OBJECT_ID = existence_live.DEFAULT_EXPECTED_OBJECT_ID
+DEFAULT_RADIUS_ARCSEC = 300.0
+DEFAULT_EXPECTED_OBJECT_ID = None
 DEFAULT_QUORUM = 2
 CONFIRM_BROKERS = ("fink", "lasair")
 PREDICATE_TEXT = "exists classification.best.class"
@@ -50,7 +50,7 @@ def build_dsl(*, ra: float, dec: float, radius_arcsec: float, quorum: int) -> st
         "latest 1\n"
         f"where {PREDICATE_TEXT}\n"
         f"confirm by {quorum} via {brokers}\n"
-        "with lightcurve via fink\n"
+        "with lightcurve via alerce\n"
     )
 
 
@@ -86,7 +86,15 @@ def assert_plan_contract(workflow, run) -> None:
     if confirm_step.predicate != search_step.predicate:
         raise RuntimeError("Confirm proposition differs from the canonical Search predicate")
 
-    _search_run, confirm_run, downstream_run = run.steps
+    search_run, confirm_run, downstream_run = run.steps
+    search_plan = search_run.endpoint_plans[0]
+    selection = search_plan.selection_realization
+    if selection is None or selection.residual != search_step.selection:
+        raise RuntimeError("latest selection has no normalized residual guarantee")
+    if selection.pushdown is not None or selection.params:
+        raise RuntimeError(
+            "latest was unsafely pushed ahead of the residual existence predicate"
+        )
     if confirm_run.candidate_input_from is not None:
         raise RuntimeError("Confirm StepRun must not carry physical candidate lineage")
     if confirm_run.material_input_from != MaterialInputRef(step_index=0):
@@ -156,15 +164,23 @@ def assert_live_contract(
     staged,
     finalized,
     *,
-    expected_object_id: str,
+    expected_object_id: str | None,
     quorum: int,
 ) -> tuple[bool, str]:
-    identity = ("ztf", expected_object_id)
     search_map = existence_live._identity_map(finalized.steps[0])
-    if identity not in search_map:
+    if not search_map:
         return False, (
-            f"expected candidate {identity!r} was not discovered while satisfying "
-            f"{PREDICATE_TEXT!r}"
+            f"no candidate in the cone satisfied {PREDICATE_TEXT!r}"
+        )
+    if len(search_map) != 1:
+        raise RuntimeError(
+            f"latest 1 exposed {len(search_map)} Search candidates instead of one"
+        )
+    identity = next(iter(search_map))
+    if expected_object_id is not None and identity != ("ztf", expected_object_id):
+        return False, (
+            f"latest qualifying candidate was {identity!r}, not the optional "
+            f"expected object {expected_object_id!r}"
         )
 
     confirm_step = workflow.steps[1]

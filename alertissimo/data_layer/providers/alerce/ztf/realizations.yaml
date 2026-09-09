@@ -1,0 +1,13 @@
+broker: alerce
+origin: ztf
+realizations:
+  query_objects:
+    selection_pushdown:
+      latest:
+        semantic_path: summary.time.last_mjd
+        count_parameter: page_size
+        fixed_params:
+          page: 1
+          order_by: lastmjd
+          order_mode: DESC
+        exact: true

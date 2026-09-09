@@ -19,10 +19,16 @@ from .normalize import (
     normalize_workflow_execution,
 )
 from .predicate import evaluate_portfolio_predicate, prune_portfolios
+from .selection import (
+    SearchSelectionError,
+    select_portfolios,
+    select_step_portfolios,
+)
 
 __all__ = [
     "ExecutionPortfolioResult",
     "StepPortfolioResult",
+    "SearchSelectionError",
     "WorkflowNormalizationAlignmentError",
     "WorkflowPortfolioResult",
     "consolidate_portfolios",
@@ -31,5 +37,7 @@ __all__ = [
     "normalize_step_execution",
     "normalize_workflow_execution",
     "prune_portfolios",
+    "select_portfolios",
+    "select_step_portfolios",
     "summary_object_identity",
 ]

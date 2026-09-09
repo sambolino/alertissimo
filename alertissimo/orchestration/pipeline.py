@@ -25,6 +25,7 @@ from alertissimo.orchestration.normalization import (
     normalize_execution,
     normalize_workflow_execution,
     prune_portfolios,
+    select_step_portfolios,
     summary_object_identity,
 )
 from alertissimo.orchestration.runtime import (
@@ -668,6 +669,8 @@ def execute_staged_workflow_run(
                 normalized_execution_cache=normalized_execution_cache,
                 validate_semantic_model=validate_semantic_model,
             )
+            if getattr(step, "selection", None) is not None:
+                view = select_step_portfolios(view, step.selection)
             if isinstance(step, ConfirmStep):
                 source_reference = succeeded.material_input_from
                 if source_reference is None:

@@ -1,0 +1,13 @@
+broker: lasair
+origin: ztf
+realizations:
+  cone:
+    supplements:
+      - endpoint: query
+        candidate_input: primary
+        required: false
+        request_params:
+          selected: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+          tables: objects
+          limit: 100
+          offset: 0

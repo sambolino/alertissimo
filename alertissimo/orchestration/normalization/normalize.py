@@ -5,7 +5,13 @@ from __future__ import annotations
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep, and_predicates
+from alertissimo.orchestration.ir import (
+    DeriveStep,
+    FilterStep,
+    MatchStep,
+    SearchStep,
+    and_predicates,
+)
 from alertissimo.orchestration.ir.predicates import Predicate
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
@@ -24,6 +30,7 @@ from .models import (
     consolidate_portfolios,
 )
 from .predicate import prune_portfolios
+from .selection import select_step_portfolios
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -615,9 +622,10 @@ def normalize_workflow_execution(
             normalized_by_execution_id,
             validate_semantic_model=validate_semantic_model,
         )
-        normalized_steps.append(
-            _materialize_enrichment_view(step_run, own, normalized_steps)
-        )
+        view = _materialize_enrichment_view(step_run, own, normalized_steps)
+        if isinstance(step, SearchStep) and step.selection is not None:
+            view = select_step_portfolios(view, step.selection)
+        normalized_steps.append(view)
 
     return WorkflowPortfolioResult(
         run=result.run,

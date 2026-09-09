@@ -290,6 +290,29 @@ def bind_endpoint(
             endpoint_plan=endpoint_plan,
         )
 
+    selection = endpoint_plan.selection_realization
+    if selection is not None:
+        for physical_name, value in selection.params.items():
+            if physical_name not in spec.params:
+                raise UnsupportedParameterBindingError(
+                    f"selection realization for {_context(endpoint_plan)} references "
+                    f"undeclared physical parameter {physical_name!r}"
+                )
+            declaration = spec.params[physical_name] or {}
+            coerced = _coerce_physical_type(
+                value,
+                declaration,
+                endpoint_plan=endpoint_plan,
+                physical_name=physical_name,
+                role="semantic_selection",
+            )
+            _set_param(
+                params,
+                physical_name,
+                coerced,
+                endpoint_plan=endpoint_plan,
+            )
+
     realization = endpoint_plan.predicate_realization
     if realization is not None:
         for physical_name, value in realization.params.items():

@@ -35,6 +35,28 @@ class EndpointCapability:
     output_type: str | None
     binding_roles: tuple[str, ...] = ()
     collection_binding_roles: tuple[str, ...] = ()
+    latest_selection: "LatestSelectionCapability | None" = None
+    supplements: tuple["EndpointSupplementCapability", ...] = ()
+
+
+@dataclass(frozen=True)
+class LatestSelectionCapability:
+    """Exact physical pushdown recipe for semantic ``latest N`` selection."""
+
+    semantic_path: str
+    count_parameter: str
+    fixed_params: tuple[tuple[str, Any], ...]
+    exact: bool
+
+
+@dataclass(frozen=True)
+class EndpointSupplementCapability:
+    """Declarative same-Step physical supplement attached to a primary endpoint."""
+
+    endpoint: str
+    candidate_input: str
+    required: bool
+    request_params: tuple[tuple[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -259,6 +281,173 @@ def _parameter_binding_roles(declaration: Any) -> tuple[str, ...]:
     return tuple(sorted(roles))
 
 
+def _compile_realizations(
+    path: Path,
+    *,
+    broker: str,
+    origin: str,
+    endpoint_defs: Mapping[str, Any],
+    mapped_paths_by_endpoint: Mapping[str, set[str]],
+) -> dict[
+    str,
+    tuple[LatestSelectionCapability | None, tuple[EndpointSupplementCapability, ...]],
+]:
+    """Validate provider-local planning recipes against physical declarations."""
+
+    if not path.is_file():
+        return {}
+    document = _load_mapping(path)
+    if set(document) - {"broker", "origin", "realizations"}:
+        raise CapabilityGraphError(f"{path}: unsupported top-level realization keys")
+    if document.get("broker") != broker or document.get("origin") != origin:
+        raise CapabilityGraphError(f"{path}: broker/origin do not match mappings.yaml")
+    declarations = _dict(document.get("realizations"), f"{path}: realizations")
+    compiled = {}
+    for endpoint, raw_declaration in declarations.items():
+        if endpoint not in endpoint_defs:
+            raise CapabilityGraphError(f"{path}: unknown primary endpoint {endpoint!r}")
+        declaration = _dict(
+            raw_declaration, f"{path}: realization {endpoint!r}"
+        )
+        if set(declaration) - {"selection_pushdown", "supplements"}:
+            raise CapabilityGraphError(
+                f"{path}: realization {endpoint!r} has unsupported keys"
+            )
+        primary = _dict(
+            endpoint_defs[endpoint], f"{path}: physical endpoint {endpoint!r}"
+        )
+        primary_params = _dict(
+            primary.get("params", {}), f"{path}: physical endpoint {endpoint!r} params"
+        )
+
+        latest = None
+        selection = declaration.get("selection_pushdown")
+        if selection is not None:
+            selection = _dict(
+                selection, f"{path}: realization {endpoint!r} selection_pushdown"
+            )
+            if set(selection) != {"latest"}:
+                raise CapabilityGraphError(
+                    f"{path}: selection_pushdown currently requires only 'latest'"
+                )
+            raw_latest = _dict(
+                selection["latest"],
+                f"{path}: realization {endpoint!r} latest",
+            )
+            if set(raw_latest) - {
+                "semantic_path",
+                "count_parameter",
+                "fixed_params",
+                "exact",
+            }:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} latest has unsupported keys"
+                )
+            semantic_path = raw_latest.get("semantic_path")
+            count_parameter = raw_latest.get("count_parameter")
+            fixed_params = _dict(
+                raw_latest.get("fixed_params", {}),
+                f"{path}: realization {endpoint!r} latest fixed_params",
+            )
+            exact = raw_latest.get("exact")
+            if (
+                not isinstance(semantic_path, str)
+                or semantic_path not in mapped_paths_by_endpoint.get(endpoint, set())
+            ):
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} latest semantic_path must "
+                    "reference a mapped canonical field"
+                )
+            if not isinstance(count_parameter, str) or count_parameter not in primary_params:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} latest count_parameter is not "
+                    "declared by the physical endpoint"
+                )
+            unknown_params = set(fixed_params) - set(primary_params)
+            if unknown_params:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} latest fixed_params reference "
+                    f"undeclared parameters {sorted(unknown_params)!r}"
+                )
+            if not isinstance(exact, bool):
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} latest exact must be boolean"
+                )
+            latest = LatestSelectionCapability(
+                semantic_path=semantic_path,
+                count_parameter=count_parameter,
+                fixed_params=tuple(sorted(fixed_params.items())),
+                exact=exact,
+            )
+
+        supplements = []
+        raw_supplements = declaration.get("supplements", [])
+        if not isinstance(raw_supplements, list):
+            raise CapabilityGraphError(
+                f"{path}: realization {endpoint!r} supplements must be a list"
+            )
+        for index, raw_supplement in enumerate(raw_supplements):
+            supplement = _dict(
+                raw_supplement,
+                f"{path}: realization {endpoint!r} supplement {index}",
+            )
+            if set(supplement) - {
+                "endpoint",
+                "candidate_input",
+                "required",
+                "request_params",
+            }:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} supplement {index} has "
+                    "unsupported keys"
+                )
+            target = supplement.get("endpoint")
+            candidate_input = supplement.get("candidate_input")
+            required = supplement.get("required")
+            request_params = _dict(
+                supplement.get("request_params", {}),
+                f"{path}: realization {endpoint!r} supplement {index} request_params",
+            )
+            if not isinstance(target, str) or target not in endpoint_defs:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} supplement {index} references "
+                    "an unknown endpoint"
+                )
+            if candidate_input != "primary":
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} supplement {index} candidate_input "
+                    "must be 'primary'"
+                )
+            if not isinstance(required, bool):
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} supplement {index} required "
+                    "must be boolean"
+                )
+            target_spec = _dict(
+                endpoint_defs[target], f"{path}: physical endpoint {target!r}"
+            )
+            target_params = _dict(
+                target_spec.get("params", {}),
+                f"{path}: physical endpoint {target!r} params",
+            )
+            unknown_params = set(request_params) - set(target_params)
+            if unknown_params:
+                raise CapabilityGraphError(
+                    f"{path}: realization {endpoint!r} supplement {index} request_params "
+                    f"reference undeclared parameters {sorted(unknown_params)!r}"
+                )
+            supplements.append(
+                EndpointSupplementCapability(
+                    endpoint=target,
+                    candidate_input=candidate_input,
+                    required=required,
+                    request_params=tuple(sorted(request_params.items())),
+                )
+            )
+        compiled[endpoint] = (latest, tuple(supplements))
+    return compiled
+
+
 def build_capability_graph(registry_root: Path | str | None = None) -> CapabilityGraph:
     """Build a deterministic graph from every data-layer provider declaration."""
     root = Path(registry_root) if registry_root is not None else PROVIDERS_ROOT
@@ -291,6 +480,37 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             raise CapabilityGraphError(f"{endpoint_path}: broker/origin do not match mappings.yaml")
 
         endpoint_defs = _dict(endpoints_doc.get("endpoints"), f"{endpoint_path}: endpoints")
+        mapped_paths = _dict(mappings_doc.get("mappings"), f"{mapping_path}: mappings")
+        realization_payloads = _dict(
+            mappings_doc.get("payloads"), f"{mapping_path}: payloads"
+        )
+        payload_endpoints = {
+            payload_key: _dict(
+                declaration, f"{mapping_path}: payload {payload_key!r}"
+            ).get("endpoint", payload_key)
+            for payload_key, declaration in realization_payloads.items()
+        }
+        mapped_paths_by_endpoint: dict[str, set[str]] = {}
+        for semantic_path, references in mapped_paths.items():
+            if not isinstance(semantic_path, str) or not isinstance(references, list):
+                continue
+            canonical_path = canonical_semantic_path(semantic_path)
+            for reference in references:
+                if not isinstance(reference, str) or "#" not in reference:
+                    continue
+                payload_key = reference.split("#", 1)[0]
+                realized_endpoint = payload_endpoints.get(payload_key)
+                if isinstance(realized_endpoint, str):
+                    mapped_paths_by_endpoint.setdefault(realized_endpoint, set()).add(
+                        canonical_path
+                    )
+        realizations = _compile_realizations(
+            mapping_path.with_name("realizations.yaml"),
+            broker=broker,
+            origin=origin,
+            endpoint_defs=endpoint_defs,
+            mapped_paths_by_endpoint=mapped_paths_by_endpoint,
+        )
         for endpoint, raw_spec in endpoint_defs.items():
             if not isinstance(endpoint, str):
                 raise CapabilityGraphError(f"{endpoint_path}: endpoint names must be strings")
@@ -328,6 +548,7 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 and declaration["binding"].get("collection") is not None
                 for role in _parameter_binding_roles(declaration)
             }))
+            latest_selection, supplements = realizations.get(endpoint, (None, ()))
             endpoint_items.append(EndpointCapability(
                 broker, origin, endpoint, path, method,
                 _strings(spec.get("operation_types"), f"{endpoint_path}: operation_types"),
@@ -336,6 +557,8 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 projection_param, supports_projection, output_type,
                 binding_roles,
                 collection_binding_roles,
+                latest_selection,
+                supplements,
             ))
 
         payload_defs = _dict(mappings_doc.get("payloads"), f"{mapping_path}: payloads")
@@ -500,6 +723,7 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
 
 __all__ = [
     "CapabilityGraph", "CapabilityGraphError", "EndpointCapability",
+    "EndpointSupplementCapability", "LatestSelectionCapability",
     "FieldMappingCapability", "PayloadCapability", "RequestConstraintCapability",
     "SemanticRecordCapability", "TransformCapability", "build_capability_graph",
     "canonical_semantic_noun", "canonical_semantic_path",

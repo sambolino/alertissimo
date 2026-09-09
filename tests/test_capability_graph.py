@@ -1,9 +1,14 @@
 """Tests for the normalized-registry capability graph."""
 
 from dataclasses import fields
+from pathlib import Path
+import shutil
 
 import alertissimo.data_layer.runtime.capability_graph as capabilities
+import pytest
+import yaml
 from alertissimo.data_layer.runtime.capability_graph import (
+    CapabilityGraphError,
     build_capability_graph,
     canonical_semantic_noun,
     semantic_record_noun_matches,
@@ -75,6 +80,53 @@ def test_lasair_ztf_endpoint_capabilities_and_projection():
     assert endpoints["query"].projection_param == "selected"
     assert endpoints["object"].supports_projection is False
     assert endpoints["object"].projection_param is None
+
+
+def test_provider_local_realizations_compile_into_endpoint_capabilities():
+    graph = build_capability_graph()
+    alerce = {
+        item.endpoint: item
+        for item in graph.endpoints_for("alerce", "ztf")
+    }
+    latest = alerce["query_objects"].latest_selection
+    assert latest is not None
+    assert latest.semantic_path == "summary.time.last_mjd"
+    assert latest.count_parameter == "page_size"
+    assert dict(latest.fixed_params) == {
+        "page": 1,
+        "order_by": "lastmjd",
+        "order_mode": "DESC",
+    }
+    assert latest.exact is True
+
+    lasair = {
+        item.endpoint: item
+        for item in graph.endpoints_for("lasair", "ztf")
+    }
+    assert [item.endpoint for item in lasair["cone"].supplements] == ["query"]
+    assert lasair["query"].supplements == ()
+
+
+def test_realization_rejects_undeclared_physical_parameters(tmp_path):
+    source = (
+        Path(__file__).parents[1]
+        / "alertissimo"
+        / "data_layer"
+        / "providers"
+        / "alerce"
+        / "ztf"
+    )
+    target = tmp_path / "alerce" / "ztf"
+    shutil.copytree(source, target)
+    path = target / "realizations.yaml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["realizations"]["query_objects"]["selection_pushdown"]["latest"][
+        "fixed_params"
+    ]["invented_parameter"] = 1
+    path.write_text(yaml.safe_dump(document), encoding="utf-8")
+
+    with pytest.raises(CapabilityGraphError, match="undeclared parameters"):
+        build_capability_graph(tmp_path)
 
 
 def test_lasair_ztf_semantic_records():

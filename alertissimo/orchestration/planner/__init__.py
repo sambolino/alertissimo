@@ -1,6 +1,11 @@
 """Public endpoint-planning API."""
 
-from alertissimo.orchestration.runtime import EndpointPlan, PredicateRealization, WorkflowRun
+from alertissimo.orchestration.runtime import (
+    EndpointPlan,
+    PredicateRealization,
+    SearchSelectionRealization,
+    WorkflowRun,
+)
 from .planner import (
     PlanningAmbiguityError,
     PlanningDeferredError,
@@ -15,6 +20,7 @@ from .predicate_realization import realize_predicate
 __all__ = [
     "EndpointPlan",
     "PredicateRealization",
+    "SearchSelectionRealization",
     "WorkflowRun",
     "PlanningAmbiguityError",
     "PlanningDeferredError",

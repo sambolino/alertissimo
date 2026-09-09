@@ -92,11 +92,11 @@ with lightcurve via fink
     FacadeScenario(
         "dsl-confirm-predicate-quorum",
         """objects from ztf via alerce
-inside (124.87996115142856, -6.0205001, 1.0arcsec)
+inside (124.879961, -6.020500, 300arcsec)
 latest 1
 where exists classification.best.class
 confirm by 2 via fink, lasair
-with lightcurve via fink
+with lightcurve via alerce
 """,
         required_env=("LASAIR_ZTF_TOKEN",),
     ),

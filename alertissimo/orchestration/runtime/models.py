@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from alertissimo.orchestration.ir.models import Step, WorkflowIR
+from alertissimo.orchestration.ir.models import SearchSelection, Step, WorkflowIR
 from alertissimo.orchestration.ir.predicates import Predicate
 
 
@@ -35,6 +35,27 @@ class PredicateRealization(RuntimeModel):
             raise ValueError("predicate realization requires pushdown or residual content")
         if self.pushdown is None and self.params:
             raise ValueError("physical predicate params require semantic pushdown evidence")
+        return self
+
+
+class SearchSelectionRealization(RuntimeModel):
+    """Physical optimization and authoritative local semantics for a selection.
+
+    ``pushdown`` is present only when provider-local realization metadata proves an
+    exact request translation. ``residual`` remains present even then: candidate
+    selection is enforced on the consolidated normalized Step view before any
+    downstream candidate binding, so provider behavior is never the sole semantic
+    guarantee.
+    """
+
+    pushdown: SearchSelection | None = None
+    residual: SearchSelection
+    params: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def require_pushdown_for_params(self) -> "SearchSelectionRealization":
+        if self.pushdown is None and self.params:
+            raise ValueError("physical selection params require semantic pushdown evidence")
         return self
 
 
@@ -102,6 +123,7 @@ class EndpointPlan(RuntimeModel):
     endpoint: str
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
+    selection_realization: SearchSelectionRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
     execution_reuse_from: EndpointPlanRef | None = None
     candidate_input_from: CandidateInputRef | None = None
@@ -303,6 +325,7 @@ __all__ = [
     "MaterialInputRef",
     "PlanCandidateInputRef",
     "PredicateRealization",
+    "SearchSelectionRealization",
     "StepRun",
     "StepRunState",
     "WorkflowRun",
