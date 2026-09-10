@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the version you used."
+title: "Alertissimo"
+type: software
+authors:
+  - family-names: "Vujčić"
+    given-names: "Veljko"
+version: 0.1.0
+repository-code: "https://github.com/sambolino/alertissimo"
+license: BSD-3-Clause
+keywords:
+  - astronomy
+  - time-domain astronomy
+  - transient alerts
+  - alert brokers
+  - scientific workflows
+  - data orchestration
+abstract: >-
+  Alertissimo is a research prototype for provider-neutral orchestration of
+  heterogeneous astronomical transient-alert brokers. It separates scientific
+  workflow intent from physical provider interfaces, normalizes broker responses
+  into shared semantic structures, and preserves execution provenance.

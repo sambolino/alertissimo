@@ -9,7 +9,7 @@ README = (ROOT / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="alertissimo",
-    version="0.9.0",
+    version="0.1.0",
     description="An uber broker for transient alert orchestration",
     long_description=README,
     long_description_content_type="text/markdown",

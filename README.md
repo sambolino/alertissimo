@@ -3,7 +3,7 @@
 
 Alertissimo is a provider-neutral orchestration backend for astronomical transient-alert brokers. It separates scientific intent from physical provider APIs, plans broker calls from declarative capabilities, normalizes heterogeneous responses into semantic Portfolios, and preserves workflow/provenance structure across multi-provider execution.
 
-The **0.9.0** line is a backend beta. The packaged provider registry currently covers ALeRCE, ANTARES, Fink, and Lasair. The public user-facing language in this release is the Alertissimo DSL; natural-language and visual-block front ends can target the same canonical workflow layer later without changing provider execution semantics.
+The **0.1.0** release is a dissertation research prototype. Its public interfaces may change during further development. The packaged provider registry currently covers ALeRCE, ANTARES, Fink, and Lasair. The public user-facing language in this release is the Alertissimo DSL; natural-language and visual-block front ends can target the same canonical workflow layer later without changing provider execution semantics.
 
 ## Install
 
@@ -23,7 +23,7 @@ Alertissimo requires Python 3.10 or newer.
 
 ## Public Python API
 
-External clients should use the stable high-level facade rather than assembling parser, planner, execution, and normalization layers themselves:
+External clients should use the high-level facade rather than assembling parser, planner, execution, and normalization layers themselves:
 
 ```python
 from alertissimo.api import validate_dsl, execute_dsl
@@ -73,7 +73,7 @@ The repository still contains the current Streamlit DSL validation/compilation p
 python -m streamlit run alertissimo/app_dsl.py
 ```
 
-It is not exposed as a console command in the 0.9.0 package; the supported integration boundary is `alertissimo.api`.
+It is not exposed as a console command in the 0.1.0 package; the supported integration boundary is `alertissimo.api`.
 
 ## Release package check
 
@@ -88,3 +88,9 @@ The check is offline with respect to astronomical broker APIs.
 ## Orchestration smoke scenarios
 
 Offline multi-provider, batch, and expected-failure acceptance commands are documented in [`scripts/smoke/README.md`](scripts/smoke/README.md).
+
+## Citation
+
+If you use Alertissimo in research, please cite the archived version corresponding to the code you used. Citation metadata is provided in [`CITATION.cff`](CITATION.cff), and GitHub exposes it through the **Cite this repository** action. The source repository is available at <https://github.com/sambolino/alertissimo>.
+
+The version-specific Zenodo DOI for the dissertation snapshot will be added after the `v0.1.0` release has been published and archived.

@@ -18,7 +18,7 @@ from zipfile import ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.9.0"
+EXPECTED_VERSION = "0.1.0"
 
 
 def _runtime_resources() -> tuple[str, ...]:
@@ -118,7 +118,7 @@ expected_target = Path(os.environ["ALERTISSIMO_CHECK_TARGET"]).resolve()
 package_path = Path(alertissimo.__file__).resolve()
 if expected_target not in package_path.parents:
     raise RuntimeError(f"imported Alertissimo from source instead of wheel target: {package_path}")
-if version("alertissimo") != "0.9.0":
+if version("alertissimo") != "0.1.0":
     raise RuntimeError(f"installed metadata version is {version('alertissimo')!r}")
 
 policy = load_execution_policy()
@@ -136,7 +136,7 @@ dsl = """objects from ztf via alerce
 inside (124.87996115142856, -6.0205001, 1arcsec)
 latest 1
 """
-validation = validate_dsl(dsl, name="0.9.0 installed-wheel acceptance")
+validation = validate_dsl(dsl, name="0.1.0 installed-wheel acceptance")
 if not validation.is_valid or not validation.is_runnable:
     raise RuntimeError(f"installed-wheel DSL validation failed: {validation!r}")
 
@@ -157,7 +157,7 @@ print(package_path)
 
 
 def main() -> int:
-    print("=== ALERTISSIMO 0.9.0 RELEASE PACKAGE CHECK ===")
+    print("=== ALERTISSIMO 0.1.0 RELEASE PACKAGE CHECK ===")
     with tempfile.TemporaryDirectory(prefix="alertissimo-release-") as temporary:
         root = Path(temporary)
         wheel = _build_wheel(root / "wheel")
@@ -170,7 +170,7 @@ def main() -> int:
         print("public API:        alertissimo.api")
         print("static DSL:        VALID / RUNNABLE")
         print("provider APIs:     not contacted")
-        print("PASS: Alertissimo 0.9.0 wheel is self-contained for declarative runtime data")
+        print("PASS: Alertissimo 0.1.0 wheel is self-contained for declarative runtime data")
     return 0
 
 
