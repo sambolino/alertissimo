@@ -45,6 +45,7 @@ def test_multi_provider_real_planning_binding_and_normalization():
         ("lasair", "ztf", "lightcurves"),
         ("alerce", "ztf", "query_forced_photometry"),
         ("alerce", "ztf", "query_lightcurve"),
+        ("alerce", "ztf", "query_forced_photometry"),
     ]
     assert [
         dict(call.params) for binding in result.bindings for call in binding.bound_calls
@@ -53,9 +54,19 @@ def test_multi_provider_real_planning_binding_and_normalization():
         {"objectIds": DEFAULT_TARGET},
         {"oid": DEFAULT_TARGET},
         {"oid": DEFAULT_TARGET},
+        {},
     ]
+    reuse = result.run.steps[2].endpoint_plans[1].execution_reuse_from
+    assert reuse is not None
+    assert (reuse.step_index, reuse.plan_index) == (1, 0)
+    assert result.run.steps[2].execution_ids[1] == result.run.steps[1].execution_ids[0]
     assert all(step.state.value == "succeeded" for step in result.run.steps)
-    assert report_data(result)["normalized_execution_count"] == 4
+
+    report = report_data(result)
+    assert report["normalized_execution_count"] == 5
+    assert report["physical_execution_count"] == 4
+    assert report["portfolio_count"] == 5
+    assert report["unique_portfolio_count"] == 4
 
 
 def test_single_target_fixture_payload_ids_match_bound_default():
@@ -107,22 +118,35 @@ def test_multi_target_collection_binding_and_honest_object_identity():
     assert len({p.internal_portfolio_id.value for p in all_portfolios}) == len(
         all_portfolios
     )
+    lasair_found = []
     for portfolio in lasair_output.portfolios:
-        assert not any(
-            "identity.object_id" in record.fields for record in portfolio.records
-        )
+        object_ids = [
+            str(r.fields["identity.object_id"])
+            for r in portfolio.records
+            if r.semantic_type.split("@", 1)[0] == "summary"
+            and "identity.object_id" in r.fields
+        ]
+        assert len(object_ids) == 1
+        lasair_found.append(object_ids[0])
         assert (
             portfolio.executions[0].internal_execution_id.value
             == lasair_output.execution_id
         )
         assert portfolio.executions[0].endpoint == "lightcurves"
+    assert set(lasair_found) == set(BATCH_TARGETS)
+    assert len(lasair_found) == len(set(lasair_found))
+
     report = report_data(result)
     assert report["steps"][1]["requested_target_ids"] == list(BATCH_TARGETS)
     assert all(
-        not p["object_identity_available"] and p["object_ids"] == []
+        p["object_identity_available"] and len(p["object_ids"]) == 1
         for p in report["steps"][1]["executions"][0]["portfolios"]
     )
-    assert "object identity: unavailable" in render_human(result)
+    assert {
+        p["object_ids"][0]
+        for p in report["steps"][1]["executions"][0]["portfolios"]
+    } == set(BATCH_TARGETS)
+    assert "object identity: unavailable" not in render_human(result)
 
 
 def test_expected_partial_failure_preserves_and_reports_runtime_contract():
@@ -153,14 +177,15 @@ def test_reporting_json_is_payload_free():
 
 
 @pytest.mark.parametrize("scenario", ["multi-provider", "multi-target"])
-def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenario):
+def test_html_dir_writes_separate_portfolios_and_resolving_index(tmp_path, scenario):
     from html.parser import HTMLParser
     from scripts.smoke.html_output import write_smoke_html
 
     output = tmp_path / scenario
     index = write_smoke_html(run_scenario(scenario), output)
-    dossiers = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
-    assert len(dossiers) == 4
+    portfolios = sorted(output.glob("step-*-execution-*-portfolio-*.html"))
+    expected_count = 5 if scenario == "multi-provider" else 4
+    assert len(portfolios) == expected_count
     assert index == output / "index.html"
 
     class Links(HTMLParser):
@@ -174,18 +199,19 @@ def test_html_dir_writes_separate_dossiers_and_resolving_index(tmp_path, scenari
 
     links = Links()
     links.feed(index.read_text())
-    assert len(links.hrefs) == 4
+    assert len(links.hrefs) == expected_count
     assert all((output / href).is_file() for href in links.hrefs)
-    assert len(set(links.hrefs)) == 4
+    assert len(set(links.hrefs)) == expected_count
 
     text = index.read_text()
     assert "Fink" not in text  # provenance uses canonical lower-case broker names
     assert "fink / ztf /" in text
     if scenario == "multi-provider":
         assert "lasair / ztf /" in text and "alerce / ztf /" in text
+        assert text.count("Open Portfolio") == 5
     else:
-        assert text.count("identity unavailable") == 2
-        assert text.count("Open Portfolio dossier") == 4
+        assert "identity unavailable" not in text
+        assert text.count("Open Portfolio") == 4
 
 
 def test_html_dir_rejects_nonempty_directory_without_modification(tmp_path):
@@ -317,6 +343,7 @@ def test_cli_rejects_unknown_or_invalid_arguments(args, message):
     assert "usage:" in completed.stderr
     assert message in completed.stderr
 
+
 def test_html_presentation_import_does_not_require_pandas():
     completed = subprocess.run(
         [
@@ -334,6 +361,7 @@ def test_html_presentation_import_does_not_require_pandas():
         capture_output=True,
     )
     assert completed.returncode == 0, completed.stderr
+
 
 def test_cli_rejects_nonempty_html_dir_before_live_execution(
     tmp_path, monkeypatch, capsys
@@ -378,7 +406,8 @@ def test_cli_rejects_nonempty_html_dir_before_live_execution(
     assert marker.read_text() == "do not change"
     assert list(output.iterdir()) == [marker]
 
-def test_html_dossier_filename_uses_normalized_step_index(tmp_path):
+
+def test_html_portfolio_filename_uses_normalized_step_index(tmp_path):
     from dataclasses import replace
 
     from scripts.smoke.html_output import write_smoke_html

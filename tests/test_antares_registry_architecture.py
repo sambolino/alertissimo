@@ -72,6 +72,23 @@ def test_client_model_mapping_corrections_and_transforms():
     assert ztf["transforms"]["detection@ztf:antares.image_metrics.is_positive"]["locus_alerts#properties.ztf_isdiffpos"]["type"] == "value_map"
 
 
+@pytest.mark.parametrize(
+    ("origin", "endpoint"),
+    [
+        ("ztf", "get_by_ztf_object_id"),
+        ("lsst", "get_by_lsst_dia_object_id"),
+    ],
+)
+def test_survey_object_lookup_realizes_lightcurve_from_alert_history(origin, endpoint):
+    registry = load(origin, "endpoints.yaml")["endpoints"]
+    mappings = load(origin, "mappings.yaml")["mappings"]
+    assert "lightcurve_lookup" in registry[endpoint]["operation_types"]
+    assert registry[endpoint]["params"][
+        "ztf_object_id" if origin == "ztf" else "lsst_object_id"
+    ]["bind"] == "target_id"
+    assert f"lightcurve@{origin}:antares.points.time.mjd" in mappings
+
+
 class FakeAlert:
     def __init__(self, alert_id, mjd, properties):
         self.alert_id, self.mjd, self.properties = alert_id, mjd, properties

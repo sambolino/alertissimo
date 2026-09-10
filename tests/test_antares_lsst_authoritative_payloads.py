@@ -62,7 +62,10 @@ def test_optional_ss_object_id_suppresses_zero_and_preserves_integer():
  assert type(fields['solar_system.identity.object_id']) is int
 def test_lightcurve_is_fixture_only_and_lazy_untouched():
  light=fixture('lightcurve.json');cols={k for r in light for k in r};debt=yaml.safe_load((FIXTURES/'lightcurve_secondary_debt.yaml').read_text())['lightcurve_secondary'];assert len(light)==16 and len(cols)==14 and cols==set(debt);assert all(v['reason']=='secondary_duplicate_representation' for v in debt.values())
- registry=yaml.safe_load(MAPPINGS.read_text());assert all('lightcurve' not in d['path'] for d in registry['payloads'].values());assert len(records(build('get_by_lsst_dia_object_id',LazyLocus(rich_locus())),'detection@lsst:antares'))==16
+ registry=yaml.safe_load(MAPPINGS.read_text());assert all('lightcurve' not in d['path'] for d in registry['payloads'].values())
+ portfolio=build('get_by_lsst_dia_object_id',LazyLocus(rich_locus()));assert len(records(portfolio,'detection@lsst:antares'))==16
+ lightcurves=records(portfolio,'lightcurve@lsst:antares');assert len(lightcurves)==1;assert len(lightcurves[0].fields['points'])==16
+ assert 'forced_photometry_points' not in lightcurves[0].fields
 def test_catalog_probe_direct_rows_zero_unaccounted_and_no_edges():
  x=rich_locus(True);report=audit_payload(x,broker='antares',origin='lsst',endpoint='get_by_lsst_dia_object_id');assert 'Unaccounted leaves: 0' in report
  p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'detection@lsst:antares'))==16 and p.edges==()

@@ -39,6 +39,16 @@ def test_live_object_variants_are_fully_accounted_and_build_records():
  det=[r for r in portfolio.records if r.semantic_type=='detection@lsst:lasair'];assert len(det)>=len(p['diaSourcesList'])
  assert any(any(k.startswith('photometry.') and k.endswith('.psf.flux') for k in r.fields) for r in det)
  assert any(any(k.startswith('forced_photometry.') and k.endswith('.psf.flux') for k in r.fields) for r in det)
+ lightcurves=[r for r in portfolio.records if r.semantic_type=='lightcurve@lsst:lasair'];assert len(lightcurves)==1
+ lightcurve=dict(lightcurves[0].fields)
+ assert len(lightcurve['points'])==len(p['diaSourcesList'])==245
+ assert len(lightcurve['forced_photometry_points'])==len(p['diaForcedSourcesList'])==345
+ first_source=p['diaSourcesList'][0];first_point=lightcurve['points'][0]
+ assert first_point['identity.source_id']==first_source['diaSourceId'];assert first_point['time.mjd']==first_source['midpointMjdTai']
+ assert first_point[f"photometry.{first_source['band']}.psf.flux"]==first_source['psfFlux']
+ first_forced=p['diaForcedSourcesList'][0];first_forced_point=lightcurve['forced_photometry_points'][0]
+ assert first_forced_point['identity.source_id']==first_forced['diaForcedSourceId'];assert first_forced_point['time.mjd']==first_forced['midpointMjdTai']
+ assert first_forced_point[f"forced_photometry.{first_forced['band']}.psf.flux"]==first_forced['psfFlux']
 
 def test_live_query_and_cone_all_are_fully_accounted():
  _zero('query','query_object');_zero('query','query_object_qualified');_zero('cone','cone_all')
@@ -57,6 +67,9 @@ def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  d=yaml.safe_load(MAPPINGS.read_text());m=d['mappings'];t=d['transforms'];p=d['payloads']
  assert p['diaSourcesList']=={'endpoint':'object','path':'diaSourcesList[]','object_partition':{'mode':'single'}}
  assert p['diaForcedSourcesList']=={'endpoint':'object','path':'diaForcedSourcesList[]','object_partition':{'mode':'single'}}
+ endpoint=yaml.safe_load(ENDPOINTS.read_text())['endpoints']['object']
+ assert set(endpoint['operation_types'])=={'object_lookup','lightcurve_lookup'}
+ assert endpoint['params']['objectId']['bind']=='target_id'
  assert p['cone_objects']=={'endpoint':'cone','path':'objects[]','object_partition':{'mode':'field','field':'object'}}
  assert all('photoZ' not in r for r in m.get('crossmatch@{producer}:lasair.redshift.value',[]));assert 'crossmatch@{producer}:lasair.redshift.error' not in m
  assert all('merged_rank' not in r for r in m['crossmatch@{producer}:lasair.rank'])

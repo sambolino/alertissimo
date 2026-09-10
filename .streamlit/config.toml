@@ -4,6 +4,11 @@ headless = true
 [runner]
 magicEnabled = true
 
-[theme]
-base = "dark"
+[browser]
+gatherUsageStats = false
 
+[theme]
+base = "light"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f6f8"
+textColor = "#172033"

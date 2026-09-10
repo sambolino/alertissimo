@@ -1,0 +1,176 @@
+{
+  "diaObjectId": "313761043604045880",
+  "tns": {
+    "name": "AT 2025AGPZ",
+    "type": "Astronomical Transient"
+  },
+  "coordinates": {
+    "ra": 8.986275,
+    "dec": -42.709834
+  },
+  "filters": {
+    "g": 3,
+    "r": 5,
+    "i": 4,
+    "z": 3
+  },
+  "survey": "LSST",
+  "candidateStatus": "Follow-up recommended",
+  "brokerCoverage": [
+    {"broker": "Fink", "origin": "LSST", "status": "available", "products": ["object", "light curve", "forced photometry", "cutouts"]},
+    {"broker": "Lasair", "origin": "LSST", "status": "available", "products": ["object", "cone search", "Sherlock context"]},
+    {"broker": "Antares", "origin": "LSST", "status": "available", "products": ["locus", "crossmatch context"]},
+    {"broker": "ALeRCE", "origin": "LSST", "status": "available", "products": ["detections", "non-detections", "probabilities", "stamps"]}
+  ],
+  "quality": {
+    "photometryStatus": "15 detections; demo coverage also includes 6 non-detections and 4 forced-photometry points",
+    "alertQuality": "No critical quality flags in the local demo",
+    "lastUpdated": "2026-08-18T15:00:00Z"
+  },
+  "classifications": [
+    {"broker": "ALeRCE", "model": "lc_classifier_v2", "class": "SN Ia", "probability": 0.82, "computedAt": "2026-07-16T00:30:00Z"},
+    {"broker": "Fink", "model": "snn_ia", "class": "SN Ia candidate", "probability": 0.76, "computedAt": "2026-07-16T00:35:00Z"},
+    {"broker": "Lasair", "model": "Sherlock", "class": "Transient near galaxy", "probability": 0.68, "computedAt": "2026-07-16T00:41:00Z"},
+    {"broker": "Antares", "model": "locus annotation", "class": "Extragalactic transient", "probability": 0.71, "computedAt": "2026-07-16T00:46:00Z"}
+  ],
+  "context": {
+    "host": {"name": "Demo host galaxy J003556.7-424235", "separationArcsec": 0.73, "redshift": 0.0412, "associationProbability": 0.91},
+    "crossmatches": [
+      {"catalog": "Gaia DR3", "match": "No stellar counterpart within 1.5 arcsec", "separationArcsec": null},
+      {"catalog": "NED", "match": "Demo host galaxy", "separationArcsec": 0.73},
+      {"catalog": "SIMBAD", "match": "No pre-existing variable-source classification", "separationArcsec": null}
+    ],
+    "solarSystem": {"status": "No likely solar-system association", "nearestEphemerisSeparationArcsec": 28.4}
+  },
+  "cutouts": [
+    {"kind": "Science", "epoch": "2026-07-15T22:58:01Z", "band": "z", "broker": "Fink", "status": "available"},
+    {"kind": "Template", "epoch": "reference stack", "band": "z", "broker": "Fink", "status": "available"},
+    {"kind": "Difference", "epoch": "2026-07-15T22:58:01Z", "band": "z", "broker": "Fink", "status": "available"}
+  ],
+  "dataProducts": [
+    {"product": "Forced photometry", "broker": "Fink", "availability": "available", "note": "4 local demo measurements"},
+    {"product": "Non-detections", "broker": "ALeRCE", "availability": "available", "note": "6 local demo upper limits"},
+    {"product": "Raw alert / Avro", "broker": "ALeRCE", "availability": "available", "note": "One demo alert packet"},
+    {"product": "Magnitude statistics", "broker": "ALeRCE", "availability": "available", "note": "Amplitude and per-band statistics"}
+  ],
+  "provenance": [
+    {"broker": "Fink", "endpoint": "objects", "requestedAt": "2026-08-18T14:56:02Z", "status": "HTTP 200", "records": 15},
+    {"broker": "Lasair", "endpoint": "object", "requestedAt": "2026-08-18T14:56:08Z", "status": "HTTP 200", "records": 1},
+    {"broker": "Antares", "endpoint": "get_by_lsst_dia_object_id", "requestedAt": "2026-08-18T14:56:14Z", "status": "HTTP 200", "records": 1},
+    {"broker": "ALeRCE", "endpoint": "query_lightcurve", "requestedAt": "2026-08-18T14:56:19Z", "status": "HTTP 200", "records": 21}
+  ],
+  "lightCurve": [
+    {
+      "date": "2025-11-24T03:14:22Z",
+      "mjd": 61003.134977,
+      "band": "g",
+      "magnitude": 22.8,
+      "magnitudeError": 0.18
+    },
+    {
+      "date": "2025-11-24T03:17:05Z",
+      "mjd": 61003.136863,
+      "band": "r",
+      "magnitude": 23.1,
+      "magnitudeError": 0.21
+    },
+    {
+      "date": "2025-12-01T02:41:18Z",
+      "mjd": 61010.112014,
+      "band": "z",
+      "magnitude": 20.6,
+      "magnitudeError": 0.09
+    },
+    {
+      "date": "2025-12-07T01:55:44Z",
+      "mjd": 61016.080370,
+      "band": "i",
+      "magnitude": 19.8,
+      "magnitudeError": 0.06
+    },
+    {
+      "date": "2025-12-18T04:12:51Z",
+      "mjd": 61027.175590,
+      "band": "r",
+      "magnitude": 19.4,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-01-05T03:33:20Z",
+      "mjd": 61045.148148,
+      "band": "g",
+      "magnitude": 19.3,
+      "magnitudeError": 0.05
+    },
+    {
+      "date": "2026-01-12T02:28:41Z",
+      "mjd": 61052.103252,
+      "band": "r",
+      "magnitude": 19.0,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-01-12T02:31:02Z",
+      "mjd": 61052.104884,
+      "band": "i",
+      "magnitude": 18.8,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-01-12T02:34:11Z",
+      "mjd": 61052.107072,
+      "band": "z",
+      "magnitude": 18.7,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-02-27T01:44:33Z",
+      "mjd": 61098.072604,
+      "band": "g",
+      "magnitude": 19.1,
+      "magnitudeError": 0.04
+    },
+    {
+      "date": "2026-02-27T01:47:19Z",
+      "mjd": 61098.074525,
+      "band": "r",
+      "magnitude": 18.9,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-02-27T01:50:07Z",
+      "mjd": 61098.076470,
+      "band": "i",
+      "magnitude": 18.6,
+      "magnitudeError": 0.03
+    },
+    {
+      "date": "2026-07-08T23:16:22Z",
+      "mjd": 61229.969699,
+      "band": "r",
+      "magnitude": 20.3,
+      "magnitudeError": 0.08
+    },
+    {
+      "date": "2026-07-08T23:19:10Z",
+      "mjd": 61229.971644,
+      "band": "i",
+      "magnitude": 19.7,
+      "magnitudeError": 0.06
+    },
+    {
+      "date": "2026-07-15T22:58:01Z",
+      "mjd": 61236.956956,
+      "band": "z",
+      "magnitude": 19.4,
+      "magnitudeError": 0.05
+    }
+  ],
+  "summary": {
+    "firstDetection": "2025-11-24T03:14:22Z",
+    "lastDetection": "2026-07-15T22:58:01Z",
+    "brightestMagnitude": 18.6,
+    "faintestMagnitude": 23.1,
+    "numberOfMeasurements": 15
+  }
+}

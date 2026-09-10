@@ -10,6 +10,7 @@ from alertissimo.orchestration.binding import (
     ParameterBindingError,
     UnsupportedParameterBindingError,
     bind_endpoint,
+    bind_endpoint_calls,
     bind_workflow_run,
 )
 from alertissimo.orchestration.ir import (
@@ -18,6 +19,7 @@ from alertissimo.orchestration.ir import (
     GetCrossmatchStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
+    LookupStep,
     SqlQueryStep,
     WorkflowIR,
 )
@@ -264,6 +266,75 @@ def test_collection_limit_is_enforced_before_execution():
     assert bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=[str(i) for i in range(50)], kind="object")), endpoint, registry)
     with pytest.raises(UnsupportedParameterBindingError, match="declared limit 50"):
         bind_endpoint(GetLightcurveStep(target=TargetSelector(ids=[str(i) for i in range(51)], kind="object")), endpoint, registry)
+
+
+def test_generic_binding_fans_plural_lookup_out_over_singular_endpoint():
+    calls = bind_endpoint_calls(
+        LookupStep(
+            target=TargetSelector(ids=["ZTF-A", "ZTF-B"], kind="object"),
+        ),
+        plan("antares", "ztf", "get_by_ztf_object_id"),
+        EndpointRegistry(),
+    )
+
+    assert [call.params for call in calls] == [
+        {"ztf_object_id": "ZTF-A"},
+        {"ztf_object_id": "ZTF-B"},
+    ]
+
+
+def test_generic_binding_keeps_plural_lookup_as_one_collection_call():
+    calls = bind_endpoint_calls(
+        LookupStep(
+            target=TargetSelector(ids=["ZTF-A", "ZTF-B"], kind="object"),
+        ),
+        plan("lasair", "ztf", "objects"),
+        EndpointRegistry(),
+    )
+
+    assert [call.params for call in calls] == [{"objectIds": "ZTF-A,ZTF-B"}]
+
+
+def test_generic_binding_chunks_collection_calls_at_declared_limit():
+    ids = [f"ZTF-{index}" for index in range(51)]
+    calls = bind_endpoint_calls(
+        GetLightcurveStep(target=TargetSelector(ids=ids, kind="object")),
+        plan("lasair", "ztf", "lightcurves"),
+        EndpointRegistry(),
+    )
+
+    assert len(calls) == 2
+    assert calls[0].params == {"objectIds": ",".join(ids[:50])}
+    assert calls[1].params == {"objectIds": ids[50]}
+
+
+def test_workflow_binding_aligns_singular_lookup_fanout_to_one_plan():
+    workflow = WorkflowIR(
+        steps=[
+            LookupStep(
+                target=TargetSelector(ids=["ZTF-A", "ZTF-B"], kind="object"),
+            )
+        ]
+    )
+    endpoint = plan("antares", "ztf", "get_by_ztf_object_id")
+    run = WorkflowRun(
+        workflow=workflow,
+        steps=(
+            StepRun(
+                step_index=0,
+                state=StepRunState.PLANNED,
+                endpoint_plans=(endpoint,),
+            ),
+        ),
+    )
+
+    binding = bind_workflow_run(run, EndpointRegistry())[0]
+
+    assert [call.params for call in binding.bound_calls] == [
+        {"ztf_object_id": "ZTF-A"},
+        {"ztf_object_id": "ZTF-B"},
+    ]
+    assert binding.plan_indexes == (0, 0)
 
 
 def test_multi_target_multiple_provider_binding_is_one_result_with_two_calls():

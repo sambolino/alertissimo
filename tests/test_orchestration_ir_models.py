@@ -21,7 +21,10 @@ def concrete_steps():
     source = Source(broker="fink", origin="ztf")
     time = TimeContext(start_time="2025-01-01T00:00:00Z", end_time="2025-01-02T00:00:00Z")
     return [
-        LookupStep(id="ZTF-object-or-alert", sources=[source]),
+        LookupStep(
+            target=TargetSelector(ids=["ZTF-object"], kind="object"),
+            sources=[source],
+        ),
         SemanticSearchStep(semantic_type="summary", criteria={"classification": "SN"}, time_context=time),
         ConeSearchStep(semantic_type="detection", ra=12.5, dec=-20, radius=0.1),
         SqlQueryStep(semantic_type="classification", query="SELECT class FROM classifications"),
@@ -124,17 +127,28 @@ def test_method_analysis_supports_open_algorithm_vocabulary():
     assert step.sources == []
 
 
-@pytest.mark.parametrize("identifier", ["ZTF24abc", "alert:survey:123", "source/456"])
-def test_lookup_accepts_generic_identifier_namespaces(identifier):
-    assert LookupStep(id=identifier).id == identifier
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [("object", "ZTF24abc"), ("alert", "alert:survey:123")],
+)
+def test_lookup_requires_explicit_supported_identifier_kind(kind, identifier):
+    step = LookupStep(target=TargetSelector(ids=[identifier], kind=kind))
+    assert step.target.ids == [identifier]
+    assert step.target.kind == kind
 
 
 @pytest.mark.parametrize("value", ["", "   "])
 def test_empty_required_strings_are_rejected(value):
     with pytest.raises(ValidationError):
-        LookupStep(id=value)
+        LookupStep(target=TargetSelector(ids=[value], kind="object"))
     with pytest.raises(ValidationError):
         MethodAnalysisStep(method=value)
+
+
+@pytest.mark.parametrize("kind", [None, "source", "detection"])
+def test_lookup_rejects_unimplemented_target_kinds(kind):
+    with pytest.raises(ValidationError, match="object.*alert"):
+        LookupStep(target=TargetSelector(ids=["id"], kind=kind))
 
 
 def test_source_requires_broker_or_origin():
@@ -168,7 +182,7 @@ def test_crossmatch_radius_must_be_positive():
 def test_confirmation_validates_required_agreement():
     with pytest.raises(ValidationError):
         ConfirmStep(required_agreement=0)
-    with pytest.raises(ValidationError, match="source count"):
+    with pytest.raises(ValidationError, match="distinct explicit broker count"):
         ConfirmStep(required_agreement=2, sources=[Source(broker="fink")])
     assert ConfirmStep(required_agreement=3).sources == []
 

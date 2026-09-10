@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import re
 from collections.abc import Iterator, Mapping
@@ -13,7 +14,7 @@ from uuid import uuid4
 import yaml
 
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
-from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalPortfolioId,
     InternalRecordId,
@@ -21,7 +22,10 @@ from alertissimo.data_layer.representations import (
     Portfolio,
     SemanticRecord,
 )
-from alertissimo.data_layer.semantic_model.index import SemanticModelIndex
+from alertissimo.data_layer.semantic_model.index import (
+    SemanticModelIndex,
+    load_semantic_model_index,
+)
 from alertissimo.data_layer.semantic_model.validation import (
     validate_portfolio_against_semantic_model,
 )
@@ -40,6 +44,65 @@ class PortfolioBuildError(ValueError):
 
 
 _MISSING = object()
+
+
+@dataclass(frozen=True)
+class _PreparedRawReference:
+    """One payload-local raw reference prepared outside the per-item hot loop."""
+
+    raw_field: str
+    specification: Mapping[str, Any] | None
+    object_key: str | None
+
+
+@dataclass(frozen=True)
+class _PreparedSemanticMapping:
+    """One semantic field plus only the raw references relevant to one payload."""
+
+    semantic_type: str
+    relative_field: str
+    references: tuple[_PreparedRawReference, ...]
+
+
+def _prepare_mappings_by_payload(
+    mappings: Mapping[str, Any],
+    transforms: Mapping[str, Any],
+) -> dict[str, tuple[_PreparedSemanticMapping, ...]]:
+    """Index mapping work by payload before walking potentially large result sets.
+
+    The YAML mapping order and per-field fallback/composition reference order remain
+    unchanged.  This only moves invariant parsing and dictionary lookups out of the
+    per-object normalization loop.
+    """
+
+    prepared: dict[str, list[_PreparedSemanticMapping]] = {}
+    for semantic_path, raw_references in mappings.items():
+        semantic_type, relative_field = split_semantic_path(semantic_path)
+        specifications = transforms.get(semantic_path, {})
+        references_by_payload: dict[str, list[_PreparedRawReference]] = {}
+        for raw_reference in raw_references:
+            payload_key, raw_field = raw_reference.split("#", 1)
+            specification = specifications.get(raw_reference)
+            object_key = specification.get("object_key") if specification else None
+            references_by_payload.setdefault(payload_key, []).append(
+                _PreparedRawReference(
+                    raw_field=raw_field,
+                    specification=specification,
+                    object_key=object_key,
+                )
+            )
+        for payload_key, references in references_by_payload.items():
+            prepared.setdefault(payload_key, []).append(
+                _PreparedSemanticMapping(
+                    semantic_type=semantic_type,
+                    relative_field=relative_field,
+                    references=tuple(references),
+                )
+            )
+    return {
+        payload_key: tuple(payload_mappings)
+        for payload_key, payload_mappings in prepared.items()
+    }
 
 
 SEMANTIC_TYPE_PLACEHOLDER_DEFAULTS = {
@@ -238,6 +301,103 @@ def _apply_transform(value: Any, specification: Mapping[str, Any] | None) -> Any
     return value  # The mapping schema rejects unknown transform types.
 
 
+def _bound_target_ids(
+    execution: ExecutionResult,
+    *,
+    providers_root: Path,
+) -> tuple[Any, ...]:
+    """Recover target identities declared by the physical request contract."""
+
+    provenance = execution.execution_provenance
+    try:
+        spec = EndpointRegistry(providers_root).resolve(
+            provenance.broker,
+            provenance.origin,
+            provenance.endpoint,
+        )
+    except (FileNotFoundError, KeyError):
+        # Mapping-only fixtures and custom registries are valid normalization inputs.
+        # Without an endpoint contract there is simply no request-binding evidence
+        # from which to synthesize semantic object identity.
+        return ()
+
+    values: list[Any] = []
+    for physical_name, declaration in spec.params.items():
+        if not isinstance(declaration, Mapping) or declaration.get("bind") != "target_id":
+            continue
+        if physical_name not in provenance.params:
+            continue
+        raw_value = provenance.params[physical_name]
+        collection = (declaration.get("binding") or {}).get("collection")
+        if collection == "csv" and isinstance(raw_value, str):
+            candidates = tuple(
+                item.strip() for item in raw_value.split(",") if item.strip()
+            )
+        elif isinstance(raw_value, (list, tuple)):
+            candidates = tuple(raw_value)
+        else:
+            candidates = (raw_value,)
+        for candidate in candidates:
+            if candidate is None or isinstance(candidate, bool):
+                continue
+            if candidate not in values:
+                values.append(candidate)
+    return tuple(values)
+
+
+def _complete_minimal_summary_identity(
+    records_by_object: dict[Any, list[SemanticRecord]],
+    *,
+    broker: str,
+    origin: str,
+    request_target_ids: tuple[Any, ...],
+    make_record_id: Callable[[], InternalRecordId],
+) -> None:
+    """Expose object identity for target-bound retrievals without guessing.
+
+    A target-bound execution supplies positive evidence that the normalized payload
+    belongs to requested objects. Prefer an explicit per-object response partition
+    identity when one exists, including for collection requests. If the response is
+    undifferentiated, only a singleton target request can safely seed identity.
+    Search-result partition keys are never promoted because those executions have no
+    target-bound request evidence.
+    """
+
+    if not request_target_ids:
+        return
+
+    summary_type = f"summary@{origin}:{broker}"
+    for partition_key, records in records_by_object.items():
+        if any(
+            record.semantic_type.split("@", 1)[0] == "summary"
+            and record.get("identity.object_id") is not None
+            for record in records
+        ):
+            continue
+
+        object_id: Any = _MISSING
+        if (
+            isinstance(partition_key, tuple)
+            and len(partition_key) == 2
+            and partition_key[0] == "identity"
+        ):
+            object_id = partition_key[1]
+        elif partition_key == ("single",) and len(request_target_ids) == 1:
+            object_id = request_target_ids[0]
+
+        if object_id is _MISSING:
+            continue
+
+        records.append(
+            SemanticRecord(
+                internal_record_id=make_record_id(),
+                semantic_type=summary_type,
+                fields={"identity.object_id": object_id},
+                internal_source=None,
+            )
+        )
+
+
 def build_portfolios_from_execution(
     execution: ExecutionResult,
     *,
@@ -249,9 +409,10 @@ def build_portfolios_from_execution(
     semantic_model: SemanticModelIndex | None = None,
 ) -> tuple[Portfolio, ...]:
     """Normalize one physical execution into execution-local object Portfolios."""
-    if mappings_path is None:
+    root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
+    mappings_from_registry = mappings_path is None
+    if mappings_from_registry:
         provenance = execution.execution_provenance
-        root = Path(providers_root) if providers_root is not None else PROVIDERS_ROOT
         mappings_path = root / provenance.broker / provenance.origin / "mappings.yaml"
         if not mappings_path.is_file():
             raise PortfolioBuildError(
@@ -273,6 +434,7 @@ def build_portfolios_from_execution(
     payload_definitions = document["payloads"]
     mappings = document["mappings"]
     transforms = document.get("transforms", {})
+    mappings_by_payload = _prepare_mappings_by_payload(mappings, transforms)
     records_by_object: dict[Any, list[SemanticRecord]] = {}
     make_record_id = record_id_factory or new_internal_record_id
 
@@ -295,6 +457,7 @@ def build_portfolios_from_execution(
         # validation, but cannot create an astronomical-object Portfolio.
         if partition["mode"] == "none":
             continue
+        payload_mappings = mappings_by_payload.get(payload_key, ())
         items = resolve_payload_items(
             payload,
             payload_key=payload_key,
@@ -327,16 +490,15 @@ def build_portfolios_from_execution(
                 # Field and root-field declarations intentionally share identity.
                 partition_key = ("identity", partition_value)
             fields_by_type: dict[str, dict[str, Any]] = {}
-            for semantic_path, references in mappings.items():
-                semantic_type, relative_field = split_semantic_path(semantic_path)
+            for prepared_mapping in payload_mappings:
+                semantic_type = prepared_mapping.semantic_type
+                relative_field = prepared_mapping.relative_field
                 ordinary_value: Any = _MISSING
                 composed_entries: dict[str, Any] = {}
-                for raw_reference in references:
-                    ref_payload_key, raw_field = raw_reference.split("#", 1)
-                    if ref_payload_key != payload_key:
-                        continue
-                    specification = transforms.get(semantic_path, {}).get(raw_reference)
-                    object_key = specification.get("object_key") if specification else None
+                for prepared_reference in prepared_mapping.references:
+                    raw_field = prepared_reference.raw_field
+                    specification = prepared_reference.specification
+                    object_key = prepared_reference.object_key
                     # Once an ordinary fallback succeeds, only composition
                     # references still need evaluation for conflict detection.
                     if object_key is None and ordinary_value is not _MISSING:
@@ -405,6 +567,19 @@ def build_portfolios_from_execution(
             f"cannot collect intrinsic semantic arrays: {error}"
         ) from error
 
+    request_target_ids = (
+        _bound_target_ids(execution, providers_root=root)
+        if mappings_from_registry
+        else ()
+    )
+    _complete_minimal_summary_identity(
+        records_by_object,
+        broker=document.get("broker", execution.execution_provenance.broker),
+        origin=document.get("origin", execution.execution_provenance.origin),
+        request_target_ids=request_target_ids,
+        make_record_id=make_record_id,
+    )
+
     if internal_portfolio_id is not None and len(records_by_object) != 1:
         raise PortfolioBuildError(
             "internal_portfolio_id requires exactly one normalized object; "
@@ -420,8 +595,12 @@ def build_portfolios_from_execution(
         for records in records_by_object.values()
     )
     if validate_semantic_model:
+        effective_semantic_model = semantic_model or load_semantic_model_index()
         for portfolio in portfolios:
-            validate_portfolio_against_semantic_model(portfolio, semantic_model)
+            validate_portfolio_against_semantic_model(
+                portfolio,
+                effective_semantic_model,
+            )
     return portfolios
 
 

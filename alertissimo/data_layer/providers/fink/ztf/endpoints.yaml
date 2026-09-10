@@ -73,16 +73,19 @@ endpoints:
       ra:
         required: true
         type: number
+        bind: ra
         description: Right Ascension, in decimal degree.
         unit: deg
       dec:
         required: true
         type: number
+        bind: dec
         description: Declination, in decimal degree.
         unit: deg
       radius:
         required: true
         type: number
+        bind: radius
         description: Conesearch radius in arcsec. Maximum is 18,000 arcseconds (5 degrees).
         unit: arcsec
       n:
@@ -98,8 +101,7 @@ endpoints:
       stopdate:
         required: false
         type: string
-        default: now
-        description: Stopping date in UTC (iso, jd, or MJD). It restricts the search to alerts whose first detection was within the specified range of dates.
+        description: Stopping date in UTC (iso, jd, or MJD). If omitted, Fink uses the current time. It restricts the search to alerts whose first detection was within the specified range of dates.
       window:
         required: false
         type: number
@@ -171,8 +173,7 @@ endpoints:
       stopdate:
         required: false
         type: string
-        default: now
-        description: Stopping date in UTC (iso, jd, or MJD).
+        description: Stopping date in UTC (iso, jd, or MJD). If omitted, Fink uses the current time.
       color:
         required: false
         type: boolean
@@ -231,8 +232,7 @@ endpoints:
       stop_date:
         required: false
         type: string
-        default: now
-        description: '[Optional] Stop date in UTC YYYY-MM-DD.'
+        description: '[Optional] Stop date in UTC YYYY-MM-DD. If omitted, Fink uses the current date.'
       columns:
         required: false
         type: string

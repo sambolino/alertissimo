@@ -21,6 +21,7 @@ endpoints:
       objectId:
         required: true
         type: string
+        bind: target_id
         description: LSST diaObjectId.
       lasair_added:
         required: false
@@ -31,6 +32,7 @@ endpoints:
       type: object
     operation_types:
     - object_lookup
+    - lightcurve_lookup
     server_filters:
     - objectId
     - lasair_added
@@ -46,16 +48,19 @@ endpoints:
       ra:
         required: true
         type: number
+        bind: ra
         unit: deg
         description: Right ascension in decimal degrees.
       dec:
         required: true
         type: number
+        bind: dec
         unit: deg
         description: Declination in decimal degrees.
       radius:
         required: true
         type: number
+        bind: radius
         unit: arcsec
         description: Angular cone radius in arcseconds; maximum 1000 arcseconds.
       requestType:

@@ -11,7 +11,7 @@ from .html_output import (
     validate_html_output_directory,
     write_smoke_html,
 )
-from .scenarios import SCENARIOS, run_scenario
+from .scenarios import DSL_SCENARIOS, SCENARIOS, run_scenario
 
 
 def parser() -> argparse.ArgumentParser:
@@ -37,7 +37,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--html-dir",
         metavar="PATH",
-        help="write separate Portfolio dossiers and a linked index to PATH",
+        help="write separate Portfolio views and a linked index to PATH",
     )
     return result
 
@@ -51,6 +51,10 @@ def main(argv=None) -> int:
         return 0
     if not args.scenario:
         parser().error("a scenario is required unless --list is used")
+    if args.scenario in DSL_SCENARIOS and args.targets:
+        parser().error(
+            f"{args.scenario} defines its candidates in DSL and accepts no --target"
+        )
     if args.targets and not args.live:
         parser().error(
             "--target requires --live because fixture scenarios use fixed payload identifiers"

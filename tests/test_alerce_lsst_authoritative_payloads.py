@@ -41,7 +41,7 @@ def test_query_object_builds_only_the_clean_summary():
     assert dict(r.fields)=={"identity.object_id":170587117485817955,"position.ra":62.45763123249455,"position.dec":-48.481492749718534,"position.ra_error":4.146258333646398e-06,"position.dec_error":3.97436696170811e-06,"time.first_mjd":61217.42118006405,"time.last_mjd":61235.41918367943,"time.timespan_days":17.998003615379275,"detection_count":16}
     assert not any(x.semantic_type.startswith("classification@") for x in p.records); assert p.edges==()
 
-def test_query_objects_same_oid_preserves_classifier_records_and_row_association():
+def test_query_objects_same_oid_preserves_object_position_classifier_records_and_row_association():
     rows = fixture("query_objects")
     assert len({row["oid"] for row in rows}) == 1
     assert {row["ranking"] for row in rows} == {1}
@@ -62,7 +62,11 @@ def test_query_objects_same_oid_preserves_classifier_records_and_row_association
     assert {record.fields["best.class"] for record in classifications} == {"SN", "AGN"}
     assert len(summaries) == 2
     assert all(
-        dict(record.fields) == {"identity.object_id": 170587117485817955}
+        dict(record.fields) == {
+            "identity.object_id": 170587117485817955,
+            "position.ra": 62.45763123249455,
+            "position.dec": -48.481492749718534,
+        }
         for record in summaries
     )
     assert not any(
@@ -171,9 +175,7 @@ def test_unsupported_psf_flag_value_is_omitted_instead_of_coerced_to_false(endpo
     row = dict(fixture("query_detections")[0])
     row["psfFlux_flag"] = 2
     payload = [row] if endpoint == "query_detections" else {
-        "detections": [row],
-        "non_detections": [],
-        "forced_photometry": [],
+        "detections": [row], "non_detections": [], "forced_photometry": [],
     }
     fields = dict(build(endpoint, payload).records[0].fields)
     assert "photometry.g.psf.flags.failed" not in fields

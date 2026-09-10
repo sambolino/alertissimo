@@ -1,0 +1,48 @@
+// Alertissimo scientific predicate expression grammar v0.1
+//
+// This grammar is deliberately independent from the outer workflow grammar.
+// It formalizes boolean predicates over semantic references without prescribing
+// provider execution, pushdown, or planner behavior.
+
+start: expression
+
+?expression: or_expr
+?or_expr: and_expr (OR and_expr)*              -> or_expr
+?and_expr: not_expr (AND not_expr)*            -> and_expr
+?not_expr: NOT not_expr                        -> not_expr
+         | atom
+?atom: "(" expression ")"                      -> grouped
+     | exists_expr
+     | comparison
+
+exists_expr: EXISTS reference                   -> exists_prefix
+           | reference EXISTS                   -> exists_suffix
+
+comparison: operand COMP_OP operand
+
+?operand: reference
+        | literal
+
+reference: REFERENCE
+
+?literal: STRING                                -> string
+        | SIGNED_NUMBER                         -> number
+        | TRUE                                  -> true
+        | FALSE                                 -> false
+
+AND.3: "and"i
+OR.3: "or"i
+NOT.3: "not"i
+EXISTS.3: "exists"i
+TRUE.3: "true"i
+FALSE.3: "false"i
+COMP_OP: ">=" | "<=" | "!=" | "=" | ">" | "<"
+
+// Producer and channel qualifiers intentionally exclude "." so the first dot
+// unambiguously begins the semantic field path.
+REFERENCE.1: /[A-Za-z][A-Za-z0-9_-]*(?:@[A-Za-z][A-Za-z0-9_-]*(?::[A-Za-z][A-Za-z0-9_-]*)?)?(?:\.[A-Za-z0-9_{}-]+)*/
+STRING: /"(?:\\.|[^"\\])*"/ | /'(?:\\.|[^'\\])*'/
+
+%import common.SIGNED_NUMBER
+%import common.WS_INLINE
+%ignore WS_INLINE

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root { color-scheme: light; font-family: sans-serif; }
+      body { margin: 0; padding: 0; }
+      #root { min-height: 310px; box-sizing: border-box; }
+      .shell { min-height: 270px; box-sizing: border-box; border: 1px solid #98a2b3;
+        border-radius: 8px; background: #ffffff; overflow: hidden; }
+      .toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; border-bottom: 1px solid #e4e7ec; background: #f9fafb; }
+      .block {
+        display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px;
+        border: 1px solid #ff4b4b; border-radius: 8px; background: #ff4b4b;
+        color: #ffffff; font-weight: 600; cursor: grab; user-select: none;
+      }
+      .run { margin-left: 8px; padding: 8px 12px; border: 1px solid #ff4b4b; border-radius: 8px;
+        background: #ffffff; color: #d92d20; font-weight: 600; cursor: pointer; }
+      .actions { padding: 10px 14px; border-top: 1px solid #e4e7ec; background: #f9fafb; }
+      .actions .run { margin-left: 0; }
+      #dsl { min-height: 205px; padding: 14px; outline: 0; white-space: pre-wrap; overflow-wrap: break-word;
+        color: #172033; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      #dsl:empty::before { content: attr(data-placeholder); color: #98a2b3; }
+      .keyword { color: #d92d20; font-weight: 700; }
+      .prompt { color: #667085; font-size: 13px; }
+      .inline-choice { display: inline; }
+      select { margin-left: 8px; padding: 5px 8px; border: 1px solid #ff4b4b; border-radius: 6px; background: #ffffff; color: #172033; }
+      .draft { width: 7em; margin-left: 4px; padding: 4px 6px; border: 1px dashed #ff4b4b; border-radius: 5px; background: #fffafa; color: #172033; font: inherit; }
+      .optional { margin-left: 8px; padding: 5px 8px; border: 1px dashed #ff4b4b; border-radius: 6px; background: #ffffff; color: #d92d20; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const root = document.getElementById("root");
+      // Streamlit reruns the Python script when the component submits.  Keep
+      // edits made in the browser until the server has rendered that exact
+      // value back, so a rerun cannot replace a just-edited DSL with stale
+      // component arguments.
+      let pendingText = null;
+      let lastServerText = "";
+      function sendMessage(type, data) {
+        window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type }, data), "*");
+      }
+      function setHeight() {
+        sendMessage("streamlit:setFrameHeight", { height: document.documentElement.scrollHeight });
+      }
+      function sendSubmit(text) {
+        sendMessage("streamlit:setComponentValue", {
+          value: { text, submit: true, nonce: Date.now() }, dataType: "json"
+        });
+      }
+      function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+      function highlighted(text) {
+        const escaped = escapeHtml(text);
+        return escaped.replace(/\b(objects|from|via|inside|within|latest|with|where|filter|match|on|order|by|ranked|using|asc|desc)\b/gi, '<span class="keyword">$1</span>');
+      }
+      function plainText(editor) {
+        const copy = editor.cloneNode(true);
+        copy.querySelectorAll(".inline-choice").forEach((item) => item.remove());
+        // textContent retains literal newlines that we render for highlighting,
+        // while contenteditable browsers represent Enter as DIV/P/BR nodes.
+        // Serialize both forms explicitly; innerText may collapse these breaks
+        // to spaces depending on browser layout and CSS.
+        function read(node) {
+          let text = "";
+          node.childNodes.forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              text += child.textContent;
+              return;
+            }
+            if (child.nodeType !== Node.ELEMENT_NODE) return;
+            if (child.tagName === "BR") {
+              text += "\n";
+              return;
+            }
+            const block = /^(DIV|P|LI|PRE)$/.test(child.tagName);
+            if (block && text && !text.endsWith("\n")) text += "\n";
+            text += read(child);
+            if (block && !text.endsWith("\n")) text += "\n";
+          });
+          return text;
+        }
+        return read(copy).replace(/\n$/, "");
+      }
+      function optionMarkup(values, label) {
+        return `<span class="inline-choice" contenteditable="false"><span class="prompt">${label}</span><select id="choice"><option value="">Select…</option>${values.map((value) => `<option value="${value}">${value}</option>`).join("")}</select></span>`;
+      }
+      function render(event) {
+        if (event.data.type !== "streamlit:render") return;
+        const existingEditor = document.getElementById("dsl");
+        if (existingEditor) {
+          const currentText = plainText(existingEditor);
+          if (currentText !== lastServerText) pendingText = currentText;
+        }
+        const serverText = event.data.args.dsl_text || "";
+        const text = pendingText === null ? serverText : pendingText;
+        const filterOnly = event.data.args.mode === "filter";
+        const toolbar = filterOnly
+          ? '<button class="block" data-draft="filter" type="button">filter</button>'
+          : `
+            <button class="block" data-block="objects from " type="button">objects from</button>
+            <button class="block" data-draft="inside" type="button">inside</button>
+            <button class="block" data-draft="within" type="button">within</button>
+            <button class="block" data-draft="latest" type="button">latest</button>
+            <button class="block" data-draft="where" type="button">where</button>
+            <button class="block" data-draft="filter" type="button">filter</button>
+            <button class="block" data-block="with " type="button">with</button>
+            <button class="block" data-draft="with-predicate" type="button">with predicate</button>
+            <button class="block" data-draft="match" type="button">match</button>
+            <button class="block" data-draft="order" type="button">order by</button>
+            <button class="block" data-draft="ranked" type="button">ranked by</button>`;
+        const placeholder = filterOnly
+          ? "Choose filter, then enter an expression."
+          : "Click a block, then complete its values.";
+        root.innerHTML = `<div class="shell">
+          <div class="toolbar">
+            ${toolbar}
+          </div>
+          <div id="dsl" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Block DSL editor" data-placeholder="${placeholder}"></div>
+          <div class="actions"><button id="run" class="run" type="button">Run DSL</button></div>
+        </div>`;
+        const run = document.getElementById("run");
+        const dsl = document.getElementById("dsl");
+        const origins = event.data.args.origins || [];
+        const brokersByOrigin = event.data.args.brokers_by_origin || {};
+        const products = event.data.args.products || [];
+        const brokers = event.data.args.brokers || [];
+        dsl.innerHTML = highlighted(text);
+        if (pendingText === serverText) pendingText = null;
+        lastServerText = serverText;
+        function focusEnd() {
+          dsl.focus();
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(dsl);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        function cursorOffset() {
+          const selection = window.getSelection();
+          if (!selection.rangeCount) return plainText(dsl).length;
+          const range = selection.getRangeAt(0).cloneRange();
+          range.selectNodeContents(dsl);
+          range.setEnd(selection.focusNode, selection.focusOffset);
+          return range.toString().length;
+        }
+        function restoreCursor(offset) {
+          const walker = document.createTreeWalker(dsl, NodeFilter.SHOW_TEXT);
+          let remaining = offset;
+          let node = walker.nextNode();
+          while (node) {
+            if (remaining <= node.textContent.length) {
+              const range = document.createRange();
+              range.setStart(node, remaining);
+              range.collapse(true);
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(range);
+              return;
+            }
+            remaining -= node.textContent.length;
+            node = walker.nextNode();
+          }
+          focusEnd();
+        }
+        function append(text) {
+          dsl.innerHTML = highlighted(plainText(dsl) + text);
+          focusEnd();
+          showAssistant();
+        }
+        function insertBlock(block) {
+          const current = plainText(dsl);
+          const separator = current && !current.endsWith("\n") ? "\n" : "";
+          dsl.innerHTML = highlighted(current + separator + block);
+          focusEnd();
+          showAssistant();
+        }
+        function draftMarkup(placeholder) {
+          return `<span class="inline-choice" contenteditable="false"><input id="draft-value" class="draft" placeholder="${placeholder}" /></span>`;
+        }
+        function insertSingleDraft(prefix, placeholder, suffix) {
+          const current = plainText(dsl);
+          const separator = current && !current.endsWith("\n") ? "\n" : "";
+          dsl.innerHTML = highlighted(current + separator + prefix);
+          dsl.insertAdjacentHTML("beforeend", draftMarkup(placeholder));
+          const input = document.getElementById("draft-value");
+          function finish() {
+            if (!input.value.trim()) return;
+            dsl.innerHTML = highlighted(plainText(dsl) + input.value.trim() + suffix);
+            focusEnd();
+            showAssistant();
+          }
+          input.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); finish(); } });
+          input.addEventListener("blur", finish);
+          input.focus();
+        }
+        function insertInsideDraft() {
+          const current = plainText(dsl);
+          const separator = current && !current.endsWith("\n") ? "\n" : "";
+          dsl.innerHTML = highlighted(current + separator + "inside (");
+          dsl.insertAdjacentHTML("beforeend", '<span class="inline-choice" contenteditable="false"><input id="ra" class="draft" placeholder="RA" />, <input id="dec" class="draft" placeholder="Dec" />, <input id="radius" class="draft" placeholder="radius" /><select id="unit"><option>arcsec</option><option>arcmin</option><option>deg</option></select></span>');
+          const fields = [document.getElementById("ra"), document.getElementById("dec"), document.getElementById("radius")];
+          function finish() {
+            if (!fields.every((field) => field.value.trim())) return;
+            const unit = document.getElementById("unit").value;
+            dsl.innerHTML = highlighted(`${plainText(dsl)}${fields[0].value.trim()}, ${fields[1].value.trim()}, ${fields[2].value.trim()}${unit})`);
+            focusEnd();
+            showAssistant();
+          }
+          fields.forEach((field) => field.addEventListener("blur", finish));
+          document.getElementById("unit").addEventListener("change", finish);
+          fields[0].focus();
+        }
+        function insertDraft(kind) {
+          if (kind === "inside") return insertInsideDraft();
+          const drafts = {
+            within: ["within ", "duration, e.g. 7d", ""],
+            latest: ["latest ", "number", ""],
+            where: ["where ", "expression", ""],
+            filter: ["filter ", "expression", ""],
+            "with-predicate": ["with ", "product", ":\n    "],
+            match: ["match on position inside ", "radius", "arcsec"],
+            order: ["order by ", "semantic path [asc|desc]", ""],
+            ranked: ["ranked by ", "criterion [asc|desc]", ""],
+          };
+          const [prefix, placeholder, suffix] = drafts[kind];
+          insertSingleDraft(prefix, placeholder, suffix);
+        }
+        function completeCurrentToken(value, suffix) {
+          const current = plainText(dsl).replace(/[\t ]*$/, "");
+          dsl.innerHTML = highlighted(current + " " + value + suffix);
+          focusEnd();
+          showAssistant();
+        }
+        function showAssistant() {
+          const current = plainText(dsl);
+          dsl.querySelectorAll(".inline-choice").forEach((item) => item.remove());
+          const originMatch = current.match(/objects\s+from\s*$/i);
+          const brokerMatch = current.match(/objects\s+from\s+([A-Za-z][A-Za-z0-9_.-]*)\s+via\s*$/i);
+          const candidateMatch = current.match(/(?:^|\n)objects\s+from\s+([A-Za-z][A-Za-z0-9_.-]*)\s*$/i);
+          const requirementMatch = current.match(/(?:^|\n)with\s*$/i);
+          const requirementValueMatch = current.match(/(?:^|\n)with\s+([A-Za-z][A-Za-z0-9_-]*)\s*$/i);
+          const genericViaMatch = current.match(/\bvia\s*$/i);
+          if (originMatch) {
+            dsl.insertAdjacentHTML("beforeend", optionMarkup(origins, ""));
+            document.getElementById("choice").addEventListener("change", (choice) => {
+              if (choice.target.value) completeCurrentToken(choice.target.value, "");
+            });
+          } else if (brokerMatch) {
+            const brokers = brokersByOrigin[brokerMatch[1].toLowerCase()] || [];
+            dsl.insertAdjacentHTML("beforeend", optionMarkup(brokers, ""));
+            document.getElementById("choice").addEventListener("change", (choice) => {
+              if (choice.target.value) completeCurrentToken(choice.target.value, "\n");
+            });
+          } else if (requirementMatch) {
+            dsl.insertAdjacentHTML("beforeend", optionMarkup(products, ""));
+            document.getElementById("choice").addEventListener("change", (choice) => {
+              if (choice.target.value) completeCurrentToken(choice.target.value, "");
+            });
+          } else if (genericViaMatch) {
+            dsl.insertAdjacentHTML("beforeend", optionMarkup(brokers, ""));
+            document.getElementById("choice").addEventListener("change", (choice) => {
+              if (choice.target.value) completeCurrentToken(choice.target.value, "\n");
+            });
+          } else if (candidateMatch) {
+            dsl.insertAdjacentHTML("beforeend", '<span class="inline-choice" contenteditable="false"><button id="add-via" class="optional" type="button">via (optional)</button></span>');
+            document.getElementById("add-via").addEventListener("mousedown", (event) => event.preventDefault());
+            document.getElementById("add-via").addEventListener("click", () => append(" via "));
+          } else if (requirementValueMatch) {
+            dsl.insertAdjacentHTML("beforeend", '<span class="inline-choice" contenteditable="false"><button id="add-via" class="optional" type="button">via (optional)</button></span>');
+            document.getElementById("add-via").addEventListener("mousedown", (event) => event.preventDefault());
+            document.getElementById("add-via").addEventListener("click", () => append(" via "));
+          }
+        }
+        document.querySelectorAll("[data-block]").forEach((button) => {
+          button.addEventListener("mousedown", (event) => event.preventDefault());
+          button.addEventListener("click", () => insertBlock(button.dataset.block));
+        });
+        document.querySelectorAll("[data-draft]").forEach((button) => {
+          button.addEventListener("mousedown", (event) => event.preventDefault());
+          button.addEventListener("click", () => insertDraft(button.dataset.draft));
+        });
+        run.addEventListener("click", () => sendSubmit(plainText(dsl)));
+        dsl.addEventListener("keydown", (event) => {
+          if (event.key !== "Tab") return;
+          event.preventDefault();
+          // Keep Tab inside the editor instead of moving focus to the next UI
+          // control. Four spaces match the DSL's canonical scoped indentation.
+          document.execCommand("insertText", false, "    ");
+        });
+        dsl.addEventListener("input", () => {
+          const offset = cursorOffset();
+          const current = plainText(dsl);
+          dsl.innerHTML = highlighted(current);
+          restoreCursor(offset);
+          showAssistant();
+        });
+        showAssistant();
+        setHeight();
+      }
+      window.addEventListener("message", render);
+      sendMessage("streamlit:componentReady", { apiVersion: 1 });
+      setHeight();
+    </script>
+  </body>
+</html>

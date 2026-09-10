@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any
+from typing import Any, TypeAlias
 
 
 class PortfolioModelError(ValueError):
@@ -71,6 +71,9 @@ class InternalExecutionId:
 
     def __post_init__(self) -> None:
         _require_non_empty_string(self.value, "internal execution ID")
+
+
+InternalEdgeEndpoint: TypeAlias = InternalPortfolioId | InternalRecordId
 
 
 @dataclass(frozen=True)
@@ -163,8 +166,8 @@ class SemanticRecord:
 class SemanticEdge:
     internal_edge_id: InternalEdgeId
     edge_type: str
-    subject_record_id: InternalRecordId
-    target_record_id: InternalRecordId
+    subject: InternalEdgeEndpoint
+    target: InternalEdgeEndpoint
     fields: Mapping[str, Any] = field(default_factory=dict)
     internal_source: InternalRecordSource | None = None
 
@@ -174,10 +177,19 @@ class SemanticEdge:
         _require_non_empty_string(self.edge_type, "edge_type")
         if not self.edge_type.startswith("--") or "--" not in self.edge_type[2:]:
             raise PortfolioModelError("edge_type must use a connection-plane --edge-- symbol")
-        if not isinstance(self.subject_record_id, InternalRecordId):
-            raise PortfolioModelError("subject_record_id must be an InternalRecordId")
-        if not isinstance(self.target_record_id, InternalRecordId):
-            raise PortfolioModelError("target_record_id must be an InternalRecordId")
+        endpoint_types = (InternalPortfolioId, InternalRecordId)
+        if not isinstance(self.subject, endpoint_types):
+            raise PortfolioModelError(
+                "edge subject must be an InternalPortfolioId or InternalRecordId"
+            )
+        if not isinstance(self.target, endpoint_types):
+            raise PortfolioModelError(
+                "edge target must be an InternalPortfolioId or InternalRecordId"
+            )
+        if type(self.subject) is not type(self.target):
+            raise PortfolioModelError(
+                "edge endpoints must both be portfolio IDs or both be record IDs"
+            )
         immutable_fields = _immutable_mapping(self.fields, "fields")
         _validate_relative_fields(immutable_fields, "edge field")
         if self.internal_source is not None and not isinstance(
@@ -221,13 +233,18 @@ class Portfolio:
         )
 
         for edge in self.edges:
-            if edge.subject_record_id not in record_ids:
+            if isinstance(edge.subject, InternalRecordId):
+                if edge.subject not in record_ids:
+                    raise PortfolioModelError(
+                        f"edge subject record {edge.subject.value!r} does not exist"
+                    )
+                if edge.target not in record_ids:
+                    raise PortfolioModelError(
+                        f"edge target record {edge.target.value!r} does not exist"
+                    )
+            elif self.internal_portfolio_id not in (edge.subject, edge.target):
                 raise PortfolioModelError(
-                    f"edge subject record {edge.subject_record_id.value!r} does not exist"
-                )
-            if edge.target_record_id not in record_ids:
-                raise PortfolioModelError(
-                    f"edge target record {edge.target_record_id.value!r} does not exist"
+                    "portfolio edge is not incident on the portfolio that stores it"
                 )
 
         if self.executions:

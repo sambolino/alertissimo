@@ -74,7 +74,7 @@ def test_derive_hierarchy_and_scientific_parameters_are_explicit():
         ColorColorStep(color_x="g-r", color_y="g-r")
 
 
-def test_complete_workflow_derives_color_magnitude_after_portfolio_creation():
+def test_complete_workflow_derives_color_magnitude_into_its_own_step_view():
     result = run_scenario("color-magnitude")
 
     assert [step.state.value for step in result.run.steps] == [
@@ -85,11 +85,18 @@ def test_complete_workflow_derives_color_magnitude_after_portfolio_creation():
     assert result.bindings[1].bound_calls == ()
     assert result.run.steps[1].endpoint_plans == ()
     assert result.run.steps[1].execution_ids == ()
-    assert result.normalized.steps[1].executions == ()
+    assert result.run.steps[1].material_input_from is not None
+    assert result.run.steps[1].material_input_from.step_index == 0
 
     provider_output = result.normalized.steps[0].executions[0]
     assert len(provider_output.portfolios) == 1
-    portfolio = provider_output.portfolios[0]
+    provider_portfolio = provider_output.portfolios[0]
+    assert provider_portfolio.records_of_type("color_magnitude@alertissimo") == ()
+
+    derive_output = result.normalized.steps[1]
+    assert derive_output.executions == ()
+    assert len(derive_output.portfolios) == 1
+    portfolio = derive_output.portfolios[0]
     (derived,) = portfolio.records_of_type("color_magnitude@alertissimo")
     assert derived.internal_source is None
     assert derived.fields["points"] == (
@@ -103,6 +110,10 @@ def test_complete_workflow_derives_color_magnitude_after_portfolio_creation():
     assert len(portfolio.executions) == 1
     assert portfolio.executions[0].broker == "fink"
     assert portfolio.executions[0].endpoint == "objects"
+
+    # The derivation is a new immutable semantic snapshot, not a retroactive rewrite.
+    assert portfolio.internal_portfolio_id == provider_portfolio.internal_portfolio_id
+    assert len(portfolio.records) == len(provider_portfolio.records) + 1
 
 
 def test_color_color_derivation_produces_non_temporal_semantic_points():

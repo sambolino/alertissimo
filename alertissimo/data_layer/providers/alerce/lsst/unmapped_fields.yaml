@@ -30,12 +30,6 @@ unmapped:
 - query_objects#lastmjd:
     reason: duplicate_execution_payload_context
     candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
-- query_objects#meandec:
-    reason: duplicate_execution_payload_context
-    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
-- query_objects#meanra:
-    reason: duplicate_execution_payload_context
-    candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.
 - query_objects#n_det:
     reason: duplicate_execution_payload_context
     candidate_meaning: The meaning is known, but this repeated object column is deliberately left unmapped to avoid duplicating the full summary for every classifier row.

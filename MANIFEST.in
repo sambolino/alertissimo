@@ -1,0 +1,6 @@
+include README.md
+include LICENCE
+recursive-include alertissimo/dsl *.lark
+recursive-include alertissimo/data_layer/execution *.yaml
+recursive-include alertissimo/data_layer/semantic_model *.yaml
+recursive-include alertissimo/data_layer/providers *.yaml

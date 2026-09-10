@@ -1,7 +1,7 @@
 """Declarative, provider-independent orchestration intermediate representation.
 
 The inheritance tree is intentionally part of the IR vocabulary: it records whether
-an operation discovers, retrieves, derives, analyzes, or acts.  These distinctions
+an operation discovers, retrieves, derives, analyzes, or acts. These distinctions
 remain semantic even if a future planner can execute several operations with one
 provider request.
 """
@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from .predicates import Predicate
 
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
@@ -83,34 +85,61 @@ class TargetSelector(IRModel):
 
 
 class LookupStep(Step):
-    """Resolve an already-known identifier rather than discover by constraints.
+    """Resolve already-known identifiers rather than discover by constraints.
 
-    Object, alert, source, and detection identifiers may resolve to different
-    semantic entity families.  Consequently lookup remains outside SearchStep and
-    does not require ``semantic_type`` until identifier namespaces are formalized.
+    The explicit target kind is part of the semantic intent: object identifiers
+    must never be guessed to be alert identifiers (or vice versa) from their text.
+    Lookup remains outside SearchStep because it materializes named entities rather
+    than discovering candidates through scientific constraints.
     """
 
     op: Literal["lookup"] = "lookup"
-    id: NonEmptyStr
+    target: TargetSelector
+
+    @model_validator(mode="after")
+    def require_lookup_target_kind(self) -> "LookupStep":
+        if self.target.kind not in {"object", "alert"}:
+            raise ValueError("lookup target kind must be 'object' or 'alert'")
+        return self
+
+
+class SearchSelection(IRModel):
+    """Selection semantics attached to candidate discovery, not a separate step.
+
+    ``latest`` means the latest N candidates in the semantic candidate universe.
+    A planner may push limits/order into provider parameters when equivalent, but
+    must preserve global semantics when several sources participate.
+    """
+
+    latest: Annotated[int, Field(gt=0)] | None = None
+
+    @model_validator(mode="after")
+    def require_selector(self) -> SearchSelection:
+        if self.latest is None:
+            raise ValueError("search selection requires at least one selector")
+        return self
 
 
 class SearchStep(Step):
     """Conceptual base for provider/capability discovery of SemanticRecords.
 
-    Search asks the available provider space to discover records matching a query.
-    Every search therefore declares the expected SemanticRecord family.  It does
-    not mean reducing records that are already in the working context; that is
-    FilterStep's deliberately separate meaning.
+    ``predicate`` is the canonical ontology-grounded first-pass condition. It says
+    what must be true, not where it is evaluated. A planner may realize some or all
+    of it as endpoint input constraints and keep the remainder for post-normalization
+    pruning. ``criteria`` remains for non-predicate search semantics that are not yet
+    modeled by dedicated fields.
     """
 
     semantic_type: NonEmptyStr
+    predicate: Predicate | None = None
+    criteria: dict[str, Any] = Field(default_factory=dict)
+    selection: SearchSelection | None = None
 
 
 class SemanticSearchStep(SearchStep):
     """Discover SemanticRecords through semantic predicates or criteria."""
 
     op: Literal["semantic_search"] = "semantic_search"
-    criteria: dict[str, Any] = Field(default_factory=dict)
     time_context: TimeContext | None = None
 
 
@@ -135,24 +164,24 @@ class SqlQueryStep(SearchStep):
 class FilterStep(Step):
     """Reduce data already present in the current working context.
 
-    Unlike SearchStep, FilterStep does not ask providers to discover records.  For
-    example, semantic-searching summaries for supernovae may become a provider
-    query, whereas filtering current candidates by decline rate operates on
-    material already available to the workflow/session/Portfolio context.  A
-    future planner may push this predicate into an upstream query as an execution
-    optimization, but doing so must not change the IR meaning.  No input/result-set
-    model is implied here yet.
+    ``predicate`` uses exactly the same semantic language as SearchStep. The
+    distinction is lifecycle: FilterStep acts on already materialized context,
+    whereas SearchStep defines candidate discovery. ``criteria`` is retained only
+    for non-predicate legacy/internal filter details. Empty FilterStep instances
+    remain valid for backward-compatible internal/local-step construction; the
+    user-facing DSL independently requires an actual filter condition.
     """
 
     op: Literal["filter"] = "filter"
-    criteria: dict[str, Any]
+    predicate: Predicate | None = None
+    criteria: dict[str, Any] = Field(default_factory=dict)
 
 
 class GetStep(Step):
     """Conceptual base for retrieving already-existing information or evidence.
 
     Get operations obtain a semantic record, product, or assertion from an
-    available source.  They do not compute a new Alertissimo result locally and do
+    available source. They do not compute a new Alertissimo result locally and do
     not request that a facility generate a new observation or product.
     """
 
@@ -160,7 +189,50 @@ class GetStep(Step):
 
 
 class GetLightcurveStep(GetStep):
-    """Retrieve an existing lightcurve; LightcurveStep constructs a local one."""
+    """Retrieve the available provider lightcurve evidence for selected objects.
+
+    ``GetLightcurveStep`` is the semantic retrieval requested by surface
+    ``with lightcurve``. It deliberately does not mean "call exactly one endpoint
+    whose physical operation is named lightcurve". For the current v0.1 policy,
+    the scientifically useful provider lightcurve is treated as the available
+    photometric history, including forced-photometry measurements when a provider
+    exposes them separately and the planner can prove that the supplementary
+    endpoint is compatible with the same target population.
+
+    Consequently one semantic ``GetLightcurveStep`` may own more than one physical
+    ``EndpointPlan``. For example Fink/LSST can be planned as its ordinary
+    ``sources`` history plus its separate ``fp`` forced-photometry retrieval. This
+    is an orchestration decomposition only: WorkflowIR still contains one semantic
+    lightcurve requirement, and providers that already combine the evidence need
+    only one physical execution.
+
+    IMPORTANT / PROVISIONAL COMPATIBILITY POLICY:
+    standalone forced-photometry selection is currently unsupported by the public
+    DSL. We intentionally do not expose ``with forced_photometry`` (nor invent a
+    modifier such as ``with lightcurve --forced``) yet. In the current ontology,
+    forced photometry is represented inside detection/summary photometric structure
+    rather than as a first-level Portfolio record type, so presenting it as a
+    separate surface product would commit us to semantics that have not been
+    decided. ``GetForcedPhotometryStep`` remains in the canonical IR as an
+    internal/provider-facing retrieval operation for direct programmatic workflows
+    and for a future DSL decision.
+
+    The future decision should be made together with analogous product-completeness
+    cases. It needs to define whether the DSL eventually needs general concepts such
+    as ``including``, ``only`` or ``without``; how explicit forced-photometry intent
+    composes with bands and time windows; and how to treat providers whose ordinary
+    lightcurve endpoint already includes some or all forced measurements.
+
+    Automatic forced photometry is therefore strictly supplementary. Its absence,
+    ambiguity, incompatible target cardinality, or inability to prove compatibility
+    must never make an otherwise satisfiable ``GetLightcurveStep`` unsupported.
+    Constrained requests (currently ``bands`` or ``time_context``) are not
+    auto-supplemented until equivalent constraint handling can be proven for the
+    forced-photometry endpoint.
+
+    ``LightcurveStep`` is different: it constructs an Alertissimo-derived
+    lightcurve locally from already available evidence.
+    """
 
     op: Literal["get_lightcurve"] = "get_lightcurve"
     bands: list[NonEmptyStr] | None = None
@@ -182,9 +254,13 @@ class GetCutoutStep(GetStep):
 
 
 class GetForcedPhotometryStep(GetStep):
-    """Retrieve existing forced photometry, never request its generation.
+    """Retrieve existing forced photometry without requesting its generation.
 
-    Generation belongs to FollowupRequestStep because it causes a new product.
+    This provider-facing IR operation is intentionally retained even though forced
+    photometry is not currently a standalone public DSL product. The ordinary DSL
+    path is ``with lightcurve``; see ``GetLightcurveStep`` for the provisional
+    automatic-inclusion and future compatibility policy. Generation belongs to
+    ``FollowupRequestStep`` because it causes a new product.
     """
 
     op: Literal["get_forced_photometry"] = "get_forced_photometry"
@@ -193,9 +269,10 @@ class GetForcedPhotometryStep(GetStep):
 
 
 class GetClassificationStep(GetStep):
-    """Retrieve an existing assertion; ClassifyStep runs a model to create one."""
+    """Retrieve an existing classification assertion from an optional classifier."""
 
     op: Literal["get_classification"] = "get_classification"
+    classifier: NonEmptyStr | None = None
 
 
 class GetSpectrumStep(GetStep):
@@ -211,7 +288,7 @@ class GetDataProductStep(GetStep):
 class DeriveStep(Step):
     """Locally construct a semantic product from already-normalized Portfolio data.
 
-    Derivations do not select or call provider endpoints.  They run only after
+    Derivations do not select or call provider endpoints. They run only after
     provider execution and normalization have produced Portfolio material, and
     complement those Portfolios with newly produced semantic records.
     """
@@ -222,7 +299,7 @@ class DeriveStep(Step):
 class LightcurveStep(DeriveStep):
     """Produce an Alertissimo-derived lightcurve from available evidence.
 
-    This is distinct from retrieving an existing provider lightcurve.  TODO: the
+    This is distinct from retrieving an existing provider lightcurve. TODO: the
     exact construction semantics (such as unifying detections, forced photometry,
     surveys, and sources) are intentionally provisional and will be iterated.
     """
@@ -266,7 +343,7 @@ class ColorColorStep(DeriveStep):
         return _require_non_negative_delta(value)
 
     @model_validator(mode="after")
-    def require_distinct_colors(self) -> ColorColorStep:
+    def require_distinct_colors(self) -> "ColorColorStep":
         if self.color_x == self.color_y:
             raise ValueError("color_x and color_y must be distinct")
         return self
@@ -276,9 +353,9 @@ class MatchStep(Step):
     """Locally perform a scientific association/matching operation.
 
     Match asks whether astronomical entities or records are spatially, temporally,
-    probabilistically, or otherwise associated.  It differs from GetCrossmatchStep,
+    probabilistically, or otherwise associated. It differs from GetCrossmatchStep,
     which retrieves somebody else's result, and from CompareStep, which asks how
-    already-selected values or assertions agree or differ.  Geometry and input-set
+    already-selected values or assertions agree or differ. Geometry and input-set
     models remain intentionally provisional pending the use-case census.
     """
 
@@ -338,9 +415,9 @@ class UtilityScoreStep(AnalyzeStep):
     """Compute objective-relative candidate or program utility/prioritization.
 
     Examples include follow-up priority, scientific utility, observability-weighted
-    target value, and telescope-time utility.  This term explicitly does not mean a
+    target value, and telescope-time utility. This term explicitly does not mean a
     classifier or anomaly score, quality, significance, or an arbitrary numeric
-    scientific measurement.  Its ontology/session placement remains unresolved.
+    scientific measurement. Its ontology/session placement remains unresolved.
     """
 
     op: Literal["utility_score"] = "utility_score"
@@ -349,16 +426,30 @@ class UtilityScoreStep(AnalyzeStep):
 
 
 class ConfirmStep(Step):
-    """Require corroboration while its future relationship to Compare/Match remains open."""
+    """Require corroboration from distinct brokers over an entity or proposition.
+
+    ``predicate=None`` is existence confirmation for the selected semantic target.
+    When ``predicate`` is present, each broker contributes a vote only when its own
+    normalized evidence satisfies that canonical predicate.
+    """
 
     op: Literal["confirm"] = "confirm"
     target: TargetSelector | None = None
+    predicate: Predicate | None = None
     required_agreement: Annotated[int, Field(ge=1)] = 1
 
     @model_validator(mode="after")
-    def validate_explicit_source_count(self) -> ConfirmStep:
-        if self.sources and self.required_agreement > len(self.sources):
-            raise ValueError("required_agreement cannot exceed the explicit source count")
+    def validate_distinct_broker_quorum(self) -> "ConfirmStep":
+        if not self.sources:
+            return self
+        explicit_brokers = [source.broker for source in self.sources if source.broker is not None]
+        if len(explicit_brokers) != len(self.sources):
+            return self
+        distinct_brokers = set(explicit_brokers)
+        if self.required_agreement > len(distinct_brokers):
+            raise ValueError(
+                "required_agreement cannot exceed the distinct explicit broker count"
+            )
         return self
 
 
@@ -430,7 +521,8 @@ __all__ = [
     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
     "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
     "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
-    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchStep",
-    "SemanticSearchStep", "Source", "SqlQueryStep", "Step", "StepUnion",
-    "TargetKind", "TargetSelector", "TimeContext", "UtilityScoreStep", "WorkflowIR",
+    "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchSelection",
+    "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
+    "StepUnion", "TargetKind", "TargetSelector", "TimeContext",
+    "UtilityScoreStep", "WorkflowIR",
 ]
