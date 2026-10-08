@@ -99,7 +99,7 @@ def test_dynamic_lasair_catalog_mapping_is_deferred_not_wildcard_proof():
     assert result.status == "deferred"
     assert result.candidates == ()
     assert "dynamic producer" in result.source_results[0].reason
-    with pytest.raises(PlanningDeferredError, match="deferred proof"):
+    with pytest.raises(PlanningDeferredError, match="dynamic producer mapping"):
         plan_step(step, graph)
 
 
