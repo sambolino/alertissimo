@@ -161,6 +161,35 @@ class CapabilityGraph:
             if item.semantic_record_type == semantic_record_type
         )
 
+    def fields_for_endpoint(
+        self,
+        broker: str,
+        origin: str,
+        endpoint: str,
+        *,
+        semantic_record_noun: str | None = None,
+    ) -> tuple[FieldMappingCapability, ...]:
+        """Return mapped field evidence for exactly one physical endpoint.
+
+        Provider-level record fields may combine several endpoints. Keep the
+        endpoint, payload, and qualified semantic path on each returned mapping
+        so callers cannot mistake that union for one call's outputs. A mapping
+        describes a possible output, not guaranteed presence in every response
+        or under every projection.
+        """
+        return tuple(
+            item for item in self.field_mapping_capabilities
+            if item.broker == broker
+            and item.origin == origin
+            and item.endpoint == endpoint
+            and (
+                semantic_record_noun is None
+                or semantic_record_noun_matches(
+                    item.semantic_record_type, semantic_record_noun
+                )
+            )
+        )
+
     def records_for_endpoint(
         self, broker: str, origin: str, endpoint: str
     ) -> tuple[SemanticRecordCapability, ...]:
