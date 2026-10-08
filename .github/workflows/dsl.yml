@@ -21,6 +21,7 @@ on:
       - 'tests/test_api_continuation.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_recipe_registry.py'
+      - 'tests/test_lasair_ztf_compact_cone_summary.py'
       - 'tests/test_orchestration_*.py'
       - '.github/workflows/dsl.yml'
   workflow_dispatch:
@@ -44,4 +45,5 @@ jobs:
             tests/test_api_continuation.py \
             tests/test_capability_graph.py \
             tests/test_recipe_registry.py \
+            tests/test_lasair_ztf_compact_cone_summary.py \
             tests/test_orchestration_*.py

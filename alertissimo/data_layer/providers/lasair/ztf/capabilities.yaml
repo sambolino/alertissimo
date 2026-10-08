@@ -8,3 +8,13 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+        - endpoint: query
+          required: false
+          params:
+            conditions:
+              from: {call: 0, path: summary.identity.object_id}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}

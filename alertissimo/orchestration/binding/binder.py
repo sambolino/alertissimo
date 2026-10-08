@@ -264,7 +264,7 @@ def _recipe_field_value(step: Step, path: tuple[str, ...]) -> Any:
 def _bind_recipe_parameter(
     step: Step,
     declaration: Mapping[str, Any],
-    source: tuple[str, ...] | dict[str, tuple[str, ...]],
+    source: tuple[str, ...] | dict[str, tuple[str, ...]] | str,
     supplied_runtime: Mapping[str, Any],
     *,
     endpoint_plan: EndpointPlan,
@@ -272,6 +272,20 @@ def _bind_recipe_parameter(
     target_ids_override: tuple[str, ...] | None,
 ) -> tuple[Any, tuple[str, ...]]:
     roles = _binding_roles(declaration)
+    if isinstance(source, str):
+        if (
+            source != "target_id" or roles != (source,)
+            or endpoint_plan.candidate_input_from_plan is None
+        ):
+            raise ParameterBindingError("recipe runtime source requires a declared candidate dependency")
+        value = (
+            target_ids_override if target_ids_override is not None
+            else supplied_runtime.get(source)
+        )
+        return _encode_parameter_values(
+            {source: value}, declaration,
+            endpoint_plan=endpoint_plan, physical_name=physical_name,
+        ), roles
     if isinstance(source, dict):
         if set(source) != set(roles) or not (declaration.get("binding") or {}).get("adapter"):
             raise ParameterBindingError("recipe encoder inputs do not match the endpoint contract")

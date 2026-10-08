@@ -13,7 +13,8 @@ import re
 from collections.abc import Mapping
 
 from alertissimo.data_layer.runtime.recipes import (
-    ConstantValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
+    CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCall, RecipeCapability,
+    StepValueSource,
 )
 
 from alertissimo.data_layer.runtime.capability_graph import (
@@ -22,7 +23,6 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
-    ConeSearchStep,
     ConfirmStep,
     DeriveStep,
     FilterStep,
@@ -140,7 +140,7 @@ def _select_one(
     return candidates[0]
 
 
-def _recipe_assignments(recipe: RecipeCapability) -> dict:
+def _recipe_assignments(call: RecipeCall, *, plan_offset: int) -> dict:
     """Carry value sources to the binder; never encode values during planning."""
     def physical_literal(value):
         if isinstance(value, Mapping):
@@ -150,12 +150,16 @@ def _recipe_assignments(recipe: RecipeCapability) -> dict:
         return value
 
     sources, constants = {}, {}
-    for parameter in recipe.calls[0].params:
+    dependency = None
+    for parameter in call.params:
         value = parameter.source
         if isinstance(value, ConstantValueSource):
             constants[parameter.parameter] = physical_literal(value.value)
         elif isinstance(value, StepValueSource):
             sources[parameter.parameter] = value.path
+        elif isinstance(value, CallValueSource):
+            sources[parameter.parameter] = "target_id"
+            dependency = PlanCandidateInputRef(plan_index=plan_offset + value.call_index)
         elif isinstance(value, EncoderValueSource) and all(
             isinstance(item, StepValueSource) for _, item in value.inputs
         ):
@@ -163,8 +167,28 @@ def _recipe_assignments(recipe: RecipeCapability) -> dict:
                 operand: item.path for operand, item in value.inputs
             }
         else:
-            raise PlanningDeferredError("atomic recipe cannot bind a call-output source")
-    return {"parameter_sources": sources, "request_params": constants}
+            raise PlanningDeferredError("recipe cannot bind these encoder inputs")
+    return {
+        "parameter_sources": sources, "request_params": constants,
+        "candidate_input_from_plan": dependency, "required": call.required,
+    }
+
+
+def _recipe_plans(
+    step: Step, recipe: RecipeCapability, validation: CapabilityValidationResult,
+    graph: CapabilityGraph, *, plan_offset: int,
+) -> tuple[EndpointPlan, ...]:
+    """Expand authored calls in order using existing physical plan dependencies."""
+    endpoints = {
+        endpoint.endpoint: endpoint
+        for endpoint in graph.endpoints_for(recipe.broker, recipe.origin)
+    }
+    return tuple(
+        _endpoint_plan(step, endpoints[call.endpoint], validation, graph).model_copy(
+            update=_recipe_assignments(call, plan_offset=plan_offset)
+        )
+        for call in recipe.calls
+    )
 
 
 def _endpoint_plan(
@@ -224,34 +248,6 @@ def _forced_photometry_supplement(
     return candidates[0]
 
 
-def _lasair_ztf_cone_summary_supplement(
-    step: Step,
-    primary: EndpointCapability,
-    graph: CapabilityGraph,
-) -> EndpointCapability | None:
-    """Select the compact Lasair query paired with its thin ZTF cone search."""
-
-    if not isinstance(step, ConeSearchStep):
-        return None
-    if (primary.broker, primary.origin, primary.endpoint) != (
-        "lasair",
-        "ztf",
-        "cone",
-    ):
-        return None
-    matches = tuple(
-        endpoint
-        for endpoint in graph.endpoints_for("lasair", "ztf")
-        if endpoint.endpoint == "query"
-    )
-    if len(matches) != 1:
-        raise PlanningDeferredError(
-            "Lasair/ZTF cone summary realization requires exactly one registered "
-            "query endpoint"
-        )
-    return matches[0]
-
-
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
@@ -277,33 +273,13 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     plans: list[EndpointPlan] = []
     for source_result in validation.source_results:
         endpoint = _select_one(validation, source_result)
-        primary_index = len(plans)
-        primary = _endpoint_plan(step, endpoint, validation, graph)
         if source_result.recipes:
             recipe, = source_result.recipes
-            primary = primary.model_copy(update=_recipe_assignments(recipe))
-        plans.append(primary)
-        cone_summary = _lasair_ztf_cone_summary_supplement(step, endpoint, graph)
-        if cone_summary is not None:
-            plans.append(
-                _endpoint_plan(step, cone_summary, validation, graph).model_copy(
-                    update={
-                        "candidate_input_from_plan": PlanCandidateInputRef(
-                            plan_index=primary_index
-                        ),
-                        "request_params": {
-                            "selected": (
-                                "objects.objectId,objects.ramean,objects.decmean,"
-                                "objects.ncand,objects.jdmin,objects.jdmax"
-                            ),
-                            "tables": "objects",
-                            "limit": 100,
-                            "offset": 0,
-                        },
-                        "required": False,
-                    }
-                )
-            )
+            plans.extend(_recipe_plans(
+                step, recipe, validation, graph, plan_offset=len(plans),
+            ))
+        else:
+            plans.append(_endpoint_plan(step, endpoint, validation, graph))
         if isinstance(step, GetLightcurveStep):
             supplement = _forced_photometry_supplement(step, endpoint, graph)
             if supplement is not None:
