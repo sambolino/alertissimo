@@ -726,6 +726,7 @@ endpoints:
         type: integer
         required: true
         description: Physical oid parameter accepted by get_stamps.
+        bind: target_id
       candid:
         type: integer
         required: false

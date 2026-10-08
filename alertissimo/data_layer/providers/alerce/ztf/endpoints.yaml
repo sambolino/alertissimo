@@ -794,6 +794,7 @@ endpoints:
         type: string
         required: true
         description: Physical oid parameter accepted by get_stamps.
+        bind: target_id
       candid:
         type: integer
         required: false
@@ -845,6 +846,7 @@ endpoints:
         type: string
         required: true
         description: Physical oid parameter accepted by get_avro.
+        bind: target_id
       candid:
         type: integer
         required: false

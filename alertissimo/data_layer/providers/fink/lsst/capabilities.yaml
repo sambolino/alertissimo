@@ -42,3 +42,19 @@ recipes:
         - endpoint: sources
           params:
             diaObjectId: {from: step.target.ids}
+  get_cutout:
+    - target_kind: alert
+      calls:
+        - endpoint: cutouts
+          params:
+            diaSourceId: {from: step.target.ids}
+            kind: {value: All}
+            output-format: {value: array}
+  get_data_product:
+    - target_kind: alert
+      calls:
+        - endpoint: cutouts
+          params:
+            diaSourceId: {from: step.target.ids}
+            kind: {value: All}
+            output-format: {value: array}

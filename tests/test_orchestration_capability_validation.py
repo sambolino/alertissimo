@@ -206,7 +206,8 @@ def test_known_and_missing_data_products_report_cleanly():
         GetCutoutStep(sources=[Source(broker="fink", origin="ztf")]), graph
     )
     spectrum = validate_step_capabilities(GetSpectrumStep(), graph)
-    assert cutout.status == "supported"
+    assert cutout.status == "deferred"
+    assert "response shape/mode" in cutout.source_results[0].reason
     assert spectrum.status == "unsupported"
     assert "no compatible" in spectrum.source_results[0].reason
 
@@ -282,14 +283,15 @@ def test_multi_target_prefers_collection_but_allows_singular_fanout():
     assert {item.endpoint for item in fanned_out.candidates} == {"query_lightcurve"}
 
 
-def test_singular_endpoints_remain_supported_through_physical_fanout():
+def test_product_response_evidence_is_required_before_physical_fanout():
     graph = build_capability_graph()
     one = GetCutoutStep(target=TargetSelector(ids=["A"], kind="object"), sources=[Source(broker="fink", origin="ztf")])
     many = GetCutoutStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=one.sources)
-    assert validate_step_capabilities(one, graph).status == "supported"
+    assert validate_step_capabilities(one, graph).status == "deferred"
     result = validate_step_capabilities(many, graph)
-    assert result.status == "supported"
-    assert {item.endpoint for item in result.candidates} == {"cutouts"}
+    assert result.status == "deferred"
+    assert result.candidates == ()
+    assert "response shape/mode" in result.source_results[0].reason
 
     singular_product = EndpointCapability(
         "test", "ztf", "product", "/product", "GET",

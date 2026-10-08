@@ -72,7 +72,7 @@ class RecipeCapability:
     op: str
     alternative_index: int
     calls: tuple[RecipeCall, ...]
-    # Lookup input namespace; output record families still come from mappings.
+    # Input identity namespace; output record families still come from mappings.
     target_kind: str | None = None
 
 
@@ -320,17 +320,24 @@ def load_provider_recipes(
             for alternative_index, raw_recipe in enumerate(alternatives):
                 where = f"recipes.{op}[{alternative_index}]"
                 recipe = _mapping(raw_recipe, where)
-                keys = {"calls", "target_kind"} if op == "lookup" else {"calls"}
+                targeted = op in {"lookup", "get_cutout", "get_data_product"}
+                keys = {"calls", "target_kind"} if targeted else {"calls"}
                 _keys(recipe, keys, keys, where)
                 target_kind = None
-                if op == "lookup":
+                if targeted:
                     try:
-                        lookup = models[op](target={
+                        targeted_step = models[op](target={
                             "ids": ["recipe-validation"], "kind": recipe["target_kind"],
                         })
                     except ValidationError as exc:
-                        raise RecipeRegistryError(f"{where}: target_kind must be a valid LookupStep target kind") from exc
-                    target_kind = lookup.target.kind
+                        raise RecipeRegistryError(
+                            f"{where}: target_kind must be a valid {models[op].__name__} target kind"
+                        ) from exc
+                    target_kind = targeted_step.target.kind
+                    if target_kind is None:
+                        raise RecipeRegistryError(
+                            f"{where}: target_kind must be an explicit {models[op].__name__} target kind"
+                        )
                 raw_calls = recipe["calls"]
                 if not isinstance(raw_calls, list) or not raw_calls:
                     raise RecipeRegistryError(f"{where}: calls must be a non-empty list")

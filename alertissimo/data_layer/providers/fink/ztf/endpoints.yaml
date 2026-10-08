@@ -273,6 +273,7 @@ endpoints:
         required: true
         type: string
         description: ZTF Object ID
+        bind: target_id
       kind:
         required: false
         type: string
@@ -292,6 +293,7 @@ endpoints:
         - array
         default: PNG
         description: PNG[default], FITS, array
+        role: output_format
       candid:
         required: false
         type: string
