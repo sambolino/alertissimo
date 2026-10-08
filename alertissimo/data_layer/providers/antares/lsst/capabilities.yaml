@@ -13,3 +13,9 @@ recipes:
         - endpoint: get_by_lsst_dia_object_id
           params:
             lsst_object_id: {from: step.target.ids}
+  lookup:
+    - target_kind: object
+      calls:
+        - endpoint: get_by_lsst_dia_object_id
+          params:
+            lsst_object_id: {from: step.target.ids}

@@ -338,6 +338,9 @@ def _candidate_execution_guarantees(
     requirement = _get_record_requirement(consumer_step)
     if requirement is None:
         return False
+    # Mapped fields do not establish what an authored projection requested.
+    if candidate_plan.request_params != consumer_plan.request_params:
+        return False
     if (
         candidate_plan.broker,
         candidate_plan.origin,

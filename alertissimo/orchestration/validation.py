@@ -204,6 +204,74 @@ def _cone_recipe_evidence(
     )
 
 
+def _lookup_recipe_evidence(
+    step: LookupStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Resolve the declared input namespace before considering output material."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        if (endpoint.broker, endpoint.origin) not in migrated
+        and "target_id" in endpoint.binding_roles
+    )
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    choices = [(endpoint, None) for endpoint in legacy]
+    raw = list(legacy)
+    reasons = []
+    for recipe in declared:
+        if recipe.target_kind != step.target.kind:
+            continue
+        if recipe.target_kind != "object":
+            reasons.append("alert lookup recipe activation is deferred pending physical identity evidence")
+            continue
+        call = recipe.calls[0]
+        if not call.required or not any(
+            semantic_record_noun_matches(output.semantic_record_type, "summary")
+            and output.relative_field_path == "identity.object_id"
+            for output in call.outputs
+        ):
+            continue
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        raw.append(endpoint)
+        if len(recipe.calls) != 1:
+            reasons.append("multi-call lookup recipe activation is deferred")
+            continue
+        if not any(
+            isinstance(parameter.source, StepValueSource)
+            and parameter.source.path == ("target", "ids")
+            for parameter in call.params
+        ) or "target_id" not in endpoint.binding_roles:
+            reasons.append("lookup recipe does not bind the target identities")
+            continue
+        if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
+            reasons.append("lookup recipes require direct Step inputs")
+            continue
+        choices.append((endpoint, recipe))
+    # Keep the existing singular/plural preference. Equal alternatives remain
+    # ambiguous, including two recipes that resolve to the same physical endpoint.
+    wants_collection = len(step.target.ids) > 1
+    preferred = [
+        choice for choice in choices
+        if ("target_id" in choice[0].collection_binding_roles) == wants_collection
+    ]
+    choices = preferred or choices
+    return _CandidateEvidence(
+        raw=tuple(raw), compatible=tuple(endpoint for endpoint, _ in choices),
+        recipes=tuple(recipe for _, recipe in choices if recipe is not None),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or "no lookup recipe supports the requested target kind and identity material",
+    )
+
+
 def _photometry_recipe_evidence(
     step: GetLightcurveStep | GetForcedPhotometryStep,
     graph: CapabilityGraph, source: Source | None,
@@ -415,6 +483,10 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, LookupStep):
+        recipes = _lookup_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     if isinstance(step, ConeSearchStep):
         recipes = _cone_recipe_evidence(step, graph, source)
         if recipes is not None:

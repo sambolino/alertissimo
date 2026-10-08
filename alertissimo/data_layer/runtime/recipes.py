@@ -15,7 +15,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Mapping, get_args, get_origin
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from ..transforms.request import RequestTransformError, load_binding_adapter
 
@@ -72,6 +72,8 @@ class RecipeCapability:
     op: str
     alternative_index: int
     calls: tuple[RecipeCall, ...]
+    # Lookup input namespace; output record families still come from mappings.
+    target_kind: str | None = None
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -318,7 +320,17 @@ def load_provider_recipes(
             for alternative_index, raw_recipe in enumerate(alternatives):
                 where = f"recipes.{op}[{alternative_index}]"
                 recipe = _mapping(raw_recipe, where)
-                _keys(recipe, {"calls"}, {"calls"}, where)
+                keys = {"calls", "target_kind"} if op == "lookup" else {"calls"}
+                _keys(recipe, keys, keys, where)
+                target_kind = None
+                if op == "lookup":
+                    try:
+                        lookup = models[op](target={
+                            "ids": ["recipe-validation"], "kind": recipe["target_kind"],
+                        })
+                    except ValidationError as exc:
+                        raise RecipeRegistryError(f"{where}: target_kind must be a valid LookupStep target kind") from exc
+                    target_kind = lookup.target.kind
                 raw_calls = recipe["calls"]
                 if not isinstance(raw_calls, list) or not raw_calls:
                     raise RecipeRegistryError(f"{where}: calls must be a non-empty list")
@@ -379,7 +391,7 @@ def load_provider_recipes(
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
                 compiled.append(RecipeCapability(
-                    broker, origin, op, alternative_index, tuple(calls),
+                    broker, origin, op, alternative_index, tuple(calls), target_kind,
                 ))
         return tuple(compiled)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:
