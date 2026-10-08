@@ -729,29 +729,113 @@ def _mark_equivalent_forced_reuse(
     return tuple(rewritten)
 
 
-def _plan_workflow_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
+def _classification_material_plans(
+    step: GetClassificationStep, workflow: WorkflowIR,
+    earlier: list[StepRun], graph: CapabilityGraph,
+) -> tuple[EndpointPlan, ...] | None:
+    """Resolve a deferred dynamic selector from an actual earlier execution.
+
+    This does not activate a search endpoint as a fresh retrieval recipe. The
+    returned material plans must be marked as reuse by the same execution proof
+    used for all other Gets below.
+    """
+    if step.target is not None or step.classifier is None or not step.sources:
+        return None
+    owner_index = None
+    for index in range(len(earlier) - 1, -1, -1):
+        previous = workflow.steps[index]
+        if isinstance(previous, (SearchStep, LookupStep)):
+            owner_index = index
+            break
+        if isinstance(previous, DeriveStep):
+            continue
+        if isinstance(previous, GetStep) and _get_record_requirement(previous) is not None:
+            continue
+        # A changed candidate population cannot reuse an unfiltered execution.
+        return None
+    if owner_index is None:
+        return None
+    owner = workflow.steps[owner_index]
+    if not isinstance(owner, SearchStep):
+        return None
+    requirement = _get_record_requirement(step)
+    if requirement is None or not _predicate_requires_reference(owner.predicate, requirement):
+        return None
+    plans = []
+    for source in step.sources:
+        if source.broker is None or source.origin is None:
+            return None
+        evidence = validate_step_capabilities(
+            step.model_copy(update={"classifier": None, "sources": [source]}), graph,
+        )
+        if evidence.status != "supported" or not any(
+            len(recipe.calls) == 1
+            and all(
+                isinstance(parameter.source, StepValueSource)
+                and parameter.source.path in {("target", "ids"), ("classifier",)}
+                for parameter in recipe.calls[0].params
+            )
+            for result in evidence.source_results for recipe in result.recipes
+        ):
+            return None
+        matches = []
+        for owner_plan in earlier[owner_index].endpoint_plans:
+            if not owner_plan.required or owner_plan.candidate_input_from_plan is not None:
+                continue
+            if (owner_plan.broker, owner_plan.origin) != (source.broker, source.origin):
+                continue
+            if not any(
+                canonical_semantic_noun(record.semantic_record_type) == "classification"
+                and (producer := _semantic_record_producer(record.semantic_record_type)) is not None
+                and _DYNAMIC_QUALIFIER.fullmatch(producer)
+                for record in graph.records_for_endpoint(
+                    owner_plan.broker, owner_plan.origin, owner_plan.endpoint,
+                )
+            ):
+                continue
+            material_plan = EndpointPlan(
+                broker=owner_plan.broker, origin=owner_plan.origin,
+                endpoint=owner_plan.endpoint,
+            )
+            if _candidate_execution_guarantees(owner, owner_plan, step, material_plan, graph):
+                matches.append(material_plan)
+        if len(matches) != 1:
+            return None
+        plans.extend(matches)
+    return tuple(plans)
+
+
+def _plan_workflow_step(
+    step: Step, graph: CapabilityGraph, workflow: WorkflowIR, earlier: list[StepRun],
+) -> tuple[EndpointPlan, ...]:
     """Plan one workflow occurrence, admitting orchestrated local steps."""
 
     if isinstance(step, (FilterStep, MatchStep)):
         return ()
-    return plan_step(step, graph)
+    try:
+        return plan_step(step, graph)
+    except PlanningDeferredError:
+        if isinstance(step, GetClassificationStep):
+            material = _classification_material_plans(step, workflow, earlier, graph)
+            if material is not None:
+                return material
+        raise
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
     """Plan Steps, then mark candidate dependencies and proven execution reuse."""
 
     pending_run = WorkflowRun.from_workflow(workflow)
-    planned_steps = tuple(
-        StepRun(
+    earlier: list[StepRun] = []
+    for step_run in pending_run.steps:
+        earlier.append(StepRun(
             step_index=step_run.step_index,
             state=StepRunState.PLANNED,
             endpoint_plans=_plan_workflow_step(
-                pending_run.step_at(step_run.step_index), graph
+                pending_run.step_at(step_run.step_index), graph, workflow, earlier,
             ),
-        )
-        for step_run in pending_run.steps
-    )
-    planned_steps = _mark_candidate_dependencies(workflow, planned_steps, graph)
+        ))
+    planned_steps = _mark_candidate_dependencies(workflow, tuple(earlier), graph)
     planned_steps = _mark_equivalent_forced_reuse(workflow, planned_steps)
     return WorkflowRun(workflow=workflow, steps=planned_steps)
 

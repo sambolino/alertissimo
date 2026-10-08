@@ -119,17 +119,17 @@ def test_alerce_lsst_classification_retrieval_is_supported():
     assert classification.status == "supported"
 
 
-def test_lasair_ztf_classification_uses_generic_semantic_endpoints():
+def test_lasair_ztf_classification_uses_targeted_semantic_recipes():
     classification = validate_step_capabilities(
         GetClassificationStep(sources=[Source(broker="lasair", origin="ztf")]),
         build_capability_graph(),
     )
     assert classification.status == "supported"
     assert {item.endpoint for item in classification.candidates} >= {
-        "object", "objects", "sherlock_position", "sherlock_objects",
+        "object", "objects", "sherlock_object", "sherlock_objects",
     }
     assert all(
-        {"object_lookup", "context_lookup"}.intersection(item.operation_types)
+        "target_id" in item.binding_roles
         for item in classification.candidates
     )
 
