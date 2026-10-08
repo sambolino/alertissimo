@@ -6,6 +6,8 @@ on:
       - 'alertissimo/api.py'
       - 'alertissimo/dsl/**'
       - 'alertissimo/data_layer/runtime/capability_graph.py'
+      - 'alertissimo/data_layer/runtime/recipes.py'
+      - 'alertissimo/data_layer/providers/**/capabilities.yaml'
       - 'alertissimo/data_layer/providers/**/request_mappings.yaml'
       - 'alertissimo/orchestration/ir/**'
       - 'alertissimo/orchestration/incremental.py'
@@ -18,6 +20,7 @@ on:
       - 'tests/test_dsl_*.py'
       - 'tests/test_api_continuation.py'
       - 'tests/test_capability_graph.py'
+      - 'tests/test_recipe_registry.py'
       - 'tests/test_orchestration_*.py'
       - '.github/workflows/dsl.yml'
   workflow_dispatch:
@@ -40,4 +43,5 @@ jobs:
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
             tests/test_capability_graph.py \
+            tests/test_recipe_registry.py \
             tests/test_orchestration_*.py
