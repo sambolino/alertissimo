@@ -7,13 +7,14 @@ always grounded in the same ontology paths used by response mappings.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
 
 import yaml
 
 from ..paths import PROVIDERS_ROOT
+from .recipes import RecipeCapability, RecipeRegistryError, load_provider_recipes
 
 
 class CapabilityGraphError(ValueError):
@@ -99,6 +100,22 @@ class CapabilityGraph:
     transform_capabilities: tuple[TransformCapability, ...]
     semantic_record_capabilities: tuple[SemanticRecordCapability, ...]
     request_constraint_capabilities: tuple[RequestConstraintCapability, ...] = ()
+    recipe_capabilities: tuple[RecipeCapability, ...] = ()
+
+    def query_recipes(
+        self,
+        *,
+        broker: str | None = None,
+        origin: str | None = None,
+        op: str | None = None,
+    ) -> tuple[RecipeCapability, ...]:
+        """Return declarations without selecting, ranking, or proving feasibility."""
+        return tuple(
+            recipe for recipe in self.recipe_capabilities
+            if (broker is None or recipe.broker == broker)
+            and (origin is None or recipe.origin == origin)
+            and (op is None or recipe.op == op)
+        )
 
     def endpoints_for(self, broker: str, origin: str) -> tuple[EndpointCapability, ...]:
         return tuple(
@@ -159,6 +176,35 @@ class CapabilityGraph:
         return tuple(
             item for item in self.field_mapping_capabilities
             if item.semantic_record_type == semantic_record_type
+        )
+
+    def fields_for_endpoint(
+        self,
+        broker: str,
+        origin: str,
+        endpoint: str,
+        *,
+        semantic_record_noun: str | None = None,
+    ) -> tuple[FieldMappingCapability, ...]:
+        """Return mapped field evidence for exactly one physical endpoint.
+
+        Provider-level record fields may combine several endpoints. Keep the
+        endpoint, payload, and qualified semantic path on each returned mapping
+        so callers cannot mistake that union for one call's outputs. A mapping
+        describes a possible output, not guaranteed presence in every response
+        or under every projection.
+        """
+        return tuple(
+            item for item in self.field_mapping_capabilities
+            if item.broker == broker
+            and item.origin == origin
+            and item.endpoint == endpoint
+            and (
+                semantic_record_noun is None
+                or semantic_record_noun_matches(
+                    item.semantic_record_type, semantic_record_noun
+                )
+            )
         )
 
     def records_for_endpoint(
@@ -267,6 +313,7 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
     field_items: list[FieldMappingCapability] = []
     transform_items: list[TransformCapability] = []
     request_items: list[RequestConstraintCapability] = []
+    recipe_providers: dict[Path, tuple[str, str, dict, dict]] = {}
 
     mapping_paths = sorted(root.glob("*/*/mappings.yaml"))
     if not mapping_paths:
@@ -291,6 +338,10 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             raise CapabilityGraphError(f"{endpoint_path}: broker/origin do not match mappings.yaml")
 
         endpoint_defs = _dict(endpoints_doc.get("endpoints"), f"{endpoint_path}: endpoints")
+        recipe_providers[mapping_path.parent] = (
+            broker, origin, endpoint_defs,
+            endpoints_doc.get("transport_defaults") or {},
+        )
         for endpoint, raw_spec in endpoint_defs.items():
             if not isinstance(endpoint, str):
                 raise CapabilityGraphError(f"{endpoint_path}: endpoint names must be strings")
@@ -492,16 +543,30 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
         SemanticRecordCapability(broker, origin, record_type, tuple(sorted(endpoints)), tuple(sorted(fields)))
         for (broker, origin, record_type), (endpoints, fields) in sorted(grouped.items())
     )
-    return CapabilityGraph(
+    graph = CapabilityGraph(
         tuple(endpoint_items), tuple(payload_items), tuple(field_items),
         tuple(transform_items), record_items, tuple(request_items),
     )
+    recipes = []
+    for recipe_path in sorted(root.glob("*/*/capabilities.yaml")):
+        if recipe_path.parent not in recipe_providers:
+            raise CapabilityGraphError(f"{recipe_path}: no normalized provider contracts")
+        broker, origin, endpoint_defs, transport_defaults = recipe_providers[recipe_path.parent]
+        try:
+            recipes.extend(load_provider_recipes(
+                recipe_path, graph, endpoint_defs, broker=broker, origin=origin,
+                transport_defaults=transport_defaults,
+            ))
+        except RecipeRegistryError as exc:
+            raise CapabilityGraphError(str(exc)) from exc
+    return replace(graph, recipe_capabilities=tuple(recipes))
 
 
 __all__ = [
     "CapabilityGraph", "CapabilityGraphError", "EndpointCapability",
     "FieldMappingCapability", "PayloadCapability", "RequestConstraintCapability",
     "SemanticRecordCapability", "TransformCapability", "build_capability_graph",
+    "RecipeCapability",
     "canonical_semantic_noun", "canonical_semantic_path",
     "semantic_record_noun_matches", "split_semantic_path",
 ]
