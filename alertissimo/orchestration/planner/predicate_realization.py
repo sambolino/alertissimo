@@ -31,12 +31,16 @@ _INVERT_OPERATOR = {
 
 
 def _constraint_lookup(
-    graph: CapabilityGraph, endpoint: EndpointCapability
+    graph: CapabilityGraph, endpoint: EndpointCapability,
+    constraints: tuple[RequestConstraintCapability, ...] | None,
 ) -> dict[tuple[str, str], tuple[RequestConstraintCapability, ...]]:
     grouped: dict[tuple[str, str], list[RequestConstraintCapability]] = {}
-    for item in graph.request_constraints_for(
+    available = constraints if constraints is not None else graph.request_constraints_for(
         endpoint.broker, endpoint.origin, endpoint.endpoint
-    ):
+    )
+    for item in available:
+        if (item.broker, item.origin, item.endpoint) != (endpoint.broker, endpoint.origin, endpoint.endpoint):
+            continue
         grouped.setdefault((item.semantic_path, item.operator), []).append(item)
     return {key: tuple(values) for key, values in grouped.items()}
 
@@ -117,6 +121,7 @@ def realize_predicate(
     *,
     endpoint: EndpointCapability,
     graph: CapabilityGraph,
+    constraints: tuple[RequestConstraintCapability, ...] | None = None,
 ) -> PredicateRealization:
     """Partition one semantic predicate for one already-selected endpoint.
 
@@ -124,9 +129,13 @@ def realize_predicate(
     residual and can be evaluated after normalization. Partial pushdown is only
     performed across conjunctions, where executing a supported subset produces
     a safe superset for residual pruning.
+
+    An explicit constraints tuple restricts realization to that call's compiled
+    bindings. An empty tuple disables pushdown; None retains endpoint lookup for
+    the legacy single-call planner and direct inspection callers.
     """
 
-    lookup = _constraint_lookup(graph, endpoint)
+    lookup = _constraint_lookup(graph, endpoint, constraints)
 
     if not isinstance(predicate, BooleanPredicate) or predicate.operator != "and":
         return _atomic_pushdown(predicate, endpoint=endpoint, lookup=lookup)
@@ -136,7 +145,9 @@ def realize_predicate(
     params: dict[str, Any] = {}
 
     for operand in predicate.operands:
-        realization = realize_predicate(operand, endpoint=endpoint, graph=graph)
+        realization = realize_predicate(
+            operand, endpoint=endpoint, graph=graph, constraints=constraints,
+        )
         for name, value in realization.params.items():
             if name in params and params[name] != value:
                 # Combining incompatible physical values would require parameter-

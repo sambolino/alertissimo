@@ -14,7 +14,7 @@ from typing import Any, Mapping
 import yaml
 
 from ..paths import PROVIDERS_ROOT
-from .recipes import RecipeCapability, RecipeRegistryError, load_provider_recipes
+from .recipes import RecipeCapability, RecipeRegistryError, load_provider_capabilities
 
 
 class CapabilityGraphError(ValueError):
@@ -558,13 +558,21 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             raise CapabilityGraphError(f"{recipe_path}: no normalized provider contracts")
         broker, origin, endpoint_defs, transport_defaults = recipe_providers[recipe_path.parent]
         try:
-            recipes.extend(load_provider_recipes(
+            provider = load_provider_capabilities(
                 recipe_path, graph, endpoint_defs, broker=broker, origin=origin,
                 transport_defaults=transport_defaults,
-            ))
+            )
+            recipes.extend(provider.recipes)
+            request_items.extend(provider.predicate_bindings)
         except RecipeRegistryError as exc:
             raise CapabilityGraphError(str(exc)) from exc
-    return replace(graph, recipe_capabilities=tuple(recipes))
+    return replace(
+        graph, recipe_capabilities=tuple(recipes),
+        request_constraint_capabilities=tuple(sorted(
+            request_items,
+            key=lambda x: (x.broker, x.origin, x.endpoint, x.parameter, x.semantic_path),
+        )),
+    )
 
 
 __all__ = [

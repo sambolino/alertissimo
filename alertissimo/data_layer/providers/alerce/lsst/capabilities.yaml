@@ -1,5 +1,16 @@
 broker: alerce
 origin: lsst
+predicate_bindings:
+  query_objects:
+    - path: classification.provenance.producer.name
+      operator: "="
+      parameter: classifier
+    - path: classification.best.class
+      operator: "="
+      parameter: class_name
+    - path: classification.best.probability
+      operator: ">="
+      parameter: probability
 recipes:
   cone_search:
     - calls:

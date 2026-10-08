@@ -181,7 +181,7 @@ def test_material_reuse_is_independent_of_provider_names(tmp_path):
     renamed = root / "example" / "survey"
     renamed.parent.mkdir()
     destination.rename(renamed)
-    for filename in ("endpoints.yaml", "mappings.yaml", "capabilities.yaml", "request_mappings.yaml"):
+    for filename in ("endpoints.yaml", "mappings.yaml", "capabilities.yaml"):
         def rename_provider(doc):
             doc.update(broker="example", origin="survey")
         edit_yaml(renamed / filename, rename_provider)

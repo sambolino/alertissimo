@@ -20,7 +20,9 @@ from pydantic import BaseModel, ValidationError
 from ..transforms.request import RequestTransformError, load_binding_adapter
 
 if TYPE_CHECKING:
-    from .capability_graph import CapabilityGraph, FieldMappingCapability
+    from .capability_graph import (
+        CapabilityGraph, FieldMappingCapability, RequestConstraintCapability,
+    )
 
 
 class RecipeRegistryError(ValueError):
@@ -63,6 +65,8 @@ class RecipeCall:
     params: tuple[RecipeParameter, ...]
     # Possible mapped fields, not guaranteed presence or a projection proof.
     outputs: tuple[FieldMappingCapability, ...]
+    # Only the candidate discovery call may consume the SearchStep predicate.
+    predicate_bindings: tuple[RequestConstraintCapability, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -74,6 +78,12 @@ class RecipeCapability:
     calls: tuple[RecipeCall, ...]
     # Input identity namespace; output record families still come from mappings.
     target_kind: str | None = None
+
+
+@dataclass(frozen=True)
+class ProviderCapabilities:
+    recipes: tuple[RecipeCapability, ...]
+    predicate_bindings: tuple[RequestConstraintCapability, ...]
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -291,17 +301,64 @@ def _parameter(
     return RecipeParameter(name, source)
 
 
-def load_provider_recipes(
+def _predicate_bindings(
+    raw: Any, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
+    *, broker: str, origin: str,
+) -> tuple[RequestConstraintCapability, ...]:
+    from alertissimo.orchestration.ir.predicates import ComparisonPredicate
+    from .capability_graph import RequestConstraintCapability, canonical_semantic_path
+
+    operators = get_args(ComparisonPredicate.model_fields["operator"].annotation)
+    compiled = []
+    for endpoint, bindings in sorted(_mapping(raw, "predicate_bindings").items()):
+        where = f"predicate_bindings.{endpoint}"
+        if endpoint not in endpoint_defs:
+            raise RecipeRegistryError(f"{where}: unknown endpoint")
+        spec = _mapping(endpoint_defs[endpoint], where)
+        parameters = _mapping(spec.get("params", {}), where)
+        filters = spec.get("server_filters", [])
+        if not isinstance(filters, list) or any(not isinstance(item, str) for item in filters):
+            raise RecipeRegistryError(f"{where}: invalid server_filters")
+        paths = {
+            canonical_semantic_path(item.semantic_path)
+            for item in graph.fields_for_endpoint(broker, origin, endpoint)
+        }
+        if not isinstance(bindings, list) or not bindings:
+            raise RecipeRegistryError(f"{where}: bindings must be a non-empty list")
+        seen_parameters, seen_constraints = set(), set()
+        for index, raw_binding in enumerate(bindings):
+            location = f"{where}[{index}]"
+            binding = _mapping(raw_binding, location)
+            _keys(binding, {"path", "operator", "parameter"}, {"path", "operator", "parameter"}, location)
+            parameter, path, operator = binding["parameter"], binding["path"], binding["operator"]
+            if not isinstance(parameter, str) or parameter not in parameters:
+                raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
+            if parameter not in filters:
+                raise RecipeRegistryError(f"{location}: parameter must be a server filter")
+            if not isinstance(path, str) or path not in paths:
+                raise RecipeRegistryError(f"{location}: path must reference an existing endpoint ontology mapping")
+            if not isinstance(operator, str) or operator not in operators:
+                raise RecipeRegistryError(f"{location}: operator must be an IR comparison operator")
+            key = (path, operator)
+            if parameter in seen_parameters or key in seen_constraints:
+                raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
+            seen_parameters.add(parameter)
+            seen_constraints.add(key)
+            compiled.append(RequestConstraintCapability(broker, origin, endpoint, parameter, path, operator))
+    return tuple(compiled)
+
+
+def load_provider_capabilities(
     path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str,
     transport_defaults: Mapping[str, Any] | None = None,
-) -> tuple[RecipeCapability, ...]:
-    """Load optional recipes against existing compiled provider evidence."""
+) -> ProviderCapabilities:
+    """Compile recipes and endpoint predicate translations from one declaration."""
     try:
         with path.open(encoding="utf-8") as stream:
             document = _mapping(yaml.load(stream, Loader=_UniqueKeyLoader), str(path))
         _keys(
-            document, {"broker", "origin", "description", "recipes"},
+            document, {"broker", "origin", "description", "recipes", "predicate_bindings"},
             {"broker", "origin", "recipes"}, str(path),
         )
         if document["broker"] != broker or document["origin"] != origin:
@@ -309,8 +366,20 @@ def load_provider_recipes(
         if "description" in document and not isinstance(document["description"], str):
             raise RecipeRegistryError("description must be a string")
         recipes = _mapping(document["recipes"], "recipes")
+        predicates = _predicate_bindings(
+            document.get("predicate_bindings", {}), graph, endpoint_defs,
+            broker=broker, origin=origin,
+        )
+        legacy = tuple(
+            item for item in graph.request_constraint_capabilities
+            if item.broker == broker and item.origin == origin
+        ) if path.with_name("request_mappings.yaml").is_file() else ()
+        if predicates and legacy:
+            raise RecipeRegistryError("predicate bindings must not also be authored in request_mappings.yaml")
+        available_bindings = predicates or legacy
         defaults = _mapping(transport_defaults or {}, "transport_defaults")
         models = _step_models()
+        from alertissimo.orchestration.ir.models import SearchStep
         compiled = []
         for op, alternatives in sorted(recipes.items()):
             if op not in models:
@@ -383,6 +452,11 @@ def load_provider_recipes(
                         raise RecipeRegistryError(f"{call_where}: only one candidate owner is supported")
                     if required and any(not calls[owner].required for owner in dependencies):
                         raise RecipeRegistryError(f"{call_where}: required call depends on an optional call")
+                    call_bindings = tuple(
+                        item for item in available_bindings if item.endpoint == endpoint
+                    ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
+                    if any(item.parameter in params or item.parameter in fixed for item in call_bindings):
+                        raise RecipeRegistryError(f"{call_where}: predicate binding conflicts with a parameter assignment/fixed value")
                     for name, declaration in declarations.items():
                         declaration = _mapping(declaration, call_where)
                         if (
@@ -394,19 +468,32 @@ def load_provider_recipes(
                     calls.append(RecipeCall(
                         endpoint, required, tuple(assignments),
                         graph.fields_for_endpoint(broker, origin, endpoint),
+                        call_bindings,
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
                 compiled.append(RecipeCapability(
                     broker, origin, op, alternative_index, tuple(calls), target_kind,
                 ))
-        return tuple(compiled)
+        return ProviderCapabilities(tuple(compiled), predicates)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:
         raise RecipeRegistryError(f"{path}: {exc}") from exc
+
+
+def load_provider_recipes(
+    path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
+    *, broker: str, origin: str,
+    transport_defaults: Mapping[str, Any] | None = None,
+) -> tuple[RecipeCapability, ...]:
+    """Compatibility inspection API; graph construction loads both declarations."""
+    return load_provider_capabilities(
+        path, graph, endpoint_defs, broker=broker, origin=origin,
+        transport_defaults=transport_defaults,
+    ).recipes
 
 
 __all__ = [
     "CallValueSource", "ConstantValueSource", "EncoderValueSource", "RecipeCall",
     "RecipeCapability", "RecipeParameter", "RecipeRegistryError", "StepValueSource",
-    "load_provider_recipes",
+    "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
 ]
