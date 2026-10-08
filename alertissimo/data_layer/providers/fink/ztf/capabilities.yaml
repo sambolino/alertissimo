@@ -1,0 +1,10 @@
+broker: fink
+origin: ztf
+recipes:
+  cone_search:
+    - calls:
+        - endpoint: conesearch
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}

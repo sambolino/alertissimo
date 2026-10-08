@@ -10,6 +10,11 @@ Steps remain distinct in every case.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
+
+from alertissimo.data_layer.runtime.recipes import (
+    ConstantValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
+)
 
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
@@ -123,12 +128,43 @@ def _select_one(
 ) -> EndpointCapability:
     candidates = source_result.candidates
     if len(candidates) != 1:
+        recipes = ", ".join(
+            f"{recipe.broker}/{recipe.origin}/recipe[{recipe.alternative_index}]"
+            for recipe in source_result.recipes
+        )
         raise PlanningAmbiguityError(
             f"ambiguous provider endpoint ({_context(result)}, "
             f"source={_source_text(source_result.source)}); candidates: "
-            f"{_candidate_text(candidates)}"
+            f"{_candidate_text(candidates)}" + (f"; recipes: {recipes}" if recipes else "")
         )
     return candidates[0]
+
+
+def _recipe_assignments(recipe: RecipeCapability) -> dict:
+    """Carry value sources to the binder; never encode values during planning."""
+    def physical_literal(value):
+        if isinstance(value, Mapping):
+            return {key: physical_literal(item) for key, item in value.items()}
+        if isinstance(value, tuple):
+            return [physical_literal(item) for item in value]
+        return value
+
+    sources, constants = {}, {}
+    for parameter in recipe.calls[0].params:
+        value = parameter.source
+        if isinstance(value, ConstantValueSource):
+            constants[parameter.parameter] = physical_literal(value.value)
+        elif isinstance(value, StepValueSource):
+            sources[parameter.parameter] = value.path
+        elif isinstance(value, EncoderValueSource) and all(
+            isinstance(item, StepValueSource) for _, item in value.inputs
+        ):
+            sources[parameter.parameter] = {
+                operand: item.path for operand, item in value.inputs
+            }
+        else:
+            raise PlanningDeferredError("atomic recipe cannot bind a call-output source")
+    return {"parameter_sources": sources, "request_params": constants}
 
 
 def _endpoint_plan(
@@ -227,20 +263,26 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
             f"{validation.reason}"
         )
     if validation.status == "deferred":
+        failures = "; ".join(
+            f"{_source_text(item.source)}: {item.reason}"
+            for item in validation.source_results if item.status == "deferred"
+        )
         raise PlanningDeferredError(
             f"provider endpoint planning is deferred ({_context(validation)}): "
-            f"{validation.reason}"
+            f"{failures or validation.reason}"
         )
     if validation.status == "unsupported":
         raise _unsupported(validation)
 
-    selected = tuple(
-        _select_one(validation, item) for item in validation.source_results
-    )
     plans: list[EndpointPlan] = []
-    for endpoint in selected:
+    for source_result in validation.source_results:
+        endpoint = _select_one(validation, source_result)
         primary_index = len(plans)
-        plans.append(_endpoint_plan(step, endpoint, validation, graph))
+        primary = _endpoint_plan(step, endpoint, validation, graph)
+        if source_result.recipes:
+            recipe, = source_result.recipes
+            primary = primary.model_copy(update=_recipe_assignments(recipe))
+        plans.append(primary)
         cone_summary = _lasair_ztf_cone_summary_supplement(step, endpoint, graph)
         if cone_summary is not None:
             plans.append(

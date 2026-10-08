@@ -25,6 +25,9 @@ from alertissimo.data_layer.runtime.capability_graph import (
     EndpointCapability,
     semantic_record_noun_matches,
 )
+from alertissimo.data_layer.runtime.recipes import (
+    EncoderValueSource, RecipeCapability, StepValueSource,
+)
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
 
 from .ir.models import (
@@ -63,6 +66,7 @@ class SourceCapabilityResult:
     status: ValidationStatus
     candidates: tuple[EndpointCapability, ...]
     reason: str
+    recipes: tuple[RecipeCapability, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -121,6 +125,74 @@ class _CandidateEvidence:
     compatible: tuple[EndpointCapability, ...]
     empty_status: ValidationStatus = "unsupported"
     empty_reason: str | None = None
+    recipes: tuple[RecipeCapability, ...] = ()
+
+
+def _cone_recipe_evidence(
+    step: ConeSearchStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Recipes own migrated providers; legacy tags cover only the others."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None,
+        op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        if (endpoint.broker, endpoint.origin) not in migrated
+    )
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    feasible = []
+    reasons = []
+    raw = list(legacy)
+    for recipe in declared:
+        matching_calls = tuple(
+            call for call in recipe.calls if call.required and any(
+                semantic_record_noun_matches(output.semantic_record_type, step.semantic_type)
+                for output in call.outputs
+            )
+        )
+        if not matching_calls:
+            continue
+        raw.extend(endpoints[(recipe.broker, recipe.origin, call.endpoint)] for call in matching_calls)
+        if len(recipe.calls) != 1:
+            reasons.append("multi-call recipe activation is deferred")
+            continue
+        call = recipe.calls[0]
+        paths = set()
+        for parameter in call.params:
+            value = parameter.source
+            sources = (
+                tuple(item for _, item in value.inputs)
+                if isinstance(value, EncoderValueSource) else (value,)
+            )
+            paths.update(item.path for item in sources if isinstance(item, StepValueSource))
+        if not {("ra",), ("dec",), ("radius",)} <= paths:
+            reasons.append("cone recipe does not bind all canonical cone coordinates")
+            continue
+        unrepresented = tuple(
+            field for field in ("magnitude_limit", "time_context")
+            if getattr(step, field) is not None and (field,) not in paths
+        )
+        if unrepresented or step.criteria:
+            reasons.append(f"cone inputs have no declared translation: {unrepresented or ('criteria',)}")
+            continue
+        feasible.append(recipe)
+    compatible = legacy + tuple(
+        endpoints[(recipe.broker, recipe.origin, recipe.calls[0].endpoint)]
+        for recipe in feasible
+    )
+    return _CandidateEvidence(
+        raw=tuple(raw), compatible=compatible, recipes=tuple(feasible),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or "no cone recipe produces the requested record family",
+    )
 
 
 def _semantic_record_producer(semantic_record_type: str) -> str | None:
@@ -257,6 +329,10 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, ConeSearchStep):
+        recipes = _cone_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     raw = _raw_candidates_for_source(step, graph, source)
     compatible = raw
     empty_status: ValidationStatus = "unsupported"
@@ -408,7 +484,9 @@ def validate_step_capabilities(
                 "no compatible registered endpoint capability found"
             )
         )
-        results.append(SourceCapabilityResult(source, status, candidates, reason))
+        results.append(SourceCapabilityResult(
+            source, status, candidates, reason, evidence.recipes,
+        ))
 
     if any(item.status == "unsupported" for item in results):
         overall: ValidationStatus = "unsupported"

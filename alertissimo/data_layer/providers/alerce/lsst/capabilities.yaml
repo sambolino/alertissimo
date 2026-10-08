@@ -1,0 +1,10 @@
+broker: alerce
+origin: lsst
+recipes:
+  cone_search:
+    - calls:
+        - endpoint: query_objects
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}

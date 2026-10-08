@@ -88,6 +88,11 @@ class EndpointPlan(RuntimeModel):
     without failing the Step. The planner owns that distinction; the executor never
     infers optionality from endpoint names or provider behavior.
 
+    ``parameter_sources`` carries compiled recipe IR paths to the binder. ``None``
+    preserves legacy endpoint-role assignment; an explicit mapping is authoritative
+    even when empty. Request constants remain in ``request_params``. Neither form
+    embeds an authored recipe or changes WorkflowIR.
+
     ``execution_reuse_from`` records that this semantic plan is satisfied by an
     earlier physical execution. ``candidate_input_from`` records a distinct case:
     this plan owns a new invocation whose runtime target values come from an
@@ -103,6 +108,11 @@ class EndpointPlan(RuntimeModel):
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
+    # None retains legacy endpoint-role binding. A recipe supplies an authoritative
+    # map from physical parameters to direct IR paths or named encoder operands.
+    parameter_sources: dict[
+        str, tuple[str, ...] | dict[str, tuple[str, ...]]
+    ] | None = None
     execution_reuse_from: EndpointPlanRef | None = None
     candidate_input_from: CandidateInputRef | None = None
     candidate_input_from_plan: PlanCandidateInputRef | None = None
