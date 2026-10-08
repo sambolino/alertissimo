@@ -152,17 +152,44 @@ def test_selection_uses_authored_physical_parameter_names(tmp_path):
     assert bind_endpoint(step, plan, EndpointRegistry(root)).params == {"sort_field": "lastmjd", "sort_direction": "DESC"}
 
 
-@pytest.mark.parametrize("kind", ["field", "producer", "criteria"])
+@pytest.mark.parametrize("kind", ["field", "criteria"])
 def test_latest_defers_unmaterialized_predicates_and_untranslated_criteria(kind):
     kwargs = {"criteria": {"limit": 1}} if kind == "criteria" else {"predicate": ComparisonPredicate(
         left=SemanticReference(
-            semantic_type="classification" if kind == "producer" else "summary",
-            field_path="best.class" if kind == "producer" else "missing",
-            producer="lc_classifier" if kind == "producer" else None,
+            semantic_type="summary", field_path="missing",
         ),
         operator="=", right=PredicateLiteral(value="SN"),
     )}
     assert validate_step_capabilities(search(**kwargs), build_capability_graph()).status == "deferred"
+
+
+@pytest.mark.parametrize("mapped_producer, expected", [
+    ("{producer}", "supported"),
+    ("lc_classifier", "supported"),
+    ("stamp_classifier", "deferred"),
+])
+def test_latest_predicate_producer_matches_endpoint_material(tmp_path, mapped_producer, expected):
+    root, destination = local_provider(tmp_path)
+    def mappings(doc):
+        # Keep the discovery endpoint's field, but vary its producer evidence.
+        fields = doc["mappings"]
+        dynamic_path = "classification@{producer}:alerce.best.class"
+        fields[f"classification@{mapped_producer}:alerce.best.class"] = fields.pop(dynamic_path)
+    edit_yaml(destination / "mappings.yaml", mappings)
+    step = search(predicate=ComparisonPredicate(
+        left=SemanticReference(
+            semantic_type="classification", field_path="best.class", producer="lc_classifier",
+        ),
+        operator="=", right=PredicateLiteral(value="SN"),
+    ))
+    graph = build_capability_graph(root)
+    assert validate_step_capabilities(step, graph).status == expected
+    if expected == "deferred":
+        with pytest.raises(PlanningDeferredError, match="latest requires"):
+            plan_step(step, graph)
+    else:
+        plan, = plan_step(step, graph)
+        assert plan.endpoint == "query_objects"
 
 
 def portfolio(name, object_id, mjd, *, broker="a"):
