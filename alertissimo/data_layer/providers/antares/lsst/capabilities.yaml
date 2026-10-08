@@ -1,0 +1,10 @@
+broker: antares
+origin: lsst
+recipes:
+  cone_search:
+    - calls:
+        - endpoint: cone_search
+          params:
+            center:
+              from: {ra: step.ra, dec: step.dec}
+            radius: {from: step.radius}

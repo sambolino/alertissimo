@@ -4,6 +4,9 @@ IR supplies canonical semantic arguments, EndpointPlan supplies the selected
 endpoint plus any predicate realization already proven by the planner, EndpointSpec
 contains the physical contract, and BoundEndpointCall contains invocation params.
 The binder applies decisions; it does not reinterpret semantic predicates.
+Recipe plans provide explicit IR source paths; endpoint role assignments remain
+the fallback for plans from operations that have not migrated yet. Both paths use
+the same endpoint-owned physical encoders.
 
 Runtime values are an optional late-binding input for canonical roles whose values
 only become available after earlier workflow Steps have executed. They do not
@@ -190,6 +193,20 @@ def _bind_declared_parameter(
         )
         for role in roles
     }
+    return _encode_parameter_values(
+        values, declaration, endpoint_plan=endpoint_plan, physical_name=physical_name,
+    )
+
+
+def _encode_parameter_values(
+    values: Mapping[str, Any],
+    declaration: Mapping[str, Any],
+    *,
+    endpoint_plan: EndpointPlan,
+    physical_name: str,
+) -> Any | None:
+    """Use the same physical encoder for legacy and recipe-resolved values."""
+    roles = tuple(values)
     if any(value is None for value in values.values()):
         return None
 
@@ -229,6 +246,60 @@ def _bind_declared_parameter(
         physical_name=physical_name,
         role=role,
     )
+
+
+def _recipe_field_value(step: Step, path: tuple[str, ...]) -> Any:
+    current: Any = step
+    if not path:
+        raise ParameterBindingError("recipe IR field path must not be empty")
+    for part in path:
+        if current is None:
+            return None
+        if part not in getattr(type(current), "model_fields", {}):
+            raise ParameterBindingError(f"invalid recipe IR field path {path!r}")
+        current = getattr(current, part)
+    return current
+
+
+def _bind_recipe_parameter(
+    step: Step,
+    declaration: Mapping[str, Any],
+    source: tuple[str, ...] | dict[str, tuple[str, ...]],
+    supplied_runtime: Mapping[str, Any],
+    *,
+    endpoint_plan: EndpointPlan,
+    physical_name: str,
+    target_ids_override: tuple[str, ...] | None,
+) -> tuple[Any, tuple[str, ...]]:
+    roles = _binding_roles(declaration)
+    if isinstance(source, dict):
+        if set(source) != set(roles) or not (declaration.get("binding") or {}).get("adapter"):
+            raise ParameterBindingError("recipe encoder inputs do not match the endpoint contract")
+        paths = source
+    else:
+        if len(roles) > 1:
+            raise ParameterBindingError("composite recipe encoding requires named inputs")
+        paths = {roles[0] if roles else physical_name: source}
+    values = {}
+    for role, path in paths.items():
+        explicit = _recipe_field_value(step, path)
+        if path == ("target", "ids"):
+            if target_ids_override is not None:
+                values[role] = target_ids_override
+                continue
+            explicit = tuple(explicit) if explicit is not None else None
+        runtime = supplied_runtime.get(role)
+        if path == ("target", "ids") and isinstance(runtime, (list, tuple)):
+            runtime = tuple(runtime)
+        if role in supplied_runtime and explicit is not None and runtime != explicit:
+            raise UnsupportedParameterBindingError(
+                f"runtime binding for {_context(endpoint_plan)} role {role!r} "
+                "conflicts with its recipe IR source"
+            )
+        values[role] = runtime if role in supplied_runtime else explicit
+    return _encode_parameter_values(
+        values, declaration, endpoint_plan=endpoint_plan, physical_name=physical_name,
+    ), tuple(paths)
 
 
 def bind_endpoint(
@@ -314,21 +385,31 @@ def bind_endpoint(
             )
 
     declared_roles: list[str] = []
-    for physical_name, raw_declaration in spec.params.items():
+    recipe_sources = endpoint_plan.parameter_sources
+    parameter_names = spec.params if recipe_sources is None else recipe_sources
+    for physical_name in parameter_names:
+        if physical_name not in spec.params:
+            raise UnsupportedParameterBindingError(
+                f"recipe references undeclared physical parameter {physical_name!r}"
+            )
+        raw_declaration = spec.params[physical_name]
         declaration = raw_declaration or {}
-        roles = _binding_roles(declaration)
-        if not roles:
-            continue
+        if recipe_sources is None:
+            roles = _binding_roles(declaration)
+            if not roles:
+                continue
+            value = _bind_declared_parameter(
+                step, declaration, roles, supplied_runtime,
+                endpoint_plan=endpoint_plan, physical_name=physical_name,
+                target_ids_override=_target_ids_override,
+            )
+        else:
+            value, roles = _bind_recipe_parameter(
+                step, declaration, recipe_sources[physical_name], supplied_runtime,
+                endpoint_plan=endpoint_plan, physical_name=physical_name,
+                target_ids_override=_target_ids_override,
+            )
         declared_roles.extend(roles)
-        value = _bind_declared_parameter(
-            step,
-            declaration,
-            roles,
-            supplied_runtime,
-            endpoint_plan=endpoint_plan,
-            physical_name=physical_name,
-            target_ids_override=_target_ids_override,
-        )
         if value is not None:
             _set_param(
                 params,

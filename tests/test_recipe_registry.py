@@ -18,6 +18,9 @@ def provider(tmp_path, broker="lasair", origin="ztf"):
     root = tmp_path / "providers"
     destination = root / broker / origin
     shutil.copytree(PROVIDERS_ROOT / broker / origin, destination)
+    # Each contract test authors its own recipe declaration, independent of
+    # which operations have since migrated in the production provider.
+    (destination / "capabilities.yaml").unlink(missing_ok=True)
     return root, destination
 
 

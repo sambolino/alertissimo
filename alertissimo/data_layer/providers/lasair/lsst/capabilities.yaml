@@ -1,0 +1,10 @@
+broker: lasair
+origin: lsst
+recipes:
+  cone_search:
+    - calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}

@@ -128,6 +128,18 @@ def coerce_physical_type(
             return float(value)
         if declared_type == "string":
             return str(value)
+        if declared_type == "boolean":
+            if type(value) is not bool:
+                raise ValueError("boolean parameter values must be booleans")
+            return value
+        if declared_type == "dict":
+            if not isinstance(value, Mapping):
+                raise ValueError("dict parameter values must be mappings")
+            return dict(value)
+        if declared_type == "array":
+            if not isinstance(value, (list, tuple)):
+                raise ValueError("array parameter values must be collections")
+            return list(value)
         if declared_type is None:
             return value
         raise ValueError(f"unsupported declared physical type {declared_type!r}")
