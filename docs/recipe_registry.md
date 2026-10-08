@@ -4,6 +4,7 @@ Branch 03 now activates atomic cone declarations; see `recipe_atomic_cone.md`.
 Branch 04 activates discovery-dependent cone follow-ups; see `recipe_composite_cone.md`.
 Branch 05 activates lightcurve and internal forced-photometry retrievals; see `recipe_lightcurves.md`.
 Branch 06a activates object lookup recipes with an explicit input namespace; see `recipe_lookup.md`.
+Branch 06b activates targeted classification retrievals; see `recipe_classification.md`.
 The foundation described below was introduced in branch 02 before activation.
 
 Provider recipes live in

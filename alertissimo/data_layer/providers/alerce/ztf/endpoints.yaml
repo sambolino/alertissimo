@@ -558,6 +558,7 @@ endpoints:
         type: string
         required: true
         description: Physical oid parameter accepted by query_probabilities.
+        bind: target_id
       format:
         type: string
         default: json

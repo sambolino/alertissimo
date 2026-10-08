@@ -19,3 +19,8 @@ recipes:
         - endpoint: objects
           params:
             objectId: {from: step.target.ids}
+  get_classification:
+    - calls:
+        - endpoint: objects
+          params:
+            objectId: {from: step.target.ids}

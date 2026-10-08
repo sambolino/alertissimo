@@ -357,6 +357,90 @@ def _semantic_record_producer(semantic_record_type: str) -> str | None:
     return producer or None
 
 
+def _classification_recipe_evidence(
+    step: GetClassificationStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Require targeted retrieval and authored translation of dynamic selectors."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        if (endpoint.broker, endpoint.origin) not in migrated
+    )
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    choices = [(endpoint, None) for endpoint in legacy]
+    raw, reasons = list(legacy), []
+    for recipe in declared:
+        call = recipe.calls[0]
+        outputs = tuple(
+            output for output in call.outputs
+            if semantic_record_noun_matches(output.semantic_record_type, "classification")
+        )
+        if not call.required or not outputs:
+            continue
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        raw.append(endpoint)
+        paths = {
+            parameter.source.path for parameter in call.params
+            if isinstance(parameter.source, StepValueSource)
+        }
+        if len(recipe.calls) != 1 or any(
+            isinstance(parameter.source, (CallValueSource, EncoderValueSource))
+            for parameter in call.params
+        ):
+            reasons.append("classification recipes require one call with direct Step inputs")
+            continue
+        if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
+            reasons.append("classification recipe does not bind the target identities")
+            continue
+        if step.classifier is not None:
+            producers = tuple(
+                _semantic_record_producer(output.semantic_record_type) for output in outputs
+            )
+            exact = any(
+                producer is not None and producer.lower() == step.classifier.lower()
+                for producer in producers
+            )
+            dynamic = any(
+                producer is not None and _DYNAMIC_QUALIFIER.fullmatch(producer)
+                for producer in producers
+            )
+            translated = any(
+                isinstance(parameter.source, StepValueSource)
+                and parameter.source.path == ("classifier",)
+                and parameter.parameter in endpoint.server_filters
+                for parameter in call.params
+            )
+            if not exact and not (dynamic and translated):
+                if dynamic:
+                    reasons.append(
+                        "requested classifier has only a dynamic producer mapping "
+                        "without a declared server-filter translation"
+                    )
+                continue
+        choices.append((endpoint, recipe))
+    if step.target is not None and len(step.target.ids) > 1:
+        collection = [
+            choice for choice in choices
+            if "target_id" in choice[0].collection_binding_roles
+        ]
+        choices = collection or choices
+    return _CandidateEvidence(
+        raw=tuple(raw), compatible=tuple(endpoint for endpoint, _ in choices),
+        recipes=tuple(recipe for _, recipe in choices if recipe is not None),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or "no classification recipe maps the requested classifier",
+    )
+
+
 def _classification_endpoint_supports_classifier(
     graph: CapabilityGraph,
     endpoint: EndpointCapability,
@@ -483,6 +567,10 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, GetClassificationStep):
+        recipes = _classification_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     if isinstance(step, LookupStep):
         recipes = _lookup_recipe_evidence(step, graph, source)
         if recipes is not None:

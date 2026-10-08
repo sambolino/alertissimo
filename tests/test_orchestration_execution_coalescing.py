@@ -180,7 +180,7 @@ def test_dynamic_producer_is_not_assumed_without_positive_search_requirement():
 
     with pytest.raises(
         PlanningDeferredError,
-        match="candidate enrichment requires runtime binding",
+        match="dynamic producer mapping",
     ):
         plan_workflow(workflow, build_capability_graph())
 
