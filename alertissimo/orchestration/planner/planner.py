@@ -20,6 +20,7 @@ from alertissimo.data_layer.runtime.recipes import (
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    RequestConstraintCapability,
     canonical_semantic_noun,
 )
 from alertissimo.orchestration.ir.models import (
@@ -184,10 +185,14 @@ def _recipe_plans(
         for endpoint in graph.endpoints_for(recipe.broker, recipe.origin)
     }
     return tuple(
-        _endpoint_plan(step, endpoints[call.endpoint], validation, graph).model_copy(
+        _endpoint_plan(
+            step, endpoints[call.endpoint], validation, graph,
+            predicate_constraints=call.predicate_bindings,
+            realize_search_predicate=index == 0,
+        ).model_copy(
             update=_recipe_assignments(call, plan_offset=plan_offset)
         )
-        for call in recipe.calls
+        for index, call in enumerate(recipe.calls)
     )
 
 
@@ -196,13 +201,17 @@ def _endpoint_plan(
     endpoint: EndpointCapability,
     validation: CapabilityValidationResult,
     graph: CapabilityGraph,
+    *,
+    predicate_constraints: tuple[RequestConstraintCapability, ...] | None = None,
+    realize_search_predicate: bool = True,
 ) -> EndpointPlan:
     realization = None
-    if isinstance(step, SearchStep) and step.predicate is not None:
+    if realize_search_predicate and isinstance(step, SearchStep) and step.predicate is not None:
         realization = realize_predicate(
             step.predicate,
             endpoint=endpoint,
             graph=graph,
+            constraints=predicate_constraints,
         )
     return EndpointPlan(
         broker=endpoint.broker,

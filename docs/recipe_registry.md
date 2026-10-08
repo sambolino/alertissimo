@@ -7,6 +7,8 @@ Branch 06a activates object lookup recipes with an explicit input namespace; see
 Branch 06b activates targeted classification retrievals; see `recipe_classification.md`.
 Branch 06c activates targeted crossmatch retrievals; see `recipe_crossmatch.md`.
 Branch 06d declares product retrievals and validates their activation boundaries; see `recipe_products.md`.
+Branch 07 compiles endpoint predicate bindings and scopes them to discovery calls;
+see `recipe_predicates.md`.
 In the current schema, `target_kind` is required for lookup, cutout, and data-product
 recipes. It guards the existing IR target namespace; other operations reject it.
 The foundation described below was introduced in branch 02 before activation.
@@ -54,8 +56,9 @@ a non-empty `calls` list. Alternatives have no authored capability IDs, prioriti
 or scores. Their indexes identify declarations for diagnostics, not preference.
 Future planning must reject unresolved ambiguity rather than choose list order.
 
-Top-level `description` is optional. Other top-level keys are rejected. A recipe
-contains only `calls`. Each call accepts only `endpoint`, `params`, and `required`.
+Top-level `description` and `predicate_bindings` are optional. Other top-level keys
+are rejected. A recipe contains `calls` and, for targeted lookup/product operations,
+`target_kind`. Each call accepts only `endpoint`, `params`, and `required`.
 `endpoint` is required; `params` defaults to an empty mapping and `required`
 defaults to true. At least one call must be required.
 
@@ -128,8 +131,8 @@ safety are subsequent planning checks.
 Missing recipe files preserve legacy graph behavior. Invalid declarations raise
 `CapabilityGraphError` with the file and declaration location. Duplicate YAML
 keys, unknown fields, orphan recipe files, unknown operations/endpoints/parameters,
-and invalid dependencies fail visibly. Predicate and selection declarations are
-intentionally not accepted until their later migration branches define them.
+and invalid dependencies fail visibly. Predicate declarations use the endpoint-local
+shape documented in `recipe_predicates.md`; selection declarations remain deferred.
 
 ## Local handoff
 
