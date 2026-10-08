@@ -11,6 +11,8 @@ Branch 07 compiles endpoint predicate bindings and scopes them to discovery call
 see `recipe_predicates.md`.
 Branch 08 activates the first verified latest-selection contract and global
 candidate reduction; see `recipe_selection.md`.
+Branch 09a activates ALeRCE semantic-search recipes through the shared discovery
+resolver; see `recipe_semantic_search.md`.
 In the current schema, `target_kind` is required for lookup, cutout, and data-product
 recipes. It guards the existing IR target namespace; other operations reject it.
 The foundation described below was introduced in branch 02 before activation.

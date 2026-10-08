@@ -8,6 +8,9 @@ selection_bindings:
         order_by: {value: lastmjd}
         order_mode: {value: DESC}
 recipes:
+  semantic_search:
+    - calls:
+        - endpoint: query_objects
   cone_search:
     - calls:
         - endpoint: query_objects

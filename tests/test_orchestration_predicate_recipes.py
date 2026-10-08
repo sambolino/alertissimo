@@ -57,7 +57,7 @@ def test_translations_compile_once_and_discovery_call_owns_them():
     assert all(
         not call.predicate_bindings
         for recipe in graph.query_recipes(broker="alerce", origin="lsst")
-        if recipe.op != "cone_search"
+        if recipe.op not in {"cone_search", "semantic_search"}
         for call in recipe.calls
     )
 
