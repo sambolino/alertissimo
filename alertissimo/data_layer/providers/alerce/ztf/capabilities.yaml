@@ -8,3 +8,17 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+  get_lightcurve:
+    - calls:
+        - endpoint: query_lightcurve
+          params:
+            oid: {from: step.target.ids}
+        - endpoint: query_forced_photometry
+          required: false
+          params:
+            oid: {from: step.target.ids}
+  get_forced_photometry:
+    - calls:
+        - endpoint: query_forced_photometry
+          params:
+            oid: {from: step.target.ids}

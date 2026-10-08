@@ -279,6 +279,11 @@ def _parameter(
         if isinstance(source, EncoderValueSource) else (source,)
     )
     dependencies = {item.call_index for item in sources if isinstance(item, CallValueSource)}
+    if any(
+        isinstance(item, StepValueSource) and item.path == ("target", "ids")
+        for item in sources
+    ) and roles != ("target_id",):
+        raise RecipeRegistryError(f"{where}: target identities require a target_id encoder role")
     if dependencies and (roles != ("target_id",) or isinstance(source, EncoderValueSource)):
         raise RecipeRegistryError(f"{where}: candidate dependency requires a target_id parameter")
     return RecipeParameter(name, source)

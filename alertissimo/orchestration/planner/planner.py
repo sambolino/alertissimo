@@ -213,41 +213,6 @@ def _endpoint_plan(
     )
 
 
-def _forced_photometry_supplement(
-    step: GetLightcurveStep,
-    primary: EndpointCapability,
-    graph: CapabilityGraph,
-) -> EndpointCapability | None:
-    if step.bands is not None or step.time_context is not None:
-        return None
-    if "forced_photometry" in primary.operation_types:
-        return None
-
-    primary_identity = (primary.broker, primary.origin, primary.endpoint)
-    candidates = tuple(
-        endpoint
-        for endpoint in graph.query_endpoints(
-            broker=primary.broker,
-            origin=primary.origin,
-            operation_type="forced_photometry",
-        )
-        if (endpoint.broker, endpoint.origin, endpoint.endpoint) != primary_identity
-        and "target_id" in endpoint.binding_roles
-    )
-
-    target_count = len(step.target.ids) if step.target is not None else None
-    if target_count is None or target_count > 1:
-        candidates = tuple(
-            endpoint
-            for endpoint in candidates
-            if "target_id" in endpoint.collection_binding_roles
-        )
-
-    if len(candidates) != 1:
-        return None
-    return candidates[0]
-
-
 def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
     """Select provider endpoints and realize search predicates per endpoint."""
     validation = validate_step_capabilities(step, graph)
@@ -280,14 +245,6 @@ def plan_step(step: Step, graph: CapabilityGraph) -> tuple[EndpointPlan, ...]:
             ))
         else:
             plans.append(_endpoint_plan(step, endpoint, validation, graph))
-        if isinstance(step, GetLightcurveStep):
-            supplement = _forced_photometry_supplement(step, endpoint, graph)
-            if supplement is not None:
-                plans.append(
-                    _endpoint_plan(step, supplement, validation, graph).model_copy(
-                        update={"required": False}
-                    )
-                )
     return tuple(plans)
 
 
@@ -683,6 +640,14 @@ def _same_forced_retrieval_input(
     lightcurve_step: GetLightcurveStep,
     supplement_plan: EndpointPlan,
 ) -> bool:
+    if (
+        owner_plan.request_params != supplement_plan.request_params
+        or owner_plan.parameter_sources != supplement_plan.parameter_sources
+        or owner_plan.predicate_realization != supplement_plan.predicate_realization
+        or owner_plan.candidate_input_from_plan is not None
+        or supplement_plan.candidate_input_from_plan is not None
+    ):
+        return False
     if owner_step.bands != lightcurve_step.bands:
         return False
     if owner_step.time_context != lightcurve_step.time_context:
@@ -707,7 +672,6 @@ def _same_forced_retrieval_input(
 def _mark_equivalent_forced_reuse(
     workflow: WorkflowIR,
     planned_steps: tuple[StepRun, ...],
-    graph: CapabilityGraph,
 ) -> tuple[StepRun, ...]:
     rewritten = list(planned_steps)
     for step_index, step in enumerate(workflow.steps):
@@ -719,10 +683,6 @@ def _mark_equivalent_forced_reuse(
         for plan_index, plan in enumerate(current_plans):
             if plan.execution_reuse_from is not None:
                 continue
-            capability = _capability_for_plan(graph, plan)
-            if "forced_photometry" not in capability.operation_types:
-                continue
-
             owner_reference: EndpointPlanRef | None = None
             for owner_step_index in range(step_index - 1, -1, -1):
                 owner_step = workflow.steps[owner_step_index]
@@ -789,7 +749,7 @@ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
         for step_run in pending_run.steps
     )
     planned_steps = _mark_candidate_dependencies(workflow, planned_steps, graph)
-    planned_steps = _mark_equivalent_forced_reuse(workflow, planned_steps, graph)
+    planned_steps = _mark_equivalent_forced_reuse(workflow, planned_steps)
     return WorkflowRun(workflow=workflow, steps=planned_steps)
 
 
