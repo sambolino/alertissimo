@@ -95,6 +95,34 @@ def test_lasair_ztf_semantic_records():
     assert "crossmatch@sherlock:lasair" not in semantic_types
 
 
+def test_endpoint_fields_do_not_inherit_other_endpoints_outputs():
+    graph = build_capability_graph()
+    cone = graph.fields_for_endpoint(
+        "lasair", "ztf", "cone", semantic_record_noun="summary"
+    )
+    query = graph.fields_for_endpoint(
+        "lasair", "ztf", "query", semantic_record_noun="summary"
+    )
+    assert {item.semantic_path for item in cone} == {
+        "summary@ztf:lasair.identity.object_id"
+    }
+    assert {
+        "summary@ztf:lasair.identity.object_id",
+        "summary@ztf:lasair.position.ra",
+        "summary@ztf:lasair.time.last_mjd",
+    } <= {item.semantic_path for item in query}
+    assert all(
+        (item.broker, item.origin, item.endpoint) == ("lasair", "ztf", "query")
+        for item in query
+    )
+    assert graph.fields_for_endpoint(
+        "lasair", "ztf", "query", semantic_record_noun="classification"
+    ) == ()
+    assert graph.fields_for_endpoint("lasair", "ztf", "missing") == ()
+    assert graph.fields_for_endpoint("lasair", "missing", "query") == ()
+    assert graph.fields_for_endpoint("missing", "ztf", "query") == ()
+
+
 def test_semantic_paths_are_split_at_first_dot():
     graph = build_capability_graph()
     expected = {
