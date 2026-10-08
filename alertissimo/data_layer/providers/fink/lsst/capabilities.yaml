@@ -37,3 +37,8 @@ recipes:
         - endpoint: objects
           params:
             diaObjectId: {from: step.target.ids}
+  get_crossmatch:
+    - calls:
+        - endpoint: sources
+          params:
+            diaObjectId: {from: step.target.ids}

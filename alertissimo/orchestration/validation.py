@@ -469,6 +469,102 @@ def _classification_endpoint_supports_classifier(
     return False
 
 
+def _crossmatch_recipe_evidence(
+    step: GetCrossmatchStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Match catalog evidence before preferring a target collection encoding."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    # Apply legacy compatibility per unmigrated provider. A migrated collection
+    # alternative must not hide an unmigrated provider's singular retrieval.
+    legacy_results = tuple(
+        _legacy_candidate_evidence_for_source(step, graph, Source(broker=broker, origin=origin))
+        for broker, origin in sorted({
+            (endpoint.broker, endpoint.origin)
+            for endpoint in _raw_candidates_for_source(step, graph, source)
+            if (endpoint.broker, endpoint.origin) not in migrated
+        })
+    )
+    legacy = tuple(endpoint for result in legacy_results for endpoint in result.compatible)
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    choices = [(endpoint, None) for endpoint in legacy]
+    raw = [endpoint for result in legacy_results for endpoint in result.raw]
+    reasons = [
+        result.empty_reason for result in legacy_results
+        if not result.compatible and result.empty_status == "deferred" and result.empty_reason
+    ]
+    unsupported = [
+        result.empty_reason for result in legacy_results
+        if not result.compatible and result.empty_status == "unsupported" and result.empty_reason
+    ]
+    for recipe in declared:
+        call = recipe.calls[0]
+        if not call.required or not any(
+            semantic_record_noun_matches(output.semantic_record_type, "crossmatch")
+            for output in call.outputs
+        ):
+            continue
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        raw.append(endpoint)
+        paths = {
+            parameter.source.path for parameter in call.params
+            if isinstance(parameter.source, StepValueSource)
+        }
+        if len(recipe.calls) != 1 or any(
+            isinstance(parameter.source, (CallValueSource, EncoderValueSource))
+            for parameter in call.params
+        ):
+            reasons.append("crossmatch recipes require one call with direct Step inputs")
+            continue
+        if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
+            reasons.append("crossmatch recipe does not bind the target identities")
+            continue
+        if step.radius is not None:
+            translated = any(
+                isinstance(parameter.source, StepValueSource)
+                and parameter.source.path == ("radius",)
+                and parameter.parameter in endpoint.server_filters
+                for parameter in call.params
+            )
+            if not translated:
+                unsupported.append("no crossmatch recipe can honor the requested radius with a declared server-filter translation")
+                continue
+        if step.catalog is not None:
+            relation = _crossmatch_catalog_relation(graph, endpoint, step.catalog)
+            if relation == "dynamic":
+                # Stored association rows can map a catalog name without
+                # declaring a request that retrieves this particular catalog.
+                reasons.append(
+                    f"requested crossmatch catalog {step.catalog!r} has only a "
+                    "dynamic producer mapping and cannot be confirmed statically"
+                )
+                continue
+            if relation == "mismatch":
+                unsupported.append(f"no crossmatch recipe produces requested catalog {step.catalog!r}")
+                continue
+        choices.append((endpoint, recipe))
+    if step.target is not None and len(step.target.ids) > 1:
+        collection = [
+            choice for choice in choices
+            if "target_id" in choice[0].collection_binding_roles
+        ]
+        choices = collection or choices
+    return _CandidateEvidence(
+        raw=tuple(raw), compatible=tuple(endpoint for endpoint, _ in choices),
+        recipes=tuple(recipe for _, recipe in choices if recipe is not None),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons or unsupported)) or "no crossmatch recipe maps the requested record family",
+    )
+
+
 def _crossmatch_catalog_relation(
     graph: CapabilityGraph,
     endpoint: EndpointCapability,
@@ -567,6 +663,10 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, GetCrossmatchStep):
+        recipes = _crossmatch_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     if isinstance(step, GetClassificationStep):
         recipes = _classification_recipe_evidence(step, graph, source)
         if recipes is not None:
@@ -583,6 +683,13 @@ def _candidate_evidence_for_source(
         recipes = _photometry_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
+    return _legacy_candidate_evidence_for_source(step, graph, source)
+
+
+def _legacy_candidate_evidence_for_source(
+    step: Step, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence:
+    """Compatibility checks for operation/source pairs not yet owned by recipes."""
     raw = _raw_candidates_for_source(step, graph, source)
     compatible = raw
     empty_status: ValidationStatus = "unsupported"

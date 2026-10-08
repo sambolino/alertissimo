@@ -470,7 +470,6 @@ def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
     assert plan_step(lsst, graph) == (
         EndpointPlan(
             broker="lasair", origin="lsst", endpoint="sherlock_object",
-            parameter_sources={"objectId": ("target", "ids")}
-            if step_type is GetClassificationStep else None,
+            parameter_sources={"objectId": ("target", "ids")},
         ),
     )

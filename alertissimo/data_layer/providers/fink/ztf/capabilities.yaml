@@ -24,3 +24,8 @@ recipes:
         - endpoint: objects
           params:
             objectId: {from: step.target.ids}
+  get_crossmatch:
+    - calls:
+        - endpoint: objects
+          params:
+            objectId: {from: step.target.ids}

@@ -19,6 +19,8 @@ on:
       - 'tests/test_orchestration_binding.py'
       - 'tests/test_orchestration_capability_validation.py'
       - 'tests/test_orchestration_classification_recipes.py'
+      - 'tests/test_orchestration_crossmatch_capability.py'
+      - 'tests/test_orchestration_crossmatch_recipes.py'
       - 'tests/test_orchestration_planner.py'
       - 'tests/test_orchestration_runner.py'
       - 'tests/test_orchestration_runtime.py'
@@ -82,6 +84,8 @@ jobs:
             tests/test_orchestration_binding.py \
             tests/test_orchestration_capability_validation.py \
             tests/test_orchestration_classification_recipes.py \
+            tests/test_orchestration_crossmatch_capability.py \
+            tests/test_orchestration_crossmatch_recipes.py \
             tests/test_orchestration_planner.py \
             tests/test_orchestration_runner.py \
             tests/test_orchestration_runtime.py \

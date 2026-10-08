@@ -35,7 +35,10 @@ def test_fink_ztf_catalog_qualified_target_selects_object_lookup():
     assert result.status == "supported"
     assert {item.endpoint for item in result.candidates} == {"objects"}
     assert plan_step(step, graph) == (
-        EndpointPlan(broker="fink", origin="ztf", endpoint="objects"),
+        EndpointPlan(
+            broker="fink", origin="ztf", endpoint="objects",
+            parameter_sources={"objectId": ("target", "ids")},
+        ),
     )
 
 
@@ -52,7 +55,10 @@ def test_fink_lsst_catalog_qualified_target_selects_sources_lookup():
     assert result.status == "supported"
     assert {item.endpoint for item in result.candidates} == {"sources"}
     assert plan_step(step, graph) == (
-        EndpointPlan(broker="fink", origin="lsst", endpoint="sources"),
+        EndpointPlan(
+            broker="fink", origin="lsst", endpoint="sources",
+            parameter_sources={"diaObjectId": ("target", "ids")},
+        ),
     )
 
 
@@ -78,7 +84,12 @@ def test_antares_catalog_crossmatch_uses_survey_object_binding(
     assert result.status == "supported"
     assert {item.endpoint for item in result.candidates} == {endpoint}
     assert plan_step(step, graph) == (
-        EndpointPlan(broker="antares", origin=origin, endpoint=endpoint),
+        EndpointPlan(
+            broker="antares", origin=origin, endpoint=endpoint,
+            parameter_sources={
+                "ztf_object_id" if origin == "ztf" else "lsst_object_id": ("target", "ids"),
+            },
+        ),
     )
 
     capability = result.candidates[0]
