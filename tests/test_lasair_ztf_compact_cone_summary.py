@@ -95,6 +95,7 @@ def test_planner_keeps_one_ir_step_with_two_physical_plans():
     assert [plan.endpoint for plan in plans] == ["cone", "query"]
     assert [plan.required for plan in plans] == [True, False]
     assert plans[1].candidate_input_from_plan.plan_index == 0
+    assert plans[1].parameter_sources == {"conditions": "target_id"}
     assert plans[1].request_params == {
         "selected": (
             "objects.objectId,objects.ramean,objects.decmean,objects.ncand,"

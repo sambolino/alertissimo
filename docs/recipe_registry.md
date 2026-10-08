@@ -1,6 +1,7 @@
 # Provider recipe registry (branch 02)
 
 Branch 03 now activates atomic cone declarations; see `recipe_atomic_cone.md`.
+Branch 04 activates discovery-dependent cone follow-ups; see `recipe_composite_cone.md`.
 The foundation described below was introduced in branch 02 before activation.
 
 Provider recipes live in

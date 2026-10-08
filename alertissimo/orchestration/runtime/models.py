@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -88,10 +88,11 @@ class EndpointPlan(RuntimeModel):
     without failing the Step. The planner owns that distinction; the executor never
     infers optionality from endpoint names or provider behavior.
 
-    ``parameter_sources`` carries compiled recipe IR paths to the binder. ``None``
-    preserves legacy endpoint-role assignment; an explicit mapping is authoritative
+    ``parameter_sources`` carries compiled recipe IR paths or runtime roles to the
+    binder. ``None`` preserves legacy endpoint-role assignment; an explicit mapping is authoritative
     even when empty. Request constants remain in ``request_params``. Neither form
-    embeds an authored recipe or changes WorkflowIR.
+    embeds an authored recipe or changes WorkflowIR. Tuple paths read the Step;
+    the string ``target_id`` reads identities supplied by a candidate dependency.
 
     ``execution_reuse_from`` records that this semantic plan is satisfied by an
     earlier physical execution. ``candidate_input_from`` records a distinct case:
@@ -109,9 +110,9 @@ class EndpointPlan(RuntimeModel):
     predicate_realization: PredicateRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
     # None retains legacy endpoint-role binding. A recipe supplies an authoritative
-    # map from physical parameters to direct IR paths or named encoder operands.
+    # map from physical parameters to IR paths, named operands, or a runtime role.
     parameter_sources: dict[
-        str, tuple[str, ...] | dict[str, tuple[str, ...]]
+        str, tuple[str, ...] | dict[str, tuple[str, ...]] | Literal["target_id"]
     ] | None = None
     execution_reuse_from: EndpointPlanRef | None = None
     candidate_input_from: CandidateInputRef | None = None

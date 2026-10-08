@@ -26,7 +26,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     semantic_record_noun_matches,
 )
 from alertissimo.data_layer.runtime.recipes import (
-    EncoderValueSource, RecipeCapability, StepValueSource,
+    CallValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
 
@@ -161,10 +161,19 @@ def _cone_recipe_evidence(
         if not matching_calls:
             continue
         raw.extend(endpoints[(recipe.broker, recipe.origin, call.endpoint)] for call in matching_calls)
-        if len(recipe.calls) != 1:
-            reasons.append("multi-call recipe activation is deferred")
-            continue
         call = recipe.calls[0]
+        if call not in matching_calls:
+            reasons.append("cone discovery call must be required and map the requested record family")
+            continue
+        # Activate discovery followed by identity-bound retrievals. Independent
+        # calls and dependencies on supplementary results need further evidence.
+        if any(
+            {parameter.source.call_index for parameter in later.params
+             if isinstance(parameter.source, CallValueSource)} != {0}
+            for later in recipe.calls[1:]
+        ):
+            reasons.append("cone follow-up calls must consume the discovery identities")
+            continue
         paths = set()
         for parameter in call.params:
             value = parameter.source
