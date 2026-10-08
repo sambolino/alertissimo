@@ -14,7 +14,9 @@ from typing import Any, Mapping
 import yaml
 
 from ..paths import PROVIDERS_ROOT
-from .recipes import RecipeCapability, RecipeRegistryError, load_provider_capabilities
+from .recipes import (
+    LatestSelectionCapability, RecipeCapability, RecipeRegistryError, load_provider_capabilities,
+)
 
 
 class CapabilityGraphError(ValueError):
@@ -102,6 +104,15 @@ class CapabilityGraph:
     semantic_record_capabilities: tuple[SemanticRecordCapability, ...]
     request_constraint_capabilities: tuple[RequestConstraintCapability, ...] = ()
     recipe_capabilities: tuple[RecipeCapability, ...] = ()
+    latest_selection_capabilities: tuple[LatestSelectionCapability, ...] = ()
+
+    def latest_selection_for(
+        self, broker: str, origin: str, endpoint: str,
+    ) -> LatestSelectionCapability | None:
+        return next((
+            item for item in self.latest_selection_capabilities
+            if (item.broker, item.origin, item.endpoint) == (broker, origin, endpoint)
+        ), None)
 
     def query_recipes(
         self,
@@ -552,7 +563,7 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
         tuple(endpoint_items), tuple(payload_items), tuple(field_items),
         tuple(transform_items), record_items, tuple(request_items),
     )
-    recipes = []
+    recipes, selections = [], []
     for recipe_path in sorted(root.glob("*/*/capabilities.yaml")):
         if recipe_path.parent not in recipe_providers:
             raise CapabilityGraphError(f"{recipe_path}: no normalized provider contracts")
@@ -564,10 +575,12 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             )
             recipes.extend(provider.recipes)
             request_items.extend(provider.predicate_bindings)
+            selections.extend(provider.latest_selections)
         except RecipeRegistryError as exc:
             raise CapabilityGraphError(str(exc)) from exc
     return replace(
         graph, recipe_capabilities=tuple(recipes),
+        latest_selection_capabilities=tuple(selections),
         request_constraint_capabilities=tuple(sorted(
             request_items,
             key=lambda x: (x.broker, x.origin, x.endpoint, x.parameter, x.semantic_path),

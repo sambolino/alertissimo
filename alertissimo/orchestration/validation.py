@@ -23,12 +23,14 @@ from typing import Literal
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    canonical_semantic_path,
     semantic_record_noun_matches,
 )
 from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
+from alertissimo.orchestration.ir.predicates import iter_semantic_references
 
 from .ir.models import (
     ActionStep,
@@ -48,6 +50,7 @@ from .ir.models import (
     MatchStep,
     MonitorStep,
     SemanticSearchStep,
+    SearchStep,
     Source,
     SqlQueryStep,
     Step,
@@ -742,6 +745,52 @@ def _raw_candidates_for_source(
 
 
 def _candidate_evidence_for_source(
+    step: Step, graph: CapabilityGraph, source: Source | None
+) -> _CandidateEvidence:
+    evidence = _operation_candidate_evidence_for_source(step, graph, source)
+    if not isinstance(step, SearchStep) or step.selection is None or not evidence.compatible:
+        return evidence
+    compatible, recipes = [], []
+    for index, endpoint in enumerate(evidence.compatible):
+        binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        recipe_index = index - (len(evidence.compatible) - len(evidence.recipes))
+        recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
+        if step.semantic_type != "summary" or binding is None:
+            continue
+        if step.criteria or getattr(step, "time_context", None) is not None:
+            continue
+        fields = graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        if step.predicate is not None and any(
+            not any(
+                (canonical_semantic_path(item.semantic_path) == reference.ontology_path
+                 if reference.field_path else semantic_record_noun_matches(item.semantic_record_type, reference.semantic_type))
+                and (reference.producer is None
+                     or _semantic_record_producer(item.semantic_record_type) == reference.producer
+                     or _DYNAMIC_QUALIFIER.fullmatch(_semantic_record_producer(item.semantic_record_type) or ""))
+                and (reference.channel is None
+                     or item.semantic_record_type.partition(":")[2] == reference.channel
+                     or ":" not in item.semantic_record_type and endpoint.broker == reference.channel)
+                for item in fields
+            )
+            for reference in iter_semantic_references(step.predicate)
+        ):
+            continue
+        if recipe is not None and (
+            len(recipe.calls) != 1 or recipe.calls[0].latest_selection is None
+            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
+        ):
+            continue
+        compatible.append(endpoint)
+        if recipe is not None:
+            recipes.append(recipe)
+    return replace(
+        evidence, compatible=tuple(compatible), recipes=tuple(recipes),
+        empty_status="deferred",
+        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; composite or untranslated populations are deferred",
+    )
+
+
+def _operation_candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
     if isinstance(step, (GetCutoutStep, GetDataProductStep)):

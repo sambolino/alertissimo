@@ -24,6 +24,7 @@ from .models import (
     consolidate_portfolios,
 )
 from .predicate import prune_portfolios
+from .selection import apply_search_selection
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -616,7 +617,9 @@ def normalize_workflow_execution(
             validate_semantic_model=validate_semantic_model,
         )
         normalized_steps.append(
-            _materialize_enrichment_view(step_run, own, normalized_steps)
+            _materialize_enrichment_view(
+                step_run, apply_search_selection(step, own), normalized_steps,
+            )
         )
 
     return WorkflowPortfolioResult(

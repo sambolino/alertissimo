@@ -106,7 +106,9 @@ class LookupStep(Step):
 class SearchSelection(IRModel):
     """Selection semantics attached to candidate discovery, not a separate step.
 
-    ``latest`` means the latest N candidates in the semantic candidate universe.
+    ``latest`` means the N candidates with greatest summary.time.last_mjd in the
+    semantic candidate universe, after predicates and object consolidation.
+    Equal timestamps use (origin, object_id) ascending as a deterministic tie break.
     A planner may push limits/order into provider parameters when equivalent, but
     must preserve global semantics when several sources participate.
     """

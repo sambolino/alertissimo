@@ -19,6 +19,7 @@ from alertissimo.app_search import (
 )
 from alertissimo.app_plot import summary_table_rows
 from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
+from alertissimo.dsl import SurfaceLoweringError, parse_surface_script
 from alertissimo.orchestration.ir import ConeSearchStep
 from alertissimo.ui_portfolios import portfolio_to_display, records_by_family
 import alertissimo.app_search as app_search
@@ -226,7 +227,7 @@ def test_dsl_cone_preview_uses_the_existing_dsl_compiler():
 
 
 def test_dsl_without_cone_selector_has_no_local_results_preview():
-    step = compile_dsl_cone_preview("objects from ztf via antares\nlatest 10\n")
+    step = compile_dsl_cone_preview("objects from ztf via alerce\nlatest 10\n")
 
     assert step is None
 
@@ -249,7 +250,9 @@ def test_block_builder_generates_parser_ready_dsl_without_clause_indentation():
         "latest 10\n"
         "with lightcurve via fink\n"
     )
-    assert compile_dsl_cone_preview(script) is not None
+    assert parse_surface_script(script)
+    with pytest.raises(SurfaceLoweringError, match="latest requires"):
+        compile_dsl_cone_preview(script)
 
 
 def test_block_builder_options_are_capability_supported():

@@ -46,6 +46,7 @@ class _ConfirmThenGetExecutor:
                 "oid": TARGET,
                 "meanra": 124.87996115142856,
                 "meandec": -6.0205001,
+                "lastmjd": 59001.0,
             }
             if self.predicate_mode:
                 item.update({"class": "SN", "classifier": "stamp"})

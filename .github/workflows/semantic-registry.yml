@@ -23,6 +23,7 @@ on:
       - 'tests/test_orchestration_crossmatch_recipes.py'
       - 'tests/test_orchestration_product_recipes.py'
       - 'tests/test_orchestration_predicate_recipes.py'
+      - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_orchestration_planner.py'
       - 'tests/test_orchestration_runner.py'
       - 'tests/test_orchestration_runtime.py'
@@ -90,6 +91,7 @@ jobs:
             tests/test_orchestration_crossmatch_recipes.py \
             tests/test_orchestration_product_recipes.py \
             tests/test_orchestration_predicate_recipes.py \
+            tests/test_orchestration_selection_recipes.py \
             tests/test_orchestration_planner.py \
             tests/test_orchestration_runner.py \
             tests/test_orchestration_runtime.py \
