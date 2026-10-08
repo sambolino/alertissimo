@@ -8,3 +8,8 @@ recipes:
             center:
               from: {ra: step.ra, dec: step.dec}
             radius: {from: step.radius}
+  get_lightcurve:
+    - calls:
+        - endpoint: get_by_lsst_dia_object_id
+          params:
+            lsst_object_id: {from: step.target.ids}

@@ -62,7 +62,10 @@ def test_explicit_lasair_ztf_lightcurve_selects_registered_endpoint(graph):
     )
     plans = plan_step(step, graph)
     assert plans == (
-        EndpointPlan(broker="lasair", origin="ztf", endpoint="lightcurves"),
+        EndpointPlan(
+            broker="lasair", origin="ztf", endpoint="lightcurves",
+            parameter_sources={"objectIds": ("target", "ids")},
+        ),
     )
     _assert_resolves(plans)
 
@@ -281,7 +284,7 @@ def test_multi_target_multiple_sources_remain_one_plan_each_without_supplements(
     ]
 
 
-def test_forced_photometry_supplement_is_skipped_when_ambiguous():
+def test_legacy_lightcurve_does_not_invent_a_supplement_from_multiple_endpoints():
     primary = EndpointCapability(
         "test", "lsst", "lightcurve", "/lc", "GET",
         ("lightcurve",), (), (), None, False, "array",
@@ -308,7 +311,7 @@ def test_forced_photometry_supplement_is_skipped_when_ambiguous():
     )
 
 
-def test_forced_photometry_supplement_requires_compatible_target_cardinality():
+def test_legacy_lightcurve_does_not_invent_a_supplement_for_any_target_cardinality():
     primary = EndpointCapability(
         "test", "lsst", "lightcurve", "/lc", "GET",
         ("lightcurve",), (), (), None, False, "array",
@@ -330,7 +333,7 @@ def test_forced_photometry_supplement_requires_compatible_target_cardinality():
             ),
             graph,
         )
-    ] == ["lightcurve", "fp"]
+    ] == ["lightcurve"]
     assert [p.endpoint for p in plan_step(GetLightcurveStep(sources=source), graph)] == [
         "lightcurve"
     ]
@@ -345,7 +348,7 @@ def test_forced_photometry_supplement_requires_compatible_target_cardinality():
     ] == ["lightcurve"]
 
 
-def test_constrained_lightcurve_does_not_guess_forced_photometry_equivalence():
+def test_legacy_constrained_lightcurve_does_not_invent_a_supplement():
     primary = EndpointCapability(
         "test", "lsst", "lightcurve", "/lc", "GET",
         ("lightcurve",), (), (), None, False, "array",

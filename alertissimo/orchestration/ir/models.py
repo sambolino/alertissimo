@@ -196,8 +196,8 @@ class GetLightcurveStep(GetStep):
     whose physical operation is named lightcurve". For the current v0.1 policy,
     the scientifically useful provider lightcurve is treated as the available
     photometric history, including forced-photometry measurements when a provider
-    exposes them separately and the planner can prove that the supplementary
-    endpoint is compatible with the same target population.
+    exposes them separately and its recipe declares a supplementary call compatible
+    with the same target population.
 
     Consequently one semantic ``GetLightcurveStep`` may own more than one physical
     ``EndpointPlan``. For example Fink/LSST can be planned as its ordinary
@@ -223,12 +223,12 @@ class GetLightcurveStep(GetStep):
     composes with bands and time windows; and how to treat providers whose ordinary
     lightcurve endpoint already includes some or all forced measurements.
 
-    Automatic forced photometry is therefore strictly supplementary. Its absence,
-    ambiguity, incompatible target cardinality, or inability to prove compatibility
+    Declared forced photometry is therefore strictly supplementary. Its absence,
+    incompatible target cardinality, or inability to prove compatibility
     must never make an otherwise satisfiable ``GetLightcurveStep`` unsupported.
-    Constrained requests (currently ``bands`` or ``time_context``) are not
-    auto-supplemented until equivalent constraint handling can be proven for the
-    forced-photometry endpoint.
+    Constrained requests (currently ``bands`` or ``time_context``) require declared
+    input translations on required calls; otherwise recipe planning is deferred.
+    Optional calls lacking equivalent constraint handling are omitted.
 
     ``LightcurveStep`` is different: it constructs an Alertissimo-derived
     lightcurve locally from already available evidence.

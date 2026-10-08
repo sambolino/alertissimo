@@ -18,3 +18,8 @@ recipes:
             tables: {value: objects}
             limit: {value: 100}
             offset: {value: 0}
+  get_lightcurve:
+    - calls:
+        - endpoint: lightcurves
+          params:
+            objectIds: {from: step.target.ids}

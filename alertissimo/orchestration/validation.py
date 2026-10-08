@@ -16,7 +16,7 @@ explicit semantic selectors such as a requested classifier or crossmatch catalog
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import re
 from typing import Literal
 
@@ -204,6 +204,83 @@ def _cone_recipe_evidence(
     )
 
 
+def _photometry_recipe_evidence(
+    step: GetLightcurveStep | GetForcedPhotometryStep,
+    graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Select declared retrievals; supplementary calls remain best effort."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        if (endpoint.broker, endpoint.origin) not in migrated
+    )
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    feasible, reasons = [], []
+    raw = list(legacy)
+    target_count = len(step.target.ids) if step.target is not None else None
+    for recipe in declared:
+        first = recipe.calls[0]
+        # Forced measurements are mapped as detection/lightcurve material in the
+        # current ontology. Their retrieval intent is the authored IR operation.
+        if not first.required or not any(
+            semantic_record_noun_matches(output.semantic_record_type, "lightcurve")
+            for output in first.outputs
+        ):
+            continue
+        raw.append(endpoints[(recipe.broker, recipe.origin, first.endpoint)])
+        calls = []
+        for call in recipe.calls:
+            endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+            paths = {
+                parameter.source.path for parameter in call.params
+                if isinstance(parameter.source, StepValueSource)
+            }
+            missing = tuple(
+                name for name in ("bands", "time_context")
+                if getattr(step, name) is not None and (name,) not in paths
+            )
+            reason = None
+            if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
+                reason = "photometry recipes require direct Step inputs"
+            elif ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
+                reason = "photometry recipe does not bind the target identities"
+            elif missing:
+                reason = f"photometry inputs have no declared translation: {missing}"
+            elif (
+                not call.required and target_count != 1
+                and "target_id" not in endpoint.collection_binding_roles
+            ):
+                # Preserve the existing optional-supplement cardinality policy.
+                # Required singular retrievals still use the binder's fan-out.
+                reason = "optional photometry call lacks a collection target binding"
+            if reason is not None:
+                if call.required:
+                    reasons.append(f"{recipe.broker}/{recipe.origin}/{call.endpoint}: {reason}")
+                    break
+                continue
+            calls.append(call)
+        else:
+            feasible.append(replace(recipe, calls=tuple(calls)))
+    return _CandidateEvidence(
+        raw=tuple(raw), recipes=tuple(feasible),
+        compatible=legacy + tuple(
+            endpoints[(recipe.broker, recipe.origin, recipe.calls[0].endpoint)]
+            for recipe in feasible
+        ),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or "no photometry recipe maps lightcurve material",
+    )
+
+
 def _semantic_record_producer(semantic_record_type: str) -> str | None:
     _, at, qualifiers = semantic_record_type.partition("@")
     if not at:
@@ -340,6 +417,10 @@ def _candidate_evidence_for_source(
 ) -> _CandidateEvidence:
     if isinstance(step, ConeSearchStep):
         recipes = _cone_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
+    if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
+        recipes = _photometry_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
     raw = _raw_candidates_for_source(step, graph, source)
