@@ -28,3 +28,12 @@ recipes:
         - endpoint: sherlock_object
           params:
             objectId: {from: step.target.ids}
+  get_crossmatch:
+    - calls:
+        - endpoint: object
+          params:
+            objectId: {from: step.target.ids}
+    - calls:
+        - endpoint: sherlock_object
+          params:
+            objectId: {from: step.target.ids}

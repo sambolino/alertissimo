@@ -19,3 +19,8 @@ recipes:
         - endpoint: get_by_ztf_object_id
           params:
             ztf_object_id: {from: step.target.ids}
+  get_crossmatch:
+    - calls:
+        - endpoint: get_by_ztf_object_id
+          params:
+            ztf_object_id: {from: step.target.ids}
