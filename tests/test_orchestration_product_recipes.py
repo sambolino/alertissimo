@@ -88,7 +88,7 @@ def test_output_format_controls_are_compiled_from_existing_physical_roles(graph)
 
 
 @pytest.mark.parametrize("op", ["get_cutout", "get_data_product"])
-@pytest.mark.parametrize("kind", [None, "source", 1])
+@pytest.mark.parametrize("kind", [None, "unknown", 1])
 def test_product_recipe_namespaces_are_validated_against_the_ir(tmp_path, op, kind):
     root, destination = local_provider(tmp_path)
     def invalid(doc):
@@ -96,6 +96,17 @@ def test_product_recipe_namespaces_are_validated_against_the_ir(tmp_path, op, ki
     edit_yaml(destination / "capabilities.yaml", invalid)
     with pytest.raises(CapabilityGraphError, match="target_kind must be"):
         build_capability_graph(root)
+
+
+@pytest.mark.parametrize("op", ["get_cutout", "get_data_product"])
+@pytest.mark.parametrize("kind", ["source", "detection"])
+def test_product_recipe_namespaces_preserve_the_existing_ir_kinds(tmp_path, op, kind):
+    root, destination = local_provider(tmp_path)
+    def valid(doc):
+        doc["recipes"][op][0]["target_kind"] = kind
+    edit_yaml(destination / "capabilities.yaml", valid)
+    recipe, = build_capability_graph(root).query_recipes(broker="fink", origin="ztf", op=op)
+    assert recipe.target_kind == kind
 
 
 def json_product_provider(tmp_path):
