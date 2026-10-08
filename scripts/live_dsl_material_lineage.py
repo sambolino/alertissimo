@@ -7,6 +7,9 @@ workflow over the same tiny sky region::
 
     discovery broker -> targetless enrichment broker -> targetless enrichment broker
 
+The matrix retrieves the cone population without ``latest`` selection. Recency
+selection requires a verified provider contract and is covered separately.
+
 The acceptance contract is architectural rather than provider-content-specific:
 
 * the SearchStep owns the candidate population;
@@ -159,7 +162,6 @@ def build_dsl(
     lines = [
         f"objects from ztf via {scenario.discovery_broker}",
         f"inside ({ra}, {dec}, {radius_arcsec}arcsec)",
-        "latest 1",
     ]
     lines.extend(
         f"with {product} via {broker}"

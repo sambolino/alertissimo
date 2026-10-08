@@ -19,6 +19,7 @@ from .normalize import (
     normalize_workflow_execution,
 )
 from .predicate import evaluate_portfolio_predicate, prune_portfolios
+from .selection import SearchSelectionError, apply_search_selection
 
 __all__ = [
     "ExecutionPortfolioResult",
@@ -32,4 +33,5 @@ __all__ = [
     "normalize_workflow_execution",
     "prune_portfolios",
     "summary_object_identity",
+    "SearchSelectionError", "apply_search_selection",
 ]

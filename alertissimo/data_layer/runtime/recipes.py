@@ -59,6 +59,17 @@ class RecipeParameter:
 
 
 @dataclass(frozen=True)
+class LatestSelectionCapability:
+    """Order a fully paginated discovery; semantic top-N remains local."""
+
+    broker: str
+    origin: str
+    endpoint: str
+    path: str
+    params: tuple[RecipeParameter, ...]
+
+
+@dataclass(frozen=True)
 class RecipeCall:
     endpoint: str
     required: bool
@@ -67,6 +78,7 @@ class RecipeCall:
     outputs: tuple[FieldMappingCapability, ...]
     # Only the candidate discovery call may consume the SearchStep predicate.
     predicate_bindings: tuple[RequestConstraintCapability, ...] = ()
+    latest_selection: LatestSelectionCapability | None = None
 
 
 @dataclass(frozen=True)
@@ -84,6 +96,7 @@ class RecipeCapability:
 class ProviderCapabilities:
     recipes: tuple[RecipeCapability, ...]
     predicate_bindings: tuple[RequestConstraintCapability, ...]
+    latest_selections: tuple[LatestSelectionCapability, ...] = ()
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -348,6 +361,83 @@ def _predicate_bindings(
     return tuple(compiled)
 
 
+def _latest_selections(
+    raw: Any, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
+    *, broker: str, origin: str, defaults: Mapping[str, Any],
+) -> tuple[LatestSelectionCapability, ...]:
+    from alertissimo.orchestration.ir.models import SearchSelection
+    from .capability_graph import canonical_semantic_path
+
+    compiled = []
+    for endpoint, raw_selectors in sorted(_mapping(raw, "selection_bindings").items()):
+        where = f"selection_bindings.{endpoint}"
+        if endpoint not in endpoint_defs:
+            raise RecipeRegistryError(f"{where}: unknown endpoint")
+        selectors = _mapping(raw_selectors, where)
+        _keys(selectors, {"latest"}, {"latest"}, where)
+        if "latest" not in SearchSelection.model_fields:
+            raise RecipeRegistryError(f"{where}: latest is not an IR selector")
+        latest = _mapping(selectors["latest"], where)
+        _keys(latest, {"path", "params"}, {"path", "params"}, where)
+        path = latest["path"]
+        if path != "summary.time.last_mjd":
+            raise RecipeRegistryError(f"{where}: latest requires summary.time.last_mjd")
+        fields = tuple(
+            item for item in graph.fields_for_endpoint(broker, origin, endpoint)
+            if canonical_semantic_path(item.semantic_path) == path
+        )
+        if not fields:
+            raise RecipeRegistryError(f"{where}: selection path has no endpoint mapping")
+        if not any(
+            canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+            for item in graph.fields_for_endpoint(broker, origin, endpoint)
+        ):
+            raise RecipeRegistryError(f"{where}: selection requires a mapped object identity")
+        spec = _mapping(endpoint_defs[endpoint], where)
+        declarations = _mapping(spec.get("params", {}), where)
+        # This matches the executor's existing exhaustive page/page_size contract.
+        if any(
+            _mapping(declarations.get(name, {}), where).get("role") != "pagination"
+            for name in ("page", "page_size")
+        ):
+            raise RecipeRegistryError(f"{where}: latest requires exhaustive page/page_size pagination")
+        if any(
+            declaration.get("role") == "output_format" and declaration.get("default") != "json"
+            for declaration in declarations.values() if isinstance(declaration, dict)
+        ):
+            raise RecipeRegistryError(f"{where}: latest requires a mapped JSON response mode")
+        output = _mapping(spec.get("output", {}), where)
+        items = _mapping(output.get("fields", {}), where).get("items", {})
+        if output.get("type") != "array" and not (
+            output.get("type") == "object" and isinstance(items, dict) and items.get("type") == "array"
+        ):
+            raise RecipeRegistryError(f"{where}: latest requires an array or items-array response")
+        transport = _mapping(spec.get("transport", {}), where)
+        fixed = {
+            **_mapping(defaults.get("fixed_params", {}), where),
+            **_mapping(transport.get("fixed_params", {}), where),
+        }
+        if "page" in fixed or fixed.get("count") or _mapping(declarations.get("count", {}), where).get("default"):
+            raise RecipeRegistryError(f"{where}: latest cannot select one page or a count-only response")
+        assignments = []
+        for name, raw_assignment in sorted(_mapping(latest["params"], where).items()):
+            declaration = _mapping(declarations.get(name, {}), where)
+            if declaration.get("role") != "ordering" or name not in spec.get("server_filters", []):
+                raise RecipeRegistryError(f"{where}: selection parameters must be ordering server filters")
+            assignment = _mapping(raw_assignment, where)
+            _keys(assignment, {"value"}, {"value"}, where)
+            constant = _constant(assignment["value"], declaration, where)
+            if name in fixed and fixed[name] != constant.value:
+                raise RecipeRegistryError(f"{where}: selection conflicts with a fixed parameter")
+            assignments.append(RecipeParameter(name, constant))
+        values = [item.source.value for item in assignments]
+        raw_fields = {item.raw_field for item in fields}
+        if len(values) != 2 or "DESC" not in values or not any(value in raw_fields for value in values if isinstance(value, str)):
+            raise RecipeRegistryError(f"{where}: latest requires the mapped raw ordering field and DESC")
+        compiled.append(LatestSelectionCapability(broker, origin, endpoint, path, tuple(assignments)))
+    return tuple(compiled)
+
+
 def load_provider_capabilities(
     path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str,
@@ -358,7 +448,7 @@ def load_provider_capabilities(
         with path.open(encoding="utf-8") as stream:
             document = _mapping(yaml.load(stream, Loader=_UniqueKeyLoader), str(path))
         _keys(
-            document, {"broker", "origin", "description", "recipes", "predicate_bindings"},
+            document, {"broker", "origin", "description", "recipes", "predicate_bindings", "selection_bindings"},
             {"broker", "origin", "recipes"}, str(path),
         )
         if document["broker"] != broker or document["origin"] != origin:
@@ -378,6 +468,16 @@ def load_provider_capabilities(
             raise RecipeRegistryError("predicate bindings must not also be authored in request_mappings.yaml")
         available_bindings = predicates or legacy
         defaults = _mapping(transport_defaults or {}, "transport_defaults")
+        selections = _latest_selections(
+            document.get("selection_bindings", {}), graph, endpoint_defs,
+            broker=broker, origin=origin, defaults=defaults,
+        )
+        if any(
+            binding.endpoint == selection.endpoint
+            and binding.parameter in {item.parameter for item in selection.params}
+            for binding in available_bindings for selection in selections
+        ):
+            raise RecipeRegistryError("selection parameters conflict with predicate bindings")
         models = _step_models()
         from alertissimo.orchestration.ir.models import SearchStep
         compiled = []
@@ -457,6 +557,13 @@ def load_provider_capabilities(
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
                     if any(item.parameter in params or item.parameter in fixed for item in call_bindings):
                         raise RecipeRegistryError(f"{call_where}: predicate binding conflicts with a parameter assignment/fixed value")
+                    latest_selection = next((
+                        item for item in selections if item.endpoint == endpoint
+                    ), None) if index == 0 and required and issubclass(models[op], SearchStep) else None
+                    if latest_selection is not None and any(
+                        item.parameter in params for item in latest_selection.params
+                    ):
+                        raise RecipeRegistryError(f"{call_where}: selection conflicts with a parameter assignment")
                     for name, declaration in declarations.items():
                         declaration = _mapping(declaration, call_where)
                         if (
@@ -469,13 +576,14 @@ def load_provider_capabilities(
                         endpoint, required, tuple(assignments),
                         graph.fields_for_endpoint(broker, origin, endpoint),
                         call_bindings,
+                        latest_selection,
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
                 compiled.append(RecipeCapability(
                     broker, origin, op, alternative_index, tuple(calls), target_kind,
                 ))
-        return ProviderCapabilities(tuple(compiled), predicates)
+        return ProviderCapabilities(tuple(compiled), predicates, selections)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:
         raise RecipeRegistryError(f"{path}: {exc}") from exc
 
@@ -495,5 +603,5 @@ def load_provider_recipes(
 __all__ = [
     "CallValueSource", "ConstantValueSource", "EncoderValueSource", "RecipeCall",
     "RecipeCapability", "RecipeParameter", "RecipeRegistryError", "StepValueSource",
-    "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
+    "LatestSelectionCapability", "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
 ]

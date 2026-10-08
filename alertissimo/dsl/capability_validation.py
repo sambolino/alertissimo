@@ -2,7 +2,7 @@
 
 This module bridges an ontology-valid ``SurfaceScript`` to the existing
 data-layer ``CapabilityGraph``. It never selects an endpoint, binds parameters,
-executes providers, or lowers user intent to orchestration IR.
+executes providers. Selection checks reuse the orchestration capability resolver.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
     InsideClause,
+    LatestClause,
     LookupCandidateSet,
     MatchClause,
     RankedByClause,
@@ -78,6 +79,7 @@ class SurfaceCapabilityCheck(BaseModel):
         "match_counterpart",
         "match_local",
         "ranking",
+        "selection",
     ]
     status: SurfaceCapabilityStatus
     reason: str
@@ -655,7 +657,28 @@ def validate_surface_capabilities(
     checked_requirements: set[tuple[str, str | None, str | None]] = set()
 
     for index, clause in enumerate(surface.clauses):
-        if isinstance(clause, RequirementClause):
+        if isinstance(clause, LatestClause):
+            # Reuse the exact candidate lowering, including predicate scope.
+            # This helper performs no capability validation or provider calls.
+            from .lowering import SurfaceLoweringError, _candidate_search
+            from alertissimo.orchestration.validation import validate_step_capabilities
+
+            try:
+                step, _ = _candidate_search(surface, record_types=semantic_model.record_types)
+            except SurfaceLoweringError as error:
+                checks.append(SurfaceCapabilityCheck(
+                    subject="selection", clause_index=index,
+                    status=SurfaceCapabilityStatus.DEFERRED, reason=str(error),
+                ))
+                continue
+            result = validate_step_capabilities(step, capability_graph)
+            checks.append(SurfaceCapabilityCheck(
+                subject="selection", clause_index=index,
+                status=SurfaceCapabilityStatus(result.status),
+                reason=(result.reason if result.status == "supported" else "; ".join(item.reason for item in result.source_results)),
+                semantic_noun="summary", evidence=_endpoint_evidence(result.candidates),
+            ))
+        elif isinstance(clause, RequirementClause):
             noun = resolve_record_type(clause.product, semantic_model.record_types)
             signature = (
                 noun or clause.product,

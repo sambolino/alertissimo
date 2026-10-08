@@ -141,7 +141,7 @@ def _select_one(
     return candidates[0]
 
 
-def _recipe_assignments(call: RecipeCall, *, plan_offset: int) -> dict:
+def _recipe_assignments(call: RecipeCall, *, plan_offset: int, step: Step) -> dict:
     """Carry value sources to the binder; never encode values during planning."""
     def physical_literal(value):
         if isinstance(value, Mapping):
@@ -151,6 +151,8 @@ def _recipe_assignments(call: RecipeCall, *, plan_offset: int) -> dict:
         return value
 
     sources, constants = {}, {}
+    if isinstance(step, SearchStep) and step.selection is not None and call.latest_selection is not None:
+        constants.update({item.parameter: item.source.value for item in call.latest_selection.params})
     dependency = None
     for parameter in call.params:
         value = parameter.source
@@ -190,7 +192,7 @@ def _recipe_plans(
             predicate_constraints=call.predicate_bindings,
             realize_search_predicate=index == 0,
         ).model_copy(
-            update=_recipe_assignments(call, plan_offset=plan_offset)
+            update=_recipe_assignments(call, plan_offset=plan_offset, step=step)
         )
         for index, call in enumerate(recipe.calls)
     )
@@ -213,12 +215,19 @@ def _endpoint_plan(
             graph=graph,
             constraints=predicate_constraints,
         )
+    request_params = {}
+    if realize_search_predicate and isinstance(step, SearchStep) and step.selection is not None:
+        binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        if binding is None:
+            raise PlanningDeferredError("latest has no declared discovery selection contract")
+        request_params = {item.parameter: item.source.value for item in binding.params}
     return EndpointPlan(
         broker=endpoint.broker,
         origin=endpoint.origin,
         endpoint=endpoint.endpoint,
         semantic_type=validation.semantic_type,
         predicate_realization=realization,
+        request_params=request_params,
     )
 
 
@@ -346,6 +355,10 @@ def _candidate_execution_guarantees(
 ) -> bool:
     requirement = _get_record_requirement(consumer_step)
     if requirement is None:
+        return False
+    if isinstance(candidate_step, SearchStep) and candidate_step.selection is not None:
+        # The full discovery execution contains candidates excluded by global
+        # selection. Bind selected IDs until reuse can carry that semantic view.
         return False
     # Mapped fields do not establish what an authored projection requested.
     if candidate_plan.request_params != consumer_plan.request_params:

@@ -26,6 +26,7 @@ from alertissimo.orchestration.normalization import (
     normalize_workflow_execution,
     prune_portfolios,
     summary_object_identity,
+    apply_search_selection,
 )
 from alertissimo.orchestration.runtime import (
     StepExecutionResult,
@@ -668,6 +669,7 @@ def execute_staged_workflow_run(
                 normalized_execution_cache=normalized_execution_cache,
                 validate_semantic_model=validate_semantic_model,
             )
+            view = apply_search_selection(step, view)
             if isinstance(step, ConfirmStep):
                 source_reference = succeeded.material_input_from
                 if source_reference is None:

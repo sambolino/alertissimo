@@ -1,5 +1,12 @@
 broker: alerce
 origin: ztf
+selection_bindings:
+  query_objects:
+    latest:
+      path: summary.time.last_mjd
+      params:
+        order_by: {value: lastmjd}
+        order_mode: {value: DESC}
 recipes:
   cone_search:
     - calls:

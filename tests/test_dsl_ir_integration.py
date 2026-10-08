@@ -1,5 +1,7 @@
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
-from alertissimo.dsl import lower_surface, parse_surface_script
+from alertissimo.dsl import (
+    compile_surface_to_ir, lower_surface, parse_surface_script, validate_surface_capabilities,
+)
 from alertissimo.orchestration.ir import ConeSearchStep, SearchSelection, SemanticSearchStep
 from alertissimo.orchestration.validation import validate_step_capabilities
 
@@ -40,7 +42,9 @@ def test_latest_remains_search_selection_under_provider_capability_validation():
     step = compilation.workflow.steps[0]
     assert isinstance(step, SemanticSearchStep)
     assert step.selection == SearchSelection(latest=10)
-    assert validate_step_capabilities(step, build_capability_graph()).status == "supported"
+    result = validate_step_capabilities(step, build_capability_graph())
+    assert result.status == "deferred"
+    assert "latest requires" in result.source_results[0].reason
 
 
 def test_order_by_is_result_view_and_never_workflow_ir():
@@ -56,3 +60,13 @@ def test_order_by_is_result_view_and_never_workflow_ir():
     assert isinstance(compilation.workflow.steps[0], SemanticSearchStep)
     assert compilation.view.order_by.expression == "summary.time.last_mjd"
     assert compilation.view.order_by.direction == "desc"
+
+
+def test_public_dsl_validation_reports_latest_deferral_and_preserves_supported_case():
+    graph = build_capability_graph()
+    for origin, status in (("ztf", "supported"), ("lsst", "deferred")):
+        report = validate_surface_capabilities(parse_surface_script(f"objects from {origin} via alerce\nlatest 1\n"), graph=graph)
+        check, = (item for item in report.checks if item.subject == "selection")
+        assert check.status.value == status
+    workflow = compile_surface_to_ir(parse_surface_script("objects from ztf via alerce\nlatest 1\n"), graph=graph)
+    assert workflow.steps[0].selection.latest == 1
