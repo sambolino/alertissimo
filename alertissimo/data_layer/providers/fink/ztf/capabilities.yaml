@@ -13,3 +13,9 @@ recipes:
         - endpoint: objects
           params:
             objectId: {from: step.target.ids}
+  lookup:
+    - target_kind: object
+      calls:
+        - endpoint: objects
+          params:
+            objectId: {from: step.target.ids}

@@ -95,11 +95,12 @@ def test_composite_astropy_encoder_is_inspected_without_execution(tmp_path):
 def test_scalar_and_collection_targets_remain_separate_alternatives(tmp_path):
     root, destination = provider(tmp_path)
     write_recipes(destination, {"lookup": [
-        {"calls": [{"endpoint": "object", "params": {"objectId": {"from": "step.target.ids"}}}]},
-        {"calls": [{"endpoint": "objects", "params": {"objectIds": {"from": "step.target.ids"}}}]},
+        {"target_kind": "object", "calls": [{"endpoint": "object", "params": {"objectId": {"from": "step.target.ids"}}}]},
+        {"target_kind": "object", "calls": [{"endpoint": "objects", "params": {"objectIds": {"from": "step.target.ids"}}}]},
     ]})
     recipes = build_capability_graph(root).query_recipes(op="lookup")
     assert [recipe.alternative_index for recipe in recipes] == [0, 1]
+    assert [recipe.target_kind for recipe in recipes] == ["object", "object"]
     assert all(recipe.calls[0].params[0].source == StepValueSource(("target", "ids")) for recipe in recipes)
 
 

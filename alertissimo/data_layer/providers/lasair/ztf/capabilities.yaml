@@ -23,3 +23,14 @@ recipes:
         - endpoint: lightcurves
           params:
             objectIds: {from: step.target.ids}
+  lookup:
+    - target_kind: object
+      calls:
+        - endpoint: object
+          params:
+            objectId: {from: step.target.ids}
+    - target_kind: object
+      calls:
+        - endpoint: objects
+          params:
+            objectIds: {from: step.target.ids}

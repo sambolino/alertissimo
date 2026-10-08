@@ -141,6 +141,9 @@ cases for meaningful contract changes; run them on the user's machine.
 | `refactor/recipes-09-cutover` | Complete currently supported semantic-search/SQL paths and confirmation evidence selection. Make planning and capability validation use one candidate-resolution implementation, preserving diagnostics and public validation behavior. Use validated registry evidence for reuse. Local orchestration still owns quorum and candidate reduction. |
 | `refactor/recipes-10-cleanup` | Remove migrated tags, binding-source declarations, request-mapping files, and compatibility routing after a consumer audit. Update architectural documentation and CI triggers. Consolidate overlapping loading only if it reduces duplication without changing executor/normalizer responsibilities; otherwise keep that as a later branch. |
 
+The retrieval stage is split by operation, beginning with
+`refactor/recipes-06a-lookup` and then classification retrieval.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
