@@ -58,6 +58,10 @@ resolver for `latest`. It now reports the same deferrals before execution. Resul
 view `order by` remains separate from WorkflowIR candidate selection. The offline
 confirmation fixture now includes the recency field it needs; UI compiler tests
 expect unsupported multi-survey latest requests to defer.
+The live material-lineage matrix uses the full tiny-cone population without
+`latest`, so all four brokers can continue rotating through discovery and
+enrichment roles. Its offline tests separately verify that explicit `latest 1`
+compiles for ALeRCE ZTF and defers for the other discovery brokers.
 
 ## Local handoff
 
