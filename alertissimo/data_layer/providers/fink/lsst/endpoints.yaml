@@ -225,6 +225,7 @@ endpoints:
         required: true
         type: string
         description: diaSourceId / long integer source ID of the alert.
+        bind: target_id
       kind:
         required: true
         type: string
@@ -243,6 +244,7 @@ endpoints:
         - array
         default: PNG
         description: Cutout output format.
+        role: output_format
       stretch:
         required: false
         type: string

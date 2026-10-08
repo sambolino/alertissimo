@@ -36,6 +36,7 @@ class EndpointCapability:
     output_type: str | None
     binding_roles: tuple[str, ...] = ()
     collection_binding_roles: tuple[str, ...] = ()
+    output_format_params: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -387,6 +388,10 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 projection_param, supports_projection, output_type,
                 binding_roles,
                 collection_binding_roles,
+                tuple(sorted(
+                    name for name, declaration in params.items()
+                    if isinstance(declaration, dict) and declaration.get("role") == "output_format"
+                )),
             ))
 
         payload_defs = _dict(mappings_doc.get("payloads"), f"{mapping_path}: payloads")

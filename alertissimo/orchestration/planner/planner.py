@@ -551,7 +551,12 @@ def _mark_candidate_dependencies(
             continue
 
         requirement = _get_record_requirement(step)
-        if requirement is None:
+        recipe_target_input = any(
+            path == ("target", "ids")
+            for plan in rewritten[step_index].endpoint_plans
+            for path in (plan.parameter_sources or {}).values()
+        )
+        if requirement is None and not recipe_target_input:
             active_search_index = None
             current_candidate_index = None
             current_material_index = (

@@ -1,5 +1,8 @@
 # Recipe object lookup (branch 06a)
 
+Branch 06d also applies the existing `target_kind` guard to product retrieval
+recipes; see `recipe_products.md`. The text below describes the 06a increment.
+
 Branch: `refactor/recipes-06a-lookup`.
 Base: `main` at `0daf3de` (PR #261).
 

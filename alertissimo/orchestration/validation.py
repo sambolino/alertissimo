@@ -587,6 +587,87 @@ def _crossmatch_catalog_relation(
     return "dynamic" if dynamic else "mismatch"
 
 
+def _product_recipe_evidence(
+    step: GetCutoutStep | GetDataProductStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    """Separate a bindable physical product call from mapped product material."""
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _legacy_candidate_evidence_for_source(step, graph, source).compatible
+        if (endpoint.broker, endpoint.origin) not in migrated
+    )
+    endpoints = {
+        (endpoint.broker, endpoint.origin, endpoint.endpoint): endpoint
+        for endpoint in graph.endpoint_capabilities
+    }
+    # The existing staged candidate dependency supplies summary object IDs.
+    # Alert IDs must be explicit; they cannot be inferred from an object view.
+    target_kind = step.target.kind if step.target is not None else "object"
+    choices = [(endpoint, None) for endpoint in legacy]
+    raw = list(legacy)
+    reasons = ["product target identity namespace is unspecified"] if target_kind is None else []
+    for recipe in declared:
+        if recipe.target_kind != target_kind:
+            continue
+        call = recipe.calls[0]
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        raw.append(endpoint)
+        if not call.required or len(recipe.calls) != 1 or any(
+            isinstance(parameter.source, (CallValueSource, EncoderValueSource))
+            for parameter in call.params
+        ):
+            reasons.append("product recipes require one required call with direct Step inputs")
+            continue
+        if not any(
+            isinstance(parameter.source, StepValueSource)
+            and parameter.source.path == ("target", "ids")
+            for parameter in call.params
+        ) or "target_id" not in endpoint.binding_roles:
+            reasons.append("product recipe does not bind the target identities")
+            continue
+        if recipe.target_kind == "alert":
+            # Existing target_id normalization can complete summary object
+            # identity. An alert ID must never become that object identity.
+            reasons.append("alert product identity ownership lacks normalization evidence")
+            continue
+        if not any(
+            semantic_record_noun_matches(output.semantic_record_type, "data_product")
+            for output in call.outputs
+        ):
+            reasons.append("product recipe has no mapped data_product material")
+            continue
+        if endpoint.output_type not in {"object", "array"} or endpoint.output_format_params:
+            # The normalizer's named JSON field mappings do not establish a
+            # compatible shape for an image URL, binary FITS/AVRO, or a bare
+            # image array. A mode/default cannot supply that missing evidence.
+            reasons.append("product response shape/mode has no verified mapping compatibility")
+            continue
+        selectors = ("format", "size") if isinstance(step, GetCutoutStep) else ("product_type",)
+        supplied = tuple(name for name in selectors if getattr(step, name) is not None)
+        if supplied:
+            reasons.append(f"product inputs lack verified response/selector compatibility: {supplied}")
+            continue
+        choices.append((endpoint, recipe))
+    if step.target is not None and len(step.target.ids) > 1:
+        collection = [
+            choice for choice in choices
+            if "target_id" in choice[0].collection_binding_roles
+        ]
+        choices = collection or choices
+    return _CandidateEvidence(
+        raw=tuple(raw), compatible=tuple(endpoint for endpoint, _ in choices),
+        recipes=tuple(recipe for _, recipe in choices if recipe is not None),
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or f"no product recipe accepts target kind {target_kind!r}",
+    )
+
+
 def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
     return bool(
         _CROSSMATCH_RADIUS_OPERATIONS.intersection(endpoint.operation_types)
@@ -663,6 +744,10 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, (GetCutoutStep, GetDataProductStep)):
+        recipes = _product_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     if isinstance(step, GetCrossmatchStep):
         recipes = _crossmatch_recipe_evidence(step, graph, source)
         if recipes is not None:

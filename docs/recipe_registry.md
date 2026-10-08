@@ -6,6 +6,9 @@ Branch 05 activates lightcurve and internal forced-photometry retrievals; see `r
 Branch 06a activates object lookup recipes with an explicit input namespace; see `recipe_lookup.md`.
 Branch 06b activates targeted classification retrievals; see `recipe_classification.md`.
 Branch 06c activates targeted crossmatch retrievals; see `recipe_crossmatch.md`.
+Branch 06d declares product retrievals and validates their activation boundaries; see `recipe_products.md`.
+In the current schema, `target_kind` is required for lookup, cutout, and data-product
+recipes. It guards the existing IR target namespace; other operations reject it.
 The foundation described below was introduced in branch 02 before activation.
 
 Provider recipes live in

@@ -38,3 +38,21 @@ recipes:
         - endpoint: query_object
           params:
             oid: {from: step.target.ids}
+  get_cutout:
+    - target_kind: object
+      calls:
+        - endpoint: get_stamps
+          params:
+            oid: {from: step.target.ids}
+            format: {from: step.format}
+  get_data_product:
+    - target_kind: object
+      calls:
+        - endpoint: get_stamps
+          params:
+            oid: {from: step.target.ids}
+    - target_kind: object
+      calls:
+        - endpoint: get_avro
+          params:
+            oid: {from: step.target.ids}
