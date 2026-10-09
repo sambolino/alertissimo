@@ -28,6 +28,10 @@ compatibility-query test uses an explicit fixture, so further provider cleanup
 does not redefine that API's regression. Existing recipe, binding, DSL, and
 fixture-execution suites exercise production declarations.
 
+The CI follow-up makes the legacy cone fixture author its own compatibility tag
+after removing recipes. A cone with neither declaration is rejected; a tagged
+legacy cone remains atomic. The composite recipe suite is included below.
+
 No tests were run here. Python syntax, YAML parsing, whitespace, local test
 targets, and bundle structure were checked.
 
@@ -51,6 +55,7 @@ PYTHONPATH=. python -m pytest -q \
   tests/test_orchestration_capability_validation.py \
   tests/test_orchestration_planner.py \
   tests/test_orchestration_cone_recipes.py \
+  tests/test_orchestration_composite_cone_recipes.py \
   tests/test_orchestration_lookup_recipes.py \
   tests/test_orchestration_photometry_recipes.py \
   tests/test_orchestration_classification_recipes.py \
