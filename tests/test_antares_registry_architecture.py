@@ -21,6 +21,7 @@ def load(origin, filename):
 def test_python_client_endpoints(origin):
     endpoints = load(origin, "endpoints.yaml")["endpoints"]
     assert set(endpoints) == EXPECTED_ENDPOINTS[origin]
+    assert "spatial_search" not in endpoints["cone_search"].get("operation_types", [])
     for endpoint in endpoints.values():
         assert endpoint["method"] == "python"
         assert endpoint["path"].startswith("antares_client.search.")
@@ -34,7 +35,7 @@ def test_python_client_endpoints(origin):
 
 
 def test_no_extra_antares_registry_yaml_files():
-    allowed = {"endpoints.yaml", "mappings.yaml", "unmapped_fields.yaml"}
+    allowed = {"endpoints.yaml", "mappings.yaml", "unmapped_fields.yaml", "capabilities.yaml"}
     assert {path.name for path in ROOT.rglob("*.yaml")} <= allowed
 
 
@@ -82,10 +83,15 @@ def test_client_model_mapping_corrections_and_transforms():
 def test_survey_object_lookup_realizes_lightcurve_from_alert_history(origin, endpoint):
     registry = load(origin, "endpoints.yaml")["endpoints"]
     mappings = load(origin, "mappings.yaml")["mappings"]
-    assert "lightcurve_lookup" in registry[endpoint]["operation_types"]
-    assert registry[endpoint]["params"][
-        "ztf_object_id" if origin == "ztf" else "lsst_object_id"
-    ]["bind"] == "target_id"
+    recipe, = load(origin, "capabilities.yaml")["recipes"]["get_lightcurve"]
+    call, = recipe["calls"]
+    parameter = "ztf_object_id" if origin == "ztf" else "lsst_object_id"
+    assert call["endpoint"] == endpoint
+    assert call["params"] == {parameter: {"from": "step.target.ids"}}
+    assert {"object_lookup", "lightcurve_lookup"}.isdisjoint(
+        registry[endpoint].get("operation_types", [])
+    )
+    assert registry[endpoint]["params"][parameter]["bind"] == "target_id"
     assert f"lightcurve@{origin}:antares.points.time.mjd" in mappings
 
 
