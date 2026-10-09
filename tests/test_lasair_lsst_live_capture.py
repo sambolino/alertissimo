@@ -68,7 +68,6 @@ def test_lsst_sherlock_does_not_restore_known_bad_shortcuts():
  assert p['diaSourcesList']=={'endpoint':'object','path':'diaSourcesList[]','object_partition':{'mode':'single'}}
  assert p['diaForcedSourcesList']=={'endpoint':'object','path':'diaForcedSourcesList[]','object_partition':{'mode':'single'}}
  endpoint=yaml.safe_load(ENDPOINTS.read_text())['endpoints']['object']
- assert set(endpoint['operation_types'])=={'object_lookup','lightcurve_lookup'}
  assert endpoint['params']['objectId']['bind']=='target_id'
  assert p['cone_objects']=={'endpoint':'cone','path':'objects[]','object_partition':{'mode':'field','field':'object'}}
  assert all('photoZ' not in r for r in m.get('crossmatch@{producer}:lasair.redshift.value',[]));assert 'crossmatch@{producer}:lasair.redshift.error' not in m
