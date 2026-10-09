@@ -110,9 +110,11 @@ def test_predicate_parameter_cannot_also_have_a_recipe_constant(tmp_path):
         build_capability_graph(root)
 
 
-def test_unmigrated_legacy_provider_keeps_existing_translations(tmp_path):
+@pytest.mark.parametrize("declarations", ["both", "legacy_only", "no_capabilities"])
+def test_retired_request_mapping_cannot_supply_provider_translations(tmp_path, declarations):
     root, destination = local_provider(tmp_path)
-    document = yaml.safe_load((destination / "capabilities.yaml").read_text())
+    capabilities_path = destination / "capabilities.yaml"
+    document = yaml.safe_load(capabilities_path.read_text())
     bindings = document.pop("predicate_bindings")
     legacy = {
         "broker": "alerce", "origin": "lsst", "constraints": {
@@ -123,15 +125,12 @@ def test_unmigrated_legacy_provider_keeps_existing_translations(tmp_path):
         },
     }
     (destination / "request_mappings.yaml").write_text(yaml.safe_dump(legacy), encoding="utf-8")
-    with pytest.raises(CapabilityGraphError, match="must not also be authored"):
+    if declarations == "legacy_only":
+        capabilities_path.write_text(yaml.safe_dump(document), encoding="utf-8")
+    elif declarations == "no_capabilities":
+        capabilities_path.unlink()
+    with pytest.raises(CapabilityGraphError, match="request_mappings.yaml is retired.*predicate_bindings"):
         build_capability_graph(root)
-    (destination / "capabilities.yaml").write_text(yaml.safe_dump(document), encoding="utf-8")
-    endpoint, graph = endpoint_and_graph(root)
-    result = realize_predicate(comparison(producer="lc_classifier"), endpoint=endpoint, graph=graph)
-    assert result.residual is None
-    assert result.params == {"classifier": "lc_classifier", "probability": 0.8}
-    recipe, = graph.query_recipes(op="cone_search")
-    assert len(recipe.calls[0].predicate_bindings) == 3
 
 
 def test_comparison_inversion_and_explicit_call_scope():

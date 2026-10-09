@@ -326,8 +326,14 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
     payload_items: list[PayloadCapability] = []
     field_items: list[FieldMappingCapability] = []
     transform_items: list[TransformCapability] = []
-    request_items: list[RequestConstraintCapability] = []
     recipe_providers: dict[Path, tuple[str, str, dict, dict]] = {}
+
+    for request_path in sorted(root.glob("*/*/request_mappings.yaml")):
+        if request_path.is_file():
+            raise CapabilityGraphError(
+                f"{request_path}: request_mappings.yaml is retired; move translations "
+                "to predicate_bindings in provider capabilities.yaml"
+            )
 
     mapping_paths = sorted(root.glob("*/*/mappings.yaml"))
     if not mapping_paths:
@@ -437,11 +443,9 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             payload_items.append(PayloadCapability(broker, origin, payload_key, endpoint, payload_path))
 
         mappings = _dict(mappings_doc.get("mappings"), f"{mapping_path}: mappings")
-        canonical_mapped_paths: set[str] = set()
         for semantic_path, refs in mappings.items():
             if not isinstance(semantic_path, str) or not isinstance(refs, list) or not refs:
                 raise CapabilityGraphError(f"{mapping_path}: invalid mapping {semantic_path!r}")
-            canonical_mapped_paths.add(canonical_semantic_path(semantic_path))
             record_type, relative_path = split_semantic_path(semantic_path)
             for raw_ref in refs:
                 if not isinstance(raw_ref, str) or raw_ref.count("#") != 1:
@@ -462,71 +466,6 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                     broker, origin, semantic_path, record_type, relative_path,
                     payload_key, raw_field, raw_ref, endpoint, payload_path,
                 ))
-
-        request_path = mapping_path.with_name("request_mappings.yaml")
-        if request_path.is_file():
-            request_doc = _load_mapping(request_path)
-            if request_doc.get("broker") != broker or request_doc.get("origin") != origin:
-                raise CapabilityGraphError(
-                    f"{request_path}: broker/origin do not match mappings.yaml"
-                )
-            constraints = _dict(
-                request_doc.get("constraints", {}), f"{request_path}: constraints"
-            )
-            for endpoint, raw_parameters in constraints.items():
-                if endpoint not in endpoint_defs:
-                    raise CapabilityGraphError(
-                        f"{request_path}: unknown endpoint {endpoint!r}"
-                    )
-                endpoint_spec = _dict(
-                    endpoint_defs[endpoint], f"{endpoint_path}: endpoint {endpoint!r}"
-                )
-                endpoint_params = _dict(
-                    endpoint_spec.get("params", {}),
-                    f"{endpoint_path}: endpoint {endpoint!r} params",
-                )
-                server_filters = set(
-                    _strings(
-                        endpoint_spec.get("server_filters"),
-                        f"{endpoint_path}: endpoint {endpoint!r} server_filters",
-                    )
-                )
-                parameters = _dict(
-                    raw_parameters, f"{request_path}: endpoint {endpoint!r}"
-                )
-                for parameter, raw_constraint in parameters.items():
-                    if parameter not in endpoint_params:
-                        raise CapabilityGraphError(
-                            f"{request_path}: {endpoint}.{parameter} is not a declared parameter"
-                        )
-                    if parameter not in server_filters:
-                        raise CapabilityGraphError(
-                            f"{request_path}: {endpoint}.{parameter} is not a server filter"
-                        )
-                    constraint = _dict(
-                        raw_constraint,
-                        f"{request_path}: {endpoint}.{parameter}",
-                    )
-                    semantic_path = constraint.get("semantic_path")
-                    operator = constraint.get("operator")
-                    if not isinstance(semantic_path, str) or semantic_path not in canonical_mapped_paths:
-                        raise CapabilityGraphError(
-                            f"{request_path}: {endpoint}.{parameter} must reference an existing ontology mapping"
-                        )
-                    if operator not in {"=", "!=", "<", "<=", ">", ">="}:
-                        raise CapabilityGraphError(
-                            f"{request_path}: {endpoint}.{parameter} has invalid operator {operator!r}"
-                        )
-                    request_items.append(
-                        RequestConstraintCapability(
-                            broker=broker,
-                            origin=origin,
-                            endpoint=endpoint,
-                            parameter=parameter,
-                            semantic_path=semantic_path,
-                            operator=operator,
-                        )
-                    )
 
         transforms = _dict(mappings_doc.get("transforms", {}), f"{mapping_path}: transforms")
         for semantic_path, raw_transforms in transforms.items():
@@ -560,9 +499,6 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
         x.broker, x.origin, x.semantic_record_type, x.semantic_path, x.raw_ref, x.payload_key
     ))
     transform_items.sort(key=lambda x: (x.broker, x.origin, x.semantic_path, x.raw_ref))
-    request_items.sort(
-        key=lambda x: (x.broker, x.origin, x.endpoint, x.parameter, x.semantic_path)
-    )
 
     grouped: dict[tuple[str, str, str], tuple[set[str], set[str]]] = {}
     for field in field_items:
@@ -577,8 +513,9 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
     )
     graph = CapabilityGraph(
         tuple(endpoint_items), tuple(payload_items), tuple(field_items),
-        tuple(transform_items), record_items, tuple(request_items),
+        tuple(transform_items), record_items,
     )
+    request_items: list[RequestConstraintCapability] = []
     recipes, selections = [], []
     for recipe_path in sorted(root.glob("*/*/capabilities.yaml")):
         if recipe_path.parent not in recipe_providers:
