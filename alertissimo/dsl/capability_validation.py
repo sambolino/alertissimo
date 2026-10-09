@@ -2,7 +2,7 @@
 
 This module bridges an ontology-valid ``SurfaceScript`` to the existing
 data-layer ``CapabilityGraph``. It never selects an endpoint, binds parameters,
-executes providers. Selection checks reuse the orchestration capability resolver.
+executes providers. Candidate and selection checks reuse the orchestration resolver.
 """
 
 from __future__ import annotations
@@ -26,9 +26,7 @@ from .predicate_lowering import PredicateLoweringError, lower_expression_predica
 from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
-    InsideClause,
     LatestClause,
-    LookupCandidateSet,
     MatchClause,
     RankedByClause,
     RequirementClause,
@@ -132,9 +130,6 @@ class SurfaceCapabilityReport(BaseModel):
 
 
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
-_GEOMETRIC_SEARCH_OPERATIONS = frozenset(
-    {"cone_search", "spatial_search", "catalog_conesearch", "skymap_search"}
-)
 _PROVIDER_OPERATION_FALLBACKS: dict[str, frozenset[str]] = {
     "lightcurve": frozenset({"lightcurve", "lightcurve_lookup"}),
     "data_product": frozenset({"data_product_lookup"}),
@@ -248,100 +243,40 @@ def _endpoint_evidence(
 def _candidate_checks(
     surface: SurfaceScript,
     graph: CapabilityGraph,
+    *,
+    record_types: frozenset[str],
 ) -> tuple[SurfaceCapabilityCheck, ...]:
-    if isinstance(surface.candidates, LookupCandidateSet):
-        candidates = surface.candidates
-        endpoints = tuple(
-            endpoint
-            for endpoint in graph.query_endpoints(
-                broker=candidates.broker,
-                origin=candidates.origin,
-                operation_type=f"{candidates.target_kind}_lookup",
-            )
-            if "target_id" in endpoint.binding_roles
-        )
-        if len(candidates.ids) == 1:
-            singular = tuple(
-                endpoint
-                for endpoint in endpoints
-                if "target_id" not in endpoint.collection_binding_roles
-            )
-            endpoints = singular or endpoints
-        else:
-            collection = tuple(
-                endpoint
-                for endpoint in endpoints
-                if "target_id" in endpoint.collection_binding_roles
-            )
-            endpoints = collection or endpoints
-        supported = bool(endpoints)
-        return (
+    """Validate the same candidate operation that compilation will emit."""
+    # Import lazily: lowering calls this validator before building the workflow.
+    # These helpers only construct IR; they never resolve or execute providers.
+    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources
+
+    try:
+        step, _ = _candidate_operation(surface, record_types=record_types)
+    except SurfaceLoweringError as error:
+        return tuple(
             SurfaceCapabilityCheck(
-                subject="candidates",
-                status=(
-                    SurfaceCapabilityStatus.SUPPORTED
-                    if supported
-                    else SurfaceCapabilityStatus.UNSUPPORTED
-                ),
-                reason=(
-                    f"registered {candidates.target_kind}-identifier lookup capability found"
-                    if supported
-                    else f"no registered {candidates.target_kind}-identifier lookup capability found"
-                ),
-                origin=candidates.origin,
-                broker=candidates.broker,
-                semantic_noun=(
-                    "summary" if candidates.target_kind == "object" else "detection"
-                ),
-                channel=candidates.broker,
-                evidence=_endpoint_evidence(endpoints),
-            ),
+                subject="candidates", status=SurfaceCapabilityStatus.DEFERRED,
+                reason=str(error), clause_index=error.clause_index,
+                origin=source.origin, broker=source.broker,
+                semantic_noun="summary", channel=source.broker,
+            )
+            for source in _candidate_sources(surface)
         )
 
-    spatial_required = any(
-        isinstance(clause, InsideClause) for clause in surface.clauses
+    result = validate_step_capabilities(step, graph)
+    return tuple(
+        SurfaceCapabilityCheck(
+            subject="candidates", status=SurfaceCapabilityStatus(item.status),
+            reason=item.reason,
+            origin=item.source.origin if item.source is not None else None,
+            broker=item.source.broker if item.source is not None else None,
+            semantic_noun=result.semantic_type,
+            channel=item.source.broker if item.source is not None else None,
+            evidence=_endpoint_evidence(item.candidates),
+        )
+        for item in result.source_results
     )
-    checks: list[SurfaceCapabilityCheck] = []
-    for origin in surface.candidates.origins:
-        endpoints = graph.query_endpoints(
-            broker=surface.candidates.broker,
-            origin=origin,
-            semantic_record_noun="summary",
-        )
-        if spatial_required:
-            endpoints = tuple(
-                endpoint
-                for endpoint in endpoints
-                if _GEOMETRIC_SEARCH_OPERATIONS.intersection(
-                    endpoint.operation_types
-                )
-            )
-        supported = bool(endpoints)
-        checks.append(
-            SurfaceCapabilityCheck(
-                subject="candidates",
-                status=(
-                    SurfaceCapabilityStatus.SUPPORTED
-                    if supported
-                    else SurfaceCapabilityStatus.UNSUPPORTED
-                ),
-                reason=(
-                    "registered spatial-search object capability found"
-                    if supported and spatial_required
-                    else "no registered spatial-search object capability found"
-                    if spatial_required
-                    else "registered object-summary capability found"
-                    if supported
-                    else "no registered object-summary capability found"
-                ),
-                origin=origin,
-                broker=surface.candidates.broker,
-                semantic_noun="summary",
-                channel=surface.candidates.broker,
-                evidence=_endpoint_evidence(endpoints),
-            )
-        )
-    return tuple(checks)
 
 
 def _operation_fallback(
@@ -650,7 +585,7 @@ def validate_surface_capabilities(
 
     capability_graph = graph or build_capability_graph()
     checks: list[SurfaceCapabilityCheck] = list(
-        _candidate_checks(surface, capability_graph)
+        _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
     )
     checked_requirements: set[tuple[str, str | None, str | None]] = set()
 

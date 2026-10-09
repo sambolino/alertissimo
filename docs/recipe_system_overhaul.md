@@ -163,6 +163,13 @@ validation and planning, including wildcard recipe resolution. A final small
 cutover branch will align DSL candidate checks with this shared resolver before
 cleanup.
 
+`refactor/recipes-09f-dsl-candidates` completes that candidate-validation cutover.
+DSL checks lower the same Lookup/Cone/Semantic candidate operation as compilation
+and consume its per-source orchestration validation results. Summary presence,
+operation aliases, and duplicated lookup cardinality rules no longer establish
+DSL discovery eligibility. The next stage is the planned consumer audit and
+compatibility cleanup.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

@@ -68,14 +68,16 @@ def _record(
 
 
 def _graph() -> CapabilityGraph:
+    # Synthetic generic discovery keeps these tests focused on requirements.
+    # Lookup-only production endpoints are covered by candidate-resolver tests.
     endpoints = (
-        _endpoint("fink", "lsst", "objects", "object_summary"),
+        _endpoint("fink", "lsst", "objects", "object_summary", "object_search"),
         _endpoint("fink", "lsst", "conesearch", "spatial_search"),
         _endpoint("fink", "lsst", "sources", "lightcurve"),
-        _endpoint("fink", "ztf", "objects", "object_summary"),
-        _endpoint("antares", "ztf", "object", "object_lookup"),
+        _endpoint("fink", "ztf", "objects", "object_summary", "object_search"),
+        _endpoint("antares", "ztf", "object", "object_lookup", "object_search"),
         _endpoint("antares", "ztf", "cone", "cone_search"),
-        _endpoint("lasair", "ztf", "object", "object_lookup"),
+        _endpoint("lasair", "ztf", "object", "object_lookup", "object_search"),
         _endpoint(
             "alerce",
             "lsst",
