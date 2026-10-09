@@ -55,6 +55,13 @@ it. The fixture now renames `capabilities.yaml`. The compatibility loader and CI
 trigger remain for unmigrated providers; declarations in both locations for the
 same provider are rejected instead of silently choosing one.
 
+Cleanup update (branch 10a): after all production request translations migrated,
+the compatibility loader was removed. `request_mappings.yaml` now causes a graph
+construction error directing authors to `predicate_bindings` in provider
+`capabilities.yaml`, including providers without recipes. DSL CI watches all
+provider YAML contracts. The branch 07 behavior above describes the migration
+stage; see `recipe_predicate_cleanup.md` for the current handoff.
+
 ## Local verification and PR
 
 Tests were not executed in the editing environment. Import and check locally:

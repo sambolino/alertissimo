@@ -170,6 +170,22 @@ operation aliases, and duplicated lookup cardinality rules no longer establish
 DSL discovery eligibility. The next stage is the planned consumer audit and
 compatibility cleanup.
 
+`refactor/recipes-10a-predicate-cleanup` starts that cleanup with the completed
+request-translation migration. No production provider retains
+`request_mappings.yaml`; graph construction now rejects that retired file with
+instructions to use `predicate_bindings` in provider `capabilities.yaml`. The
+duplicate loader and recipe fallback are removed. The compiled
+`RequestConstraintCapability` API remains the input to predicate realization.
+DSL CI watches all provider YAML contracts, including any accidentally restored
+legacy file.
+
+The consumer audit also found remaining uses of physical `bind`/`binding.roles`
+in encoding, recipe contract validation, normalization identity, and live
+provenance inspection. These declarations are retained. Operation tags still
+serve DSL requirement evidence and unowned compatibility paths; they must not be
+removed until those consumers are migrated or explicitly retained. Cleanup will
+continue in small branches rather than deleting all metadata together.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

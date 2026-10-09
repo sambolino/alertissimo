@@ -22,7 +22,7 @@ class PredicateRealization(RuntimeModel):
 
     ``pushdown`` and ``residual`` remain semantic predicates. ``params`` contains
     only the physical request values proven equivalent to ``pushdown`` by the
-    provider's request mappings. Residual evaluation happens after normalization.
+    provider's predicate bindings. Residual evaluation happens after normalization.
     """
 
     pushdown: Predicate | None = None

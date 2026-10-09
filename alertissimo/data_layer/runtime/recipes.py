@@ -465,13 +465,6 @@ def load_provider_capabilities(
             document.get("predicate_bindings", {}), graph, endpoint_defs,
             broker=broker, origin=origin,
         )
-        legacy = tuple(
-            item for item in graph.request_constraint_capabilities
-            if item.broker == broker and item.origin == origin
-        ) if path.with_name("request_mappings.yaml").is_file() else ()
-        if predicates and legacy:
-            raise RecipeRegistryError("predicate bindings must not also be authored in request_mappings.yaml")
-        available_bindings = predicates or legacy
         defaults = _mapping(transport_defaults or {}, "transport_defaults")
         selections = _latest_selections(
             document.get("selection_bindings", {}), graph, endpoint_defs,
@@ -480,7 +473,7 @@ def load_provider_capabilities(
         if any(
             binding.endpoint == selection.endpoint
             and binding.parameter in {item.parameter for item in selection.params}
-            for binding in available_bindings for selection in selections
+            for binding in predicates for selection in selections
         ):
             raise RecipeRegistryError("selection parameters conflict with predicate bindings")
         models = _step_models()
@@ -558,7 +551,7 @@ def load_provider_capabilities(
                     if required and any(not calls[owner].required for owner in dependencies):
                         raise RecipeRegistryError(f"{call_where}: required call depends on an optional call")
                     call_bindings = tuple(
-                        item for item in available_bindings if item.endpoint == endpoint
+                        item for item in predicates if item.endpoint == endpoint
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
                     if any(item.parameter in params or item.parameter in fixed for item in call_bindings):
                         raise RecipeRegistryError(f"{call_where}: predicate binding conflicts with a parameter assignment/fixed value")
