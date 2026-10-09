@@ -230,6 +230,19 @@ the shared IR resolver's responsibility. Local methods and ontology gates remain
 unchanged. Further cleanup can now audit operation tags against the remaining
 unowned routing consumers.
 
+`refactor/recipes-10f-lasair-ztf-tags` starts the provider-by-provider cleanup.
+Lasair ZTF's object, objects, lightcurves, cone, sherlock_object, and
+sherlock_objects endpoints no longer author `operation_types`; the six owned
+operations resolve through recipes. The composite cone's optional SQL supplement
+still uses its authored recipe and physical membership encoder. The unowned SQL
+and positional Sherlock endpoints retain their compatibility tags. An audit of
+Python consumers found operation-tag routing only in shared unowned-operation
+resolution and default confirmation tiers; owned confirmation supplies recipe
+tiers explicitly. Physical bind roles remain required by encoding, cardinality,
+confirmation identity proof, and normalization. Compatibility graph queries stay
+available and their tests use explicit fixtures rather than migrated declarations.
+Other providers remain separate cleanup branches.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

@@ -11,7 +11,9 @@ from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.ir import ConeSearchStep, Source, WorkflowIR
-from alertissimo.orchestration.planner import PlanningDeferredError, plan_step, plan_workflow
+from alertissimo.orchestration.planner import (
+    PlanningDeferredError, UnsupportedStepError, plan_step, plan_workflow,
+)
 from alertissimo.orchestration.runtime import WorkflowRun
 from alertissimo.orchestration.validation import validate_step_capabilities
 
@@ -107,6 +109,15 @@ def test_follow_up_is_not_invented_for_atomic_or_legacy_cone(tmp_path):
     graph = build_capability_graph(root)
     assert [plan.endpoint for plan in plan_step(cone(), graph)] == ["cone"]
     legacy = replace(graph, recipe_capabilities=())
+    with pytest.raises(UnsupportedStepError):
+        plan_step(cone(), legacy)
+    # Compatibility routing requires an explicit tag; production Lasair ZTF
+    # cone routing now belongs to its recipe.
+    legacy = replace(legacy, endpoint_capabilities=tuple(
+        replace(endpoint, operation_types=("cone_search",))
+        if endpoint.endpoint == "cone" else endpoint
+        for endpoint in legacy.endpoint_capabilities
+    ))
     assert [plan.endpoint for plan in plan_step(cone(), legacy)] == ["cone"]
 
 

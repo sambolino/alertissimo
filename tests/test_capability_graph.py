@@ -194,7 +194,24 @@ def test_canonical_semantic_nouns_preserve_qualified_graph_types():
 
 
 def test_generic_endpoint_query_combines_source_operation_and_semantics():
-    graph = build_capability_graph()
+    # Compatibility-tag queries remain supported independently of which
+    # production endpoints have migrated to recipes.
+    endpoints = tuple(
+        capabilities.EndpointCapability(
+            broker=broker, origin=origin, endpoint="cone", path="/cone", method="GET",
+            operation_types=("cone_search",), params=(), server_filters=(),
+            projection_param=None, supports_projection=False, output_type="array",
+        )
+        for broker in ("lasair", "other") for origin in ("ztf", "lsst")
+    )
+    records = tuple(
+        capabilities.SemanticRecordCapability(
+            item.broker, item.origin, f"summary@{item.origin}:{item.broker}",
+            ("cone",), ("identity.object_id",),
+        )
+        for item in endpoints
+    )
+    graph = capabilities.CapabilityGraph(endpoints, (), (), (), records)
     unconstrained = graph.query_endpoints(operation_type="cone_search")
     broker = graph.query_endpoints(broker="lasair", operation_type="cone_search")
     origin = graph.query_endpoints(origin="lsst", operation_type="cone_search")

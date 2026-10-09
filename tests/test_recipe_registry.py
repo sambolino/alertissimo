@@ -52,7 +52,10 @@ def test_absent_recipes_preserve_existing_graph(tmp_path):
     graph = build_capability_graph(root)
     assert graph.recipe_capabilities == ()
     assert graph.query_recipes(op="cone_search") == ()
-    assert graph.query_endpoints(broker="lasair", origin="ztf", operation_type="cone_search")
+    cone = next(item for item in graph.endpoints_for("lasair", "ztf") if item.endpoint == "cone")
+    assert cone.operation_types == ()
+    assert graph.query_endpoints(broker="lasair", origin="ztf", operation_type="cone_search") == ()
+    assert graph.query_endpoints(broker="lasair", origin="ztf", operation_type="sql_query")
 
 
 def test_compiles_candidate_dependency_and_keeps_call_output_evidence(tmp_path):

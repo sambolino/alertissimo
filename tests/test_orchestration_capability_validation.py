@@ -37,7 +37,7 @@ from alertissimo.orchestration.validation import (
 )
 
 
-def test_cone_and_sql_require_their_registered_operations():
+def test_cone_uses_recipes_and_untranslated_sql_defers():
     graph = build_capability_graph()
     cone = ConeSearchStep(
         semantic_type="summary", ra=1, dec=2, radius=3,
@@ -47,8 +47,13 @@ def test_cone_and_sql_require_their_registered_operations():
         semantic_type="summary", query="SELECT objectId",
         sources=[Source(broker="lasair", origin="ztf")],
     )
-    assert {op for item in candidate_capabilities(cone, graph)
-            for op in item.operation_types} >= {"cone_search"}
+    result = validate_step_capabilities(cone, graph)
+    assert result.status == "supported"
+    assert {item.endpoint for item in result.candidates} == {"cone"}
+    recipe, = result.source_results[0].recipes
+    assert recipe.op == "cone_search"
+    assert [call.endpoint for call in recipe.calls] == ["cone", "query"]
+    assert result.candidates[0].operation_types == ()
     assert validate_step_capabilities(sql, graph).status == "deferred"
     assert candidate_capabilities(sql, graph) == ()
 
@@ -199,7 +204,13 @@ def test_other_retrieval_rules_use_explicit_and_semantic_registry_evidence():
     )
     assert forced.status == crossmatch.status == "supported"
     assert all("forced_photometry" in item.operation_types for item in forced.candidates)
-    assert any("context_lookup" in item.operation_types for item in crossmatch.candidates)
+    assert {item.endpoint for item in crossmatch.candidates} == {
+        "object", "objects", "sherlock_object", "sherlock_objects",
+    }
+    assert len(crossmatch.source_results[0].recipes) == 4
+    assert all(recipe.op == "get_crossmatch"
+               for recipe in crossmatch.source_results[0].recipes)
+    assert all(item.operation_types == () for item in crossmatch.candidates)
 
 
 def test_known_and_missing_data_products_report_cleanly():

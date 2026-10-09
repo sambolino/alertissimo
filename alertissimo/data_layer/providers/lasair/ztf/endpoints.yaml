@@ -34,7 +34,6 @@ endpoints:
         type: boolean
         description: Optional Lasair response-mode flag; both true and false are accepted by the observed ZTF endpoint.
     output: {type: object}
-    operation_types: [object_lookup]
     server_filters: [objectId, lasair_added, lite]
     projection: {supports_columns: false}
 
@@ -52,7 +51,6 @@ endpoints:
           collection: csv
         description: Comma-separated ZTF objectIds.
     output: {type: array}
-    operation_types: [object_lookup]
     server_filters: [objectIds]
     projection: {supports_columns: false}
 
@@ -71,7 +69,6 @@ endpoints:
           max_items: 50
         description: Comma-separated ZTF objectIds; at most 50 object IDs are accepted.
     output: {type: array}
-    operation_types: [lightcurve_lookup]
     server_filters: [objectIds]
     projection: {supports_columns: false}
 
@@ -106,7 +103,6 @@ endpoints:
         default: all
         description: 'Cone request type: nearest, all, or count; observed response shape depends on this parameter.'
     output: {type: array}
-    operation_types: [cone_search]
     server_filters: [ra, dec, radius, requestType]
     projection: {supports_columns: false}
 
@@ -168,7 +164,6 @@ endpoints:
         default: true
         description: Return reduced Sherlock context when true; false exposes the fuller crossmatch surface.
     output: {type: object}
-    operation_types: [context_lookup]
     server_filters: [objectId, lite]
     projection: {supports_columns: false}
 
@@ -191,7 +186,6 @@ endpoints:
         default: true
         description: Return reduced Sherlock context when true; false exposes the fuller crossmatch surface.
     output: {type: object}
-    operation_types: [context_lookup]
     server_filters: [objectIds, lite]
     projection: {supports_columns: false}
 
