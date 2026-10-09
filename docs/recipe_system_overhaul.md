@@ -186,6 +186,16 @@ serve DSL requirement evidence and unowned compatibility paths; they must not be
 removed until those consumers are migrated or explicitly retained. Cleanup will
 continue in small branches rather than deleting all metadata together.
 
+`refactor/recipes-10b-dsl-retrievals` removes the DSL-only operation fallback for
+lightcurve and data-product requirements. These requirements, and the existing
+cutout lowering rule when admitted by the supplied ontology, now lower their
+actual Get operation and consume the shared IR validation result. Owned recipes
+cannot be bypassed through a family mapping or operation tag. Source overrides,
+per-origin diagnostics, and clause metadata are preserved. Ontology validation
+remains the first gate; no new scientific nouns or physical product translations
+are introduced. Qualified classification/crossmatch requirement checks and their
+discovery-material context remain a separate follow-up before tag removal.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

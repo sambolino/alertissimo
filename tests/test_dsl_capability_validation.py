@@ -211,7 +211,7 @@ def test_fully_qualified_general_where_implies_same_classification_capability():
     assert requirements[0].status is SurfaceCapabilityStatus.SUPPORTED
 
 
-def test_lightcurve_can_be_supported_by_registered_operation_fallback():
+def test_unowned_lightcurve_uses_the_shared_ir_compatibility_resolver():
     report = _validate("objects from lsst via fink\nwith lightcurve\n")
 
     requirement = next(

@@ -2,7 +2,8 @@
 
 This module bridges an ontology-valid ``SurfaceScript`` to the existing
 data-layer ``CapabilityGraph``. It never selects an endpoint, binds parameters,
-executes providers. Candidate and selection checks reuse the orchestration resolver.
+executes providers. Candidate, selection, and migrated retrieval checks reuse the
+orchestration resolver.
 """
 
 from __future__ import annotations
@@ -130,10 +131,7 @@ class SurfaceCapabilityReport(BaseModel):
 
 
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
-_PROVIDER_OPERATION_FALLBACKS: dict[str, frozenset[str]] = {
-    "lightcurve": frozenset({"lightcurve", "lightcurve_lookup"}),
-    "data_product": frozenset({"data_product_lookup"}),
-}
+_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product"})
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
 
 
@@ -279,23 +277,46 @@ def _candidate_checks(
     )
 
 
-def _operation_fallback(
-    graph: CapabilityGraph,
+def _retrieval_requirement_checks(
+    surface: SurfaceScript,
+    clause: RequirementClause,
     *,
+    clause_index: int,
     noun: str,
-    origin: str,
-    broker: str | None,
-    producer: str | None,
-) -> tuple[EndpointCapability, ...]:
-    operations = _PROVIDER_OPERATION_FALLBACKS.get(noun)
-    if not operations:
-        return ()
-    if producer is not None and producer.lower() != origin.lower():
-        return ()
+    graph: CapabilityGraph,
+    record_types: frozenset[str],
+) -> tuple[SurfaceCapabilityCheck, ...]:
+    """Check the exact retrieval emitted by lowering, before endpoint selection."""
+    # Pure IR construction; the lazy import avoids the compiler validation cycle.
+    from .lowering import SurfaceLoweringError, _lower_requirement
+
+    broker = clause.via or surface.candidates.broker
+    try:
+        step = _lower_requirement(
+            surface, clause, clause_index=clause_index, record_types=record_types,
+        )
+    except SurfaceLoweringError as error:
+        return tuple(
+            SurfaceCapabilityCheck(
+                subject="requirement", status=SurfaceCapabilityStatus.DEFERRED,
+                reason=str(error), clause_index=clause_index,
+                origin=origin, broker=broker, semantic_noun=noun,
+                producer=clause.source, channel=broker,
+            )
+            for origin in surface.candidates.origins
+        )
+
+    result = validate_step_capabilities(step, graph)
     return tuple(
-        endpoint
-        for endpoint in graph.query_endpoints(broker=broker, origin=origin)
-        if operations.intersection(endpoint.operation_types)
+        SurfaceCapabilityCheck(
+            subject="requirement", status=SurfaceCapabilityStatus(item.status),
+            reason=item.reason, clause_index=clause_index,
+            origin=item.source.origin if item.source is not None else None,
+            broker=item.source.broker if item.source is not None else None,
+            semantic_noun=noun, producer=clause.source, channel=broker,
+            evidence=_endpoint_evidence(item.candidates),
+        )
+        for item in result.source_results
     )
 
 
@@ -355,6 +376,12 @@ def _requirement_checks(
             for origin in surface.candidates.origins
         )
 
+    if noun in _RETRIEVAL_REQUIREMENTS:
+        return _retrieval_requirement_checks(
+            surface, clause, clause_index=clause_index, noun=noun,
+            graph=graph, record_types=record_types,
+        )
+
     checks: list[SurfaceCapabilityCheck] = []
     for origin in surface.candidates.origins:
         records = graph.query_records(
@@ -388,21 +415,7 @@ def _requirement_checks(
             reason = "exact registered semantic-record capability found"
             evidence = _record_evidence(exact)
         else:
-            endpoints = _operation_fallback(
-                graph,
-                noun=noun,
-                origin=origin,
-                broker=broker,
-                producer=clause.source,
-            )
-            if endpoints:
-                status = SurfaceCapabilityStatus.SUPPORTED
-                reason = (
-                    "registered provider operation can satisfy the product even "
-                    "though no first-level semantic record is materialized directly"
-                )
-                evidence = _endpoint_evidence(endpoints)
-            elif dynamic and _dynamic_records_are_selectable(
+            if dynamic and _dynamic_records_are_selectable(
                 dynamic, noun=noun, graph=graph
             ):
                 status = SurfaceCapabilityStatus.SUPPORTED
