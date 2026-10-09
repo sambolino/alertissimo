@@ -196,6 +196,16 @@ remains the first gate; no new scientific nouns or physical product translations
 are introduced. Qualified classification/crossmatch requirement checks and their
 discovery-material context remain a separate follow-up before tag removal.
 
+`refactor/recipes-10c-dsl-crossmatch` completes the crossmatch requirement route.
+Explicit and implied catalog requirements now lower GetCrossmatch and use its
+shared per-source resolver. A catalog mapped by another endpoint cannot establish
+targeted retrieval support. Supported reports retain qualified record labels but
+limit endpoint names to eligible retrievals; deferred/unsupported checks expose
+the IR diagnostic without presenting an ineligible mapping as executable evidence.
+Classification requirements remain separate because the planner can resolve a
+deferred dynamic classifier from required discovery material under execution-reuse
+constraints. That workflow context must be preserved before their final cutover.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

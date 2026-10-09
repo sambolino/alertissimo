@@ -173,9 +173,8 @@ def test_dynamic_crossmatch_producer_mapping_remains_deferred_not_wildcard():
         check for check in report.checks if check.subject == "requirement"
     )
     assert requirement.status is SurfaceCapabilityStatus.DEFERRED
-    assert {
-        evidence.semantic_record_type for evidence in requirement.evidence
-    } == {"crossmatch@{producer}:lasair"}
+    assert "dynamic producer mapping" in requirement.reason
+    assert requirement.evidence == ()
 
 
 def test_dynamic_classification_producer_is_supported_with_explicit_classifier_selector():
