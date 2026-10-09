@@ -30,9 +30,6 @@ endpoints:
         description: Include Lasair-added Sherlock, TNS, annotation, and image-url context.
     output:
       type: object
-    operation_types:
-    - object_lookup
-    - lightcurve_lookup
     server_filters:
     - objectId
     - lasair_added
@@ -74,8 +71,6 @@ endpoints:
         description: 'Cone request type: nearest, all, or count.'
     output:
       type: object
-    operation_types:
-    - cone_search
     server_filters:
     - ra
     - dec
@@ -144,8 +139,6 @@ endpoints:
         description: Return lite Sherlock context when true.
     output:
       type: object
-    operation_types:
-    - context_lookup
     server_filters:
     - objectId
     - lite

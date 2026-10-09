@@ -243,6 +243,15 @@ confirmation identity proof, and normalization. Compatibility graph queries stay
 available and their tests use explicit fixtures rather than migrated declarations.
 Other providers remain separate cleanup branches.
 
+`refactor/recipes-10g-lasair-lsst-tags` completes the same cleanup for Lasair LSST.
+Its object, cone, and sherlock_object declarations retire their operation tags;
+lookup, cone search, full object history, classification, crossmatch, and
+confirmation already use provider recipes. SQL and positional Sherlock retain
+their compatibility declarations. The frozen LSST capture continues to verify
+lightcurve and forced-history normalization, identity, counts, and response
+shapes; retrieval support is established by existing recipe tests rather than
+the retired object/lightcurve tags. Physical encoders and mappings remain intact.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

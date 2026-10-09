@@ -80,15 +80,20 @@ def test_endpoint_contracts_are_physical_rest_operations() -> None:
                 assert endpoint["projection"] == {"supports_columns": False}
 
 
-def test_ztf_recipe_owned_endpoints_retire_operation_tags() -> None:
-    endpoints = load("ztf", "endpoints.yaml")["endpoints"]
-    for name in (
-        "object", "objects", "lightcurves", "cone",
-        "sherlock_object", "sherlock_objects",
-    ):
-        assert "operation_types" not in endpoints[name]
-    assert endpoints["query"]["operation_types"] == ["sql_query"]
-    assert endpoints["sherlock_position"]["operation_types"] == ["context_lookup"]
+def test_recipe_owned_endpoints_retire_operation_tags() -> None:
+    migrated = {
+        "ztf": (
+            "object", "objects", "lightcurves", "cone",
+            "sherlock_object", "sherlock_objects",
+        ),
+        "lsst": ("object", "cone", "sherlock_object"),
+    }
+    for origin, names in migrated.items():
+        endpoints = load(origin, "endpoints.yaml")["endpoints"]
+        for name in names:
+            assert "operation_types" not in endpoints[name]
+        assert endpoints["query"]["operation_types"] == ["sql_query"]
+        assert endpoints["sherlock_position"]["operation_types"] == ["context_lookup"]
 
 
 def test_mappings_use_minimal_payload_references() -> None:
