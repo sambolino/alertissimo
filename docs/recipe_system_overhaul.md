@@ -157,6 +157,11 @@ whole-query recipes use the shared discovery resolver and physical query role.
 required recipe call and its compiled outputs. Optional supplements cannot satisfy
 a later mandatory retrieval. Remaining semantic-provider eligibility is audited
 separately before cleanup.
+`refactor/recipes-09e-discovery` audits remaining semantic-discovery eligibility.
+Specialized search aliases and missing mandatory physical inputs now defer in IR
+validation and planning, including wildcard recipe resolution. A final small
+cutover branch will align DSL candidate checks with this shared resolver before
+cleanup.
 
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
