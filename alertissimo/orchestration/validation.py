@@ -145,7 +145,7 @@ def _search_recipe_evidence(
     migrated = {(recipe.broker, recipe.origin) for recipe in declared}
     unmigrated = (
         _legacy_candidate_evidence_for_source(step, graph, source).compatible
-        if isinstance(step, SqlQueryStep) else _raw_candidates_for_source(step, graph, source)
+        if isinstance(step, (SemanticSearchStep, SqlQueryStep)) else _raw_candidates_for_source(step, graph, source)
     )
     legacy = tuple(
         endpoint for endpoint in unmigrated
@@ -911,6 +911,23 @@ def _legacy_candidate_evidence_for_source(
     empty_status: ValidationStatus = "unsupported"
     empty_reason: str | None = None
     target = _target_selector(step)
+
+    if isinstance(step, SemanticSearchStep) and raw:
+        # Alert/tag/anomaly/geometry aliases describe specialized populations,
+        # not a translation of generic semantic discovery. Do not silently pick
+        # a parameter-free specialized endpoint as the remaining alternative.
+        generic = tuple(item for item in raw if "object_search" in item.operation_types)
+        compatible = tuple(item for item in generic if not item.required_params)
+        if step.criteria or step.time_context is not None:
+            compatible = ()
+            empty_reason = "semantic search inputs have no declared recipe translation: criteria/time_context"
+        elif not generic:
+            empty_reason = "semantic discovery has only specialized search populations; an explicit recipe translation is required"
+        elif not compatible:
+            required = tuple(sorted({name for item in generic for name in item.required_params}))
+            empty_reason = f"semantic discovery requires physical inputs {required!r} with no declared recipe translation"
+        if not compatible:
+            empty_status = "deferred"
 
     if isinstance(step, SqlQueryStep):
         compatible = tuple(item for item in compatible if "query" in item.binding_roles)

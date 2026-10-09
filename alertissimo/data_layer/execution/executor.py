@@ -57,7 +57,7 @@ class RegistryEndpointExecutor:
             contract = contract or {}
             if name not in validated and "default" in contract:
                 validated[name] = contract["default"]
-            if contract.get("required") is True and name not in validated:
+            if contract.get("required") is True and name not in validated and name not in spec.fixed_params:
                 raise ValueError(f"missing required endpoint parameter: {name}")
         # Fixed values are executor-owned and are deliberately applied last.
         validated.update(spec.fixed_params)

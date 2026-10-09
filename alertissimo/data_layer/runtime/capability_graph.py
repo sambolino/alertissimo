@@ -39,6 +39,8 @@ class EndpointCapability:
     binding_roles: tuple[str, ...] = ()
     collection_binding_roles: tuple[str, ...] = ()
     output_format_params: tuple[str, ...] = ()
+    # Required caller inputs after parameter and transport defaults are applied.
+    required_params: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -350,9 +352,14 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             raise CapabilityGraphError(f"{endpoint_path}: broker/origin do not match mappings.yaml")
 
         endpoint_defs = _dict(endpoints_doc.get("endpoints"), f"{endpoint_path}: endpoints")
+        transport_defaults = _dict(
+            endpoints_doc.get("transport_defaults") or {}, f"{endpoint_path}: transport_defaults"
+        )
+        provider_fixed_params = _dict(
+            transport_defaults.get("fixed_params", {}), f"{endpoint_path}: fixed_params"
+        )
         recipe_providers[mapping_path.parent] = (
-            broker, origin, endpoint_defs,
-            endpoints_doc.get("transport_defaults") or {},
+            broker, origin, endpoint_defs, transport_defaults,
         )
         for endpoint, raw_spec in endpoint_defs.items():
             if not isinstance(endpoint, str):
@@ -391,6 +398,10 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 and declaration["binding"].get("collection") is not None
                 for role in _parameter_binding_roles(declaration)
             }))
+            fixed_params = {
+                **provider_fixed_params,
+                **_dict(transport.get("fixed_params", {}), f"{endpoint_path}: endpoint {endpoint!r} fixed_params"),
+            }
             endpoint_items.append(EndpointCapability(
                 broker, origin, endpoint, path, method,
                 _strings(spec.get("operation_types"), f"{endpoint_path}: operation_types"),
@@ -402,6 +413,11 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
                 tuple(sorted(
                     name for name, declaration in params.items()
                     if isinstance(declaration, dict) and declaration.get("role") == "output_format"
+                )),
+                tuple(sorted(
+                    name for name, declaration in params.items()
+                    if isinstance(declaration, dict) and declaration.get("required")
+                    and declaration.get("default") is None and name not in fixed_params
                 )),
             ))
 
