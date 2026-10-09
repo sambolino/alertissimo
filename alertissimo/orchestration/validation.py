@@ -131,8 +131,8 @@ class _CandidateEvidence:
     recipes: tuple[RecipeCapability, ...] = ()
 
 
-def _cone_recipe_evidence(
-    step: ConeSearchStep, graph: CapabilityGraph, source: Source | None,
+def _search_recipe_evidence(
+    step: ConeSearchStep | SemanticSearchStep, graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
     """Recipes own migrated providers; legacy tags cover only the others."""
     declared = graph.query_recipes(
@@ -154,6 +154,7 @@ def _cone_recipe_evidence(
     feasible = []
     reasons = []
     raw = list(legacy)
+    discovery = "cone" if isinstance(step, ConeSearchStep) else "semantic search"
     for recipe in declared:
         matching_calls = tuple(
             call for call in recipe.calls if call.required and any(
@@ -166,7 +167,7 @@ def _cone_recipe_evidence(
         raw.extend(endpoints[(recipe.broker, recipe.origin, call.endpoint)] for call in matching_calls)
         call = recipe.calls[0]
         if call not in matching_calls:
-            reasons.append("cone discovery call must be required and map the requested record family")
+            reasons.append(f"{discovery} discovery call must be required and map the requested record family")
             continue
         # Activate discovery followed by identity-bound retrievals. Independent
         # calls and dependencies on supplementary results need further evidence.
@@ -175,7 +176,7 @@ def _cone_recipe_evidence(
              if isinstance(parameter.source, CallValueSource)} != {0}
             for later in recipe.calls[1:]
         ):
-            reasons.append("cone follow-up calls must consume the discovery identities")
+            reasons.append(f"{discovery} follow-up calls must consume the discovery identities")
             continue
         paths = set()
         for parameter in call.params:
@@ -185,15 +186,15 @@ def _cone_recipe_evidence(
                 if isinstance(value, EncoderValueSource) else (value,)
             )
             paths.update(item.path for item in sources if isinstance(item, StepValueSource))
-        if not {("ra",), ("dec",), ("radius",)} <= paths:
+        if isinstance(step, ConeSearchStep) and not {("ra",), ("dec",), ("radius",)} <= paths:
             reasons.append("cone recipe does not bind all canonical cone coordinates")
             continue
         unrepresented = tuple(
             field for field in ("magnitude_limit", "time_context")
-            if getattr(step, field) is not None and (field,) not in paths
+            if getattr(step, field, None) is not None and (field,) not in paths
         )
         if unrepresented or step.criteria:
-            reasons.append(f"cone inputs have no declared translation: {unrepresented or ('criteria',)}")
+            reasons.append(f"{discovery} inputs have no declared translation: {unrepresented or ('criteria',)}")
             continue
         feasible.append(recipe)
     compatible = legacy + tuple(
@@ -203,7 +204,7 @@ def _cone_recipe_evidence(
     return _CandidateEvidence(
         raw=tuple(raw), compatible=compatible, recipes=tuple(feasible),
         empty_status="deferred" if reasons else "unsupported",
-        empty_reason="; ".join(dict.fromkeys(reasons)) or "no cone recipe produces the requested record family",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or f"no {discovery} recipe produces the requested record family",
     )
 
 
@@ -809,8 +810,8 @@ def _operation_candidate_evidence_for_source(
         recipes = _lookup_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
-    if isinstance(step, ConeSearchStep):
-        recipes = _cone_recipe_evidence(step, graph, source)
+    if isinstance(step, (ConeSearchStep, SemanticSearchStep)):
+        recipes = _search_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
     if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):

@@ -143,6 +143,10 @@ cases for meaningful contract changes; run them on the user's machine.
 
 The retrieval stage is split by operation, beginning with
 `refactor/recipes-06a-lookup` and then classification retrieval.
+The cutover stage also proceeds in small branches. `refactor/recipes-09a-search`
+migrates ALeRCE ZTF/LSST semantic discovery and shares its candidate resolver with
+cone recipes. SQL translation, confirmation evidence, and reuse audits remain
+separate follow-ups before cleanup.
 
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous

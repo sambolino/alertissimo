@@ -12,6 +12,9 @@ predicate_bindings:
       operator: ">="
       parameter: probability
 recipes:
+  semantic_search:
+    - calls:
+        - endpoint: query_objects
   cone_search:
     - calls:
         - endpoint: query_objects

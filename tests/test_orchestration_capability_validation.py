@@ -56,12 +56,14 @@ def test_cone_and_sql_require_their_registered_operations():
 def test_semantic_search_checks_record_family_and_real_alerce_lsst_source():
     graph = build_capability_graph()
     supported = SemanticSearchStep(
-        semantic_type="summary", criteria={"untranslated": True},
+        semantic_type="summary",
         sources=[Source(broker="alerce", origin="lsst")],
     )
     unsupported = supported.model_copy(update={"semantic_type": "spectrum"})
     assert validate_step_capabilities(supported, graph).status == "supported"
     assert validate_step_capabilities(unsupported, graph).status == "unsupported"
+    untranslated = supported.model_copy(update={"criteria": {"untranslated": True}})
+    assert validate_step_capabilities(untranslated, graph).status == "deferred"
 
 
 def test_each_explicit_source_must_be_supported():
