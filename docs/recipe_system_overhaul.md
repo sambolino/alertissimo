@@ -217,6 +217,19 @@ Retrieval-material intent and positive-reference semantics are shared rather tha
 copied into the DSL. The DSL classification shortcut remains for the next small
 branch, which will consume this proof together with its actual lowered prefix.
 
+`refactor/recipes-10e-dsl-classification` completes that DSL cutover. Explicit and
+implied classification requirements now validate their actual lowered Get intent.
+A deferred fresh selector becomes supported only through the shared material
+proof for the compiler's emitted occurrence and canonical prefix. Pure lowering
+loops provide those prefixes without planning or rebuilding workflow order in the
+validator. Continuations use the actual base WorkflowIR, including intervening
+filters/selection and existing requirement deduplication. Supported checks retain
+qualified labels scoped to the proven retrieval or discovery owner. The DSL-only
+classifier-parameter shortcut is removed; provider-unowned compatibility remains
+the shared IR resolver's responsibility. Local methods and ontology gates remain
+unchanged. Further cleanup can now audit operation tags against the remaining
+unowned routing consumers.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

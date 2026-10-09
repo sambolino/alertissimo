@@ -636,13 +636,19 @@ def lower_surface(
     name: str | None = None,
 ) -> SurfaceCompilation:
     """Lower ontology-valid surface intent into scientific IR plus view metadata."""
-
     semantic_model = semantic_paths or _semantic_path_model()
     _validate_semantics(surface, semantic_model)
+    return _lower_surface_intent(surface, record_types=semantic_model.record_types, name=name)
 
+
+def _lower_surface_intent(
+    surface: SurfaceScript, *, record_types: frozenset[str], name: str | None = None,
+    stop_before: tuple[str, str | None, str | None] | None = None,
+) -> SurfaceCompilation:
+    """Build canonical intent, optionally stopping at one retrieval occurrence."""
     candidate_step, consumed = _candidate_operation(
         surface,
-        record_types=semantic_model.record_types,
+        record_types=record_types,
     )
     steps = [candidate_step]
     first_filter = _first_filter_index(surface)
@@ -654,7 +660,7 @@ def lower_surface(
         for clause in surface.clauses
         if isinstance(clause, RequirementClause)
         for signature in [
-            _requirement_signature(surface, clause, semantic_model.record_types)
+            _requirement_signature(surface, clause, record_types)
         ]
         if signature is not None
     }
@@ -677,21 +683,23 @@ def lower_surface(
                 for implied in _implicit_requirements_from_where(
                     surface,
                     clause,
-                    record_types=semantic_model.record_types,
+                    record_types=record_types,
                 ):
                     signature = _requirement_signature(
-                        surface, implied, semantic_model.record_types
+                        surface, implied, record_types
                     )
                     if signature is None or signature in emitted:
                         continue
                     if signature in explicit_signatures:
                         continue
+                    if signature == stop_before:
+                        return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
                     steps.append(
                         _lower_requirement(
                             surface,
                             implied,
                             clause_index=index,
-                            record_types=semantic_model.record_types,
+                            record_types=record_types,
                         )
                     )
                     emitted.add(signature)
@@ -699,7 +707,7 @@ def lower_surface(
 
         if isinstance(clause, RequirementClause):
             signature = _requirement_signature(
-                surface, clause, semantic_model.record_types
+                surface, clause, record_types
             )
             if signature is None:
                 raise SurfaceLoweringError(
@@ -708,12 +716,14 @@ def lower_surface(
                     clause_index=index,
                 )
             if signature not in emitted:
+                if signature == stop_before:
+                    return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
                 steps.append(
                     _lower_requirement(
                         surface,
                         clause,
                         clause_index=index,
-                        record_types=semantic_model.record_types,
+                        record_types=record_types,
                     )
                 )
                 emitted.add(signature)
@@ -723,7 +733,7 @@ def lower_surface(
                     surface,
                     clause,
                     noun=signature[0],
-                    record_types=semantic_model.record_types,
+                    record_types=record_types,
                     clause_index=index,
                 )
                 if scoped is not None:
@@ -733,7 +743,7 @@ def lower_surface(
                 FilterStep(
                     predicate=_semantic_predicate(
                         clause.condition,
-                        record_types=semantic_model.record_types,
+                        record_types=record_types,
                         clause_index=index,
                     )
                 )
@@ -744,7 +754,7 @@ def lower_surface(
                 previous = surface.clauses[index - 1]
                 attached_predicate = _semantic_predicate(
                     previous.condition,
-                    record_types=semantic_model.record_types,
+                    record_types=record_types,
                     clause_index=index - 1,
                 )
             steps.append(
@@ -771,6 +781,11 @@ def lower_surface(
                 clause_index=index,
             )
 
+    if stop_before is not None:
+        raise SurfaceLoweringError(
+            "requirement has no emitted retrieval occurrence in this workflow",
+            code="missing_requirement_occurrence",
+        )
     return SurfaceCompilation(
         workflow=WorkflowIR(steps=steps, name=name),
         view=view,
@@ -884,9 +899,20 @@ def compile_surface_fragment(
                 clause_index=check.clause_index,
             )
 
+    return _lower_fragment_intent(
+        context, base_workflow, record_types=semantic_model.record_types, name=name,
+    )
+
+
+def _lower_fragment_intent(
+    context: SurfaceScript, base_workflow: WorkflowIR, *,
+    record_types: frozenset[str], name: str | None = None,
+    stop_before: tuple[str, str | None, str | None] | None = None,
+) -> SurfaceCompilation:
+    """Lower continuation intent using its actual canonical base."""
     steps = list(base_workflow.steps)
     view = ResultViewSpec()
-    for index, clause in enumerate(fragment.clauses):
+    for index, clause in enumerate(context.clauses):
         if isinstance(clause, OrderByClause):
             view = ResultViewSpec(
                 order_by=ResultOrderSpec(
@@ -900,18 +926,26 @@ def compile_surface_fragment(
                 context,
                 clause,
                 clause_index=index,
-                record_types=semantic_model.record_types,
+                record_types=record_types,
             )
+            if _requirement_signature(context, clause, record_types) == stop_before:
+                prefix = steps[:steps.index(step)] if step in steps else steps
+                if not prefix:
+                    raise SurfaceLoweringError(
+                        "existing retrieval has no earlier discovery context",
+                        code="missing_requirement_occurrence",
+                    )
+                return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
             if step not in steps:
                 steps.append(step)
             if clause.predicates:
-                noun = resolve_record_type(clause.product, semantic_model.record_types)
+                noun = resolve_record_type(clause.product, record_types)
                 assert noun is not None
                 scoped = _scoped_requirement_predicate(
                     context,
                     clause,
                     noun=noun,
-                    record_types=semantic_model.record_types,
+                    record_types=record_types,
                     clause_index=index,
                 )
                 if scoped is not None:
@@ -922,7 +956,7 @@ def compile_surface_fragment(
                 FilterStep(
                     predicate=_semantic_predicate(
                         clause.condition,
-                        record_types=semantic_model.record_types,
+                        record_types=record_types,
                         clause_index=index,
                     )
                 )
@@ -946,6 +980,11 @@ def compile_surface_fragment(
             clause_index=index,
         )
 
+    if stop_before is not None:
+        raise SurfaceLoweringError(
+            "requirement has no emitted retrieval occurrence in this continuation",
+            code="missing_requirement_occurrence",
+        )
     return SurfaceCompilation(
         workflow=WorkflowIR(
             steps=steps,
@@ -954,6 +993,21 @@ def compile_surface_fragment(
         ),
         view=view,
     )
+
+
+def _requirement_prefix(
+    surface: SurfaceScript, clause: RequirementClause, *,
+    record_types: frozenset[str], base_workflow: WorkflowIR | None = None,
+):
+    """Use the compiler's real occurrence order for discovery-material proof."""
+    signature = _requirement_signature(surface, clause, record_types)
+    if signature is None:
+        raise SurfaceLoweringError("requirement has no canonical signature", code="unresolved_requirement")
+    if base_workflow is None:
+        compilation = _lower_surface_intent(surface, record_types=record_types, stop_before=signature)
+    else:
+        compilation = _lower_fragment_intent(surface, base_workflow, record_types=record_types, stop_before=signature)
+    return tuple(compilation.workflow.steps)
 
 
 def lower_surface_to_ir(
