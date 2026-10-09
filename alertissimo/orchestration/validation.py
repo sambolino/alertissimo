@@ -132,7 +132,7 @@ class _CandidateEvidence:
 
 
 def _search_recipe_evidence(
-    step: ConeSearchStep | SemanticSearchStep, graph: CapabilityGraph, source: Source | None,
+    step: ConeSearchStep | SemanticSearchStep | SqlQueryStep, graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
     """Recipes own migrated providers; legacy tags cover only the others."""
     declared = graph.query_recipes(
@@ -143,8 +143,12 @@ def _search_recipe_evidence(
     if not declared:
         return None
     migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    unmigrated = (
+        _legacy_candidate_evidence_for_source(step, graph, source).compatible
+        if isinstance(step, SqlQueryStep) else _raw_candidates_for_source(step, graph, source)
+    )
     legacy = tuple(
-        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        endpoint for endpoint in unmigrated
         if (endpoint.broker, endpoint.origin) not in migrated
     )
     endpoints = {
@@ -154,7 +158,7 @@ def _search_recipe_evidence(
     feasible = []
     reasons = []
     raw = list(legacy)
-    discovery = "cone" if isinstance(step, ConeSearchStep) else "semantic search"
+    discovery = "cone" if isinstance(step, ConeSearchStep) else "SQL" if isinstance(step, SqlQueryStep) else "semantic search"
     for recipe in declared:
         matching_calls = tuple(
             call for call in recipe.calls if call.required and any(
@@ -188,6 +192,12 @@ def _search_recipe_evidence(
             paths.update(item.path for item in sources if isinstance(item, StepValueSource))
         if isinstance(step, ConeSearchStep) and not {("ra",), ("dec",), ("radius",)} <= paths:
             reasons.append("cone recipe does not bind all canonical cone coordinates")
+            continue
+        if isinstance(step, SqlQueryStep) and (
+            len(recipe.calls) != 1 or ("query",) not in paths
+            or "query" not in endpoints[(recipe.broker, recipe.origin, call.endpoint)].binding_roles
+        ):
+            reasons.append("SQL discovery requires one call with a declared whole-query binding")
             continue
         unrepresented = tuple(
             field for field in ("magnitude_limit", "time_context")
@@ -881,7 +891,7 @@ def _operation_candidate_evidence_for_source(
         recipes = _lookup_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
-    if isinstance(step, (ConeSearchStep, SemanticSearchStep)):
+    if isinstance(step, (ConeSearchStep, SemanticSearchStep, SqlQueryStep)):
         recipes = _search_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
@@ -901,6 +911,16 @@ def _legacy_candidate_evidence_for_source(
     empty_status: ValidationStatus = "unsupported"
     empty_reason: str | None = None
     target = _target_selector(step)
+
+    if isinstance(step, SqlQueryStep):
+        compatible = tuple(item for item in compatible if "query" in item.binding_roles)
+        if raw and not compatible:
+            empty_status = "deferred"
+            empty_reason = "SQL discovery has no declared whole-query binding; split query parameters require an explicit translation"
+        elif compatible and step.criteria:
+            compatible = ()
+            empty_status = "deferred"
+            empty_reason = "SQL criteria have no declared translation"
 
     if isinstance(step, LookupStep):
         compatible = tuple(

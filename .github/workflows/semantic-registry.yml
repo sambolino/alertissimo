@@ -27,6 +27,7 @@ on:
       - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_orchestration_search_recipes.py'
       - 'tests/test_orchestration_confirmation_recipes.py'
+      - 'tests/test_orchestration_sql_recipes.py'
       - 'tests/test_orchestration_planner.py'
       - 'tests/test_orchestration_runner.py'
       - 'tests/test_orchestration_runtime.py'
@@ -97,6 +98,7 @@ jobs:
             tests/test_orchestration_selection_recipes.py \
             tests/test_orchestration_search_recipes.py \
             tests/test_orchestration_confirmation_recipes.py \
+            tests/test_orchestration_sql_recipes.py \
             tests/test_orchestration_planner.py \
             tests/test_orchestration_runner.py \
             tests/test_orchestration_runtime.py \

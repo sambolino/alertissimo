@@ -49,8 +49,8 @@ def test_cone_and_sql_require_their_registered_operations():
     )
     assert {op for item in candidate_capabilities(cone, graph)
             for op in item.operation_types} >= {"cone_search"}
-    assert {op for item in candidate_capabilities(sql, graph)
-            for op in item.operation_types} >= {"sql_query"}
+    assert validate_step_capabilities(sql, graph).status == "deferred"
+    assert candidate_capabilities(sql, graph) == ()
 
 
 def test_semantic_search_checks_record_family_and_real_alerce_lsst_source():
@@ -74,7 +74,7 @@ def test_each_explicit_source_must_be_supported():
     )
     result = validate_step_capabilities(step, graph)
     assert result.status == "unsupported"
-    assert [item.status for item in result.source_results] == ["supported", "unsupported"]
+    assert [item.status for item in result.source_results] == ["deferred", "unsupported"]
 
 
 def test_full_lightcurve_does_not_accept_a_component_only_endpoint():
