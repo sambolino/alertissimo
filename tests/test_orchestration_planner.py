@@ -98,14 +98,11 @@ def test_explicit_cone_plans_and_untranslated_sql_defers(graph):
             sources=[Source(broker="lasair", origin="ztf")],
         ), graph)
     assert cone[0].endpoint == "cone"
-    for plan, operation in ((cone[0], "cone_search"),):
-        capability = next(
-            item
-            for item in graph.endpoint_capabilities
-            if (item.broker, item.origin, item.endpoint)
-            == (plan.broker, plan.origin, plan.endpoint)
-        )
-        assert operation in capability.operation_types
+    assert [plan.endpoint for plan in cone] == ["cone", "query"]
+    assert [plan.required for plan in cone] == [True, False]
+    assert cone[0].parameter_sources == {
+        "ra": ("ra",), "dec": ("dec",), "radius": ("radius",),
+    }
     _assert_resolves(cone)
 
 

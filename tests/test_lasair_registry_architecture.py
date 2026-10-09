@@ -60,7 +60,7 @@ def test_endpoint_contracts_are_physical_rest_operations() -> None:
             assert endpoint["path"].startswith("/api/")
             assert endpoint["description"].strip()
             assert endpoint["output"]["type"]
-            assert all("@" not in operation for operation in endpoint["operation_types"])
+            assert all("@" not in operation for operation in endpoint.get("operation_types", []))
             for specification in endpoint.get("params", {}).values():
                 assert specification["description"].strip()
             for specification in endpoint.get("headers", {}).values():
@@ -78,6 +78,17 @@ def test_endpoint_contracts_are_physical_rest_operations() -> None:
                 ]
             else:
                 assert endpoint["projection"] == {"supports_columns": False}
+
+
+def test_ztf_recipe_owned_endpoints_retire_operation_tags() -> None:
+    endpoints = load("ztf", "endpoints.yaml")["endpoints"]
+    for name in (
+        "object", "objects", "lightcurves", "cone",
+        "sherlock_object", "sherlock_objects",
+    ):
+        assert "operation_types" not in endpoints[name]
+    assert endpoints["query"]["operation_types"] == ["sql_query"]
+    assert endpoints["sherlock_position"]["operation_types"] == ["context_lookup"]
 
 
 def test_mappings_use_minimal_payload_references() -> None:
