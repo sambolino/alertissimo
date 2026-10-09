@@ -206,6 +206,17 @@ Classification requirements remain separate because the planner can resolve a
 deferred dynamic classifier from required discovery material under execution-reuse
 constraints. That workflow context must be preserved before their final cutover.
 
+`refactor/recipes-10d-classification-material` extracts that workflow proof into
+the read-only capability bridge. `classification_material_capabilities` identifies
+a unique required discovery owner for each explicitly constrained source using
+compiled call outputs, positive classifier predicates, and unchanged candidate
+context. It rejects optional/dependent calls, conflicting discovery constants,
+global selection, and ambiguous alternatives. Planning consumes this evidence and
+still verifies the concrete selected call before marking execution reuse.
+Retrieval-material intent and positive-reference semantics are shared rather than
+copied into the DSL. The DSL classification shortcut remains for the next small
+branch, which will consume this proof together with its actual lowered prefix.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
