@@ -153,6 +153,10 @@ planning consume the same recipe resolver; quorum remains an orchestration rule.
 `refactor/recipes-09c-sql` checks the whole-query binding required by the existing
 SQL IR. Lasair split-query contracts defer consistently before planning. Direct
 whole-query recipes use the shared discovery resolver and physical query role.
+`refactor/recipes-09d-reuse` requires candidate-search reuse to match a selected
+required recipe call and its compiled outputs. Optional supplements cannot satisfy
+a later mandatory retrieval. Remaining semantic-provider eligibility is audited
+separately before cleanup.
 
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous

@@ -346,6 +346,42 @@ def _predicate_requires_reference(
     return False
 
 
+def _candidate_record_types(
+    step: SearchStep | LookupStep, plan: EndpointPlan, graph: CapabilityGraph,
+) -> tuple[str, ...]:
+    """Use the selected required call's outputs for recipe-owned discovery."""
+    if not plan.required:
+        return ()
+    if not graph.query_recipes(op=step.op, broker=plan.broker, origin=plan.origin):
+        # Preserve compatibility only for operation/source pairs without recipes.
+        return tuple(record.semantic_record_type for record in graph.records_for_endpoint(
+            plan.broker, plan.origin, plan.endpoint,
+        ))
+
+    validation = validate_step_capabilities(step, graph)
+    if validation.status != "supported":
+        return ()
+    plan_offset = 0
+    record_types = []
+    for result in validation.source_results:
+        if result.recipes:
+            if len(result.recipes) != 1:
+                return ()
+            recipe, = result.recipes
+            if (recipe.broker, recipe.origin) == (plan.broker, plan.origin):
+                for call in recipe.calls:
+                    if call.endpoint != plan.endpoint or not call.required:
+                        continue
+                    assignments = _recipe_assignments(call, plan_offset=plan_offset, step=step)
+                    if all(getattr(plan, key) == value for key, value in assignments.items()):
+                        record_types.extend(output.semantic_record_type for output in call.outputs)
+            plan_offset += len(recipe.calls)
+        else:
+            plan_offset += 1
+    # An unmatched owned call must never borrow legacy endpoint-family evidence.
+    return tuple(dict.fromkeys(record_types))
+
+
 def _candidate_execution_guarantees(
     candidate_step: SearchStep | LookupStep,
     candidate_plan: EndpointPlan,
@@ -374,14 +410,10 @@ def _candidate_execution_guarantees(
     ):
         return False
 
-    records = graph.records_for_endpoint(
-        candidate_plan.broker, candidate_plan.origin, candidate_plan.endpoint
-    )
     matching = tuple(
-        record
-        for record in records
-        if canonical_semantic_noun(record.semantic_record_type)
-        == requirement.semantic_type
+        record_type
+        for record_type in _candidate_record_types(candidate_step, candidate_plan, graph)
+        if canonical_semantic_noun(record_type) == requirement.semantic_type
     )
     if not matching:
         return False
@@ -389,8 +421,8 @@ def _candidate_execution_guarantees(
     if requirement.producer is None:
         return True
 
-    for record in matching:
-        producer = _semantic_record_producer(record.semantic_record_type)
+    for record_type in matching:
+        producer = _semantic_record_producer(record_type)
         if producer == requirement.producer:
             return True
         if (
@@ -812,12 +844,10 @@ def _classification_material_plans(
             if (owner_plan.broker, owner_plan.origin) != (source.broker, source.origin):
                 continue
             if not any(
-                canonical_semantic_noun(record.semantic_record_type) == "classification"
-                and (producer := _semantic_record_producer(record.semantic_record_type)) is not None
+                canonical_semantic_noun(record_type) == "classification"
+                and (producer := _semantic_record_producer(record_type)) is not None
                 and _DYNAMIC_QUALIFIER.fullmatch(producer)
-                for record in graph.records_for_endpoint(
-                    owner_plan.broker, owner_plan.origin, owner_plan.endpoint,
-                )
+                for record_type in _candidate_record_types(owner, owner_plan, graph)
             ):
                 continue
             material_plan = EndpointPlan(
