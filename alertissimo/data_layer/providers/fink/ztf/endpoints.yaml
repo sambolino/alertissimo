@@ -51,9 +51,7 @@ endpoints:
       type: array
       item: alert_row
     operation_types:
-    - object_lookup
     - object_history
-    - lightcurve
     server_filters:
     - objectId
     - withupperlim
@@ -126,7 +124,6 @@ endpoints:
       type: array
       item: alert_row
     operation_types:
-    - spatial_search
     - alert_search
     server_filters:
     - ra
@@ -339,9 +336,6 @@ endpoints:
       - output-format=array returns 2D array as shown
 
       '
-    operation_types:
-    - data_product_lookup
-    - cutout
     server_filters:
     - objectId
     - kind

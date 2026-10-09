@@ -77,7 +77,10 @@ def test_object_product_recipes_do_not_accept_alert_ids(graph, step_type):
 
 def test_output_format_controls_are_compiled_from_existing_physical_roles(graph):
     for origin in ("ztf", "lsst"):
-        endpoint, = graph.query_endpoints(broker="fink", origin=origin, operation_type="cutout")
+        recipe, = graph.query_recipes(broker="fink", origin=origin, op="get_cutout")
+        call, = recipe.calls
+        endpoint, = (item for item in graph.endpoints_for("fink", origin)
+                     if item.endpoint == call.endpoint)
         assert endpoint.output_format_params == ("output-format",)
         assert endpoint.binding_roles == ("target_id",)
     assert all(
