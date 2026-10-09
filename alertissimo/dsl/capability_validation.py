@@ -131,7 +131,7 @@ class SurfaceCapabilityReport(BaseModel):
 
 
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
-_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product"})
+_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product", "crossmatch"})
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
 
 
@@ -277,6 +277,29 @@ def _candidate_checks(
     )
 
 
+def _crossmatch_endpoint_evidence(
+    endpoints: tuple[EndpointCapability, ...],
+    graph: CapabilityGraph,
+    *,
+    catalog: str | None,
+    channel: str | None,
+) -> tuple[SurfaceCapabilityEvidence, ...]:
+    """Retain catalog labels while limiting evidence to eligible retrievals."""
+    evidence = []
+    for record in graph.query_records(semantic_record_noun="crossmatch"):
+        names = tuple(sorted({
+            endpoint.endpoint for endpoint in endpoints
+            if (endpoint.broker, endpoint.origin) == (record.broker, record.origin)
+            and endpoint.endpoint in record.endpoints
+        }))
+        if names and _record_relation(record, producer=catalog, channel=channel) == "exact":
+            evidence.append(SurfaceCapabilityEvidence(
+                broker=record.broker, origin=record.origin,
+                semantic_record_type=record.semantic_record_type, endpoints=names,
+            ))
+    return tuple(evidence)
+
+
 def _retrieval_requirement_checks(
     surface: SurfaceScript,
     clause: RequirementClause,
@@ -314,7 +337,11 @@ def _retrieval_requirement_checks(
             origin=item.source.origin if item.source is not None else None,
             broker=item.source.broker if item.source is not None else None,
             semantic_noun=noun, producer=clause.source, channel=broker,
-            evidence=_endpoint_evidence(item.candidates),
+            evidence=(
+                _crossmatch_endpoint_evidence(
+                    item.candidates, graph, catalog=clause.source, channel=broker,
+                ) if noun == "crossmatch" else _endpoint_evidence(item.candidates)
+            ),
         )
         for item in result.source_results
     )
