@@ -14,6 +14,7 @@ on:
       - 'alertissimo/orchestration/pipeline.py'
       - 'alertissimo/orchestration/planner/**'
       - 'alertissimo/orchestration/binding/**'
+      - 'alertissimo/orchestration/confirmation/**'
       - 'alertissimo/orchestration/runtime/**'
       - 'alertissimo/orchestration/normalization/**'
       - 'alertissimo/orchestration/results/**'

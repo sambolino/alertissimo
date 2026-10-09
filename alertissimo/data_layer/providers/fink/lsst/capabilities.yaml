@@ -1,6 +1,19 @@
 broker: fink
 origin: lsst
 recipes:
+  confirm:
+    - calls:
+        - endpoint: objects
+          params:
+            diaObjectId: {from: step.target.ids}
+    - calls:
+        - endpoint: sources
+          params:
+            diaObjectId: {from: step.target.ids}
+    - calls:
+        - endpoint: fp
+          params:
+            diaObjectId: {from: step.target.ids}
   cone_search:
     - calls:
         - endpoint: conesearch

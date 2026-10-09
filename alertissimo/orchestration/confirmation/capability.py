@@ -34,8 +34,9 @@ def _emits_object_evidence(
     endpoint: EndpointCapability,
 ) -> bool:
     return any(
-        semantic_record_noun_matches(record.semantic_record_type, noun)
-        for record in graph.records_for_endpoint(
+        semantic_record_noun_matches(mapping.semantic_record_type, noun)
+        and mapping.relative_field_path == "identity.object_id"
+        for mapping in graph.fields_for_endpoint(
             endpoint.broker, endpoint.origin, endpoint.endpoint
         )
         for noun in ("summary", "detection")
@@ -67,15 +68,15 @@ def _emits_reference(
     producer: str | None,
     channel: str | None,
 ) -> bool:
-    for record in graph.records_for_endpoint(
+    for mapping in graph.fields_for_endpoint(
         endpoint.broker, endpoint.origin, endpoint.endpoint
     ):
         actual_noun, actual_producer, actual_channel = _record_parts(
-            record.semantic_record_type
+            mapping.semantic_record_type
         )
         if actual_noun != noun:
             continue
-        if field_path and field_path not in record.fields:
+        if field_path and field_path != mapping.relative_field_path:
             continue
         if not _qualifier_matches(actual_producer, producer):
             continue
@@ -112,6 +113,9 @@ def confirmation_endpoints(
     broker: str | None,
     origin: str | None,
     predicate: Predicate | None = None,
+    candidates: tuple[EndpointCapability, ...] | None = None,
+    lookup_endpoints: frozenset[tuple[str, str, str]] | None = None,
+    history_endpoints: frozenset[tuple[str, str, str]] | None = None,
 ) -> tuple[EndpointCapability, ...]:
     """Return the best registered target-bound evidence endpoints for one source.
 
@@ -125,29 +129,37 @@ def confirmation_endpoints(
     special-cased here.
     """
 
+    # Recipe resolution supplies validated candidates and registry-derived tiers.
+    # Callers for unmigrated providers retain the legacy tag-based tiers.
     bindable = tuple(
         endpoint
-        for endpoint in graph.query_endpoints(broker=broker, origin=origin)
+        for endpoint in (candidates if candidates is not None else graph.query_endpoints(broker=broker, origin=origin))
         if "target_id" in endpoint.binding_roles
     )
+    def in_tier(endpoint, declared, operations):
+        return (
+            (endpoint.broker, endpoint.origin, endpoint.endpoint) in declared
+            if declared is not None else bool(operations.intersection(endpoint.operation_types))
+        )
 
     if predicate is not None:
         compatible = tuple(
             endpoint
             for endpoint in bindable
-            if _emits_predicate_evidence(graph, endpoint, predicate)
+            if _emits_object_evidence(graph, endpoint)
+            and _emits_predicate_evidence(graph, endpoint, predicate)
         )
         object_lookup = tuple(
             endpoint
             for endpoint in compatible
-            if "object_lookup" in endpoint.operation_types
+            if in_tier(endpoint, lookup_endpoints, {"object_lookup"})
         )
         return _prefer_collection(object_lookup or compatible)
 
     object_lookup = tuple(
         endpoint
         for endpoint in bindable
-        if "object_lookup" in endpoint.operation_types
+        if in_tier(endpoint, lookup_endpoints, {"object_lookup"})
         and _emits_object_evidence(graph, endpoint)
     )
     if object_lookup:
@@ -156,7 +168,7 @@ def confirmation_endpoints(
     history = tuple(
         endpoint
         for endpoint in bindable
-        if _HISTORY_OPERATIONS.intersection(endpoint.operation_types)
+        if in_tier(endpoint, history_endpoints, _HISTORY_OPERATIONS)
         and _emits_object_evidence(graph, endpoint)
     )
     if history:

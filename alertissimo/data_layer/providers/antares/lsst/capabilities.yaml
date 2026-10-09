@@ -1,6 +1,11 @@
 broker: antares
 origin: lsst
 recipes:
+  confirm:
+    - calls:
+        - endpoint: get_by_lsst_dia_object_id
+          params:
+            lsst_object_id: {from: step.target.ids}
   cone_search:
     - calls:
         - endpoint: cone_search
