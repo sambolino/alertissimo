@@ -252,6 +252,17 @@ lightcurve and forced-history normalization, identity, counts, and response
 shapes; retrieval support is established by existing recipe tests rather than
 the retired object/lightcurve tags. Physical encoders and mappings remain intact.
 
+`refactor/recipes-10h-antares-tags` removes recipe-owned object_lookup and
+lightcurve_lookup tags from each survey's object-ID endpoint, plus spatial_search
+from both cone endpoints. Mixed declarations retain locus/summary metadata, and
+the unowned generic Elasticsearch search retains its compatibility tags and
+deferred physical-input diagnostic. ANTARES lookup, cone search, lightcurve,
+crossmatch, and confirmation still resolve through recipes. Architecture checks
+now admit capabilities.yaml and establish lightcurve intent from its authored
+target assignment and mapped history. Registry CI includes that architecture
+module. Native Astropy encoders, Python-client paths, and response mappings remain
+unchanged.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
