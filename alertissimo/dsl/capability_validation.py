@@ -21,7 +21,9 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.orchestration.ir import ConfirmStep, Source, WorkflowIR
-from alertissimo.orchestration.validation import validate_step_capabilities
+from alertissimo.orchestration.validation import (
+    classification_material_capabilities, validate_step_capabilities,
+)
 
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .fragment import fragment_surface_context
@@ -131,7 +133,7 @@ class SurfaceCapabilityReport(BaseModel):
 
 
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
-_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product", "crossmatch"})
+_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product", "crossmatch", "classification"})
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
 
 
@@ -277,22 +279,24 @@ def _candidate_checks(
     )
 
 
-def _crossmatch_endpoint_evidence(
+def _qualified_endpoint_evidence(
     endpoints: tuple[EndpointCapability, ...],
     graph: CapabilityGraph,
     *,
-    catalog: str | None,
+    noun: str,
+    producer: str | None,
     channel: str | None,
 ) -> tuple[SurfaceCapabilityEvidence, ...]:
-    """Retain catalog labels while limiting evidence to eligible retrievals."""
+    """Retain qualified labels while limiting evidence to eligible retrievals."""
     evidence = []
-    for record in graph.query_records(semantic_record_noun="crossmatch"):
+    for record in graph.query_records(semantic_record_noun=noun):
         names = tuple(sorted({
             endpoint.endpoint for endpoint in endpoints
             if (endpoint.broker, endpoint.origin) == (record.broker, record.origin)
             and endpoint.endpoint in record.endpoints
         }))
-        if names and _record_relation(record, producer=catalog, channel=channel) == "exact":
+        relation = _record_relation(record, producer=producer, channel=channel)
+        if names and (relation == "exact" or noun == "classification" and relation == "dynamic"):
             evidence.append(SurfaceCapabilityEvidence(
                 broker=record.broker, origin=record.origin,
                 semantic_record_type=record.semantic_record_type, endpoints=names,
@@ -308,10 +312,11 @@ def _retrieval_requirement_checks(
     noun: str,
     graph: CapabilityGraph,
     record_types: frozenset[str],
+    base_workflow: WorkflowIR | None = None,
 ) -> tuple[SurfaceCapabilityCheck, ...]:
     """Check the exact retrieval emitted by lowering, before endpoint selection."""
     # Pure IR construction; the lazy import avoids the compiler validation cycle.
-    from .lowering import SurfaceLoweringError, _lower_requirement
+    from .lowering import SurfaceLoweringError, _lower_requirement, _requirement_prefix
 
     broker = clause.via or surface.candidates.broker
     try:
@@ -330,6 +335,31 @@ def _retrieval_requirement_checks(
         )
 
     result = validate_step_capabilities(step, graph)
+    material = ()
+    if noun == "classification" and result.status == "deferred":
+        try:
+            earlier = _requirement_prefix(
+                surface, clause, record_types=record_types, base_workflow=base_workflow,
+            )
+        except SurfaceLoweringError:
+            # Keep the fresh-call diagnostic when no actual occurrence is proven.
+            pass
+        else:
+            material = classification_material_capabilities(step, earlier, graph)
+    if material:
+        return tuple(
+            SurfaceCapabilityCheck(
+                subject="requirement", status=SurfaceCapabilityStatus.SUPPORTED,
+                reason="requested classifier is supplied by required discovery material",
+                clause_index=clause_index, origin=item.source.origin, broker=item.source.broker,
+                semantic_noun=noun, producer=clause.source, channel=broker,
+                evidence=tuple(SurfaceCapabilityEvidence(
+                    broker=item.endpoint.broker, origin=item.endpoint.origin,
+                    semantic_record_type=record, endpoints=(item.endpoint.endpoint,),
+                ) for record in item.record_types),
+            )
+            for item in material
+        )
     return tuple(
         SurfaceCapabilityCheck(
             subject="requirement", status=SurfaceCapabilityStatus(item.status),
@@ -338,32 +368,12 @@ def _retrieval_requirement_checks(
             broker=item.source.broker if item.source is not None else None,
             semantic_noun=noun, producer=clause.source, channel=broker,
             evidence=(
-                _crossmatch_endpoint_evidence(
-                    item.candidates, graph, catalog=clause.source, channel=broker,
-                ) if noun == "crossmatch" else _endpoint_evidence(item.candidates)
+                _qualified_endpoint_evidence(
+                    item.candidates, graph, noun=noun, producer=clause.source, channel=broker,
+                ) if noun in {"crossmatch", "classification"} else _endpoint_evidence(item.candidates)
             ),
         )
         for item in result.source_results
-    )
-
-
-def _dynamic_records_are_selectable(
-    records: tuple[SemanticRecordCapability, ...],
-    *,
-    noun: str,
-    graph: CapabilityGraph,
-) -> bool:
-    if noun != "classification":
-        return False
-    endpoint_keys = {
-        (record.broker, record.origin, endpoint)
-        for record in records
-        for endpoint in record.endpoints
-    }
-    return any(
-        (endpoint.broker, endpoint.origin, endpoint.endpoint) in endpoint_keys
-        and ("classifier" in endpoint.server_filters or "classifier" in endpoint.params)
-        for endpoint in graph.endpoint_capabilities
     )
 
 
@@ -374,6 +384,7 @@ def _requirement_checks(
     clause_index: int,
     graph: CapabilityGraph,
     record_types: frozenset[str],
+    base_workflow: WorkflowIR | None = None,
 ) -> tuple[SurfaceCapabilityCheck, ...]:
     noun = resolve_record_type(clause.product, record_types)
     if noun is None:
@@ -407,6 +418,7 @@ def _requirement_checks(
         return _retrieval_requirement_checks(
             surface, clause, clause_index=clause_index, noun=noun,
             graph=graph, record_types=record_types,
+            base_workflow=base_workflow,
         )
 
     checks: list[SurfaceCapabilityCheck] = []
@@ -442,16 +454,7 @@ def _requirement_checks(
             reason = "exact registered semantic-record capability found"
             evidence = _record_evidence(exact)
         else:
-            if dynamic and _dynamic_records_are_selectable(
-                dynamic, noun=noun, graph=graph
-            ):
-                status = SurfaceCapabilityStatus.SUPPORTED
-                reason = (
-                    "dynamic semantic producer is backed by an explicit provider "
-                    "selector for this record family"
-                )
-                evidence = _record_evidence(dynamic)
-            elif dynamic:
+            if dynamic:
                 status = SurfaceCapabilityStatus.DEFERRED
                 reason = (
                     "only a dynamic qualified semantic capability is registered; "
@@ -604,10 +607,19 @@ def _match_checks(
 
 
 def validate_surface_capabilities(
+    surface: SurfaceScript, *, graph: CapabilityGraph | None = None,
+    semantic_paths: _SemanticPaths | None = None,
+) -> SurfaceCapabilityReport:
+    """Validate provider-facing surface intent against registered capabilities."""
+    return _validate_surface_capabilities(surface, graph=graph, semantic_paths=semantic_paths)
+
+
+def _validate_surface_capabilities(
     surface: SurfaceScript,
     *,
     graph: CapabilityGraph | None = None,
     semantic_paths: _SemanticPaths | None = None,
+    base_workflow: WorkflowIR | None = None,
 ) -> SurfaceCapabilityReport:
     """Validate provider-facing surface intent against registered capabilities."""
 
@@ -667,6 +679,7 @@ def validate_surface_capabilities(
                     clause_index=index,
                     graph=capability_graph,
                     record_types=semantic_model.record_types,
+                    base_workflow=base_workflow,
                 )
             )
         elif isinstance(clause, WhereClause):
@@ -692,6 +705,7 @@ def validate_surface_capabilities(
                         clause_index=index,
                         graph=capability_graph,
                         record_types=semantic_model.record_types,
+                        base_workflow=base_workflow,
                     )
                 )
         elif isinstance(clause, ConfirmClause):
@@ -739,10 +753,10 @@ def validate_surface_fragment_capabilities(
     """Validate only newly requested capabilities against canonical IR context."""
 
     context = fragment_surface_context(fragment, base_workflow)
-    report = validate_surface_capabilities(
+    report = _validate_surface_capabilities(
         context,
         graph=graph,
-        semantic_paths=semantic_paths,
+        semantic_paths=semantic_paths, base_workflow=base_workflow,
     )
     return SurfaceCapabilityReport(
         checks=tuple(check for check in report.checks if check.subject != "candidates")
