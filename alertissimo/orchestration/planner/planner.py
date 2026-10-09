@@ -28,12 +28,8 @@ from alertissimo.orchestration.ir.models import (
     DeriveStep,
     FilterStep,
     GetClassificationStep,
-    GetCrossmatchStep,
-    GetCutoutStep,
-    GetDataProductStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
-    GetSpectrumStep,
     GetStep,
     LookupStep,
     MatchStep,
@@ -43,12 +39,7 @@ from alertissimo.orchestration.ir.models import (
     WorkflowIR,
 )
 from alertissimo.orchestration.ir.predicates import (
-    BooleanPredicate,
-    ComparisonPredicate,
-    ExistsPredicate,
-    NotPredicate,
-    Predicate,
-    SemanticReference,
+    predicate_requires_reference as _predicate_requires_reference,
 )
 from alertissimo.orchestration.runtime.models import (
     CandidateInputRef,
@@ -63,6 +54,8 @@ from alertissimo.orchestration.runtime.models import (
 from alertissimo.orchestration.validation import (
     CapabilityValidationResult,
     SourceCapabilityResult,
+    classification_material_capabilities,
+    retrieval_record_requirement as _get_record_requirement,
     validate_step_capabilities,
 )
 
@@ -272,78 +265,6 @@ def _semantic_record_producer(record_type: str) -> str | None:
         return None
     producer, _, _ = qualifiers.partition(":")
     return producer or None
-
-
-def _get_record_requirement(step: GetStep) -> SemanticReference | None:
-    if getattr(step, "target", None) is not None:
-        return None
-    if isinstance(step, GetClassificationStep):
-        return SemanticReference(
-            semantic_type="classification",
-            producer=step.classifier,
-        )
-    if isinstance(step, GetCrossmatchStep):
-        if step.radius is not None:
-            return None
-        return SemanticReference(
-            semantic_type="crossmatch",
-            producer=step.catalog,
-        )
-    if isinstance(step, GetLightcurveStep):
-        if step.bands is not None or step.time_context is not None:
-            return None
-        return SemanticReference(semantic_type="lightcurve")
-    if isinstance(step, GetForcedPhotometryStep):
-        if step.bands is not None or step.time_context is not None:
-            return None
-        return SemanticReference(semantic_type="forced_photometry")
-    if isinstance(step, GetSpectrumStep):
-        if step.time_context is not None:
-            return None
-        return SemanticReference(semantic_type="spectrum")
-    if isinstance(step, GetDataProductStep):
-        if step.product_type is not None:
-            return None
-        return SemanticReference(semantic_type="data_product")
-    if isinstance(step, GetCutoutStep):
-        return None
-    return None
-
-
-def _positive_references(predicate: Predicate | None) -> tuple[SemanticReference, ...]:
-    if predicate is None:
-        return ()
-    if isinstance(predicate, ComparisonPredicate):
-        return tuple(
-            operand
-            for operand in (predicate.left, predicate.right)
-            if isinstance(operand, SemanticReference)
-        )
-    if isinstance(predicate, ExistsPredicate):
-        return (predicate.reference,)
-    if isinstance(predicate, BooleanPredicate) and predicate.operator == "and":
-        return tuple(
-            reference
-            for operand in predicate.operands
-            for reference in _positive_references(operand)
-        )
-    if isinstance(predicate, NotPredicate):
-        return ()
-    return ()
-
-
-def _predicate_requires_reference(
-    predicate: Predicate | None, requirement: SemanticReference
-) -> bool:
-    for reference in _positive_references(predicate):
-        if reference.semantic_type != requirement.semantic_type:
-            continue
-        if requirement.producer is not None and reference.producer != requirement.producer:
-            continue
-        if requirement.channel is not None and reference.channel != requirement.channel:
-            continue
-        return True
-    return False
 
 
 def _candidate_record_types(
@@ -798,50 +719,21 @@ def _classification_material_plans(
     returned material plans must be marked as reuse by the same execution proof
     used for all other Gets below.
     """
-    if step.target is not None or step.classifier is None or not step.sources:
-        return None
-    owner_index = None
-    for index in range(len(earlier) - 1, -1, -1):
-        previous = workflow.steps[index]
-        if isinstance(previous, (SearchStep, LookupStep)):
-            owner_index = index
-            break
-        if isinstance(previous, DeriveStep):
-            continue
-        if isinstance(previous, GetStep) and _get_record_requirement(previous) is not None:
-            continue
-        # A changed candidate population cannot reuse an unfiltered execution.
-        return None
-    if owner_index is None:
-        return None
-    owner = workflow.steps[owner_index]
-    if not isinstance(owner, SearchStep):
-        return None
-    requirement = _get_record_requirement(step)
-    if requirement is None or not _predicate_requires_reference(owner.predicate, requirement):
+    capabilities = classification_material_capabilities(
+        step, tuple(workflow.steps[:len(earlier)]), graph,
+    )
+    if not capabilities:
         return None
     plans = []
-    for source in step.sources:
-        if source.broker is None or source.origin is None:
-            return None
-        evidence = validate_step_capabilities(
-            step.model_copy(update={"classifier": None, "sources": [source]}), graph,
-        )
-        if evidence.status != "supported" or not any(
-            len(recipe.calls) == 1
-            and all(
-                isinstance(parameter.source, StepValueSource)
-                and parameter.source.path in {("target", "ids"), ("classifier",)}
-                for parameter in recipe.calls[0].params
-            )
-            for result in evidence.source_results for recipe in result.recipes
-        ):
-            return None
+    for capability in capabilities:
+        owner = workflow.steps[capability.owner_index]
         matches = []
-        for owner_plan in earlier[owner_index].endpoint_plans:
+        for owner_plan in earlier[capability.owner_index].endpoint_plans:
             if not owner_plan.required or owner_plan.candidate_input_from_plan is not None:
                 continue
-            if (owner_plan.broker, owner_plan.origin) != (source.broker, source.origin):
+            if (owner_plan.broker, owner_plan.origin, owner_plan.endpoint) != (
+                capability.endpoint.broker, capability.endpoint.origin, capability.endpoint.endpoint,
+            ):
                 continue
             if not any(
                 canonical_semantic_noun(record_type) == "classification"

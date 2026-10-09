@@ -108,6 +108,43 @@ NotPredicate.model_rebuild()
 BooleanPredicate.model_rebuild()
 
 
+def _positive_references(predicate: Predicate | None) -> tuple[SemanticReference, ...]:
+    if predicate is None:
+        return ()
+    if isinstance(predicate, ComparisonPredicate):
+        return tuple(
+            operand
+            for operand in (predicate.left, predicate.right)
+            if isinstance(operand, SemanticReference)
+        )
+    if isinstance(predicate, ExistsPredicate):
+        return (predicate.reference,)
+    if isinstance(predicate, BooleanPredicate) and predicate.operator == "and":
+        return tuple(
+            reference
+            for operand in predicate.operands
+            for reference in _positive_references(operand)
+        )
+    if isinstance(predicate, NotPredicate):
+        return ()
+    return ()
+
+
+def predicate_requires_reference(
+    predicate: Predicate | None, requirement: SemanticReference
+) -> bool:
+    """Require a qualified reference positively, including conjunctions only."""
+    for reference in _positive_references(predicate):
+        if reference.semantic_type != requirement.semantic_type:
+            continue
+        if requirement.producer is not None and reference.producer != requirement.producer:
+            continue
+        if requirement.channel is not None and reference.channel != requirement.channel:
+            continue
+        return True
+    return False
+
+
 def and_predicates(predicates: list[Predicate] | tuple[Predicate, ...]) -> Predicate | None:
     """Conjoin predicates without manufacturing a one-child boolean node."""
 
@@ -148,4 +185,5 @@ __all__ = [
     "SemanticReference",
     "and_predicates",
     "iter_semantic_references",
+    "predicate_requires_reference",
 ]

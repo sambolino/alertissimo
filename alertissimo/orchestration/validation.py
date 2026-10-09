@@ -27,10 +27,12 @@ from alertissimo.data_layer.runtime.capability_graph import (
     semantic_record_noun_matches,
 )
 from alertissimo.data_layer.runtime.recipes import (
-    CallValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
+    CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
-from alertissimo.orchestration.ir.predicates import iter_semantic_references
+from alertissimo.orchestration.ir.predicates import (
+    SemanticReference, iter_semantic_references, predicate_requires_reference,
+)
 
 from .ir.models import (
     ActionStep,
@@ -46,6 +48,7 @@ from .ir.models import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
+    GetStep,
     LookupStep,
     MatchStep,
     MonitorStep,
@@ -91,6 +94,16 @@ class CapabilityValidationResult:
             for item in result.candidates
         }
         return tuple(keyed[key] for key in sorted(keyed))
+
+
+@dataclass(frozen=True)
+class ClassificationMaterialCapability:
+    """A uniquely proven required discovery owner for a qualified retrieval."""
+
+    owner_index: int
+    source: Source
+    endpoint: EndpointCapability
+    record_types: tuple[str, ...]
 
 
 _FULL_LIGHTCURVE_OPERATIONS = frozenset({"lightcurve", "lightcurve_lookup"})
@@ -1111,6 +1124,140 @@ def validate_step_capabilities(
     )
 
 
+def retrieval_record_requirement(step: GetStep) -> SemanticReference | None:
+    """Describe the material a retrieval may reuse without changing its intent."""
+    if getattr(step, "target", None) is not None:
+        return None
+    if isinstance(step, GetClassificationStep):
+        return SemanticReference(
+            semantic_type="classification",
+            producer=step.classifier,
+        )
+    if isinstance(step, GetCrossmatchStep):
+        if step.radius is not None:
+            return None
+        return SemanticReference(
+            semantic_type="crossmatch",
+            producer=step.catalog,
+        )
+    if isinstance(step, GetLightcurveStep):
+        if step.bands is not None or step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="lightcurve")
+    if isinstance(step, GetForcedPhotometryStep):
+        if step.bands is not None or step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="forced_photometry")
+    if isinstance(step, GetSpectrumStep):
+        if step.time_context is not None:
+            return None
+        return SemanticReference(semantic_type="spectrum")
+    if isinstance(step, GetDataProductStep):
+        if step.product_type is not None:
+            return None
+        return SemanticReference(semantic_type="data_product")
+    if isinstance(step, GetCutoutStep):
+        return None
+    return None
+
+
+def classification_material_capabilities(
+    step: GetClassificationStep, earlier_steps: tuple[Step, ...],
+    graph: CapabilityGraph,
+) -> tuple[ClassificationMaterialCapability, ...]:
+    """Prove discovery material without selecting endpoints or building plans.
+
+    This is the narrow dynamic-classifier reuse contract. Fresh retrieval support
+    still comes from validate_step_capabilities. Empty evidence means this proof
+    cannot establish an owner for every requested source.
+    """
+    if step.target is not None or step.classifier is None or not step.sources:
+        return ()
+    owner_index = None
+    for index in range(len(earlier_steps) - 1, -1, -1):
+        previous = earlier_steps[index]
+        if isinstance(previous, (SearchStep, LookupStep)):
+            owner_index = index
+            break
+        if isinstance(previous, DeriveStep):
+            continue
+        if isinstance(previous, GetStep) and retrieval_record_requirement(previous) is not None:
+            continue
+        return ()
+    if owner_index is None:
+        return ()
+    owner = earlier_steps[owner_index]
+    requirement = retrieval_record_requirement(step)
+    if (
+        not isinstance(owner, SearchStep) or owner.selection is not None
+        or requirement is None or not predicate_requires_reference(owner.predicate, requirement)
+    ):
+        return ()
+    discovery = validate_step_capabilities(owner, graph)
+    if discovery.status != "supported":
+        return ()
+
+    material = []
+    for source in step.sources:
+        if source.broker is None or source.origin is None:
+            return ()
+        retrieval = validate_step_capabilities(
+            step.model_copy(update={"classifier": None, "sources": [source]}), graph,
+        )
+        if retrieval.status != "supported" or not any(
+            len(recipe.calls) == 1
+            and all(
+                isinstance(parameter.source, StepValueSource)
+                and parameter.source.path in {("target", "ids"), ("classifier",)}
+                for parameter in recipe.calls[0].params
+            )
+            for result in retrieval.source_results for recipe in result.recipes
+        ):
+            return ()
+        matches = []
+        for result in discovery.source_results:
+            # Multiple alternatives supply no uniquely established execution.
+            if len(result.candidates) != 1 or len(result.recipes) > 1:
+                continue
+            if result.recipes:
+                recipe, = result.recipes
+                if (recipe.broker, recipe.origin) != (source.broker, source.origin):
+                    continue
+                calls = tuple(
+                    (call.endpoint, tuple(output.semantic_record_type for output in call.outputs))
+                    for call in recipe.calls
+                    if call.required and not any(
+                        isinstance(parameter.source, (CallValueSource, ConstantValueSource))
+                        for parameter in call.params
+                    )
+                )
+            else:
+                endpoint, = result.candidates
+                if (endpoint.broker, endpoint.origin) != (source.broker, source.origin):
+                    continue
+                calls = ((endpoint.endpoint, tuple(
+                    record.semantic_record_type for record in graph.records_for_endpoint(
+                        endpoint.broker, endpoint.origin, endpoint.endpoint,
+                    )
+                )),)
+            for endpoint_name, outputs in calls:
+                records = tuple(dict.fromkeys(
+                    record for record in outputs
+                    if semantic_record_noun_matches(record, "classification")
+                    and (producer := _semantic_record_producer(record)) is not None
+                    and _DYNAMIC_QUALIFIER.fullmatch(producer)
+                ))
+                if not records:
+                    continue
+                endpoint = next(item for item in graph.endpoints_for(source.broker, source.origin)
+                                if item.endpoint == endpoint_name)
+                matches.append(ClassificationMaterialCapability(owner_index, source, endpoint, records))
+        if len(matches) != 1:
+            return ()
+        material.extend(matches)
+    return tuple(material)
+
+
 def validate_workflow_capabilities(
     workflow: WorkflowIR, graph: CapabilityGraph
 ) -> tuple[CapabilityValidationResult, ...]:
@@ -1119,9 +1266,12 @@ def validate_workflow_capabilities(
 
 __all__ = [
     "CapabilityValidationResult",
+    "ClassificationMaterialCapability",
     "SourceCapabilityResult",
     "ValidationStatus",
     "candidate_capabilities",
+    "classification_material_capabilities",
+    "retrieval_record_requirement",
     "validate_step_capabilities",
     "validate_workflow_capabilities",
 ]
