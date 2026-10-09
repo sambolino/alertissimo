@@ -15,6 +15,8 @@ Branch 09a activates ALeRCE semantic-search recipes through the shared discovery
 resolver; see `recipe_semantic_search.md`.
 Branch 09b supplies confirmation evidence through provider recipes and endpoint-local
 field mappings; see `recipe_confirmation.md`.
+Branch 09c aligns SQL validation with whole-query binding and extends the shared
+discovery resolver to declared SQL recipes; see `recipe_sql.md`.
 In the current schema, `target_kind` is required for lookup, cutout, and data-product
 recipes. It guards the existing IR target namespace; other operations reject it.
 The foundation described below was introduced in branch 02 before activation.

@@ -309,6 +309,11 @@ def _parameter(
         for item in sources
     ) and roles != ("target_id",):
         raise RecipeRegistryError(f"{where}: target identities require a target_id encoder role")
+    if any(
+        isinstance(item, StepValueSource) and item.path == ("query",)
+        for item in sources
+    ) and roles != ("query",):
+        raise RecipeRegistryError(f"{where}: whole queries require a query encoder role")
     if dependencies and (roles != ("target_id",) or isinstance(source, EncoderValueSource)):
         raise RecipeRegistryError(f"{where}: candidate dependency requires a target_id parameter")
     return RecipeParameter(name, source)

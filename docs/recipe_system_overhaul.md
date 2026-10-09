@@ -150,6 +150,9 @@ separate follow-ups before cleanup.
 `refactor/recipes-09b-confirmation` declares target-bound confirmation evidence
 across the eight existing broker/survey contracts. DSL confirmation validation and
 planning consume the same recipe resolver; quorum remains an orchestration rule.
+`refactor/recipes-09c-sql` checks the whole-query binding required by the existing
+SQL IR. Lasair split-query contracts defer consistently before planning. Direct
+whole-query recipes use the shared discovery resolver and physical query role.
 
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous

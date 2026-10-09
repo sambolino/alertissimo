@@ -80,7 +80,7 @@ def test_explicit_alerce_lsst_forced_photometry(graph):
     _assert_resolves(plans)
 
 
-def test_explicit_cone_and_sql_select_only_matching_operations(graph):
+def test_explicit_cone_plans_and_untranslated_sql_defers(graph):
     cone = plan_step(
         ConeSearchStep(
             semantic_type="summary",
@@ -91,17 +91,14 @@ def test_explicit_cone_and_sql_select_only_matching_operations(graph):
         ),
         graph,
     )
-    sql = plan_step(
-        SqlQueryStep(
+    with pytest.raises(PlanningDeferredError, match="whole-query binding"):
+        plan_step(SqlQueryStep(
             semantic_type="summary",
             query="select * from objects",
             sources=[Source(broker="lasair", origin="ztf")],
-        ),
-        graph,
-    )
+        ), graph)
     assert cone[0].endpoint == "cone"
-    assert sql[0].endpoint == "query"
-    for plan, operation in ((cone[0], "cone_search"), (sql[0], "sql_query")):
+    for plan, operation in ((cone[0], "cone_search"),):
         capability = next(
             item
             for item in graph.endpoint_capabilities
@@ -109,7 +106,7 @@ def test_explicit_cone_and_sql_select_only_matching_operations(graph):
             == (plan.broker, plan.origin, plan.endpoint)
         )
         assert operation in capability.operation_types
-    _assert_resolves(cone + sql)
+    _assert_resolves(cone)
 
 
 def test_classification_uses_semantic_candidates_without_guessing(graph):
@@ -196,9 +193,8 @@ def test_unsupported_deferred_and_local_statuses_are_distinct(graph):
 def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(graph):
     workflow = WorkflowIR(
         steps=[
-            SqlQueryStep(
-                semantic_type="summary",
-                query="select 1",
+            LookupStep(
+                target=TargetSelector(ids=["ZTF20abc"], kind="object"),
                 sources=[Source(broker="lasair", origin="ztf")],
             ),
             GetLightcurveStep(
@@ -217,7 +213,7 @@ def test_workflow_planning_preserves_step_boundaries_and_fails_on_local_steps(gr
         StepRunState.PLANNED,
     ]
     assert [[item.endpoint for item in step.endpoint_plans] for step in run.steps] == [
-        ["query"],
+        ["object"],
         ["lightcurves"],
         [],
     ]
