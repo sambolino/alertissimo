@@ -679,6 +679,73 @@ def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
     )
 
 
+def _confirmation_recipe_evidence(
+    step: ConfirmStep, graph: CapabilityGraph, source: Source | None,
+) -> _CandidateEvidence | None:
+    declared = graph.query_recipes(
+        broker=source.broker if source else None,
+        origin=source.origin if source else None, op=step.op,
+    )
+    if not declared:
+        return None
+    migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+    legacy = tuple(
+        endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+        if (endpoint.broker, endpoint.origin) not in migrated
+    )
+    endpoints = {
+        (item.broker, item.origin, item.endpoint): item
+        for item in graph.endpoint_capabilities
+    }
+    choices, reasons = [], []
+    for recipe in declared:
+        call = recipe.calls[0]
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        if step.target is not None and step.target.kind != "object":
+            reasons.append("confirmation recipes require object target identities")
+            continue
+        if len(recipe.calls) != 1 or not call.required or any(
+            isinstance(item.source, (CallValueSource, EncoderValueSource))
+            for item in call.params
+        ):
+            reasons.append("confirmation recipes require one required call with direct Step inputs")
+            continue
+        if not any(
+            isinstance(item.source, StepValueSource)
+            and item.source.path == ("target", "ids")
+            for item in call.params
+        ) or "target_id" not in endpoint.binding_roles:
+            reasons.append("confirmation recipe does not bind the candidate identities")
+            continue
+        choices.append((endpoint, recipe))
+
+    def tier(op):
+        return frozenset(
+            (recipe.broker, recipe.origin, recipe.calls[0].endpoint)
+            for recipe in graph.query_recipes(op=op)
+            if (op != "lookup" or recipe.target_kind == "object")
+            and recipe.calls[0].required
+            and any(
+                isinstance(item.source, StepValueSource) and item.source.path == ("target", "ids")
+                for item in recipe.calls[0].params
+            )
+        )
+
+    ranked = confirmation_endpoints(
+        graph, broker=source.broker if source else None,
+        origin=source.origin if source else None, predicate=step.predicate,
+        candidates=tuple(endpoint for endpoint, _ in choices),
+        lookup_endpoints=tier("lookup"), history_endpoints=tier("get_lightcurve"),
+    )
+    selected = tuple(recipe for endpoint, recipe in choices if endpoint in ranked)
+    return _CandidateEvidence(
+        raw=legacy + tuple(endpoints[(recipe.broker, recipe.origin, recipe.calls[0].endpoint)] for recipe in declared),
+        compatible=legacy + ranked, recipes=selected,
+        empty_status="deferred" if reasons else "unsupported",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or "no confirmation recipe materializes the requested endpoint-local evidence",
+    )
+
+
 def _raw_candidates_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> tuple[EndpointCapability, ...]:
@@ -794,6 +861,10 @@ def _candidate_evidence_for_source(
 def _operation_candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    if isinstance(step, ConfirmStep):
+        recipes = _confirmation_recipe_evidence(step, graph, source)
+        if recipes is not None:
+            return recipes
     if isinstance(step, (GetCutoutStep, GetDataProductStep)):
         recipes = _product_recipe_evidence(step, graph, source)
         if recipes is not None:

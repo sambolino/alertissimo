@@ -1,4 +1,5 @@
 import pytest
+from dataclasses import replace
 
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.dsl import (
@@ -192,3 +193,18 @@ def test_singular_confirm_endpoint_uses_generic_runtime_fanout():
     assert run.steps[1].endpoint_plans[0].candidate_input_from == CandidateInputRef(
         step_index=0
     )
+
+
+def test_surface_confirmation_cannot_use_an_infeasible_owned_recipe():
+    graph = build_capability_graph()
+    graph = replace(graph, recipe_capabilities=tuple(
+        replace(recipe, calls=tuple(replace(call, params=()) for call in recipe.calls))
+        if recipe.op == "confirm" and recipe.broker == "alerce" and recipe.origin == "ztf"
+        else recipe for recipe in graph.recipe_capabilities
+    ))
+    report = validate_surface_capabilities(parse_surface_script(
+        "objects from ztf via alerce\nconfirm by 1 via alerce\n"
+    ), graph=graph)
+    check, = [item for item in report.checks if item.subject == "confirm"]
+    assert check.status is SurfaceCapabilityStatus.DEFERRED
+    assert "does not bind the candidate identities" in check.reason

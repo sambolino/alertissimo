@@ -19,8 +19,8 @@ from alertissimo.data_layer.runtime.capability_graph import (
     SemanticRecordCapability,
     build_capability_graph,
 )
-from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
-from alertissimo.orchestration.ir import WorkflowIR
+from alertissimo.orchestration.ir import ConfirmStep, Source, WorkflowIR
+from alertissimo.orchestration.validation import validate_step_capabilities
 
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .fragment import fragment_surface_context
@@ -545,20 +545,17 @@ def _confirm_checks(
     checks: list[SurfaceCapabilityCheck] = []
     for origin in surface.candidates.origins:
         for broker in clause.brokers:
-            endpoints = confirmation_endpoints(
+            result = validate_step_capabilities(
+                ConfirmStep(sources=[Source(broker=broker, origin=origin)], predicate=predicate),
                 graph,
-                broker=broker,
-                origin=origin,
-                predicate=predicate,
             )
+            endpoints = result.candidates
             supported = bool(endpoints)
             if predicate is None:
                 positive_reason = "registered target-bindable object evidence capability found"
-                negative_reason = "no registered target-bindable object evidence capability found"
                 semantic_noun = "summary"
             else:
                 positive_reason = "registered target-bindable proposition evidence capability found"
-                negative_reason = "no target-bindable endpoint can materialize the confirmed proposition"
                 semantic_noun = None
             checks.append(
                 SurfaceCapabilityCheck(
@@ -566,9 +563,10 @@ def _confirm_checks(
                     status=(
                         SurfaceCapabilityStatus.SUPPORTED
                         if supported
+                        else SurfaceCapabilityStatus.DEFERRED if result.status == "deferred"
                         else SurfaceCapabilityStatus.UNSUPPORTED
                     ),
-                    reason=positive_reason if supported else negative_reason,
+                    reason=positive_reason if supported else result.source_results[0].reason,
                     clause_index=clause_index,
                     origin=origin,
                     broker=broker,
@@ -661,7 +659,6 @@ def validate_surface_capabilities(
             # Reuse the exact candidate lowering, including predicate scope.
             # This helper performs no capability validation or provider calls.
             from .lowering import SurfaceLoweringError, _candidate_search
-            from alertissimo.orchestration.validation import validate_step_capabilities
 
             try:
                 step, _ = _candidate_search(surface, record_types=semantic_model.record_types)

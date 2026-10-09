@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'alertissimo/data_layer/**'
+      - 'alertissimo/orchestration/confirmation/**'
       - 'tests/test_mapping_schema.py'
       - 'tests/test_semantic_paths.py'
       - 'tests/test_semantic_model_validation.py'
@@ -25,6 +26,7 @@ on:
       - 'tests/test_orchestration_predicate_recipes.py'
       - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_orchestration_search_recipes.py'
+      - 'tests/test_orchestration_confirmation_recipes.py'
       - 'tests/test_orchestration_planner.py'
       - 'tests/test_orchestration_runner.py'
       - 'tests/test_orchestration_runtime.py'
@@ -94,6 +96,7 @@ jobs:
             tests/test_orchestration_predicate_recipes.py \
             tests/test_orchestration_selection_recipes.py \
             tests/test_orchestration_search_recipes.py \
+            tests/test_orchestration_confirmation_recipes.py \
             tests/test_orchestration_planner.py \
             tests/test_orchestration_runner.py \
             tests/test_orchestration_runtime.py \

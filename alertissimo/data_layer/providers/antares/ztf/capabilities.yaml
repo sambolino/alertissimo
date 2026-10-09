@@ -1,6 +1,11 @@
 broker: antares
 origin: ztf
 recipes:
+  confirm:
+    - calls:
+        - endpoint: get_by_ztf_object_id
+          params:
+            ztf_object_id: {from: step.target.ids}
   cone_search:
     - calls:
         - endpoint: cone_search

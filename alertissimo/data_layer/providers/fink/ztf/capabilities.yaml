@@ -1,6 +1,11 @@
 broker: fink
 origin: ztf
 recipes:
+  confirm:
+    - calls:
+        - endpoint: objects
+          params:
+            objectId: {from: step.target.ids}
   cone_search:
     - calls:
         - endpoint: conesearch

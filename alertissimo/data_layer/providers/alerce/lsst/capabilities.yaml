@@ -12,6 +12,23 @@ predicate_bindings:
       operator: ">="
       parameter: probability
 recipes:
+  confirm:
+    - calls:
+        - endpoint: query_object
+          params:
+            oid: {from: step.target.ids}
+    - calls:
+        - endpoint: query_probabilities
+          params:
+            oid: {from: step.target.ids}
+    - calls:
+        - endpoint: query_lightcurve
+          params:
+            oid: {from: step.target.ids}
+    - calls:
+        - endpoint: query_forced_photometry
+          params:
+            oid: {from: step.target.ids}
   semantic_search:
     - calls:
         - endpoint: query_objects
