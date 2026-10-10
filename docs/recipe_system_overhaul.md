@@ -294,6 +294,17 @@ selection binding, pagination, qualified classifier assignment, optional forced
 evidence, product deferrals, physical contracts, and normalization stay intact.
 ALeRCE LSST remains a separate cleanup branch.
 
+`refactor/recipes-10l-alerce-lsst-tags` completes ALeRCE's migrated-tag cleanup.
+Six LSST endpoints retire discovery/filter, lookup, lightcurve, forced-photometry,
+classification, and stamp-product tags. Mixed summary/history/component metadata,
+unowned catalog enrichment, and the disabled, unowned LSST AVRO declaration stay
+intact. Architecture retirement coverage now spans both surveys. The incompatible
+owned-discovery fixture explicitly supplies its legacy fallback tag, and forced
+retrieval validation asserts compiled recipe evidence. Fresh classifier-qualified
+LSST retrieval still defers without shared discovery-material proof; optional
+forced evidence and product deferrals retain their existing contracts. Recipes,
+scientific mappings, physical bindings, and runtime behavior are unchanged.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

@@ -94,6 +94,11 @@ def test_incompatible_owned_recipe_cannot_fall_back_to_query_objects(tmp_path):
             "endpoint": "query_lightcurve", "params": {"oid": {"value": 1}},
         }]}]
     edit_yaml(destination / "capabilities.yaml", capabilities)
+    # Keep a legacy fallback available in this fixture so an incompatible
+    # owned recipe must reject it, independently of production tag cleanup.
+    def endpoints(doc):
+        doc["endpoints"]["query_objects"].setdefault("operation_types", []).append("object_search")
+    edit_yaml(destination / "endpoints.yaml", endpoints)
     graph = build_capability_graph(root)
     assert graph.query_endpoints(broker="alerce", origin="lsst", operation_type="object_search")
     assert validate_step_capabilities(search(), graph).status == "unsupported"

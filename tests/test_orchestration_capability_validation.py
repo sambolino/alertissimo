@@ -203,7 +203,10 @@ def test_other_retrieval_rules_use_explicit_and_semantic_registry_evidence():
         GetCrossmatchStep(sources=[Source(broker="lasair", origin="ztf")]), graph
     )
     assert forced.status == crossmatch.status == "supported"
-    assert all("forced_photometry" in item.operation_types for item in forced.candidates)
+    assert {item.endpoint for item in forced.candidates} == {"query_forced_photometry"}
+    recipe, = forced.source_results[0].recipes
+    assert recipe.op == "get_forced_photometry"
+    assert recipe.calls[0].endpoint == "query_forced_photometry"
     assert {item.endpoint for item in crossmatch.candidates} == {
         "object", "objects", "sherlock_object", "sherlock_objects",
     }
