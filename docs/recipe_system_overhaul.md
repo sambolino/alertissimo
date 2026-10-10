@@ -305,6 +305,23 @@ LSST retrieval still defers without shared discovery-material proof; optional
 forced evidence and product deferrals retain their existing contracts. Recipes,
 scientific mappings, physical bindings, and runtime behavior are unchanged.
 
+`refactor/recipes-10m-encoder-roles` consolidates the duplicate strict operand
+reader used by recipe compilation and physical binding into the generic request
+transform layer. It reads existing bind/binding.roles declarations without
+resolving IR sources, loading providers, or selecting endpoints. Compiler and
+binder retain their own public errors and encoder responsibilities. Malformed
+binding containers now fail through the binder's public error instead of leaking
+an attribute error. Regression cases compare compiler rejection with both legacy
+and recipe binding; generic transform contracts join registry CI, and DSL CI
+watches request-transform changes. Provider YAML remains unchanged.
+
+The provider-by-provider tag cleanup is complete for currently owned operations.
+Remaining operation tags serve unowned compatibility or mixed material metadata;
+physical bind/binding.roles still supply encoding, identity, and cardinality
+contracts. The unrelated central broker registry is exposed through a legacy
+import wrapper and remains outside this cleanup. These declarations are retained
+until an actual replacement covers their consumers.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

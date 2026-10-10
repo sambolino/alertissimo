@@ -40,6 +40,34 @@ def _binding(declaration: Mapping[str, Any]) -> Mapping[str, Any]:
     return binding
 
 
+def binding_roles(declaration: Mapping[str, Any]) -> tuple[str, ...]:
+    """Read ordered encoder operands without resolving their semantic sources."""
+
+    raw_roles = _binding(declaration).get("roles")
+    if raw_roles is not None:
+        if (
+            not isinstance(raw_roles, list)
+            or not raw_roles
+            or any(not isinstance(role, str) or not role for role in raw_roles)
+            or len(set(raw_roles)) != len(raw_roles)
+        ):
+            raise RequestTransformError(
+                "binding.roles must be a non-empty list of unique role names"
+            )
+        if declaration.get("bind") is not None:
+            raise RequestTransformError(
+                "physical parameter declaration cannot use both bind and binding.roles"
+            )
+        return tuple(raw_roles)
+
+    role = declaration.get("bind")
+    if role is None:
+        return ()
+    if not isinstance(role, str) or not role:
+        raise RequestTransformError("bind must be a non-empty role name")
+    return (role,)
+
+
 def load_binding_adapter(path: str) -> Callable[..., Any]:
     """Resolve one registered generic request transform callable."""
 
@@ -154,6 +182,7 @@ __all__ = [
     "RequestTransformError",
     "UnsupportedRequestTransformError",
     "apply_binding_adapter",
+    "binding_roles",
     "coerce_physical_type",
     "load_binding_adapter",
     "transform_collection",

@@ -6,12 +6,16 @@ import pytest
 import yaml
 
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
+from alertissimo.data_layer.execution import EndpointRegistry
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraphError, build_capability_graph,
 )
 from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, ConstantValueSource, EncoderValueSource, StepValueSource,
 )
+from alertissimo.orchestration.binding import ParameterBindingError, bind_endpoint
+from alertissimo.orchestration.ir import ConeSearchStep
+from alertissimo.orchestration.runtime import EndpointPlan
 
 
 def provider(tmp_path, broker="lasair", origin="ztf"):
@@ -196,6 +200,37 @@ def test_rejects_unknown_encoder_and_wrong_named_operands(tmp_path):
     path.write_text(yaml.safe_dump(document), encoding="utf-8")
     with pytest.raises(CapabilityGraphError, match="registered request transform"):
         build_capability_graph(root)
+
+
+@pytest.mark.parametrize("metadata, message", [
+    ({"bind": False}, "bind must be a non-empty role name"),
+    ({"binding": {"roles": ["ra", "ra"]}}, "unique role names"),
+    ({"binding": {"roles": "ra"}}, "unique role names"),
+    ({"binding": {"roles": []}}, "unique role names"),
+    ({"bind": "ra", "binding": {"roles": ["ra"]}}, "both bind and binding.roles"),
+    ({"binding": ["ra"]}, "binding.*must be a mapping"),
+])
+def test_compiler_and_binder_reject_the_same_invalid_encoder_roles(tmp_path, metadata, message):
+    root, destination = provider(tmp_path)
+    path = destination / "endpoints.yaml"
+    document = yaml.safe_load(path.read_text())
+    declaration = document["endpoints"]["cone"]["params"]["ra"]
+    declaration.pop("bind", None)
+    declaration.pop("binding", None)
+    declaration.update(metadata)
+    path.write_text(yaml.safe_dump(document), encoding="utf-8")
+    write_recipes(destination, {"cone_search": [{"calls": [cone_call()]}]})
+    with pytest.raises(CapabilityGraphError, match=message):
+        build_capability_graph(root)
+
+    step = ConeSearchStep(semantic_type="summary", ra=12.5, dec=-4, radius=3)
+    # Both an unmigrated plan and a recipe plan consume the physical contract.
+    for sources in (None, {name: (name,) for name in ("ra", "dec", "radius")}):
+        plan = EndpointPlan(
+            broker="lasair", origin="ztf", endpoint="cone", parameter_sources=sources,
+        )
+        with pytest.raises(ParameterBindingError, match=message):
+            bind_endpoint(step, plan, EndpointRegistry(root))
 
 
 def test_duplicate_keys_and_orphan_recipe_files_fail_visibly(tmp_path):
