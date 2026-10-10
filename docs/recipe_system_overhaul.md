@@ -322,6 +322,17 @@ contracts. The unrelated central broker registry is exposed through a legacy
 import wrapper and remains outside this cleanup. These declarations are retained
 until an actual replacement covers their consumers.
 
+`refactor/recipes-10n-package-contracts` adds the final package boundary check.
+The wheel checker compares runtime resource contents with the checkout, compiles
+all eight provider recipe registries from the installed copy, and validates/plans
+cone discovery for every broker/survey pair. It retains the existing ALeRCE ZTF
+latest example and performs no provider calls or physical encoding. DSL CI now
+runs that check and watches packaging inputs. README links the current runtime
+guide in `recipe_runtime.md`; historical branch documents remain intact. Runtime
+code and provider declarations are unchanged. The implementation and cleanup are
+in place; broader local regression and live acceptance remain the final validation
+milestone before declaring the overhaul complete.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
