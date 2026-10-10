@@ -126,12 +126,21 @@ def test_duplicate_discovery_recipes_remain_ambiguous():
         plan_step(search(), graph)
 
 
-def test_unmigrated_provider_retains_the_legacy_compatibility_path():
+@pytest.mark.parametrize("origin", ["ztf", "lsst"])
+def test_unmigrated_provider_retains_the_legacy_compatibility_path(origin):
     graph = build_capability_graph()
     graph = replace(graph, recipe_capabilities=tuple(
         recipe for recipe in graph.recipe_capabilities if recipe.op != "semantic_search"
     ))
-    evidence = validate_step_capabilities(search(), graph)
+    # Compatibility tags belong to this legacy fixture, independently of
+    # which production provider declarations have migrated to recipes.
+    graph = replace(graph, endpoint_capabilities=tuple(
+        replace(item, operation_types=("object_search",))
+        if (item.broker, item.origin, item.endpoint) == ("alerce", origin, "query_objects")
+        else item for item in graph.endpoint_capabilities
+    ))
+    step = search(origin)
+    evidence = validate_step_capabilities(step, graph)
     assert evidence.status == "supported"
     assert evidence.source_results[0].recipes == ()
-    assert plan_step(search(), graph)[0].endpoint == "query_objects"
+    assert plan_step(step, graph)[0].endpoint == "query_objects"

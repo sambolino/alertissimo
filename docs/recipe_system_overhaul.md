@@ -284,6 +284,16 @@ remain enforced by recipes. The architecture retirement check now covers both
 surveys and already runs in registry CI. Physical request and response contracts,
 recipes, mappings, and runtime behavior are unchanged.
 
+`refactor/recipes-10k-alerce-ztf-tags` retires migrated discovery/filter, lookup,
+lightcurve, forced-photometry, classification, and product tags from seven ALeRCE
+ZTF endpoints. Mixed summary/history/component/raw-alert metadata and unowned
+endpoints remain. Discovery and confirmation compatibility regressions author
+their own tags and exercise both surveys, independently of production cleanup.
+Architecture checks accept optional tags and join registry CI. The ZTF latest
+selection binding, pagination, qualified classifier assignment, optional forced
+evidence, product deferrals, physical contracts, and normalization stay intact.
+ALeRCE LSST remains a separate cleanup branch.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation

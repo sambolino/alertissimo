@@ -130,10 +130,19 @@ def test_nonobject_target_namespace_defers_before_binding():
         plan_step(step, graph)
 
 
-def test_unmigrated_confirmation_retains_compatibility_resolution():
+@pytest.mark.parametrize("origin", ["ztf", "lsst"])
+def test_unmigrated_confirmation_retains_compatibility_resolution(origin):
     graph = build_capability_graph()
     graph = replace(graph, recipe_capabilities=tuple(item for item in graph.recipe_capabilities if item.op != "confirm"))
-    result = validate_step_capabilities(confirm(), graph)
+    # Supply an explicit legacy lookup tier instead of borrowing a production
+    # tag that is now redundant with the provider's lookup recipe.
+    graph = replace(graph, endpoint_capabilities=tuple(
+        replace(item, operation_types=("object_lookup",))
+        if (item.broker, item.origin, item.endpoint) == ("alerce", origin, "query_object")
+        else item for item in graph.endpoint_capabilities
+    ))
+    step = confirm(origin=origin)
+    result = validate_step_capabilities(step, graph)
     assert result.status == "supported"
     assert result.source_results[0].recipes == ()
-    assert plan_step(confirm(), graph)[0].endpoint == "query_object"
+    assert plan_step(step, graph)[0].endpoint == "query_object"
