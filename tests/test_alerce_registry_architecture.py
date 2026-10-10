@@ -68,7 +68,7 @@ def test_endpoints_remain_physical_contracts(origin):
         "capabilities",
     }
     for endpoint in endpoints.values():
-        assert endpoint.get("operation_types")
+        assert all("@" not in tag for tag in endpoint.get("operation_types", []))
         assert set(endpoint.get("server_filters", ())) <= set(endpoint.get("params", {}))
         assert "post_filter" in endpoint
         for name, parameter in endpoint.get("params", {}).items():
@@ -81,6 +81,21 @@ def test_endpoints_remain_physical_contracts(origin):
                 stack.extend(value.values())
             elif isinstance(value, list):
                 stack.extend(value)
+
+
+def test_ztf_recipe_owned_tags_are_retired():
+    endpoints = load("ztf", "endpoints.yaml")["endpoints"]
+    retired = {
+        "query_objects": {"object_search", "cone_search", "classification_filter"},
+        "query_object": {"object_lookup"},
+        "query_lightcurve": {"lightcurve"},
+        "query_forced_photometry": {"forced_photometry"},
+        "get_avro": {"data_product_lookup"},
+    }
+    for name, tags in retired.items():
+        assert tags.isdisjoint(endpoints[name].get("operation_types", []))
+    for name in ("query_probabilities", "get_stamps"):
+        assert "operation_types" not in endpoints[name]
 
 
 def test_lsst_query_probabilities_excludes_unsupported_classifier_argument():
