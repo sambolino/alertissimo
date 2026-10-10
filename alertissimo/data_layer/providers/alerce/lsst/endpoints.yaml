@@ -131,9 +131,6 @@ endpoints:
       type: array
       item: object_summary
     operation_types:
-    - object_search
-    - cone_search
-    - classification_filter
     - object_summary
     server_filters:
     - classifier
@@ -200,7 +197,6 @@ endpoints:
       type: object
       item: object_summary
     operation_types:
-    - object_lookup
     - object_summary
     server_filters:
     - oid
@@ -360,7 +356,6 @@ endpoints:
       item: forced_photometry
     operation_types:
     - object_history
-    - forced_photometry
     - lightcurve_component
     server_filters:
     - oid
@@ -415,7 +410,6 @@ endpoints:
       item: lightcurve_bundle
     operation_types:
     - object_history
-    - lightcurve
     server_filters:
     - oid
     post_filter: true
@@ -518,9 +512,6 @@ endpoints:
     output:
       type: array
       item: classification_probability
-    operation_types:
-    - classification_lookup
-    - object_classification
     server_filters:
     - oid
     post_filter: true
@@ -750,9 +741,6 @@ endpoints:
     output:
       type: object
       item: stamp_triplet
-    operation_types:
-    - data_product_lookup
-    - cutout
     server_filters:
     - oid
     - candid

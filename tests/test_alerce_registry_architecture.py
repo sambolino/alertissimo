@@ -83,15 +83,17 @@ def test_endpoints_remain_physical_contracts(origin):
                 stack.extend(value)
 
 
-def test_ztf_recipe_owned_tags_are_retired():
-    endpoints = load("ztf", "endpoints.yaml")["endpoints"]
+@pytest.mark.parametrize("origin", ORIGINS)
+def test_recipe_owned_tags_are_retired(origin):
+    endpoints = load(origin, "endpoints.yaml")["endpoints"]
     retired = {
         "query_objects": {"object_search", "cone_search", "classification_filter"},
         "query_object": {"object_lookup"},
         "query_lightcurve": {"lightcurve"},
         "query_forced_photometry": {"forced_photometry"},
-        "get_avro": {"data_product_lookup"},
     }
+    if origin == "ztf":
+        retired["get_avro"] = {"data_product_lookup"}
     for name, tags in retired.items():
         assert tags.isdisjoint(endpoints[name].get("operation_types", []))
     for name in ("query_probabilities", "get_stamps"):
