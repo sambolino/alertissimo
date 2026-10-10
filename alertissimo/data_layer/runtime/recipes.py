@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Mapping, get_args, get_origin
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from ..transforms.request import RequestTransformError, load_binding_adapter
+from ..transforms.request import RequestTransformError, binding_roles, load_binding_adapter
 
 if TYPE_CHECKING:
     from .capability_graph import (
@@ -205,20 +205,11 @@ def _source(
 
 def _encoder(declaration: dict, where: str) -> tuple[tuple[str, ...], str | None]:
     binding = _mapping(declaration.get("binding") or {}, f"{where} binding")
-    roles = binding.get("roles")
-    direct = declaration.get("bind")
-    if roles is not None:
-        if (
-            direct is not None or not isinstance(roles, list) or not roles
-            or any(not isinstance(role, str) or not role for role in roles)
-            or len(set(roles)) != len(roles)
-        ):
-            raise RecipeRegistryError(f"{where}: invalid encoder roles")
-        roles = tuple(roles)
-    else:
-        if direct is not None and (not isinstance(direct, str) or not direct):
-            raise RecipeRegistryError(f"{where}: invalid bind role")
-        roles = (direct,) if direct is not None else ()
+    try:
+        roles = binding_roles(declaration)
+    except RequestTransformError as exc:
+        reason = "invalid encoder roles" if binding.get("roles") is not None else "invalid bind role"
+        raise RecipeRegistryError(f"{where}: {reason}: {exc}") from exc
     adapter = binding.get("adapter")
     if len(roles) > 1 and adapter is None:
         raise RecipeRegistryError(f"{where}: multiple operands require an adapter")

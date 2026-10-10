@@ -7,6 +7,7 @@ on:
       - 'alertissimo/dsl/**'
       - 'alertissimo/data_layer/runtime/capability_graph.py'
       - 'alertissimo/data_layer/runtime/recipes.py'
+      - 'alertissimo/data_layer/transforms/**'
       - 'alertissimo/data_layer/providers/**/*.yaml'
       - 'alertissimo/orchestration/ir/**'
       - 'alertissimo/orchestration/incremental.py'

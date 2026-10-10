@@ -28,6 +28,7 @@ from alertissimo.data_layer.transforms.request import (
     RequestTransformError,
     UnsupportedRequestTransformError,
     apply_binding_adapter,
+    binding_roles,
     coerce_physical_type,
     transform_collection,
 )
@@ -58,32 +59,12 @@ def _context(plan: EndpointPlan) -> str:
 
 
 def _binding_roles(declaration: Mapping[str, Any]) -> tuple[str, ...]:
-    """Return canonical roles feeding one physical parameter declaration."""
+    """Keep physical-contract failures in the binder's public error family."""
 
-    binding = declaration.get("binding") or {}
-    raw_roles = binding.get("roles")
-    if raw_roles is not None:
-        if (
-            not isinstance(raw_roles, list)
-            or not raw_roles
-            or any(not isinstance(role, str) or not role for role in raw_roles)
-            or len(set(raw_roles)) != len(raw_roles)
-        ):
-            raise ParameterBindingError(
-                "binding.roles must be a non-empty list of unique role names"
-            )
-        if declaration.get("bind") is not None:
-            raise ParameterBindingError(
-                "physical parameter declaration cannot use both bind and binding.roles"
-            )
-        return tuple(raw_roles)
-
-    role = declaration.get("bind")
-    if role is None:
-        return ()
-    if not isinstance(role, str) or not role:
-        raise ParameterBindingError("bind must be a non-empty role name")
-    return (role,)
+    try:
+        return binding_roles(declaration)
+    except RequestTransformError as error:
+        raise ParameterBindingError(str(error)) from error
 
 
 def _transform(
