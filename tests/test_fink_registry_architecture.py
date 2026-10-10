@@ -85,13 +85,17 @@ def test_fink_projection_metadata_matches_columns_param():
                 assert projection.get("param") in params, endpoint_name
 
 
-def test_ztf_recipe_owned_tags_are_retired():
-    endpoints = load("ztf", "endpoints.yaml")["endpoints"]
-    assert {"object_lookup", "lightcurve"}.isdisjoint(
-        endpoints["objects"].get("operation_types", [])
-    )
-    assert "spatial_search" not in endpoints["conesearch"].get("operation_types", [])
-    assert "operation_types" not in endpoints["cutouts"]
+def test_recipe_owned_tags_are_retired():
+    for origin in ORIGINS:
+        endpoints = load(origin, "endpoints.yaml")["endpoints"]
+        assert {"object_lookup", "lightcurve"}.isdisjoint(
+            endpoints["objects"].get("operation_types", [])
+        )
+        assert "spatial_search" not in endpoints["conesearch"].get("operation_types", [])
+        assert "operation_types" not in endpoints["cutouts"]
+        if origin == "lsst":
+            assert "lightcurve" not in endpoints["sources"].get("operation_types", [])
+            assert "forced_photometry" not in endpoints["fp"].get("operation_types", [])
 
 
 def test_valid_fink_semantic_paths_are_preserved():

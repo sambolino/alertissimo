@@ -273,6 +273,17 @@ recipe calls. Fink architecture checks join registry CI. Physical request roles,
 response modes, mappings, cardinality, and execution behavior remain unchanged;
 Fink LSST cleanup is a separate branch.
 
+`refactor/recipes-10j-fink-lsst-tags` completes Fink's migrated-tag cleanup.
+Objects retires object_lookup, sources retires lightcurve, fp retires
+forced_photometry, conesearch retires spatial_search, and cutouts removes its
+cutout/data-product tags. Remaining mixed history/summary/search metadata and
+unowned specialized endpoints are preserved. Existing lightcurve recipes still
+include optional forced-photometry evidence, and explicit forced retrieval still
+reuses equivalent calls. Product alert-ID namespaces and normalization deferrals
+remain enforced by recipes. The architecture retirement check now covers both
+surveys and already runs in registry CI. Physical request and response contracts,
+recipes, mappings, and runtime behavior are unchanged.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
