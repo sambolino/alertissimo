@@ -132,6 +132,15 @@ def test_record_mismatch_and_unconstrained_ambiguity_are_preserved():
     with pytest.raises(PlanningAmbiguityError):
         plan_step(cone().model_copy(update={"sources": []}), graph)
     legacy = replace(graph, recipe_capabilities=())
+    with pytest.raises(UnsupportedStepError):
+        plan_step(cone(), legacy)
+    # This compatibility fixture owns its geometric tag independently of
+    # the migrated production contract.
+    legacy = replace(legacy, endpoint_capabilities=tuple(
+        replace(item, operation_types=item.operation_types + ("spatial_search",))
+        if (item.broker, item.origin, item.endpoint) == ("fink", "ztf", "conesearch")
+        else item for item in legacy.endpoint_capabilities
+    ))
     legacy_plan, = plan_step(cone(), legacy)
     assert legacy_plan.parameter_sources is None
 

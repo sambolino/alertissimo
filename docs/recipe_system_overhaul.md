@@ -263,6 +263,16 @@ target assignment and mapped history. Registry CI includes that architecture
 module. Native Astropy encoders, Python-client paths, and response mappings remain
 unchanged.
 
+`refactor/recipes-10i-fink-ztf-tags` removes object_lookup/lightcurve from the
+ZTF objects endpoint, spatial_search from conesearch, and cutout/data-product tags
+from cutouts. These operations are recipe-owned even when product response
+contracts remain deferred. Mixed object-history and alert-search metadata stays
+in place, together with unowned specialized endpoints. The legacy cone fixture
+authors its own compatibility tag; product encoder inspection follows compiled
+recipe calls. Fink architecture checks join registry CI. Physical request roles,
+response modes, mappings, cardinality, and execution behavior remain unchanged;
+Fink LSST cleanup is a separate branch.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
