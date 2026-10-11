@@ -14,6 +14,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from alertissimo.ui_portfolios import (
     DEFAULT_PORTFOLIO,
     load_ui_portfolio,
+    loaded_photometry_counts,
     portfolio_to_display,
     records_by_family,
 )
@@ -195,6 +196,12 @@ def lightcurve_chart(
             alt.Tooltip("magnitude:Q", title="sci mag", format=".2f"),
             alt.Tooltip("magnitudeError:Q", title="Error", format=".2f"),
             alt.Tooltip("band:N", title="Filter"),
+            *([
+                alt.Tooltip("broker:N", title="Broker"),
+                alt.Tooltip("origin:N", title="Survey"),
+                alt.Tooltip("record_id:N", title="Record"),
+                alt.Tooltip("real_bogus:Q", title="Real/bogus", format=".3f"),
+            ] if "broker" in frame else []),
         ],
     )
 
@@ -243,7 +250,8 @@ def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_tabl
     # click interaction; it is intentionally not a grid column because Arrow
     # tables cannot hash nested dictionaries.
     table = table[[column for column in (
-        "date", "mjd", "band", "magnitude", "magnitudeError", "record_id"
+        "date", "mjd", "broker", "origin", "endpoint", "band", "magnitude",
+        "magnitudeError", "real_bogus", "record_id"
     ) if column in table]]
     st.subheader("Light curve data")
 
@@ -262,6 +270,12 @@ def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_tabl
     )
     grid.configure_column("date", header_name="UTC date", minWidth=190, flex=2)
     grid.configure_column("mjd", header_name="MJD", minWidth=145, flex=1)
+    for column, label in (
+        ("broker", "Broker"), ("origin", "Survey"), ("endpoint", "Endpoint"),
+        ("real_bogus", "Real/bogus"),
+    ):
+        if column in table:
+            grid.configure_column(column, header_name=label, minWidth=120, flex=1)
     grid.configure_column(
         "band",
         header_name="Band",
@@ -314,6 +328,11 @@ def selected_chart_point(event: Any, selection_name: str) -> str | None:
 def render_detection_details(data: dict[str, Any], detection: pd.Series) -> None:
     """Render the individual detection represented by a selected chart point."""
     st.markdown("#### Detection details")
+    record_id = detection.get("record_id")
+    record = next((item for item in records_by_family(data, "detection") if item.get("record_id") == record_id), None)
+    if record is not None:
+        render_record_evidence(data, record)
+        return
     st.caption("Individual `detection` SemanticRecord selected from the light curve.")
     details = {
         "time.datetime": format_utc(detection["date"]),
@@ -332,6 +351,26 @@ def render_detection_details(data: dict[str, Any], detection: pd.Series) -> None
     if isinstance(extra, dict):
         details.update(extra)
     st.json(details, expanded=True)
+
+
+def render_record_evidence(data: dict[str, Any], record: dict[str, Any]) -> None:
+    """Show the exact normalized fields and their record-linked execution source."""
+    st.caption(f"{record['semantic_type']} · {record['record_id']}")
+    source = record.get("internal_source")
+    execution_id = source.get("internal_execution_id") if isinstance(source, dict) else None
+    execution = next((
+        item for item in data.get("executions", [])
+        if execution_id is not None and item.get("internal_execution_id") == execution_id
+    ), None)
+    if execution is not None:
+        st.caption(
+            f"Broker: {execution.get('broker', '—')} · Survey: {execution.get('origin', '—')} · "
+            f"Endpoint: {execution.get('endpoint', '—')}"
+        )
+    st.markdown("**Normalized fields**")
+    st.json(record["fields"], expanded=True)
+    st.markdown("**Record source and execution provenance**")
+    st.json({"internal_source": source, "execution": execution}, expanded=False)
 
 
 def _rows(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
@@ -432,7 +471,7 @@ def render_semantic_record_browser(data: dict[str, Any], *, widget_key: str) -> 
     )
     selected = next(record for record in grouped if record["record_id"] == selected_id)
     st.markdown(f"**{selected['semantic_type']}** · `{selected['record_id']}`")
-    st.json(selected["fields"], expanded=False)
+    render_record_evidence(data, selected)
 
 
 def summary_table_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
@@ -526,6 +565,12 @@ def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
 def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count: int, widget_key: str) -> None:
     """Render the existing interactive light-curve view and measurement table."""
     st.markdown("#### Light curve")
+    loaded = loaded_photometry_counts(data)
+    if loaded:
+        st.caption("Loaded photometry by provider: " + " · ".join(
+            f"{broker}: {count}" for broker, count in loaded
+        ))
+        st.caption("Provider records can include the same observation reported by different brokers.")
     detection_col, upper_col, forced_col, band_col = st.columns(4)
     detection_col.metric("Plotted points", len(frame))
     record_counts = data.get("record_counts", {})
@@ -579,6 +624,19 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
     render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}")
+    detections = records_by_family(data, "detection")
+    if detections:
+        with st.expander("Inspect detection records"):
+            by_id = {record["record_id"]: record for record in detections}
+            selected_id = st.selectbox(
+                "Detection record", list(by_id),
+                format_func=lambda record_id: (
+                    f"{by_id[record_id]['semantic_type']} · "
+                    f"MJD {by_id[record_id]['fields'].get('time.mjd', '—')} · {record_id}"
+                ),
+                key=f"detection_inspector_{widget_key}",
+            )
+            render_record_evidence(data, by_id[selected_id])
 
 
 def render_classification(data: dict[str, Any]) -> None:

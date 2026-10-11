@@ -49,6 +49,26 @@ tests with focused dependencies and no provider calls.
 Tests and live calls are run by the user locally; neither was run while preparing
 this branch.
 
+The detection-count side fix is now also included in this branch. Result cards
+and the photometry view show loaded measurements by provider, separately from
+reported summary counts. Hover and table views expose broker, survey, and
+real/bogus; clicking a plotted detection shows its full normalized fields and
+record-linked execution provenance. An Inspect detection records expander allows
+inspection without selecting overlapping chart points. The generic Semantic
+Records browser exposes the same source metadata.
+
+A continuation containing both a filter and a later light-curve retrieval can
+increase the final number of loaded measurements. A filter-only continuation
+should not add records or execute new provider calls. Counts across brokers
+represent retained provider evidence and may include the same observation from
+different providers; no scientific cross-provider deduplication is inferred here.
+The existing Filter semantics select candidate Portfolios if their evidence
+satisfies the predicate. They do not delete individual low-quality detections
+from a surviving Portfolio. Thus a surviving object may still contain detections
+below a real/bogus threshold, or detections from another provider without that
+quality field. The inspector shows those original values rather than implying
+that every retained measurement passed the candidate-selection predicate.
+
 ```bash
 PYTHONPATH=. python -m pytest -q \
   tests/test_api_continuation.py \

@@ -20,6 +20,10 @@ Branch `fix/ui-reported-detection-snapshots` is independent of UI branch 02 and
 starts from main `1d715ac`. Merge branch 02 first, then rebase this fix on current
 main. The changes are in separate areas of the shared files.
 
+The fix has also been cherry-picked into the updated UI 02 branch for a combined
+handoff while neither branch is merged. When using that combined handoff, merge
+UI 02 once; no separate PR is needed for this side fix.
+
 Run locally:
 
 ```bash

@@ -40,6 +40,7 @@ from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
+    loaded_photometry_counts,
     portfolio_to_display,
     reported_detection_counts,
 )
@@ -261,6 +262,11 @@ def render_live_portfolio_cards(
                 f"{display.get('survey', '—')} · "
                 f"{' · '.join(dict.fromkeys(brokers)) or 'broker evidence'}"
             )
+            loaded = loaded_photometry_counts(display)
+            if loaded:
+                st.caption("Loaded photometry by provider: " + " · ".join(
+                    f"{broker}: {count}" for broker, count in loaded
+                ))
             metrics = st.columns(3)
             metrics[0].metric(
                 "Reported detections",
@@ -492,6 +498,10 @@ def render_dsl_entry(
         st.write(
             "Filter or enrich the portfolios above. Enter continuation clauses only; "
             "do not repeat `objects from ...`."
+        )
+        st.caption(
+            "Filters select candidate objects using their recorded evidence. "
+            "Retrieval clauses can add measurements to the surviving objects."
         )
     if context:
         st.caption(context)
