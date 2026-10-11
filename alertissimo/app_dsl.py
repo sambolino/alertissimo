@@ -40,7 +40,9 @@ def main() -> None:
         return
 
     graph = build_capability_graph()
-    validation = validate_dsl(dsl_input, graph=graph, name="UI workflow validation")
+    validation = validate_dsl(
+        dsl_input, graph=graph, name="UI workflow validation", continue_from=None,
+    )
     if validation.parse_error is not None:
         st.error(f"DSL syntax error: {validation.parse_error}")
         return

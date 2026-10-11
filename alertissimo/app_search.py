@@ -15,7 +15,7 @@ from typing import Any
 import streamlit as st
 from dotenv import load_dotenv
 
-from alertissimo.api import DSLExecutionResult, execute_dsl
+from alertissimo.api import DSLExecutionResult, IncrementalExecutionError, execute_dsl, validate_dsl
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
 from alertissimo.data_layer.execution import MissingEndpointCredentialError
 from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
@@ -34,6 +34,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.orchestration.ir import ConeSearchStep
+from alertissimo.orchestration.planner import PlanningError
 from alertissimo.orchestration.runtime import WorkflowExecutionError
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
@@ -151,8 +152,11 @@ def render_selected_candidate(candidate: dict[str, Any]) -> None:
     with dsl_tab:
         render_dsl_entry(
             load_demo_search_data()[0],
-            title="Continue with DSL",
-            context=f'Continue the survey from {candidate["object_id"]}.',
+            title="Start a live investigation",
+            context=(
+                f'This Portfolio uses frozen evidence for {candidate["object_id"]}. '
+                "Enter a complete workflow to start a live investigation."
+            ),
             key="survey_dsl_after_search_result",
         )
 
@@ -512,31 +516,59 @@ def render_dsl_entry(
 
     if submitted:
         try:
-            with st.spinner("Executing DSL against broker services…"):
-                execution = execute_dsl(
-                    dsl_text,
-                    name=f"interactive DSL: {key}",
-                )
+            graph = load_block_capability_graph()
+            validation = validate_dsl(
+                dsl_text, graph=graph, name=f"interactive DSL: {key}",
+                continue_from=continue_from,
+            )
+            if validation.semantic is not None:
+                for issue in validation.semantic.warnings:
+                    st.warning(f"{issue.code}: {issue.message}")
+            if validation.parse_error is not None:
+                st.error(f"DSL syntax error: {validation.parse_error}")
+            elif not validation.is_valid:
+                if validation.semantic is not None:
+                    for issue in validation.semantic.errors:
+                        st.error(f"{issue.code}: {issue.message}")
+            elif not validation.is_runnable:
+                st.error(f"This workflow cannot currently run: {validation.lowering_error}")
+            else:
+                with st.spinner("Executing DSL against broker services…"):
+                    execution = execute_dsl(
+                        dsl_text,
+                        name=f"interactive DSL: {key}",
+                        graph=graph,
+                        continue_from=continue_from,
+                    )
+                # Invalidate old descendant views, but retain draft and nonce keys:
+                # clearing a nonce could replay a cached component submission.
+                # Failed validation/execution leaves the last successful view intact.
+                for state_key in list(st.session_state):
+                    if state_key.startswith(f"{key}_next_") and state_key.endswith((
+                        "_dsl_execution", "_live_portfolio_selected", "_cone_results", "_cone_selected",
+                    )):
+                        st.session_state.pop(state_key)
+                st.session_state[execution_state_key] = execution
+                st.session_state.pop(results_state_key, None)
+                st.session_state.pop(selection_state_key, None)
+                st.session_state.pop(live_selection_state_key, None)
         except DSLParseError as error:
             st.error(f"DSL syntax error: {error}")
-            return
         except SurfaceLoweringError as error:
             st.error(f"DSL cannot be compiled: {error}")
-            return
+        except PlanningError as error:
+            st.error(f"This workflow cannot be planned: {error}")
+        except IncrementalExecutionError as error:
+            st.error(f"This result cannot safely be continued: {error}")
         except MissingEndpointCredentialError as error:
             st.error(f"DSL requires a broker credential: {error}")
-            return
         except WorkflowExecutionError as error:
             st.error(f"A broker request failed: {error}")
-            return
         except Exception as error:
             st.error(f"Live DSL execution failed: {type(error).__name__}: {error}")
-            return
 
-        st.session_state[execution_state_key] = execution
-        st.session_state.pop(results_state_key, None)
-        st.session_state.pop(selection_state_key, None)
-        st.session_state.pop(live_selection_state_key, None)
+        if execution_state_key in st.session_state:
+            st.caption("Showing the last successful result for this editor.")
 
     execution = st.session_state.get(execution_state_key)
     if execution is not None:
@@ -548,6 +580,9 @@ def render_dsl_entry(
             "Results are normalized through the provider mappings. Raw broker payloads "
             "are not displayed."
         )
+        for step_run in execution.run.steps:
+            for warning in step_run.warnings:
+                st.warning(f"Supplementary data warning: {warning}")
         if not execution.portfolios:
             st.info("The live query completed successfully but returned no objects.")
             return
@@ -565,7 +600,7 @@ def render_dsl_entry(
             st.divider()
             render_dsl_entry(
                 candidates,
-                title="Filter DSL query",
+                title="Continue this investigation",
                 context=(
                     "Example: `filter classification.best.probability >= 0.8`. "
                     "This is evaluated against the results above."

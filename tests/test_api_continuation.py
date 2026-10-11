@@ -1,4 +1,9 @@
-from alertissimo.api import execute_dsl, validate_dsl
+import pytest
+
+import alertissimo.api as api
+from alertissimo.api import IncrementalExecutionError, execute_dsl, validate_dsl
+from alertissimo.dsl import DSLParseError
+from alertissimo.orchestration.runtime import WorkflowExecutionError
 from scripts.smoke.executors import FixtureEndpointExecutor, fixture_key
 
 
@@ -103,3 +108,69 @@ def test_complete_candidate_program_is_valid_as_a_fresh_workflow():
     assert [step.op for step in validation.compilation.workflow.steps] == [
         "semantic_search"
     ]
+
+
+def test_explicit_continuation_uses_its_parent_after_another_investigation(monkeypatch):
+    # Poison the compatibility context: explicit UI calls must never consult it.
+    compatibility_context = object()
+    monkeypatch.setattr(api, "_active_workflow", compatibility_context)
+    executor = _executor()
+    first = execute_dsl(FIRST_PASS, executor=executor, continue_from=None)
+    other = execute_dsl(
+        FIRST_PASS.replace("with lightcurve via fink\n", ""),
+        executor=executor, continue_from=None,
+    )
+    snapshots = (first.to_dict(), other.to_dict())
+    assert len(executor.calls) == 5
+
+    validation = validate_dsl(SECOND_PASS, continue_from=first)
+    assert validation.is_runnable
+    assert len(executor.calls) == 5
+    second = execute_dsl(SECOND_PASS, executor=executor, continue_from=first)
+
+    assert len(executor.calls) == 6
+    assert executor.calls[-1][2:] == ("lightcurves", {"objectIds": CANDIDATE_ID})
+    assert tuple(second.workflow.steps[:2]) == tuple(first.workflow.steps)
+    assert (first.to_dict(), other.to_dict()) == snapshots
+    assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
+    assert second.run.steps[1].execution_ids == first.run.steps[1].execution_ids
+    assert api._active_workflow is compatibility_context
+
+
+def test_explicit_empty_context_refuses_a_fragment_even_with_an_active_workflow(monkeypatch):
+    executor = _executor()
+    first = execute_dsl(FIRST_PASS, executor=executor, continue_from=None)
+    monkeypatch.setattr(api, "_active_workflow", first.staged)
+
+    validation = validate_dsl(SECOND_PASS, continue_from=None)
+    assert validation.parse_error is not None
+    with pytest.raises(DSLParseError, match="already executed workflow"):
+        execute_dsl(SECOND_PASS, executor=executor, continue_from=None)
+    assert len(executor.calls) == 3
+    assert api._active_workflow is first.staged
+
+
+@pytest.mark.parametrize("fail_call", [2, 4], ids=["incomplete-parent", "new-call-failure"])
+def test_explicit_continuation_failure_preserves_parent_and_compatibility_context(monkeypatch, fail_call):
+    monkeypatch.setattr(api, "_active_workflow", None)
+    executor = _executor()
+    executor.fail_call = fail_call
+    first = execute_dsl(FIRST_PASS, executor=executor, continue_from=None)
+    snapshot = first.to_dict()
+
+    expected = IncrementalExecutionError if fail_call == 2 else WorkflowExecutionError
+    with pytest.raises(expected):
+        execute_dsl(SECOND_PASS, executor=executor, continue_from=first)
+    assert len(executor.calls) == (3 if fail_call == 2 else 4)
+    assert first.to_dict() == snapshot
+    assert api._active_workflow is None
+
+
+def test_explicit_continuation_rejects_a_complete_program_without_provider_calls():
+    executor = _executor()
+    first = execute_dsl(FIRST_PASS, executor=executor, continue_from=None)
+    validation = validate_dsl(FIRST_PASS, continue_from=first)
+    assert validation.parse_error is not None
+    with pytest.raises(DSLParseError, match="continuation clauses only"):
+        execute_dsl(FIRST_PASS, executor=executor, continue_from=first)
+    assert len(executor.calls) == 3

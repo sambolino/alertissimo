@@ -41,6 +41,24 @@ if validation.is_runnable:
 
 `execute_dsl()` returns the finalized semantic workflow result and browser-safe serialization helpers while keeping raw provider payloads behind the execution boundary.
 
+Interactive clients should make continuation context explicit:
+
+```python
+validation = validate_dsl(source, continue_from=None)
+if validation.is_runnable:
+    first = execute_dsl(source, continue_from=None)
+    fragment = "filter detection@ztf:fink.quality.real_bogus >= 0.8"
+    continuation = validate_dsl(fragment, continue_from=first)
+    if continuation.is_runnable:
+        second = execute_dsl(fragment, continue_from=first)
+```
+
+Store the returned result in the client session. Explicit `None` starts fresh;
+a supplied result owns continuation without reading or replacing process-wide
+active state. Omitting `continue_from` retains implicit continuation for existing
+single-client scripts. Planning, credentials, and provider execution can still
+fail after validation; the previous result remains available.
+
 ## Declarative runtime
 
 Provider recipes and predicate/selection bindings, physical endpoint contracts,
