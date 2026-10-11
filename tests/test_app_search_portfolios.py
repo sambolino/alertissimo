@@ -333,6 +333,8 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch, ou
     class FakeStreamlit:
         session_state: dict[str, object] = {}
         errors: list[str] = []
+        successes: list[str] = []
+        warnings: list[str] = []
 
         def subheader(self, *_args, **_kwargs):
             pass
@@ -343,8 +345,11 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch, ou
         def caption(self, *_args, **_kwargs):
             pass
 
-        def success(self, *_args, **_kwargs):
-            pass
+        def success(self, message):
+            self.successes.append(message)
+
+        def warning(self, message):
+            self.warnings.append(message)
 
         def error(self, message):
             self.errors.append(message)
@@ -360,6 +365,8 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch, ou
     FakeStreamlit.session_state = {
         "parent_dsl_execution": old_result,
         "parent_next_dsl_execution": old_result,
+        "parent_next_dsl_submission_errors": ["Old child request was rejected"],
+        "parent_dsl_submission_errors": ["Old parent request was rejected"],
         "parent_next_block_last_submit": 123,
         "parent_next_block_dsl": "filter classification.best.probability >= 0.8",
     }
@@ -421,6 +428,22 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch, ou
     assert FakeStreamlit.session_state["parent_dsl_execution"] is displayed
     assert ("parent_next_dsl_execution" in FakeStreamlit.session_state) == (outcome != "success")
     assert bool(FakeStreamlit.errors) == (outcome != "success")
+    assert bool(FakeStreamlit.successes) == (outcome == "success")
+    assert bool(FakeStreamlit.warnings) == (outcome != "success")
+    assert ("parent_next_dsl_submission_errors" in FakeStreamlit.session_state) == (outcome != "success")
+    assert ("parent_dsl_submission_errors" in FakeStreamlit.session_state) == (outcome != "success")
     assert FakeStreamlit.session_state["parent_next_block_last_submit"] == 123
     assert FakeStreamlit.session_state["parent_next_block_dsl"].startswith("filter ")
     assert editor_modes == [("parent", True)]
+
+    # Widget reruns must keep the rejection visible without resubmitting it.
+    monkeypatch.setattr(app_search, "render_dsl_block_input", lambda **_kwargs: ("draft", False))
+    FakeStreamlit.errors.clear()
+    FakeStreamlit.successes.clear()
+    FakeStreamlit.warnings.clear()
+    original_render([], key="parent", continue_from=parent)
+    assert validations == expected_calls
+    assert calls == ([] if outcome == "validation-error" else expected_calls)
+    assert bool(FakeStreamlit.errors) == (outcome != "success")
+    assert bool(FakeStreamlit.successes) == (outcome == "success")
+    assert bool(FakeStreamlit.warnings) == (outcome != "success")

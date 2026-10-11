@@ -94,6 +94,30 @@ def lightcurve_dataframe(data: dict[str, Any]) -> tuple[pd.DataFrame, int]:
     return frame, initial_count - len(frame)
 
 
+def filter_photometry_frame(
+    frame: pd.DataFrame,
+    *,
+    bands: list[str],
+    brokers: list[str] | None = None,
+    min_real_bogus: float | None = None,
+    include_missing: bool = False,
+) -> pd.DataFrame:
+    """Select displayed measurements without modifying Portfolio evidence."""
+    keep = frame["band"].astype(str).isin(bands)
+    if brokers is not None:
+        keep &= frame["broker"].fillna("unknown").astype(str).isin(brokers)
+    if min_real_bogus is not None:
+        scores = pd.to_numeric(
+            frame.get("real_bogus", pd.Series(index=frame.index, dtype=float)),
+            errors="coerce",
+        )
+        quality = scores.ge(min_real_bogus)
+        if include_missing:
+            quality |= scores.isna()
+        keep &= quality
+    return frame.loc[keep].copy()
+
+
 def band_scale(frame: pd.DataFrame) -> alt.Scale:
     """Build a stable color scale, including bands not present in the demo file."""
     bands = list(dict.fromkeys(frame["band"].astype(str)))
@@ -200,7 +224,7 @@ def lightcurve_chart(
                 alt.Tooltip("broker:N", title="Broker"),
                 alt.Tooltip("origin:N", title="Survey"),
                 alt.Tooltip("record_id:N", title="Record"),
-                alt.Tooltip("real_bogus:Q", title="Real/bogus", format=".3f"),
+                alt.Tooltip("real_bogus:Q", title="Real/bogus", format=".6f"),
             ] if "broker" in frame else []),
         ],
     )
@@ -243,9 +267,11 @@ def format_utc(value: pd.Timestamp) -> str:
     return value.strftime("%Y-%m-%d %H:%M UTC")
 
 
-def render_lightcurve_table(data: dict[str, Any], *, key: str = "lightcurve_table") -> None:
-    """Render the original light-curve data in a sortable, paginated grid."""
-    table = pd.DataFrame(data["lightCurve"])
+def render_lightcurve_table(
+    data: dict[str, Any], *, key: str = "lightcurve_table", frame: pd.DataFrame | None = None,
+) -> None:
+    """Render the selected light-curve measurements in a sortable grid."""
+    table = pd.DataFrame(data["lightCurve"]) if frame is None else frame
     # ``details`` is the complete SemanticRecord field mapping used by the
     # click interaction; it is intentionally not a grid column because Arrow
     # tables cannot hash nested dictionaries.
@@ -563,7 +589,7 @@ def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
 
 
 def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count: int, widget_key: str) -> None:
-    """Render the existing interactive light-curve view and measurement table."""
+    """Use one measurement selection for the plot, table, and inspector."""
     st.markdown("#### Light curve")
     loaded = loaded_photometry_counts(data)
     if loaded:
@@ -571,35 +597,70 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             f"{broker}: {count}" for broker, count in loaded
         ))
         st.caption("Provider records can include the same observation reported by different brokers.")
+    st.caption(
+        "DSL filters keep candidate objects when their evidence matches; they do not "
+        "remove individual detections. The display controls below select measurements "
+        "locally, without provider calls. The full evidence remains in Semantic Records."
+    )
+    st.markdown("##### Display measurements")
+    observed_bands = list(dict.fromkeys(frame["band"].astype(str)))
+    configured_bands = list(data.get("filters", {}))
+    bands = [band for band in configured_bands if band in observed_bands]
+    bands.extend(band for band in observed_bands if band not in bands)
+    selected_bands = st.pills(
+        "Bands", options=bands, default=bands, selection_mode="multi",
+        key=f"band_filter_{widget_key}",
+    )
+    selected_brokers = None
+    if "broker" in frame:
+        brokers = sorted(frame["broker"].fillna("unknown").astype(str).unique())
+        selected_brokers = st.multiselect(
+            "Brokers", brokers, default=brokers, key=f"broker_filter_{widget_key}",
+        )
+    apply_quality = st.checkbox(
+        "Apply real/bogus threshold to displayed measurements",
+        key=f"quality_filter_{widget_key}",
+    )
+    threshold = st.number_input(
+        "Minimum real/bogus (inclusive)", min_value=0.0, max_value=1.0,
+        value=0.999, step=0.001, format="%.6f", disabled=not apply_quality,
+        key=f"quality_threshold_{widget_key}",
+    )
+    include_missing = st.checkbox(
+        "Also show measurements with a missing real/bogus score",
+        value=False, disabled=not apply_quality, key=f"quality_missing_{widget_key}",
+    )
+    if apply_quality:
+        st.caption(
+            "The threshold uses each record's normalized real/bogus value. "
+            "A blank value is missing, not zero. Broker scores are not recalibrated."
+        )
+    filtered_frame = filter_photometry_frame(
+        frame, bands=selected_bands, brokers=selected_brokers,
+        min_real_bogus=threshold if apply_quality else None,
+        include_missing=include_missing,
+    )
+    filtered_frame["_point_id"] = filtered_frame.index.astype(str)
+    st.caption(f"Showing {len(filtered_frame)} of {len(frame)} loaded valid measurements.")
+    if "broker" in filtered_frame and not filtered_frame.empty:
+        visible_counts = filtered_frame["broker"].fillna("unknown").value_counts().sort_index()
+        st.caption("Shown photometry by provider: " + " · ".join(
+            f"{broker}: {count}" for broker, count in visible_counts.items()
+        ))
     detection_col, upper_col, forced_col, band_col = st.columns(4)
-    detection_col.metric("Plotted points", len(frame))
+    detection_col.metric("Shown points", len(filtered_frame))
     record_counts = data.get("record_counts", {})
-    upper_col.metric("Non-detections", record_counts.get("non_detection", "—"))
-    forced_col.metric("Forced photometry", record_counts.get("forced_photometry", "—"))
-    band_col.metric("Observed bands", len(frame["band"].unique()))
+    upper_col.metric("Loaded non-detections", record_counts.get("non_detection", "—"))
+    forced_col.metric("Loaded forced photometry", record_counts.get("forced_photometry", "—"))
+    band_col.metric("Shown bands", len(filtered_frame["band"].unique()))
 
     image_col, chart_col = st.columns([1, 5], gap="large")
     with image_col:
         st.image(DEFAULT_IMAGE_PATH, caption="Object image", use_container_width=True)
     with chart_col:
-        observed_bands = list(dict.fromkeys(frame["band"].astype(str)))
-        configured_bands = list(data.get("filters", {}))
-        bands = [band for band in configured_bands if band in observed_bands]
-        bands.extend(band for band in observed_bands if band not in bands)
-        band_counts = frame["band"].astype(str).value_counts().to_dict()
-        st.markdown('<div class="filter-title">Filter</div>', unsafe_allow_html=True)
-        selected_bands = st.pills(
-            "Filter",
-            options=bands,
-            default=bands,
-            selection_mode="multi",
-            key=f"band_filter_{widget_key}",
-            label_visibility="collapsed",
-        )
-        filtered_frame = frame[frame["band"].astype(str).isin(selected_bands)].copy()
-        filtered_frame["_point_id"] = filtered_frame.index.astype(str)
+        band_counts = filtered_frame["band"].astype(str).value_counts().to_dict()
         if filtered_frame.empty:
-            st.info("Select at least one band to display the light curve.")
+            st.info("No measurements match the display controls. Adjust the bands, brokers, or quality threshold.")
         else:
             selection_name = f"detection_point_{widget_key}"
             event = st.altair_chart(
@@ -623,10 +684,14 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
     st.caption("Counts and plotted measurements come from normalized semantic records.")
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
-    render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}")
-    detections = records_by_family(data, "detection")
+    render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}", frame=filtered_frame)
+    visible_ids = set(filtered_frame.get("record_id", ()))
+    detections = [
+        record for record in records_by_family(data, "detection")
+        if record["record_id"] in visible_ids
+    ]
     if detections:
-        with st.expander("Inspect detection records"):
+        with st.expander("Inspect shown detection records"):
             by_id = {record["record_id"]: record for record in detections}
             selected_id = st.selectbox(
                 "Detection record", list(by_id),
@@ -758,7 +823,7 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
     first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
     last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))
     brightest.metric("Brightest", f'{frame["magnitude"].min():.2f} mag')
-    count.metric("Displayed points", len(frame))
+    count.metric("Loaded points", len(frame))
     summary, photometry, classification, crossmatches, spectra, products, records, provenance = st.tabs([
         "Summary", "Detections & light curve", "Classifications", "Crossmatches", "Spectra",
         "Data products", "Semantic Records", "Provenance",
