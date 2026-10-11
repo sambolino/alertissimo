@@ -52,8 +52,18 @@ an expander; neither operation makes provider calls or proves provider uptime.
 The main investigation page still needs session-safe execution. Its current
 `continue_from` argument controls the display but is not passed to execution;
 the public facade currently stores an active workflow in process-local state.
-Branch 02 must establish an explicit session-owned orchestration context at the
-API boundary. Do not make the UI manipulate private facade globals.
+Branch 02 establishes an explicit session-owned orchestration context at the
+API boundary. The UI does not manipulate private facade globals.
+
+## Branch 02 progress
+
+`refactor/ui-02-session-execution` adds explicit `continue_from` to the public
+facade. Streamlit validation and execution now use the editor's own prior result
+or explicit `None`, without consulting or replacing compatibility state. Failed
+submissions retain the prior view, successful parent reruns clear old descendant
+results, and supplementary warnings are visible. Script callers that omit the
+argument retain their existing behavior. The [session execution runbook](ui_session_execution.md)
+describes local checks and the unchanged incomplete-prefix refusal policy.
 
 ## Local verification and handoff
 

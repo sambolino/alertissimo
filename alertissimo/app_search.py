@@ -15,7 +15,7 @@ from typing import Any
 import streamlit as st
 from dotenv import load_dotenv
 
-from alertissimo.api import DSLExecutionResult, execute_dsl
+from alertissimo.api import DSLExecutionResult, IncrementalExecutionError, execute_dsl, validate_dsl
 from alertissimo.app_plot import load_lightcurve_document, render_object_portfolio
 from alertissimo.data_layer.execution import MissingEndpointCredentialError
 from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
@@ -34,13 +34,15 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.orchestration.ir import ConeSearchStep
+from alertissimo.orchestration.planner import PlanningError
 from alertissimo.orchestration.runtime import WorkflowExecutionError
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
+    loaded_photometry_counts,
     portfolio_to_display,
-    records_by_family,
+    reported_detection_counts,
 )
 
 
@@ -151,8 +153,11 @@ def render_selected_candidate(candidate: dict[str, Any]) -> None:
     with dsl_tab:
         render_dsl_entry(
             load_demo_search_data()[0],
-            title="Continue with DSL",
-            context=f'Continue the survey from {candidate["object_id"]}.',
+            title="Start a live investigation",
+            context=(
+                f'This Portfolio uses frozen evidence for {candidate["object_id"]}. '
+                "Enter a complete workflow to start a live investigation."
+            ),
             key="survey_dsl_after_search_result",
         )
 
@@ -163,25 +168,9 @@ def candidate_result_key(candidate: dict[str, Any]) -> str:
 
 
 def reported_detection_metric(display: dict[str, Any]) -> str:
-    """Format provider-labelled summary counts for a discovery card."""
+    """Format the latest dated provider counts without listing historical snapshots."""
 
-    reported: list[tuple[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for record in records_by_family(display, "summary"):
-        semantic_type = str(record.get("semantic_type", ""))
-        qualifier = semantic_type.partition("@")[2]
-        broker = qualifier.partition(":")[2] or "unknown provider"
-        fields = record.get("fields")
-        if not isinstance(fields, dict):
-            continue
-        count = fields.get("detection_count")
-        if count is None:
-            continue
-        key = (broker, str(count))
-        if key in seen:
-            continue
-        seen.add(key)
-        reported.append((broker, count))
+    reported = reported_detection_counts(display)
     if not reported:
         return "—"
     return " · ".join(f"{broker}: {count}" for broker, count in reported)
@@ -273,13 +262,20 @@ def render_live_portfolio_cards(
                 f"{display.get('survey', '—')} · "
                 f"{' · '.join(dict.fromkeys(brokers)) or 'broker evidence'}"
             )
+            loaded = loaded_photometry_counts(display)
+            if loaded:
+                st.caption("Loaded photometry by provider: " + " · ".join(
+                    f"{broker}: {count}" for broker, count in loaded
+                ))
             metrics = st.columns(3)
             metrics[0].metric(
                 "Reported detections",
                 reported_detection_metric(display),
                 help=(
-                    "Counts reported by provider summary records; — means the "
-                    "search response did not provide one."
+                    "Latest dated counts reported by each provider, not the number "
+                    "of loaded or filtered points. Conflicting counts at the latest "
+                    "time and undated counts are retained. Full history is in Provider "
+                    "summaries; — means no count was reported."
                 ),
             )
             metrics[1].metric(
@@ -503,6 +499,10 @@ def render_dsl_entry(
             "Filter or enrich the portfolios above. Enter continuation clauses only; "
             "do not repeat `objects from ...`."
         )
+        st.caption(
+            "Filters select candidate objects using their recorded evidence. "
+            "Retrieval clauses can add measurements to the surviving objects."
+        )
     if context:
         st.caption(context)
     dsl_text, submitted = render_dsl_block_input(
@@ -512,31 +512,59 @@ def render_dsl_entry(
 
     if submitted:
         try:
-            with st.spinner("Executing DSL against broker services…"):
-                execution = execute_dsl(
-                    dsl_text,
-                    name=f"interactive DSL: {key}",
-                )
+            graph = load_block_capability_graph()
+            validation = validate_dsl(
+                dsl_text, graph=graph, name=f"interactive DSL: {key}",
+                continue_from=continue_from,
+            )
+            if validation.semantic is not None:
+                for issue in validation.semantic.warnings:
+                    st.warning(f"{issue.code}: {issue.message}")
+            if validation.parse_error is not None:
+                st.error(f"DSL syntax error: {validation.parse_error}")
+            elif not validation.is_valid:
+                if validation.semantic is not None:
+                    for issue in validation.semantic.errors:
+                        st.error(f"{issue.code}: {issue.message}")
+            elif not validation.is_runnable:
+                st.error(f"This workflow cannot currently run: {validation.lowering_error}")
+            else:
+                with st.spinner("Executing DSL against broker services…"):
+                    execution = execute_dsl(
+                        dsl_text,
+                        name=f"interactive DSL: {key}",
+                        graph=graph,
+                        continue_from=continue_from,
+                    )
+                # Invalidate old descendant views, but retain draft and nonce keys:
+                # clearing a nonce could replay a cached component submission.
+                # Failed validation/execution leaves the last successful view intact.
+                for state_key in list(st.session_state):
+                    if state_key.startswith(f"{key}_next_") and state_key.endswith((
+                        "_dsl_execution", "_live_portfolio_selected", "_cone_results", "_cone_selected",
+                    )):
+                        st.session_state.pop(state_key)
+                st.session_state[execution_state_key] = execution
+                st.session_state.pop(results_state_key, None)
+                st.session_state.pop(selection_state_key, None)
+                st.session_state.pop(live_selection_state_key, None)
         except DSLParseError as error:
             st.error(f"DSL syntax error: {error}")
-            return
         except SurfaceLoweringError as error:
             st.error(f"DSL cannot be compiled: {error}")
-            return
+        except PlanningError as error:
+            st.error(f"This workflow cannot be planned: {error}")
+        except IncrementalExecutionError as error:
+            st.error(f"This result cannot safely be continued: {error}")
         except MissingEndpointCredentialError as error:
             st.error(f"DSL requires a broker credential: {error}")
-            return
         except WorkflowExecutionError as error:
             st.error(f"A broker request failed: {error}")
-            return
         except Exception as error:
             st.error(f"Live DSL execution failed: {type(error).__name__}: {error}")
-            return
 
-        st.session_state[execution_state_key] = execution
-        st.session_state.pop(results_state_key, None)
-        st.session_state.pop(selection_state_key, None)
-        st.session_state.pop(live_selection_state_key, None)
+        if execution_state_key in st.session_state:
+            st.caption("Showing the last successful result for this editor.")
 
     execution = st.session_state.get(execution_state_key)
     if execution is not None:
@@ -548,6 +576,9 @@ def render_dsl_entry(
             "Results are normalized through the provider mappings. Raw broker payloads "
             "are not displayed."
         )
+        for step_run in execution.run.steps:
+            for warning in step_run.warnings:
+                st.warning(f"Supplementary data warning: {warning}")
         if not execution.portfolios:
             st.info("The live query completed successfully but returned no objects.")
             return
@@ -565,7 +596,7 @@ def render_dsl_entry(
             st.divider()
             render_dsl_entry(
                 candidates,
-                title="Filter DSL query",
+                title="Continue this investigation",
                 context=(
                     "Example: `filter classification.best.probability >= 0.8`. "
                     "This is evaluated against the results above."

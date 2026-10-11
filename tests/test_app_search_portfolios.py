@@ -21,7 +21,7 @@ from alertissimo.app_plot import summary_table_rows
 from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
 from alertissimo.dsl import SurfaceLoweringError, parse_surface_script
 from alertissimo.orchestration.ir import ConeSearchStep
-from alertissimo.ui_portfolios import portfolio_to_display, records_by_family
+from alertissimo.ui_portfolios import load_ui_portfolio, portfolio_to_display, records_by_family
 import alertissimo.app_search as app_search
 
 
@@ -125,6 +125,51 @@ def test_missing_reported_detection_count_is_not_rendered_as_zero():
 
     assert reported_detection_metric(display) == "—"
     assert summary_table_rows(display)[0]["Reported detections"] == "—"
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_reported_metric_selects_latest_snapshot_instead_of_largest_count(reverse):
+    records = [
+        ("summary@ztf:lasair", {"identity.object_id": "ZTF-test", "detection_count": 35, "time.last_mjd": 60003}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 44, "time.last_mjd": 60001}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 30, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 27, "time.last_mjd": 60003}),
+    ]
+    if reverse:
+        records.reverse()
+    display = portfolio_to_display(serialized_summary_portfolio(*records))
+
+    assert set(reported_detection_metric(display).split(" · ")) == {"lasair: 35", "fink: 27"}
+    assert len(records_by_family(display, "summary")) == 4
+    assert len(summary_table_rows(display)) == 4
+
+
+def test_reported_metric_retains_latest_epoch_conflicts_and_undated_evidence():
+    display = portfolio_to_display(serialized_summary_portfolio(
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 1, "time.last_mjd": 60001}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 3, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 4, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 5}),
+    ))
+
+    assert reported_detection_metric(display) == "fink: 3 · fink: 4 · fink: 5"
+
+
+def test_reported_metric_retains_undated_conflicts_and_a_reported_zero():
+    display = portfolio_to_display(serialized_summary_portfolio(
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 0}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 2}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 2}),
+    ))
+
+    assert reported_detection_metric(display) == "fink: 0 · fink: 2"
+
+
+def test_frozen_fink_history_projects_one_current_count_without_removing_snapshots():
+    display = portfolio_to_display(load_ui_portfolio("ztf_fink_ZTF21abfmbix.json"))
+
+    assert reported_detection_metric(display) == "fink: 17"
+    assert len(summary_table_rows(display)) > 1
 
 
 def test_live_result_card_leads_with_reported_not_loaded_detections(monkeypatch):
@@ -281,11 +326,13 @@ def test_dsl_entry_uses_only_the_block_editor():
     assert not app.exception
 
 
-def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
+@pytest.mark.parametrize("outcome", ["success", "validation-error", "execution-error"])
+def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch, outcome):
     """The nested filter editor must extend, rather than restart, its parent run."""
 
     class FakeStreamlit:
         session_state: dict[str, object] = {}
+        errors: list[str] = []
 
         def subheader(self, *_args, **_kwargs):
             pass
@@ -299,14 +346,25 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
         def success(self, *_args, **_kwargs):
             pass
 
+        def error(self, message):
+            self.errors.append(message)
+
         def spinner(self, *_args, **_kwargs):
             return nullcontext()
 
         def divider(self):
             pass
 
-    previous_result = SimpleNamespace(portfolios=(object(),))
+    previous_result = SimpleNamespace(portfolios=(object(),), run=SimpleNamespace(steps=()))
+    old_result = SimpleNamespace(portfolios=(object(),), run=SimpleNamespace(steps=()))
+    FakeStreamlit.session_state = {
+        "parent_dsl_execution": old_result,
+        "parent_next_dsl_execution": old_result,
+        "parent_next_block_last_submit": 123,
+        "parent_next_block_dsl": "filter classification.best.probability >= 0.8",
+    }
     calls = []
+    validations = []
     nested = []
     editor_modes = []
     original_render = app_search.render_dsl_entry
@@ -317,10 +375,26 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
         return "filter classification.best.probability >= 0.8", True
 
     monkeypatch.setattr(app_search, "render_dsl_block_input", filter_editor)
+    graph = object()
+    monkeypatch.setattr(app_search, "load_block_capability_graph", lambda: graph)
+    def validate(source, **kwargs):
+        validations.append((source, kwargs))
+        return SimpleNamespace(
+            parse_error=None, is_valid=True, is_runnable=outcome != "validation-error",
+            lowering_error="unsupported request", semantic=None,
+        )
+
+    def execute(source, **kwargs):
+        calls.append((source, kwargs))
+        if outcome == "execution-error":
+            raise app_search.IncrementalExecutionError("incomplete supplementary execution")
+        return previous_result
+
+    monkeypatch.setattr(app_search, "validate_dsl", validate)
     monkeypatch.setattr(
         app_search,
         "execute_dsl",
-        lambda source, **kwargs: calls.append((source, kwargs)) or previous_result,
+        execute,
     )
     monkeypatch.setattr(app_search, "portfolio_to_dict", lambda _portfolio: {})
     monkeypatch.setattr(app_search, "load_lightcurve_document", lambda _payload: {})
@@ -334,11 +408,19 @@ def test_filter_dsl_entry_continues_from_the_visible_live_result(monkeypatch):
     parent = SimpleNamespace()
     original_render([], key="parent", continue_from=parent)
 
-    assert calls == [
+    expected_calls = [
         (
             "filter classification.best.probability >= 0.8",
-            {"name": "interactive DSL: parent"},
+            {"name": "interactive DSL: parent", "graph": graph, "continue_from": parent},
         )
     ]
-    assert nested[0]["continue_from"] is previous_result
+    assert validations == expected_calls
+    assert calls == ([] if outcome == "validation-error" else expected_calls)
+    displayed = previous_result if outcome == "success" else old_result
+    assert nested[0]["continue_from"] is displayed
+    assert FakeStreamlit.session_state["parent_dsl_execution"] is displayed
+    assert ("parent_next_dsl_execution" in FakeStreamlit.session_state) == (outcome != "success")
+    assert bool(FakeStreamlit.errors) == (outcome != "success")
+    assert FakeStreamlit.session_state["parent_next_block_last_submit"] == 123
+    assert FakeStreamlit.session_state["parent_next_block_dsl"].startswith("filter ")
     assert editor_modes == [("parent", True)]

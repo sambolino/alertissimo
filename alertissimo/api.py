@@ -8,6 +8,7 @@ and post-normalization semantic finalization themselves.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import json
 from threading import RLock
 from typing import Any
@@ -152,12 +153,15 @@ class DSLExecutionResult:
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
-# The initial UI facade models one browser tab and therefore one active generic
-# orchestration state. No DSL source, surface object, or DSL response envelope is
-# retained here. Session-scoped storage can replace this process-local reference
-# later without changing validate_dsl()/execute_dsl().
+# Compatibility context for single-client scripts that omit ``continue_from``.
+# Interactive clients pass an explicit result (or None) stored by their session;
+# those calls neither read nor replace this process-local reference.
 _active_workflow: StagedWorkflowResult | None = None
 _active_dsl_lock = RLock()
+
+
+class _ContinuationMode(Enum):
+    ACTIVE = "active"
 
 
 def _is_complete_program(source: str) -> bool:
@@ -176,18 +180,31 @@ def _is_complete_program(source: str) -> bool:
 
 def _parse_dsl_turn(
     source: str,
+    *,
+    continue_from: DSLExecutionResult | None | _ContinuationMode = _ContinuationMode.ACTIVE,
 ) -> tuple[SurfaceScript | SurfaceFragment, StagedWorkflowResult | None]:
     """Parse a complete program or an IR-contextual continuation fragment."""
 
     if _is_complete_program(source):
+        if isinstance(continue_from, DSLExecutionResult):
+            raise DSLParseError(
+                "an explicit continuation must contain continuation clauses only; "
+                "pass continue_from=None to start a fresh workflow"
+            )
         return parse_surface_script(source), None
     fragment = parse_surface_fragment(source)
-    if _active_workflow is None:
+    if continue_from is _ContinuationMode.ACTIVE:
+        previous = _active_workflow
+    elif continue_from is None:
+        previous = None
+    else:
+        previous = continue_from.staged
+    if previous is None:
         raise DSLParseError(
             "DSL continuation requires an already executed workflow; the first "
             "request must begin with a candidate search or explicit object/alert lookup"
         )
-    return fragment, _active_workflow
+    return fragment, previous
 
 
 def validate_dsl(
@@ -195,6 +212,7 @@ def validate_dsl(
     *,
     graph: CapabilityGraph | None = None,
     name: str | None = None,
+    continue_from: DSLExecutionResult | None | _ContinuationMode = _ContinuationMode.ACTIVE,
 ) -> DSLValidationResult:
     """Validate DSL without contacting provider APIs.
 
@@ -203,13 +221,15 @@ def validate_dsl(
     construction are returned as data rather than raised.
 
     A complete program validates independently. A clause-only fragment is compiled
-    directly against the canonical WorkflowIR inside the active staged workflow.
-    Validation reads but never changes that generic orchestration state.
+    directly against the canonical WorkflowIR inside the supplied prior result.
+    Explicit None requires a fresh complete program. Omitting ``continue_from``
+    preserves implicit continuation for single-client scripts. Validation never
+    changes either the supplied result or the compatibility context.
     """
 
     with _active_dsl_lock:
         try:
-            surface, previous = _parse_dsl_turn(source)
+            surface, previous = _parse_dsl_turn(source, continue_from=continue_from)
         except DSLParseError as error:
             return DSLValidationResult(source=source, parse_error=error)
 
@@ -279,19 +299,22 @@ def execute_dsl(
     registry: EndpointRegistry | None = None,
     executor: EndpointExecutor | None = None,
     validate_semantic_model: bool = True,
+    continue_from: DSLExecutionResult | None | _ContinuationMode = _ContinuationMode.ACTIVE,
 ) -> DSLExecutionResult:
-    """Execute a complete DSL program or continue the one active workflow.
+    """Execute a complete DSL program or continue a prior execution result.
 
     A complete program starts a fresh generic workflow. A clause-only fragment is
-    lowered directly onto the active WorkflowIR, then incremental execution replays
-    the exact old physical prefix and executes only new provider work. Only the
-    resulting ``StagedWorkflowResult`` is retained; DSL artifacts remain response-only.
+    lowered directly onto the supplied prior WorkflowIR, then incremental execution
+    replays the exact old physical prefix and executes only new provider work.
+    Interactive clients pass ``continue_from=None`` for fresh work and their
+    session's prior result for fragments. Explicit calls never read or update the
+    implicit active workflow; omitting the argument retains script compatibility.
     """
 
     global _active_workflow
     with _active_dsl_lock:
         effective_graph = graph if graph is not None else build_capability_graph()
-        surface, previous = _parse_dsl_turn(source)
+        surface, previous = _parse_dsl_turn(source, continue_from=continue_from)
         compilation = (
             compile_surface(
                 surface,
@@ -338,7 +361,8 @@ def execute_dsl(
             staged=staged,
             result=result,
         )
-        _active_workflow = staged
+        if continue_from is _ContinuationMode.ACTIVE:
+            _active_workflow = staged
         return execution
 
 
