@@ -333,6 +333,15 @@ code and provider declarations are unchanged. The implementation and cleanup are
 in place; broader local regression and live acceptance remain the final validation
 milestone before declaring the overhaul complete.
 
+`fix/recipes-live-composite-acceptance` updates two stale live acceptance checks
+found during the final sweep. Cross-provider discovery now validates cone plus
+optional compact query; continuation compares actual recorded calls with staged
+bindings and allows collection batches. Required/optional roles, dependency
+ownership, unique executions, prior execution replay, and survivor identity
+checks remain enforced. Captured offline replays cover both scripts with healthy
+and failed summary supplements. Runtime and provider declarations are unchanged;
+Fink LSST HTTP 504 remains a separate unavailable acceptance result.
+
 During migration, fall back to the legacy planner only for an operation/source
 with no migrated recipe. A malformed declaration, unsatisfied recipe, or ambiguous
 recipe must fail visibly; do not hide it by taking the old path. Once an operation
