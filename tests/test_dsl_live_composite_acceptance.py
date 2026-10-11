@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from alertissimo.api import IncrementalExecutionError
 from scripts import live_dsl_complex, live_dsl_continuation
 from scripts.smoke.executors import FixtureEndpointExecutor, fixture_key
 
@@ -38,7 +39,7 @@ def test_cross_provider_live_script_accepts_composite_discovery(monkeypatch, fai
 
 
 @pytest.mark.parametrize("fail_call", [None, 2], ids=["summary-success", "summary-failure"])
-def test_live_continuation_replays_composite_discovery(monkeypatch, fail_call):
+def test_live_continuation_respects_supplement_completeness(monkeypatch, fail_call):
     executor = fixture_executor(fail_call)
     monkeypatch.setattr(live_dsl_continuation, "load_dotenv", lambda **kwargs: None)
     monkeypatch.setattr(live_dsl_continuation, "RegistryEndpointExecutor", lambda **kwargs: executor)
@@ -46,8 +47,20 @@ def test_live_continuation_replays_composite_discovery(monkeypatch, fail_call):
         ra=124.87996115142856, dec=-6.0205001, radius_arcsec=5.0, threshold=0.8,
     ))
 
-    # This single-object fixture keeps every candidate. The intended outcome is
-    # INCONCLUSIVE after verifying replay, rather than a call-count failure.
+    if fail_call is not None:
+        # The first execution may finish with an optional-query warning, but
+        # incremental replay deliberately refuses this incomplete prefix.
+        with pytest.raises(IncrementalExecutionError, match="incomplete supplementary.*step_index 0"):
+            live_dsl_continuation.main()
+        assert [call[2] for call in executor.calls] == ["cone", "query", "objects"]
+        previous = live_dsl_continuation.api._active_workflow
+        assert len(previous.run.workflow.steps) == 2
+        assert previous.run.steps[0].state.value == "succeeded"
+        assert previous.run.steps[0].warnings
+        return
+
+    # A complete first pass may continue. This single-object fixture keeps all
+    # candidates, so narrowing is INCONCLUSIVE after replay/binding checks pass.
     assert live_dsl_continuation.main() == 3
     assert [call[2] for call in executor.calls] == ["cone", "query", "objects", "lightcurves"]
     assert executor.calls[-1][3] == {"objectIds": OBJECT_ID}

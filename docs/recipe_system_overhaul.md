@@ -338,8 +338,9 @@ found during the final sweep. Cross-provider discovery now validates cone plus
 optional compact query; continuation compares actual recorded calls with staged
 bindings and allows collection batches. Required/optional roles, dependency
 ownership, unique executions, prior execution replay, and survivor identity
-checks remain enforced. Captured offline replays cover both scripts with healthy
-and failed summary supplements. Runtime and provider declarations are unchanged;
+checks remain enforced. Captured offline replays cover healthy supplements and
+failed ones; incremental continuation must reject the incomplete prefix before
+making any new provider call. Runtime and provider declarations are unchanged;
 Fink LSST HTTP 504 remains a separate unavailable acceptance result.
 
 During migration, fall back to the legacy planner only for an operation/source

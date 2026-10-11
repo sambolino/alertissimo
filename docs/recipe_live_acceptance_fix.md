@@ -22,9 +22,13 @@ identity checks remain. New history calls may use multiple registry batches, but
 every call must be Lasair ZTF lightcurves and bind each survivor exactly once.
 
 Offline regressions replay both live scripts using captured fixtures, including a
-controlled optional query failure. The continuation fixture deliberately retains
-all candidates, so it returns INCONCLUSIVE only after its replay and binding
-invariants pass. Separate checks exercise batched survivors and reject extra calls.
+controlled optional query failure. Cross-provider execution may finish with that
+warning. Incremental continuation deliberately refuses a prefix with incomplete
+supplementary execution; the failure fixture checks that refusal before any new
+provider call and verifies that the original workflow remains active. With a
+complete first pass, the continuation fixture retains all candidates and returns
+INCONCLUSIVE after replay and binding invariants pass. Separate checks exercise
+batched survivors and reject extra calls.
 DSL CI watches both changed live scripts; the new regressions join its existing
 DSL test glob. Production runtime and provider declarations are unchanged.
 
