@@ -2,8 +2,8 @@
 """Build and verify the distributable Alertissimo wheel without provider API calls.
 
 The check proves that release metadata and declarative runtime resources survive
-packaging, then installs the wheel into an isolated target directory and runs the
-public static DSL facade from that installed copy rather than from the source tree.
+packaging unchanged, then installs the wheel into an isolated target directory
+and validates/plans recipes from that copy rather than from the source tree.
 """
 
 from __future__ import annotations
@@ -63,6 +63,15 @@ def _verify_wheel(wheel: Path) -> int:
                 "wheel is missing runtime declarative resources:\n  "
                 + "\n  ".join(missing)
             )
+        changed = [
+            resource for resource in expected_resources
+            if archive.read(resource) != (ROOT / resource).read_bytes()
+        ]
+        if changed:
+            raise RuntimeError(
+                "wheel runtime declarations differ from the checkout:\n  "
+                + "\n  ".join(changed)
+            )
 
         metadata_names = [name for name in names if name.endswith(".dist-info/METADATA")]
         if len(metadata_names) != 1:
@@ -112,7 +121,9 @@ import os
 import alertissimo
 from alertissimo.api import validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry, load_execution_policy
+from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.data_layer.semantic_model import load_semantic_model_index
+from alertissimo.orchestration.planner import plan_workflow
 
 expected_target = Path(os.environ["ALERTISSIMO_CHECK_TARGET"]).resolve()
 package_path = Path(alertissimo.__file__).resolve()
@@ -132,11 +143,34 @@ if not semantic_model.containers or not semantic_model.fields:
 registry = EndpointRegistry()
 registry.resolve("alerce", "lsst", "query_objects")
 
+graph = build_capability_graph()
+expected_sources = {
+    (broker, origin)
+    for broker in ("alerce", "antares", "fink", "lasair")
+    for origin in ("lsst", "ztf")
+}
+recipe_sources = {(recipe.broker, recipe.origin) for recipe in graph.recipe_capabilities}
+if recipe_sources != expected_sources:
+    raise RuntimeError(f"unexpected packaged recipe providers: {sorted(recipe_sources)!r}")
+
+for broker, origin in sorted(expected_sources):
+    for op in ("cone_search", "lookup", "get_lightcurve", "confirm"):
+        if not graph.query_recipes(broker=broker, origin=origin, op=op):
+            raise RuntimeError(f"missing packaged recipe: {broker}/{origin}/{op}")
+    source = f"objects from {origin} via {broker}\ninside (34, 33, 3arcsec)\n"
+    validation = validate_dsl(source, graph=graph, name=f"installed-wheel {broker}/{origin} cone")
+    if not validation.is_runnable:
+        raise RuntimeError(f"installed-wheel cone validation failed for {broker}/{origin}: {validation!r}")
+    run = plan_workflow(validation.compilation.workflow, graph)
+    plans = tuple(plan for step in run.steps for plan in step.endpoint_plans)
+    if not plans or any(plan.parameter_sources is None for plan in plans):
+        raise RuntimeError(f"installed-wheel cone did not produce recipe bindings for {broker}/{origin}")
+
 dsl = """objects from ztf via alerce
 inside (124.87996115142856, -6.0205001, 1arcsec)
 latest 1
 """
-validation = validate_dsl(dsl, name="0.1.0 installed-wheel acceptance")
+validation = validate_dsl(dsl, graph=graph, name="0.1.0 installed-wheel acceptance")
 if not validation.is_valid or not validation.is_runnable:
     raise RuntimeError(f"installed-wheel DSL validation failed: {validation!r}")
 
@@ -169,6 +203,7 @@ def main() -> int:
         print(f"installed import:  {installed_path}")
         print("public API:        alertissimo.api")
         print("static DSL:        VALID / RUNNABLE")
+        print("cone recipes:      8 broker/survey pairs VALID / PLANNED")
         print("provider APIs:     not contacted")
         print("PASS: Alertissimo 0.1.0 wheel is self-contained for declarative runtime data")
     return 0

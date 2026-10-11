@@ -43,7 +43,11 @@ if validation.is_runnable:
 
 ## Declarative runtime
 
-Provider endpoint contracts, request mappings, semantic mappings, the ontology, DSL grammars, and physical execution safety policy are package resources rather than hard-coded application choices. Automatic provider pagination is bounded by:
+Provider recipes and predicate/selection bindings, physical endpoint contracts,
+semantic mappings, the ontology, DSL grammars, and execution safety policy are
+package resources. The [recipe runtime guide](docs/recipe_runtime.md) describes
+their ownership and the validation/planning boundary. Automatic provider
+pagination is bounded by:
 
 ```text
 alertissimo/data_layer/execution/policy.yaml
@@ -77,7 +81,9 @@ It is not exposed as a console command in the 0.1.0 package; the supported integ
 
 ## Release package check
 
-Before tagging a release, build and inspect the wheel and run static DSL validation from the installed wheel copy:
+Before tagging a release, build and inspect the wheel, compare its declarative
+resources with the checkout, and validate/plan cone recipes for all eight
+broker/survey pairs from the installed wheel copy:
 
 ```bash
 PYTHONPATH=. python scripts/check_release_package.py
