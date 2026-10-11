@@ -41,7 +41,7 @@ from alertissimo.ui_portfolios import (
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
     portfolio_to_display,
-    records_by_family,
+    reported_detection_counts,
 )
 
 
@@ -167,25 +167,9 @@ def candidate_result_key(candidate: dict[str, Any]) -> str:
 
 
 def reported_detection_metric(display: dict[str, Any]) -> str:
-    """Format provider-labelled summary counts for a discovery card."""
+    """Format the latest dated provider counts without listing historical snapshots."""
 
-    reported: list[tuple[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for record in records_by_family(display, "summary"):
-        semantic_type = str(record.get("semantic_type", ""))
-        qualifier = semantic_type.partition("@")[2]
-        broker = qualifier.partition(":")[2] or "unknown provider"
-        fields = record.get("fields")
-        if not isinstance(fields, dict):
-            continue
-        count = fields.get("detection_count")
-        if count is None:
-            continue
-        key = (broker, str(count))
-        if key in seen:
-            continue
-        seen.add(key)
-        reported.append((broker, count))
+    reported = reported_detection_counts(display)
     if not reported:
         return "—"
     return " · ".join(f"{broker}: {count}" for broker, count in reported)
@@ -282,8 +266,10 @@ def render_live_portfolio_cards(
                 "Reported detections",
                 reported_detection_metric(display),
                 help=(
-                    "Counts reported by provider summary records; — means the "
-                    "search response did not provide one."
+                    "Latest dated counts reported by each provider, not the number "
+                    "of loaded or filtered points. Conflicting counts at the latest "
+                    "time and undated counts are retained. Full history is in Provider "
+                    "summaries; — means no count was reported."
                 ),
             )
             metrics[1].metric(

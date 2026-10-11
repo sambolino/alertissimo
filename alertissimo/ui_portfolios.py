@@ -93,6 +93,46 @@ def records_by_family(data: dict[str, Any], family: str) -> tuple[dict[str, Any]
     )
 
 
+def reported_detection_counts(data: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
+    """Project the latest dated count for each provider/object summary history.
+
+    Unknown epochs and conflicting counts at the latest epoch remain visible;
+    neither payload order nor the largest count proves which snapshot is latest.
+    This selects metric values only and leaves all scientific records untouched.
+    """
+
+    groups: dict[tuple[str, str], list[tuple[str, Any, float | None]]] = {}
+    for record in records_by_family(data, "summary"):
+        fields = _fields(record)
+        count = fields.get("detection_count")
+        if count is None:
+            continue
+        semantic_type = str(record.get("semantic_type", ""))
+        qualifier = semantic_type.partition("@")[2]
+        broker = qualifier.partition(":")[2] or "unknown provider"
+        object_id = str(fields.get("identity.object_id", data.get("diaObjectId", "")))
+        epoch = fields.get("time.last_mjd")
+        timestamp = (
+            float(epoch)
+            if isinstance(epoch, (int, float)) and not isinstance(epoch, bool) and math.isfinite(epoch)
+            else None
+        )
+        groups.setdefault((semantic_type, object_id), []).append((broker, count, timestamp))
+
+    result: list[tuple[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for snapshots in groups.values():
+        latest = max((epoch for _, _, epoch in snapshots if epoch is not None), default=None)
+        for broker, count, epoch in snapshots:
+            if epoch is not None and epoch != latest:
+                continue
+            key = (broker, str(count))
+            if key not in seen:
+                seen.add(key)
+                result.append((broker, count))
+    return tuple(result)
+
+
 def _summary_identity(records: list[dict[str, Any]]) -> tuple[str, str] | None:
     """Validate and return the one identity established by summary records."""
 

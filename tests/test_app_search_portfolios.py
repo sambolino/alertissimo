@@ -21,7 +21,7 @@ from alertissimo.app_plot import summary_table_rows
 from alertissimo.dsl.blocks import BlockRequirement, render_block_dsl
 from alertissimo.dsl import SurfaceLoweringError, parse_surface_script
 from alertissimo.orchestration.ir import ConeSearchStep
-from alertissimo.ui_portfolios import portfolio_to_display, records_by_family
+from alertissimo.ui_portfolios import load_ui_portfolio, portfolio_to_display, records_by_family
 import alertissimo.app_search as app_search
 
 
@@ -125,6 +125,51 @@ def test_missing_reported_detection_count_is_not_rendered_as_zero():
 
     assert reported_detection_metric(display) == "—"
     assert summary_table_rows(display)[0]["Reported detections"] == "—"
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_reported_metric_selects_latest_snapshot_instead_of_largest_count(reverse):
+    records = [
+        ("summary@ztf:lasair", {"identity.object_id": "ZTF-test", "detection_count": 35, "time.last_mjd": 60003}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 44, "time.last_mjd": 60001}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 30, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 27, "time.last_mjd": 60003}),
+    ]
+    if reverse:
+        records.reverse()
+    display = portfolio_to_display(serialized_summary_portfolio(*records))
+
+    assert set(reported_detection_metric(display).split(" · ")) == {"lasair: 35", "fink: 27"}
+    assert len(records_by_family(display, "summary")) == 4
+    assert len(summary_table_rows(display)) == 4
+
+
+def test_reported_metric_retains_latest_epoch_conflicts_and_undated_evidence():
+    display = portfolio_to_display(serialized_summary_portfolio(
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 1, "time.last_mjd": 60001}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 3, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 4, "time.last_mjd": 60002}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 5}),
+    ))
+
+    assert reported_detection_metric(display) == "fink: 3 · fink: 4 · fink: 5"
+
+
+def test_reported_metric_retains_undated_conflicts_and_a_reported_zero():
+    display = portfolio_to_display(serialized_summary_portfolio(
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 0}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 2}),
+        ("summary@ztf:fink", {"identity.object_id": "ZTF-test", "detection_count": 2}),
+    ))
+
+    assert reported_detection_metric(display) == "fink: 0 · fink: 2"
+
+
+def test_frozen_fink_history_projects_one_current_count_without_removing_snapshots():
+    display = portfolio_to_display(load_ui_portfolio("ztf_fink_ZTF21abfmbix.json"))
+
+    assert reported_detection_metric(display) == "fink: 17"
+    assert len(summary_table_rows(display)) > 1
 
 
 def test_live_result_card_leads_with_reported_not_loaded_detections(monkeypatch):
