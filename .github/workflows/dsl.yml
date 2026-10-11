@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'alertissimo/api.py'
+      - 'alertissimo/app_dsl.py'
       - 'alertissimo/dsl/**'
       - 'alertissimo/data_layer/runtime/capability_graph.py'
       - 'alertissimo/data_layer/runtime/recipes.py'

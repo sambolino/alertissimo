@@ -1,102 +1,86 @@
-"""Minimal Streamlit front end for the declarative DSL compiler pipeline."""
+"""Streamlit validation and planning of complete Alertissimo DSL workflows."""
 
 from __future__ import annotations
 
 import streamlit as st
 
+from alertissimo.api import validate_dsl
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
-from alertissimo.dsl import (
-    DSLParseError,
-    SurfaceCapabilityStatus,
-    SurfaceCapabilityValidationError,
-    SurfaceLoweringError,
-    compile_surface,
-    parse_surface_script,
-    validate_surface_capabilities,
-    validate_surface_semantics,
-)
+from alertissimo.dsl import DSLParseError, parse_surface_script
+from alertissimo.orchestration.planner import PlanningError, plan_workflow
 
 
-_EXAMPLE = """objects from lsst via alerce
-    within 7d
-    latest 100
-    with classification from lc_classifier:
-        best.class = "SN"
-        best.probability >= 0.8
-    order by summary.time.last_mjd desc
+_EXAMPLE = """objects from ztf via lasair
+inside (124.87996115142856, -6.0205001, 5arcsec)
+with lightcurve via fink
 """
 
 
 def main() -> None:
-    """Render syntax, ontology, capability, IR, and result-view compilation."""
+    """Validate through the public facade, then preview planning without execution."""
 
-    st.title("Alertissimo DSL")
-    st.markdown(
-        "Validate the formal declarative syntax, ontology-grounded surface intent, "
-        "registered provider capabilities, scientific WorkflowIR, and separate "
-        "result-view intent. Planning, binding, and execution remain later stages."
-    )
+    st.set_page_config(page_title="Alertissimo · Validate a workflow", page_icon="🔭", layout="wide")
+    st.title("Validate an investigation")
+    st.write("Check an Alertissimo DSL workflow before running it against broker services.")
+    st.caption("Validation and planning use the local registry. No broker requests are made.")
 
-    dsl_input = st.text_area("DSL", value=_EXAMPLE, height=300)
-    if not st.button("Validate and compile"):
+    with st.form("dsl-validation"):
+        dsl_input = st.text_area("Complete workflow", value=_EXAMPLE, height=260)
+        submitted = st.form_submit_button("Validate and plan", type="primary")
+    if not submitted:
         return
 
+    # This standalone page accepts complete workflows only. Do not let a fragment
+    # inherit the facade's process-local active execution from another UI session.
     try:
-        surface = parse_surface_script(dsl_input)
-    except DSLParseError as exc:
-        st.error(f"DSL syntax error: {exc}")
+        parse_surface_script(dsl_input)
+    except DSLParseError as error:
+        st.error(f"DSL syntax error: {error}")
+        st.info("Start with `objects from ...` or `object ID from ...`.")
         return
-
-    st.success("Formal syntax is valid")
-    semantic_report = validate_surface_semantics(surface)
-    if semantic_report.errors:
-        st.error("Ontology validation failed")
-        for issue in semantic_report.errors:
-            st.markdown(f"- `{issue.code}`: {issue.message}")
-        return
-
-    st.success("Ontology-grounded surface intent is valid")
-    for issue in semantic_report.warnings:
-        st.warning(f"{issue.code}: {issue.message}")
 
     graph = build_capability_graph()
-    try:
-        capability_report = validate_surface_capabilities(surface, graph=graph)
-    except SurfaceCapabilityValidationError as exc:
-        st.error(f"Capability validation could not run: {exc}")
+    validation = validate_dsl(dsl_input, graph=graph, name="UI workflow validation")
+    if validation.parse_error is not None:
+        st.error(f"DSL syntax error: {validation.parse_error}")
+        return
+    if validation.semantic is not None:
+        for issue in validation.semantic.errors:
+            st.error(f"{issue.code}: {issue.message}")
+        for issue in validation.semantic.warnings:
+            st.warning(f"{issue.code}: {issue.message}")
+    if not validation.is_valid:
         return
 
-    if capability_report.status is SurfaceCapabilityStatus.UNSUPPORTED:
-        st.error("One or more registered capability requirements are unsupported")
-    elif capability_report.status is SurfaceCapabilityStatus.DEFERRED:
-        st.warning(
-            "Provider capability validation passed where applicable, but one or "
-            "more local/dynamic capabilities remain deferred"
-        )
-    else:
-        st.success("Registered provider capabilities support the surface intent")
+    st.success("Syntax and scientific references are valid.")
+    if validation.lowering_error is not None:
+        st.warning(f"This workflow cannot currently run: {validation.lowering_error}")
+    compilation = validation.compilation
+    run = None
+    if validation.is_runnable and compilation is not None:
+        try:
+            run = plan_workflow(compilation.workflow, graph)
+        except PlanningError as error:
+            st.warning(f"A complete execution plan is not available: {error}")
+        else:
+            st.success("The registry can produce an execution plan for this workflow.")
+            st.caption(
+                f"{len(compilation.workflow.steps)} workflow step(s). "
+                "Provider availability, credentials, and returned data are checked when you execute."
+            )
 
-    st.subheader("Capability checks")
-    st.json(capability_report.model_dump(mode="json"))
-
-    try:
-        compilation = compile_surface(surface, graph=graph)
-    except SurfaceLoweringError as exc:
-        st.warning(f"Lowering is not yet available for all intent: {exc}")
-    else:
-        st.success("Surface intent compiled")
-        st.subheader("Scientific WorkflowIR")
-        st.json(compilation.workflow.model_dump(mode="json"))
-        st.subheader("Result view")
-        st.json(compilation.view.model_dump(mode="json"))
-
-    st.subheader("Surface intent")
-    st.json(surface.model_dump(mode="json"))
-    st.info(
-        "Result-view instructions are kept outside scientific WorkflowIR and "
-        "Portfolio content. This UI stops before endpoint planning, parameter "
-        "binding, and provider execution."
-    )
+    with st.expander("Validation and planning details"):
+        if validation.capabilities is not None:
+            st.subheader("Capability checks")
+            st.json(validation.capabilities.model_dump(mode="json"))
+        if compilation is not None:
+            st.subheader("Scientific workflow")
+            st.json(compilation.workflow.model_dump(mode="json"))
+            st.subheader("Result view")
+            st.json(compilation.view.model_dump(mode="json"))
+        if run is not None:
+            st.subheader("Execution plan")
+            st.json(run.model_dump(mode="json", exclude={"workflow"}))
 
 
 if __name__ == "__main__":

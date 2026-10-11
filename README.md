@@ -69,15 +69,33 @@ The formal grammar is in:
 alertissimo/dsl/grammar.lark
 ```
 
-## UI prototype
+## UI prototypes
 
-The repository still contains the current Streamlit DSL validation/compilation prototype:
+Start the investigation UI with local object-ID/cone demonstrations, a live DSL
+editor, result cards, and normalized object Portfolios:
 
 ```bash
-python -m streamlit run alertissimo/app_dsl.py
+PYTHONPATH=. python -m streamlit run alertissimo/app_search.py
 ```
 
-It is not exposed as a console command in the 0.1.0 package; the supported integration boundary is `alertissimo.api`.
+Object-ID and basic cone controls use frozen broker evidence. Submitting a DSL
+workflow makes live provider requests; credentials are loaded from the repository
+`.env` without overriding environment variables.
+
+For validation and an execution-plan preview without broker calls:
+
+```bash
+PYTHONPATH=. python -m streamlit run alertissimo/app_dsl.py
+```
+
+The single-object Portfolio demonstration is available through
+`alertissimo/app_plot.py`; `alertissimo/ui/app.py` accepts serialized Portfolio
+uploads for light-curve viewing. These are separate prototypes, not yet one
+integrated application. The [UI overhaul plan](docs/ui_overhaul.md) tracks the
+next small branches.
+
+The UI is not exposed as a console command in the 0.1.0 package; the supported
+integration boundary is `alertissimo.api`.
 
 ## Release package check
 
