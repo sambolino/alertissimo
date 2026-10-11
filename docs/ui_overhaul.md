@@ -29,6 +29,7 @@ assumptions have already been superseded by normalized Portfolio views.
 | --- | --- |
 | `refactor/ui-01-dsl-validation` | Repair the validator's invalid default DSL, use `validate_dsl`, add actual offline planning, and document existing UI entry points. |
 | `refactor/ui-02-session-execution` | Make execution and continuation belong to one browser session and the selected prior result. Add validation before execution and useful failure feedback. |
+| `fix/ui-02b-photometry-filter` | Distinguish candidate selection from measurement display; share band, broker, and real/bogus controls across the plot, table, count, and inspector. Persist rejected-submission feedback. |
 | `refactor/ui-03-workspace-navigation` | Integrate investigation, candidate results, and object inspection with clear navigation and evidence labels. |
 | `refactor/ui-04-candidate-triage` | Add filtering, sorting, and candidate selection using shared scientific presentation projections. |
 | `refactor/ui-05-portfolio-layout` | Refine the object header, scientific summary, photometry, classification, and provenance hierarchy. |

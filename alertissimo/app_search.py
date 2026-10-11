@@ -489,6 +489,7 @@ def render_dsl_entry(
     results_state_key = f"{key}_cone_results"
     selection_state_key = f"{key}_cone_selected"
     execution_state_key = f"{key}_dsl_execution"
+    error_state_key = f"{key}_dsl_submission_errors"
     live_selection_state_key = f"{key}_live_portfolio_selected"
 
     st.subheader(title)
@@ -501,7 +502,9 @@ def render_dsl_entry(
         )
         st.caption(
             "Filters select candidate objects using their recorded evidence. "
-            "Retrieval clauses can add measurements to the surviving objects."
+            "They do not remove low-scoring detections from a surviving object. "
+            "Retrieval clauses can add measurements to the surviving objects. "
+            "Use Display measurements in the object view to hide individual detections."
         )
     if context:
         st.caption(context)
@@ -511,6 +514,11 @@ def render_dsl_entry(
     )
 
     if submitted:
+        st.session_state[error_state_key] = []
+
+        def reject(message: str) -> None:
+            st.session_state[error_state_key].append(message)
+
         try:
             graph = load_block_capability_graph()
             validation = validate_dsl(
@@ -521,13 +529,15 @@ def render_dsl_entry(
                 for issue in validation.semantic.warnings:
                     st.warning(f"{issue.code}: {issue.message}")
             if validation.parse_error is not None:
-                st.error(f"DSL syntax error: {validation.parse_error}")
+                reject(f"DSL syntax error: {validation.parse_error}")
             elif not validation.is_valid:
                 if validation.semantic is not None:
                     for issue in validation.semantic.errors:
-                        st.error(f"{issue.code}: {issue.message}")
+                        reject(f"{issue.code}: {issue.message}")
+                if not st.session_state[error_state_key]:
+                    reject("This DSL request failed validation.")
             elif not validation.is_runnable:
-                st.error(f"This workflow cannot currently run: {validation.lowering_error}")
+                reject(f"This workflow cannot currently run: {validation.lowering_error}")
             else:
                 with st.spinner("Executing DSL against broker services…"):
                     execution = execute_dsl(
@@ -542,36 +552,45 @@ def render_dsl_entry(
                 for state_key in list(st.session_state):
                     if state_key.startswith(f"{key}_next_") and state_key.endswith((
                         "_dsl_execution", "_live_portfolio_selected", "_cone_results", "_cone_selected",
+                        "_dsl_submission_errors",
                     )):
                         st.session_state.pop(state_key)
                 st.session_state[execution_state_key] = execution
                 st.session_state.pop(results_state_key, None)
                 st.session_state.pop(selection_state_key, None)
                 st.session_state.pop(live_selection_state_key, None)
+                st.session_state.pop(error_state_key, None)
         except DSLParseError as error:
-            st.error(f"DSL syntax error: {error}")
+            reject(f"DSL syntax error: {error}")
         except SurfaceLoweringError as error:
-            st.error(f"DSL cannot be compiled: {error}")
+            reject(f"DSL cannot be compiled: {error}")
         except PlanningError as error:
-            st.error(f"This workflow cannot be planned: {error}")
+            reject(f"This workflow cannot be planned: {error}")
         except IncrementalExecutionError as error:
-            st.error(f"This result cannot safely be continued: {error}")
+            reject(f"This result cannot safely be continued: {error}")
         except MissingEndpointCredentialError as error:
-            st.error(f"DSL requires a broker credential: {error}")
+            reject(f"DSL requires a broker credential: {error}")
         except WorkflowExecutionError as error:
-            st.error(f"A broker request failed: {error}")
+            reject(f"A broker request failed: {error}")
         except Exception as error:
-            st.error(f"Live DSL execution failed: {type(error).__name__}: {error}")
+            reject(f"Live DSL execution failed: {type(error).__name__}: {error}")
 
-        if execution_state_key in st.session_state:
-            st.caption("Showing the last successful result for this editor.")
+    submission_errors = st.session_state.get(error_state_key, ())
+    for message in submission_errors:
+        st.error(message)
 
     execution = st.session_state.get(execution_state_key)
     if execution is not None:
-        st.success(
-            f"Live DSL execution completed: {len(execution.portfolios)} semantic "
-            "portfolio(s) returned."
-        )
+        if submission_errors:
+            st.warning(
+                "The latest request was not applied. Showing the previous successful "
+                f"result: {len(execution.portfolios)} semantic portfolio(s)."
+            )
+        else:
+            st.success(
+                f"Live DSL execution completed: {len(execution.portfolios)} semantic "
+                "portfolio(s) returned."
+            )
         st.caption(
             "Results are normalized through the provider mappings. Raw broker payloads "
             "are not displayed."
