@@ -22,6 +22,7 @@ from alertissimo.data_layer.runtime.capability_graph import build_capability_gra
 from alertissimo.dsl import compile_surface, parse_surface_script
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
 from alertissimo.orchestration.planner import plan_workflow
+from alertissimo.orchestration.runtime import PlanCandidateInputRef
 
 
 DSL = """objects from ztf via lasair
@@ -44,6 +45,48 @@ def object_ids(step_output) -> tuple[str, ...]:
             if value is not None and str(value) not in seen:
                 seen.append(str(value))
     return tuple(seen)
+
+
+def _assert_plan(workflow, run) -> None:
+    if len(run.steps) != 3:
+        raise RuntimeError(f"expected 3 semantic Steps, found {len(run.steps)}")
+
+    search_plans = run.steps[0].endpoint_plans
+    fink_plans = run.steps[1].endpoint_plans
+    lasair_plans = run.steps[2].endpoint_plans
+
+    if [(plan.broker, plan.origin, plan.endpoint) for plan in search_plans] != [
+        ("lasair", "ztf", "cone"), ("lasair", "ztf", "query"),
+    ]:
+        raise RuntimeError("expected Step 0 to plan Lasair/ZTF cone and compact query")
+    if [plan.required for plan in search_plans] != [True, False]:
+        raise RuntimeError("cone must be required and compact query supplementary")
+    if search_plans[1].candidate_input_from_plan != PlanCandidateInputRef(plan_index=0):
+        raise RuntimeError("compact query must consume the cone plan's candidates")
+
+    if len(fink_plans) != 1 or (
+        fink_plans[0].broker,
+        fink_plans[0].origin,
+        fink_plans[0].endpoint,
+    ) != ("fink", "ztf", "objects"):
+        raise RuntimeError("expected Step 1 to plan fink/ztf/objects")
+
+    if len(lasair_plans) != 1 or (
+        lasair_plans[0].broker,
+        lasair_plans[0].origin,
+        lasair_plans[0].endpoint,
+    ) != ("lasair", "ztf", "lightcurves"):
+        raise RuntimeError("expected Step 2 to plan lasair/ztf/lightcurves")
+
+    if fink_plans[0].candidate_input_from is None:
+        raise RuntimeError("Fink/ZTF lightcurve Step did not declare runtime candidate input")
+    if lasair_plans[0].candidate_input_from is None:
+        raise RuntimeError("Lasair/ZTF lightcurve Step did not declare runtime candidate input")
+
+    if getattr(workflow.steps[1], "target", None) is not None:
+        raise RuntimeError("late-bound Fink target leaked into semantic WorkflowIR")
+    if getattr(workflow.steps[2], "target", None) is not None:
+        raise RuntimeError("late-bound Lasair target leaked into semantic WorkflowIR")
 
 
 def main() -> int:
@@ -70,6 +113,7 @@ def main() -> int:
     print()
 
     run = plan_workflow(workflow, graph)
+    _assert_plan(workflow, run)
 
     print("=== PHYSICAL PLAN ===")
     for step_run in run.steps:
@@ -149,44 +193,6 @@ def main() -> int:
     print()
     print("=== INVARIANTS ===")
 
-    if len(run.steps) != 3:
-        raise RuntimeError(f"expected 3 semantic Steps, found {len(run.steps)}")
-
-    search_plans = run.steps[0].endpoint_plans
-    fink_plans = run.steps[1].endpoint_plans
-    lasair_plans = run.steps[2].endpoint_plans
-
-    if len(search_plans) != 1 or (
-        search_plans[0].broker,
-        search_plans[0].origin,
-        search_plans[0].endpoint,
-    ) != ("lasair", "ztf", "cone"):
-        raise RuntimeError("expected Step 0 to plan lasair/ztf/cone")
-
-    if len(fink_plans) != 1 or (
-        fink_plans[0].broker,
-        fink_plans[0].origin,
-        fink_plans[0].endpoint,
-    ) != ("fink", "ztf", "objects"):
-        raise RuntimeError("expected Step 1 to plan fink/ztf/objects")
-
-    if len(lasair_plans) != 1 or (
-        lasair_plans[0].broker,
-        lasair_plans[0].origin,
-        lasair_plans[0].endpoint,
-    ) != ("lasair", "ztf", "lightcurves"):
-        raise RuntimeError("expected Step 2 to plan lasair/ztf/lightcurves")
-
-    if fink_plans[0].candidate_input_from is None:
-        raise RuntimeError("Fink/ZTF lightcurve Step did not declare runtime candidate input")
-    if lasair_plans[0].candidate_input_from is None:
-        raise RuntimeError("Lasair/ZTF lightcurve Step did not declare runtime candidate input")
-
-    if getattr(workflow.steps[1], "target", None) is not None:
-        raise RuntimeError("late-bound Fink target leaked into semantic WorkflowIR")
-    if getattr(workflow.steps[2], "target", None) is not None:
-        raise RuntimeError("late-bound Lasair target leaked into semantic WorkflowIR")
-
     search_ids = set(object_ids(staged.normalized.steps[0]))
     fink_ids = set(object_ids(staged.normalized.steps[1]))
     lasair_ids = set(object_ids(staged.normalized.steps[2]))
@@ -208,13 +214,12 @@ def main() -> int:
             + ", ".join(sorted(missing_lasair))
         )
 
-    if len(unique_execution_ids) != 3:
-        raise RuntimeError(
-            f"expected 3 unique physical executions, found {len(unique_execution_ids)}"
-        )
+    successful_executions = sum(len(step.executions) for step in staged.execution.steps)
+    if len(unique_execution_ids) != successful_executions:
+        raise RuntimeError("independent physical calls did not retain unique execution IDs")
 
     print("OK: 3 semantic Steps")
-    print("OK: Lasair/ZTF cone search creates the candidate population")
+    print("OK: Lasair/ZTF cone plus optional compact query creates one candidate Step")
     print("OK: Fink/ZTF lightcurve target is late-bound from candidate identities")
     print("OK: Lasair/ZTF lightcurve target is late-bound from the same candidates")
     print("OK: both downstream WorkflowIR targets remain None")
@@ -226,7 +231,7 @@ def main() -> int:
     print(f"Unique physical execution IDs observed: {len(unique_execution_ids)}")
     print("Result ordering remains view-only:", compilation.view.model_dump())
     print(
-        "NOTE: this ZTF fallback uses one physical execution per lightcurve Step; "
+        "NOTE: this ZTF path uses one endpoint per lightcurve Step with registry batching; "
         "it validates the semantic Portfolio view but does not exercise the "
         "cross-execution sources+forced-photometry consolidation case."
     )

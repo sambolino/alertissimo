@@ -8,7 +8,7 @@ materializes Fink evidence. The second call appends only::
     with lightcurve via lasair
 
 The acceptance proves that prior provider calls are replayed from the first result,
-while the one genuinely new Lasair call is bound only to Filter survivors. Live data
+while new Lasair calls are bound only to Filter survivors, with registry batching. Live data
 may make the survivor set empty or unchanged; those cases are INCONCLUSIVE rather
 than architecture failures.
 """
@@ -26,6 +26,7 @@ from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointE
 from alertissimo.dsl import SurfaceFragment
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.pipeline import StagedWorkflowResult
+from alertissimo.orchestration.runtime import PlanCandidateInputRef
 
 
 DEFAULT_RA = 124.87996115142856
@@ -99,6 +100,50 @@ def _bound_object_ids(params: Mapping[str, Any]) -> tuple[str, ...]:
     return (str(value),)
 
 
+def _assert_first_pass_calls(first, recorded_calls: tuple[RecordedCall, ...]) -> None:
+    """Account for the composite discovery and any physical binding batches."""
+
+    search_plans = first.run.steps[0].endpoint_plans
+    if [(plan.broker, plan.origin, plan.endpoint) for plan in search_plans] != [
+        ("lasair", "ztf", "cone"), ("lasair", "ztf", "query"),
+    ]:
+        raise RuntimeError("first pass expected Lasair/ZTF cone and compact query plans")
+    if [plan.required for plan in search_plans] != [True, False]:
+        raise RuntimeError("first-pass cone must be required and compact query supplementary")
+    if search_plans[1].candidate_input_from_plan != PlanCandidateInputRef(plan_index=0):
+        raise RuntimeError("first-pass compact query must consume the cone candidates")
+    expected = tuple(
+        RecordedCall(
+            call.endpoint_plan.broker, call.endpoint_plan.origin,
+            call.endpoint_plan.endpoint, dict(call.params),
+        )
+        for binding in first.staged.bindings
+        for call in binding.bound_calls
+    )
+    if recorded_calls != expected:
+        raise RuntimeError("first-pass executor calls differ from staged physical bindings")
+
+
+def _assert_survivor_calls(calls: tuple[RecordedCall, ...], survivor_ids: tuple[str, ...]) -> None:
+    """Require only survivor-bound Lasair history calls, allowing registry batches."""
+
+    if not calls:
+        raise RuntimeError("non-empty Filter survivors produced no continuation call")
+    bound_ids: list[str] = []
+    for call in calls:
+        if (call.broker, call.origin, call.endpoint) != ("lasair", "ztf", "lightcurves"):
+            raise RuntimeError(f"unexpected new continuation call: {call!r}")
+        ids = _bound_object_ids(call.params)
+        if not ids:
+            raise RuntimeError("continuation made an empty target call")
+        bound_ids.extend(ids)
+    if len(bound_ids) != len(set(bound_ids)) or set(bound_ids) != set(survivor_ids):
+        raise RuntimeError(
+            "continued Lasair binding differs from Filter survivors: "
+            f"bound={bound_ids!r}, survivors={list(survivor_ids)!r}"
+        )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ra", type=float, default=DEFAULT_RA)
@@ -156,10 +201,7 @@ with lightcurve via lasair
         raise RuntimeError(
             f"unexpected first-pass workflow: {[step.op for step in first.workflow.steps]!r}"
         )
-    if len(first_calls) != 2:
-        raise RuntimeError(
-            f"first pass expected two physical calls, observed {len(first_calls)}"
-        )
+    _assert_first_pass_calls(first, first_calls)
 
     print("=== CONTINUATION ===")
     print(continuation_source.rstrip())
@@ -253,25 +295,7 @@ with lightcurve via lasair
         print("INCONCLUSIVE: live filter selected zero objects")
         return 3
 
-    if len(new_calls) != 1:
-        raise RuntimeError(
-            "continuation must make exactly one new physical call for non-empty "
-            f"survivors; observed {len(new_calls)}"
-        )
-    new_call = new_calls[0]
-    if (new_call.broker, new_call.origin, new_call.endpoint) != (
-        "lasair",
-        "ztf",
-        "lightcurves",
-    ):
-        raise RuntimeError(f"unexpected new continuation call: {new_call!r}")
-
-    bound_ids = _bound_object_ids(new_call.params)
-    if set(bound_ids) != set(survivor_ids):
-        raise RuntimeError(
-            "continued Lasair binding differs from Filter survivors: "
-            f"bound={list(bound_ids)!r}, survivors={list(survivor_ids)!r}"
-        )
+    _assert_survivor_calls(new_calls, survivor_ids)
     if set(downstream_ids) != set(survivor_ids):
         raise RuntimeError(
             "continued Lasair normalization differs from Filter survivors: "

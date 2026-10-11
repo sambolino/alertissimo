@@ -26,6 +26,8 @@ on:
       - 'tests/test_lasair_ztf_compact_cone_summary.py'
       - 'tests/test_orchestration_*.py'
       - 'scripts/check_release_package.py'
+      - 'scripts/live_dsl_complex.py'
+      - 'scripts/live_dsl_continuation.py'
       - 'setup.py'
       - 'pyproject.toml'
       - 'MANIFEST.in'
