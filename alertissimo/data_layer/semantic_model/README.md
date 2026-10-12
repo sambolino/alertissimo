@@ -11,3 +11,8 @@ but it is not sufficient to interpret the ontology.
 
 A dedicated ontology loader/validator will be responsible for interpreting
 this file.
+
+[metamodel.md](metamodel.md) specifies the reusable notation and composition rules.
+[ontology.yaml](ontology.yaml) supplies Alertissimo's astronomy vocabulary and domain conventions.
+Read them together; the Markdown specification is not loaded or imported at runtime.
+A new domain may reuse the notation with its own root, record families, and levels.
