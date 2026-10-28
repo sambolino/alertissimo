@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from types import MappingProxyType
 from typing import Any, Mapping
 
@@ -33,6 +34,9 @@ class StepBindingResult:
     step_index: int
     bound_calls: tuple[BoundEndpointCall, ...]
     plan_indexes: tuple[int, ...] = ()
+    # Pin relative discovery windows during continuation; request bounds remain
+    # visible in bound params and execution provenance, not substituted into IR.
+    reference_time: datetime | None = None
 
     def __post_init__(self) -> None:
         if any(index < 0 for index in self.plan_indexes):

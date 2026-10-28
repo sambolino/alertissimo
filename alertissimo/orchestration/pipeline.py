@@ -8,9 +8,11 @@ that only exist after an earlier Step has executed and normalized.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Protocol
 
 from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
+from alertissimo.data_layer.transforms.temporal import utc_instant
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.binding.models import StepBindingResult
@@ -282,6 +284,8 @@ def execute_staged_workflow_run(
     executor: EndpointExecutor,
     *,
     validate_semantic_model: bool = True,
+    reference_time: datetime | None = None,
+    _reference_times: dict[int, datetime] | None = None,
 ) -> StagedWorkflowResult:
     """Bind and execute a planned workflow as runtime values become available.
 
@@ -294,6 +298,8 @@ def execute_staged_workflow_run(
 
     if any(step.state is not StepRunState.PLANNED for step in run.steps):
         raise CandidateFlowError("staged execution requires a fully planned WorkflowRun")
+    if reference_time is not None:
+        reference_time = utc_instant(reference_time)
 
     updated_run = run
     bindings: list[StepBindingResult] = []
@@ -307,6 +313,11 @@ def execute_staged_workflow_run(
     for original_step_run in run.steps:
         step_index = original_step_run.step_index
         step = run.step_at(step_index)
+        step_reference = None
+        if getattr(step, "time_context", None) is not None:
+            step_reference = (_reference_times or {}).get(step_index, reference_time)
+            if step_reference is None:
+                step_reference = datetime.now(timezone.utc)
 
         if isinstance(step, DeriveStep):
             bindings.append(StepBindingResult(step_index=step_index, bound_calls=()))
@@ -516,6 +527,7 @@ def execute_staged_workflow_run(
                     plan,
                     registry,
                     runtime_values=runtime_values,
+                    reference_time=step_reference,
                 )
             except Exception as error:
                 if not plan.required:
@@ -633,6 +645,7 @@ def execute_staged_workflow_run(
             step_index=step_index,
             bound_calls=tuple(calls),
             plan_indexes=tuple(call_plan_indexes),
+            reference_time=step_reference,
         )
         bindings.append(binding)
 

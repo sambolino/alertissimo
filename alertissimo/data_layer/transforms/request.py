@@ -12,6 +12,7 @@ from typing import Any
 
 from .astropy import angle_arcsec, skycoord_icrs_degrees
 from .sql import string_membership_condition
+from .temporal import time_bound
 
 
 class RequestTransformError(ValueError):
@@ -23,6 +24,7 @@ class UnsupportedRequestTransformError(RequestTransformError):
 
 
 _REQUEST_ADAPTERS: Mapping[str, Callable[..., Any]] = {
+    "alertissimo.data_layer.transforms.temporal:time_bound": time_bound,
     "alertissimo.data_layer.transforms.astropy:skycoord_icrs_degrees": (
         skycoord_icrs_degrees
     ),

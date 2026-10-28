@@ -221,6 +221,28 @@ def _search_recipe_evidence(
             reasons.append(f"{discovery} inputs have no declared translation: {unrepresented or ('criteria',)}")
             continue
         endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        if ("time_context",) in paths:
+            from alertissimo.data_layer.transforms.temporal import validate_time_context
+
+            if step.time_context is not None:
+                try:
+                    validate_time_context(step.time_context.model_dump())
+                except ValueError as error:
+                    reasons.append(f"time_context cannot be translated: {error}")
+                    continue
+            elif any(
+                parameter.parameter in endpoint.required_params
+                and (
+                    isinstance(parameter.source, StepValueSource) and parameter.source.path == ("time_context",)
+                    or isinstance(parameter.source, EncoderValueSource) and any(
+                        item.path == ("time_context",) for _, item in parameter.source.inputs
+                        if isinstance(item, StepValueSource)
+                    )
+                )
+                for parameter in call.params
+            ):
+                reasons.append("required physical time parameters need a time_context")
+                continue
         predicate_parameters = {item.parameter for item in call.predicate_bindings}
         required_predicates = tuple(
             name for name in endpoint.required_params if name in predicate_parameters

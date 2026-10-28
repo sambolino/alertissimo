@@ -294,6 +294,24 @@ def _parameter(
         tuple(item for _, item in source.inputs)
         if isinstance(source, EncoderValueSource) else (source,)
     )
+    temporal_sources = tuple(
+        item for item in sources
+        if isinstance(item, StepValueSource) and item.path[0] == "time_context"
+    )
+    if temporal_sources or "time_context" in roles:
+        if (
+            roles != ("time_context",) or len(temporal_sources) != 1
+            or temporal_sources[0].path != ("time_context",)
+            or adapter != "alertissimo.data_layer.transforms.temporal:time_bound"
+        ):
+            raise RecipeRegistryError(f"{where}: time_context requires the whole IR context and its declared time encoder")
+        from ..transforms.temporal import validate_time_encoding
+
+        options = declaration["binding"].get("adapter_options", {})
+        try:
+            validate_time_encoding(options.get("bound"), options.get("encoding"))
+        except ValueError as exc:
+            raise RecipeRegistryError(f"{where}: {exc}") from exc
     dependencies = {item.call_index for item in sources if isinstance(item, CallValueSource)}
     if any(
         isinstance(item, StepValueSource) and item.path == ("target", "ids")
@@ -541,6 +559,16 @@ def load_provider_capabilities(
                         raise RecipeRegistryError(f"{call_where}: only one candidate owner is supported")
                     if required and any(not calls[owner].required for owner in dependencies):
                         raise RecipeRegistryError(f"{call_where}: required call depends on an optional call")
+                    if index == 0 and issubclass(models[op], SearchStep):
+                        bounds = set()
+                        for assignment in assignments:
+                            if isinstance(assignment.source, ConstantValueSource):
+                                continue
+                            if _encoder(declarations[assignment.parameter], call_where)[0] == ("time_context",):
+                                bound = declarations[assignment.parameter]["binding"]["adapter_options"]["bound"]
+                                bounds.update(("start", "end") if bound == "range" else (bound,))
+                        if bounds and bounds != {"start", "end"}:
+                            raise RecipeRegistryError(f"{call_where}: discovery time_context must encode both start and end")
                     call_bindings = tuple(
                         item for item in predicates if item.endpoint == endpoint
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()

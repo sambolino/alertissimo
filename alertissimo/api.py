@@ -8,6 +8,7 @@ and post-normalization semantic finalization themselves.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 import json
 from threading import RLock
@@ -311,6 +312,7 @@ def execute_dsl(
     executor: EndpointExecutor | None = None,
     validate_semantic_model: bool = True,
     continue_from: DSLExecutionResult | None | _ContinuationMode = _ContinuationMode.ACTIVE,
+    reference_time: datetime | None = None,
 ) -> DSLExecutionResult:
     """Execute a complete DSL program or continue a prior execution result.
 
@@ -320,6 +322,8 @@ def execute_dsl(
     Interactive clients pass ``continue_from=None`` for fresh work and their
     session's prior result for fragments. Explicit calls never read or update the
     implicit active workflow; omitting the argument retains script compatibility.
+    ``reference_time`` optionally pins new relative discovery windows to an aware
+    datetime. Continuation retains prior occurrence clocks when replaying its prefix.
     """
 
     global _active_workflow
@@ -354,6 +358,7 @@ def execute_dsl(
                 effective_registry,
                 effective_executor,
                 validate_semantic_model=validate_semantic_model,
+                **({"reference_time": reference_time} if reference_time is not None else {}),
             )
         else:
             staged = execute_incremental_workflow_run(
@@ -362,6 +367,7 @@ def execute_dsl(
                 effective_registry,
                 effective_executor,
                 validate_semantic_model=validate_semantic_model,
+                **({"reference_time": reference_time} if reference_time is not None else {}),
             )
         result = finalize_local_semantics(staged.normalized)
 
