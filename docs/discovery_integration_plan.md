@@ -191,7 +191,7 @@ python -m pytest -q tests/test_alerce_ztf_endpoint_contracts.py tests/test_alerc
 
 Split into two sequential reviews: **02a** implements required predicate inputs;
 **02b** implements time bindings and clock/replay guarantees. Provider activation
-remains in PRs 03 onward. Only 02a has been prepared so far.
+remains in PRs 03 onward. PR 02a is merged; 02b is now prepared for local verification.
 
 Complete two missing parts of the existing recipe/binder contract:
 
@@ -570,8 +570,8 @@ not need redesign for this series.
 | PR | Branch suffix | PR number / commit | Local verification | Live outcome |
 | --- | --- | --- | --- | --- |
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
-| 02a | predicate-bindings | Prepared on `feat/discovery-02a-predicate-bindings`; PR pending | Not run here; local handoff | No provider activation |
-| 02b | time-bindings | Pending | Pending | Through provider PRs |
+| 02a | predicate-bindings | [#294](https://github.com/sambolino/alertissimo/pull/294), main `7f7165d` | Merged; local results not separately reported | No provider activation |
+| 02b | time-bindings | Prepared on `feat/discovery-02b-time-bindings`; PR pending | Not run here; local handoff | No provider activation |
 | 03 | fink | Pending | Pending | Pending |
 | 04 | alerce | Pending | Pending | Pending |
 | 05 | lasair | Pending | Pending | Pending |

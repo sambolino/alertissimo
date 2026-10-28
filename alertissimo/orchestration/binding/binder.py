@@ -21,9 +21,11 @@ only role resolution, conflicts, and endpoint-call construction.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from alertissimo.data_layer.execution.registry import EndpointRegistry
+from alertissimo.data_layer.transforms.temporal import resolve_time_context, utc_instant
 from alertissimo.data_layer.transforms.request import (
     RequestTransformError,
     UnsupportedRequestTransformError,
@@ -161,6 +163,7 @@ def _bind_declared_parameter(
     endpoint_plan: EndpointPlan,
     physical_name: str,
     target_ids_override: tuple[str, ...] | None,
+    reference_time: datetime | None = None,
 ) -> Any | None:
     """Resolve direct or adapter-backed canonical roles for one physical parameter."""
 
@@ -176,6 +179,7 @@ def _bind_declared_parameter(
     }
     return _encode_parameter_values(
         values, declaration, endpoint_plan=endpoint_plan, physical_name=physical_name,
+        reference_time=reference_time,
     )
 
 
@@ -185,11 +189,22 @@ def _encode_parameter_values(
     *,
     endpoint_plan: EndpointPlan,
     physical_name: str,
+    reference_time: datetime | None = None,
 ) -> Any | None:
     """Use the same physical encoder for legacy and recipe-resolved values."""
     roles = tuple(values)
     if any(value is None for value in values.values()):
         return None
+    if "time_context" in values:
+        context = values["time_context"]
+        try:
+            resolved = resolve_time_context(
+                context.model_dump() if hasattr(context, "model_dump") else context,
+                reference_time,
+            )
+        except (ValueError, OverflowError, TypeError) as error:
+            raise ParameterBindingError(f"cannot resolve time_context for {_context(endpoint_plan)}: {error}") from error
+        values = {**values, "time_context": resolved}
 
     binding = declaration.get("binding") or {}
     adapter_path = binding.get("adapter")
@@ -251,6 +266,7 @@ def _bind_recipe_parameter(
     endpoint_plan: EndpointPlan,
     physical_name: str,
     target_ids_override: tuple[str, ...] | None,
+    reference_time: datetime | None = None,
 ) -> tuple[Any, tuple[str, ...]]:
     roles = _binding_roles(declaration)
     if isinstance(source, str):
@@ -266,6 +282,7 @@ def _bind_recipe_parameter(
         return _encode_parameter_values(
             {source: value}, declaration,
             endpoint_plan=endpoint_plan, physical_name=physical_name,
+            reference_time=reference_time,
         ), roles
     if isinstance(source, dict):
         if set(source) != set(roles) or not (declaration.get("binding") or {}).get("adapter"):
@@ -294,6 +311,7 @@ def _bind_recipe_parameter(
         values[role] = runtime if role in supplied_runtime else explicit
     return _encode_parameter_values(
         values, declaration, endpoint_plan=endpoint_plan, physical_name=physical_name,
+        reference_time=reference_time,
     ), tuple(paths)
 
 
@@ -304,6 +322,7 @@ def bind_endpoint(
     *,
     runtime_values: Mapping[str, Any] | None = None,
     _target_ids_override: tuple[str, ...] | None = None,
+    reference_time: datetime | None = None,
 ) -> BoundEndpointCall:
     """Bind one canonical Step to one resolved physical endpoint contract.
 
@@ -313,6 +332,10 @@ def bind_endpoint(
     they never mutate the Step or become a second representation of semantic intent.
     """
 
+    if reference_time is not None:
+        reference_time = utc_instant(reference_time)
+    elif getattr(step, "time_context", None) is not None:
+        reference_time = datetime.now(timezone.utc)
     spec = registry.resolve(
         endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
     )
@@ -333,6 +356,10 @@ def bind_endpoint(
         )
 
     supplied_runtime = dict(runtime_values or {})
+    if "time_context" in supplied_runtime:
+        raise UnsupportedParameterBindingError(
+            "time_context must come from WorkflowIR; supply reference_time to inject a clock"
+        )
     params: dict[str, Any] = {}
 
     for physical_name, value in endpoint_plan.request_params.items():
@@ -397,12 +424,14 @@ def bind_endpoint(
                 step, declaration, roles, supplied_runtime,
                 endpoint_plan=endpoint_plan, physical_name=physical_name,
                 target_ids_override=_target_ids_override,
+                reference_time=reference_time,
             )
         else:
             value, roles = _bind_recipe_parameter(
                 step, declaration, recipe_sources[physical_name], supplied_runtime,
                 endpoint_plan=endpoint_plan, physical_name=physical_name,
                 target_ids_override=_target_ids_override,
+                reference_time=reference_time,
             )
         declared_roles.extend(roles)
         if value is not None:
@@ -452,6 +481,7 @@ def bind_endpoint_calls(
     registry: EndpointRegistry,
     *,
     runtime_values: Mapping[str, Any] | None = None,
+    reference_time: datetime | None = None,
 ) -> tuple[BoundEndpointCall, ...]:
     """Bind one plan to one or more calls according to target cardinality.
 
@@ -461,6 +491,10 @@ def bind_endpoint_calls(
     be plural.
     """
 
+    if reference_time is not None:
+        reference_time = utc_instant(reference_time)
+    elif getattr(step, "time_context", None) is not None:
+        reference_time = datetime.now(timezone.utc)
     spec = registry.resolve(
         endpoint_plan.broker, endpoint_plan.origin, endpoint_plan.endpoint
     )
@@ -488,6 +522,7 @@ def bind_endpoint_calls(
                 endpoint_plan,
                 registry,
                 runtime_values=runtime_values,
+                reference_time=reference_time,
             ),
         )
 
@@ -503,6 +538,7 @@ def bind_endpoint_calls(
                 endpoint_plan,
                 registry,
                 runtime_values=runtime_values,
+                reference_time=reference_time,
             ),
         )
     if len(declarations) != 1:
@@ -531,13 +567,14 @@ def bind_endpoint_calls(
             registry,
             runtime_values=runtime_without_target,
             _target_ids_override=tuple(target_ids[index : index + chunk_size]),
+            reference_time=reference_time,
         )
         for index in range(0, len(target_ids), chunk_size)
     )
 
 
 def bind_workflow_run(
-    run: WorkflowRun, registry: EndpointRegistry
+    run: WorkflowRun, registry: EndpointRegistry, *, reference_time: datetime | None = None,
 ) -> tuple[StepBindingResult, ...]:
     """Bind every statically-bindable semantic Step occurrence.
 
@@ -545,6 +582,9 @@ def bind_workflow_run(
     because their runtime role values do not exist until earlier Steps have executed
     and normalized. This helper intentionally remains the all-upfront static path.
     """
+
+    if reference_time is not None:
+        reference_time = utc_instant(reference_time)
 
     for step_run in run.steps:
         if step_run.state != StepRunState.PLANNED:
@@ -558,8 +598,11 @@ def bind_workflow_run(
         calls = []
         plan_indexes = []
         step = run.step_at(step_run.step_index)
+        step_reference = None
+        if getattr(step, "time_context", None) is not None:
+            step_reference = reference_time if reference_time is not None else datetime.now(timezone.utc)
         for plan_index, plan in enumerate(step_run.endpoint_plans):
-            bound = bind_endpoint_calls(step, plan, registry)
+            bound = bind_endpoint_calls(step, plan, registry, reference_time=step_reference)
             calls.extend(bound)
             plan_indexes.extend([plan_index] * len(bound))
         results.append(
@@ -567,6 +610,7 @@ def bind_workflow_run(
                 step_index=step_run.step_index,
                 bound_calls=tuple(calls),
                 plan_indexes=tuple(plan_indexes),
+                reference_time=step_reference,
             )
         )
     return tuple(results)

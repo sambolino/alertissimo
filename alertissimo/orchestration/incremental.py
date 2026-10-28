@@ -14,6 +14,7 @@ Step or its plan, continuation is refused rather than silently re-running provid
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
@@ -224,6 +225,7 @@ def execute_incremental_workflow_run(
     executor: EndpointExecutor,
     *,
     validate_semantic_model: bool = True,
+    reference_time: datetime | None = None,
 ) -> StagedWorkflowResult:
     """Execute an extended planned workflow while replaying its prior call prefix.
 
@@ -240,6 +242,11 @@ def execute_incremental_workflow_run(
         registry,
         replay,
         validate_semantic_model=validate_semantic_model,
+        reference_time=reference_time,
+        _reference_times={
+            binding.step_index: binding.reference_time
+            for binding in previous.bindings if binding.reference_time is not None
+        },
     )
     replay.require_complete_replay()
     return staged

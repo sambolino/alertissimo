@@ -22,6 +22,7 @@ on:
       - 'alertissimo/orchestration/validation.py'
       - 'tests/test_dsl_*.py'
       - 'tests/test_api_continuation.py'
+      - 'tests/test_discovery_time_bindings.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_recipe_registry.py'
       - 'tests/test_lasair_ztf_compact_cone_summary.py'
@@ -53,6 +54,7 @@ jobs:
           PYTHONPATH=. pytest -q \
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
+            tests/test_discovery_time_bindings.py \
             tests/test_capability_graph.py \
             tests/test_recipe_registry.py \
             tests/test_lasair_ztf_compact_cone_summary.py \
