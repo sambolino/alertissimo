@@ -261,10 +261,15 @@ def _search_recipe_evidence(
             )
             missing = tuple(name for name in required_predicates if name not in params)
             if missing:
+                domains = {
+                    item.parameter: item.values for item in call.predicate_bindings
+                    if item.parameter in missing and item.values is not None
+                }
                 reasons.append(
                     f"required physical parameters {missing!r} have no eligible predicate "
                     "assignment; supply compatible operators, qualifiers, and one "
                     "consistent value through the declared predicate bindings"
+                    + (f"; admitted literal values: {domains!r}" if domains else "")
                 )
                 continue
         feasible.append(recipe)
