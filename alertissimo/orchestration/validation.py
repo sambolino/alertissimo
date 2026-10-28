@@ -8,10 +8,11 @@ The boundary is deliberately narrow::
         -> candidate registered endpoint(s)
 
 It answers whether and where the registered system can satisfy provider-facing
-intent. It does not select an endpoint, translate arguments, execute requests,
+intent. It does not select an endpoint, encode arguments, execute requests,
 or merge results. In particular, semantic-search criteria are not evidence of
 server-side pushdown: this module validates the broad registered operation and
 explicit semantic selectors such as a requested classifier or crossmatch catalog.
+Required predicate inputs are checked through the existing pure realization rules.
 """
 
 from __future__ import annotations
@@ -219,6 +220,31 @@ def _search_recipe_evidence(
         if unrepresented or step.criteria:
             reasons.append(f"{discovery} inputs have no declared translation: {unrepresented or ('criteria',)}")
             continue
+        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+        predicate_parameters = {item.parameter for item in call.predicate_bindings}
+        required_predicates = tuple(
+            name for name in endpoint.required_params if name in predicate_parameters
+        )
+        if required_predicates:
+            # Use the planner's existing pure realization rules. Declaring a
+            # possible binding does not prove that this request supplies it.
+            # Import lazily to keep validation/planner initialization acyclic.
+            from .planner.predicate_realization import realize_predicate
+
+            params = (
+                realize_predicate(
+                    step.predicate, endpoint=endpoint, graph=graph,
+                    constraints=call.predicate_bindings,
+                ).params if step.predicate is not None else {}
+            )
+            missing = tuple(name for name in required_predicates if name not in params)
+            if missing:
+                reasons.append(
+                    f"required physical parameters {missing!r} have no eligible predicate "
+                    "assignment; supply compatible operators, qualifiers, and one "
+                    "consistent value through the declared predicate bindings"
+                )
+                continue
         feasible.append(recipe)
     compatible = legacy + tuple(
         endpoints[(recipe.broker, recipe.origin, recipe.calls[0].endpoint)]

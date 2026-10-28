@@ -125,7 +125,8 @@ review, keeping the same order and acceptance boundary.
 | Branch | Deliverable |
 | --- | --- |
 | `fix/integration-01-alerce-classification` | Correct ALeRCE classification contracts, remove the demonstrated ambiguity, and align public validation with planning |
-| `feat/discovery-02-bindings` | Complete time-context binding and required predicate-parameter handling using existing interfaces |
+| `feat/discovery-02a-predicate-bindings` | Admit required predicate parameters through existing recipes and reject unbound requests before execution |
+| `feat/discovery-02b-time-bindings` | Complete time-context encoding and fixed-clock/replay handling through existing binding/execution interfaces |
 | `feat/discovery-03-fink` | Activate Fink ZTF class/time discovery and audit Fink Rubin discovery separately |
 | `feat/discovery-04-alerce` | Complete admitted class/time search combinations in existing ALeRCE recipes |
 | `feat/discovery-05-lasair` | Implement a bounded, declared semantic-search translation for verified Lasair query fields |
@@ -187,6 +188,10 @@ python -m pytest -q tests/test_alerce_ztf_endpoint_contracts.py tests/test_alerc
 ```
 
 ### PR 02 — Discovery input bindings
+
+Split into two sequential reviews: **02a** implements required predicate inputs;
+**02b** implements time bindings and clock/replay guarantees. Provider activation
+remains in PRs 03 onward. Only 02a has been prepared so far.
 
 Complete two missing parts of the existing recipe/binder contract:
 
@@ -564,8 +569,9 @@ not need redesign for this series.
 
 | PR | Branch suffix | PR number / commit | Local verification | Live outcome |
 | --- | --- | --- | --- | --- |
-| 01 | alerce-classification | Prepared on `fix/integration-01-alerce-classification`; PR pending | Not run here; local handoff | Pending |
-| 02 | bindings | Pending | Pending | Through provider PRs |
+| 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
+| 02a | predicate-bindings | Prepared on `feat/discovery-02a-predicate-bindings`; PR pending | Not run here; local handoff | No provider activation |
+| 02b | time-bindings | Pending | Pending | Through provider PRs |
 | 03 | fink | Pending | Pending | Pending |
 | 04 | alerce | Pending | Pending | Pending |
 | 05 | lasair | Pending | Pending | Pending |

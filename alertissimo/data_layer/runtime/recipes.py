@@ -553,12 +553,14 @@ def load_provider_capabilities(
                         item.parameter in params for item in latest_selection.params
                     ):
                         raise RecipeRegistryError(f"{call_where}: selection conflicts with a parameter assignment")
+                    predicate_parameters = {item.parameter for item in call_bindings}
                     for name, declaration in declarations.items():
                         declaration = _mapping(declaration, call_where)
                         if (
                             declaration.get("required")
                             and declaration.get("default") is None
                             and name not in params and name not in fixed
+                            and name not in predicate_parameters
                         ):
                             raise RecipeRegistryError(f"{call_where}: required parameter {name!r} has no assignment/default")
                     calls.append(RecipeCall(
