@@ -362,10 +362,19 @@ def _predicate_bindings(
                 raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
             if parameter not in filters:
                 raise RecipeRegistryError(f"{location}: parameter must be a server filter")
+            declaration = _mapping(parameters[parameter], location)
+            roles, adapter = _encoder(declaration, location)
+            if "semantic_predicate" in roles and roles != ("semantic_predicate",):
+                raise RecipeRegistryError(f"{location}: semantic_predicate must be the only encoder operand")
             if not isinstance(path, str) or path not in paths:
                 raise RecipeRegistryError(f"{location}: path must reference an existing endpoint ontology mapping")
             if not isinstance(operator, str) or operator not in operators:
                 raise RecipeRegistryError(f"{location}: operator must be an IR comparison operator")
+            if adapter == "alertissimo.data_layer.transforms.request:numeric_lower_bound" and (
+                operator != ">=" or declaration.get("type") != "array"
+                or roles != ("semantic_predicate",)
+            ):
+                raise RecipeRegistryError(f"{location}: numeric_lower_bound requires an array parameter and >= predicate binding")
             exact = binding.get("exact", True)
             if type(exact) is not bool:
                 raise RecipeRegistryError(f"{location}: exact must be boolean")

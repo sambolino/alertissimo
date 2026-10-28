@@ -79,6 +79,21 @@ def test_generic_collection_and_scalar_request_transforms():
     assert coerce_physical_type(3, {"type": "number"}, role="radius") == 3.0
 
 
+def test_numeric_minimum_encoding_is_a_physical_array_without_changing_the_value():
+    path = "alertissimo.data_layer.transforms.request:numeric_lower_bound"
+    assert apply_binding_adapter(path, {"semantic_predicate": 61000.125}) == [61000.125]
+    assert apply_binding_adapter(path, {"semantic_predicate": 0}) == [0.0]
+
+
+@pytest.mark.parametrize("value", [None, True, "61000", [61000], float("nan"), float("inf")])
+def test_numeric_minimum_rejects_missing_or_nonfinite_nonnumeric_literals(value):
+    with pytest.raises(RequestTransformError, match="finite numeric literal"):
+        apply_binding_adapter(
+            "alertissimo.data_layer.transforms.request:numeric_lower_bound",
+            {"semantic_predicate": value},
+        )
+
+
 def test_generic_sql_membership_transform_uses_validated_adapter_options():
     path = "alertissimo.data_layer.transforms.sql:string_membership_condition"
     options = {

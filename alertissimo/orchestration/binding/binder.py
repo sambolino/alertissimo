@@ -360,6 +360,10 @@ def bind_endpoint(
         raise UnsupportedParameterBindingError(
             "time_context must come from WorkflowIR; supply reference_time to inject a clock"
         )
+    if "semantic_predicate" in supplied_runtime:
+        raise UnsupportedParameterBindingError(
+            "semantic_predicate must come from the planned predicate realization"
+        )
     params: dict[str, Any] = {}
 
     for physical_name, value in endpoint_plan.request_params.items():
@@ -392,13 +396,24 @@ def bind_endpoint(
                     f"undeclared physical parameter {physical_name!r}"
                 )
             declaration = spec.params[physical_name] or {}
-            coerced = _coerce_physical_type(
-                value,
-                declaration,
-                endpoint_plan=endpoint_plan,
-                physical_name=physical_name,
-                role="semantic_predicate",
-            )
+            if _binding_roles(declaration) == ("semantic_predicate",):
+                if value is None:
+                    raise ParameterBindingError(
+                        f"semantic predicate literal is missing for {_context(endpoint_plan)} "
+                        f"physical parameter {physical_name!r}"
+                    )
+                coerced = _encode_parameter_values(
+                    {"semantic_predicate": value}, declaration,
+                    endpoint_plan=endpoint_plan, physical_name=physical_name,
+                )
+            else:
+                coerced = _coerce_physical_type(
+                    value,
+                    declaration,
+                    endpoint_plan=endpoint_plan,
+                    physical_name=physical_name,
+                    role="semantic_predicate",
+                )
             _set_param(
                 params,
                 physical_name,

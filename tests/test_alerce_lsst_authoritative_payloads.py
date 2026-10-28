@@ -66,6 +66,8 @@ def test_query_objects_same_oid_preserves_object_position_classifier_records_and
             "identity.object_id": 170587117485817955,
             "position.ra": 62.45763123249455,
             "position.dec": -48.481492749718534,
+            "time.first_mjd": 61217.42118006405,
+            "time.last_mjd": 61235.41918367943,
         }
         for record in summaries
     )

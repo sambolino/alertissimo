@@ -1,5 +1,21 @@
 broker: alerce
 origin: ztf
+predicate_bindings:
+  query_objects:
+    - path: classification.provenance.producer.name
+      operator: "="
+      parameter: classifier
+      exact: false
+    - path: classification.best.class
+      operator: "="
+      parameter: class_name
+      exact: false
+    - path: summary.time.first_mjd
+      operator: ">="
+      parameter: firstmjd
+    - path: summary.time.last_mjd
+      operator: ">="
+      parameter: lastmjd
 selection_bindings:
   query_objects:
     latest:

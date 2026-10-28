@@ -51,6 +51,8 @@ def test_translations_compile_once_and_discovery_call_owns_them():
         ("classifier", "classification.provenance.producer.name", "="),
         ("class_name", "classification.best.class", "="),
         ("probability", "classification.best.probability", ">="),
+        ("firstmjd", "summary.time.first_mjd", ">="),
+        ("lastmjd", "summary.time.last_mjd", ">="),
     }
     recipe, = graph.query_recipes(broker="alerce", origin="lsst", op="cone_search")
     assert set(recipe.calls[0].predicate_bindings) == set(constraints)
