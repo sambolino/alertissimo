@@ -10,6 +10,7 @@ from alertissimo.orchestration.normalization import (
     StepPortfolioResult,
     WorkflowPortfolioResult,
     consolidate_portfolios,
+    apply_classification_selection,
 )
 from alertissimo.orchestration.runtime import StepRunState
 
@@ -161,6 +162,7 @@ def finalize_local_semantics(
                 step_run=step_run,
                 steps=steps,
             )
+            steps[step_index] = apply_classification_selection(step, steps[step_index])
             continue
 
         if step_run.state is not StepRunState.PLANNED:

@@ -6,6 +6,11 @@ import pytest
 
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph, canonical_semantic_noun
 from alertissimo.data_layer.runtime.recipes import ConstantValueSource, RecipeParameter
+from alertissimo.data_layer.representations import (
+    InternalEdgeId, InternalExecutionId, InternalExecutionProvenance,
+    InternalPortfolioId, InternalRecordId, InternalRecordSource, Portfolio,
+    SemanticEdge, SemanticRecord,
+)
 from alertissimo.orchestration.ir import (
     FilterStep, GetClassificationStep, GetLightcurveStep, LookupStep,
     SearchSelection, SemanticSearchStep, Source, TargetSelector, WorkflowIR,
@@ -16,6 +21,7 @@ from alertissimo.orchestration.ir.predicates import (
 )
 from alertissimo.orchestration.planner import PlanningAmbiguityError, PlanningDeferredError, plan_workflow
 from alertissimo.orchestration.runtime import EndpointPlanRef
+from alertissimo.orchestration.normalization import StepPortfolioResult, apply_classification_selection
 from alertissimo.orchestration.validation import (
     classification_material_capabilities, validate_step_capabilities,
 )
@@ -37,9 +43,9 @@ def intent():
     return owner, consumer
 
 
-def test_discovery_material_proves_reuse_without_activating_fresh_selector(graph):
+def test_discovery_material_is_reused_even_when_fresh_local_selection_is_supported(graph):
     owner, consumer = intent()
-    assert validate_step_capabilities(consumer, graph).status == "deferred"
+    assert validate_step_capabilities(consumer, graph).status == "supported"
     material, = classification_material_capabilities(consumer, (owner,), graph)
     assert material.owner_index == 0
     assert material.source == consumer.sources[0]
@@ -103,8 +109,9 @@ def test_owned_call_contract_limits_read_only_and_planner_proof(graph, change):
     graph = replace(graph, recipe_capabilities=tuple(recipes))
     assert classification_material_capabilities(consumer, (owner,), graph) == ()
     if change != "ambiguous":
-        with pytest.raises(PlanningDeferredError):
-            plan_workflow(WorkflowIR(steps=[owner, consumer]), graph)
+        run = plan_workflow(WorkflowIR(steps=[owner, consumer]), graph)
+        assert run.steps[1].endpoint_plans[0].endpoint == "query_probabilities"
+        assert run.steps[1].endpoint_plans[0].execution_reuse_from is None
     else:
         with pytest.raises(PlanningAmbiguityError):
             plan_workflow(WorkflowIR(steps=[owner, consumer]), graph)
@@ -119,3 +126,39 @@ def test_positive_reference_proof_preserves_qualifiers_and_conjunctions():
     ), requirement)
     assert not predicate_requires_reference(owner.predicate, requirement.model_copy(update={"producer": "other"}))
     assert not predicate_requires_reference(owner.predicate, requirement.model_copy(update={"channel": "other"}))
+
+
+def test_local_classifier_selection_preserves_other_sources_edges_and_prior_snapshots():
+    portfolios = []
+    for broker, origin in (("alerce", "ztf"), ("alerce", "lsst"), ("fink", "ztf")):
+        prefix = f"{broker}:{origin}"
+        execution_id = InternalExecutionId(f"execution:{prefix}")
+        source = InternalRecordSource(execution_id, "probabilities", "$[0]", 0)
+        identifier = InternalPortfolioId(f"portfolio:{prefix}")
+        # No summary here: these independent records exercise source scoping
+        # without implying cross-survey candidate ownership.
+        records = tuple(SemanticRecord(
+            InternalRecordId(f"{prefix}:{model}"), f"classification@{model}:{broker}",
+            {"provenance.producer.name": model}, source,
+        ) for model in ("lc_classifier", "other_classifier"))
+        edges = (
+            SemanticEdge(InternalEdgeId(f"{prefix}:keep"), "--related_to--", identifier, InternalPortfolioId(f"portfolio:{prefix}:related")),
+            SemanticEdge(InternalEdgeId(f"{prefix}:drop"), "--related_to--", records[0].internal_record_id, records[1].internal_record_id),
+        )
+        portfolios.append(Portfolio(
+            identifier, records=records, edges=edges,
+            executions=(InternalExecutionProvenance(execution_id, broker, origin, "probabilities"),),
+        ))
+    view = StepPortfolioResult(1, (), tuple(portfolios))
+    step = GetClassificationStep(classifier="lc_classifier", sources=[Source(broker="alerce", origin="ztf")])
+    selected = apply_classification_selection(step, view)
+    actual, lsst, fink = selected.portfolios
+    assert actual.records == portfolios[0].records[:1]
+    assert actual.internal_portfolio_id != portfolios[0].internal_portfolio_id
+    assert actual.executions == portfolios[0].executions
+    assert len(actual.edges) == 1
+    assert actual.edges[0].subject == actual.internal_portfolio_id
+    assert actual.edges[0].target == portfolios[0].edges[0].target
+    assert lsst is portfolios[1] and fink is portfolios[2]
+    assert view.portfolios[0] is portfolios[0]
+    assert len(view.portfolios[0].records) == len(view.portfolios[0].edges) == 2

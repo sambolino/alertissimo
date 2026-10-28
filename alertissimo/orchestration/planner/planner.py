@@ -713,7 +713,7 @@ def _classification_material_plans(
     step: GetClassificationStep, workflow: WorkflowIR,
     earlier: list[StepRun], graph: CapabilityGraph,
 ) -> tuple[EndpointPlan, ...] | None:
-    """Resolve a deferred dynamic selector from an actual earlier execution.
+    """Resolve a dynamic selector from an actual earlier discovery execution.
 
     This does not activate a search endpoint as a fresh retrieval recipe. The
     returned material plans must be marked as reuse by the same execution proof
@@ -761,14 +761,13 @@ def _plan_workflow_step(
 
     if isinstance(step, (FilterStep, MatchStep)):
         return ()
-    try:
-        return plan_step(step, graph)
-    except PlanningDeferredError:
-        if isinstance(step, GetClassificationStep):
-            material = _classification_material_plans(step, workflow, earlier, graph)
-            if material is not None:
-                return material
-        raise
+    # Prefer proven, already-required discovery material even when a fresh
+    # probabilities retrieval can now realize the selector locally.
+    if isinstance(step, GetClassificationStep):
+        material = _classification_material_plans(step, workflow, earlier, graph)
+        if material is not None:
+            return material
+    return plan_step(step, graph)
 
 
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:

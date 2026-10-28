@@ -78,9 +78,6 @@ unmapped:
 - query_forced_photometry#scienceFluxErr:
     reason: unsupported_semantic_concept
     candidate_meaning: Uncertainty for scienceFlux, which has no same-meaning ontology path.
-- query_probabilities#ranking:
-    reason: unsupported_semantic_concept
-    candidate_meaning: Classifier-dependent ordering is neither a class assessment nor a selected-best assertion for the full probability response.
 - query_lightcurve.detections#band:
     reason: unsupported_semantic_concept
     candidate_meaning: Numeric ALeRCE band identifier; band_name supplies the canonical filter label used for binding.

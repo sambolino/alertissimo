@@ -13,6 +13,7 @@ from .models import (
     summary_object_identity,
 )
 from .normalize import (
+    apply_classification_selection,
     WorkflowNormalizationAlignmentError,
     normalize_execution,
     normalize_step_execution,
@@ -23,6 +24,7 @@ from .selection import SearchSelectionError, apply_search_selection
 
 __all__ = [
     "ExecutionPortfolioResult",
+    "apply_classification_selection",
     "StepPortfolioResult",
     "WorkflowNormalizationAlignmentError",
     "WorkflowPortfolioResult",

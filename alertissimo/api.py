@@ -49,7 +49,7 @@ from alertissimo.orchestration.pipeline import (
     StagedWorkflowResult,
     execute_staged_workflow_run,
 )
-from alertissimo.orchestration.planner import plan_workflow
+from alertissimo.orchestration.planner import PlanningError, plan_workflow
 from alertissimo.orchestration.results import ResultViewSpec
 from alertissimo.orchestration.runtime import WorkflowRun
 
@@ -59,8 +59,8 @@ class DSLValidationResult:
     """Read-only DSL validation/compilation result suitable for interactive clients.
 
     ``is_valid`` means formal syntax parsed and ontology validation succeeded.
-    ``is_runnable`` means the same surface also passed capability/lowering policy
-    and produced a canonical ``SurfaceCompilation``. Capability reports are kept
+    ``is_runnable`` means the same surface passed capability/lowering and offline
+    planning policy and produced a canonical ``SurfaceCompilation``. Reports are kept
     separately so clients may still show supported/deferred/unsupported details.
     """
 
@@ -272,6 +272,17 @@ def validate_dsl(
                     graph=effective_graph,
                     name=name,
                 )
+            )
+            # Admission uses the same offline planner as execution. Feasible
+            # capabilities alone do not establish an unambiguous physical plan.
+            plan_workflow(compilation.workflow, effective_graph)
+        except PlanningError as error:
+            return DSLValidationResult(
+                source=source,
+                surface=surface,
+                semantic=semantic,
+                capabilities=capabilities,
+                lowering_error=SurfaceLoweringError(str(error), code="planning_error"),
             )
         except SurfaceLoweringError as error:
             return DSLValidationResult(

@@ -14,9 +14,6 @@ unmapped:
 - query_objects#step_id_corr:
     reason: provider_native_processing_identifier
     candidate_meaning: ALeRCE CorrectionStep pipeline version/identifier; no same-meaning scientific ontology field currently exists.
-- query_probabilities#ranking:
-    reason: ambiguous_provider_semantics
-    candidate_meaning: Classifier-dependent result ordering/rank; it is neither a class assessment nor a selected best-class assertion.
 - query_object#mjdstarthist:
     reason: unsupported_semantic_concept
     candidate_meaning: Start MJD of spatially coincident historical raw ZTF detections under ALeRCE selection conditions; this is not necessarily the first accepted object detection.

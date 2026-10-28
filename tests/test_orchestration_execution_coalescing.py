@@ -176,13 +176,11 @@ def test_dynamic_producer_is_not_assumed_without_positive_search_requirement():
         ]
     )
 
-    import pytest
-
-    with pytest.raises(
-        PlanningDeferredError,
-        match="dynamic producer mapping",
-    ):
-        plan_workflow(workflow, build_capability_graph())
+    run = plan_workflow(workflow, build_capability_graph())
+    plan, = run.steps[1].endpoint_plans
+    assert plan.endpoint == "query_probabilities"
+    assert plan.execution_reuse_from is None
+    assert plan.candidate_input_from.step_index == 0
 
 
 def test_coalescing_proof_is_provider_neutral():

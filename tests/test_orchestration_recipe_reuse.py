@@ -15,7 +15,7 @@ from alertissimo.data_layer.runtime.capability_graph import build_capability_gra
 from alertissimo.orchestration.ir import GetClassificationStep, SemanticSearchStep, Source, WorkflowIR
 from alertissimo.orchestration.ir.predicates import ComparisonPredicate, PredicateLiteral, SemanticReference
 from alertissimo.orchestration.pipeline import execute_staged_workflow_run
-from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
+from alertissimo.orchestration.planner import plan_workflow
 from alertissimo.orchestration.runtime import CandidateInputRef, EndpointPlanRef, StepRunState, WorkflowRun
 
 
@@ -130,9 +130,17 @@ def test_owned_reuse_uses_compiled_call_outputs_instead_of_legacy_families(class
         ),
         GetClassificationStep(classifier="lc_classifier", sources=sources),
     ])
+    run = plan_workflow(workflow, graph)
+    consumer, = run.steps[1].endpoint_plans
     if classification_output:
-        run = plan_workflow(workflow, graph)
-        assert run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
+        assert consumer.endpoint == "query_objects"
+        assert consumer.execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
+        assert consumer.candidate_input_from is None
     else:
-        with pytest.raises(PlanningDeferredError, match="dynamic producer mapping"):
-            plan_workflow(workflow, graph)
+        # The legacy family index still advertises classification, but the
+        # compiled discovery call does not supply it. Retrieve probabilities
+        # for the discovered candidates instead of borrowing that family claim.
+        assert consumer.endpoint == "query_probabilities"
+        assert consumer.execution_reuse_from is None
+        assert consumer.candidate_input_from == CandidateInputRef(step_index=0)
+        assert consumer.parameter_sources == {"oid": ("target", "ids")}

@@ -58,7 +58,7 @@ def test_query_object_selected_result_is_classifier_produced_record():
 def test_probability_version_is_provenance_and_class_is_assessment_namespace():
     portfolio = _build(
         "query_probabilities",
-        [{"classifier_name": "Stamp Classifier", "classifier_version": "1.2.0", "class_name": "SN Ia", "probability": 0.82}],
+        [{"classifier_name": "Stamp Classifier", "classifier_version": "1.2.0", "class_name": "SN Ia", "probability": 0.82, "ranking": 2}],
     )
     record = portfolio.records[0]
     assert record.semantic_type == "classification@stamp_classifier:alerce"
@@ -66,6 +66,7 @@ def test_probability_version_is_provenance_and_class_is_assessment_namespace():
     assert record.fields["provenance.producer.version"] == "1.2.0"
     assert record.fields["assessment.sn_ia.class"] == "SN Ia"
     assert record.fields["assessment.sn_ia.probability"] == 0.82
+    assert record.fields["assessment.sn_ia.rank"] == 2
     assert not any("1.2.0" in field for field in record.fields)
 
 

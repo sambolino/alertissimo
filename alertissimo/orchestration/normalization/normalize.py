@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+from uuid import uuid4
+
 from alertissimo.data_layer.execution import ExecutionResult
-from alertissimo.data_layer.representations import Portfolio
-from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.orchestration.ir import DeriveStep, FilterStep, MatchStep, and_predicates
+from alertissimo.data_layer.representations import (
+    InternalEdgeId, InternalPortfolioId, InternalRecordId, Portfolio,
+)
+from alertissimo.data_layer.runtime.record_builder import (
+    _semantic_identifier, build_portfolios_from_execution,
+)
+from alertissimo.orchestration.ir import (
+    DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
+)
 from alertissimo.orchestration.ir.predicates import Predicate
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
@@ -29,6 +38,64 @@ from .selection import apply_search_selection
 
 class WorkflowNormalizationAlignmentError(ValueError):
     """Raised before normalization when runtime results are cross-wired."""
+
+
+def apply_classification_selection(step: Step, view: StepPortfolioResult) -> StepPortfolioResult:
+    """Select a Get's classifier in its semantic view, keeping execution audit intact.
+
+    Selection is restricted to records from the requested provider/survey sources.
+    Raw normalization and prior Step snapshots remain immutable; a missing model
+    yields no classification records for that source, rather than another model.
+    """
+    if not isinstance(step, GetClassificationStep) or step.classifier is None:
+        return view
+    requested = _semantic_identifier(step.classifier)
+    selected = []
+    changed = False
+    for portfolio in view.portfolios:
+        executions = {item.internal_execution_id: item for item in portfolio.executions}
+        removed = set()
+        for record in portfolio.records:
+            noun, _, qualifiers = record.semantic_type.partition("@")
+            if noun != "classification" or record.internal_source is None:
+                continue
+            execution = executions.get(record.internal_source.internal_execution_id)
+            if execution is None or step.sources and not any(
+                (source.broker is None or source.broker == execution.broker)
+                and (source.origin is None or source.origin == execution.origin)
+                for source in step.sources
+            ):
+                continue
+            producer = qualifiers.partition(":")[0]
+            if producer != requested:
+                removed.add(record.internal_record_id)
+        if not removed:
+            selected.append(portfolio)
+            continue
+        changed = True
+        identifier = InternalPortfolioId(f"portfolio:{uuid4()}")
+        edges = []
+        for edge in portfolio.edges:
+            if any(isinstance(value, InternalRecordId) and value in removed for value in (edge.subject, edge.target)):
+                continue
+            if portfolio.internal_portfolio_id in (edge.subject, edge.target):
+                edge = replace(
+                    edge, internal_edge_id=InternalEdgeId(f"edge:{uuid4()}"),
+                    subject=identifier if edge.subject == portfolio.internal_portfolio_id else edge.subject,
+                    target=identifier if edge.target == portfolio.internal_portfolio_id else edge.target,
+                )
+            edges.append(edge)
+        selected.append(replace(
+            portfolio, internal_portfolio_id=identifier,
+            records=tuple(record for record in portfolio.records if record.internal_record_id not in removed),
+            edges=tuple(edges),
+        ))
+    if not changed:
+        return view
+    return StepPortfolioResult(
+        step_index=view.step_index, executions=view.executions,
+        materialized_portfolios=tuple(selected),
+    )
 
 
 def normalize_execution(
@@ -617,9 +684,9 @@ def normalize_workflow_execution(
             validate_semantic_model=validate_semantic_model,
         )
         normalized_steps.append(
-            _materialize_enrichment_view(
+            apply_classification_selection(step, _materialize_enrichment_view(
                 step_run, apply_search_selection(step, own), normalized_steps,
-            )
+            ))
         )
 
     return WorkflowPortfolioResult(
@@ -630,6 +697,7 @@ def normalize_workflow_execution(
 
 __all__ = [
     "WorkflowNormalizationAlignmentError",
+    "apply_classification_selection",
     "normalize_execution",
     "normalize_step_execution",
     "normalize_workflow_execution",

@@ -209,5 +209,6 @@ def test_real_classifier_row_uses_classifier_as_producer_and_alerce_as_channel()
         "provenance.producer.version": "hierarchical_rf_1.1.0",
         "assessment.snia.class": "SNIa",
         "assessment.snia.probability": 0.0082,
+        "assessment.snia.rank": 11,
     }
     assert portfolio.edges == ()
