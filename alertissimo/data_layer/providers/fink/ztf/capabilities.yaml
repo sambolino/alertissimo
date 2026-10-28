@@ -1,6 +1,17 @@
 broker: fink
 origin: ztf
+predicate_bindings:
+  latests:
+    - path: classification.best.class
+      operator: "="
+      parameter: class
 recipes:
+  semantic_search:
+    - calls:
+        - endpoint: latests
+          params:
+            startdate: {from: step.time_context}
+            stopdate: {from: step.time_context}
   confirm:
     - calls:
         - endpoint: objects
