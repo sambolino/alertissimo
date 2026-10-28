@@ -1,38 +1,29 @@
-"""Fink class/time discovery through the public facade; recorded and synthetic replays.
+"""Fink ZTF class discovery uses the verified latests request contract."""
 
-latests.json is the immutable class-endpoint capture. The SN regression selects
-unchanged alert rows from objects_core.json to simulate the same class response
-shape; it is not claimed to be a new captured latests response. For multi-object
-binding tests, the transport replays selected latests rows as object responses.
-All transport routing is a fixture: no HTTP call or upstream package is used.
-"""
-
-from copy import deepcopy
-from dataclasses import replace
-from datetime import datetime, timedelta, timezone
-import json
-from pathlib import Path
-import shutil
+from datetime import datetime, timezone
 
 import pytest
-import yaml
 
 from alertissimo.api import execute_dsl, validate_dsl
-from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor, TransportResult
-from alertissimo.data_layer.paths import PROVIDERS_ROOT
-from alertissimo.data_layer.runtime.capability_graph import CapabilityGraphError, build_capability_graph
-from alertissimo.dsl import SurfaceLoweringError
+from alertissimo.data_layer.execution import (
+    EndpointRegistry,
+    RegistryEndpointExecutor,
+    TransportResult,
+)
+from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.dsl import SurfaceLoweringError, lower_surface, parse_surface_script
 from alertissimo.orchestration.binding import bind_endpoint
-from alertissimo.orchestration.ir import ComparisonPredicate, PredicateLiteral, SearchSelection, SemanticReference, TimeContext
-from alertissimo.orchestration.normalization import normalize_workflow_execution, summary_object_identity
-from alertissimo.orchestration.normalization.predicate import evaluate_portfolio_predicate
-from alertissimo.orchestration.planner import PlanningDeferredError, plan_step, realize_predicate
-from alertissimo.orchestration.runtime import EndpointPlan, WorkflowExecutionError
+from alertissimo.orchestration.ir import SemanticSearchStep
+from alertissimo.orchestration.planner import PlanningDeferredError, plan_step
+from alertissimo.orchestration.validation import validate_step_capabilities
 
 
-FIXTURES = Path(__file__).parent / "fixtures/fink/ztf"
-NOW = datetime(2021, 11, 25, tzinfo=timezone.utc)
-SN_NOW = datetime(2021, 7, 2, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 28, 12, 34, 56, 123456, tzinfo=timezone.utc)
+SEARCH = (
+    "objects from ztf via fink\n"
+    "within 7d\n"
+    'where classification.best.class = "SN candidate"\n'
+)
 
 
 @pytest.fixture(scope="module")

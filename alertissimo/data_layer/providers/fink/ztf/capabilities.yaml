@@ -5,14 +5,6 @@ predicate_bindings:
     - path: classification.best.class
       operator: "="
       parameter: class
-      # Only the audited ordinary class-index routes. Physical class aliases
-      # and special grouped tables do not inherit this scientific meaning.
-      values:
-        - SN candidate
-        - Early SN Ia candidate
-      # Keep the returned v:classification as scientific evidence; the stream
-      # selector alone does not establish a current classification per object.
-      exact: false
 recipes:
   semantic_search:
     - calls:

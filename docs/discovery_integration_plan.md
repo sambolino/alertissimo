@@ -245,12 +245,12 @@ labels with normalized response rechecking. See
 Window subdivision, if added, must preserve verified boundary semantics
 and operational limits; until then saturation must remain an explicit failure.
 
-Add the ZTF `semantic_search` recipe for the existing `latests` endpoint. Declare
-the eligible classification equality binding to `class`, plus the verified time
-bindings to `startdate` and `stopdate`. Keep method, defaults, field projection,
-and physical limits in the endpoint contract. Existing GET and an application's
-use of POST are not inherently a defect; verify supported transport before
-changing it.
+The ZTF `semantic_search` recipe is implemented for the existing `latests`
+endpoint. It translates only classification equality to `class` and a supplied
+time context to UTC `startdate`/`stopdate`. A search with no eligible class
+equality remains deferred rather than selecting an arbitrary stream. Method,
+defaults, projection, and physical limits remain in the endpoint contract.
+Existing GET and an application's use of POST are not inherently a defect.
 
 Required acceptance query:
 
@@ -260,18 +260,16 @@ within 7d
 where classification.best.class = "SN candidate"
 ```
 
-Then exercise the same search with a residual filter and downstream light-curve
-or classification retrieval. Confirm that endpoint-local mappings supply the
-requested summary identities and predicate material. A missing class should have
-a clear diagnostic instead of triggering an arbitrary default stream.
+The exact acceptance query is covered by `tests/test_fink_semantic_search.py`
+through public validation, planning, fixed-clock binding, and an offline
+registry-executor replay. Existing authoritative-payload tests cover the captured
+`latests` response mappings. A missing class has an explicit deferred diagnostic.
 
-Handle repeated alerts for one object through current candidate partitioning.
-Implement complete retrieval using verified window subdivision/pagination, or
-expose an explicit bounded/incomplete result through the existing result and
-diagnostic facilities. Continue subdividing while the upstream contract permits;
-do not inherit nucleuswatch's silent one-day stopping limit. If completeness
-cannot be established for a saturated interval, report it visibly. An `n` limit
-does not implement global `latest N` over a filtered object population.
+Repeated alerts for one object use current candidate partitioning. The existing
+executor rejects a JSON response that reaches the physical `n` ceiling, so
+saturation is an explicit incomplete-result failure. Unsaturated responses are
+not proof of completeness; automatic window subdivision and global `latest N`
+over a filtered object population are not implemented.
 
 Audit Rubin's actual tags/class-search interface and available classifier fields.
 Activate an equivalent recipe only if its input and population semantics are
