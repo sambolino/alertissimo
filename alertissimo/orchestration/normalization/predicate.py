@@ -46,19 +46,25 @@ def _selector(reference: SemanticReference) -> tuple[str, str | None, str | None
     return reference.semantic_type, reference.producer, reference.channel
 
 
-def _record_matches(record: SemanticRecord, reference: SemanticReference) -> bool:
+def _record_matches(record: SemanticRecord, reference: SemanticReference, portfolio: Portfolio) -> bool:
     noun, producer, channel = _record_parts(record.semantic_type)
     if noun != reference.semantic_type:
         return False
     if reference.producer is not None and producer != reference.producer:
         return False
+    if channel is None and reference.channel is not None and record.internal_source is not None:
+        # Legacy fixed-producer records (for example classification@fink) omit
+        # the channel suffix. Only their own execution provenance can supply it;
+        # another broker present in the Portfolio is not evidence for this record.
+        execution = portfolio.execution(record.internal_source.internal_execution_id)
+        channel = execution.broker if execution is not None else None
     if reference.channel is not None and channel != reference.channel:
         return False
     return True
 
 
-def _record_value(record: SemanticRecord, reference: SemanticReference) -> Any:
-    if not _record_matches(record, reference):
+def _record_value(record: SemanticRecord, reference: SemanticReference, portfolio: Portfolio) -> Any:
+    if not _record_matches(record, reference, portfolio):
         return _MISSING
     if not reference.field_path:
         return True
@@ -74,25 +80,25 @@ def _compare(left: Any, operator_name: str, right: Any) -> bool:
         return False
 
 
-def _operand_on_record(operand, record: SemanticRecord) -> Any:
+def _operand_on_record(operand, record: SemanticRecord, portfolio: Portfolio) -> Any:
     if isinstance(operand, PredicateLiteral):
         return operand.value
-    return _record_value(record, operand)
+    return _record_value(record, operand, portfolio)
 
 
-def _evaluate_on_record(predicate: Predicate, record: SemanticRecord) -> bool:
+def _evaluate_on_record(predicate: Predicate, record: SemanticRecord, portfolio: Portfolio) -> bool:
     if isinstance(predicate, ComparisonPredicate):
         return _compare(
-            _operand_on_record(predicate.left, record),
+            _operand_on_record(predicate.left, record, portfolio),
             predicate.operator,
-            _operand_on_record(predicate.right, record),
+            _operand_on_record(predicate.right, record, portfolio),
         )
     if isinstance(predicate, ExistsPredicate):
-        return _record_value(record, predicate.reference) is not _MISSING
+        return _record_value(record, predicate.reference, portfolio) is not _MISSING
     if isinstance(predicate, NotPredicate):
-        return not _evaluate_on_record(predicate.operand, record)
+        return not _evaluate_on_record(predicate.operand, record, portfolio)
     if isinstance(predicate, BooleanPredicate):
-        values = (_evaluate_on_record(item, record) for item in predicate.operands)
+        values = (_evaluate_on_record(item, record, portfolio) for item in predicate.operands)
         return all(values) if predicate.operator == "and" else any(values)
     return False
 
@@ -111,7 +117,7 @@ def _matching_records(
         producer=selector[1],
         channel=selector[2],
     )
-    return tuple(record for record in portfolio.records if _record_matches(record, probe))
+    return tuple(record for record in portfolio.records if _record_matches(record, probe, portfolio))
 
 
 def _values(portfolio: Portfolio, operand) -> tuple[Any, ...]:
@@ -120,7 +126,7 @@ def _values(portfolio: Portfolio, operand) -> tuple[Any, ...]:
     return tuple(
         value
         for record in portfolio.records
-        for value in [_record_value(record, operand)]
+        for value in [_record_value(record, operand, portfolio)]
         if value is not _MISSING
     )
 
@@ -137,7 +143,7 @@ def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> 
     selector = _single_selector(predicate)
     if selector is not None:
         return any(
-            _evaluate_on_record(predicate, record)
+            _evaluate_on_record(predicate, record, portfolio)
             for record in _matching_records(portfolio, selector)
         )
 

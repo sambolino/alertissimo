@@ -356,7 +356,7 @@ def _predicate_bindings(
         for index, raw_binding in enumerate(bindings):
             location = f"{where}[{index}]"
             binding = _mapping(raw_binding, location)
-            _keys(binding, {"path", "operator", "parameter"}, {"path", "operator", "parameter"}, location)
+            _keys(binding, {"path", "operator", "parameter", "values", "exact"}, {"path", "operator", "parameter"}, location)
             parameter, path, operator = binding["parameter"], binding["path"], binding["operator"]
             if not isinstance(parameter, str) or parameter not in parameters:
                 raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
@@ -366,12 +366,28 @@ def _predicate_bindings(
                 raise RecipeRegistryError(f"{location}: path must reference an existing endpoint ontology mapping")
             if not isinstance(operator, str) or operator not in operators:
                 raise RecipeRegistryError(f"{location}: operator must be an IR comparison operator")
+            exact = binding.get("exact", True)
+            if type(exact) is not bool:
+                raise RecipeRegistryError(f"{location}: exact must be boolean")
+            values = None
+            if "values" in binding:
+                raw_values = binding["values"]
+                if not isinstance(raw_values, list) or not raw_values or any(
+                    type(value) not in (str, int, float, bool) for value in raw_values
+                ):
+                    raise RecipeRegistryError(f"{location}: values must be a non-empty list of scalar literals")
+                values = tuple(
+                    _constant(value, _mapping(parameters[parameter], location), location).value
+                    for value in raw_values
+                )
             key = (path, operator)
             if parameter in seen_parameters or key in seen_constraints:
                 raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
             seen_parameters.add(parameter)
             seen_constraints.add(key)
-            compiled.append(RequestConstraintCapability(broker, origin, endpoint, parameter, path, operator))
+            compiled.append(RequestConstraintCapability(
+                broker, origin, endpoint, parameter, path, operator, values, exact,
+            ))
     return tuple(compiled)
 
 

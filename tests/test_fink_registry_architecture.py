@@ -96,6 +96,8 @@ def test_recipe_owned_tags_are_retired():
         if origin == "lsst":
             assert "lightcurve" not in endpoints["sources"].get("operation_types", [])
             assert "forced_photometry" not in endpoints["fp"].get("operation_types", [])
+        else:
+            assert "operation_types" not in endpoints["latests"]
 
 
 def test_valid_fink_semantic_paths_are_preserved():

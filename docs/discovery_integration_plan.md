@@ -238,8 +238,11 @@ Split into **03a**, the physical JSON response-cap guard and source audit, and
 03a does not activate semantic discovery or claim that every unsaturated response
 is complete. The audit found provider-side grouping and post-filtering for some
 routes; those require separate admission evidence. See
-[the 03a runbook](discovery_03a_fink_result_limit.md). Create 03b only after 03a
-is merged. Window subdivision, if added, must preserve verified boundary semantics
+[the 03a runbook](discovery_03a_fink_result_limit.md). 03a is merged; 03b is
+prepared from that baseline and activates the two audited ordinary SN-class
+labels with normalized response rechecking. See
+[the 03b runbook](discovery_03b_fink.md) for the exact support matrix and limits.
+Window subdivision, if added, must preserve verified boundary semantics
 and operational limits; until then saturation must remain an explicit failure.
 
 Add the ZTF `semantic_search` recipe for the existing `latests` endpoint. Declare
@@ -582,8 +585,8 @@ not need redesign for this series.
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
 | 02a | predicate-bindings | [#294](https://github.com/sambolino/alertissimo/pull/294), main `7f7165d` | Merged; local results not separately reported | No provider activation |
 | 02b | time-bindings | [#295](https://github.com/sambolino/alertissimo/pull/295), main `d91106e` | All three CI workflows passed; local results not separately reported | No provider activation |
-| 03a | fink-result-limit | Prepared on `feat/discovery-03a-fink-result-limit`; PR pending | Not run here; local handoff | No broker calls; semantic discovery pending |
-| 03b | fink | Pending; after 03a merge | Pending | Pending |
+| 03a | fink-result-limit | [#296](https://github.com/sambolino/alertissimo/pull/296), main `1ced30e` | Merged; local results not separately reported | No live outcome separately reported |
+| 03b | fink | Prepared on `feat/discovery-03b-fink`; PR pending | Not run here; local handoff | Two ZTF labels admitted; cap errors explicit; Rubin class search deferred |
 | 04 | alerce | Pending | Pending | Pending |
 | 05 | lasair | Pending | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |

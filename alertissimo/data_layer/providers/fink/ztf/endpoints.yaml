@@ -168,10 +168,18 @@ endpoints:
         type: string
         default: '2019-11-01 00:00:00'
         description: Starting date in UTC (iso, jd, or MJD).
+        bind: time_context
+        binding:
+          adapter: alertissimo.data_layer.transforms.temporal:time_bound
+          adapter_options: {bound: start, encoding: utc_iso}
       stopdate:
         required: false
         type: string
         description: Stopping date in UTC (iso, jd, or MJD). If omitted, Fink uses the current time.
+        bind: time_context
+        binding:
+          adapter: alertissimo.data_layer.transforms.temporal:time_bound
+          adapter_options: {bound: end, encoding: utc_iso}
       color:
         required: false
         type: boolean
@@ -196,10 +204,6 @@ endpoints:
     output:
       type: array
       item: alert_row
-    operation_types:
-    - class_tag_search
-    - latest_alert_search
-    - alert_search
     server_filters:
     - class
     - trend
