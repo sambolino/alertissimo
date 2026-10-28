@@ -162,6 +162,7 @@ endpoints:
         type: integer
         default: 100
         description: Last N alerts to transfer between stopping date and starting date.
+        role: result_limit
       startdate:
         required: false
         type: string
@@ -191,6 +192,7 @@ endpoints:
         - votable
         default: json
         description: Output format
+        role: output_format
     output:
       type: array
       item: alert_row
