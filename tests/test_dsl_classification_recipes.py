@@ -171,14 +171,21 @@ def test_continuation_uses_actual_base_workflow(graph, barrier):
         base = WorkflowIR(steps=[LookupStep(target=TargetSelector(ids=["1"], kind="object"), sources=owner.sources)])
     fragment = parse_surface_fragment("with classification from lc_classifier\n")
     check = classification_check(validate_surface_fragment_capabilities(fragment, base, graph=graph))
-    if barrier is None:
-        assert check.status is SurfaceCapabilityStatus.SUPPORTED
-        compilation = compile_surface_fragment(fragment, base, graph=graph)
+    assert check.status is SurfaceCapabilityStatus.SUPPORTED
+    compilation = compile_surface_fragment(fragment, base, graph=graph)
+    if barrier == "selection":
+        # Fresh classifier selection is supported, but this synthetic base's
+        # Rubin latest selection has no declared recency-ordering contract.
+        # Do not confuse a valid continuation clause with a plannable prefix.
+        assert classification_material_capabilities(
+            compilation.workflow.steps[-1], tuple(compilation.workflow.steps[:-1]), graph,
+        ) == ()
+        with pytest.raises(PlanningDeferredError, match="latest requires a declared recency ordering"):
+            plan_workflow(compilation.workflow, graph)
+    elif barrier is None:
         run = plan_workflow(compilation.workflow, graph)
         assert run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
     else:
-        assert check.status is SurfaceCapabilityStatus.SUPPORTED
-        compilation = compile_surface_fragment(fragment, base, graph=graph)
         plan, = plan_workflow(compilation.workflow, graph).steps[-1].endpoint_plans
         assert plan.endpoint == "query_probabilities"
         assert plan.execution_reuse_from is None
