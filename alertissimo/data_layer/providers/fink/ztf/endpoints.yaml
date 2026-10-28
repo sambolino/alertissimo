@@ -171,9 +171,7 @@ endpoints:
         bind: time_context
         binding:
           adapter: alertissimo.data_layer.transforms.temporal:time_bound
-          adapter_options:
-            bound: start
-            encoding: utc_iso
+          adapter_options: {bound: start, encoding: utc_iso}
       stopdate:
         required: false
         type: string
@@ -181,9 +179,7 @@ endpoints:
         bind: time_context
         binding:
           adapter: alertissimo.data_layer.transforms.temporal:time_bound
-          adapter_options:
-            bound: end
-            encoding: utc_iso
+          adapter_options: {bound: end, encoding: utc_iso}
       color:
         required: false
         type: boolean
@@ -208,10 +204,6 @@ endpoints:
     output:
       type: array
       item: alert_row
-    operation_types:
-    - class_tag_search
-    - latest_alert_search
-    - alert_search
     server_filters:
     - class
     - trend

@@ -8,6 +8,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
     RequestConstraintCapability,
+    canonical_semantic_path,
 )
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
@@ -76,6 +77,7 @@ def _atomic_pushdown(
     predicate: Predicate,
     *,
     endpoint: EndpointCapability,
+    graph: CapabilityGraph,
     lookup: dict[tuple[str, str], tuple[RequestConstraintCapability, ...]],
 ) -> PredicateRealization:
     if not isinstance(predicate, ComparisonPredicate):
@@ -94,12 +96,18 @@ def _atomic_pushdown(
     )
     if field_constraint is None:
         return PredicateRealization(residual=predicate)
+    if field_constraint.values is not None and not any(
+        type(value) is type(allowed) and value == allowed
+        for allowed in field_constraint.values
+    ):
+        return PredicateRealization(residual=predicate)
 
     params: dict[str, Any] = {field_constraint.parameter: value}
 
     # A qualified producer is part of the semantic reference. Pushdown is safe
-    # only when the endpoint can express that qualifier too; otherwise applying
-    # only the field condition could narrow the wrong producer's result set.
+    # only with a server selector or one fixed producer for this mapped leaf.
+    # A dynamic or mixed producer mapping cannot establish that proof.
+    producer_constraint = None
     if reference.producer is not None:
         producer_constraint = _single_constraint(
             lookup,
@@ -107,13 +115,33 @@ def _atomic_pushdown(
             "=",
         )
         if producer_constraint is None:
-            return PredicateRealization(residual=predicate)
-        existing = params.get(producer_constraint.parameter)
-        if existing is not None and existing != reference.producer:
-            return PredicateRealization(residual=predicate)
-        params[producer_constraint.parameter] = reference.producer
+            record_types = {
+                field.semantic_record_type
+                for field in graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+                if canonical_semantic_path(field.semantic_path) == reference.ontology_path
+            }
+            if not record_types or any(
+                record.partition("@")[2].partition(":")[0] != reference.producer
+                or reference.channel is not None and (
+                    record.partition(":")[2] or endpoint.broker
+                ) != reference.channel
+                for record in record_types
+            ):
+                return PredicateRealization(residual=predicate)
+        else:
+            existing = params.get(producer_constraint.parameter)
+            if existing is not None and existing != reference.producer:
+                return PredicateRealization(residual=predicate)
+            if producer_constraint.values is not None and reference.producer not in producer_constraint.values:
+                return PredicateRealization(residual=predicate)
+            params[producer_constraint.parameter] = reference.producer
 
-    return PredicateRealization(pushdown=predicate, params=params)
+    exact = field_constraint.exact and (
+        reference.producer is None or producer_constraint is None or producer_constraint.exact
+    )
+    return PredicateRealization(
+        pushdown=predicate, params=params, residual=None if exact else predicate,
+    )
 
 
 def realize_predicate(
@@ -133,12 +161,15 @@ def realize_predicate(
     An explicit constraints tuple restricts realization to that call's compiled
     bindings. An empty tuple disables pushdown; None retains endpoint lookup for
     the legacy single-call planner and direct inspection callers.
+
+    A binding may restrict its typed literal values. Non-exact selectors supply
+    candidate supersets and retain the same predicate for normalized rechecking.
     """
 
     lookup = _constraint_lookup(graph, endpoint, constraints)
 
     if not isinstance(predicate, BooleanPredicate) or predicate.operator != "and":
-        return _atomic_pushdown(predicate, endpoint=endpoint, lookup=lookup)
+        return _atomic_pushdown(predicate, endpoint=endpoint, graph=graph, lookup=lookup)
 
     pushdown_parts: list[Predicate] = []
     residual_parts: list[Predicate] = []

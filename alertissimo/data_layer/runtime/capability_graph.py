@@ -87,7 +87,7 @@ class SemanticRecordCapability:
 
 @dataclass(frozen=True)
 class RequestConstraintCapability:
-    """One physical server-filter parameter's exact ontology meaning."""
+    """One server filter's ontology meaning and admitted literal domain."""
 
     broker: str
     origin: str
@@ -95,6 +95,9 @@ class RequestConstraintCapability:
     parameter: str
     semantic_path: str
     operator: str
+    values: tuple[Any, ...] | None = None
+    # False means the filter is a candidate superset, requiring local recheck.
+    exact: bool = True
 
 
 @dataclass(frozen=True)

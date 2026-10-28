@@ -8,7 +8,10 @@ import yaml
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor, TransportResult
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.orchestration.binding import bind_endpoint
-from alertissimo.orchestration.ir import SemanticSearchStep, Source, TimeContext
+from alertissimo.orchestration.ir import (
+    ComparisonPredicate, PredicateLiteral, SemanticReference,
+    SemanticSearchStep, Source, TimeContext,
+)
 from alertissimo.orchestration.planner import PlanningDeferredError, UnsupportedStepError, plan_step
 from alertissimo.orchestration.validation import candidate_capabilities, validate_step_capabilities
 
@@ -22,8 +25,9 @@ def search(broker="example", origin="survey", **kwargs):
     return SemanticSearchStep(semantic_type="summary", sources=[Source(broker=broker, origin=origin)], **kwargs)
 
 
-@pytest.mark.parametrize("broker", ["antares", "fink"])
-@pytest.mark.parametrize("origin", ["ztf", "lsst"])
+@pytest.mark.parametrize("broker,origin", [
+    ("antares", "ztf"), ("antares", "lsst"), ("fink", "lsst"),
+])
 def test_untranslated_real_discovery_defers_before_binding(graph, broker, origin):
     step = search(broker, origin)
     evidence = validate_step_capabilities(step, graph)
@@ -32,6 +36,32 @@ def test_untranslated_real_discovery_defers_before_binding(graph, broker, origin
     assert not candidate_capabilities(step, graph)
     with pytest.raises(PlanningDeferredError, match="recipe translation"):
         plan_step(step, graph)
+
+
+def test_owned_fink_discovery_requires_an_eligible_class_before_planning(graph):
+    step = search("fink", "ztf")
+    recipe, = graph.query_recipes(broker="fink", origin="ztf", op="semantic_search")
+    assert recipe.calls[0].endpoint == "latests"
+    evidence = validate_step_capabilities(step, graph)
+    assert evidence.status == "deferred"
+    assert "required physical parameters ('class',)" in evidence.source_results[0].reason
+    assert "eligible predicate assignment" in evidence.source_results[0].reason
+    assert not candidate_capabilities(step, graph)
+    with pytest.raises(PlanningDeferredError, match="required physical parameters.*class"):
+        plan_step(step, graph)
+
+    # The translation exists. Supplying its required scientific input must
+    # activate the declared recipe rather than a legacy specialized population.
+    predicate = ComparisonPredicate(
+        left=SemanticReference(semantic_type="classification", field_path="best.class"),
+        operator="=", right=PredicateLiteral(value="SN candidate"),
+    )
+    supplied = step.model_copy(update={"predicate": predicate})
+    assert validate_step_capabilities(supplied, graph).status == "supported"
+    plan, = plan_step(supplied, graph)
+    assert plan.endpoint == "latests"
+    assert plan.predicate_realization.params == {"class": "SN candidate"}
+    assert plan.predicate_realization.residual == predicate
 
 
 @pytest.mark.parametrize("origin", ["ztf", "lsst"])
