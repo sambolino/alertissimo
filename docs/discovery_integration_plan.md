@@ -127,7 +127,8 @@ review, keeping the same order and acceptance boundary.
 | `fix/integration-01-alerce-classification` | Correct ALeRCE classification contracts, remove the demonstrated ambiguity, and align public validation with planning |
 | `feat/discovery-02a-predicate-bindings` | Admit required predicate parameters through existing recipes and reject unbound requests before execution |
 | `feat/discovery-02b-time-bindings` | Complete time-context encoding and fixed-clock/replay handling through existing binding/execution interfaces |
-| `feat/discovery-03-fink` | Activate Fink ZTF class/time discovery and audit Fink Rubin discovery separately |
+| `feat/discovery-03a-fink-result-limit` | Reject visibly saturated Fink JSON responses through the existing executor and record the provider contract audit |
+| `feat/discovery-03b-fink` | Activate verified Fink ZTF class/time discovery using the cap guard; keep Rubin tag search separate |
 | `feat/discovery-04-alerce` | Complete admitted class/time search combinations in existing ALeRCE recipes |
 | `feat/discovery-05-lasair` | Implement a bounded, declared semantic-search translation for verified Lasair query fields |
 | `feat/discovery-06-antares` | Implement a bounded, declared semantic-search translation for verified ANTARES query fields |
@@ -191,7 +192,7 @@ python -m pytest -q tests/test_alerce_ztf_endpoint_contracts.py tests/test_alerc
 
 Split into two sequential reviews: **02a** implements required predicate inputs;
 **02b** implements time bindings and clock/replay guarantees. Provider activation
-remains in PRs 03 onward. PR 02a is merged; 02b is now prepared for local verification.
+remains in PRs 03 onward. PRs 02a and 02b are merged.
 
 Complete two missing parts of the existing recipe/binder contract:
 
@@ -231,6 +232,15 @@ python -m pytest -q tests/test_recipe_registry.py tests/test_request_transforms.
 ```
 
 ### PR 03 — Fink semantic discovery
+
+Split into **03a**, the physical JSON response-cap guard and source audit, and
+**03b**, the semantic recipe and admission of verified class/time populations.
+03a does not activate semantic discovery or claim that every unsaturated response
+is complete. The audit found provider-side grouping and post-filtering for some
+routes; those require separate admission evidence. See
+[the 03a runbook](discovery_03a_fink_result_limit.md). Create 03b only after 03a
+is merged. Window subdivision, if added, must preserve verified boundary semantics
+and operational limits; until then saturation must remain an explicit failure.
 
 Add the ZTF `semantic_search` recipe for the existing `latests` endpoint. Declare
 the eligible classification equality binding to `class`, plus the verified time
@@ -571,8 +581,9 @@ not need redesign for this series.
 | --- | --- | --- | --- | --- |
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
 | 02a | predicate-bindings | [#294](https://github.com/sambolino/alertissimo/pull/294), main `7f7165d` | Merged; local results not separately reported | No provider activation |
-| 02b | time-bindings | Prepared on `feat/discovery-02b-time-bindings`; PR pending | Not run here; local handoff | No provider activation |
-| 03 | fink | Pending | Pending | Pending |
+| 02b | time-bindings | [#295](https://github.com/sambolino/alertissimo/pull/295), main `d91106e` | All three CI workflows passed; local results not separately reported | No provider activation |
+| 03a | fink-result-limit | Prepared on `feat/discovery-03a-fink-result-limit`; PR pending | Not run here; local handoff | No broker calls; semantic discovery pending |
+| 03b | fink | Pending; after 03a merge | Pending | Pending |
 | 04 | alerce | Pending | Pending | Pending |
 | 05 | lasair | Pending | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |

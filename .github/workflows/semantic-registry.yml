@@ -35,6 +35,7 @@ on:
       - 'tests/test_recipe_registry.py'
       - 'tests/test_request_transforms.py'
       - 'tests/test_endpoint_execution.py'
+      - 'tests/test_orchestration_endpoint_pagination.py'
       - 'tests/test_lasair_registry_architecture.py'
       - 'tests/test_antares_registry_architecture.py'
       - 'tests/test_fink_registry_architecture.py'
@@ -110,6 +111,7 @@ jobs:
             tests/test_recipe_registry.py \
             tests/test_request_transforms.py \
             tests/test_endpoint_execution.py \
+            tests/test_orchestration_endpoint_pagination.py \
             tests/test_antares_ztf_authoritative_payloads.py \
             tests/test_fink_ztf_authoritative_payloads.py \
             tests/test_fink_lsst_authoritative_payloads.py \

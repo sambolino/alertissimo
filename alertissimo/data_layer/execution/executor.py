@@ -21,7 +21,7 @@ class MissingEndpointCredentialError(RuntimeError):
 
 
 class EndpointPaginationError(RuntimeError):
-    """A declared page-based endpoint could not be exhausted safely."""
+    """A declared paginated or capped result could not be verified safely."""
 
 
 class ExecutionPolicyLimitError(EndpointPaginationError):
@@ -202,6 +202,61 @@ class RegistryEndpointExecutor:
             "the physical execution policy; results are not silently truncated."
         )
 
+    @staticmethod
+    def _json_result_limit(
+        spec: EndpointSpec, params: Mapping[str, Any],
+    ) -> tuple[str, int] | None:
+        """Read an opt-in ceiling for a non-paginated JSON array response.
+
+        This detects saturation only. Fewer returned rows do not by themselves
+        prove population completeness: provider-side grouping and post-filters
+        still need separate admission evidence. Explicit raw export modes retain
+        their physical one-response behavior and have no row-count guarantee.
+        """
+        names = [
+            name for name, contract in spec.params.items()
+            if (contract or {}).get("role") == "result_limit"
+        ]
+        if not names:
+            return None
+        if len(names) != 1 or RegistryEndpointExecutor._page_parameters(spec):
+            raise EndpointPaginationError(
+                "result_limit requires one ceiling on a non-paginated JSON array"
+            )
+        name, = names
+        value = params.get(name)
+        if isinstance(value, str) and value.isascii() and value.isdecimal():
+            value = int(value)
+        if type(value) is not int or value <= 0:
+            raise EndpointPaginationError(f"result_limit parameter {name!r} must be a positive integer")
+        if any(
+            (contract or {}).get("role") == "output_format"
+            and params.get(parameter) != "json"
+            for parameter, contract in spec.params.items()
+        ):
+            return None
+        return name, value
+
+    @staticmethod
+    def _check_result_limit(
+        spec: EndpointSpec, result: TransportResult, limit: tuple[str, int] | None,
+    ) -> None:
+        if limit is None:
+            return
+        context = f"{spec.broker}/{spec.origin}/{spec.endpoint}"
+        if not isinstance(result.payload, list):
+            raise EndpointPaginationError(
+                f"cannot verify result_limit for {context}: expected a JSON array"
+            )
+        name, ceiling = limit
+        if len(result.payload) >= ceiling:
+            raise EndpointPaginationError(
+                f"incomplete result from {context}: returned {len(result.payload)} rows "
+                f"at the physical ceiling {name}={ceiling}; completeness cannot be "
+                "established. Narrow the time window or query; no successful "
+                "partial result is returned."
+            )
+
     def _execute_with_pagination(
         self,
         transport: Any,
@@ -346,6 +401,7 @@ class RegistryEndpointExecutor:
             validated,
             caller_supplied_page=caller_supplied_page,
         )
+        result_limit = self._json_result_limit(spec, validated)
         resolved_headers = self._resolved_headers(spec, headers)
         execution_id = self.execution_id_factory()
         started = datetime.now(timezone.utc)
@@ -358,6 +414,7 @@ class RegistryEndpointExecutor:
             resolved_headers,
             caller_supplied_page=caller_supplied_page,
         )
+        self._check_result_limit(spec, transport_result, result_limit)
         elapsed_ms = (perf_counter() - timer) * 1000
         finished = datetime.now(timezone.utc)
         provenance = InternalExecutionProvenance(
