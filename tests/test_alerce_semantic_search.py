@@ -225,7 +225,11 @@ def test_operational_pagination_limit_is_not_silent_search_truncation(graph, mon
 def test_malformed_numeric_literal_fails_at_binding_before_any_transport(graph, value):
     step = search("ztf", predicate=predicate())
     plan, = plan_step(step, graph)
-    malformed = plan.model_copy(update={"predicate_realization": PredicateRealization(params={"lastmjd": value})})
+    # Keep the required semantic evidence so this fixture reaches the binder's
+    # numeric encoder, rather than failing the runtime model's content guard.
+    malformed = plan.model_copy(update={"predicate_realization": PredicateRealization(
+        pushdown=step.predicate, params={"lastmjd": value},
+    )})
     with pytest.raises(ParameterBindingError, match="finite numeric literal"):
         bind_endpoint(step, malformed, EndpointRegistry())
     with pytest.raises(UnsupportedParameterBindingError, match="planned predicate realization"):
