@@ -432,7 +432,7 @@ def bind_endpoint(
             continue
         if physical_name in params or physical_name in spec.fixed_params:
             continue
-        if "default" in declaration:
+        if declaration.get("default") is not None:
             continue
         roles = _binding_roles(declaration)
         expected = roles[0] if len(roles) == 1 else roles or None
