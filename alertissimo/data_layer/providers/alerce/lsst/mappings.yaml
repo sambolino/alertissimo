@@ -101,6 +101,8 @@ mappings:
   - query_probabilities#class_name
   classification@{producer}:alerce.assessment.{output}.probability:
   - query_probabilities#probability
+  classification@{producer}:alerce.assessment.{output}.rank:
+  - query_probabilities#ranking
   detection@lsst:alerce.photometry.{filter}:
   - query_detections#band_name
   - query_lightcurve.detections#band_name

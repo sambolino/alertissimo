@@ -65,16 +65,21 @@ def test_classification_recipes_preserve_target_encoding(
     assert plan.parameter_sources[physical] == ("target", "ids")
     calls = bind_endpoint_calls(step, plan, EndpointRegistry())
     assert [call.params[physical] for call in calls] == values
-    if broker == "alerce" and origin == "ztf":
-        assert plan.parameter_sources["classifier"] == ("classifier",)
-        assert all(call.params["classifier"] == classifier for call in calls)
-    else:
-        assert all("classifier" not in call.params for call in calls)
+    assert all("classifier" not in call.params for call in calls)
 
 
-def test_qualified_dynamic_retrieval_needs_an_authored_selector(graph):
-    with pytest.raises(PlanningDeferredError, match="dynamic producer mapping"):
-        plan_step(classification(classifier="lc_classifier"), graph)
+def test_qualified_dynamic_retrieval_uses_mapped_producer_identity(graph):
+    plan, = plan_step(classification(classifier="lc_classifier"), graph)
+    assert plan.endpoint == "query_probabilities"
+    assert plan.parameter_sources == {"oid": ("target", "ids")}
+
+
+def remove_probability_producer(doc):
+    for path in list(doc["mappings"]):
+        if path.endswith(".provenance.producer.name"):
+            doc["mappings"][path] = [
+                ref for ref in doc["mappings"][path] if not ref.startswith("query_probabilities#")
+            ]
 
 
 def test_parameter_existence_does_not_replace_a_recipe_assignment(tmp_path):
@@ -84,6 +89,7 @@ def test_parameter_existence_does_not_replace_a_recipe_assignment(tmp_path):
         endpoint["params"]["classifier"] = {"type": "string"}
         endpoint["server_filters"].append("classifier")
     edit_yaml(destination / "endpoints.yaml", add_selector)
+    edit_yaml(destination / "mappings.yaml", remove_probability_producer)
     with pytest.raises(PlanningDeferredError, match="declared server-filter translation"):
         plan_step(classification(classifier="lc_classifier"), build_capability_graph(root))
 
@@ -91,8 +97,12 @@ def test_parameter_existence_does_not_replace_a_recipe_assignment(tmp_path):
 def test_authored_selector_needs_server_filter_evidence(tmp_path):
     root, destination = local_provider(tmp_path, origin="ztf")
     def remove_filter(doc):
-        doc["endpoints"]["query_probabilities"]["server_filters"].remove("classifier")
+        doc["endpoints"]["query_probabilities"]["params"]["classifier"] = {"type": "string"}
     edit_yaml(destination / "endpoints.yaml", remove_filter)
+    def add_binding(doc):
+        doc["recipes"]["get_classification"][0]["calls"][0]["params"]["classifier"] = {"from": "step.classifier"}
+    edit_yaml(destination / "capabilities.yaml", add_binding)
+    edit_yaml(destination / "mappings.yaml", remove_probability_producer)
     with pytest.raises(PlanningDeferredError, match="declared server-filter translation"):
         plan_step(classification(origin="ztf", classifier="lc_classifier"), build_capability_graph(root))
 
@@ -103,7 +113,7 @@ def test_unmapped_classifier_is_unsupported(graph, broker, origin):
         plan_step(classification(broker, origin, "unknown_model"), graph)
 
 
-@pytest.mark.parametrize("broker,origin", [("alerce", "ztf"), ("fink", "lsst"), ("lasair", "ztf")])
+@pytest.mark.parametrize("broker,origin", [("fink", "lsst"), ("lasair", "ztf")])
 def test_real_classification_alternatives_remain_ambiguous(graph, broker, origin):
     with pytest.raises(PlanningAmbiguityError):
         plan_step(classification(broker, origin), graph)
@@ -202,5 +212,8 @@ def test_dynamic_material_reuse_needs_a_positive_requirement_and_the_same_popula
     else:
         search = search.model_copy(update={"predicate": NotPredicate(operand=search.predicate)})
         steps = [search, get]
-    with pytest.raises(PlanningDeferredError, match="dynamic producer mapping"):
-        plan_workflow(WorkflowIR(steps=steps), graph)
+    run = plan_workflow(WorkflowIR(steps=steps), graph)
+    plan, = run.steps[-1].endpoint_plans
+    assert plan.endpoint == "query_probabilities"
+    assert plan.execution_reuse_from is None
+    assert plan.candidate_input_from is not None

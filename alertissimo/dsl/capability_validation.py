@@ -336,7 +336,7 @@ def _retrieval_requirement_checks(
 
     result = validate_step_capabilities(step, graph)
     material = ()
-    if noun == "classification" and result.status == "deferred":
+    if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
             earlier = _requirement_prefix(
                 surface, clause, record_types=record_types, base_workflow=base_workflow,

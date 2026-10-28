@@ -30,7 +30,7 @@ def classification_check(report):
 
 @pytest.mark.parametrize("source, status", [
     ("objects 1 from lsst via alerce\nwith classification\n", "supported"),
-    ("objects 1 from lsst via alerce\nwith classification from lc_classifier\n", "deferred"),
+    ("objects 1 from lsst via alerce\nwith classification from lc_classifier\n", "supported"),
     ("objects ZTF1 from ztf via fink\nwith classification from fink\n", "supported"),
     ("objects ZTF1 from ztf via fink\nwith classification from unknown\n", "unsupported"),
 ])
@@ -63,7 +63,7 @@ def test_qualified_discovery_material_preserves_emitted_retrieval(graph, clauses
     surface = parse_surface_script("objects from lsst via alerce\n" + clauses)
     workflow = lower_surface(surface).workflow
     owner, consumer = workflow.steps
-    assert validate_step_capabilities(consumer, graph).status == "deferred"
+    assert validate_step_capabilities(consumer, graph).status == "supported"
     material, = classification_material_capabilities(consumer, (owner,), graph)
     report = validate_surface_capabilities(surface, graph=graph)
     check = classification_check(report)
@@ -87,13 +87,12 @@ def test_later_explicit_requirement_keeps_the_intervening_filter(graph):
     workflow = lower_surface(surface).workflow
     assert [step.op for step in workflow.steps] == ["semantic_search", "filter", "get_classification"]
     check = classification_check(validate_surface_capabilities(surface, graph=graph))
-    assert check.status is SurfaceCapabilityStatus.DEFERRED
-    assert check.evidence == ()
-    with pytest.raises(PlanningDeferredError):
-        plan_workflow(workflow, graph)
-    with pytest.raises(SurfaceLoweringError) as caught:
-        compile_surface_to_ir(surface, graph=graph)
-    assert caught.value.code == "deferred_capability"
+    assert check.status is SurfaceCapabilityStatus.SUPPORTED
+    assert compile_surface_to_ir(surface, graph=graph) == workflow
+    plan, = plan_workflow(workflow, graph).steps[-1].endpoint_plans
+    assert plan.endpoint == "query_probabilities"
+    assert plan.execution_reuse_from is None
+    assert plan.candidate_input_from.step_index == 1
 
 
 def test_a_later_lowering_failure_does_not_erase_earlier_discovery_proof(graph):
@@ -178,10 +177,11 @@ def test_continuation_uses_actual_base_workflow(graph, barrier):
         run = plan_workflow(compilation.workflow, graph)
         assert run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
     else:
-        assert check.status is SurfaceCapabilityStatus.DEFERRED
-        with pytest.raises(SurfaceLoweringError) as caught:
-            compile_surface_fragment(fragment, base, graph=graph)
-        assert caught.value.code == "deferred_capability"
+        assert check.status is SurfaceCapabilityStatus.SUPPORTED
+        compilation = compile_surface_fragment(fragment, base, graph=graph)
+        plan, = plan_workflow(compilation.workflow, graph).steps[-1].endpoint_plans
+        assert plan.endpoint == "query_probabilities"
+        assert plan.execution_reuse_from is None
 
 
 def test_duplicate_continuation_checks_the_existing_emitted_occurrence(graph):

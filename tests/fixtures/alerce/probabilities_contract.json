@@ -1,0 +1,20 @@
+{
+  "inspected_at": "2026-10-28",
+  "package": "alerce",
+  "version": "2.3.1",
+  "artifact": "alerce-2.3.1-py3-none-any.whl",
+  "sha256": "30efbcd42e1a92459816ec068af0d6252ddeaf49697f6d1b62e54455d3fccd3a",
+  "source": "https://pypi.org/pypi/alerce/2.3.1/json",
+  "public_method": "alerce.core.Alerce.query_probabilities",
+  "implementation": "alerce/common_search.py",
+  "parameters": ["oid", "format", "survey", "index", "sort"],
+  "accepts_extra_keywords": false,
+  "routes": {
+    "ztf": "alerce/ztf_search.py: legacy probabilities URL for oid; no classifier forwarded by the public wrapper",
+    "lsst": "alerce/ms_search.py: GET probabilities with survey_id and oid; no classifier parameter"
+  },
+  "payload_evidence": {
+    "ztf": "ztf/query_probabilities.json",
+    "lsst": "lsst/query_probabilities.json"
+  }
+}

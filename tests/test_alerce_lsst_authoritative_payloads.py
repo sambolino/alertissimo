@@ -246,7 +246,7 @@ def test_shared_rubin_detection_fields_converge_with_antares_semantic_paths():
 def test_probability_row_is_classifier_produced_assessment_not_computed_best():
     row=fixture("query_probabilities")[0]; r=build("query_probabilities",[row]).records[0]
     assert r.semantic_type=="classification@stamp_classifier_rubin_beta:alerce"
-    assert dict(r.fields)=={"provenance.producer.name":"stamp_classifier_rubin_beta","provenance.producer.version":201,"assessment.sn.class":"SN","assessment.sn.probability":0.1623767}
+    assert dict(r.fields)=={"provenance.producer.name":"stamp_classifier_rubin_beta","provenance.producer.version":201,"assessment.sn.class":"SN","assessment.sn.probability":0.1623767,"assessment.sn.rank":2}
     assert "best.class" not in r.fields
 
 def test_lightcurve_delegates_all_three_branches_without_edges():

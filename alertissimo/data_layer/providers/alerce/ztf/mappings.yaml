@@ -322,6 +322,8 @@ mappings:
   - query_probabilities#class_name
   classification@{producer}:alerce.assessment.{output}.probability:
   - query_probabilities#probability
+  classification@{producer}:alerce.assessment.{output}.rank:
+  - query_probabilities#ranking
   lightcurve@ztf:alerce.points.photometry.{filter}:
   - query_lightcurve.detections#fid
   - query_lightcurve.non_detections#fid

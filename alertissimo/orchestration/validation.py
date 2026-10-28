@@ -446,11 +446,22 @@ def _classification_recipe_evidence(
                 and parameter.parameter in endpoint.server_filters
                 for parameter in call.params
             )
-            if not exact and not (dynamic and translated):
+            # A targeted response can supply several classifiers. Its mapped
+            # producer identity lets normalization select records locally; it
+            # does not require, or invent, a physical classifier parameter.
+            local_selector = any(
+                output.relative_field_path in {
+                    "provenance.producer.name", "provenance.producer.id",
+                }
+                and (producer := _semantic_record_producer(output.semantic_record_type)) is not None
+                and _DYNAMIC_QUALIFIER.fullmatch(producer)
+                for output in outputs
+            )
+            if not exact and not (dynamic and (translated or local_selector)):
                 if dynamic:
                     reasons.append(
                         "requested classifier has only a dynamic producer mapping "
-                        "without a declared server-filter translation"
+                        "without mapped producer identity or a declared server-filter translation"
                     )
                 continue
         choices.append((endpoint, recipe))
@@ -1204,7 +1215,13 @@ def classification_material_capabilities(
         retrieval = validate_step_capabilities(
             step.model_copy(update={"classifier": None, "sources": [source]}), graph,
         )
-        if retrieval.status != "supported" or not any(
+        if (
+            retrieval.status != "supported" or len(retrieval.source_results) != 1
+            or len(retrieval.source_results[0].candidates) != 1
+            or len(retrieval.source_results[0].recipes) != 1
+        ):
+            return ()
+        if not any(
             len(recipe.calls) == 1
             and all(
                 isinstance(parameter.source, StepValueSource)

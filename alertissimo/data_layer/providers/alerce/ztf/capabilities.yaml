@@ -60,11 +60,6 @@ recipes:
         - endpoint: query_probabilities
           params:
             oid: {from: step.target.ids}
-            classifier: {from: step.classifier}
-    - calls:
-        - endpoint: query_object
-          params:
-            oid: {from: step.target.ids}
   get_cutout:
     - target_kind: object
       calls:

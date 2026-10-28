@@ -23,6 +23,7 @@ from alertissimo.orchestration.normalization import (
     WorkflowPortfolioResult,
     consolidate_portfolios,
     normalize_execution,
+    apply_classification_selection,
     normalize_workflow_execution,
     prune_portfolios,
     summary_object_identity,
@@ -669,6 +670,7 @@ def execute_staged_workflow_run(
                 normalized_execution_cache=normalized_execution_cache,
                 validate_semantic_model=validate_semantic_model,
             )
+            view = apply_classification_selection(step, view)
             view = apply_search_selection(step, view)
             if isinstance(step, ConfirmStep):
                 source_reference = succeeded.material_input_from

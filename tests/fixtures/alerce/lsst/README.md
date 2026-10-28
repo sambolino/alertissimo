@@ -32,7 +32,7 @@ Counts are distinct observed scalar leaf paths after homogeneous list rows are c
 | `query_non_detections` | 0 | 0 | 0 | 0 | 0 |
 | `query_forced_photometry` | 14 | 11 | 3 | 0 | 0 |
 | `query_lightcurve` populated delegated branches | 116 | 99 | 17 | 116 | 0 |
-| `query_probabilities` | 5 | 4 | 1 | 0 | 0 |
+| `query_probabilities` | 5 | 5 | 0 | 0 | 0 |
 
 ## Semantic audit boundary
 
