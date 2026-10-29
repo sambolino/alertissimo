@@ -71,6 +71,10 @@ class LatestSelectionCapability:
     endpoint: str
     path: str
     params: tuple[RecipeParameter, ...]
+    call_index: int = 0
+    discovery_identity: str = ""
+    evidence_identity: str = ""
+    recency_field: str = ""
 
 
 @dataclass(frozen=True)
@@ -112,6 +116,7 @@ class RecipeCapability:
     # Input identity namespace; output record families still come from mappings.
     target_kind: str | None = None
     time_selection: TimeSelectionCapability | None = None
+    latest_selection: LatestSelectionCapability | None = None
 
 
 @dataclass(frozen=True)
@@ -564,6 +569,47 @@ def _latest_selections(
 
 
 
+def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], where: str) -> LatestSelectionCapability:
+    """Compile a complete finite discovery plus required identity-bound summary."""
+    from .capability_graph import canonical_semantic_path
+    proof = _mapping(raw, where)
+    _keys(proof, {"call", "complete"}, {"call", "complete"}, where)
+    index = proof["call"]
+    if proof["complete"] is not True or type(index) is not int or not 0 < index < len(calls):
+        raise RecipeRegistryError(f"{where}: latest evidence requires complete finite discovery and a later call")
+    root, evidence = calls[0], calls[index]
+    if not root.required or not evidence.required:
+        raise RecipeRegistryError(f"{where}: latest discovery and summary must be required")
+    root_spec, spec = endpoint_defs[root.endpoint], endpoint_defs[evidence.endpoint]
+    if any(p.get("role") in {"pagination", "result_limit"} for p in root_spec.get("params", {}).values()):
+        raise RecipeRegistryError(f"{where}: material latest requires an uncapped finite discovery contract")
+    if root_spec.get("output", {}).get("type") != "array" or spec.get("output", {}).get("type") != "array":
+        raise RecipeRegistryError(f"{where}: material latest requires array responses")
+    targets = [p for p in evidence.params if isinstance(p.source, CallValueSource)]
+    if len(targets) != 1 or targets[0].source.call_index != 0:
+        raise RecipeRegistryError(f"{where}: latest summary must consume discovery identities")
+    limit = spec["params"][targets[0].parameter].get("binding", {}).get("max_items")
+    constants = {p.parameter: p.source.value for p in evidence.params if isinstance(p.source, ConstantValueSource)}
+    if type(limit) is not int or limit <= 0 or type(constants.get("limit")) is not int or constants["limit"] < limit or constants.get("offset") != 0:
+        raise RecipeRegistryError(f"{where}: latest summary needs a bounded identity batch and a covering limit with offset zero")
+    projection = constants.get(spec.get("projection", {}).get("param"))
+    if not isinstance(projection, str):
+        raise RecipeRegistryError(f"{where}: latest summary requires a constant projection")
+    columns = {c.strip().split(".")[-1] for c in projection.split(",")}
+    def field(call, path, projected=False):
+        fields = [f for f in call.outputs if canonical_semantic_path(f.semantic_path) == path
+                  and f.semantic_record_type == f"summary@{f.origin}:{f.broker}"
+                  and f.payload_path == "[]" and (not projected or f.raw_field in columns)]
+        if len(fields) != 1:
+            raise RecipeRegistryError(f"{where}: latest requires one projected identity/recency field per response")
+        return fields[0]
+    identity = field(root, "summary.identity.object_id")
+    summary_id = field(evidence, "summary.identity.object_id", True)
+    recency = field(evidence, "summary.time.last_mjd", True)
+    return LatestSelectionCapability(identity.broker, identity.origin, root.endpoint, "summary.time.last_mjd", (),
+                                     index, identity.raw_field, summary_id.raw_field, recency.raw_field)
+
+
 def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], graph: CapabilityGraph, where: str) -> TimeSelectionCapability:
     """Compile evidence in the existing recipe; mapping possibility is not coverage."""
     from .capability_graph import canonical_semantic_path
@@ -705,7 +751,7 @@ def load_provider_capabilities(
                 recipe = _mapping(raw_recipe, where)
                 targeted = op in {"lookup", "get_cutout", "get_data_product"}
                 required_keys = {"calls", "target_kind"} if targeted else {"calls"}
-                keys = required_keys | ({"time_selection"} if issubclass(models[op], SearchStep) else set())
+                keys = required_keys | ({"time_selection", "latest_selection"} if issubclass(models[op], SearchStep) else set())
                 _keys(recipe, keys, required_keys, where)
                 raw_temporal = _mapping(recipe["time_selection"], where) if "time_selection" in recipe else {}
                 target_kind = None
@@ -885,8 +931,10 @@ def load_provider_capabilities(
                     for call in calls for item in call.params
                 ):
                     raise RecipeRegistryError(f"{where}: candidate-time encoders require time_selection evidence")
+                latest = _material_latest(recipe["latest_selection"], calls, endpoint_defs, where) if "latest_selection" in recipe else None
                 compiled.append(RecipeCapability(
                     broker, origin, op, alternative_index, tuple(calls), target_kind, temporal,
+                    latest,
                 ))
         return ProviderCapabilities(tuple(compiled), predicates, selections)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:

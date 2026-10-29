@@ -72,7 +72,7 @@ def test_latest_binds_verified_ordering_without_a_page_or_top_n_limit(cone):
     assert plan_step(step.model_copy(update={"selection": None}), graph)[0].request_params == {}
 
 
-@pytest.mark.parametrize("broker, origin", [("alerce", "lsst"), ("fink", "ztf"), ("lasair", "ztf"), ("antares", "ztf")])
+@pytest.mark.parametrize("broker, origin", [("alerce", "lsst"), ("fink", "ztf"), ("antares", "ztf")])
 def test_unproven_latest_contract_is_deferred(broker, origin):
     step = ConeSearchStep(
         semantic_type="summary", ra=120, dec=-6, radius=30,

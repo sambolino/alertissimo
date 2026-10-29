@@ -183,6 +183,7 @@ def test_enrichment_bindings_do_not_consume_the_discovery_predicate(tmp_path, di
         # recipe from production semantic discovery's required conditions.
         doc.pop("selection_bindings", None)
         doc["recipes"].pop("semantic_search", None)
+        doc["recipes"]["cone_search"] = [r for r in doc["recipes"]["cone_search"] if "latest_selection" not in r]
         doc["predicate_bindings"] = {"query": [binding]}
         if discovery_binding:
             doc["predicate_bindings"]["cone"] = [binding]

@@ -175,6 +175,8 @@ def _search_recipe_evidence(
     discovery = "cone" if isinstance(step, ConeSearchStep) else "SQL" if isinstance(step, SqlQueryStep) else "semantic search"
     for recipe in declared:
         temporal = recipe.time_selection
+        if recipe.latest_selection is not None and temporal is None and step.selection is None:
+            continue
         context = getattr(step, "time_context", None)
         if temporal is not None and (context is None or context.mode != temporal.mode):
             reasons.append("temporal recipe requires its matching time_context mode")
@@ -939,7 +941,13 @@ def _candidate_evidence_for_source(
         binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
         recipe_index = index - (len(evidence.compatible) - len(evidence.recipes))
         recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
+        material_latest = recipe.latest_selection if recipe is not None else None
+        binding = material_latest or binding
         if step.semantic_type != "summary" or binding is None:
+            continue
+        if material_latest is not None and step.predicate is not None:
+            # The finite-discovery coverage proof precedes local pruning.
+            # Summary predicates use SQL discovery instead of thin cone IDs.
             continue
         temporal = recipe.time_selection if recipe is not None else None
         if step.criteria or getattr(step, "time_context", None) is not None and (
@@ -947,9 +955,9 @@ def _candidate_evidence_for_source(
         ):
             continue
         if recipe is not None and (
-            recipe.calls[0].latest_selection is None
+            recipe.calls[0].latest_selection is None and material_latest is None
             or any(item.parameter in {"page", "offset", "count"} for item in recipe.calls[0].params)
-            or len(recipe.calls) > 1 and (temporal is None or not temporal.complete)
+            or len(recipe.calls) > 1 and material_latest is None and (temporal is None or not temporal.complete)
             or any(
                 source.path[0] == "selection"
                 for call in recipe.calls for item in call.params
@@ -973,8 +981,9 @@ def _candidate_evidence_for_source(
                     continue
                 columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
                 fields = tuple(item for item in fields if item.raw_field in columns)
-        if not all(any(canonical_semantic_path(item.semantic_path) == path for item in fields)
-                   for path in ("summary.identity.object_id", binding.path)):
+        ranking_fields = recipe.calls[material_latest.call_index].outputs if material_latest is not None else fields
+        if (not any(canonical_semantic_path(item.semantic_path) == "summary.identity.object_id" for item in fields)
+            or not any(canonical_semantic_path(item.semantic_path) == binding.path for item in ranking_fields)):
             continue
         if step.predicate is not None and any(
             not any(

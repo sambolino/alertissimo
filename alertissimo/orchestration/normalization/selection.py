@@ -15,6 +15,54 @@ class SearchSelectionError(ValueError):
     """A candidate has no trustworthy identity or numeric recency value."""
 
 
+def validate_latest_selection_payloads(step_run: StepRun, result) -> None:
+    """Check exact coverage before a required summary can establish recency."""
+    from alertissimo.data_layer.runtime.payload_paths import extract_raw_field, RawFieldMissing
+    indexes = step_run.execution_plan_indexes or tuple(range(len(step_run.endpoint_plans)))
+    for owner, plan in enumerate(step_run.endpoint_plans):
+        proof = plan.latest_selection
+        if proof is None:
+            continue
+        if proof.evidence_plan_index >= len(step_run.endpoint_plans):
+            raise SearchSelectionError("latest summary references unavailable evidence")
+        evidence = step_run.endpoint_plans[proof.evidence_plan_index]
+        if (not plan.required or not evidence.required
+            or (plan.broker, plan.origin) != (evidence.broker, evidence.origin)
+            or evidence.candidate_input_from_plan is None
+            or evidence.candidate_input_from_plan.plan_index != owner):
+            raise SearchSelectionError("latest summary must be required evidence owned by discovery")
+        if len(indexes) != len(result.executions):
+            raise SearchSelectionError("latest requires aligned physical execution groups")
+        if owner not in indexes:
+            raise SearchSelectionError("latest requires an executed discovery response")
+        def identities(index, field, recency=False):
+            values = []
+            try:
+                for current, execution in zip(indexes, result.executions):
+                    if current != index:
+                        continue
+                    if not isinstance(execution.payload, list):
+                        raise ValueError("expected a complete array response")
+                    for row in execution.payload:
+                        value = extract_raw_field(row, field)
+                        if type(value) not in (str, int) or not str(value):
+                            raise ValueError("invalid object identity")
+                        values.append(str(value))
+                        if recency:
+                            date = extract_raw_field(row, proof.recency_field)
+                            if type(date) not in (int, float) or not math.isfinite(date):
+                                raise ValueError("missing or invalid recency")
+            except (RawFieldMissing, KeyError, TypeError, ValueError) as error:
+                raise SearchSelectionError("missing or malformed latest discovery/summary evidence") from error
+            if len(values) != len(set(values)):
+                raise SearchSelectionError("duplicate latest discovery/summary identity")
+            return set(values)
+        expected = identities(owner, proof.discovery_identity)
+        actual = identities(proof.evidence_plan_index, proof.evidence_identity, True)
+        if expected != actual:
+            raise SearchSelectionError("latest summary does not cover exactly the discovery identities")
+
+
 def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfolioResult:
     """Apply latest once, after residual pruning and object consolidation.
 

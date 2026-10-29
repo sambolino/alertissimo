@@ -14,7 +14,7 @@ from collections.abc import Mapping
 
 from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCall, RecipeCapability,
-    StepValueSource,
+    StepValueSource, LatestSelectionCapability,
 )
 
 from alertissimo.data_layer.runtime.capability_graph import (
@@ -179,7 +179,7 @@ def _recipe_plans(
         endpoint.endpoint: endpoint
         for endpoint in graph.endpoints_for(recipe.broker, recipe.origin)
     }
-    from alertissimo.orchestration.runtime.models import TimeSelectionRealization
+    from alertissimo.orchestration.runtime.models import TimeSelectionRealization, LatestSelectionRealization
 
     temporal = recipe.time_selection
     return tuple(
@@ -187,8 +187,15 @@ def _recipe_plans(
             step, endpoints[call.endpoint], validation, graph,
             predicate_constraints=call.predicate_bindings,
             realize_search_predicate=index == 0,
+            selection_binding=recipe.latest_selection if index == 0 else None,
         ).model_copy(
             update={**_recipe_assignments(call, plan_offset=plan_offset, step=step),
+                    "latest_selection": LatestSelectionRealization(
+                        evidence_plan_index=plan_offset + recipe.latest_selection.call_index,
+                        discovery_identity=recipe.latest_selection.discovery_identity,
+                        evidence_identity=recipe.latest_selection.evidence_identity,
+                        recency_field=recipe.latest_selection.recency_field,
+                    ) if index == 0 and recipe.latest_selection is not None and getattr(step, "selection", None) is not None else None,
                     "time_selection": TimeSelectionRealization(
                         mode=temporal.mode, method=temporal.method,
                         evidence_plan_index=plan_offset + temporal.call_index,
@@ -212,6 +219,7 @@ def _endpoint_plan(
     *,
     predicate_constraints: tuple[RequestConstraintCapability, ...] | None = None,
     realize_search_predicate: bool = True,
+    selection_binding: LatestSelectionCapability | None = None,
 ) -> EndpointPlan:
     realization = None
     if realize_search_predicate and isinstance(step, SearchStep) and step.predicate is not None:
@@ -223,7 +231,7 @@ def _endpoint_plan(
         )
     request_params = {}
     if realize_search_predicate and isinstance(step, SearchStep) and step.selection is not None:
-        binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        binding = selection_binding or graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
         if binding is None:
             raise PlanningDeferredError("latest has no declared discovery selection contract")
         request_params = {item.parameter: item.source.value for item in binding.params}

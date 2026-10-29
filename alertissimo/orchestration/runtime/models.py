@@ -96,6 +96,15 @@ class TimeSelectionRealization(RuntimeModel):
     target_collection: Literal["csv"] | None = None
 
 
+class LatestSelectionRealization(RuntimeModel):
+    """Mapped coverage fields for required finite-population ranking evidence."""
+
+    evidence_plan_index: int = Field(gt=0)
+    discovery_identity: str
+    evidence_identity: str
+    recency_field: str
+
+
 class EndpointPlan(RuntimeModel):
     """Physical identity selected for one semantic Step occurrence.
 
@@ -125,6 +134,7 @@ class EndpointPlan(RuntimeModel):
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
     time_selection: TimeSelectionRealization | None = None
+    latest_selection: LatestSelectionRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
     # None retains legacy endpoint-role binding. A recipe supplies an authoritative
     # map from physical parameters to IR paths, named operands, or a runtime role.
