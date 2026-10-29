@@ -2,6 +2,8 @@ name: Semantic registry
 
 on:
   pull_request:
+    branches-ignore:
+      - 'integration/discovery-completion'
     paths:
       - 'alertissimo/data_layer/**'
       - 'alertissimo/orchestration/confirmation/**'

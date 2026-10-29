@@ -2,6 +2,8 @@ name: DSL compiler
 
 on:
   pull_request:
+    branches-ignore:
+      - 'integration/discovery-completion'
     paths:
       - 'alertissimo/api.py'
       - 'alertissimo/app_dsl.py'

@@ -117,9 +117,9 @@ every response, response mode, or requested projection contains it.
 
 ## Sequential PRs
 
-Each branch starts from updated `main` after its predecessor is merged. Do not
-pre-create future branches. The branch names below are proposed names, not
-existing refs. Split a branch further if its implementation becomes difficult to
+Through Time 03b each branch started from updated `main`. From Time 04 onward,
+use the integration branch described below. Do not pre-create future feature
+branches. Split a branch further if its implementation becomes difficult to
 review, keeping the same order and acceptance boundary.
 
 | Branch | Deliverable |
@@ -563,16 +563,58 @@ All application tests and live provider calls for this implementation series run
 on Veljko's machine. This document adds no implementation and claims no planned
 test has passed. Do not install the entire stack in a document-editing session.
 
+### Integration branch from Time 04 — 29 October 2026
+
+`integration/discovery-completion` starts at merged Time 03b, main `7536b2d`
+([PR #309](https://github.com/sambolino/alertissimo/pull/309)). It is the base for
+the remaining Time 04, shared/provider latest, ANTARES ZTF, required-material,
+result-access, and acceptance branches above. Classification joins and additional
+Rubin discovery remain consultation items at the end, before implementing them.
+
+Each small PR targets this integration branch and is squash-merged there after
+its focused local checks pass. All three workflows exclude this exact PR base
+from automatic runs; other PR bases retain their existing CI. No skip-CI commit
+markers, global workflow disabling, or changes to main's checks are needed.
+`workflow_dispatch` remains available on the integration branch. Local test
+commands and a log path accompany every handoff. Keep dependent work sequential
+by starting the next branch from the updated remote integration tip.
+
+CI is required on the final integration PR into `main`, against its current
+base. Do not merge that PR until all applicable checks and the final local
+offline/live handoff pass (record unavailable providers separately). If main
+changes, integrate it and verify the resulting final revision before merging.
+Do not use administrative bypasses for a blocked merge.
+
+An intermediate manual DSL/registry run is recommended when shared latest
+admission is implemented, since it changes candidate ordering and reuse across
+providers. Flag any earlier change to shared IR, binding, execution, or
+normalization that creates equivalent cross-provider uncertainty. A provider
+declaration alone does not require another full CI run after its focused local
+checks pass. Run the UI job early only if shared facade/result changes affect it.
+
+For a manual checkpoint on the current integration revision:
+
+```bash
+gh workflow run dsl.yml --ref integration/discovery-completion
+gh workflow run semantic-registry.yml --ref integration/discovery-completion
+gh run list --branch integration/discovery-completion --event workflow_dispatch --limit 6
+```
+
+Use `gh run watch RUN_ID --exit-status` for each returned checkpoint run. At the
+final PR, use `gh pr checks integration/discovery-completion --watch` and record
+the tested head SHA. These commands intentionally run no workflow automatically
+on intermediate feature PRs.
+
 For each PR:
 
-1. Rebase the work onto current `main` and implement only the named boundary.
+1. Rebase the work onto the current integration branch and implement only the named boundary.
 2. Add focused regressions for changed contracts and meaningful failure cases.
 3. Run its focused commands locally and record the exact outcome.
 4. Run `git diff --check`; review declarations, payload evidence, and package/CI
    inclusion when adding runtime files or resources.
 5. Include the commands and any live limitation in the PR description. A missing
    token or upstream outage is not a passing live result.
-6. Merge, update `main`, and create the next branch. Keep the plan's progress table
+6. Squash-merge, update the integration branch, and create the next branch. Keep the plan's progress table
    current with PR numbers and resulting commits.
 
 After the relevant provider milestones, run the existing facade checks:
@@ -666,8 +708,9 @@ not need redesign for this series.
 | Time 01b | within-membership | [#306](https://github.com/sambolino/alertissimo/pull/306), main `37ba25c` | Merged after reported fixture/runtime fixes; final local count not separately reported | Shared evidence checks; production declarations unchanged |
 | Time 02 | alerce-ztf | [#307](https://github.com/sambolino/alertissimo/pull/307), main `5840d31` | Merged after fixture fixes; final local count not separately reported | No new live result separately reported |
 | Time 03a | sql-bindings | [#308](https://github.com/sambolino/alertissimo/pull/308), main `108e57e` | Merged; local count not separately reported | No production activation |
-| Time 03b | lasair-ztf | Prepared on `feat/time-03b-lasair-ztf`; PR pending | Not run here; recorded/synthetic local handoff | Pending on user's machine |
-| Time 04 onward | Fink within activation, latest | Next after Time 03b | Pending | Pending |
+| Time 03b | lasair-ztf | [#309](https://github.com/sambolino/alertissimo/pull/309), main `7536b2d` | Merged after local follow-ups | Provider live evidence remains separate |
+| Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
+| Time 04 onward | Fink within activation, latest | Next on integration branch | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

@@ -2,6 +2,8 @@ name: Streamlit UI
 
 on:
   pull_request:
+    branches-ignore:
+      - 'integration/discovery-completion'
     paths:
       - 'alertissimo/**'
       - 'tests/test_app_*.py'
