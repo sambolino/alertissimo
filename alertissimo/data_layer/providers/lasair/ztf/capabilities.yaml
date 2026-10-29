@@ -1,6 +1,13 @@
 broker: lasair
 origin: ztf
 recipes:
+  semantic_search:
+    - calls:
+        - endpoint: query
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
   confirm:
     - calls:
         - endpoint: object
@@ -89,3 +96,68 @@ recipes:
         - endpoint: sherlock_objects
           params:
             objectIds: {from: step.target.ids}
+
+# Numeric object summaries only. Conditions are compiled from these declarations,
+# never supplied as target IDs. Every comparison operator is explicit.
+predicate_bindings:
+  query:
+    - path: summary.detection_count
+      operator: "="
+      parameter: conditions
+      sql: {column: objects.ncand, subtract: 0, order_by: objects.objectId}
+    - path: summary.detection_count
+      operator: "<"
+      parameter: conditions
+      sql: {column: objects.ncand, subtract: 0, order_by: objects.objectId}
+    - path: summary.detection_count
+      operator: "<="
+      parameter: conditions
+      sql: {column: objects.ncand, subtract: 0, order_by: objects.objectId}
+    - path: summary.detection_count
+      operator: ">"
+      parameter: conditions
+      sql: {column: objects.ncand, subtract: 0, order_by: objects.objectId}
+    - path: summary.detection_count
+      operator: ">="
+      parameter: conditions
+      sql: {column: objects.ncand, subtract: 0, order_by: objects.objectId}
+    - path: summary.time.first_mjd
+      operator: "="
+      parameter: conditions
+      sql: {column: objects.jdmin, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.first_mjd
+      operator: "<"
+      parameter: conditions
+      sql: {column: objects.jdmin, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.first_mjd
+      operator: "<="
+      parameter: conditions
+      sql: {column: objects.jdmin, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.first_mjd
+      operator: ">"
+      parameter: conditions
+      sql: {column: objects.jdmin, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.first_mjd
+      operator: ">="
+      parameter: conditions
+      sql: {column: objects.jdmin, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.last_mjd
+      operator: "="
+      parameter: conditions
+      sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.last_mjd
+      operator: "<"
+      parameter: conditions
+      sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.last_mjd
+      operator: "<="
+      parameter: conditions
+      sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.last_mjd
+      operator: ">"
+      parameter: conditions
+      sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}
+    - path: summary.time.last_mjd
+      operator: ">="
+      parameter: conditions
+      sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}

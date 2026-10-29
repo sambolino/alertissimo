@@ -30,7 +30,7 @@ def graph():
     ("objects from lsst via fink\n", "deferred"),
     ("objects from ztf via antares\n", "deferred"),
     ("objects from lsst, ztf via antares\n", "deferred"),
-    ("objects from ztf via lasair\n", "unsupported"),
+    ("objects from ztf via lasair\n", "deferred"),
     ("objects from lsst via fink\ninside (34, 33, 3arcsec)\n", "supported"),
     ("objects 1, 2 from lsst via alerce\n", "supported"),
     ("alert 123456 from ztf via fink\n", "unsupported"),

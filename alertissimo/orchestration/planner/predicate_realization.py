@@ -10,6 +10,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     RequestConstraintCapability,
     canonical_semantic_path,
 )
+from alertissimo.data_layer.transforms.sql import numeric_comparison
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
@@ -139,12 +140,19 @@ def _atomic_pushdown(
     exact = field_constraint.exact and (
         reference.producer is None or producer_constraint is None or producer_constraint.exact
     )
+    if field_constraint.sql_column is not None:
+        try:
+            params[field_constraint.parameter] = numeric_comparison(
+                field_constraint.sql_column, operator, value, subtract=field_constraint.sql_subtract,
+            )
+        except (ValueError, OverflowError):
+            return PredicateRealization(residual=predicate)
     return PredicateRealization(
         pushdown=predicate, params=params, residual=None if exact else predicate,
     )
 
 
-def realize_predicate(
+def _realize_predicate(
     predicate: Predicate,
     *,
     endpoint: EndpointCapability,
@@ -176,11 +184,17 @@ def realize_predicate(
     params: dict[str, Any] = {}
 
     for operand in predicate.operands:
-        realization = realize_predicate(
+        realization = _realize_predicate(
             operand, endpoint=endpoint, graph=graph, constraints=constraints,
         )
         for name, value in realization.params.items():
             if name in params and params[name] != value:
+                if any(item.parameter == name and item.sql_column is not None
+                       for matches in lookup.values() for item in matches):
+                    # SQL conditions form a conjunction; range bounds do not
+                    # compete for one scalar request value.
+                    params[name] = f"({params[name]}) AND ({value})"
+                    continue
                 # Combining incompatible physical values would require parameter-
                 # specific algebra. Keep the whole semantic predicate residual.
                 return PredicateRealization(residual=predicate)
@@ -195,6 +209,37 @@ def realize_predicate(
         residual=and_predicates(residual_parts),
         params=params,
     )
+
+
+def realize_predicate(
+    predicate: Predicate, *, endpoint: EndpointCapability, graph: CapabilityGraph,
+    constraints: tuple[RequestConstraintCapability, ...] | None = None,
+) -> PredicateRealization:
+    """Realize declared filters, including a bounded numeric SQL conjunction.
+
+    SQL admits only completely translated comparisons/conjunctions. Unsupported
+    types, qualifiers, OR/NOT, or leaves cannot silently broaden discovery. The
+    existing required-parameter check then defers the missing conditions before
+    binding. SQL results retain a full normalized recheck as scientific evidence.
+    """
+    available = constraints if constraints is not None else graph.request_constraints_for(
+        endpoint.broker, endpoint.origin, endpoint.endpoint,
+    )
+    sql = tuple(item for item in available if item.sql_column is not None
+                and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
+    result = _realize_predicate(predicate, endpoint=endpoint, graph=graph, constraints=constraints)
+    if not sql:
+        return result
+    if result.residual is not None or result.pushdown is None:
+        return PredicateRealization(residual=predicate)
+    params = dict(result.params)
+    for parameter in {item.parameter for item in sql}:
+        if parameter in params:
+            ordering = {item.sql_order_by for item in sql if item.parameter == parameter}
+            if len(ordering) != 1 or None in ordering:
+                return PredicateRealization(residual=predicate)
+            params[parameter] += " ORDER BY " + next(iter(ordering))
+    return PredicateRealization(pushdown=result.pushdown, params=params, residual=predicate)
 
 
 __all__ = ["realize_predicate"]

@@ -179,6 +179,9 @@ def test_enrichment_bindings_do_not_consume_the_discovery_predicate(tmp_path, di
             spec["params"]["object_filter"] = {"type": "string"}
             spec.setdefault("server_filters", []).append("object_filter")
     def capabilities(doc):
+        # This fixture authors enrichment-only bindings; isolate its cone
+        # recipe from production semantic discovery's required conditions.
+        doc["recipes"].pop("semantic_search", None)
         doc["predicate_bindings"] = {"query": [binding]}
         if discovery_binding:
             doc["predicate_bindings"]["cone"] = [binding]

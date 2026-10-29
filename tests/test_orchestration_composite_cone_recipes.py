@@ -50,6 +50,9 @@ def test_composite_uses_authored_endpoint_names_parameters_and_constants(tmp_pat
         for payload in doc["payloads"].values():
             payload["endpoint"] = renames.get(payload["endpoint"], payload["endpoint"])
     def recipes(doc):
+        # This fixture renames the composite cone's physical contracts only.
+        doc["recipes"].pop("semantic_search", None)
+        doc.pop("predicate_bindings", None)
         calls = doc["recipes"]["cone_search"][0]["calls"]
         for call in calls:
             call["endpoint"] = renames[call["endpoint"]]

@@ -98,6 +98,10 @@ class RequestConstraintCapability:
     values: tuple[Any, ...] | None = None
     # False means the filter is a candidate superset, requiring local recheck.
     exact: bool = True
+    # Optional physical SQL representation, authored beside semantic bindings.
+    sql_column: str | None = None
+    sql_subtract: float = 0
+    sql_order_by: str | None = None
 
 
 @dataclass(frozen=True)
