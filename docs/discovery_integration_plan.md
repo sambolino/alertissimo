@@ -132,7 +132,15 @@ review, keeping the same order and acceptance boundary.
 | `feat/discovery-04-alerce` | Complete admitted class/time search combinations in existing ALeRCE recipes |
 | `feat/discovery-05a-lasair-pagination` | Exhaust declared offset queries while preserving existing explicit pages |
 | `feat/discovery-05b-lasair` | Implement a bounded, declared semantic-search translation for verified Lasair query fields |
-| `feat/discovery-06-antares` | Implement a bounded, declared semantic-search translation for verified ANTARES query fields |
+| `feat/time-01a-within-syntax` | Shared default/first/last within syntax, IR intent, and safe execution guards |
+| `feat/time-01b-within-membership` | Verify candidate temporal membership in existing discovery finalization |
+| `feat/time-02-alerce-ztf` | Activate default/first/last within using verified ALeRCE evidence |
+| `feat/time-03-lasair-ztf` | Activate default/first/last within using verified Lasair evidence |
+| `feat/time-04-fink-ztf` | Align Fink native windows and admitted first/last modes |
+| `feat/selection-01-latest-admission` | Complete shared latest admission after temporal verification |
+| `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
+| `feat/selection-03-fink-ztf` | Activate complete Fink latest selection |
+| `feat/discovery-06-antares-ztf` | Implement verified ANTARES ZTF search with temporal and latest selection |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
@@ -353,6 +361,29 @@ Add `tests/test_lasair_semantic_search.py`.
 ```bash
 python -m pytest -q tests/test_lasair_semantic_search.py tests/test_orchestration_sql_recipes.py tests/test_orchestration_search_recipes.py tests/test_orchestration_binding.py tests/test_orchestration_composite_cone_recipes.py tests/test_lasair_ztf_compact_cone_summary.py tests/test_orchestration_endpoint_pagination.py
 ```
+
+### Revised temporal and latest sequence — 29 October 2026
+
+The user-approved continuation expands this plan with default `within` meaning
+at least one detection in the interval, optional `first within` and `last within`,
+and completion of the existing global object `latest N` semantics. Relative
+intervals end at the occurrence's fixed now; explicit intervals preserve their
+bounds. All returned measurements for surviving candidates remain available.
+
+The shared time milestone is split into Time 01a (syntax/IR) and Time 01b
+(material-based verification and admission). See
+[the Time 01a runbook](time_01a_within_syntax.md). ALeRCE ZTF, Lasair ZTF, and Fink
+ZTF activation then precede shared/provider latest work and ANTARES ZTF. Keep
+first/last timestamp filters separate from historical detection existence:
+summary overlap can prefilter, but cannot prove a detection in a gap.
+
+The original required-material inventory, unit-correct distnr mapping, optional
+verified cutout mode, per-candidate result access, recorded/live comparison, and
+handoff remain required. Extend their acceptance with temporal gaps/boundaries,
+first/last modes, global latest, measurement retention, and prefix replay.
+Classification joins and additional Rubin discovery are explicitly reserved for
+end-of-series discussion with Veljko before those implementation branches. Keep
+existing Rubin support valid; an audit or deferral is not a new activation.
 
 ### PR 06 — ANTARES semantic discovery
 
@@ -608,7 +639,9 @@ not need redesign for this series.
 | 03b | fink | [#300](https://github.com/sambolino/alertissimo/pull/300), main `9c09896` | Merged after CI regression fix; local results not separately reported | Two ZTF labels admitted; live outcome not separately reported |
 | 04 | alerce | [#302](https://github.com/sambolino/alertissimo/pull/302), main `0ab4fca` | Merged after fixture fixes; local results not separately reported | Explicit object-MJD predicates; live result not separately reported |
 | 05a | lasair-pagination | [#303](https://github.com/sambolino/alertissimo/pull/303), main `dd12dd2` | Merged; local results not separately reported | Physical paging only; no live result separately reported |
-| 05b | lasair | Prepared on `feat/discovery-05b-lasair`; PR pending | Not run here; local handoff | Numeric ZTF object-summary conjunctions; Rubin semantic discovery deferred; no live calls |
+| 05b | lasair | [#304](https://github.com/sambolino/alertissimo/pull/304), main `92b4879` | Merged; local results not separately reported | Numeric ZTF object-summary discovery; new live outcome not separately reported |
+| Time 01a | within-syntax | Prepared on `feat/time-01a-within-syntax`; PR pending | Not run here; local handoff | Syntax/IR only; new first/last execution guarded |
+| Time 01b onward | within-membership, provider activation, latest | Next after Time 01a | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

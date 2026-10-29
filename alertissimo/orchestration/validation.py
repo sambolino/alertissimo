@@ -948,6 +948,15 @@ def _candidate_evidence_for_source(
 def _operation_candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
+    context = getattr(step, "time_context", None)
+    if isinstance(step, SearchStep) and context is not None and context.mode != "detection":
+        # Syntax/IR admission does not prove that an existing detection-window
+        # endpoint filters object history's first/last timestamp. Provider proof
+        # and material-based membership follow in the next small branches.
+        return _CandidateEvidence(
+            raw=(), compatible=(), empty_status="deferred",
+            empty_reason=f"{context.mode} within requires a declared candidate-time translation",
+        )
     if isinstance(step, ConfirmStep):
         recipes = _confirmation_recipe_evidence(step, graph, source)
         if recipes is not None:

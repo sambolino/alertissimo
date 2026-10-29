@@ -16,6 +16,9 @@ def validate_time_context(context: Mapping) -> None:
     """Check representability without reading a clock or resolving relative intent."""
     if not isinstance(context, Mapping):
         raise ValueError("time context must be a mapping")
+    mode = context.get("mode", "detection")
+    if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
+        raise ValueError("time selection mode must be detection, first, or last")
     if context.get("offset") is not None or context.get("sampling") is not None:
         raise ValueError("time offset and sampling have no declared window translation")
     window = context.get("window")
@@ -32,12 +35,14 @@ def validate_time_context(context: Mapping) -> None:
             raise ValueError("time start must not exceed time end")
 
 
-def resolve_time_context(context: Mapping, reference_time: datetime | None) -> dict[str, datetime]:
+def resolve_time_context(context: Mapping, reference_time: datetime | None) -> dict[str, datetime | str]:
     validate_time_context(context)
     if context.get("window") is not None:
         end = utc_instant(reference_time)
-        return {"start": end - context["window"], "end": end}
-    return {"start": utc_instant(context["start_time"]), "end": utc_instant(context["end_time"])}
+        bounds = {"start": end - context["window"], "end": end}
+    else:
+        bounds = {"start": utc_instant(context["start_time"]), "end": utc_instant(context["end_time"])}
+    return {**bounds, "mode": context.get("mode", "detection")}
 
 
 def validate_time_encoding(bound: str, encoding: str) -> None:
@@ -54,6 +59,8 @@ def time_bound(*, time_context: Mapping, bound: str, encoding: str):
     to TAI/TT or leap-second representation is implied by this datetime encoder.
     """
     validate_time_encoding(bound, encoding)
+    if time_context.get("mode", "detection") != "detection":
+        raise ValueError("first/last within requires a declared candidate-time translation; the existing time_bound adapter only encodes detection windows")
 
     def encode(value):
         value = utc_instant(value)

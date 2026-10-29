@@ -40,8 +40,14 @@ class Source(IRModel):
 
 
 class TimeContext(IRModel):
-    """Declarative temporal constraints, without provider query translation."""
+    """Declarative temporal intent, without choosing a provider query.
 
+    For candidate discovery, detection (the default) means at least one detection
+    in the interval; first/last refer to the source's earliest/latest detection.
+    Selecting candidates never restricts their returned measurements.
+    """
+
+    mode: Literal["detection", "first", "last"] = "detection"
     window: timedelta | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None

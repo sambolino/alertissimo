@@ -273,3 +273,18 @@ def test_time_binding_declarations_must_encode_the_whole_context_and_both_bounds
         edit_yaml(destination / "endpoints.yaml", invalid)
     with pytest.raises(CapabilityGraphError):
         build_capability_graph(root)
+
+
+@pytest.mark.parametrize("mode", ["first", "last"])
+def test_continuation_cannot_change_time_membership_mode(tmp_path, mode):
+    root = contract(tmp_path)
+    graph, registry, executor = build_capability_graph(root), EndpointRegistry(root), FixtureExecutor()
+    first = execute_dsl(DSL, graph=graph, registry=registry, executor=executor, continue_from=None, reference_time=NOW)
+    previous_step = first.workflow.steps[0]
+    changed_step = previous_step.model_copy(update={"time_context": previous_step.time_context.model_copy(update={"mode": mode})})
+    # Isolate the prefix guard from provider admission: even a constructed run
+    # cannot change the semantic meaning of a previously executed occurrence.
+    changed = first.run.model_copy(update={"workflow": WorkflowIR(steps=[changed_step])})
+    with pytest.raises(IncrementalExecutionError, match="semantic workflow prefix"):
+        execute_incremental_workflow_run(changed, first.staged, registry, executor)
+    assert len(executor.calls) == 1

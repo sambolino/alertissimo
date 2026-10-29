@@ -63,8 +63,13 @@ broker_list: NAME ("," NAME)*
 
 inside_clause: "inside"i "(" NUMBER "," NUMBER "," ANGLE ")"
 
-within_clause: "within"i duration                       -> within_relative
-             | "within"i WINDOW_BOUND "," WINDOW_BOUND -> within_explicit
+within_clause: within_mode? "within"i duration -> within_relative
+             | within_mode? "within"i window_bound "," window_bound -> within_explicit
+             | within_mode? "within"i "[" window_bound "," window_bound "]" -> within_explicit
+within_mode: "first"i -> first_within_mode
+           | "last"i  -> last_within_mode
+?window_bound: ESCAPED_STRING -> quoted_window_bound
+             | WINDOW_BOUND
 
 latest_clause: "latest"i INT
 where_clause: "where"i TEXT
@@ -93,7 +98,7 @@ duration: DURATION
 
 PRODUCT.2: /[^:#\n]+?(?=\s+(?i:from|via|using|where)\s+[A-Za-z]|\s*(?:#|\n|$))/
 TEXT: /[^#\n]+/
-WINDOW_BOUND: /[^,#\n]+/
+WINDOW_BOUND: /[^\s,\[\]#"][^,\[\]#"\n]*/
 DURATION: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:s|min|h|d|w)/i
 ANGLE: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:deg|arcmin|arcsec)?/i
 METHOD: /[A-Za-z][A-Za-z0-9_.:-]*/
@@ -105,6 +110,7 @@ LOOKUP_ID: /[A-Za-z0-9][A-Za-z0-9_.:\/+\-]*/
 COMMENT: /#[^\n]*/
 _NL: /(\r?\n[\t ]*)+/
 
+%import common.ESCAPED_STRING
 %import common.WS_INLINE
 %ignore WS_INLINE
 %ignore COMMENT
