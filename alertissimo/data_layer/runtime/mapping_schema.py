@@ -49,6 +49,7 @@ BINDING_KEYS = {
     "roles",
     "adapter",
     "adapter_options",
+    "time_context",
 }
 
 
@@ -125,6 +126,15 @@ def _validate_binding(binding: dict[Any, Any], param: dict[Any, Any], where: str
     """Validate collection and native/composite request-binding metadata."""
 
     _allowed_keys(binding, BINDING_KEYS, where)
+    if "time_context" in binding:
+        # Share the compiler's strict alternate-encoder contract. Allowing the
+        # key alone would hide malformed operands/options until execution.
+        from ..transforms.request import time_binding_bounds, time_context_declaration
+
+        try:
+            time_binding_bounds(time_context_declaration(param))
+        except (TypeError, ValueError) as error:
+            raise MappingSchemaError(f"{where}: invalid time_context binding: {error}") from error
     collection = binding.get("collection")
     max_items = binding.get("max_items")
     roles = binding.get("roles")

@@ -96,6 +96,12 @@ def test_dependency_indexes_account_for_previous_source_plans_and_survive_json()
 
 def test_optional_output_mapping_does_not_prove_requested_discovery_family(tmp_path):
     root, destination = local_provider(tmp_path)
+    def optional_recipe_only(doc):
+        # This test owns the unwindowed optional supplement. Temporal recipes
+        # have required evidence and are a different capability contract.
+        doc["recipes"]["cone_search"] = [item for item in doc["recipes"]["cone_search"]
+                                          if "time_selection" not in item]
+    edit_yaml(destination / "capabilities.yaml", optional_recipe_only)
     def add_optional_mapping(doc):
         doc["mappings"]["classification@sherlock:lasair.best.class"].append("query#classification")
     edit_yaml(destination / "mappings.yaml", add_optional_mapping)

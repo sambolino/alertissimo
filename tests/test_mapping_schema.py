@@ -404,3 +404,49 @@ def test_adapter_collection_binding_metadata_passes(tmp_path, valid_mapping):
     )
 
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def sql_time_parameter():
+    return {
+        "type": "string", "bind": "target_id",
+        "binding": {
+            "collection": "adapter", "max_items": 100,
+            "adapter": "alertissimo.data_layer.transforms.sql:string_membership_condition",
+            "adapter_options": {"column": "objects.objectId", "value_pattern": r"^ZTF\d{2}[a-z]{7}$"},
+            "time_context": {
+                "adapter": "alertissimo.data_layer.transforms.sql:time_window_condition",
+                "adapter_options": {"first_column": "objects.jdmin", "last_column": "objects.jdmax",
+                                    "subtract": 2400000.5, "order_by": "objects.objectId"},
+            },
+        },
+    }
+
+
+def test_alternate_whole_time_context_binding_passes_mapping_validation(tmp_path, valid_mapping):
+    write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {"params": {"conditions": sql_time_parameter()}}}})
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("change", ["null", "adapter", "missing_option", "unknown_key", "column", "subtract", "type", "role"])
+def test_malformed_alternate_time_context_binding_is_rejected(tmp_path, valid_mapping, change):
+    param = sql_time_parameter()
+    alternate = param["binding"]["time_context"]
+    if change == "null":
+        param["binding"]["time_context"] = None
+    elif change == "adapter":
+        alternate["adapter"] = "unregistered:callable"
+    elif change == "missing_option":
+        alternate["adapter_options"].pop("last_column")
+    elif change == "unknown_key":
+        alternate["roles"] = ["time_context"]
+    elif change == "column":
+        alternate["adapter_options"]["first_column"] = "objects.jdmin; DROP TABLE objects"
+    elif change == "subtract":
+        alternate["adapter_options"]["subtract"] = float("inf")
+    elif change == "type":
+        param["type"] = "array"
+    else:
+        param["bind"] = "query"
+    write_yaml(tmp_path / "endpoints.yaml", {"endpoints": {"objects": {"params": {"conditions": param}}}})
+    with pytest.raises(MappingSchemaError, match="invalid time_context binding"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))

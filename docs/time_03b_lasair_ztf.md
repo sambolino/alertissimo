@@ -109,3 +109,14 @@ continuation, later candidate filtering, numeric conjunction, native rechecks,
 interval boundaries, historical windows, policy limits, and captured statistics.
 Earlier synthetic binding/renaming fixtures are isolated from new alternatives;
 their original guarantees and Rubin deferral remain covered.
+
+## Follow-up for the reported local run
+
+The first local handoff reported 36 failures and 196 passes. Thirty-five failures
+hit a mapping-schema whitelist that had not been updated for the alternate
+`binding.time_context` encoder. Mapping validation now admits it through the same
+strict operand/options checks as recipe compilation, with positive and malformed
+declaration cases. The other failure came from an optional-supplement fixture
+including newly required temporal alternatives; that fixture now isolates its
+original unwindowed contract and retains its unsupported-family assertion.
+No tests ran here; verification of this follow-up is pending the local rerun.
