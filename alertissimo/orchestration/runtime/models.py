@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from alertissimo.orchestration.ir.models import Step, WorkflowIR
 from alertissimo.orchestration.ir.predicates import Predicate
@@ -80,6 +80,17 @@ class MaterialInputRef(RuntimeModel):
     step_index: int = Field(ge=0)
 
 
+class TimeSelectionRealization(RuntimeModel):
+    """Runtime evidence location; the relative intent remains in WorkflowIR."""
+
+    mode: Literal["detection", "first", "last"]
+    method: Literal["native", "material"]
+    evidence_plan_index: int = Field(ge=0)
+    payload: str = Field(min_length=1)
+    complete: bool
+    time_scale: Literal["utc"]
+
+
 class EndpointPlan(RuntimeModel):
     """Physical identity selected for one semantic Step occurrence.
 
@@ -108,6 +119,7 @@ class EndpointPlan(RuntimeModel):
     endpoint: str
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
+    time_selection: TimeSelectionRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
     # None retains legacy endpoint-role binding. A recipe supplies an authoritative
     # map from physical parameters to IR paths, named operands, or a runtime role.
@@ -165,6 +177,8 @@ class StepRun(RuntimeModel):
 
     step_index: int = Field(ge=0)
     state: StepRunState = StepRunState.PENDING
+    # Execution evidence for reproducible temporal checks during offline replay.
+    time_reference: AwareDatetime | None = None
     endpoint_plans: tuple[EndpointPlan, ...] = ()
     candidate_input_from: CandidateInputRef | None = None
     material_input_from: MaterialInputRef | None = None

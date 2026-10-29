@@ -10,6 +10,7 @@ from alertissimo.orchestration.normalization import (
     StepPortfolioResult,
     WorkflowPortfolioResult,
     consolidate_portfolios,
+    summary_object_identity,
     apply_classification_selection,
 )
 from alertissimo.orchestration.runtime import StepRunState
@@ -83,11 +84,25 @@ def _rematerialize_provider_step(
         step_index=step_index,
         executions=current.executions,
     )
+    incoming = own.portfolios
+    if any(
+        plan.execution_reuse_from is not None
+        for plan in step_run.endpoint_plans
+    ):
+        surviving = {
+            summary_object_identity(portfolio)
+            for portfolio in source.portfolios
+        }
+        surviving.discard(None)
+        incoming = tuple(
+            portfolio for portfolio in incoming
+            if summary_object_identity(portfolio) in surviving
+        )
     steps[step_index] = StepPortfolioResult(
         step_index=step_index,
         executions=current.executions,
         materialized_portfolios=consolidate_portfolios(
-            source.portfolios + own.portfolios
+            source.portfolios + incoming
         ),
     )
 

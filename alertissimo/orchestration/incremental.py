@@ -71,57 +71,70 @@ def _physical_calls(previous: StagedWorkflowResult) -> tuple[_ReplayCall, ...]:
     """
 
     physical: list[_ReplayCall] = []
+    if not (len(previous.run.steps) == len(previous.bindings) == len(previous.execution.steps)):
+        raise IncrementalExecutionError("previous Steps, bindings, and results do not align")
     for step_run, binding, step_result in zip(
         previous.run.steps,
         previous.bindings,
         previous.execution.steps,
     ):
+        if step_result.step_index != step_run.step_index:
+            raise IncrementalExecutionError("previous Step result is not occurrence-aligned")
         plan_indexes = _execution_plan_indexes(step_run, step_result)
-        successful = dict(zip(plan_indexes, step_result.executions))
-        bound_calls = iter(binding.bound_calls)
-
-        for plan_index, plan in enumerate(step_run.endpoint_plans):
+        if any(index < 0 or index >= len(step_run.endpoint_plans) for index in plan_indexes):
+            raise IncrementalExecutionError("previous execution references an unavailable endpoint plan")
+        successful: dict[int, list[ExecutionResult]] = {}
+        for index, execution in zip(plan_indexes, step_result.executions):
+            successful.setdefault(index, []).append(execution)
+        pending = {index: iter(executions) for index, executions in successful.items()}
+        if binding.plan_indexes:
+            bound_indexes = binding.plan_indexes
+        elif len(binding.bound_calls) == len(step_run.endpoint_plans):
+            bound_indexes = tuple(range(len(step_run.endpoint_plans)))
+        elif not binding.bound_calls:
+            bound_indexes = ()
+        else:
+            raise IncrementalExecutionError("previous fan-out bindings require plan index metadata")
+        if binding.step_index != step_run.step_index or len(bound_indexes) != len(binding.bound_calls):
+            raise IncrementalExecutionError("previous binding does not align with its Step and calls")
+        covered = set()
+        for plan_index, call in zip(bound_indexes, binding.bound_calls):
+            if plan_index < 0 or plan_index >= len(step_run.endpoint_plans):
+                raise IncrementalExecutionError("previous binding references an unavailable endpoint plan")
             if plan_index in step_run.vacuous_plan_indexes:
-                continue
-            try:
-                call = next(bound_calls)
-            except StopIteration as error:
-                raise IncrementalExecutionError(
-                    f"previous step_index {step_run.step_index} binding does not "
-                    "cover its non-vacuous endpoint plans"
-                ) from error
+                raise IncrementalExecutionError("previous vacuous plan unexpectedly has bound calls")
+            plan = step_run.endpoint_plans[plan_index]
+            covered.add(plan_index)
             if call.endpoint_plan != plan:
                 raise IncrementalExecutionError(
                     f"previous step_index {step_run.step_index} binding is not "
                     f"aligned at plan_index {plan_index}"
                 )
             if plan.execution_reuse_from is not None:
-                continue
+                continue  # One binding can stand for an entire reused execution group.
             try:
-                execution = successful[plan_index]
-            except KeyError as error:
+                execution = next(pending.get(plan_index, iter(())))
+            except StopIteration as error:
                 raise IncrementalExecutionError(
-                    "previous physical plan has no successful execution at "
+                    "previous physical call has no aligned successful execution at "
                     f"step_index {step_run.step_index}, plan_index {plan_index}"
                 ) from error
-            physical.append(
-                _ReplayCall(
-                    broker=plan.broker,
-                    origin=plan.origin,
-                    endpoint=plan.endpoint,
-                    params=dict(call.params),
-                    execution=execution,
-                )
-            )
-
-        try:
-            next(bound_calls)
-        except StopIteration:
-            pass
-        else:
+            physical.append(_ReplayCall(
+                broker=plan.broker, origin=plan.origin, endpoint=plan.endpoint,
+                params=dict(call.params), execution=execution,
+            ))
+        expected = set(range(len(step_run.endpoint_plans))) - set(step_run.vacuous_plan_indexes)
+        if covered != expected:
             raise IncrementalExecutionError(
-                f"previous step_index {step_run.step_index} has extra bound calls"
+                f"previous step_index {step_run.step_index} binding does not cover its non-vacuous endpoint plans"
             )
+        for plan_index, remaining in pending.items():
+            if step_run.endpoint_plans[plan_index].execution_reuse_from is not None:
+                continue
+            if next(remaining, None) is not None:
+                raise IncrementalExecutionError(
+                    f"previous step_index {step_run.step_index} has extra successful executions at plan_index {plan_index}"
+                )
 
     return tuple(physical)
 
@@ -161,6 +174,12 @@ def _require_extension_prefix(
                 "new intent changes the previously executed physical plan at "
                 f"step_index {index}; start a fresh execution instead"
             )
+        if any(plan.time_selection is not None for plan in previous_step_run.endpoint_plans):
+            binding = next((item for item in previous.bindings if item.step_index == index), None)
+            if binding is None or binding.reference_time != previous_step_run.time_reference:
+                raise IncrementalExecutionError(
+                    f"previous temporal reference is inconsistent at step_index {index}"
+                )
         if previous_step_run.warnings:
             raise IncrementalExecutionError(
                 "cannot safely continue a prior Step with incomplete supplementary "

@@ -83,6 +83,18 @@ class RecipeCall:
 
 
 @dataclass(frozen=True)
+class TimeSelectionCapability:
+    """Provider-authored evidence for one candidate-time selection."""
+
+    mode: str
+    method: str
+    call_index: int
+    payload: str
+    complete: bool
+    time_scale: str
+
+
+@dataclass(frozen=True)
 class RecipeCapability:
     broker: str
     origin: str
@@ -91,6 +103,7 @@ class RecipeCapability:
     calls: tuple[RecipeCall, ...]
     # Input identity namespace; output record families still come from mappings.
     target_kind: str | None = None
+    time_selection: TimeSelectionCapability | None = None
 
 
 @dataclass(frozen=True)
@@ -310,7 +323,7 @@ def _parameter(
 
         options = declaration["binding"].get("adapter_options", {})
         try:
-            validate_time_encoding(options.get("bound"), options.get("encoding"))
+            validate_time_encoding(options.get("bound"), options.get("encoding"), options.get("mode", "detection"))
         except ValueError as exc:
             raise RecipeRegistryError(f"{where}: {exc}") from exc
     dependencies = {item.call_index for item in sources if isinstance(item, CallValueSource)}
@@ -517,6 +530,66 @@ def _latest_selections(
     return tuple(compiled)
 
 
+
+def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], where: str) -> TimeSelectionCapability:
+    """Compile evidence in the existing recipe; mapping possibility is not coverage."""
+    from .capability_graph import canonical_semantic_path
+
+    proof = _mapping(raw, where)
+    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale"},
+          {"mode", "method", "call", "payload", "complete", "time_scale"}, where)
+    mode, method, index = proof["mode"], proof["method"], proof["call"]
+    if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
+        raise RecipeRegistryError(f"{where}: invalid time selection mode")
+    if not isinstance(method, str) or method not in {"native", "material"}:
+        raise RecipeRegistryError(f"{where}: method must be native or material")
+    if type(index) is not int or not 0 <= index < len(calls) or not calls[index].required:
+        raise RecipeRegistryError(f"{where}: evidence call must be an existing required call")
+    if type(proof["complete"]) is not bool or proof["time_scale"] != "utc":
+        raise RecipeRegistryError(f"{where}: complete must be boolean and time_scale must be utc")
+    payload = proof["payload"]
+    if not isinstance(payload, str):
+        raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence")
+    path = "detection.time.mjd" if mode == "detection" else f"summary.time.{mode}_mjd"
+    noun = "detection" if mode == "detection" else "summary"
+    fields = tuple(item for item in calls[index].outputs if item.payload_key == payload
+                   and item.semantic_record_type == f"{noun}@{item.origin}:{item.broker}")
+    spec = endpoint_defs[calls[index].endpoint]
+    projection = spec.get("projection") or {}
+    parameter = projection.get("param")
+    if projection.get("supports_columns") and parameter is not None:
+        assignment = next((item for item in calls[index].params if item.parameter == parameter), None)
+        if assignment is not None:
+            if not isinstance(assignment.source, ConstantValueSource) or not isinstance(assignment.source.value, str):
+                raise RecipeRegistryError(f"{where}: temporal evidence needs a constant verified projection")
+            columns = {column.strip().split(".")[-1] for column in assignment.source.value.split(",")}
+            fields = tuple(item for item in fields if item.raw_field in columns)
+    if not any(canonical_semantic_path(item.semantic_path) == path for item in fields):
+        raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
+    if mode == "detection" and not any(
+        canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
+        and item.relative_field_path.endswith((".mag", ".flux"))
+        and "limit" not in item.relative_field_path.split(".") for item in fields
+    ):
+        raise RecipeRegistryError(f"{where}: detection evidence must map ordinary photometry in the same payload")
+    if index and {item.source.call_index for item in calls[index].params
+                  if isinstance(item.source, CallValueSource)} != {0}:
+        raise RecipeRegistryError(f"{where}: evidence call must consume discovery identities")
+    encoded = []
+    for item in calls[0].params:
+        source = item.source
+        sources = tuple(value for _, value in source.inputs) if isinstance(source, EncoderValueSource) else (source,)
+        if any(isinstance(value, StepValueSource) and value.path == ("time_context",) for value in sources):
+            declaration = endpoint_defs[calls[0].endpoint]["params"][item.parameter]
+            options = declaration["binding"].get("adapter_options", {})
+            if options.get("mode", "detection") != mode:
+                raise RecipeRegistryError(f"{where}: time encoder mode conflicts with selection mode")
+            encoded.append(options["bound"])
+    if method == "native" and (index != 0 or not proof["complete"] or not encoded):
+        raise RecipeRegistryError(f"{where}: native selection requires complete discovery-call evidence and encoded bounds")
+    return TimeSelectionCapability(mode, method, index, payload, proof["complete"], "utc")
+
+
 def load_provider_capabilities(
     path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str,
@@ -562,8 +635,9 @@ def load_provider_capabilities(
                 where = f"recipes.{op}[{alternative_index}]"
                 recipe = _mapping(raw_recipe, where)
                 targeted = op in {"lookup", "get_cutout", "get_data_product"}
-                keys = {"calls", "target_kind"} if targeted else {"calls"}
-                _keys(recipe, keys, keys, where)
+                required_keys = {"calls", "target_kind"} if targeted else {"calls"}
+                keys = required_keys | ({"time_selection"} if issubclass(models[op], SearchStep) else set())
+                _keys(recipe, keys, required_keys, where)
                 target_kind = None
                 if targeted:
                     try:
@@ -685,8 +759,17 @@ def load_provider_capabilities(
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
+                temporal = _time_selection(recipe["time_selection"], calls, endpoint_defs, where) if "time_selection" in recipe else None
+                if temporal is None and any(
+                    any(isinstance(source, StepValueSource) and source.path == ("time_context",)
+                        for source in (tuple(value for _, value in item.source.inputs)
+                                       if isinstance(item.source, EncoderValueSource) else (item.source,)))
+                    and endpoint_defs[call.endpoint]["params"][item.parameter]["binding"].get("adapter_options", {}).get("mode", "detection") != "detection"
+                    for call in calls for item in call.params
+                ):
+                    raise RecipeRegistryError(f"{where}: first/last time encoders require time_selection evidence")
                 compiled.append(RecipeCapability(
-                    broker, origin, op, alternative_index, tuple(calls), target_kind,
+                    broker, origin, op, alternative_index, tuple(calls), target_kind, temporal,
                 ))
         return ProviderCapabilities(tuple(compiled), predicates, selections)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:
@@ -708,5 +791,5 @@ def load_provider_recipes(
 __all__ = [
     "CallValueSource", "ConstantValueSource", "EncoderValueSource", "RecipeCall",
     "RecipeCapability", "RecipeParameter", "RecipeRegistryError", "StepValueSource",
-    "LatestSelectionCapability", "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
+    "LatestSelectionCapability", "TimeSelectionCapability", "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
 ]

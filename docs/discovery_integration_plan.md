@@ -372,8 +372,10 @@ bounds. All returned measurements for surviving candidates remain available.
 
 The shared time milestone is split into Time 01a (syntax/IR) and Time 01b
 (material-based verification and admission). See
-[the Time 01a runbook](time_01a_within_syntax.md). ALeRCE ZTF, Lasair ZTF, and Fink
-ZTF activation then precede shared/provider latest work and ANTARES ZTF. Keep
+[the Time 01a runbook](time_01a_within_syntax.md) and
+[the Time 01b evidence-checking runbook](time_01b_within_membership.md).
+ALeRCE ZTF, Lasair ZTF, and Fink ZTF activation then precede shared/provider latest
+work and ANTARES ZTF. Keep
 first/last timestamp filters separate from historical detection existence:
 summary overlap can prefilter, but cannot prove a detection in a gap.
 
@@ -640,8 +642,9 @@ not need redesign for this series.
 | 04 | alerce | [#302](https://github.com/sambolino/alertissimo/pull/302), main `0ab4fca` | Merged after fixture fixes; local results not separately reported | Explicit object-MJD predicates; live result not separately reported |
 | 05a | lasair-pagination | [#303](https://github.com/sambolino/alertissimo/pull/303), main `dd12dd2` | Merged; local results not separately reported | Physical paging only; no live result separately reported |
 | 05b | lasair | [#304](https://github.com/sambolino/alertissimo/pull/304), main `92b4879` | Merged; local results not separately reported | Numeric ZTF object-summary discovery; new live outcome not separately reported |
-| Time 01a | within-syntax | Prepared on `feat/time-01a-within-syntax`; PR pending | Not run here; local handoff | Syntax/IR only; new first/last execution guarded |
-| Time 01b onward | within-membership, provider activation, latest | Next after Time 01a | Pending | Pending |
+| Time 01a | within-syntax | [#305](https://github.com/sambolino/alertissimo/pull/305), main `55b6c2f` | Merged; local results not separately reported | Syntax/IR prerequisite |
+| Time 01b | within-membership | Prepared on `feat/time-01b-within-membership`; PR pending | Not run here; synthetic local handoff | Shared evidence checks; production declarations unchanged |
+| Time 02 onward | provider within activation, latest | Next after Time 01b | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

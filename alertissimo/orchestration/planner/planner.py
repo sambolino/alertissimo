@@ -179,13 +179,21 @@ def _recipe_plans(
         endpoint.endpoint: endpoint
         for endpoint in graph.endpoints_for(recipe.broker, recipe.origin)
     }
+    from alertissimo.orchestration.runtime.models import TimeSelectionRealization
+
+    temporal = recipe.time_selection
     return tuple(
         _endpoint_plan(
             step, endpoints[call.endpoint], validation, graph,
             predicate_constraints=call.predicate_bindings,
             realize_search_predicate=index == 0,
         ).model_copy(
-            update=_recipe_assignments(call, plan_offset=plan_offset, step=step)
+            update={**_recipe_assignments(call, plan_offset=plan_offset, step=step),
+                    "time_selection": TimeSelectionRealization(
+                        mode=temporal.mode, method=temporal.method,
+                        evidence_plan_index=plan_offset + temporal.call_index,
+                        payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
+                    ) if index == 0 and temporal is not None else None}
         )
         for index, call in enumerate(recipe.calls)
     )

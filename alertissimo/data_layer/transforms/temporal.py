@@ -45,22 +45,24 @@ def resolve_time_context(context: Mapping, reference_time: datetime | None) -> d
     return {**bounds, "mode": context.get("mode", "detection")}
 
 
-def validate_time_encoding(bound: str, encoding: str) -> None:
+def validate_time_encoding(bound: str, encoding: str, mode: str = "detection") -> None:
+    if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
+        raise ValueError("time encoding mode must be detection, first, or last")
     if not isinstance(bound, str) or bound not in {"start", "end", "range"}:
         raise ValueError("time bound must be start, end, or range")
     if not isinstance(encoding, str) or encoding not in {"utc_iso", "mjd", "jd"}:
         raise ValueError("time encoding must be utc_iso, mjd, or jd")
 
 
-def time_bound(*, time_context: Mapping, bound: str, encoding: str):
+def time_bound(*, time_context: Mapping, bound: str, encoding: str, mode: str = "detection"):
     """Encode resolved UTC bounds exactly as declared; never shift boundaries.
 
     MJD/JD are UTC day numbers, subject to floating-point precision. No conversion
     to TAI/TT or leap-second representation is implied by this datetime encoder.
     """
-    validate_time_encoding(bound, encoding)
-    if time_context.get("mode", "detection") != "detection":
-        raise ValueError("first/last within requires a declared candidate-time translation; the existing time_bound adapter only encodes detection windows")
+    validate_time_encoding(bound, encoding, mode)
+    if time_context.get("mode", "detection") != mode:
+        raise ValueError("first/last within requires a declared candidate-time translation; time encoder mode does not match intent")
 
     def encode(value):
         value = utc_instant(value)

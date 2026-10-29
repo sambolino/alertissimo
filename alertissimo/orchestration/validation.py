@@ -174,6 +174,11 @@ def _search_recipe_evidence(
     raw = list(legacy)
     discovery = "cone" if isinstance(step, ConeSearchStep) else "SQL" if isinstance(step, SqlQueryStep) else "semantic search"
     for recipe in declared:
+        temporal = recipe.time_selection
+        context = getattr(step, "time_context", None)
+        if temporal is not None and (context is None or context.mode != temporal.mode):
+            reasons.append("temporal recipe requires its matching time_context mode")
+            continue
         matching_calls = tuple(
             call for call in recipe.calls if call.required and any(
                 semantic_record_noun_matches(output.semantic_record_type, step.semantic_type)
@@ -216,12 +221,13 @@ def _search_recipe_evidence(
         unrepresented = tuple(
             field for field in ("magnitude_limit", "time_context")
             if getattr(step, field, None) is not None and (field,) not in paths
+            and not (field == "time_context" and temporal is not None and temporal.method == "material")
         )
         if unrepresented or step.criteria:
             reasons.append(f"{discovery} inputs have no declared translation: {unrepresented or ('criteria',)}")
             continue
         endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
-        if ("time_context",) in paths:
+        if ("time_context",) in paths or temporal is not None:
             from alertissimo.data_layer.transforms.temporal import validate_time_context
 
             if step.time_context is not None:
@@ -912,7 +918,9 @@ def _candidate_evidence_for_source(
         recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
         if step.semantic_type != "summary" or binding is None:
             continue
-        if step.criteria or getattr(step, "time_context", None) is not None:
+        if step.criteria or getattr(step, "time_context", None) is not None and (
+            recipe is None or recipe.time_selection is None
+        ):
             continue
         fields = graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
         if step.predicate is not None and any(
@@ -949,10 +957,11 @@ def _operation_candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
     context = getattr(step, "time_context", None)
-    if isinstance(step, SearchStep) and context is not None and context.mode != "detection":
-        # Syntax/IR admission does not prove that an existing detection-window
-        # endpoint filters object history's first/last timestamp. Provider proof
-        # and material-based membership follow in the next small branches.
+    if isinstance(step, SearchStep) and context is not None and context.mode != "detection" and not any(
+        recipe.time_selection is not None and recipe.time_selection.mode == context.mode
+        for recipe in graph.query_recipes(broker=source.broker if source else None,
+                                         origin=source.origin if source else None, op=step.op)
+    ):
         return _CandidateEvidence(
             raw=(), compatible=(), empty_status="deferred",
             empty_reason=f"{context.mode} within requires a declared candidate-time translation",
