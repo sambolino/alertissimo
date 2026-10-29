@@ -417,8 +417,11 @@ integration `4ee3b6f`; the skipped wheel check was handed off locally.
 identity-ordered SQL scans followed by global ranking after temporal membership.
 Numeric-predicate and default/first/last within searches are covered. Cone latest
 remains deferred pending its distinct required-summary ranking proof, scheduled
-as the small Selection 02b follow-up before Fink latest. Retain the focused-local
-merge discipline.
+as the small Selection 02b follow-up before Fink latest. Selection 02 is now
+merged as PR #313, integration `1680d38`, including its local fixture correction.
+[Selection 02b](selection_02b_lasair_cone.md) prepares required summary coverage
+for cone latest in the existing recipe/planner/normalization paths. Retain the
+focused-local merge discipline.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -739,9 +742,9 @@ not need redesign for this series.
 | Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
 | Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
 | Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
-| Selection 02 | Lasair ZTF semantic latest | Prepared on `feat/selection-02-lasair-ztf`, based on `4ee3b6f` | Local handoff; exhaustive offsets, temporal checks, selected-ID continuation | Final acceptance pending |
-| Selection 02b | Lasair cone latest | Next: required-summary and complete-population proof | Pending | Pending |
-| Selection 03 onward | Fink latest, remaining integration | After Selection 02b on updated integration branch | Pending | Pending |
+| Selection 02 | Lasair ZTF semantic latest | [#313](https://github.com/sambolino/alertissimo/pull/313), integration `1680d38` | Merged after focused local run and fixture correction | Final acceptance pending |
+| Selection 02b | Lasair cone latest | Prepared on `feat/selection-02b-lasair-cone` | Local handoff; complete required-summary coverage and selected-ID continuation | Final acceptance pending |
+| Selection 03 onward | Fink latest, remaining integration | Next on updated integration branch | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

@@ -99,7 +99,8 @@ recipes:
             offset: {value: 0}
     # Temporal cone selection keeps the finite cone population and upgrades
     # summary retrieval to required evidence. The old optional recipe stays.
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: detection
         method: material
         call: 2
@@ -112,6 +113,7 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
@@ -123,7 +125,8 @@ recipes:
         - endpoint: lightcurves
           params:
             objectIds: {from: {call: 0, path: summary.identity.object_id}}
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: first
         method: material
         call: 1
@@ -136,6 +139,7 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
@@ -144,7 +148,8 @@ recipes:
             tables: {value: objects}
             limit: {value: 100}
             offset: {value: 0}
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: last
         method: material
         call: 1
@@ -157,9 +162,29 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}
+    # Unwindowed latest needs required summary coverage.
+    - latest_selection: {call: 1, complete: true}
+      calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+            requestType: {value: all}
+        - endpoint: query
+          required: true
+          params:
+            conditions:
+              from: {call: 0, path: summary.identity.object_id}
             selected:
               value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
             tables: {value: objects}

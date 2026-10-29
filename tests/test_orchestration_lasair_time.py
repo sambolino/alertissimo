@@ -81,6 +81,12 @@ class ReplayTransport:
                 payload = [dict(row) for row in db.execute(sql, (params["limit"], params["offset"]))]
             if self.failure == "missing_summary":
                 payload = [row for row in payload if row["objectId"] != IDS[3]]
+            elif self.failure == "duplicate_summary" and payload:
+                payload.append(deepcopy(payload[0]))
+            elif self.failure == "foreign_summary" and payload:
+                payload[-1]["objectId"] = IDS[5]
+            elif self.failure == "invalid_recency" and payload:
+                payload[-1]["jdmax"] = None
         else:
             assert spec.endpoint == "lightcurves"
             if self.failure == "history_request":
@@ -307,7 +313,7 @@ def test_native_summary_selection_uses_unchanged_captured_object_statistics(grap
 
 def test_unmaterialized_cone_predicates_and_latest_remain_explicitly_deferred(graph):
     sources = [program(cone=True, tail="where summary.detection_count >= 8\n"),
-               *(program(mode, cone=True, tail="latest 1\n") for mode in ("detection", "first", "last"))]
+               program(cone=True, tail="where summary.detection_count >= 8\nlatest 1\n")]
     for source in sources:
         result = validate_dsl(source, graph=graph, continue_from=None)
         assert not result.is_runnable
@@ -360,6 +366,79 @@ def test_latest_cannot_return_an_incomplete_discovery_or_history(graph, monkeypa
     with pytest.raises(WorkflowExecutionError):
         execute_dsl(program(tail="latest 1\n"), graph=graph, registry=registry, executor=executor,
                     continue_from=None, reference_time=NOW)
+
+
+@pytest.mark.parametrize("mode,expected", [(None, IDS[1]), ("detection", IDS[2]), ("first", IDS[2]), ("last", IDS[3])])
+def test_cone_latest_requires_complete_summaries_before_global_ranking(graph, monkeypatch, mode, expected):
+    source = program(mode or "detection", cone=True, tail="latest 1\n")
+    if mode is None:
+        source = source.replace("within 10d\n", "")
+    transport, registry, executor = replay(monkeypatch)
+    assert validate_dsl(source, graph=graph, continue_from=None).is_runnable
+    first = execute_dsl(source, graph=graph, registry=registry, executor=executor,
+                        continue_from=None, reference_time=NOW)
+    assert identities(first.portfolios) == {expected}
+    assert all(p.required for p in first.run.steps[0].endpoint_plans)
+    proof = first.run.steps[0].endpoint_plans[0].latest_selection
+    assert proof.evidence_plan_index == 1
+    assert proof.discovery_identity == "object" and proof.evidence_identity == "objectId"
+    assert identities(normalize_workflow_execution(first.staged.execution).steps[0].portfolios) == {expected}
+    before = deepcopy(transport.calls)
+    second = execute_dsl("with lightcurve via lasair\n", graph=graph, registry=registry, executor=executor,
+                         continue_from=first, reference_time=NOW + timedelta(days=1))
+    assert transport.calls[:len(before)] == before
+    assert transport.calls[len(before):] == [("lightcurves", {"objectIds": expected})]
+    assert identities(second.portfolios) == {expected}
+    assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
+
+
+@pytest.mark.parametrize("failure", ["missing_summary", "duplicate_summary", "foreign_summary", "invalid_recency", "query_error"])
+def test_cone_latest_rejects_incomplete_or_invalid_summary_coverage(graph, monkeypatch, failure):
+    transport, registry, executor = replay(monkeypatch, failure=failure)
+    with pytest.raises(ValueError, match="latest|temporal"):
+        execute_dsl(program(cone=True, tail="latest 1\n"), graph=graph, registry=registry, executor=executor,
+                    continue_from=None, reference_time=NOW)
+
+
+def test_cone_latest_validates_summary_coverage_across_identity_batches(graph, monkeypatch):
+    ids = [f"ZTF20{chr(97 + i // 26)}{chr(97 + i % 26)}aaaaa" for i in range(101)]
+    rows = [{**ROWS[0], "objectId": oid, "jdmax": 2459030.5 + i} for i, oid in enumerate(ids)]
+    transport, registry, executor = replay(monkeypatch, rows=rows, histories={oid: [59012] for oid in ids})
+    source = program(cone=True, tail="latest 1\n").replace("within 10d\n", "")
+    result = execute_dsl(source, graph=graph, registry=registry, executor=executor, continue_from=None)
+    assert identities(result.portfolios) == {ids[-1]}
+    assert [name for name, _ in transport.calls] == ["cone", "query", "query"]
+    assert all(p["limit"] == 100 and p["offset"] == 0 for name, p in transport.calls if name == "query")
+
+
+def test_empty_cone_latest_is_empty_without_summary_or_history_requests(graph, monkeypatch):
+    transport, registry, executor = replay(monkeypatch, rows=[])
+    source = program(cone=True, tail="latest 1\n").replace("within 10d\n", "")
+    result = execute_dsl(source, graph=graph, registry=registry, executor=executor, continue_from=None)
+    assert result.portfolios == ()
+    assert [name for name, _ in transport.calls] == ["cone"]
+
+
+@pytest.mark.parametrize("change", ["optional", "short_limit", "projection", "incomplete"])
+def test_cone_latest_proof_rejects_unproven_required_summary_contracts(tmp_path, change):
+    root = tmp_path / "providers"
+    dest = root / "lasair/ztf"
+    shutil.copytree(PROVIDERS_ROOT / "lasair/ztf", dest)
+    path = dest / "capabilities.yaml"
+    doc = yaml.safe_load(path.read_text())
+    recipe = doc["recipes"]["cone_search"][-1]
+    summary = recipe["calls"][1]
+    if change == "optional":
+        summary["required"] = False
+    elif change == "short_limit":
+        summary["params"]["limit"] = {"value": 99}
+    elif change == "projection":
+        summary["params"]["selected"] = {"value": "objects.objectId"}
+    else:
+        recipe["latest_selection"]["complete"] = False
+    path.write_text(yaml.safe_dump(doc, sort_keys=False))
+    with pytest.raises(CapabilityGraphError, match="latest"):
+        build_capability_graph(root)
 
 
 @pytest.mark.parametrize("change", ["optional_history", "partition", "collection", "time_scale"])

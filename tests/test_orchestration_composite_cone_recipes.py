@@ -55,7 +55,7 @@ def test_composite_uses_authored_endpoint_names_parameters_and_constants(tmp_pat
         doc.pop("predicate_bindings", None)
         doc.pop("selection_bindings", None)
         doc["recipes"]["cone_search"] = [item for item in doc["recipes"]["cone_search"]
-                                          if "time_selection" not in item]
+                                          if "time_selection" not in item and "latest_selection" not in item]
         calls = doc["recipes"]["cone_search"][0]["calls"]
         for call in calls:
             call["endpoint"] = renames[call["endpoint"]]
@@ -101,7 +101,7 @@ def test_optional_output_mapping_does_not_prove_requested_discovery_family(tmp_p
         # This test owns the unwindowed optional supplement. Temporal recipes
         # have required evidence and are a different capability contract.
         doc["recipes"]["cone_search"] = [item for item in doc["recipes"]["cone_search"]
-                                          if "time_selection" not in item]
+                                          if "time_selection" not in item and "latest_selection" not in item]
     edit_yaml(destination / "capabilities.yaml", optional_recipe_only)
     def add_optional_mapping(doc):
         doc["mappings"]["classification@sherlock:lasair.best.class"].append("query#classification")

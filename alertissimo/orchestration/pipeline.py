@@ -16,7 +16,7 @@ from alertissimo.data_layer.transforms.temporal import utc_instant
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.binding.models import StepBindingResult
-from alertissimo.orchestration.normalization.selection import validate_time_selection_payloads
+from alertissimo.orchestration.normalization.selection import validate_time_selection_payloads, validate_latest_selection_payloads
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
@@ -139,6 +139,7 @@ def _candidate_view_from_step(
 
     plan_indexes = _execution_plan_indexes(step_run, result)
     validate_time_selection_payloads(step_run, result)
+    validate_latest_selection_payloads(step_run, result)
     executions: list[ExecutionPortfolioResult] = []
     for plan_index, execution in zip(plan_indexes, result.executions):
         plan = step_run.endpoint_plans[plan_index]
