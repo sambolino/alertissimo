@@ -131,6 +131,13 @@ endpoints:
           adapter_options:
             column: objects.objectId
             value_pattern: '^ZTF\d{2}[a-z]{7}$'
+          time_context:
+            adapter: alertissimo.data_layer.transforms.sql:time_window_condition
+            adapter_options:
+              first_column: objects.jdmin
+              last_column: objects.jdmax
+              subtract: 2400000.5
+              order_by: objects.objectId
         description: SQL WHERE criteria without the WHERE keyword.
       limit:
         required: false

@@ -96,6 +96,10 @@ class TimeSelectionCapability:
     complete: bool
     time_scale: str
     payload_path: str = ""
+    required_payload_paths: tuple[tuple[int, str], ...] = ()
+    response_identity: str | None = None
+    target_parameter: str | None = None
+    target_collection: str | None = None
 
 
 @dataclass(frozen=True)
@@ -547,7 +551,7 @@ def _latest_selections(
 
 
 
-def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], where: str) -> TimeSelectionCapability:
+def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], graph: CapabilityGraph, where: str) -> TimeSelectionCapability:
     """Compile evidence in the existing recipe; mapping possibility is not coverage."""
     from .capability_graph import canonical_semantic_path
 
@@ -606,7 +610,40 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     paths = {item.payload_path for item in fields}
     if len(paths) != 1:
         raise RecipeRegistryError(f"{where}: temporal evidence must have one payload path")
-    return TimeSelectionCapability(mode, method, index, payload, proof["complete"], "utc", paths.pop())
+    discovery_paths = {item.payload_path for item in calls[0].outputs
+                       if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"}
+    if len(discovery_paths) != 1:
+        raise RecipeRegistryError(f"{where}: temporal discovery requires one mapped identity payload")
+    required_paths = []
+    for call_index, call in enumerate(calls):
+        if not call.required:
+            continue
+        identities = {item.payload_path for item in call.outputs
+                      if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"}
+        if len(identities) > 1:
+            raise RecipeRegistryError(f"{where}: required temporal call has ambiguous identity payloads")
+        if identities:
+            required_paths.append((call_index, identities.pop()))
+    payload_spec, = (item for item in graph.payload_capabilities
+                     if item.broker == fields[0].broker and item.origin == fields[0].origin
+                     and item.endpoint == calls[index].endpoint and item.payload_key == payload)
+    if payload_spec.partition_mode not in {"single", "field", "root_field"}:
+        raise RecipeRegistryError(f"{where}: temporal evidence requires an object partition")
+    response_identity = target_parameter = target_collection = None
+    if payload_spec.partition_mode == "root_field":
+        response_identity = payload_spec.partition_field
+        targets = [item for item in calls[index].params if isinstance(item.source, CallValueSource)]
+        if not response_identity or not payload_spec.path.startswith("[].") or len(targets) != 1:
+            raise RecipeRegistryError(f"{where}: batched temporal evidence needs a root identity and one target binding")
+        target_parameter = targets[0].parameter
+        declaration = spec["params"][target_parameter]
+        target_collection = declaration.get("binding", {}).get("collection")
+        if target_collection not in (None, "csv") or declaration.get("binding", {}).get("adapter") is not None:
+            raise RecipeRegistryError(f"{where}: batched temporal evidence requires direct singular or CSV target encoding")
+    return TimeSelectionCapability(
+        mode, method, index, payload, proof["complete"], "utc", paths.pop(), tuple(required_paths),
+        response_identity, target_parameter, target_collection,
+    )
 
 
 def load_provider_capabilities(
@@ -815,7 +852,7 @@ def load_provider_capabilities(
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
-                temporal = _time_selection(recipe["time_selection"], calls, endpoint_defs, where) if "time_selection" in recipe else None
+                temporal = _time_selection(recipe["time_selection"], calls, endpoint_defs, graph, where) if "time_selection" in recipe else None
                 if temporal is None and any(
                     any(isinstance(source, StepValueSource) and source.path == ("time_context",)
                         for source in (tuple(value for _, value in item.source.inputs)

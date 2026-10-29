@@ -43,6 +43,9 @@ def contract(tmp_path, mode="last"):
     shutil.copytree(PROVIDERS_ROOT / "lasair/ztf", dest)
     endpoints_path, recipes_path = dest / "endpoints.yaml", dest / "capabilities.yaml"
     endpoints, recipes = yaml.safe_load(endpoints_path.read_text()), yaml.safe_load(recipes_path.read_text())
+    # Isolate this binding fixture from production temporal alternatives.
+    recipes["recipes"]["semantic_search"] = [item for item in recipes["recipes"]["semantic_search"]
+                                             if "time_selection" not in item]
     endpoints["endpoints"]["query"]["params"]["conditions"]["binding"]["time_context"] = {
         "adapter": ADAPTER, "adapter_options": OPTIONS,
     }
@@ -215,8 +218,8 @@ def test_sql_composition_rejects_missing_or_incompatible_ordering(left, right):
         conjoin_ordered_conditions(left, right)
 
 
-def test_this_branch_does_not_activate_production_lasair_time_windows():
+def test_rubin_time_windows_need_their_own_provider_evidence():
     graph = build_capability_graph()
     for prefix in ("", "first ", "last "):
-        result = validate_dsl(f"objects from ztf via lasair\n{prefix}within 7d\n", graph=graph, continue_from=None)
+        result = validate_dsl(f"objects from lsst via lasair\n{prefix}within 7d\n", graph=graph, continue_from=None)
         assert not result.is_runnable

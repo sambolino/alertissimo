@@ -98,11 +98,31 @@ def validate_time_selection_payloads(step_run: StepRun, result) -> None:
         if proof is None:
             continue
         for index, execution in zip(indexes, result.executions):
+            if index in proof.required_payload_paths:
+                try:
+                    require_path(execution.payload, proof.required_payload_paths[index])
+                except (RawFieldMissing, ValueError, TypeError) as error:
+                    raise TimeSelectionError("missing or malformed required temporal payload") from error
             if index != proof.evidence_plan_index:
                 continue
             try:
                 require_path(execution.payload, proof.payload_path)
-            except (RawFieldMissing, ValueError, TypeError) as error:
+                if proof.response_identity is not None:
+                    raw = execution.execution_provenance.params[proof.target_parameter]
+                    if proof.target_collection == "csv":
+                        if not isinstance(raw, str):
+                            raise ValueError("expected CSV target identities")
+                        expected = raw.split(",")
+                    else:
+                        expected = [raw]
+                    actual = [extract_raw_field(item, proof.response_identity) for item in execution.payload]
+                    if any(not isinstance(value, (str, int)) or isinstance(value, bool) or str(value) == ""
+                           for value in expected + actual):
+                        raise ValueError("invalid temporal response identity")
+                    actual_ids = [str(value) for value in actual]
+                    if len(actual_ids) != len(set(actual_ids)) or set(actual_ids) != {str(value) for value in expected}:
+                        raise ValueError("missing, duplicate or unexpected temporal response identities")
+            except (RawFieldMissing, KeyError, ValueError, TypeError) as error:
                 raise TimeSelectionError(f"missing or malformed temporal evidence payload {proof.payload!r}") from error
 
 
@@ -200,6 +220,20 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                     continue
                 if source.internal_execution_id.value not in evidence_ids or source.payload_key != proof.payload:
                     continue
+                if context.mode == "detection":
+                    ordinary = [value for key, value in record.fields.items()
+                                if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
+                                and "limit" not in key.split(".")]
+                    if not any(type(value) in (int, float) and math.isfinite(value) for value in ordinary):
+                        # Mixed history arrays retain upper limits as records.
+                        # A limit-only row is not a positive detection witness.
+                        limits = [value for key, value in record.fields.items()
+                                  if key.startswith("photometry.") and ".limit." in key
+                                  and key.endswith((".mag", ".flux"))]
+                        invalid = invalid or bool(ordinary) or record.get("identity.source_id") is not None or not any(
+                            type(value) in (int, float) and math.isfinite(value) for value in limits
+                        )
+                        continue
                 value = record.get(field)
                 if type(value) not in (int, float) or not math.isfinite(value):
                     invalid = True
