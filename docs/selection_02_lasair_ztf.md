@@ -90,3 +90,12 @@ Fink test corrected in PR #312; semantic registry CI passed. Keep the agreed
 focused-local workflow for this branch and run full CI at the final integration
 PR. Final live acceptance remains separate. Next is the small
 `feat/selection-02b-lasair-cone` proof/admission follow-up, then Fink latest.
+
+## Local follow-up
+
+The focused run reported 193 passed and one fixture failure. The `no_sql` case
+used an empty predicate-binding list, which is invalid before selection checks
+run. It now removes the query binding declaration and checks the specific
+missing-SQL-ordering diagnostic. The production guard and all other assertions
+remain unchanged. This test-only correction awaits a focused local rerun; no
+tests ran here.

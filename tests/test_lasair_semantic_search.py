@@ -215,10 +215,13 @@ def test_offset_latest_requires_an_exhaustive_stable_sql_contract(tmp_path, chan
     elif change == "ordering":
         capabilities["selection_bindings"]["query"]["latest"]["params"] = {"limit": {"value": 1}}
     else:
-        capabilities["predicate_bindings"]["query"] = []
+        # Omit SQL translations without introducing an invalid empty binding
+        # list, so the selection contract's ordering guard is what fails.
+        capabilities["predicate_bindings"].pop("query")
     endpoints_path.write_text(yaml.safe_dump(endpoints, sort_keys=False))
     capabilities_path.write_text(yaml.safe_dump(capabilities, sort_keys=False))
-    with pytest.raises(CapabilityGraphError, match="selection_bindings"):
+    message = "offset latest requires mapped SQL identity ordering" if change == "no_sql" else "selection_bindings"
+    with pytest.raises(CapabilityGraphError, match=message):
         build_capability_graph(root)
 
 
