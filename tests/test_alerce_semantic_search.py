@@ -195,8 +195,8 @@ def test_ztf_selector_does_not_manufacture_class_evidence_from_null_capture_fiel
     assert all(endpoint == "query_objects" for endpoint, _ in client.calls)
 
 
-@pytest.mark.parametrize("origin", ["ztf", "lsst"])
-def test_unqualified_generic_within_is_still_deferred_instead_of_becoming_object_recency(graph, origin):
+@pytest.mark.parametrize("origin", ["lsst"])
+def test_rubin_within_stays_deferred_without_its_own_time_scale_contract(graph, origin):
     source = f"objects from {origin} via alerce\nwithin 7d\n"
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     with pytest.raises(PlanningDeferredError, match="time_context"):

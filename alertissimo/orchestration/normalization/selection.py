@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 
 from alertissimo.orchestration.ir import SearchStep, Step
 from alertissimo.orchestration.runtime.models import StepRun
@@ -59,6 +60,50 @@ def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfol
 
 class TimeSelectionError(SearchSelectionError):
     """Temporal membership lacks sufficient, source-aligned evidence."""
+
+
+def validate_time_selection_payloads(step_run: StepRun, result) -> None:
+    """Distinguish a present empty evidence collection from absent/bad data.
+
+    Normal mapping paths tolerate absent branches. A completeness assertion must
+    not turn that tolerance into a proven absence of detections. Inspect only the
+    compiled evidence branch; do not validate unrelated optional provider fields.
+    """
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+
+    def require_path(value, path):
+        if path.startswith("[]."):
+            if not isinstance(value, (list, tuple)):
+                raise ValueError("expected a root collection")
+            for item in value:
+                require_path(item, path[3:])
+            return
+        if path == ".":
+            if not isinstance(value, Mapping):
+                raise ValueError("expected an object")
+            return
+        if path == "[]":
+            collection, kind = value, (list, tuple)
+        elif path.endswith(("[]", "{}")):
+            collection = extract_raw_field(value, path[:-2])
+            kind = (list, tuple) if path.endswith("[]") else Mapping
+        else:
+            raise ValueError("missing compiled evidence path")
+        if not isinstance(collection, kind):
+            raise ValueError("expected an evidence collection")
+
+    indexes = step_run.execution_plan_indexes or tuple(range(len(step_run.endpoint_plans)))
+    for plan in step_run.endpoint_plans:
+        proof = plan.time_selection
+        if proof is None:
+            continue
+        for index, execution in zip(indexes, result.executions):
+            if index != proof.evidence_plan_index:
+                continue
+            try:
+                require_path(execution.payload, proof.payload_path)
+            except (RawFieldMissing, ValueError, TypeError) as error:
+                raise TimeSelectionError(f"missing or malformed temporal evidence payload {proof.payload!r}") from error
 
 
 def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResult) -> StepPortfolioResult:

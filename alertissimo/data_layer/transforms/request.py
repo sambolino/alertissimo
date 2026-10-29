@@ -13,7 +13,7 @@ from typing import Any
 
 from .astropy import angle_arcsec, skycoord_icrs_degrees
 from .sql import string_membership_condition
-from .temporal import time_bound
+from .temporal import time_bound, validate_time_encoding
 
 
 class RequestTransformError(ValueError):
@@ -36,7 +36,73 @@ def numeric_lower_bound(*, semantic_predicate: Any) -> list[float]:
     return [float(semantic_predicate)]
 
 
+def object_mjd_range(*, field: str, time_context: Mapping | None = None,
+                     semantic_predicate: Any = None) -> list[float]:
+    """Encode a summary-date range or an explicit inclusive numeric minimum.
+
+    Default detection membership uses only last >= start as a safe prefilter;
+    required history evidence owns the upper bound and actual existence test.
+    First/last modes use the corresponding closed summary-date range. This pure
+    transform neither resolves a clock nor chooses an endpoint or evidence call.
+    """
+    if field not in ("first", "last"):
+        raise RequestTransformError("object MJD range field must be first or last")
+    if semantic_predicate is not None:
+        if time_context is not None:
+            raise RequestTransformError("encode predicate and window separately before intersection")
+        return numeric_lower_bound(semantic_predicate=semantic_predicate)
+    if time_context is None:
+        raise RequestTransformError("object MJD range requires a time context or finite numeric literal")
+    mode = time_context.get("mode", "detection")
+    if mode == "detection" and field == "last":
+        return [time_bound(time_context=time_context, bound="start", encoding="mjd")]
+    if mode != field:
+        raise RequestTransformError("object MJD range field conflicts with within mode")
+    return time_bound(time_context=time_context, bound="range", encoding="mjd", mode=mode)
+
+
+def time_binding_bounds(declaration: Mapping[str, Any], *, mode: str | None = None) -> frozenset[str]:
+    """Validate a declared time encoder and describe its represented bounds."""
+    binding = _binding(declaration)
+    adapter, options = binding.get("adapter"), binding.get("adapter_options") or {}
+    if adapter == "alertissimo.data_layer.transforms.request:object_mjd_range":
+        field = options.get("field")
+        if field not in ("first", "last") or declaration.get("type") != "array":
+            raise RequestTransformError("object MJD range requires an array and a first/last field")
+        mode = field if mode is None else mode
+        if mode == "detection" and field == "last":
+            return frozenset({"start"})
+        if mode != field:
+            raise RequestTransformError("time encoder mode conflicts with selection mode")
+        return frozenset({"start", "end"})
+    if adapter != "alertissimo.data_layer.transforms.temporal:time_bound":
+        raise RequestTransformError("time_context requires its declared time encoder")
+    declared_mode = options.get("mode", "detection")
+    validate_time_encoding(options.get("bound"), options.get("encoding"), declared_mode)
+    if mode is not None and mode != declared_mode:
+        raise RequestTransformError("time encoder mode conflicts with selection mode")
+    bound = options["bound"]
+    return frozenset({"start", "end"} if bound == "range" else {bound})
+
+
+def intersect_numeric_ranges(left: Any, right: Any) -> list[float]:
+    """Intersect inclusive [minimum] / [minimum, maximum] physical ranges.
+
+    Preserve an empty intersection as a contradictory bounded range. The audited
+    endpoint applies both comparisons, so no records can satisfy it; do not widen
+    it, drop a bound, or send an infinity/None sentinel to the provider.
+    """
+    for value in (left, right):
+        if (not isinstance(value, (list, tuple)) or len(value) not in (1, 2)
+            or any(type(item) not in (int, float) or not math.isfinite(item) for item in value)):
+            raise RequestTransformError("range intersection requires finite numeric bounds")
+    result = [max(left[0], right[0])]
+    upper = [value[1] for value in (left, right) if len(value) == 2]
+    return result + [min(upper)] if upper else result
+
+
 _REQUEST_ADAPTERS: Mapping[str, Callable[..., Any]] = {
+    "alertissimo.data_layer.transforms.request:object_mjd_range": object_mjd_range,
     "alertissimo.data_layer.transforms.request:numeric_lower_bound": numeric_lower_bound,
     "alertissimo.data_layer.transforms.temporal:time_bound": time_bound,
     "alertissimo.data_layer.transforms.astropy:skycoord_icrs_degrees": (

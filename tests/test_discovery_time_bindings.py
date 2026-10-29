@@ -51,6 +51,10 @@ def contract(tmp_path, *, origins=("lsst",), encoding="utc_iso", ranged=False, f
                     }
 
         def recipes(doc):
+            # This synthetic contract tests whole-window encoding independently
+            # of production temporal alternatives and their evidence calls.
+            for op in ("semantic_search", "cone_search"):
+                doc["recipes"][op] = [item for item in doc["recipes"][op] if "time_selection" not in item]
             operations = ("semantic_search", "cone_search", "get_lightcurve") if fanout else ("semantic_search", "cone_search")
             for op in operations:
                 for parameter in bounds:

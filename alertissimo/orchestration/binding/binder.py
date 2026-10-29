@@ -32,6 +32,7 @@ from alertissimo.data_layer.transforms.request import (
     apply_binding_adapter,
     binding_roles,
     coerce_physical_type,
+    intersect_numeric_ranges,
     transform_collection,
 )
 from alertissimo.orchestration.ir.models import Step
@@ -396,7 +397,9 @@ def bind_endpoint(
                     f"undeclared physical parameter {physical_name!r}"
                 )
             declaration = spec.params[physical_name] or {}
-            if _binding_roles(declaration) == ("semantic_predicate",):
+            if (_binding_roles(declaration) == ("semantic_predicate",)
+                or (declaration.get("binding") or {}).get("adapter")
+                == "alertissimo.data_layer.transforms.request:object_mjd_range"):
                 if value is None:
                     raise ParameterBindingError(
                         f"semantic predicate literal is missing for {_context(endpoint_plan)} "
@@ -450,6 +453,16 @@ def bind_endpoint(
             )
         declared_roles.extend(roles)
         if value is not None:
+            if (realization is not None and physical_name in realization.params
+                and recipe_sources is not None
+                and physical_name in recipe_sources
+                and (declaration.get("binding") or {}).get("adapter")
+                == "alertissimo.data_layer.transforms.request:object_mjd_range"):
+                try:
+                    params[physical_name] = intersect_numeric_ranges(params[physical_name], value)
+                except RequestTransformError as error:
+                    raise ParameterBindingError(f"cannot intersect range for {_context(endpoint_plan)}: {error}") from error
+                continue
             _set_param(
                 params,
                 physical_name,

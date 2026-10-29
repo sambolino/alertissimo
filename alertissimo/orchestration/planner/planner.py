@@ -193,6 +193,7 @@ def _recipe_plans(
                         mode=temporal.mode, method=temporal.method,
                         evidence_plan_index=plan_offset + temporal.call_index,
                         payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
+                        payload_path=temporal.payload_path,
                     ) if index == 0 and temporal is not None else None}
         )
         for index, call in enumerate(recipe.calls)

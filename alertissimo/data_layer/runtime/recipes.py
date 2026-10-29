@@ -18,7 +18,9 @@ from typing import TYPE_CHECKING, Annotated, Any, Mapping, get_args, get_origin
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from ..transforms.request import RequestTransformError, binding_roles, load_binding_adapter
+from ..transforms.request import (
+    RequestTransformError, binding_roles, load_binding_adapter, time_binding_bounds,
+)
 
 if TYPE_CHECKING:
     from .capability_graph import (
@@ -92,6 +94,7 @@ class TimeSelectionCapability:
     payload: str
     complete: bool
     time_scale: str
+    payload_path: str = ""
 
 
 @dataclass(frozen=True)
@@ -316,14 +319,10 @@ def _parameter(
         if (
             roles != ("time_context",) or len(temporal_sources) != 1
             or temporal_sources[0].path != ("time_context",)
-            or adapter != "alertissimo.data_layer.transforms.temporal:time_bound"
         ):
             raise RecipeRegistryError(f"{where}: time_context requires the whole IR context and its declared time encoder")
-        from ..transforms.temporal import validate_time_encoding
-
-        options = declaration["binding"].get("adapter_options", {})
         try:
-            validate_time_encoding(options.get("bound"), options.get("encoding"), options.get("mode", "detection"))
+            time_binding_bounds(declaration)
         except ValueError as exc:
             raise RecipeRegistryError(f"{where}: {exc}") from exc
     dependencies = {item.call_index for item in sources if isinstance(item, CallValueSource)}
@@ -389,6 +388,12 @@ def _predicate_bindings(
                 or roles != ("semantic_predicate",)
             ):
                 raise RecipeRegistryError(f"{location}: numeric_lower_bound requires an array parameter and >= predicate binding")
+            if adapter == "alertissimo.data_layer.transforms.request:object_mjd_range":
+                field = declaration["binding"].get("adapter_options", {}).get("field")
+                if (operator != ">=" or declaration.get("type") != "array"
+                    or roles != ("time_context",) or field not in ("first", "last")
+                    or path != f"summary.time.{field}_mjd"):
+                    raise RecipeRegistryError(f"{location}: object_mjd_range requires a matching summary field, array parameter and >= predicate binding")
             sql_column, sql_subtract, sql_order_by = None, 0, None
             if "sql" in binding:
                 sql = _mapping(binding["sql"], location)
@@ -581,13 +586,16 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         sources = tuple(value for _, value in source.inputs) if isinstance(source, EncoderValueSource) else (source,)
         if any(isinstance(value, StepValueSource) and value.path == ("time_context",) for value in sources):
             declaration = endpoint_defs[calls[0].endpoint]["params"][item.parameter]
-            options = declaration["binding"].get("adapter_options", {})
-            if options.get("mode", "detection") != mode:
-                raise RecipeRegistryError(f"{where}: time encoder mode conflicts with selection mode")
-            encoded.append(options["bound"])
+            try:
+                encoded.extend(time_binding_bounds(declaration, mode=mode))
+            except ValueError as exc:
+                raise RecipeRegistryError(f"{where}: {exc}") from exc
     if method == "native" and (index != 0 or not proof["complete"] or not encoded):
         raise RecipeRegistryError(f"{where}: native selection requires complete discovery-call evidence and encoded bounds")
-    return TimeSelectionCapability(mode, method, index, payload, proof["complete"], "utc")
+    paths = {item.payload_path for item in fields}
+    if len(paths) != 1:
+        raise RecipeRegistryError(f"{where}: temporal evidence must have one payload path")
+    return TimeSelectionCapability(mode, method, index, payload, proof["complete"], "utc", paths.pop())
 
 
 def load_provider_capabilities(
@@ -638,6 +646,7 @@ def load_provider_capabilities(
                 required_keys = {"calls", "target_kind"} if targeted else {"calls"}
                 keys = required_keys | ({"time_selection"} if issubclass(models[op], SearchStep) else set())
                 _keys(recipe, keys, required_keys, where)
+                raw_temporal = _mapping(recipe["time_selection"], where) if "time_selection" in recipe else {}
                 target_kind = None
                 if targeted:
                     try:
@@ -704,14 +713,29 @@ def load_provider_capabilities(
                             if isinstance(assignment.source, ConstantValueSource):
                                 continue
                             if _encoder(declarations[assignment.parameter], call_where)[0] == ("time_context",):
-                                bound = declarations[assignment.parameter]["binding"]["adapter_options"]["bound"]
-                                bounds.update(("start", "end") if bound == "range" else (bound,))
-                        if bounds and bounds != {"start", "end"}:
+                                proof_mode = raw_temporal.get("mode", "detection")
+                                try:
+                                    bounds.update(time_binding_bounds(declarations[assignment.parameter], mode=proof_mode))
+                                except ValueError as exc:
+                                    raise RecipeRegistryError(f"{call_where}: {exc}") from exc
+                        material_detection = (
+                            raw_temporal.get("mode") == "detection"
+                            and raw_temporal.get("method") == "material"
+                        )
+                        if bounds and bounds != {"start", "end"} and not material_detection:
                             raise RecipeRegistryError(f"{call_where}: discovery time_context must encode both start and end")
                     call_bindings = tuple(
                         item for item in predicates if item.endpoint == endpoint
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
-                    if any(item.parameter in params or item.parameter in fixed for item in call_bindings):
+                    composable_ranges = {
+                        assignment.parameter for assignment in assignments
+                        if isinstance(assignment.source, StepValueSource)
+                        and assignment.source.path == ("time_context",)
+                        and declarations[assignment.parameter].get("binding", {}).get("adapter")
+                        == "alertissimo.data_layer.transforms.request:object_mjd_range"
+                    }
+                    if any(item.parameter in params and item.parameter not in composable_ranges
+                           or item.parameter in fixed for item in call_bindings):
                         raise RecipeRegistryError(f"{call_where}: predicate binding conflicts with a parameter assignment/fixed value")
                     sql_bindings = tuple(item for item in call_bindings if item.sql_column is not None)
                     if sql_bindings:
@@ -764,7 +788,11 @@ def load_provider_capabilities(
                     any(isinstance(source, StepValueSource) and source.path == ("time_context",)
                         for source in (tuple(value for _, value in item.source.inputs)
                                        if isinstance(item.source, EncoderValueSource) else (item.source,)))
-                    and endpoint_defs[call.endpoint]["params"][item.parameter]["binding"].get("adapter_options", {}).get("mode", "detection") != "detection"
+                    and (
+                        endpoint_defs[call.endpoint]["params"][item.parameter]["binding"].get("adapter")
+                        == "alertissimo.data_layer.transforms.request:object_mjd_range"
+                        or endpoint_defs[call.endpoint]["params"][item.parameter]["binding"].get("adapter_options", {}).get("mode", "detection") != "detection"
+                    )
                     for call in calls for item in call.params
                 ):
                     raise RecipeRegistryError(f"{where}: first/last time encoders require time_selection evidence")

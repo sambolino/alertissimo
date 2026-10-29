@@ -34,7 +34,7 @@ from .models import (
     summary_object_identity,
 )
 from .predicate import prune_portfolios
-from .selection import apply_search_selection, apply_time_selection
+from .selection import apply_search_selection, apply_time_selection, validate_time_selection_payloads
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -257,6 +257,7 @@ def _normalize_planned_step(
     """Normalize successful executions against their owning endpoint plans."""
 
     plan_indexes = _execution_plan_indexes(step_run, result)
+    validate_time_selection_payloads(step_run, result)
     return StepPortfolioResult(
         step_index=result.step_index,
         executions=tuple(
