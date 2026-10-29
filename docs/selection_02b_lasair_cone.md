@@ -81,6 +81,7 @@ static verification.
 set -o pipefail
 PYTHONPATH=. python -m pytest -q \
   tests/test_orchestration_lasair_time.py \
+  tests/test_dsl_live_material_lineage_matrix.py \
   tests/test_orchestration_composite_cone_recipes.py \
   tests/test_orchestration_selection_recipes.py \
   tests/test_orchestration_predicate_recipes.py \
