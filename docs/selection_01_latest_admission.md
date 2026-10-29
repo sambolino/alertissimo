@@ -113,3 +113,32 @@ because the admission logic is shared by every provider. No live provider call i
 needed to validate the admission change; final live acceptance remains scheduled.
 
 Next: `feat/selection-02-lasair-ztf` from the updated integration branch.
+
+## Intermediate checkpoint follow-up
+
+Selection 01 is merged as PR #311, integration `4ecb37e`. The manual
+[DSL run #40921413814](https://github.com/sambolino/alertissimo/actions/runs/40921413814)
+completed with 1,195 passed and one failure in
+`test_owned_fink_discovery_requires_an_eligible_class_before_planning`. The
+separate semantic-registry checkpoint passed on the same revision.
+
+The failed test unpacked the entire Fink semantic recipe list as one recipe,
+although Time 04 now declares separate physical-default and windowed recipes.
+The correction covers both forms, preserves all missing/eligible-class
+assertions, and requires one admitted recipe with matching temporal evidence
+after supplying the class. No production code changes.
+
+Run the corrected module locally and complete the installed-wheel check that CI
+skipped after pytest failed. A second twelve-minute broad CI run is unnecessary
+for this test-only correction; final integration CI remains required. Do not
+rerun the old workflow ID to test new code: that would test the old revision.
+
+```bash
+set -o pipefail
+PYTHONPATH=. python -m pytest -q tests/test_orchestration_discovery_eligibility.py \
+  2>&1 | tee /tmp/alertissimo-selection-01-ci-fix-tests.log
+PYTHONPATH=. python scripts/check_release_package.py \
+  2>&1 | tee /tmp/alertissimo-selection-01-wheel-check.log
+```
+
+Neither command was executed here. Both local outcomes remain to be reported.
