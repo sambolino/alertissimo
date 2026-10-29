@@ -192,6 +192,17 @@ def _search_recipe_evidence(
         if call not in matching_calls:
             reasons.append(f"{discovery} discovery call must be required and map the requested record family")
             continue
+        if isinstance(step, ConeSearchStep) and temporal is not None and step.predicate is not None and any(
+            not any((canonical_semantic_path(output.semantic_path) == reference.ontology_path
+                     if reference.field_path else semantic_record_noun_matches(output.semantic_record_type, reference.semantic_type))
+                    and (reference.producer is None or _semantic_record_producer(output.semantic_record_type) == reference.producer
+                         or _DYNAMIC_QUALIFIER.fullmatch(_semantic_record_producer(output.semantic_record_type) or ""))
+                    and (reference.channel is None or output.semantic_record_type.partition(":")[2] == reference.channel)
+                    for output in call.outputs)
+            for reference in iter_semantic_references(step.predicate)
+        ):
+            reasons.append("temporal cone predicates need discovery-call material; apply a later filter after required enrichment")
+            continue
         # Activate discovery followed by identity-bound retrievals. Independent
         # calls and dependencies on supplementary results need further evidence.
         if any(

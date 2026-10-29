@@ -90,6 +90,10 @@ class TimeSelectionRealization(RuntimeModel):
     complete: bool
     time_scale: Literal["utc"]
     payload_path: str = ""
+    required_payload_paths: dict[int, str] = Field(default_factory=dict)
+    response_identity: str | None = None
+    target_parameter: str | None = None
+    target_collection: Literal["csv"] | None = None
 
 
 class EndpointPlan(RuntimeModel):

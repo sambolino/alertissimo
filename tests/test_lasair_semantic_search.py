@@ -103,7 +103,7 @@ def test_ineligible_or_partially_translated_conditions_defer_before_binding(grap
     {"time_context": TimeContext(window=timedelta(days=7))},
     {"criteria": {"limit": 10}}, {"selection": SearchSelection(latest=1)},
 ])
-def test_window_criteria_and_latest_are_not_relabelled_as_object_summary_search(graph, kwargs):
+def test_invalid_window_criteria_and_latest_are_not_relabelled_as_object_summary_search(graph, kwargs):
     with pytest.raises(PlanningDeferredError):
         plan_step(search(predicate=comparison(), **kwargs), graph)
 
@@ -256,5 +256,6 @@ def test_possible_mapping_does_not_invent_unselected_classification_material(tmp
     path.write_text(yaml.safe_dump(document, sort_keys=False))
     graph = build_capability_graph(root)
     assert graph.fields_for_endpoint("lasair", "ztf", "query", semantic_record_noun="classification")
-    recipe, = graph.query_recipes(broker="lasair", origin="ztf", op="semantic_search")
+    recipe, = (item for item in graph.query_recipes(broker="lasair", origin="ztf", op="semantic_search")
+               if item.time_selection is None)
     assert all(item.semantic_record_type == "summary@ztf:lasair" for item in recipe.calls[0].outputs)

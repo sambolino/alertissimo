@@ -53,6 +53,8 @@ def test_composite_uses_authored_endpoint_names_parameters_and_constants(tmp_pat
         # This fixture renames the composite cone's physical contracts only.
         doc["recipes"].pop("semantic_search", None)
         doc.pop("predicate_bindings", None)
+        doc["recipes"]["cone_search"] = [item for item in doc["recipes"]["cone_search"]
+                                          if "time_selection" not in item]
         calls = doc["recipes"]["cone_search"][0]["calls"]
         for call in calls:
             call["endpoint"] = renames[call["endpoint"]]

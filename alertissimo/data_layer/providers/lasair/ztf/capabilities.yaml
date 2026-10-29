@@ -8,6 +8,51 @@ recipes:
             selected:
               value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
             tables: {value: objects}
+    - time_selection:
+        mode: detection
+        method: material
+        call: 1
+        payload: lightcurve_candidates
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            conditions: {from: step.time_context}
+        - endpoint: lightcurves
+          params:
+            objectIds: {from: {call: 0, path: summary.identity.object_id}}
+    - time_selection:
+        mode: first
+        method: native
+        call: 0
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            conditions: {from: step.time_context}
+    - time_selection:
+        mode: last
+        method: native
+        call: 0
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            conditions: {from: step.time_context}
   confirm:
     - calls:
         - endpoint: object
@@ -41,6 +86,74 @@ recipes:
           params:
             conditions:
               from: {call: 0, path: summary.identity.object_id}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}
+    # Temporal cone selection keeps the finite cone population and upgrades
+    # summary retrieval to required evidence. The old optional recipe stays.
+    - time_selection:
+        mode: detection
+        method: material
+        call: 2
+        payload: lightcurve_candidates
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+        - endpoint: query
+          params:
+            conditions: {from: {call: 0, path: summary.identity.object_id}}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}
+        - endpoint: lightcurves
+          params:
+            objectIds: {from: {call: 0, path: summary.identity.object_id}}
+    - time_selection:
+        mode: first
+        method: material
+        call: 1
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+        - endpoint: query
+          params:
+            conditions: {from: {call: 0, path: summary.identity.object_id}}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}
+    - time_selection:
+        mode: last
+        method: material
+        call: 1
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+        - endpoint: query
+          params:
+            conditions: {from: {call: 0, path: summary.identity.object_id}}
             selected:
               value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
             tables: {value: objects}

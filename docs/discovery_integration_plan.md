@@ -393,6 +393,12 @@ main `5840d31`. Time 03 is split into a small SQL-binding prerequisite
 must distinguish detections from the upper limits in Lasair's mixed history
 array and reject missing/per-object failed evidence before claiming membership.
 
+Time 03a is merged as [PR #308](https://github.com/sambolino/alertissimo/pull/308),
+main `108e57e`. [Time 03b](time_03b_lasair_ztf.md) now prepares ZTF semantic/cone
+within activation: actual detection witnesses, required first/last summaries,
+per-object batch response coverage, and source-aligned replay/reuse. Lasair
+latest remains separate. Fink ZTF follows this milestone.
+
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
 handoff remain required. Extend their acceptance with temporal gaps/boundaries,
@@ -659,8 +665,9 @@ not need redesign for this series.
 | Time 01a | within-syntax | [#305](https://github.com/sambolino/alertissimo/pull/305), main `55b6c2f` | Merged; local results not separately reported | Syntax/IR prerequisite |
 | Time 01b | within-membership | [#306](https://github.com/sambolino/alertissimo/pull/306), main `37ba25c` | Merged after reported fixture/runtime fixes; final local count not separately reported | Shared evidence checks; production declarations unchanged |
 | Time 02 | alerce-ztf | [#307](https://github.com/sambolino/alertissimo/pull/307), main `5840d31` | Merged after fixture fixes; final local count not separately reported | No new live result separately reported |
-| Time 03a | sql-bindings | Prepared on `feat/time-03a-sql-bindings`; PR pending | Not run here; synthetic local handoff | No production activation |
-| Time 03b onward | Lasair/Fink within activation, latest | Next after Time 03a | Pending | Pending |
+| Time 03a | sql-bindings | [#308](https://github.com/sambolino/alertissimo/pull/308), main `108e57e` | Merged; local count not separately reported | No production activation |
+| Time 03b | lasair-ztf | Prepared on `feat/time-03b-lasair-ztf`; PR pending | Not run here; recorded/synthetic local handoff | Pending on user's machine |
+| Time 04 onward | Fink within activation, latest | Next after Time 03b | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

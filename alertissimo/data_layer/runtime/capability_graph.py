@@ -50,6 +50,8 @@ class PayloadCapability:
     payload_key: str
     endpoint: str
     path: str
+    partition_mode: str | None = None
+    partition_field: str | None = None
 
 
 @dataclass(frozen=True)
@@ -447,7 +449,11 @@ def build_capability_graph(registry_root: Path | str | None = None) -> Capabilit
             if not isinstance(payload_key, str) or not isinstance(payload_path, str):
                 raise CapabilityGraphError(f"{mapping_path}: payload key/path must be strings")
             payload_lookup[payload_key] = (endpoint, payload_path)
-            payload_items.append(PayloadCapability(broker, origin, payload_key, endpoint, payload_path))
+            partition = _dict(spec.get("object_partition") or {}, f"{mapping_path}: payload {payload_key!r} partition")
+            payload_items.append(PayloadCapability(
+                broker, origin, payload_key, endpoint, payload_path,
+                partition.get("mode"), partition.get("field"),
+            ))
 
         mappings = _dict(mappings_doc.get("mappings"), f"{mapping_path}: mappings")
         for semantic_path, refs in mappings.items():
