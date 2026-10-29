@@ -88,10 +88,11 @@ def test_targetless_recipe_plans_retain_candidate_owner_and_json_binding():
         assert bound.params == {"diaObjectId": "1,2"}
 
 
-def test_optional_singular_supplement_is_retained_only_for_one_explicit_target():
+@pytest.mark.parametrize("origin", ["ztf", "lsst"])
+def test_optional_singular_supplement_is_retained_only_for_one_explicit_target(origin):
     graph = build_capability_graph()
     for ids, expected in [(("1",), ["query_lightcurve", "query_forced_photometry"]), (("1", "2"), ["query_lightcurve"]), (None, ["query_lightcurve"])]:
-        assert [plan.endpoint for plan in plan_step(retrieval("alerce", "lsst", ids), graph)] == expected
+        assert [plan.endpoint for plan in plan_step(retrieval("alerce", origin, ids), graph)] == expected
 
 
 def test_recipe_selection_and_forced_reuse_do_not_need_operation_tags(tmp_path):

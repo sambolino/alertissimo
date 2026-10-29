@@ -41,7 +41,9 @@ observation ever taken or an atomic snapshot across requests.
 
 Survivors retain all returned measurements, including dates outside the interval.
 An explicit later `with lightcurve via alerce` reuses compatible required history
-and keeps the established optional forced-photometry supplement. Reuse and
+and preserves the existing supplement policy: optional singular forced photometry
+is retained only for one explicit target, not for a targetless population request.
+Its omission is a planning decision, not an optional-call failure. Reuse and
 incremental continuation retain the selected identities and the original clock.
 First/last discovery itself needs no per-object history requests.
 

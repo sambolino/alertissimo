@@ -143,7 +143,12 @@ def test_history_is_reused_without_resurrection_and_continuation_retains_the_clo
     assert identities(first.portfolios) == expected
     assert first.run.steps[1].endpoint_plans[0].execution_reuse_from.plan_index == 1
     assert [p["oid"] for name, p in client.calls if name == "query_lightcurve"] == list(IDS[:4])
-    assert {p["oid"] for name, p in client.calls if name == "query_forced_photometry"} == expected
+    # Targetless retrieval retains the existing optional-supplement policy:
+    # singular forced photometry is not planned for an unknown population.
+    # Its absence must be an admission decision, not a swallowed call failure.
+    assert [plan.endpoint for plan in first.run.steps[1].endpoint_plans] == ["query_lightcurve"]
+    assert not any(name == "query_forced_photometry" for name, _ in client.calls)
+    assert first.run.steps[1].warnings == ()
     for portfolio in first.portfolios:
         oid = summary_object_identity(portfolio)[1]
         times = sorted(record.get("time.mjd") for record in portfolio.records
