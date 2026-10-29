@@ -64,7 +64,7 @@ class RecipeParameter:
 
 @dataclass(frozen=True)
 class LatestSelectionCapability:
-    """Order a fully paginated discovery; semantic top-N remains local."""
+    """Prove a fully paginated discovery; semantic top-N remains local."""
 
     broker: str
     origin: str
@@ -476,6 +476,7 @@ def _predicate_bindings(
 def _latest_selections(
     raw: Any, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str, defaults: Mapping[str, Any],
+    predicates: tuple[RequestConstraintCapability, ...],
 ) -> tuple[LatestSelectionCapability, ...]:
     from alertissimo.orchestration.ir.models import SearchSelection
     from .capability_graph import canonical_semantic_path
@@ -507,8 +508,10 @@ def _latest_selections(
             raise RecipeRegistryError(f"{where}: selection requires a mapped object identity")
         spec = _mapping(endpoint_defs[endpoint], where)
         declarations = _mapping(spec.get("params", {}), where)
-        # This matches the executor's existing exhaustive page/page_size contract.
-        if any(
+        # These are the executor's two existing exhaustive pagination contracts.
+        offset_scan = all(_mapping(declarations.get(name, {}), where).get("role") == "pagination"
+                          for name in ("offset", "limit")) and "page" not in declarations
+        if not offset_scan and any(
             _mapping(declarations.get(name, {}), where).get("role") != "pagination"
             for name in ("page", "page_size")
         ):
@@ -529,7 +532,7 @@ def _latest_selections(
             **_mapping(defaults.get("fixed_params", {}), where),
             **_mapping(transport.get("fixed_params", {}), where),
         }
-        if "page" in fixed or fixed.get("count") or _mapping(declarations.get("count", {}), where).get("default"):
+        if "page" in fixed or "offset" in fixed or fixed.get("count") or _mapping(declarations.get("count", {}), where).get("default"):
             raise RecipeRegistryError(f"{where}: latest cannot select one page or a count-only response")
         assignments = []
         for name, raw_assignment in sorted(_mapping(latest["params"], where).items()):
@@ -544,7 +547,17 @@ def _latest_selections(
             assignments.append(RecipeParameter(name, constant))
         values = [item.source.value for item in assignments]
         raw_fields = {item.raw_field for item in fields}
-        if len(values) != 2 or "DESC" not in values or not any(value in raw_fields for value in values if isinstance(value, str)):
+        if offset_scan:
+            # SQL discovery already compiles a mapped identity ORDER BY and a
+            # constant projection. Exhaust it in that stable order, then rank
+            # the whole normalized population locally; never inject top-N SQL.
+            sql = tuple(item for item in predicates if item.endpoint == endpoint and item.sql_column is not None)
+            offset_default = declarations["offset"].get("default", 0)
+            if (assignments or output.get("type") != "array" or not sql
+                or len({item.sql_order_by for item in sql}) != 1
+                or type(offset_default) is not int or offset_default != 0):
+                raise RecipeRegistryError(f"{where}: offset latest requires mapped SQL identity ordering and empty params")
+        elif len(values) != 2 or "DESC" not in values or not any(value in raw_fields for value in values if isinstance(value, str)):
             raise RecipeRegistryError(f"{where}: latest requires the mapped raw ordering field and DESC")
         compiled.append(LatestSelectionCapability(broker, origin, endpoint, path, tuple(assignments)))
     return tuple(compiled)
@@ -671,7 +684,7 @@ def load_provider_capabilities(
         defaults = _mapping(transport_defaults or {}, "transport_defaults")
         selections = _latest_selections(
             document.get("selection_bindings", {}), graph, endpoint_defs,
-            broker=broker, origin=origin, defaults=defaults,
+            broker=broker, origin=origin, defaults=defaults, predicates=predicates,
         )
         if any(
             binding.endpoint == selection.endpoint
