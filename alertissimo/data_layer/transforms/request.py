@@ -12,7 +12,7 @@ import math
 from typing import Any
 
 from .astropy import angle_arcsec, skycoord_icrs_degrees
-from .sql import string_membership_condition
+from .sql import string_membership_condition, time_window_condition, validate_time_window_options
 from .temporal import time_bound, validate_time_encoding
 
 
@@ -63,8 +63,14 @@ def object_mjd_range(*, field: str, time_context: Mapping | None = None,
 
 def time_binding_bounds(declaration: Mapping[str, Any], *, mode: str | None = None) -> frozenset[str]:
     """Validate a declared time encoder and describe its represented bounds."""
+    declaration = time_context_declaration(declaration)
     binding = _binding(declaration)
     adapter, options = binding.get("adapter"), binding.get("adapter_options") or {}
+    if adapter == "alertissimo.data_layer.transforms.sql:time_window_condition":
+        if declaration.get("type") != "string" or mode is not None and mode not in ("detection", "first", "last"):
+            raise RequestTransformError("SQL time encoding requires a string parameter and a valid mode")
+        validate_time_window_options(**options)
+        return frozenset({"start", "end"})
     if adapter == "alertissimo.data_layer.transforms.request:object_mjd_range":
         field = options.get("field")
         if field not in ("first", "last") or declaration.get("type") != "array":
@@ -102,6 +108,7 @@ def intersect_numeric_ranges(left: Any, right: Any) -> list[float]:
 
 
 _REQUEST_ADAPTERS: Mapping[str, Callable[..., Any]] = {
+    "alertissimo.data_layer.transforms.sql:time_window_condition": time_window_condition,
     "alertissimo.data_layer.transforms.request:object_mjd_range": object_mjd_range,
     "alertissimo.data_layer.transforms.request:numeric_lower_bound": numeric_lower_bound,
     "alertissimo.data_layer.transforms.temporal:time_bound": time_bound,
@@ -120,6 +127,27 @@ def _binding(declaration: Mapping[str, Any]) -> Mapping[str, Any]:
     if not isinstance(binding, Mapping):
         raise RequestTransformError("binding metadata must be a mapping")
     return binding
+
+
+def time_context_declaration(declaration: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Select an explicit whole-TimeContext encoder for a shared SQL parameter.
+
+    Its ordinary target-ID declaration is preserved for identity-bound lookups.
+    Only a compiled recipe source of step.time_context selects this alternative;
+    no runtime value or text sniffing chooses an encoder.
+    """
+    binding = _binding(declaration)
+    if "time_context" not in binding:
+        return declaration
+    alternate = binding["time_context"]
+    if (not isinstance(alternate, Mapping)
+        or set(alternate) != {"adapter", "adapter_options"}
+        or alternate["adapter"] != "alertissimo.data_layer.transforms.sql:time_window_condition"
+        or not isinstance(alternate["adapter_options"], Mapping)
+        or declaration.get("type") != "string"
+        or binding_roles(declaration) != ("target_id",)):
+        raise RequestTransformError("invalid alternate SQL time_context encoder")
+    return {**declaration, "bind": "time_context", "binding": dict(alternate)}
 
 
 def binding_roles(declaration: Mapping[str, Any]) -> tuple[str, ...]:

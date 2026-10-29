@@ -135,7 +135,8 @@ review, keeping the same order and acceptance boundary.
 | `feat/time-01a-within-syntax` | Shared default/first/last within syntax, IR intent, and safe execution guards |
 | `feat/time-01b-within-membership` | Verify candidate temporal membership in existing discovery finalization |
 | `feat/time-02-alerce-ztf` | Activate default/first/last within using verified ALeRCE evidence |
-| `feat/time-03-lasair-ztf` | Activate default/first/last within using verified Lasair evidence |
+| `feat/time-03a-sql-bindings` | Bind and compose SQL time windows without changing provider activation |
+| `feat/time-03b-lasair-ztf` | Activate default/first/last within using verified Lasair evidence |
 | `feat/time-04-fink-ztf` | Align Fink native windows and admitted first/last modes |
 | `feat/selection-01-latest-admission` | Complete shared latest admission after temporal verification |
 | `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
@@ -385,6 +386,12 @@ Time 02 now prepares ALeRCE ZTF semantic/cone default and first/last within;
 see [its activation runbook](time_02_alerce_ztf.md). Default uses a safe last-date
 minimum plus required detection history; native first/last use closed summary
 ranges. Default composite latest waits for the scheduled shared admission step.
+
+Time 02 is now merged as [PR #307](https://github.com/sambolino/alertissimo/pull/307),
+main `5840d31`. Time 03 is split into a small SQL-binding prerequisite
+([Time 03a](time_03a_sql_bindings.md)) and Lasair activation in Time 03b. The latter
+must distinguish detections from the upper limits in Lasair's mixed history
+array and reject missing/per-object failed evidence before claiming membership.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -651,8 +658,9 @@ not need redesign for this series.
 | 05b | lasair | [#304](https://github.com/sambolino/alertissimo/pull/304), main `92b4879` | Merged; local results not separately reported | Numeric ZTF object-summary discovery; new live outcome not separately reported |
 | Time 01a | within-syntax | [#305](https://github.com/sambolino/alertissimo/pull/305), main `55b6c2f` | Merged; local results not separately reported | Syntax/IR prerequisite |
 | Time 01b | within-membership | [#306](https://github.com/sambolino/alertissimo/pull/306), main `37ba25c` | Merged after reported fixture/runtime fixes; final local count not separately reported | Shared evidence checks; production declarations unchanged |
-| Time 02 | alerce-ztf | Prepared on `feat/time-02-alerce-ztf`; PR pending | Not run here; recorded/synthetic local handoff | Pending on user's machine |
-| Time 03 onward | remaining provider within activation, latest | Next after Time 02 | Pending | Pending |
+| Time 02 | alerce-ztf | [#307](https://github.com/sambolino/alertissimo/pull/307), main `5840d31` | Merged after fixture fixes; final local count not separately reported | No new live result separately reported |
+| Time 03a | sql-bindings | Prepared on `feat/time-03a-sql-bindings`; PR pending | Not run here; synthetic local handoff | No production activation |
+| Time 03b onward | Lasair/Fink within activation, latest | Next after Time 03a | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

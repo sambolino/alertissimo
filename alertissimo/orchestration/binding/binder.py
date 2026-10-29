@@ -33,8 +33,10 @@ from alertissimo.data_layer.transforms.request import (
     binding_roles,
     coerce_physical_type,
     intersect_numeric_ranges,
+    time_context_declaration,
     transform_collection,
 )
+from alertissimo.data_layer.transforms.sql import conjoin_ordered_conditions
 from alertissimo.orchestration.ir.models import Step
 from alertissimo.orchestration.runtime.models import (
     EndpointPlan,
@@ -269,6 +271,11 @@ def _bind_recipe_parameter(
     target_ids_override: tuple[str, ...] | None,
     reference_time: datetime | None = None,
 ) -> tuple[Any, tuple[str, ...]]:
+    if source == ("time_context",):
+        try:
+            declaration = time_context_declaration(declaration)
+        except RequestTransformError as error:
+            raise ParameterBindingError(str(error)) from error
     roles = _binding_roles(declaration)
     if isinstance(source, str):
         if (
@@ -453,6 +460,15 @@ def bind_endpoint(
             )
         declared_roles.extend(roles)
         if value is not None:
+            if (realization is not None and physical_name in realization.params
+                and recipe_sources is not None and recipe_sources.get(physical_name) == ("time_context",)
+                and (time_context_declaration(declaration).get("binding") or {}).get("adapter")
+                == "alertissimo.data_layer.transforms.sql:time_window_condition"):
+                try:
+                    params[physical_name] = conjoin_ordered_conditions(params[physical_name], value)
+                except ValueError as error:
+                    raise ParameterBindingError(f"cannot conjoin SQL conditions for {_context(endpoint_plan)}: {error}") from error
+                continue
             if (realization is not None and physical_name in realization.params
                 and recipe_sources is not None
                 and physical_name in recipe_sources
