@@ -79,7 +79,7 @@ between historical indexing and current classification decoding.
 | ZTF admitted class without a window | Existing physical-default behavior | No invented time context |
 | ZTF semantic first/last within | Deferred before transport | An alert observation-time index cannot discover the complete first/last object population |
 | ZTF cone with any within mode | Deferred before transport | Per-pixel internal limits, grouping and later geometric pruning can hide saturation |
-| ZTF latest | Deferred for the scheduled selection milestone | `n` is an alert ceiling, not global object latest |
+| ZTF latest | Deferred after the [Selection 03 audit](selection_03_fink_ztf.md) | Historical class alerts lack authoritative overall object recency; object histories have a server cap without pagination |
 | Rubin temporal discovery | Deferred | Different tag/index and time-scale contracts need independent verification |
 
 For example, an object first observed on 1 January can become an indexed SN on

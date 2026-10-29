@@ -1,5 +1,9 @@
 broker: fink
 origin: ztf
+# No latest selection proof: latests ranks historical class alerts, while
+# objects histories have a server-configured cap and no pagination.
+# Mapped jdendhist values alone do not establish current object recency.
+# Source audit and counterexample: docs/selection_03_fink_ztf.md.
 predicate_bindings:
   latests:
     - path: classification.best.class

@@ -18,7 +18,9 @@ from alertissimo.data_layer.execution import RegistryEndpointExecutor, Transport
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraphError, build_capability_graph
 from alertissimo.dsl import SurfaceLoweringError
+from alertissimo.orchestration.ir import SearchSelection
 from alertissimo.orchestration.normalization import TimeSelectionError, normalize_workflow_execution, summary_object_identity
+from alertissimo.orchestration.planner import PlanningDeferredError, plan_step
 from alertissimo.orchestration.runtime import WorkflowExecutionError
 
 
@@ -187,6 +189,55 @@ def test_first_last_are_not_inferred_from_an_alert_window(graph, cone, mode):
 def test_cone_window_does_not_inherit_the_ungrouped_class_scan_proof(graph):
     source = "objects from ztf via fink\ninside (120, -6, 5arcsec)\nwithin 10d\n"
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+
+
+@pytest.mark.parametrize("windowed", [False, True])
+@pytest.mark.parametrize("label", ["SN candidate", "Early SN Ia candidate"])
+def test_latest_needs_object_recency_even_with_a_complete_class_window(graph, windowed, label):
+    source = program().replace("SN candidate", label)
+    if not windowed:
+        source = source.replace("within 10d\n", "")
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    step = validation.compilation.workflow.steps[0]
+    with pytest.raises(PlanningDeferredError, match="latest requires"):
+        plan_step(step.model_copy(update={"selection": SearchSelection(latest=1)}), graph)
+
+    # A downstream history request happens after discovery selection. It must
+    # not turn mapped per-alert history dates into an object-recency proof.
+    source += "latest 1\nwith lightcurve via fink\n"
+    assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+    transport = ReplayTransport()
+    with pytest.raises(SurfaceLoweringError, match="latest requires") as raised:
+        execute(source, graph, transport)
+    assert raised.value.code == "deferred_capability"
+    assert transport.calls == []
+
+
+def test_class_alert_recency_can_rank_objects_differently_from_later_history(graph):
+    a = alert(IDS[0], 59011, 1)
+    b = alert(IDS[1], 59012, 2)
+    a["i:jdendhist"], b["i:jdendhist"] = a["i:jd"], b["i:jd"]
+    later_a = alert(IDS[0], 59019, 3)
+    later_a["i:jdendhist"] = later_a["i:jd"]
+    later_a["v:classification"] = "Unknown"
+    transport = ReplayTransport([a, b], objects=[a, b, later_a])
+    result = execute(program(tail="with lightcurve via fink\n"), graph, transport)
+
+    def recencies(portfolios):
+        return {summary_object_identity(p)[1]: max(
+            r.get("time.last_mjd") for r in p.records
+            if r.semantic_type == "summary@ztf:fink" and r.get("time.last_mjd") is not None
+        ) for p in portfolios}
+
+    discovery = recencies(normalize_workflow_execution(result.staged.execution).steps[0].portfolios)
+    enriched = recencies(result.portfolios)
+    assert discovery == {IDS[0]: 59011.0, IDS[1]: 59012.0}
+    assert enriched == {IDS[0]: 59019.0, IDS[1]: 59012.0}
+    assert max(discovery, key=discovery.get) == IDS[1]
+    assert max(enriched, key=enriched.get) == IDS[0]
+    assert identities(result.portfolios) == set(IDS[:2])
+    assert [name for name, _ in transport.calls] == ["latests", "objects"]
 
 
 @pytest.mark.parametrize("padding", [True, -1, "10800", float("inf"), float("nan"), 1e300])

@@ -141,7 +141,7 @@ review, keeping the same order and acceptance boundary.
 | `feat/selection-01-latest-admission` | Complete shared latest admission after temporal verification |
 | `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
 | `feat/selection-02b-lasair-cone` | Prove required summary recency and complete cone population before admitting cone latest |
-| `feat/selection-03-fink-ztf` | Activate complete Fink latest selection |
+| `feat/selection-03-fink-ztf` | Audit Fink latest evidence; activate only if overall object recency is established |
 | `feat/discovery-06-antares-ztf` | Implement verified ANTARES ZTF search with temporal and latest selection |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
@@ -422,6 +422,14 @@ merged as PR #313, integration `1680d38`, including its local fixture correction
 [Selection 02b](selection_02b_lasair_cone.md) prepares required summary coverage
 for cone latest in the existing recipe/planner/normalization paths. Retain the
 focused-local merge discipline.
+
+[Fink latest audit](selection_03_fink_ztf.md) now records a concrete blocker:
+complete historical class alerts can rank objects differently from later object
+history. The `objects` API also has a server-configured cap without an exposed
+exhaustion/newest-summary contract. Selection 03 preserves pre-transport deferral
+and adds counterexample/admission regressions instead of declaring unsupported
+completeness. Carry this limitation into acceptance; ANTARES is next. Fink latest
+activation remains open pending a verified authoritative object-recency source.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -743,8 +751,8 @@ not need redesign for this series.
 | Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
 | Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
 | Selection 02 | Lasair ZTF semantic latest | [#313](https://github.com/sambolino/alertissimo/pull/313), integration `1680d38` | Merged after focused local run and fixture correction | Final acceptance pending |
-| Selection 02b | Lasair cone latest | Prepared on `feat/selection-02b-lasair-cone` | Local handoff; complete required-summary coverage and selected-ID continuation | Final acceptance pending |
-| Selection 03 onward | Fink latest, remaining integration | Next on updated integration branch | Pending | Pending |
+| Selection 02b | Lasair cone latest | [#314](https://github.com/sambolino/alertissimo/pull/314), integration `7b107d9`; matrix correction [#315](https://github.com/sambolino/alertissimo/pull/315), `9f4a7bd` | DSL checkpoint 1,220 passed / one stale matrix assertion, corrected in #315; skipped package check handed off locally | Final acceptance pending |
+| Selection 03 | Fink latest audit | Prepared on `feat/selection-03-fink-ztf` | Local regression handoff; activation blocked by object-recency contract | No live claim; retain explicit deferral |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
