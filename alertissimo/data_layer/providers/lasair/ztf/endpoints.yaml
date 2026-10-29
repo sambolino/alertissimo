@@ -136,11 +136,14 @@ endpoints:
         required: false
         type: integer
         default: 1000
+        role: pagination
+        auto_page_size_max: 1000
         description: Maximum number of records to return.
       offset:
         required: false
         type: integer
         default: 0
+        role: pagination
         description: Offset of the first returned record.
     output: {type: array}
     operation_types: [sql_query]
