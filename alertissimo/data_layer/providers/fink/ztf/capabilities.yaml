@@ -15,11 +15,21 @@ predicate_bindings:
       exact: false
 recipes:
   semantic_search:
+    # Keep searches without an authored window on their physical defaults.
+    - calls:
+        - endpoint: latests
     - calls:
         - endpoint: latests
           params:
             startdate: {from: step.time_context}
             stopdate: {from: step.time_context}
+      time_selection:
+        mode: detection
+        method: native
+        call: 0
+        payload: latests
+        complete: true
+        time_scale: utc
   confirm:
     - calls:
         - endpoint: objects
