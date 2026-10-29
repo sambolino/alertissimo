@@ -121,9 +121,10 @@ class Duration(SurfaceModel):
 
 
 class WithinClause(SurfaceModel):
-    """Time window; a one-value form is a lookback ending at runtime ``now``."""
+    """Candidate time selection; an unqualified window means detection existence."""
 
     kind: Literal["within"] = "within"
+    mode: Literal["detection", "first", "last"] = "detection"
     duration: Duration | None = None
     start: str | None = None
     end: str | None = None

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from importlib.resources import files
+import json
 import re
 from typing import Literal
 
@@ -37,6 +38,7 @@ _ANGLE_RE = re.compile(
     r"^(?P<value>\d+(?:\.\d*)?|\.\d+)(?P<unit>deg|arcmin|arcsec)?$",
     re.IGNORECASE,
 )
+_WITHIN_PREFIX = re.compile(r"^(?:(?:first|last)\s+)?within(?:\s|$)", re.IGNORECASE)
 _CLAUSE_PREFIXES = (
     "inside",
     "within ",
@@ -189,14 +191,22 @@ class _SurfaceTransformer(Transformer):
             radius=_parse_angle(str(items[2])),
         )
 
+    def first_within_mode(self, items):
+        return "first"
+
+    def last_within_mode(self, items):
+        return "last"
+
+    def quoted_window_bound(self, items):
+        return json.loads(str(items[0]))
+
     def within_relative(self, items):
-        return WithinClause(duration=items[0], relative_to="now")
+        mode, duration = ("detection", items[0]) if len(items) == 1 else items
+        return WithinClause(mode=mode, duration=duration, relative_to="now")
 
     def within_explicit(self, items):
-        return WithinClause(
-            start=str(items[0]).strip(),
-            end=str(items[1]).strip(),
-        )
+        mode, start, end = ("detection", *items) if len(items) == 2 else items
+        return WithinClause(mode=mode, start=str(start).strip(), end=str(end).strip())
 
     def latest_clause(self, items):
         return LatestClause(count=int(str(items[0])))
@@ -317,7 +327,8 @@ def _preflight_structure(script: str) -> None:
                 "candidate origins are fixed by the first candidate population statement",
                 line=line_no,
             )
-        if not any(
+        is_within = _WITHIN_PREFIX.match(text) is not None
+        if not is_within and not any(
             lowered == prefix.rstrip() or lowered.startswith(prefix)
             for prefix in _CLAUSE_PREFIXES
         ):
@@ -357,7 +368,7 @@ def _preflight_structure(script: str) -> None:
                     "later refinement",
                     line=line_no,
                 )
-        elif filter_seen and lowered.startswith(("inside", "within ", "latest ")):
+        elif filter_seen and (is_within or lowered.startswith(("inside", "latest "))):
             raise DSLParseError(
                 "inside, within, and latest belong to the initial candidate pass",
                 line=line_no,

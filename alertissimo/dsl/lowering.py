@@ -171,10 +171,10 @@ def _counterpart_source(origin: str, broker: str | None) -> Source:
 
 def _time_context(clause: WithinClause, *, clause_index: int) -> TimeContext:
     if clause.duration is not None:
-        return TimeContext(window=_duration(clause.duration), relative_to="now")
+        return TimeContext(mode=clause.mode, window=_duration(clause.duration), relative_to="now")
     try:
         return TimeContext.model_validate(
-            {"start_time": clause.start, "end_time": clause.end}
+            {"mode": clause.mode, "start_time": clause.start, "end_time": clause.end}
         )
     except ValidationError as exc:
         raise SurfaceLoweringError(
