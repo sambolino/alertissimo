@@ -729,7 +729,7 @@ not need redesign for this series.
 | Time 03b | lasair-ztf | [#309](https://github.com/sambolino/alertissimo/pull/309), main `7536b2d` | Merged after local follow-ups | Provider live evidence remains separate |
 | Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
 | Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
-| Selection 01 | Shared latest admission | Prepared on `feat/selection-01-latest-admission` | Local handoff; intermediate DSL/registry CI after integration merge | No provider calls needed for admission |
+| Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
 | Selection 02 onward | Provider latest, remaining integration | Next on updated integration branch after shared checkpoint | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
