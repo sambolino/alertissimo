@@ -31,9 +31,10 @@ from .models import (
     StepPortfolioResult,
     WorkflowPortfolioResult,
     consolidate_portfolios,
+    summary_object_identity,
 )
 from .predicate import prune_portfolios
-from .selection import apply_search_selection
+from .selection import apply_search_selection, apply_time_selection
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -302,12 +303,14 @@ def _materialize_enrichment_view(
             f"provider step_index {step_run.step_index} material input must reference "
             "an earlier Step"
         )
+    incoming = own.portfolios
+    if any(plan.execution_reuse_from is not None for plan in step_run.endpoint_plans):
+        survivors = {summary_object_identity(portfolio) for portfolio in source.portfolios}
+        incoming = tuple(portfolio for portfolio in incoming if summary_object_identity(portfolio) in survivors)
     return StepPortfolioResult(
         step_index=own.step_index,
         executions=own.executions,
-        materialized_portfolios=consolidate_portfolios(
-            source.portfolios + own.portfolios
-        ),
+        materialized_portfolios=consolidate_portfolios(source.portfolios + incoming),
     )
 
 
@@ -685,7 +688,7 @@ def normalize_workflow_execution(
         )
         normalized_steps.append(
             apply_classification_selection(step, _materialize_enrichment_view(
-                step_run, apply_search_selection(step, own), normalized_steps,
+                step_run, apply_search_selection(step, apply_time_selection(step, step_run, own)), normalized_steps,
             ))
         )
 

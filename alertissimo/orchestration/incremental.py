@@ -161,6 +161,12 @@ def _require_extension_prefix(
                 "new intent changes the previously executed physical plan at "
                 f"step_index {index}; start a fresh execution instead"
             )
+        if any(plan.time_selection is not None for plan in previous_step_run.endpoint_plans):
+            binding = next((item for item in previous.bindings if item.step_index == index), None)
+            if binding is None or binding.reference_time != previous_step_run.time_reference:
+                raise IncrementalExecutionError(
+                    f"previous temporal reference is inconsistent at step_index {index}"
+                )
         if previous_step_run.warnings:
             raise IncrementalExecutionError(
                 "cannot safely continue a prior Step with incomplete supplementary "

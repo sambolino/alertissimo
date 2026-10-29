@@ -280,6 +280,7 @@ def execute_workflow_run(
         succeeded_step = step_run.model_copy(
             update={
                 "state": StepRunState.SUCCEEDED,
+                "time_reference": binding.reference_time,
                 "execution_ids": tuple(
                     item.internal_execution_id.value for item in executions
                 ),

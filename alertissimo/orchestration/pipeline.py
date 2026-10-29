@@ -30,6 +30,7 @@ from alertissimo.orchestration.normalization import (
     prune_portfolios,
     summary_object_identity,
     apply_search_selection,
+    apply_time_selection,
 )
 from alertissimo.orchestration.runtime import (
     StepExecutionResult,
@@ -163,12 +164,14 @@ def _candidate_view_from_step(
     )
     if material_source is None:
         return own
+    incoming = own.portfolios
+    if any(plan.execution_reuse_from is not None for plan in step_run.endpoint_plans):
+        survivors = {summary_object_identity(portfolio) for portfolio in material_source.portfolios}
+        incoming = tuple(portfolio for portfolio in incoming if summary_object_identity(portfolio) in survivors)
     return StepPortfolioResult(
         step_index=step_run.step_index,
         executions=own.executions,
-        materialized_portfolios=consolidate_portfolios(
-            material_source.portfolios + own.portfolios
-        ),
+        materialized_portfolios=consolidate_portfolios(material_source.portfolios + incoming),
     )
 
 
@@ -654,6 +657,7 @@ def execute_staged_workflow_run(
         succeeded = original_step_run.model_copy(
             update={
                 "state": StepRunState.SUCCEEDED,
+                "time_reference": step_reference,
                 "execution_ids": tuple(
                     execution.internal_execution_id.value for execution in executions
                 ),
@@ -684,6 +688,7 @@ def execute_staged_workflow_run(
                 validate_semantic_model=validate_semantic_model,
             )
             view = apply_classification_selection(step, view)
+            view = apply_time_selection(step, succeeded, view)
             view = apply_search_selection(step, view)
             if isinstance(step, ConfirmStep):
                 source_reference = succeeded.material_input_from
