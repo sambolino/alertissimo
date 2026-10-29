@@ -568,7 +568,8 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
     if mode == "detection" and not any(
         canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
-        and item.relative_field_path.endswith((".mag", ".flux")) for item in fields
+        and item.relative_field_path.endswith((".mag", ".flux"))
+        and "limit" not in item.relative_field_path.split(".") for item in fields
     ):
         raise RecipeRegistryError(f"{where}: detection evidence must map ordinary photometry in the same payload")
     if index and {item.source.call_index for item in calls[index].params

@@ -363,20 +363,20 @@ def _filter_candidate_view(
     )
 
 
-def _execution_for_plan(
+def _executions_for_plan(
     step_run: StepRun,
     step_result: StepExecutionResult,
     plan_index: int,
-) -> ExecutionResult:
+) -> tuple[ExecutionResult, ...]:
     plan_indexes = _execution_plan_indexes(step_run, step_result)
-    try:
-        position = plan_indexes.index(plan_index)
-    except ValueError as error:
+    executions = tuple(execution for owner, execution in zip(plan_indexes, step_result.executions)
+                       if owner == plan_index)
+    if not executions:
         raise WorkflowNormalizationAlignmentError(
             "execution reuse references an endpoint plan with no successful execution "
             f"({step_run.step_index}, {plan_index})"
-        ) from error
-    return step_result.executions[position]
+        )
+    return executions
 
 
 def _validate_reuse_alignment(
@@ -385,7 +385,6 @@ def _validate_reuse_alignment(
     step_index: int,
     plan_index: int,
     plan: EndpointPlan,
-    execution: ExecutionResult,
 ) -> None:
     reference = plan.execution_reuse_from
     if reference is None:
@@ -397,8 +396,11 @@ def _validate_reuse_alignment(
     owner_plan = _plan_at(result.run, reference)
     owner_step_run = result.run.steps[reference.step_index]
     owner_step_result = result.steps[reference.step_index]
-    owner_execution = _execution_for_plan(
+    owner_executions = _executions_for_plan(
         owner_step_run, owner_step_result, reference.plan_index
+    )
+    consumer_executions = _executions_for_plan(
+        result.run.steps[step_index], result.steps[step_index], plan_index,
     )
 
     if (
@@ -414,12 +416,12 @@ def _validate_reuse_alignment(
             "reused endpoint plan does not match owner endpoint identity"
         )
     if (
-        owner_execution.internal_execution_id.value
-        != execution.internal_execution_id.value
+        tuple(item.internal_execution_id.value for item in owner_executions)
+        != tuple(item.internal_execution_id.value for item in consumer_executions)
     ):
         raise WorkflowNormalizationAlignmentError(
             f"step_index {step_index} plan {plan_index} does not carry the "
-            "execution ID of its declared reuse owner"
+            "ordered execution IDs of its declared reuse owner"
         )
 
 
@@ -593,6 +595,7 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                 f"results for required endpoint plan indexes {missing_required}"
             )
 
+        validated_reuse = set()
         for execution_position, (plan_index, execution) in enumerate(
             zip(plan_indexes, step_result.executions)
         ):
@@ -612,13 +615,14 @@ def _validate_workflow_alignment(result: WorkflowExecutionResult) -> None:
                     f"endpoint={plan.endpoint}; actual broker={provenance.broker}, "
                     f"origin={provenance.origin}, endpoint={provenance.endpoint}"
                 )
-            _validate_reuse_alignment(
-                result,
-                step_index=step_run.step_index,
-                plan_index=plan_index,
-                plan=plan,
-                execution=execution,
-            )
+            if plan_index not in validated_reuse:
+                _validate_reuse_alignment(
+                    result,
+                    step_index=step_run.step_index,
+                    plan_index=plan_index,
+                    plan=plan,
+                )
+                validated_reuse.add(plan_index)
         actual_ids = tuple(
             execution.internal_execution_id.value
             for execution in step_result.executions

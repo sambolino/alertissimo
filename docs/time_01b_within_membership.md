@@ -126,3 +126,18 @@ Next after merge: **Time 02 — activate ALeRCE ZTF default/first/last within** 
 verified upstream prefilters, history coverage, and request range composition.
 Classification joins and remaining Rubin discovery remain at the end for the
 user-requested discussion.
+
+## Follow-up for the reported local failures
+
+Veljko reported 176 passed and three failures before this fix. Two paths still
+assumed one execution per endpoint plan: reuse validation compared every history
+against only the first owner execution, and continuation collapsed a fan-out
+group to one result/one binding. Both now preserve the full ordered group.
+Reuse still rejects reordered, duplicated, missing, or foreign execution IDs;
+continuation still compares exact pre-executor bound parameters and skips
+semantic reuse rather than replaying it as a provider call.
+
+The ordinary-photometry admission guard now excludes a `limit` path component:
+`photometry.<band>.limit.mag` cannot certify detection existence. The original
+three failing assertions remain intact, with additional fan-out/replay rejection
+regressions. Fix verification is pending local execution; no tests ran here.

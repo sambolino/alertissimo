@@ -17,7 +17,7 @@ from alertissimo.dsl import lower_surface, parse_surface_script
 from alertissimo.orchestration.incremental import IncrementalExecutionError, execute_incremental_workflow_run
 from alertissimo.orchestration.normalization import TimeSelectionError, StepPortfolioResult, apply_time_selection, normalize_workflow_execution, summary_object_identity
 from alertissimo.orchestration.planner import PlanningDeferredError, plan_step, plan_workflow
-from alertissimo.orchestration.runtime import EndpointPlan
+from alertissimo.orchestration.runtime import EndpointPlan, WorkflowExecutionError
 
 
 NOW = datetime(2020, 6, 20, tzinfo=timezone.utc)  # UTC MJD 59020
@@ -273,5 +273,27 @@ def test_continuation_checks_the_pinned_clock_even_without_physical_time_paramet
     binding = first.staged.bindings[0]
     tampered = replace(first.staged, bindings=(replace(binding, reference_time=NOW + timedelta(days=1)),))
     with pytest.raises(IncrementalExecutionError, match="temporal reference is inconsistent"):
+        execute_incremental_workflow_run(plan_workflow(first.workflow, graph), tampered, registry, executor)
+    assert len(executor.calls) == 5
+
+
+def test_continuation_skips_reused_fanout_but_replays_every_original_history_call(tmp_path):
+    first, executor, graph, registry, _ = run(tmp_path, tail="with lightcurve via alerce\n")
+    assert len(executor.calls) == 5
+    second = execute_dsl("with classification via alerce\n", graph=graph, registry=registry,
+                         executor=executor, continue_from=first, reference_time=NOW + timedelta(days=1))
+    assert len(executor.calls) == 8
+    assert identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
+    assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
+    assert second.run.steps[1].execution_ids == first.run.steps[1].execution_ids
+
+
+def test_reordered_bound_history_calls_fail_exact_prefix_replay(tmp_path):
+    first, executor, graph, registry, _ = run(tmp_path)
+    binding = first.staged.bindings[0]
+    calls = list(binding.bound_calls)
+    calls[1], calls[2] = calls[2], calls[1]
+    tampered = replace(first.staged, bindings=(replace(binding, bound_calls=tuple(calls)),))
+    with pytest.raises(WorkflowExecutionError, match="previous physical-call"):
         execute_incremental_workflow_run(plan_workflow(first.workflow, graph), tampered, registry, executor)
     assert len(executor.calls) == 5
