@@ -62,7 +62,9 @@ class NativeClient:
                                 and (len(bounds) == 1 or row[name] <= bounds[1])]
         if params.get("order_by"):
             selected.sort(key=lambda row: row[params["order_by"]], reverse=params["order_mode"] == "DESC")
-        page, size = params["page"], params["page_size"]
+        # The real client defaults to page 1 when the first request omits page;
+        # subsequent requests carry the explicit next page from this response.
+        page, size = params.get("page", 1), params["page_size"]
         batch = selected[(page - 1) * size:page * size]
         more = page * size < len(selected)
         return {"items": batch, "page": page, "has_next": more,
