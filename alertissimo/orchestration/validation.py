@@ -265,7 +265,19 @@ def _search_recipe_evidence(
                     constraints=call.predicate_bindings,
                 ).params if step.predicate is not None else {}
             )
-            missing = tuple(name for name in required_predicates if name not in params)
+            time_parameters = {
+                item.parameter for item in call.params
+                if context is not None and isinstance(item.source, StepValueSource)
+                and item.source.path == ("time_context",)
+            }
+            sql_parameters = {item.parameter for item in call.predicate_bindings if item.sql_column is not None}
+            # A window can supply a required WHERE parameter without a predicate.
+            # An authored SQL predicate must still translate in full; the window
+            # must not hide an unsupported leaf behind its own valid condition.
+            missing = tuple(
+                name for name in required_predicates if name not in params
+                and (name not in time_parameters or step.predicate is not None and name in sql_parameters)
+            )
             if missing:
                 domains = {
                     item.parameter: item.values for item in call.predicate_bindings
