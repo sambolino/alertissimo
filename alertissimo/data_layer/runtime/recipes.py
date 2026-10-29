@@ -757,6 +757,7 @@ def load_provider_capabilities(
                         raise RecipeRegistryError(f"{call_where}: required call depends on an optional call")
                     if index == 0 and issubclass(models[op], SearchStep):
                         bounds = set()
+                        padded = False
                         for assignment in assignments:
                             if isinstance(assignment.source, ConstantValueSource):
                                 continue
@@ -768,8 +769,12 @@ def load_provider_capabilities(
                                 proof_mode = raw_temporal.get("mode", "detection")
                                 try:
                                     bounds.update(time_binding_bounds(declarations[assignment.parameter], mode=proof_mode))
+                                    options = time_context_declaration(declarations[assignment.parameter]).get("binding", {}).get("adapter_options", {})
+                                    padded = padded or bool(options.get("padding_seconds", 0))
                                 except ValueError as exc:
                                     raise RecipeRegistryError(f"{call_where}: {exc}") from exc
+                        if padded and not raw_temporal:
+                            raise RecipeRegistryError(f"{call_where}: padded discovery bounds require time_selection evidence")
                         material_detection = (
                             raw_temporal.get("mode") == "detection"
                             and raw_temporal.get("method") == "material"

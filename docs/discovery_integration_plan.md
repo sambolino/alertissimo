@@ -397,7 +397,13 @@ Time 03a is merged as [PR #308](https://github.com/sambolino/alertissimo/pull/30
 main `108e57e`. [Time 03b](time_03b_lasair_ztf.md) now prepares ZTF semantic/cone
 within activation: actual detection witnesses, required first/last summaries,
 per-object batch response coverage, and source-aligned replay/reuse. Lasair
-latest remains separate. Fink ZTF follows this milestone.
+latest remains separate. Time 03b is merged as PR #309, main `7536b2d`.
+
+[Time 04](time_04_fink_ztf.md) now prepares Fink ZTF's explicit native detection
+proof, conservative physical scan envelope, and exact closed-window recheck.
+Fink first/last and temporal cone discovery remain deferred for the specific
+population/completeness reasons in that audit. Shared latest admission follows
+on `integration/discovery-completion`, using the revised merge discipline below.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -585,6 +591,12 @@ offline/live handoff pass (record unavailable providers separately). If main
 changes, integrate it and verify the resulting final revision before merging.
 Do not use administrative bypasses for a blocked merge.
 
+After the last small PR is merged, remove the three temporary `branches-ignore`
+sections in a cleanup commit on the integration branch before opening its main
+PR. There are no push-triggered jobs in these workflows. This restores the
+original automatic-trigger policy for the completed main branch while the final
+integration PR still receives all applicable checks.
+
 An intermediate manual DSL/registry run is recommended when shared latest
 admission is implemented, since it changes candidate ordering and reuse across
 providers. Flag any earlier change to shared IR, binding, execution, or
@@ -710,7 +722,8 @@ not need redesign for this series.
 | Time 03a | sql-bindings | [#308](https://github.com/sambolino/alertissimo/pull/308), main `108e57e` | Merged; local count not separately reported | No production activation |
 | Time 03b | lasair-ztf | [#309](https://github.com/sambolino/alertissimo/pull/309), main `7536b2d` | Merged after local follow-ups | Provider live evidence remains separate |
 | Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
-| Time 04 onward | Fink within activation, latest | Next on integration branch | Pending | Pending |
+| Time 04 | Fink ZTF within alignment | Prepared on `feat/time-04-fink-ztf`, based on integration branch | Local handoff; native scan edges, exact selection and replay | Pending |
+| Selection 01 onward | Shared/provider latest, remaining integration | Next on updated integration branch | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

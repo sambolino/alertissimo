@@ -146,13 +146,15 @@ def test_new_modes_defer_before_clock_or_provider_execution(graph, monkeypatch, 
         plan_step(step, graph)
 
 
-def test_existing_fink_default_still_validates_and_binds_the_same_physical_parameters(graph):
+def test_fink_default_binds_a_scan_envelope_and_retains_exact_temporal_intent(graph):
     result = validate_dsl(source("within 7d"), graph=graph, continue_from=None)
     assert result.is_runnable, result.lowering_error
     step = result.compilation.workflow.steps[0]
     plan, = plan_step(step, graph)
     bound = bind_endpoint(step, plan, EndpointRegistry(), reference_time=NOW)
-    assert bound.params == {"class": "SN candidate", "startdate": "2026-10-22T12:34:56.123456Z", "stopdate": "2026-10-29T12:34:56.123456Z"}
+    assert bound.params == {"class": "SN candidate", "startdate": "2026-10-22T09:34:56.123456Z", "stopdate": "2026-10-29T15:34:56.123456Z"}
+    assert step.time_context.window == timedelta(days=7)
+    assert plan.time_selection is not None and plan.time_selection.mode == "detection"
 
 
 @pytest.mark.parametrize("mode", ["first", "last"])
