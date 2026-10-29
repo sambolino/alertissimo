@@ -105,16 +105,20 @@ endpoints:
         type: array
         required: false
         description: Inclusive object first-detection MJD range, [minimum] or [minimum, maximum].
-        bind: semantic_predicate
+        bind: time_context
         binding:
-          adapter: alertissimo.data_layer.transforms.request:numeric_lower_bound
+          adapter: alertissimo.data_layer.transforms.request:object_mjd_range
+          adapter_options:
+            field: first
       lastmjd:
         type: array
         required: false
         description: Inclusive object last-detection MJD range, [minimum] or [minimum, maximum]; not an alert-window filter.
-        bind: semantic_predicate
+        bind: time_context
         binding:
-          adapter: alertissimo.data_layer.transforms.request:numeric_lower_bound
+          adapter: alertissimo.data_layer.transforms.request:object_mjd_range
+          adapter_options:
+            field: last
       ra:
         type: number
         required: false

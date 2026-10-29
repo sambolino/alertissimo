@@ -44,6 +44,44 @@ recipes:
   semantic_search:
     - calls:
         - endpoint: query_objects
+    # A last-detection minimum is a safe superset, not proof of an observation
+    # inside a historical interval. Verify the required full detection history.
+    - time_selection:
+        mode: detection
+        method: material
+        call: 1
+        payload: query_lightcurve.detections
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            lastmjd: {from: step.time_context}
+        - endpoint: query_lightcurve
+          params:
+            oid: {from: {call: 0, path: summary.identity.object_id}}
+    - time_selection:
+        mode: first
+        method: native
+        call: 0
+        payload: query_objects
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            firstmjd: {from: step.time_context}
+    - time_selection:
+        mode: last
+        method: native
+        call: 0
+        payload: query_objects
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            lastmjd: {from: step.time_context}
   cone_search:
     - calls:
         - endpoint: query_objects
@@ -51,6 +89,51 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+    - time_selection:
+        mode: detection
+        method: material
+        call: 1
+        payload: query_lightcurve.detections
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+            lastmjd: {from: step.time_context}
+        - endpoint: query_lightcurve
+          params:
+            oid: {from: {call: 0, path: summary.identity.object_id}}
+    - time_selection:
+        mode: first
+        method: native
+        call: 0
+        payload: query_objects
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+            firstmjd: {from: step.time_context}
+    - time_selection:
+        mode: last
+        method: native
+        call: 0
+        payload: query_objects
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query_objects
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+            lastmjd: {from: step.time_context}
   get_lightcurve:
     - calls:
         - endpoint: query_lightcurve

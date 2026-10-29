@@ -89,6 +89,7 @@ class TimeSelectionRealization(RuntimeModel):
     payload: str = Field(min_length=1)
     complete: bool
     time_scale: Literal["utc"]
+    payload_path: str = ""
 
 
 class EndpointPlan(RuntimeModel):

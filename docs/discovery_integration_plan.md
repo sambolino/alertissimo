@@ -379,6 +379,13 @@ work and ANTARES ZTF. Keep
 first/last timestamp filters separate from historical detection existence:
 summary overlap can prefilter, but cannot prove a detection in a gap.
 
+Time 01b is merged as [PR #306](https://github.com/sambolino/alertissimo/pull/306),
+main `37ba25c`, including fan-out reuse/continuation and final material-view fixes.
+Time 02 now prepares ALeRCE ZTF semantic/cone default and first/last within;
+see [its activation runbook](time_02_alerce_ztf.md). Default uses a safe last-date
+minimum plus required detection history; native first/last use closed summary
+ranges. Default composite latest waits for the scheduled shared admission step.
+
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
 handoff remain required. Extend their acceptance with temporal gaps/boundaries,
@@ -643,8 +650,9 @@ not need redesign for this series.
 | 05a | lasair-pagination | [#303](https://github.com/sambolino/alertissimo/pull/303), main `dd12dd2` | Merged; local results not separately reported | Physical paging only; no live result separately reported |
 | 05b | lasair | [#304](https://github.com/sambolino/alertissimo/pull/304), main `92b4879` | Merged; local results not separately reported | Numeric ZTF object-summary discovery; new live outcome not separately reported |
 | Time 01a | within-syntax | [#305](https://github.com/sambolino/alertissimo/pull/305), main `55b6c2f` | Merged; local results not separately reported | Syntax/IR prerequisite |
-| Time 01b | within-membership | Prepared on `feat/time-01b-within-membership`; PR pending | Not run here; synthetic local handoff | Shared evidence checks; production declarations unchanged |
-| Time 02 onward | provider within activation, latest | Next after Time 01b | Pending | Pending |
+| Time 01b | within-membership | [#306](https://github.com/sambolino/alertissimo/pull/306), main `37ba25c` | Merged after reported fixture/runtime fixes; final local count not separately reported | Shared evidence checks; production declarations unchanged |
+| Time 02 | alerce-ztf | Prepared on `feat/time-02-alerce-ztf`; PR pending | Not run here; recorded/synthetic local handoff | Pending on user's machine |
+| Time 03 onward | remaining provider within activation, latest | Next after Time 02 | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
