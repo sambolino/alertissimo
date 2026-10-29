@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
@@ -33,4 +34,20 @@ def string_membership_condition(
     return f"{column} IN ({quoted})"
 
 
-__all__ = ["string_membership_condition"]
+def numeric_comparison(column: str, operator: str, value: Any, *, subtract: float = 0) -> str:
+    """Render a declared numeric comparison; never interpolate arbitrary text.
+
+    Subtraction operates on the raw column, matching the response transform
+    without rounding a canonical bound through an inverse unit conversion.
+    """
+    if not _COLUMN.fullmatch(column) or operator not in {"=", "<", "<=", ">", ">="}:
+        raise ValueError("invalid SQL comparison column or operator")
+    if type(value) not in (int, float) or not math.isfinite(value):
+        raise ValueError("SQL comparison requires a finite numeric literal")
+    if type(subtract) not in (int, float) or not math.isfinite(subtract):
+        raise ValueError("SQL subtraction requires a finite number")
+    expression = f"({column} - {subtract!r})" if subtract else column
+    return f"{expression} {operator} {value!r}"
+
+
+__all__ = ["string_membership_condition", "numeric_comparison"]

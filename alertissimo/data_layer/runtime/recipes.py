@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import inspect
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -356,7 +357,7 @@ def _predicate_bindings(
         for index, raw_binding in enumerate(bindings):
             location = f"{where}[{index}]"
             binding = _mapping(raw_binding, location)
-            _keys(binding, {"path", "operator", "parameter", "values", "exact"}, {"path", "operator", "parameter"}, location)
+            _keys(binding, {"path", "operator", "parameter", "values", "exact", "sql"}, {"path", "operator", "parameter"}, location)
             parameter, path, operator = binding["parameter"], binding["path"], binding["operator"]
             if not isinstance(parameter, str) or parameter not in parameters:
                 raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
@@ -375,6 +376,41 @@ def _predicate_bindings(
                 or roles != ("semantic_predicate",)
             ):
                 raise RecipeRegistryError(f"{location}: numeric_lower_bound requires an array parameter and >= predicate binding")
+            sql_column, sql_subtract, sql_order_by = None, 0, None
+            if "sql" in binding:
+                sql = _mapping(binding["sql"], location)
+                _keys(sql, {"column", "subtract", "order_by"}, {"column", "order_by"}, location)
+                sql_column, sql_subtract, sql_order_by = sql["column"], sql.get("subtract", 0), sql["order_by"]
+                if operator == "!=":
+                    raise RecipeRegistryError(f"{location}: SQL != requires a separate null-semantics contract")
+                if declaration.get("type") != "string" or "semantic_predicate" in roles:
+                    raise RecipeRegistryError(f"{location}: SQL conditions require a physical string parameter without a literal encoder")
+                if any(not isinstance(column, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*", column)
+                       for column in (sql_column, sql_order_by)):
+                    raise RecipeRegistryError(f"{location}: SQL columns must be qualified identifiers")
+                fields = graph.fields_for_endpoint(broker, origin, endpoint)
+                matches = tuple(item for item in fields
+                                if canonical_semantic_path(item.semantic_path) == path
+                                and item.raw_field == sql_column.split(".")[1])
+                identities = tuple(item for item in fields
+                                   if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+                                   and item.raw_field == sql_order_by.split(".")[1])
+                if not matches or not identities or sql_column.split(".")[0] != sql_order_by.split(".")[0]:
+                    raise RecipeRegistryError(f"{location}: SQL column and ordering must reference mapped output and identity")
+                if type(sql_subtract) not in (int, float) or not math.isfinite(sql_subtract):
+                    raise RecipeRegistryError(f"{location}: SQL subtract must be a finite number")
+                transforms = tuple(item for item in graph.transform_capabilities
+                                   if item.broker == broker and item.origin == origin
+                                   and item.semantic_path in {field.semantic_path for field in matches}
+                                   and item.raw_ref in {field.raw_ref for field in matches})
+                # Admit the already implemented JD-to-MJD response arithmetic,
+                # or an untransformed column. Other conversions need their own proof.
+                if (sql_subtract == 2400000.5 and transforms and all(item.transform_type == "jd_to_mjd" for item in transforms)):
+                    pass
+                elif sql_subtract != 0 or transforms:
+                    raise RecipeRegistryError(f"{location}: SQL subtraction must match the output mapping transform")
+                if binding.get("exact", True) is not True or "values" in binding:
+                    raise RecipeRegistryError(f"{location}: numeric SQL bindings require exact comparisons without a values domain")
             exact = binding.get("exact", True)
             if type(exact) is not bool:
                 raise RecipeRegistryError(f"{location}: exact must be boolean")
@@ -390,12 +426,16 @@ def _predicate_bindings(
                     for value in raw_values
                 )
             key = (path, operator)
-            if parameter in seen_parameters or key in seen_constraints:
+            previous = tuple(item for item in compiled if item.endpoint == endpoint and item.parameter == parameter)
+            if key in seen_constraints or parameter in seen_parameters and (
+                sql_column is None or any(item.sql_column is None or item.sql_order_by != sql_order_by for item in previous)
+            ):
                 raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
             seen_parameters.add(parameter)
             seen_constraints.add(key)
             compiled.append(RequestConstraintCapability(
                 broker, origin, endpoint, parameter, path, operator, values, exact,
+                sql_column, sql_subtract, sql_order_by,
             ))
     return tuple(compiled)
 
@@ -599,6 +639,22 @@ def load_provider_capabilities(
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
                     if any(item.parameter in params or item.parameter in fixed for item in call_bindings):
                         raise RecipeRegistryError(f"{call_where}: predicate binding conflicts with a parameter assignment/fixed value")
+                    sql_bindings = tuple(item for item in call_bindings if item.sql_column is not None)
+                    if sql_bindings:
+                        constants = {item.parameter: item.source.value for item in assignments
+                                     if isinstance(item.source, ConstantValueSource)}
+                        projection = spec.get("projection") or {}
+                        selected = constants.get(projection.get("param"))
+                        columns = {item.sql_column for item in sql_bindings} | {item.sql_order_by for item in sql_bindings}
+                        tables = {column.split(".")[0] for column in columns}
+                        if (not projection.get("supports_columns") or not isinstance(selected, str)
+                            or not columns.issubset({column.strip() for column in selected.split(",")})
+                            or len(tables) != 1 or constants.get("tables") not in tables):
+                            raise RecipeRegistryError(f"{call_where}: SQL discovery requires a constant mapped projection and one declared table")
+                        if ("offset" in params or "offset" in fixed
+                            or declarations.get("offset", {}).get("role") != "pagination"
+                            or declarations.get("limit", {}).get("role") != "pagination"):
+                            raise RecipeRegistryError(f"{call_where}: SQL discovery requires automatic limit/offset pagination")
                     latest_selection = next((
                         item for item in selections if item.endpoint == endpoint
                     ), None) if index == 0 and required and issubclass(models[op], SearchStep) else None
@@ -616,9 +672,14 @@ def load_provider_capabilities(
                             and name not in predicate_parameters
                         ):
                             raise RecipeRegistryError(f"{call_where}: required parameter {name!r} has no assignment/default")
+                    outputs = graph.fields_for_endpoint(broker, origin, endpoint)
+                    if sql_bindings:
+                        # Projection evidence is call-specific. A later mapping
+                        # addition cannot invent material absent from SELECT.
+                        projected = {column.strip().split(".")[-1] for column in selected.split(",")}
+                        outputs = tuple(item for item in outputs if item.raw_field in projected)
                     calls.append(RecipeCall(
-                        endpoint, required, tuple(assignments),
-                        graph.fields_for_endpoint(broker, origin, endpoint),
+                        endpoint, required, tuple(assignments), outputs,
                         call_bindings,
                         latest_selection,
                     ))

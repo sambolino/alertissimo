@@ -322,9 +322,11 @@ python -m pytest -q tests/test_alerce_semantic_search.py tests/test_alerce_ztf_e
 Split into **05a**, physical offset pagination and the account-clamping safeguard,
 and **05b**, scientific predicate-to-SQL translation. 05a leaves semantic-search
 admission and the target-ID condition encoder unchanged. See
-[the paging runbook](discovery_05a_lasair_pagination.md). Create 05b only after 05a
-is merged. It must supply stable query ordering and scientific projection; offset
-mechanics alone do not establish population or snapshot completeness.
+[the paging runbook](discovery_05a_lasair_pagination.md). 05a is merged as
+[#303](https://github.com/sambolino/alertissimo/pull/303), main `dd12dd2`.
+The 05b handoff is documented in [its runbook](discovery_05b_lasair.md). It supplies
+stable query ordering and a scientific projection; offset mechanics alone do not
+establish population or snapshot completeness.
 
 Use the existing query endpoint to implement a deliberately bounded subset of
 semantic discovery over verified fields. Start with object identity/summary,
@@ -605,8 +607,8 @@ not need redesign for this series.
 | 03a | fink-result-limit | [#296](https://github.com/sambolino/alertissimo/pull/296), main `1ced30e` | Merged; local results not separately reported | No live outcome separately reported |
 | 03b | fink | [#300](https://github.com/sambolino/alertissimo/pull/300), main `9c09896` | Merged after CI regression fix; local results not separately reported | Two ZTF labels admitted; live outcome not separately reported |
 | 04 | alerce | [#302](https://github.com/sambolino/alertissimo/pull/302), main `0ab4fca` | Merged after fixture fixes; local results not separately reported | Explicit object-MJD predicates; live result not separately reported |
-| 05a | lasair-pagination | Prepared on `feat/discovery-05a-lasair-pagination`; PR pending | Not run here; local handoff | No semantic activation or live broker calls |
-| 05b | lasair | Pending; after 05a merge | Pending | Pending |
+| 05a | lasair-pagination | [#303](https://github.com/sambolino/alertissimo/pull/303), main `dd12dd2` | Merged; local results not separately reported | Physical paging only; no live result separately reported |
+| 05b | lasair | Prepared on `feat/discovery-05b-lasair`; PR pending | Not run here; local handoff | Numeric ZTF object-summary conjunctions; Rubin semantic discovery deferred; no live calls |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

@@ -64,9 +64,8 @@ def test_owned_fink_discovery_requires_an_eligible_class_before_planning(graph):
     assert plan.predicate_realization.residual == predicate
 
 
-@pytest.mark.parametrize("origin", ["ztf", "lsst"])
-def test_lasair_without_a_generic_discovery_contract_remains_unsupported(graph, origin):
-    step = search("lasair", origin)
+def test_lasair_rubin_without_a_verified_discovery_contract_remains_unsupported(graph):
+    step = search("lasair", "lsst")
     assert validate_step_capabilities(step, graph).status == "unsupported"
     with pytest.raises(UnsupportedStepError):
         plan_step(step, graph)
