@@ -120,3 +120,14 @@ declaration cases. The other failure came from an optional-supplement fixture
 including newly required temporal alternatives; that fixture now isolates its
 original unwindowed contract and retains its unsupported-family assertion.
 No tests ran here; verification of this follow-up is pending the local rerun.
+
+The rerun reached 197 passes with two continuation assertions failing. Those
+assertions incorrectly expected a repeated `with lightcurve via lasair` clause
+to emit another retrieval: continuation lowering deliberately deduplicates an
+existing requirement, even after a filter. The cases now assert no extra call,
+the existing execution IDs, and the filtered survivor with its full history.
+A separate parameterization continues from discovery without that prior
+requirement: it must emit a fresh post-filter retrieval, bind only the survivor,
+and carry no discovery-reuse reference. Both paths retain the original clock
+and leave the parent results unchanged. Production behavior is unchanged; this
+test correction awaits local verification.

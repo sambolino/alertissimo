@@ -166,7 +166,8 @@ def test_production_modes_select_candidates_from_their_own_required_evidence(gra
 
 
 @pytest.mark.parametrize("cone", [False, True])
-def test_reuse_and_continuation_preserve_survivors_and_do_not_repeat_history(graph, monkeypatch, cone):
+@pytest.mark.parametrize("repeat_requirement", [False, True], ids=["first-retrieval-after-filter", "existing-retrieval"])
+def test_reuse_and_continuation_preserve_survivors_and_do_not_repeat_history(graph, monkeypatch, cone, repeat_requirement):
     transport, registry, executor = replay(monkeypatch)
     first = execute_dsl(program(cone=cone), graph=graph, registry=registry, executor=executor,
                         continue_from=None, reference_time=NOW)
@@ -177,12 +178,31 @@ def test_reuse_and_continuation_preserve_survivors_and_do_not_repeat_history(gra
     assert identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
     assert second.run.steps[1].endpoint_plans[0].execution_reuse_from.plan_index == (2 if cone else 1)
     assert second.run.steps[0].time_reference == NOW
+    # An existing requirement is deduplicated by continuation lowering. Starting
+    # from discovery alone instead emits a new retrieval after the filter, where
+    # the candidate barrier forbids reusing the unfiltered discovery history.
+    parent = second if repeat_requirement else first
     third = execute_dsl("filter summary.detection_count >= 8\nwith lightcurve via lasair\n",
-                        graph=graph, registry=registry, executor=executor, continue_from=second,
+                        graph=graph, registry=registry, executor=executor, continue_from=parent,
                         reference_time=NOW + timedelta(days=2))
-    assert len(transport.calls) == old_calls + 1
-    assert transport.calls[-1] == ("lightcurves", {"objectIds": IDS[3]})
+    if repeat_requirement:
+        assert len(transport.calls) == old_calls
+        assert [step.op for step in third.workflow.steps] == [first.workflow.steps[0].op, "get_lightcurve", "filter"]
+        assert third.run.steps[1].execution_ids == second.run.steps[1].execution_ids
+    else:
+        assert len(transport.calls) == old_calls + 1
+        assert transport.calls[-1] == ("lightcurves", {"objectIds": IDS[3]})
+        assert [step.op for step in third.workflow.steps] == [first.workflow.steps[0].op, "filter", "get_lightcurve"]
+        plan, = third.run.steps[2].endpoint_plans
+        assert plan.execution_reuse_from is None
+        assert plan.candidate_input_from.step_index == 1
     assert identities(third.portfolios) == {IDS[3]}
+    assert third.run.steps[0].time_reference == NOW
+    assert identities(first.portfolios) == identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
+    detections = [record for record in third.portfolios[0].records
+                  if record.semantic_type == "detection@ztf:lasair"
+                  and record.get("photometry.g.psf.mag") is not None]
+    assert {record.get("time.mjd") for record in detections} == set(HISTORY[IDS[3]])
 
 
 def test_batch_boundaries_preserve_full_execution_groups_on_reuse(graph, monkeypatch):
