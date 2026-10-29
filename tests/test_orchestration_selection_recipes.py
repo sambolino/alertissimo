@@ -1,6 +1,7 @@
 """Latest selects a complete semantic population, never one provider page."""
 
 from itertools import count
+from datetime import timedelta
 from pathlib import Path
 import shutil
 
@@ -23,7 +24,7 @@ from alertissimo.orchestration.binding import bind_endpoint
 from alertissimo.orchestration.incremental import execute_incremental_workflow_run
 from alertissimo.orchestration.ir import (
     ComparisonPredicate, ConeSearchStep, GetLightcurveStep, PredicateLiteral,
-    SearchSelection, SemanticReference, SemanticSearchStep, Source, WorkflowIR,
+    SearchSelection, SemanticReference, SemanticSearchStep, Source, TimeContext, WorkflowIR,
 )
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult, SearchSelectionError, StepPortfolioResult,
@@ -139,6 +140,51 @@ def test_recipe_cannot_narrow_latest_to_one_explicit_page(tmp_path):
     edit_yaml(destination / "capabilities.yaml", single_page)
     step = ConeSearchStep(**search().model_dump(exclude={"op"}), ra=120, dec=-6, radius=30)
     assert validate_step_capabilities(step, build_capability_graph(root)).status == "deferred"
+
+
+@pytest.mark.parametrize("change", [
+    "incomplete_membership", "unwindowed_composite", "explicit_page",
+    "history_top_n", "projection_recency", "projection_predicate",
+])
+def test_composite_latest_requires_complete_membership_and_discovery_material(tmp_path, change):
+    root, destination = local_provider(tmp_path)
+    context = TimeContext(window=timedelta(days=10), relative_to="now")
+    predicate = None
+    def capabilities(doc):
+        recipe = doc["recipes"]["semantic_search"][1]
+        if change == "incomplete_membership":
+            recipe["time_selection"]["complete"] = False
+        elif change == "unwindowed_composite":
+            doc["recipes"]["semantic_search"][0]["calls"].append(recipe["calls"][1])
+        elif change == "explicit_page":
+            recipe["calls"][0]["params"]["page"] = {"value": 1}
+        elif change == "history_top_n":
+            recipe["calls"][1]["params"]["fixture_limit"] = {"from": "step.selection.latest"}
+        else:
+            recipe["calls"][0]["params"]["fixture_columns"] = {
+                "value": "oid" if change == "projection_recency" else "oid,lastmjd",
+            }
+    edit_yaml(destination / "capabilities.yaml", capabilities)
+    if change == "history_top_n":
+        def endpoints(doc):
+            doc["endpoints"]["query_lightcurve"]["params"]["fixture_limit"] = {"type": "integer"}
+        edit_yaml(destination / "endpoints.yaml", endpoints)
+    if change.startswith("projection_"):
+        def endpoints(doc):
+            endpoint = doc["endpoints"]["query_objects"]
+            endpoint["params"]["fixture_columns"] = {"type": "string", "role": "projection"}
+            endpoint["projection"] = {"supports_columns": True, "param": "fixture_columns"}
+        edit_yaml(destination / "endpoints.yaml", endpoints)
+    if change == "projection_predicate":
+        predicate = ComparisonPredicate(left=SemanticReference(semantic_type="summary", field_path="time.first_mjd"),
+                                        operator=">=", right=PredicateLiteral(value=58000))
+    if change == "unwindowed_composite":
+        context = None
+    step = search(time_context=context, predicate=predicate)
+    graph = build_capability_graph(root)
+    assert validate_step_capabilities(step, graph).status == "deferred"
+    with pytest.raises(PlanningDeferredError, match="latest requires"):
+        plan_step(step, graph)
 
 
 def test_selection_uses_authored_physical_parameter_names(tmp_path):

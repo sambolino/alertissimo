@@ -402,8 +402,14 @@ latest remains separate. Time 03b is merged as PR #309, main `7536b2d`.
 [Time 04](time_04_fink_ztf.md) now prepares Fink ZTF's explicit native detection
 proof, conservative physical scan envelope, and exact closed-window recheck.
 Fink first/last and temporal cone discovery remain deferred for the specific
-population/completeness reasons in that audit. Shared latest admission follows
-on `integration/discovery-completion`, using the revised merge discipline below.
+population/completeness reasons in that audit. Time 04 is merged as PR #310,
+integration commit `4356353`.
+
+[Shared latest admission](selection_01_latest_admission.md) now prepares complete
+temporal composites for ALeRCE ZTF, while retaining declared discovery ordering,
+projection/material checks, complete membership evidence and selected-ID
+continuation. Its integration merge is the intermediate shared DSL/registry CI
+checkpoint. Lasair latest follows after that checkpoint.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -722,8 +728,9 @@ not need redesign for this series.
 | Time 03a | sql-bindings | [#308](https://github.com/sambolino/alertissimo/pull/308), main `108e57e` | Merged; local count not separately reported | No production activation |
 | Time 03b | lasair-ztf | [#309](https://github.com/sambolino/alertissimo/pull/309), main `7536b2d` | Merged after local follow-ups | Provider live evidence remains separate |
 | Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
-| Time 04 | Fink ZTF within alignment | Prepared on `feat/time-04-fink-ztf`, based on integration branch | Local handoff; native scan edges, exact selection and replay | Pending |
-| Selection 01 onward | Shared/provider latest, remaining integration | Next on updated integration branch | Pending | Pending |
+| Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
+| Selection 01 | Shared latest admission | Prepared on `feat/selection-01-latest-admission` | Local handoff; intermediate DSL/registry CI after integration merge | No provider calls needed for admission |
+| Selection 02 onward | Provider latest, remaining integration | Next on updated integration branch after shared checkpoint | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
