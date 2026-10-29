@@ -130,7 +130,8 @@ review, keeping the same order and acceptance boundary.
 | `feat/discovery-03a-fink-result-limit` | Reject visibly saturated Fink JSON responses through the existing executor and record the provider contract audit |
 | `feat/discovery-03b-fink` | Activate verified Fink ZTF class/time discovery using the cap guard; keep Rubin tag search separate |
 | `feat/discovery-04-alerce` | Complete admitted class/time search combinations in existing ALeRCE recipes |
-| `feat/discovery-05-lasair` | Implement a bounded, declared semantic-search translation for verified Lasair query fields |
+| `feat/discovery-05a-lasair-pagination` | Exhaust declared offset queries while preserving existing explicit pages |
+| `feat/discovery-05b-lasair` | Implement a bounded, declared semantic-search translation for verified Lasair query fields |
 | `feat/discovery-06-antares` | Implement a bounded, declared semantic-search translation for verified ANTARES query fields |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
@@ -317,6 +318,13 @@ python -m pytest -q tests/test_alerce_semantic_search.py tests/test_alerce_ztf_e
 ```
 
 ### PR 05 — Lasair semantic discovery
+
+Split into **05a**, physical offset pagination and the account-clamping safeguard,
+and **05b**, scientific predicate-to-SQL translation. 05a leaves semantic-search
+admission and the target-ID condition encoder unchanged. See
+[the paging runbook](discovery_05a_lasair_pagination.md). Create 05b only after 05a
+is merged. It must supply stable query ordering and scientific projection; offset
+mechanics alone do not establish population or snapshot completeness.
 
 Use the existing query endpoint to implement a deliberately bounded subset of
 semantic discovery over verified fields. Start with object identity/summary,
@@ -596,8 +604,9 @@ not need redesign for this series.
 | 02b | time-bindings | [#295](https://github.com/sambolino/alertissimo/pull/295), main `d91106e` | All three CI workflows passed; local results not separately reported | No provider activation |
 | 03a | fink-result-limit | [#296](https://github.com/sambolino/alertissimo/pull/296), main `1ced30e` | Merged; local results not separately reported | No live outcome separately reported |
 | 03b | fink | [#300](https://github.com/sambolino/alertissimo/pull/300), main `9c09896` | Merged after CI regression fix; local results not separately reported | Two ZTF labels admitted; live outcome not separately reported |
-| 04 | alerce | Prepared on `feat/discovery-04-alerce`; PR pending | Not run here; local handoff | Explicit object-MJD predicates; generic within deferred |
-| 05 | lasair | Pending | Pending | Pending |
+| 04 | alerce | [#302](https://github.com/sambolino/alertissimo/pull/302), main `0ab4fca` | Merged after fixture fixes; local results not separately reported | Explicit object-MJD predicates; live result not separately reported |
+| 05a | lasair-pagination | Prepared on `feat/discovery-05a-lasair-pagination`; PR pending | Not run here; local handoff | No semantic activation or live broker calls |
+| 05b | lasair | Pending; after 05a merge | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

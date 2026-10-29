@@ -110,6 +110,46 @@ class RegistryEndpointExecutor:
             return None
         return "page", "page_size" if "page_size" in pagination else None
 
+    @staticmethod
+    def _offset_parameters(spec: EndpointSpec) -> tuple[str, str] | None:
+        pagination = {
+            name for name, contract in spec.params.items()
+            if (contract or {}).get("role") == "pagination"
+        }
+        if not pagination.intersection({"offset", "limit"}):
+            return None
+        if not {"offset", "limit"} <= pagination or "page" in pagination:
+            raise EndpointPaginationError(
+                "offset pagination requires a declared limit/offset pair without page pagination"
+            )
+        return "offset", "limit"
+
+    @staticmethod
+    def _offset_controls(
+        spec: EndpointSpec, params: Mapping[str, Any], *, explicit_offset: bool,
+    ) -> tuple[int, int] | None:
+        names = RegistryEndpointExecutor._offset_parameters(spec)
+        if names is None or explicit_offset:
+            return None
+        offset_name, limit_name = names
+        offset, limit = params.get(offset_name, 0), params.get(limit_name)
+        if type(offset) is not int or offset < 0 or type(limit) is not int or limit <= 0:
+            raise EndpointPaginationError("offset must be a non-negative integer and limit a positive integer")
+        # Some APIs silently clamp a requested page according to account class.
+        # A shorter page could then look exhausted. The declaration records a
+        # universally safe auto-paging size, not a false absolute API maximum.
+        ceiling = (spec.params[limit_name] or {}).get("auto_page_size_max")
+        if ceiling is not None:
+            if type(ceiling) is not int or ceiling <= 0:
+                raise EndpointPaginationError("auto_page_size_max must be a positive integer")
+            if limit > ceiling:
+                raise EndpointPaginationError(
+                    f"automatic offset pagination requires {limit_name} <= "
+                    f"auto_page_size_max={ceiling}; the provider may clamp larger pages. "
+                    "Use a safe page size, or select an explicit offset for one bounded response."
+                )
+        return offset, limit
+
     def _auto_paginated_params(
         self,
         spec: EndpointSpec,
@@ -219,7 +259,10 @@ class RegistryEndpointExecutor:
         ]
         if not names:
             return None
-        if len(names) != 1 or RegistryEndpointExecutor._page_parameters(spec):
+        if (
+            len(names) != 1 or RegistryEndpointExecutor._page_parameters(spec)
+            or RegistryEndpointExecutor._offset_parameters(spec)
+        ):
             raise EndpointPaginationError(
                 "result_limit requires one ceiling on a non-paginated JSON array"
             )
@@ -384,6 +427,42 @@ class RegistryEndpointExecutor:
 
         return first
 
+    def _execute_with_offsets(
+        self, transport: Any, spec: EndpointSpec, params: Mapping[str, Any],
+        headers: Mapping[str, str] | None, controls: tuple[int, int],
+    ) -> TransportResult:
+        """Exhaust a declared JSON-array offset query as one logical execution.
+
+        Stable ordering and a consistent provider population remain caller/query
+        obligations. Offset mechanics alone do not provide snapshot isolation.
+        """
+        offset, limit = controls
+        results: list[TransportResult] = []
+        merged: list[Any] = []
+        while True:
+            if len(results) >= self.policy.max_auto_pages:
+                raise self._policy_limit_error(spec)
+            page_params = {**params, "offset": offset}
+            result = self._call_transport(transport, spec, page_params, headers)
+            payload = result.payload
+            if not isinstance(payload, list):
+                raise EndpointPaginationError(
+                    f"offset pagination expected a JSON array for "
+                    f"{spec.broker}/{spec.origin}/{spec.endpoint} at offset {offset}"
+                )
+            if len(payload) > limit:
+                raise EndpointPaginationError("offset response exceeded the requested limit")
+            if payload and any(payload == prior.payload for prior in results):
+                raise EndpointPaginationError(f"offset pagination repeated page content at offset {offset}")
+            results.append(result)
+            merged.extend(payload)
+            if len(payload) < limit:
+                return self._merge_transport_results(
+                    results[0], result, payload=merged,
+                    raw_size_bytes=self._summed_raw_size(results),
+                )
+            offset += limit
+
     def execute(
         self,
         broker: str,
@@ -401,19 +480,26 @@ class RegistryEndpointExecutor:
             validated,
             caller_supplied_page=caller_supplied_page,
         )
+        explicit_offset = "offset" in supplied or "offset" in spec.fixed_params
+        offset_controls = self._offset_controls(spec, validated, explicit_offset=explicit_offset)
         result_limit = self._json_result_limit(spec, validated)
         resolved_headers = self._resolved_headers(spec, headers)
         execution_id = self.execution_id_factory()
         started = datetime.now(timezone.utc)
         timer = perf_counter()
         transport = self.transports[spec.transport_kind]
-        transport_result = self._execute_with_pagination(
-            transport,
-            spec,
-            validated,
-            resolved_headers,
-            caller_supplied_page=caller_supplied_page,
-        )
+        if offset_controls is not None:
+            transport_result = self._execute_with_offsets(
+                transport, spec, validated, resolved_headers, offset_controls,
+            )
+        else:
+            transport_result = self._execute_with_pagination(
+                transport,
+                spec,
+                validated,
+                resolved_headers,
+                caller_supplied_page=caller_supplied_page,
+            )
         self._check_result_limit(spec, transport_result, result_limit)
         elapsed_ms = (perf_counter() - timer) * 1000
         finished = datetime.now(timezone.utc)
