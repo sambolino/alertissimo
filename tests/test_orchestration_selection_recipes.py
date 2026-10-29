@@ -99,6 +99,14 @@ def test_invalid_selection_claims_fail_at_loading(tmp_path, change, message):
         selection = doc["selection_bindings"]["query_objects"]["latest"]
         if change == "path":
             selection["path"] = "summary.time.first_mjd"
+        elif change == "mapping":
+            # Isolate the selection proof. The removed output also backs a
+            # predicate binding now; leave no unrelated invalid declaration
+            # that could fail registry compilation before selection is checked.
+            doc["predicate_bindings"]["query_objects"] = [
+                binding for binding in doc["predicate_bindings"]["query_objects"]
+                if binding["path"] != "summary.time.last_mjd"
+            ]
         elif change == "direction":
             selection["params"]["order_mode"]["value"] = "ASC"
         elif change == "ordering_field":

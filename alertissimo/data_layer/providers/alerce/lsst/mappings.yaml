@@ -78,8 +78,10 @@ mappings:
   summary@lsst:alerce.position.dec_error:
   - query_object#sigmadec
   summary@lsst:alerce.time.first_mjd:
+  - query_objects#firstmjd
   - query_object#firstmjd
   summary@lsst:alerce.time.last_mjd:
+  - query_objects#lastmjd
   - query_object#lastmjd
   summary@lsst:alerce.time.timespan_days:
   - query_object#deltamjd

@@ -74,13 +74,19 @@ endpoints:
         required: false
         description: Physical probability parameter accepted by query_objects.
       firstmjd:
-        type: number
+        type: array
         required: false
-        description: Physical firstmjd parameter accepted by query_objects.
+        description: Inclusive object first-detection MJD range, [minimum] or [minimum, maximum], in the provider's reported scale.
+        bind: semantic_predicate
+        binding:
+          adapter: alertissimo.data_layer.transforms.request:numeric_lower_bound
       lastmjd:
-        type: number
+        type: array
         required: false
-        description: Physical lastmjd parameter accepted by query_objects.
+        description: Inclusive object last-detection MJD range, [minimum] or [minimum, maximum], in the provider's reported scale; not an alert-window filter.
+        bind: semantic_predicate
+        binding:
+          adapter: alertissimo.data_layer.transforms.request:numeric_lower_bound
       ra:
         type: number
         required: false

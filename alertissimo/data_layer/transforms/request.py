@@ -8,6 +8,7 @@ selection, providers, or execution state.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+import math
 from typing import Any
 
 from .astropy import angle_arcsec, skycoord_icrs_degrees
@@ -23,7 +24,20 @@ class UnsupportedRequestTransformError(RequestTransformError):
     """A declared request transform cannot represent the supplied cardinality."""
 
 
+def numeric_lower_bound(*, semantic_predicate: Any) -> list[float]:
+    """Encode a finite numeric minimum as a one-element inclusive range.
+
+    The predicate binding owns the >= operator. This transform only represents
+    its already selected literal in a physical [minimum] array; no time scale,
+    clock, provider, or semantic-field choice is inferred here.
+    """
+    if type(semantic_predicate) not in (int, float) or not math.isfinite(semantic_predicate):
+        raise RequestTransformError("numeric lower bound requires a finite numeric literal")
+    return [float(semantic_predicate)]
+
+
 _REQUEST_ADAPTERS: Mapping[str, Callable[..., Any]] = {
+    "alertissimo.data_layer.transforms.request:numeric_lower_bound": numeric_lower_bound,
     "alertissimo.data_layer.transforms.temporal:time_bound": time_bound,
     "alertissimo.data_layer.transforms.astropy:skycoord_icrs_degrees": (
         skycoord_icrs_degrees

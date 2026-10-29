@@ -73,14 +73,23 @@ def test_endpoints_remain_physical_contracts(origin):
         assert "post_filter" in endpoint
         for name, parameter in endpoint.get("params", {}).items():
             assert parameter.get("description"), name
-        stack = [endpoint]
+        stack = [(endpoint, ())]
         while stack:
-            value = stack.pop()
+            value, path = stack.pop()
             if isinstance(value, dict):
-                assert forbidden.isdisjoint(value)
-                stack.extend(value.values())
+                # Value encoders belong to physical parameter declarations.
+                # They are not endpoint-level semantic planning capabilities.
+                parameter = len(path) == 2 and path[0] == "params"
+                disallowed = forbidden - {"binding"} if parameter else forbidden
+                assert disallowed.isdisjoint(value)
+                if parameter and "binding" in value:
+                    assert value.get("bind")
+                    assert set(value["binding"]) <= {
+                        "adapter", "adapter_options", "collection", "max_items",
+                    }
+                stack.extend((child, path + (key,)) for key, child in value.items())
             elif isinstance(value, list):
-                stack.extend(value)
+                stack.extend((child, path + (index,)) for index, child in enumerate(value))
 
 
 @pytest.mark.parametrize("origin", ORIGINS)

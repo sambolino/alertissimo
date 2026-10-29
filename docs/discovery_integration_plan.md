@@ -238,8 +238,8 @@ Split into **03a**, the physical JSON response-cap guard and source audit, and
 03a does not activate semantic discovery or claim that every unsaturated response
 is complete. The audit found provider-side grouping and post-filtering for some
 routes; those require separate admission evidence. See
-[the 03a runbook](discovery_03a_fink_result_limit.md). 03a is merged; 03b is
-prepared from that baseline and activates the two audited ordinary SN-class
+[the 03a runbook](discovery_03a_fink_result_limit.md). 03a and 03b are merged.
+03b activates the two audited ordinary SN-class
 labels with normalized response rechecking. See
 [the 03b runbook](discovery_03b_fink.md) for the exact support matrix and limits.
 Window subdivision, if added, must preserve verified boundary semantics
@@ -286,6 +286,15 @@ python -m pytest -q tests/test_fink_semantic_search.py tests/test_fink_ztf_autho
 ```
 
 ### PR 04 — Complete ALeRCE discovery combinations
+
+The implementation audit established native **object first/latest MJD** filters,
+not an equivalent historical alert-window search. PR 04 therefore implements
+explicit `summary.time.first_mjd` / `summary.time.last_mjd` predicates and ZTF
+class/model bindings; generic `within` remains deferred. It uses existing predicate
+realization and binding, without reinterpreting TimeContext or choosing its time
+axis implicitly. See [the runbook](discovery_04_alerce.md) for the exact boundary,
+range encoding, and support matrix. PR 02b's UTC clock machinery remains available
+where a provider's window equivalence is established.
 
 Extend the existing semantic-search recipes with verified classification and time
 translations for ZTF and Rubin. Reuse PR 02's binding machinery. Check physical
@@ -586,8 +595,8 @@ not need redesign for this series.
 | 02a | predicate-bindings | [#294](https://github.com/sambolino/alertissimo/pull/294), main `7f7165d` | Merged; local results not separately reported | No provider activation |
 | 02b | time-bindings | [#295](https://github.com/sambolino/alertissimo/pull/295), main `d91106e` | All three CI workflows passed; local results not separately reported | No provider activation |
 | 03a | fink-result-limit | [#296](https://github.com/sambolino/alertissimo/pull/296), main `1ced30e` | Merged; local results not separately reported | No live outcome separately reported |
-| 03b | fink | Prepared on `feat/discovery-03b-fink`; PR pending | Not run here; local handoff | Two ZTF labels admitted; cap errors explicit; Rubin class search deferred |
-| 04 | alerce | Pending | Pending | Pending |
+| 03b | fink | [#300](https://github.com/sambolino/alertissimo/pull/300), main `9c09896` | Merged after CI regression fix; local results not separately reported | Two ZTF labels admitted; live outcome not separately reported |
+| 04 | alerce | Prepared on `feat/discovery-04-alerce`; PR pending | Not run here; local handoff | Explicit object-MJD predicates; generic within deferred |
 | 05 | lasair | Pending | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |

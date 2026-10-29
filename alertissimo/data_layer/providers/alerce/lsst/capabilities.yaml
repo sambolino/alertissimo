@@ -11,6 +11,12 @@ predicate_bindings:
     - path: classification.best.probability
       operator: ">="
       parameter: probability
+    - path: summary.time.first_mjd
+      operator: ">="
+      parameter: firstmjd
+    - path: summary.time.last_mjd
+      operator: ">="
+      parameter: lastmjd
 recipes:
   confirm:
     - calls:
