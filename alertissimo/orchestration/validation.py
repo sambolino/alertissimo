@@ -941,11 +941,41 @@ def _candidate_evidence_for_source(
         recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
         if step.semantic_type != "summary" or binding is None:
             continue
+        temporal = recipe.time_selection if recipe is not None else None
         if step.criteria or getattr(step, "time_context", None) is not None and (
-            recipe is None or recipe.time_selection is None
+            temporal is None or not temporal.complete
         ):
             continue
-        fields = graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        if recipe is not None and (
+            recipe.calls[0].latest_selection is None
+            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
+            or len(recipe.calls) > 1 and (temporal is None or not temporal.complete)
+            or any(
+                source.path[0] == "selection"
+                for call in recipe.calls for item in call.params
+                for source in (tuple(value for _, value in item.source.inputs)
+                               if isinstance(item.source, EncoderValueSource) else (item.source,))
+                if isinstance(source, StepValueSource)
+            )
+        ):
+            continue
+        # Predicates are applied to discovery material before supplementary
+        # calls. A mapping on another call, or outside an authored projection,
+        # cannot establish that this candidate population is fully selected.
+        fields = recipe.calls[0].outputs if recipe is not None else graph.fields_for_endpoint(
+            endpoint.broker, endpoint.origin, endpoint.endpoint
+        )
+        if recipe is not None and endpoint.supports_projection:
+            projection = next((item.source for item in recipe.calls[0].params
+                               if item.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                fields = tuple(item for item in fields if item.raw_field in columns)
+        if not all(any(canonical_semantic_path(item.semantic_path) == path for item in fields)
+                   for path in ("summary.identity.object_id", binding.path)):
+            continue
         if step.predicate is not None and any(
             not any(
                 (canonical_semantic_path(item.semantic_path) == reference.ontology_path
@@ -961,18 +991,13 @@ def _candidate_evidence_for_source(
             for reference in iter_semantic_references(step.predicate)
         ):
             continue
-        if recipe is not None and (
-            len(recipe.calls) != 1 or recipe.calls[0].latest_selection is None
-            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
-        ):
-            continue
         compatible.append(endpoint)
         if recipe is not None:
             recipes.append(recipe)
     return replace(
         evidence, compatible=tuple(compatible), recipes=tuple(recipes),
         empty_status="deferred",
-        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; composite or untranslated populations are deferred",
+        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; temporal composites also require complete membership evidence",
     )
 
 
