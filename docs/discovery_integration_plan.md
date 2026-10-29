@@ -140,6 +140,7 @@ review, keeping the same order and acceptance boundary.
 | `feat/time-04-fink-ztf` | Align Fink native windows and admitted first/last modes |
 | `feat/selection-01-latest-admission` | Complete shared latest admission after temporal verification |
 | `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
+| `feat/selection-02b-lasair-cone` | Prove required summary recency and complete cone population before admitting cone latest |
 | `feat/selection-03-fink-ztf` | Activate complete Fink latest selection |
 | `feat/discovery-06-antares-ztf` | Implement verified ANTARES ZTF search with temporal and latest selection |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
@@ -409,7 +410,15 @@ integration commit `4356353`.
 temporal composites for ALeRCE ZTF, while retaining declared discovery ordering,
 projection/material checks, complete membership evidence and selected-ID
 continuation. Its integration merge is the intermediate shared DSL/registry CI
-checkpoint. Lasair latest follows after that checkpoint.
+checkpoint. Its single stale Fink recipe-count assertion is corrected in PR #312,
+integration `4ee3b6f`; the skipped wheel check was handed off locally.
+
+[Lasair semantic latest](selection_02_lasair_ztf.md) now prepares exhaustive
+identity-ordered SQL scans followed by global ranking after temporal membership.
+Numeric-predicate and default/first/last within searches are covered. Cone latest
+remains deferred pending its distinct required-summary ranking proof, scheduled
+as the small Selection 02b follow-up before Fink latest. Retain the focused-local
+merge discipline.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -730,7 +739,9 @@ not need redesign for this series.
 | Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
 | Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
 | Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
-| Selection 02 onward | Provider latest, remaining integration | Next on updated integration branch after shared checkpoint | Pending | Pending |
+| Selection 02 | Lasair ZTF semantic latest | Prepared on `feat/selection-02-lasair-ztf`, based on `4ee3b6f` | Local handoff; exhaustive offsets, temporal checks, selected-ID continuation | Final acceptance pending |
+| Selection 02b | Lasair cone latest | Next: required-summary and complete-population proof | Pending | Pending |
+| Selection 03 onward | Fink latest, remaining integration | After Selection 02b on updated integration branch | Pending | Pending |
 | 06 | antares | Pending | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |

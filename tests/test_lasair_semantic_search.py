@@ -101,9 +101,9 @@ def test_ineligible_or_partially_translated_conditions_defer_before_binding(grap
 
 @pytest.mark.parametrize("kwargs", [
     {"time_context": TimeContext(window=timedelta(days=7))},
-    {"criteria": {"limit": 10}}, {"selection": SearchSelection(latest=1)},
+    {"criteria": {"limit": 10}},
 ])
-def test_invalid_window_criteria_and_latest_are_not_relabelled_as_object_summary_search(graph, kwargs):
+def test_invalid_window_and_criteria_are_not_relabelled_as_object_summary_search(graph, kwargs):
     with pytest.raises(PlanningDeferredError):
         plan_step(search(predicate=comparison(), **kwargs), graph)
 
@@ -186,6 +186,43 @@ def test_normalized_recheck_protects_against_a_server_ignoring_conditions(graph,
                          graph=graph, registry=registry, executor=executor, continue_from=None)
     assert {summary_object_identity(p) for p in result.portfolios} == {("ztf", "ZTF20acpwljl"), ("ztf", "ZTF20aaaaaaa")}
     assert len(transport.calls) == 2  # 3 raw rows, then short page, then local pruning
+
+
+def test_numeric_discovery_latest_exhausts_identity_order_before_ranking(graph, monkeypatch):
+    rows = recorded_and_synthetic_rows()
+    transport, registry, executor = replay(monkeypatch, rows)
+    result = execute_dsl("objects from ztf via lasair\nwhere summary.detection_count >= 0\nlatest 1\nwith lightcurve via lasair\n",
+                         graph=graph, registry=registry, executor=executor, continue_from=None)
+    expected = sorted(rows, key=lambda row: (-row["jdmax"], row["objectId"]))[0]["objectId"]
+    assert {summary_object_identity(p)[1] for p in result.portfolios} == {expected}
+    queries = [p for name, p in transport.calls if name == "query"]
+    assert [p["offset"] for p in queries] == [0, 2]
+    assert all(p["limit"] == 2 and p["conditions"].endswith("ORDER BY objects.objectId") for p in queries)
+    assert [p for name, p in transport.calls if name == "lightcurves"] == [{"objectIds": expected}]
+
+
+@pytest.mark.parametrize("change", ["offset_default", "offset_role", "ordering", "no_sql"])
+def test_offset_latest_requires_an_exhaustive_stable_sql_contract(tmp_path, change):
+    root = tmp_path / "providers"
+    destination = root / "lasair/ztf"
+    shutil.copytree(PROVIDERS_ROOT / "lasair/ztf", destination)
+    endpoints_path, capabilities_path = destination / "endpoints.yaml", destination / "capabilities.yaml"
+    endpoints, capabilities = yaml.safe_load(endpoints_path.read_text()), yaml.safe_load(capabilities_path.read_text())
+    if change == "offset_default":
+        endpoints["endpoints"]["query"]["params"]["offset"]["default"] = 2
+    elif change == "offset_role":
+        endpoints["endpoints"]["query"]["params"]["offset"].pop("role")
+    elif change == "ordering":
+        capabilities["selection_bindings"]["query"]["latest"]["params"] = {"limit": {"value": 1}}
+    else:
+        # Omit SQL translations without introducing an invalid empty binding
+        # list, so the selection contract's ordering guard is what fails.
+        capabilities["predicate_bindings"].pop("query")
+    endpoints_path.write_text(yaml.safe_dump(endpoints, sort_keys=False))
+    capabilities_path.write_text(yaml.safe_dump(capabilities, sort_keys=False))
+    message = "offset latest requires mapped SQL identity ordering" if change == "no_sql" else "selection_bindings"
+    with pytest.raises(CapabilityGraphError, match=message):
+        build_capability_graph(root)
 
 
 @pytest.mark.parametrize("rows", [[], recorded_and_synthetic_rows()])

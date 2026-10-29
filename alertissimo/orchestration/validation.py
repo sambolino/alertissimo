@@ -948,7 +948,7 @@ def _candidate_evidence_for_source(
             continue
         if recipe is not None and (
             recipe.calls[0].latest_selection is None
-            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
+            or any(item.parameter in {"page", "offset", "count"} for item in recipe.calls[0].params)
             or len(recipe.calls) > 1 and (temporal is None or not temporal.complete)
             or any(
                 source.path[0] == "selection"

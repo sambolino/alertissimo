@@ -1,5 +1,11 @@
 broker: lasair
 origin: ztf
+selection_bindings:
+  query:
+    latest:
+      path: summary.time.last_mjd
+      # Exhaust the compiled identity-ordered SQL scan; rank objects locally.
+      params: {}
 recipes:
   semantic_search:
     - calls:

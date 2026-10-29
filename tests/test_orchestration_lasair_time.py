@@ -307,10 +307,59 @@ def test_native_summary_selection_uses_unchanged_captured_object_statistics(grap
 
 def test_unmaterialized_cone_predicates_and_latest_remain_explicitly_deferred(graph):
     sources = [program(cone=True, tail="where summary.detection_count >= 8\n"),
-               *(program(mode, tail="latest 1\n") for mode in ("detection", "first", "last"))]
+               *(program(mode, cone=True, tail="latest 1\n") for mode in ("detection", "first", "last"))]
     for source in sources:
         result = validate_dsl(source, graph=graph, continue_from=None)
         assert not result.is_runnable
+
+
+@pytest.mark.parametrize("mode,expected", [("detection", IDS[2]), ("first", IDS[2]), ("last", IDS[3])])
+def test_semantic_latest_ranks_after_complete_time_membership(graph, monkeypatch, mode, expected):
+    transport, registry, executor = replay(monkeypatch)
+    source = program(mode, tail="latest 1\n")
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    result = execute_dsl(source, graph=graph, registry=registry, executor=executor,
+                         continue_from=None, reference_time=NOW)
+    assert identities(result.portfolios) == {expected}
+    queries = [p for name, p in transport.calls if name == "query"]
+    assert [p["offset"] for p in queries] == ([0, 2, 4] if mode == "detection" else [0])
+    assert all(p["limit"] == 2 and p["conditions"].endswith("ORDER BY objects.objectId") for p in queries)
+    histories = [p for name, p in transport.calls if name == "lightcurves"]
+    assert len(histories) == (1 if mode == "detection" else 0)
+    if mode == "detection":
+        assert set(histories[0]["objectIds"].split(",")) == set(IDS[:4])
+        # B has the latest summary date but no in-window detection. C wins
+        # by its overall last date, rather than by its in-window witness.
+        times = {r.get("time.mjd") for r in result.portfolios[0].records
+                 if r.semantic_type == "detection@ztf:lasair" and r.get("photometry.g.psf.mag") is not None}
+        assert times == set(HISTORY[expected])
+    assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {expected}
+
+
+def test_latest_continuation_replays_discovery_and_fetches_only_selected_ids(graph, monkeypatch):
+    transport, registry, executor = replay(monkeypatch)
+    first = execute_dsl(program(tail="latest 2\n"), graph=graph, registry=registry, executor=executor,
+                        continue_from=None, reference_time=NOW)
+    assert identities(first.portfolios) == {IDS[0], IDS[2]}
+    before = deepcopy(transport.calls)
+    second = execute_dsl("filter summary.detection_count >= 5\nwith lightcurve via lasair\n",
+                         graph=graph, registry=registry, executor=executor, continue_from=first,
+                         reference_time=NOW + timedelta(days=1))
+    assert transport.calls[:len(before)] == before
+    assert transport.calls[len(before):] == [("lightcurves", {"objectIds": IDS[0]})]
+    assert identities(second.portfolios) == {IDS[0]}
+    assert identities(first.portfolios) == {IDS[0], IDS[2]}
+    assert second.run.steps[0].time_reference == NOW
+    assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
+
+
+@pytest.mark.parametrize("failure,kwargs", [(None, {"max_pages": 1}), ("history_request", {})])
+def test_latest_cannot_return_an_incomplete_discovery_or_history(graph, monkeypatch, failure, kwargs):
+    transport, registry, executor = replay(monkeypatch, failure=failure, **kwargs)
+    with pytest.raises(WorkflowExecutionError):
+        execute_dsl(program(tail="latest 1\n"), graph=graph, registry=registry, executor=executor,
+                    continue_from=None, reference_time=NOW)
 
 
 @pytest.mark.parametrize("change", ["optional_history", "partition", "collection", "time_scale"])
