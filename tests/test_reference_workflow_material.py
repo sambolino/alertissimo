@@ -72,8 +72,15 @@ def test_reference_inputs_keep_their_capture_row_and_reported_count():
     assert ps1.get("separation.total") == row["i:distpsnr1"]
     assert ps1.get("classification.assessment.star_galaxy.score") == row["i:sgscore1"]
     summaries = records(portfolios, "summary@ztf:fink")
-    assert {r.get("detection_count") for r in summaries if r.get("detection_count") is not None} == {17}
+    # Each historical alert retains its own reported-count snapshot. Match
+    # every count to its source row rather than treating them as one aggregate.
+    reported = {r.internal_source.payload_index: r.get("detection_count")
+                for r in summaries if r.get("detection_count") is not None}
+    assert reported == {index: raw["i:ndethist"] for index, raw in enumerate(payload)}
+    summary = next(r for r in summaries if r.internal_source == detection.internal_source)
+    assert summary.get("detection_count") == row["i:ndethist"] == 17
     assert len(detections) == 14
+    assert summary.get("detection_count") != len(detections)
 
 
 @pytest.mark.parametrize("value", [0.0, -999.0, None])
