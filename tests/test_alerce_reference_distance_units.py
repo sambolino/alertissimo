@@ -7,11 +7,14 @@ from pathlib import Path
 import pytest
 
 from alertissimo.api import execute_dsl
-from alertissimo.data_layer.execution import ExecutionResult, RegistryEndpointExecutor, TransportResult
+from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult, RegistryEndpointExecutor, TransportResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
 from alertissimo.orchestration.normalization import normalize_workflow_execution
+from alertissimo.orchestration.ir import GetLightcurveStep, Source, TargetSelector, WorkflowIR
+from alertissimo.orchestration.pipeline import execute_staged_workflow_run
+from alertissimo.orchestration.planner import plan_workflow
 
 
 FIXTURES = Path(__file__).parent / "fixtures/alerce/ztf"
@@ -81,7 +84,8 @@ def test_missing_zero_and_sentinel_values_are_not_converted_between_units(endpoi
     assert data == before
 
 
-def test_enrichment_retains_pixel_and_angular_evidence_in_their_own_measurements():
+@pytest.mark.parametrize("explicit_target", [False, True], ids=["enrichment-family", "explicit-lightcurve"])
+def test_retrieval_retains_distance_units_under_existing_supplement_policy(explicit_target):
     class ReplayTransport:
         def __init__(self):
             # Recorded subsets exercise the public family path; they make no
@@ -100,17 +104,38 @@ def test_enrichment_retains_pixel_and_angular_evidence_in_their_own_measurements
             return TransportResult(deepcopy(self.responses[spec.endpoint]))
 
     transport = ReplayTransport()
-    result = execute_dsl("objects ZTF18abbuksn from ztf via alerce\nwith enrichment\n",
-                         graph=build_capability_graph(),
-                         executor=RegistryEndpointExecutor(transports={"python_client": transport}),
-                         continue_from=None)
-    assert set(transport.calls) == {"query_object", "query_probabilities", "query_lightcurve", "query_forced_photometry"}
-    assert len(transport.calls) == 4
-    for portfolios in (result.portfolios, normalize_workflow_execution(result.staged.execution).steps[-1].portfolios):
+    graph = build_capability_graph()
+    executor = RegistryEndpointExecutor(transports={"python_client": transport})
+    if explicit_target:
+        # A singleton target admits the optional singular forced-photometry call.
+        workflow = WorkflowIR(steps=[GetLightcurveStep(
+            target=TargetSelector(ids=["ZTF18abbuksn"], kind="object"),
+            sources=[Source(broker="alerce", origin="ztf")],
+        )])
+        staged = execute_staged_workflow_run(plan_workflow(workflow, graph), EndpointRegistry(), executor)
+        portfolios = staged.normalized.steps[-1].portfolios
+        expected_calls = {"query_lightcurve", "query_forced_photometry"}
+    else:
+        result = execute_dsl("objects ZTF18abbuksn from ztf via alerce\nwith enrichment\n",
+                             graph=graph, executor=executor, continue_from=None)
+        staged, portfolios = result.staged, result.portfolios
+        # Family Gets inherit candidate flow, not the lookup's explicit selector.
+        # Unknown target cardinality omits this optional singular supplement.
+        lightcurve, = [step for step in result.workflow.steps if step.op == "get_lightcurve"]
+        assert lightcurve.target is None
+        expected_calls = {"query_object", "query_probabilities", "query_lightcurve"}
+    assert set(transport.calls) == expected_calls
+    assert len(transport.calls) == len(expected_calls)
+    assert all(not step.warnings for step in staged.run.steps)
+    for portfolios in (portfolios, normalize_workflow_execution(staged.execution).steps[-1].portfolios):
         measurements = [r for p in portfolios for r in p.records if r.semantic_type == "measurement@ztf:alerce"]
         ordinary, = [r for r in measurements if r.internal_source.payload_key == "query_lightcurve.detections"]
-        forced, = [r for r in measurements if r.internal_source.payload_key == "query_forced_photometry"]
         assert ordinary.get(PIXEL) == first_row("query_lightcurve")["distnr"]
         assert ANGULAR not in ordinary.fields
-        assert forced.get(ANGULAR) == first_row("query_forced_photometry")["distnr"]
-        assert PIXEL not in forced.fields
+        forced = [r for r in measurements if r.internal_source.payload_key == "query_forced_photometry"]
+        if explicit_target:
+            forced, = forced
+            assert forced.get(ANGULAR) == first_row("query_forced_photometry")["distnr"]
+            assert PIXEL not in forced.fields
+        else:
+            assert forced == []

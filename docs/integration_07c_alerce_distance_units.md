@@ -69,10 +69,16 @@ those raw values to appear only under their documented unit-specific field.
 No fixture bytes or unmapped exclusions change.
 
 The new offline regression also executes `with enrichment` through the current
-public DSL using recorded subsets and a fake Python transport. It checks that
-classification/lightcurve family expansion retains ordinary pixel evidence and
-forced-photometry angular evidence separately, including offline normalization.
-It does not claim completeness for those deliberately small replay subsets.
+public DSL using recorded subsets and a fake Python transport. Family expansion
+retains ordinary pixel evidence. Its lightcurve Get inherits candidate flow with
+unknown target cardinality, so the existing policy omits the optional singular
+forced-photometry call even when the preceding lookup names one object. A second
+case uses an explicitly targeted singleton `GetLightcurveStep` and verifies both
+ordinary pixel and forced-photometry angular evidence in their own measurements.
+Both cases check offline normalization and absence of supplementary failures.
+Neither claims completeness for those deliberately small replay subsets.
+
+The follow-up fixture correction changes no production planning or mappings.
 
 ## Local handoff and shared checkpoint
 
