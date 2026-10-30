@@ -9,6 +9,12 @@ on:
       - 'tests/test_app_*.py'
       - 'tests/test_ui_fixtures.py'
       - 'tests/test_api_continuation.py'
+      - 'tests/test_application_portfolio_access.py'
+      - 'tests/test_portfolio_lightcurve.py'
+      - 'tests/test_portfolio_serialization.py'
+      - 'tests/test_dsl_public_api_serialization.py'
+      - 'tests/test_target_bound_partition_identity.py'
+      - 'examples/application_portfolio_access.py'
       - 'tests/fixtures/**'
       - 'scripts/build_ui_fixtures.py'
       - 'scripts/smoke/executors.py'
@@ -36,4 +42,9 @@ jobs:
             tests/test_app_search_portfolios.py \
             tests/test_app_plot_semantic_records.py \
             tests/test_ui_fixtures.py \
+            tests/test_application_portfolio_access.py \
+            tests/test_portfolio_lightcurve.py \
+            tests/test_portfolio_serialization.py \
+            tests/test_dsl_public_api_serialization.py \
+            tests/test_target_bound_partition_identity.py \
             tests/test_api_continuation.py

@@ -540,6 +540,14 @@ python -m pytest -q tests/test_reference_workflow_material.py tests/test_semanti
 
 ### PR 08 — Application access to results
 
+Prepared as `feat/integration-08-portfolio-access`, based on `4d93b51` / PR #325.
+The [application access guide](application_portfolio_access.md) and checkout
+example use existing APIs; no backend layer or provider contract changes.
+The paired shared checkpoints after 07c both passed on `4d93b51`:
+[DSL](https://github.com/sambolino/alertissimo/actions/runs/41077308992) and
+[Semantic registry](https://github.com/sambolino/alertissimo/actions/runs/41077292721).
+Use focused local verification for this step; keep the final shared acceptance.
+
 Use `execute_dsl`, `DSLExecutionResult.portfolios`, and existing Portfolio
 serialization as the application entry points. Extend existing presentation
 helpers only where the consumer genuinely lacks access. Add clear examples for
@@ -800,9 +808,9 @@ not need redesign for this series.
 | 06e | ANTARES latest and cone identity review | [#321](https://github.com/sambolino/alertissimo/pull/321), integration `b34eb1d` | Manual DSL checkpoint [41041721319](https://github.com/sambolino/alertissimo/actions/runs/41041721319) passed | Provider live acceptance pending; native cone temporal/latest deferred |
 | 07a | Reference input inventory and Fink pixel distance | [#322](https://github.com/sambolino/alertissimo/pull/322), integration `da31fd7` | Merged after per-alert count fixture correction | Frozen evidence; live acceptance remains separate |
 | 07b | Fink JSON cutout bundles | [#323](https://github.com/sambolino/alertissimo/pull/323), integration `0fc3759` | Merged after capability fanout expectation correction | Synthetic stamps and pinned API source; deployed cutout acceptance pending |
-| Ontology | Measurement records and enrichment families | [#324](https://github.com/sambolino/alertissimo/pull/324), integration `f8e0909` | New baseline; paired shared checkpoint scheduled after 07c | No new provider/live support inferred from family membership |
-| 07c | ALeRCE reference-distance units | Prepared on `fix/integration-07c-alerce-distance-units` | Documented pixel/arcsecond client contracts separated; local handoff | Frozen evidence; TAP equivalence not claimed |
-| 08 | result-access | Pending | Pending | Through acceptance |
+| Ontology | Measurement records and enrichment families | [#324](https://github.com/sambolino/alertissimo/pull/324), integration `f8e0909` | Paired shared checkpoints passed on `4d93b51` after 07c | No new provider/live support inferred from family membership |
+| 07c | ALeRCE reference-distance units | [#325](https://github.com/sambolino/alertissimo/pull/325), integration `4d93b51` | Merged after supplement-fixture correction; [DSL](https://github.com/sambolino/alertissimo/actions/runs/41077308992) and [registry](https://github.com/sambolino/alertissimo/actions/runs/41077292721) passed | Frozen evidence; TAP equivalence not claimed |
+| 08 | Application result access | Prepared on `feat/integration-08-portfolio-access` | Per-candidate example, provenance-preserving views and local regressions | No provider requests needed for consumer isolation |
 | 09 | acceptance | Pending | Pending | Pending |
 
 ## References

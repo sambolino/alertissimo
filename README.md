@@ -59,6 +59,12 @@ active state. Omitting `continue_from` retains implicit continuation for existin
 single-client scripts. Planning, credentials, and provider execution can still
 fail after validation; the previous result remains available.
 
+Read final candidates through `result.portfolios`. The
+[application access guide](docs/application_portfolio_access.md) shows per-object
+selection, classification and crossmatch evidence, photometry views, reported
+counts, and serialization with provenance. Its checkout example preserves each
+candidate's survey identity and qualified records.
+
 ## Declarative runtime
 
 Provider recipes and predicate/selection bindings, physical endpoint contracts,
