@@ -46,7 +46,7 @@ time_selection:
   payload: locus_alerts
   complete: true
   time_scale: utc
-  detection_identity: detection.identity.source_id
+  detection_identity: measurement.identity.source_id
   reduction: min
 ```
 
