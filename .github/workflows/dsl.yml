@@ -25,6 +25,7 @@ on:
       - 'alertissimo/orchestration/validation.py'
       - 'tests/test_dsl_*.py'
       - 'tests/test_api_continuation.py'
+      - 'tests/test_discovery_integration_acceptance.py'
       - 'tests/test_discovery_time_bindings.py'
       - 'tests/test_fink_semantic_search.py'
       - 'tests/test_alerce_semantic_search.py'
@@ -61,6 +62,7 @@ jobs:
           PYTHONPATH=. pytest -q \
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
+            tests/test_discovery_integration_acceptance.py \
             tests/test_discovery_time_bindings.py \
             tests/test_fink_semantic_search.py \
             tests/test_alerce_semantic_search.py \
