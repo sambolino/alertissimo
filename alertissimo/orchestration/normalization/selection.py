@@ -119,7 +119,7 @@ def _latest_history_scopes(step_run: StepRun, view: StepPortfolioResult):
         index = proof.evidence_plan_index
         if (proof.mode != "last" or proof.reduction != "max" or proof.method != "material"
             or not proof.complete or proof.time_scale != "utc"
-            or proof.detection_identity != "detection.identity.source_id"
+            or proof.detection_identity != "measurement.identity.source_id"
             or proof.response_identity is None or proof.target_parameter is None
             or proof.target_collection is not None or index >= len(step_run.endpoint_plans)):
             raise SearchSelectionError("latest requires complete identified detection history")
@@ -171,7 +171,7 @@ def apply_search_selection(step: Step, view: StepPortfolioResult, step_run: Step
         for plan, proof, candidates, evidence_ids in histories:
             if identity not in candidates:
                 continue
-            dates, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, "detection", "time.mjd")
+            dates, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, "measurement", "time.mjd")
             if invalid or not dates or not evidence_ids:
                 raise SearchSelectionError(f"latest candidate {identity!r} lacks complete valid detection recency")
             values.append(max(dates))
@@ -270,11 +270,11 @@ def _temporal_values(portfolio, plan, proof, evidence_ids, noun, field):
         if source is None:
             # Normalization may add an identity-only summary without a
             # physical source; it says nothing about temporal evidence.
-            invalid = invalid or noun == "detection" or record.get(field) is not None
+            invalid = invalid or noun == "measurement" or record.get(field) is not None
             continue
         if source.internal_execution_id.value not in evidence_ids or source.payload_key != proof.payload:
             continue
-        if noun == "detection":
+        if noun == "measurement":
             ordinary = [value for key, value in record.fields.items()
                         if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
                         and "limit" not in key.split(".") and value is not None]
@@ -289,7 +289,7 @@ def _temporal_values(portfolio, plan, proof, evidence_ids, noun, field):
                 )
                 continue
             if proof.detection_identity is not None:
-                identifier = record.get(proof.detection_identity.removeprefix("detection."))
+                identifier = record.get(proof.detection_identity.removeprefix("measurement."))
                 if type(identifier) not in (str, int) or str(identifier) == "":
                     # Photometry alone cannot establish this survey's
                     # witness in a broker's potentially mixed history.
@@ -360,7 +360,7 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
         if proof.reduction is not None and (
             (proof.mode, proof.reduction) not in (("first", "min"), ("last", "max"))
             or proof.method != "material" or not proof.complete
-            or proof.detection_identity != "detection.identity.source_id"
+            or proof.detection_identity != "measurement.identity.source_id"
         ):
             raise TimeSelectionError("invalid complete detection reduction proof")
         evidence_index = proof.evidence_plan_index
@@ -389,8 +389,8 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
         for plan, proof, candidates, evidence_ids in scoped:
             if identity not in candidates:
                 continue
-            noun = "detection" if context.mode == "detection" or proof.reduction else "summary"
-            field = "time.mjd" if noun == "detection" else f"time.{context.mode}_mjd"
+            noun = "measurement" if context.mode == "detection" or proof.reduction else "summary"
+            field = "time.mjd" if noun == "measurement" else f"time.{context.mode}_mjd"
             values, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, noun, field)
             if context.mode == "detection":
                 if any(start <= value <= end for value in values):

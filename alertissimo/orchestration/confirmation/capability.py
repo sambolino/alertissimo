@@ -39,7 +39,7 @@ def _emits_object_evidence(
         for mapping in graph.fields_for_endpoint(
             endpoint.broker, endpoint.origin, endpoint.endpoint
         )
-        for noun in ("summary", "detection")
+        for noun in ("summary", "measurement")
     )
 
 

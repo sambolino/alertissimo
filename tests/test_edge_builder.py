@@ -15,8 +15,8 @@ def record(identifier, semantic_type, fields=None):
 
 
 def test_existing_explicit_edges_are_preserved():
-    first = record("detection:1", "detection@ztf:lasair")
-    second = record("detection:2", "detection@ztf:lasair")
+    first = record("detection:1", "measurement@ztf:lasair")
+    second = record("detection:2", "measurement@ztf:lasair")
     explicit = SemanticEdge(
         InternalEdgeId("edge:explicit"), "--duplicate--",
         first.internal_record_id, second.internal_record_id,
@@ -34,8 +34,8 @@ def test_existing_explicit_edges_are_preserved():
 def test_no_containment_or_summary_hub_edges_are_generated():
     portfolio = Portfolio(InternalPortfolioId("portfolio:2"), (
         record("summary", "summary@ztf:lasair"),
-        record("detection:1", "detection@ztf:lasair"),
-        record("detection:2", "detection@ztf:lasair"),
+        record("detection:1", "measurement@ztf:lasair"),
+        record("detection:2", "measurement@ztf:lasair"),
         record("classification", "classification@lasair"),
         record("crossmatch", "crossmatch@unknown:lasair"),
     ))
@@ -45,8 +45,8 @@ def test_no_containment_or_summary_hub_edges_are_generated():
 
 def test_no_chronological_edges_are_generated():
     portfolio = Portfolio(InternalPortfolioId("portfolio:3"), (
-        record("detection:1", "detection@ztf:lasair", {"time.mjd": 60000.0}),
-        record("detection:2", "detection@ztf:lasair", {"time.mjd": 60001.0}),
+        record("detection:1", "measurement@ztf:lasair", {"time.mjd": 60000.0}),
+        record("detection:2", "measurement@ztf:lasair", {"time.mjd": 60001.0}),
     ))
 
     assert connect_portfolio_records(portfolio).edges == ()

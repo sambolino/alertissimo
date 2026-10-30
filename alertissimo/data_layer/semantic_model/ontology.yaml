@@ -101,10 +101,10 @@
 #   records rather than forcing all information into a single object tree.
 #   Object-level identity and aggregate projections belong in <summary>.
 #
-#   Current first-level record types are:
+#   Concrete first-level record types (including enrichment descendants) are:
 #
 #       summary
-#       detection
+#       measurement
 #       crossmatch
 #       lightcurve
 #       color_magnitude
@@ -119,9 +119,9 @@
 #
 #
 #
-# 10. Generic detection
+# 10. Generic measurement
 #
-#   <detection> is the generic atomic observational, alert, or event record.
+#   <measurement> is the generic record for an individually represented observational result.
 #   Optical alerts, radio detections, X-ray and gamma-ray notices, Solar System
 #   detections, GW notices, and neutrino events should not require separate
 #   first-level portfolio branches merely because their producers or messengers
@@ -129,29 +129,29 @@
 #
 #   The producer/channel qualifier may strongly suggest the expected profile:
 #
-#       portfolio.detection@lsst:fink
-#       portfolio.detection@lvk:gcn
-#       portfolio.detection@icecube:gcn
+#       portfolio.measurement@lsst:fink
+#       portfolio.measurement@lvk:gcn
+#       portfolio.measurement@icecube:gcn
 #
 #   but the formal semantic content is expressed by the branches present inside
-#   the detection:
+#   the measurement:
 #
-#       detection.photometry...
-#       detection.localization...
-#       detection.gravitational_wave...
-#       detection.neutrino...
-#       detection.radio...
-#       detection.xray...
-#       detection.gamma_ray...
-#       detection.solar_system...
+#       measurement.photometry...
+#       measurement.localization...
+#       measurement.gravitational_wave...
+#       measurement.neutrino...
+#       measurement.radio...
+#       measurement.xray...
+#       measurement.gamma_ray...
+#       measurement.solar_system...
 #
-#   A reference from <detection> to a phenomenon-specific container allows that
-#   content; it does not imply that every detection carries it.
+#   A reference from <measurement> to a phenomenon-specific container allows that
+#   content; it does not imply that every measurement carries it.
 #
-#   The optional detection.type field is a controlled high-level hint used for
+#   The optional measurement.type field is a controlled high-level hint used for
 #   filtering and validation. It does not replace the structural branches: a
-#   record with detection.type = radio should still express radio-specific
-#   content under detection.radio where such data are available.
+#   record with measurement.type = radio should still express radio-specific
+#   content under measurement.radio where such data are available.
 #
 #
 #
@@ -164,15 +164,15 @@
 #   such as localization.position.ra and obscure the distinction between a point
 #   estimate and an uncertainty/probability region.
 #
-#       detection@icecube:gcn.position.ra
-#       detection@icecube:gcn.localization.radius_90
-#       detection@lvk:gcn.localization.skymap
+#       measurement@icecube:gcn.position.ra
+#       measurement@icecube:gcn.localization.radius_90
+#       measurement@lvk:gcn.localization.skymap
 #
 #   pointing describes the telescope, spacecraft, or detector orientation. It is
 #   not the same as the source position or event localization.
 #
-#       detection@swift:gcn.pointing.ra
-#       detection@swift:gcn.pointing.roll
+#       measurement@swift:gcn.pointing.ra
+#       measurement@swift:gcn.pointing.roll
 #
 #   spectra and data products are first-level payload-bearing records when the
 #   payload is not an atomic detection/report. A reduced one-dimensional
@@ -183,12 +183,12 @@
 #
 #       portfolio.spectrum@gemini:archive.data_product.uri
 #       portfolio.data_product@gemini:archive.format
-#       portfolio.spectrum@gemini:archive --followup_of--> portfolio.detection@lsst:fink
-#       portfolio.data_product@gemini:archive --followup_of--> portfolio.detection@lsst:fink
+#       portfolio.spectrum@gemini:archive --followup_of--> portfolio.measurement@lsst:fink
+#       portfolio.data_product@gemini:archive --followup_of--> portfolio.measurement@lsst:fink
 #       portfolio.spectrum@gemini:archive --derived_from--> portfolio.data_product@gemini:archive
 #
 #   Use the most semantic record available. If an archive result is an atomic
-#   observation/report, use detection. If it is a time series, use lightcurve.
+#   observation/report, use measurement. If it is a time series, use lightcurve.
 #   If it is a wavelength-series product, use spectrum. If it is primarily a
 #   file, image, table, cube, or archive artifact, use data_product. If it is a
 #   reduced external catalog/enrichment row, use crossmatch.
@@ -202,7 +202,7 @@
 #
 #       portfolio.classification...                 portfolio object
 #       portfolio.crossmatch....classification...   matched catalog object
-#       portfolio.detection....classification...    detection, where applicable
+#       portfolio.measurement....classification...    detection, where applicable
 #
 #   A classification record may carry a selected result and a set of named
 #   assessment outputs:
@@ -1163,6 +1163,7 @@ levels:
     description: "Classification-specific additional field"
 
 <classification>:
+  $is: <enrichment>
   level: L5, L6
   description: "Classification, annotation, or taxonomic interpretation"
 
@@ -1458,6 +1459,10 @@ levels:
   [pileup_fraction]:
 
 
+<enrichment>:
+  abstract: true
+  description: "Additional scientific or contextual product retained as a whole"
+
 <_data_product_core>:
   [type]:
     description: "Semantic data-product type"
@@ -1495,6 +1500,7 @@ levels:
   [{field}]:
     description: "Data-product-specific additional field"
 <data_product>:
+  $is: <enrichment>
   level: L3, L6
   description: "Instrumental, archive, or file-level data product associated with the portfolio"
   $ref: <_data_product_core>
@@ -1503,10 +1509,11 @@ levels:
   $ref: <pointing>
   $ref: <provenance>
   $edges:
-    --edge-- <detection>@{producer}:{channel}
+    --edge-- <measurement>@{producer}:{channel}
     --edge-- <spectrum>@{producer}:{channel}
 
 <spectrum>:
+  $is: <enrichment>
   level: L3, L6
   description: "Science-ready spectroscopic or wavelength-series product associated with a transient, source, or event"
   $ref: <identity>(L1, L6)
@@ -1577,7 +1584,7 @@ levels:
         unit: km/s
       [significance]:
   $edges:
-    --edge-- <detection>@{producer}:{channel}
+    --edge-- <measurement>@{producer}:{channel}
     --edge-- <crossmatch>@{producer}:{channel}
     --edge-- <data_product>@{producer}:{channel}
   [{field}]:
@@ -1657,6 +1664,7 @@ levels:
     $ref: <astrometric_solution>
 
 <crossmatch>:
+  $is: <enrichment>
   level: L6
   description: "External catalog, archive, service, or enrichment record associated with the portfolio or one of its records"
   $ref: <identity>
@@ -1718,6 +1726,7 @@ levels:
 # point model is intentionally generic enough for a possible future rename to
 # <time_series> without changing the semantic content of the point types.
 <lightcurve>:
+  $is: <enrichment>
   level: L4
   description: "Photometric and photometry-derived time-series data"
   $ref: <provenance>
@@ -1762,6 +1771,7 @@ levels:
   $ref: <photometry>(L1, L6)
 
 <color_magnitude>:
+  $is: <enrichment>
   description: "Non-temporal relation pairing a color measurement with a photometric magnitude; may be supplied directly by a producer or derived locally"
   $ref: <provenance>
   <points>:
@@ -1775,6 +1785,7 @@ levels:
   $ref: <color>(L1, L6)
 
 <color_color>:
+  $is: <enrichment>
   description: "Non-temporal relation pairing two color measurements; may be supplied directly by a producer or derived locally"
   $ref: <provenance>
   <points>:
@@ -2025,10 +2036,10 @@ levels:
   [superseded_fields]:
     description: "Fields changed or superseded by this revision"
 
-<detection>:
-  description: "Single detection, observation, alert, or event record"
+<measurement>:
+  description: "Individual observational result, including detections, limits, forced measurements, and event reports"
   [type]:
-    description: "Canonical high-level detection or messenger type"
+    description: "Canonical high-level measurement or messenger type"
     enum: [optical, infrared, ultraviolet, xray, gamma_ray, radio, solar_system, gravitational_wave, neutrino, satellite, multimessenger, other]
 
   # Generic record structure
@@ -2063,22 +2074,16 @@ levels:
 
   # Connection layer
   $edges:
-    --edge-- <detection>@{producer}:{channel}
+    --edge-- <measurement>@{producer}:{channel}
 
   [{field}]:
-    description: "Detection-specific additional field"
+    description: "Measurement-specific additional field"
 
 
 <portfolio>:
   $refs: <summary>@{producer}:{channel}
-  $refs: <detection>@{producer}:{channel}
-  $refs: <crossmatch>@{producer}:{channel}
-  $refs: <lightcurve>@{producer}:{channel}
-  $refs: <color_magnitude>@{producer}:{channel}
-  $refs: <color_color>@{producer}:{channel}
-  $refs: <spectrum>@{producer}:{channel}
-  $refs: <data_product>@{producer}:{channel}
-  $refs: <classification>@{producer}:{channel}
+  $refs: <measurement>@{producer}:{channel}
+  $refs: <enrichment>@{producer}:{channel}
   $refs: <survey>@{producer}:{channel}
   $edges:
     --association-- <portfolio>

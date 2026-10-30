@@ -37,7 +37,7 @@ FALLBACK_COLORS = ["#00b8d4", "#00b85c", "#ff4081", "#651fff"]
 
 SEMANTIC_RECORD_FAMILIES = (
     "summary",
-    "detection",
+    "measurement",
     "crossmatch",
     "lightcurve",
     "spectrum",
@@ -355,11 +355,11 @@ def render_detection_details(data: dict[str, Any], detection: pd.Series) -> None
     """Render the individual detection represented by a selected chart point."""
     st.markdown("#### Detection details")
     record_id = detection.get("record_id")
-    record = next((item for item in records_by_family(data, "detection") if item.get("record_id") == record_id), None)
+    record = next((item for item in records_by_family(data, "measurement") if item.get("record_id") == record_id), None)
     if record is not None:
         render_record_evidence(data, record)
         return
-    st.caption("Individual `detection` SemanticRecord selected from the light curve.")
+    st.caption("Individual `measurement` SemanticRecord selected from the light curve.")
     details = {
         "time.datetime": format_utc(detection["date"]),
         "time.mjd": float(detection["mjd"]),
@@ -443,7 +443,7 @@ def semantic_record_index(data: dict[str, Any]) -> list[dict[str, Any]]:
         "summary": data.get("summary", {}),
     })
     for index, detection in enumerate(_rows(data, "lightCurve"), start=1):
-        add("detection", f"detection:demo:{index}", detection)
+        add("measurement", f"detection:demo:{index}", detection)
     if data.get("lightCurve"):
         add("lightcurve", "lightcurve:demo:local", {
             "point_count": len(_rows(data, "lightCurve")),
@@ -687,7 +687,7 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
     render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}", frame=filtered_frame)
     visible_ids = set(filtered_frame.get("record_id", ()))
     detections = [
-        record for record in records_by_family(data, "detection")
+        record for record in records_by_family(data, "measurement")
         if record["record_id"] in visible_ids
     ]
     if detections:

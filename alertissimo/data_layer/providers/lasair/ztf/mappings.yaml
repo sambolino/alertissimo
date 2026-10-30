@@ -108,65 +108,65 @@ mappings:
   - object#objectData.decmean
   - objects#objectData.decmean
   - query#decmean
-  detection@ztf:lasair.identity.source_id:
+  measurement@ztf:lasair.identity.source_id:
   - candidates#candid
   - lightcurve_candidates#candid
   - objects_candidates#candid
-  detection@ztf:lasair.identity.night_id:
+  measurement@ztf:lasair.identity.night_id:
   - candidates#nid
   - lightcurve_candidates#nid
   - objects_candidates#nid
-  detection@ztf:lasair.time.mjd:
+  measurement@ztf:lasair.time.mjd:
   - candidates#jd
   - lightcurve_candidates#jd
   - candidates#mjd
   - objects_candidates#jd
   - objects_candidates#mjd
-  detection@ztf:lasair.position.ra:
+  measurement@ztf:lasair.position.ra:
   - candidates#ra
   - lightcurve_candidates#ra
   - objects_candidates#ra
-  detection@ztf:lasair.position.dec:
+  measurement@ztf:lasair.position.dec:
   - candidates#dec
   - lightcurve_candidates#dec
   - objects_candidates#dec
-  detection@ztf:lasair.photometry.{filter}:
+  measurement@ztf:lasair.photometry.{filter}:
   - candidates#fid
   - lightcurve_candidates#fid
   - objects_candidates#fid
-  detection@ztf:lasair.photometry.{filter}.psf.mag:
+  measurement@ztf:lasair.photometry.{filter}.psf.mag:
   - lightcurve_candidates#magpsf
-  detection@ztf:lasair.photometry.{filter}.psf.mag.error:
+  measurement@ztf:lasair.photometry.{filter}.psf.mag.error:
   - lightcurve_candidates#sigmapsf
-  detection@ztf:lasair.photometry.{filter}.limit.mag:
+  measurement@ztf:lasair.photometry.{filter}.limit.mag:
   - candidates#diffmaglim
   - lightcurve_candidates#diffmaglim
   - objects_candidates#diffmaglim
-  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
+  measurement@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag:
   - candidates#magnr
   - lightcurve_candidates#magnr
   - objects_candidates#magnr
-  detection@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag.error:
+  measurement@ztf:lasair.reference_image.nearest_source.photometry.{filter}.mag.error:
   - candidates#sigmagnr
   - lightcurve_candidates#sigmagnr
   - objects_candidates#sigmagnr
-  detection@ztf:lasair.calibration.{filter}.zero_point:
+  measurement@ztf:lasair.calibration.{filter}.zero_point:
   - candidates#magzpsci
   - lightcurve_candidates#magzpsci
   - objects_candidates#magzpsci
-  detection@ztf:lasair.quality.real_bogus:
+  measurement@ztf:lasair.quality.real_bogus:
   - candidates#drb
   - lightcurve_candidates#drb
   - objects_candidates#drb
-  detection@ztf:lasair.image_metrics.is_positive:
+  measurement@ztf:lasair.image_metrics.is_positive:
   - candidates#isdiffpos
   - lightcurve_candidates#isdiffpos
   - objects_candidates#isdiffpos
-  detection@ztf:lasair.solar_system.mpc_match.identity.object_id:
+  measurement@ztf:lasair.solar_system.mpc_match.identity.object_id:
   - candidates#ssnamenr
   - lightcurve_candidates#ssnamenr
   - objects_candidates#ssnamenr
-  detection@ztf:lasair.solar_system.mpc_match.separation.total:
+  measurement@ztf:lasair.solar_system.mpc_match.separation.total:
   - candidates#ssdistnr
   - lightcurve_candidates#ssdistnr
   - objects_candidates#ssdistnr
@@ -433,7 +433,7 @@ mappings:
   summary@ztf:lasair.time.last_detection:
   - object#objectData.latestUtc
   - objects#objectData.latestUtc
-  detection@ztf:lasair.time.datetime:
+  measurement@ztf:lasair.time.datetime:
   - candidates#utc
   - objects_candidates#utc
   crossmatch@tns:lasair.separation.total:
@@ -498,14 +498,14 @@ transforms:
       type: jd_to_mjd
     query#jdmax:
       type: jd_to_mjd
-  detection@ztf:lasair.time.mjd:
+  measurement@ztf:lasair.time.mjd:
     candidates#jd:
       type: jd_to_mjd
     lightcurve_candidates#jd:
       type: jd_to_mjd
     objects_candidates#jd:
       type: jd_to_mjd
-  detection@ztf:lasair.photometry.{filter}:
+  measurement@ztf:lasair.photometry.{filter}:
     candidates#fid:
       type: value_map
       map:
@@ -524,7 +524,7 @@ transforms:
         1: g
         2: r
         3: i
-  detection@ztf:lasair.image_metrics.is_positive:
+  measurement@ztf:lasair.image_metrics.is_positive:
     candidates#isdiffpos:
       type: value_map
       map:
@@ -540,7 +540,7 @@ transforms:
       map:
         t: true
         f: false
-  detection@ztf:lasair.solar_system.mpc_match.identity.object_id:
+  measurement@ztf:lasair.solar_system.mpc_match.identity.object_id:
     candidates#ssnamenr:
       type: value_map
       map: &id002
@@ -565,7 +565,7 @@ transforms:
         '-999.0': null
         Unknown: null
       skip_null: true
-  detection@ztf:lasair.solar_system.mpc_match.separation.total:
+  measurement@ztf:lasair.solar_system.mpc_match.separation.total:
     candidates#ssdistnr:
       type: value_map
       map: &id003

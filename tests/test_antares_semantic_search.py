@@ -118,7 +118,7 @@ def test_frozen_and_synthetic_pages_are_replayable_and_survivors_bind_retrieval(
     assert identities(second.portfolios) == {IDS[1]}
     assert identities(first.portfolios) == set(IDS)
     assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
-    assert any(r.semantic_type == "detection@ztf:antares" for r in second.portfolios[0].records)
+    assert any(r.semantic_type == "measurement@ztf:antares" for r in second.portfolios[0].records)
     assert identities(normalize_workflow_execution(second.staged.execution).steps[-1].portfolios) == {IDS[1]}
 
 

@@ -45,7 +45,7 @@ latest_selection:
   history:
     payload: locus_alerts
     time_scale: utc
-    detection_identity: detection.identity.source_id
+    detection_identity: measurement.identity.source_id
 ```
 
 Compilation reuses the existing complete material time proof with last/max

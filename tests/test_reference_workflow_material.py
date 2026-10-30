@@ -45,7 +45,7 @@ def records(portfolios, semantic_type):
 def test_each_captured_candidate_contract_preserves_pixel_distance_without_angular_alias(endpoint, fixture):
     row = json.loads((FIXTURES / f"{fixture}.json").read_text())[0]
     before = deepcopy(row)
-    detection, = records(build(endpoint, [row]), "detection@ztf:fink")
+    detection, = records(build(endpoint, [row]), "measurement@ztf:fink")
     assert detection.get(PIXEL) == row["i:distnr"]
     assert "reference_image.nearest_source.separation.total" not in detection.fields
     assert detection.internal_source.payload_key == endpoint
@@ -56,7 +56,7 @@ def test_each_captured_candidate_contract_preserves_pixel_distance_without_angul
 def test_reference_inputs_keep_their_capture_row_and_reported_count():
     payload = json.loads((FIXTURES / "objects_core.json").read_text())
     portfolios = build("objects", payload)
-    detections = records(portfolios, "detection@ztf:fink")
+    detections = records(portfolios, "measurement@ztf:fink")
     detection = next(r for r in detections if r.internal_source.payload_index == 0)
     ps1 = next(r for r in records(portfolios, "crossmatch@panstarrs:fink")
                if r.internal_source.payload_index == 0)
@@ -88,7 +88,7 @@ def test_pixel_mapping_keeps_zero_sentinel_and_null_without_changing_subtraction
     row = {"i:objectId": "ZTF-synthetic", "i:candid": 123, "i:jd": 2459000.5,
            "i:fid": 1, "i:magpsf": 20.0, "i:distnr": value, "i:isdiffpos": "f"}
     before = deepcopy(row)
-    detection, = records(build("objects", [row]), "detection@ztf:fink")
+    detection, = records(build("objects", [row]), "measurement@ztf:fink")
     assert detection.get(PIXEL) == value
     assert detection.get("image_metrics.is_positive") is False
     assert "reference_image.nearest_source.separation.total" not in detection.fields
@@ -98,7 +98,7 @@ def test_pixel_mapping_keeps_zero_sentinel_and_null_without_changing_subtraction
 def test_missing_pixel_distance_is_not_synthesized_from_other_distances():
     row = {"i:objectId": "ZTF-synthetic", "i:candid": 123, "i:jd": 2459000.5,
            "i:fid": 1, "i:magpsf": 20.0, "i:distpsnr1": 0.1}
-    detection, = records(build("objects", [row]), "detection@ztf:fink")
+    detection, = records(build("objects", [row]), "measurement@ztf:fink")
     assert PIXEL not in detection.fields
 
 
@@ -109,21 +109,21 @@ def test_valid_nonnegative_pixel_filter_selects_candidates_and_keeps_all_their_m
     portfolios = build("objects", [row("A", 1, 0.1), row("A", 2, 10.0), row("B", 3, -999.0)])
     predicate = BooleanPredicate(operator="and", operands=tuple(
         ComparisonPredicate(
-            left=SemanticReference(semantic_type="detection", producer="ztf", channel="fink", field_path=PIXEL),
+            left=SemanticReference(semantic_type="measurement", producer="ztf", channel="fink", field_path=PIXEL),
             operator=operator, right=PredicateLiteral(value=value),
         ) for operator, value in [(">=", 0), ("<=", 0.5)]
     ))
     selected = tuple(p for p in portfolios if evaluate_portfolio_predicate(p, predicate))
     assert len(selected) == 1
-    assert sorted(r.get(PIXEL) for r in records(selected, "detection@ztf:fink")) == [0.1, 10.0]
+    assert sorted(r.get(PIXEL) for r in records(selected, "measurement@ztf:fink")) == [0.1, 10.0]
 
 
 def test_new_mapping_retires_only_the_pixel_distance_exclusions():
     mapping = yaml.safe_load((PROVIDER / "mappings.yaml").read_text())
     debt = yaml.safe_load((PROVIDER / "unmapped_fields.yaml").read_text())
-    mapped = set(mapping["mappings"][f"detection@ztf:fink.{PIXEL}"])
+    mapped = set(mapping["mappings"][f"measurement@ztf:fink.{PIXEL}"])
     assert mapped == {f"{endpoint}#i:distnr" for endpoint in ("objects", "conesearch", "latests", "anomaly", "sso")}
     excluded = {next(iter(entry)) for entry in debt["unmapped"]}
     assert not mapped & excluded
     assert {"objects#i:objectidps2", "objects#i:objectidps3"} <= excluded
-    assert SemanticPathModel.from_ontology().is_valid(f"detection@ztf:fink.{PIXEL}")
+    assert SemanticPathModel.from_ontology().is_valid(f"measurement@ztf:fink.{PIXEL}")

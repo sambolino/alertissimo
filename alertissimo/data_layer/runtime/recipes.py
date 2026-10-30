@@ -664,7 +664,7 @@ def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[s
         if len(partition_fields) != 1 or len(evidence_fields) != 1:
             raise RecipeRegistryError(f"{where}: history latest requires mapped matching response partitions")
         return LatestSelectionCapability(
-            broker, origin, root.endpoint, "detection.time.mjd", (), index,
+            broker, origin, root.endpoint, "measurement.time.mjd", (), index,
             discovery_identity=root_ids[0].raw_field, evidence_identity=temporal.response_identity,
             history=temporal, discovery_partition=partition_fields[0].raw_field,
             evidence_partition=evidence_fields[0].raw_field,
@@ -719,11 +719,11 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     if "reduction" in proof and (
         (mode, reduction) not in (("first", "min"), ("last", "max"))
         or method != "material" or index == 0 or not proof["complete"]
-        or proof.get("detection_identity") != "detection.identity.source_id"
+        or proof.get("detection_identity") != "measurement.identity.source_id"
     ):
         raise RecipeRegistryError(f"{where}: reduction requires complete material detection history, source identity and matching first/min or last/max")
-    path = "detection.time.mjd" if mode == "detection" or reduction else f"summary.time.{mode}_mjd"
-    noun = "detection" if mode == "detection" or reduction else "summary"
+    path = "measurement.time.mjd" if mode == "detection" or reduction else f"summary.time.{mode}_mjd"
+    noun = "measurement" if mode == "detection" or reduction else "summary"
     fields = tuple(item for item in calls[index].outputs if item.payload_key == payload
                    and item.semantic_record_type == f"{noun}@{item.origin}:{item.broker}")
     spec = endpoint_defs[calls[index].endpoint]
@@ -740,12 +740,12 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
     detection_identity = proof.get("detection_identity")
     if "detection_identity" in proof and (
-        noun != "detection" or detection_identity != "detection.identity.source_id"
+        noun != "measurement" or detection_identity != "measurement.identity.source_id"
         or not any(canonical_semantic_path(item.semantic_path) == detection_identity for item in fields)
     ):
         raise RecipeRegistryError(f"{where}: detection_identity requires a mapped source identity in the detection evidence payload")
-    if noun == "detection" and not any(
-        canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
+    if noun == "measurement" and not any(
+        canonical_semantic_path(item.semantic_path).startswith("measurement.photometry.")
         and item.relative_field_path.endswith((".mag", ".flux"))
         and "limit" not in item.relative_field_path.split(".") for item in fields
     ):

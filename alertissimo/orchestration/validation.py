@@ -1200,7 +1200,7 @@ def validate_step_capabilities(
     operation = getattr(step, "op", type(step).__name__)
     semantic_type = getattr(step, "semantic_type", None)
     if isinstance(step, LookupStep):
-        semantic_type = "summary" if step.target.kind == "object" else "detection"
+        semantic_type = "summary" if step.target.kind == "object" else "measurement"
 
     if isinstance(
         step,

@@ -9,6 +9,7 @@ on:
       - 'alertissimo/orchestration/confirmation/**'
       - 'tests/test_mapping_schema.py'
       - 'tests/test_semantic_paths.py'
+      - 'tests/test_semantic_families.py'
       - 'tests/test_semantic_model_validation.py'
       - 'tests/test_semantic_record_builder.py'
       - 'tests/test_normalization_cardinality.py'
@@ -87,6 +88,7 @@ jobs:
           PYTHONPATH=. pytest -q \
             tests/test_mapping_schema.py \
             tests/test_semantic_paths.py \
+            tests/test_semantic_families.py \
             tests/test_semantic_model_validation.py \
             tests/test_semantic_record_builder.py \
             tests/test_normalization_cardinality.py \

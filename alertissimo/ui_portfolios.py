@@ -194,7 +194,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
     execution_index = {item.get("internal_execution_id"): item for item in executions}
     summary_identity = _summary_identity(records)
     summary = _first(records, "summary")
-    detections = [record for record in records if _family(record) == "detection"]
+    detections = [record for record in records if _family(record) == "measurement"]
     points = []
     for record in detections:
         fields = _fields(record)

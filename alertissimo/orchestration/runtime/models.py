@@ -94,7 +94,7 @@ class TimeSelectionRealization(RuntimeModel):
     response_identity: str | None = None
     target_parameter: str | None = None
     target_collection: Literal["csv"] | None = None
-    detection_identity: Literal["detection.identity.source_id"] | None = None
+    detection_identity: Literal["measurement.identity.source_id"] | None = None
     reduction: Literal["min", "max"] | None = None
 
 

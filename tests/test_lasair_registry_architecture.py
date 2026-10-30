@@ -253,19 +253,19 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         "object_partition": {"mode": "root_field", "field": "objectId"},
     }
     assert "lightcurve@ztf:lasair.{filter}.points" not in mappings
-    assert transforms["detection@ztf:lasair.time.mjd"]["candidates#jd"][
+    assert transforms["measurement@ztf:lasair.time.mjd"]["candidates#jd"][
         "type"
     ] == "jd_to_mjd"
-    assert transforms["detection@ztf:lasair.time.mjd"]["objects_candidates#jd"][
+    assert transforms["measurement@ztf:lasair.time.mjd"]["objects_candidates#jd"][
         "type"
     ] == "jd_to_mjd"
-    assert transforms["detection@ztf:lasair.photometry.{filter}"][
+    assert transforms["measurement@ztf:lasair.photometry.{filter}"][
         "candidates#fid"
     ]["type"] == "value_map"
-    assert transforms["detection@ztf:lasair.photometry.{filter}"][
+    assert transforms["measurement@ztf:lasair.photometry.{filter}"][
         "objects_candidates#fid"
     ]["type"] == "value_map"
-    assert transforms["detection@ztf:lasair.image_metrics.is_positive"][
+    assert transforms["measurement@ztf:lasair.image_metrics.is_positive"][
         "candidates#isdiffpos"
     ]["type"] == "value_map"
     producer_transforms = transforms[

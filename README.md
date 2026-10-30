@@ -47,7 +47,7 @@ Interactive clients should make continuation context explicit:
 validation = validate_dsl(source, continue_from=None)
 if validation.is_runnable:
     first = execute_dsl(source, continue_from=None)
-    fragment = "filter detection@ztf:fink.quality.real_bogus >= 0.8"
+    fragment = "filter measurement@ztf:fink.quality.real_bogus >= 0.8"
     continuation = validate_dsl(fragment, continue_from=first)
     if continuation.is_runnable:
         second = execute_dsl(fragment, continue_from=first)

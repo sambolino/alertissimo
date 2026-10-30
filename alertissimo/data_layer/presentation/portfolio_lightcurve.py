@@ -69,7 +69,7 @@ def _finite_number(value: Any) -> float | None:
 
 def _is_detection(semantic_type: str) -> bool:
     """Ignore producer and broker qualification when identifying detections."""
-    return semantic_type.split("@", 1)[0] == "detection"
+    return semantic_type.split("@", 1)[0] == "measurement"
 
 
 def _rows_for_record(

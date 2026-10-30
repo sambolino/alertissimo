@@ -155,7 +155,7 @@ def test_production_modes_select_candidates_from_their_own_required_evidence(gra
         assert set(histories[0]["objectIds"].split(",")) == set(IDS[:4])
         for portfolio in result.portfolios:
             oid = summary_object_identity(portfolio)[1]
-            records = [r for r in portfolio.records if r.semantic_type == "detection@ztf:lasair"]
+            records = [r for r in portfolio.records if r.semantic_type == "measurement@ztf:lasair"]
             detections = [r for r in records if r.get("photometry.g.psf.mag") is not None]
             assert sorted(r.get("time.mjd") for r in detections) == HISTORY[oid]
             assert any(r.get("photometry.g.limit.mag") == 22.0 for r in records)
@@ -206,7 +206,7 @@ def test_reuse_and_continuation_preserve_survivors_and_do_not_repeat_history(gra
     assert third.run.steps[0].time_reference == NOW
     assert identities(first.portfolios) == identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
     detections = [record for record in third.portfolios[0].records
-                  if record.semantic_type == "detection@ztf:lasair"
+                  if record.semantic_type == "measurement@ztf:lasair"
                   and record.get("photometry.g.psf.mag") is not None]
     assert {record.get("time.mjd") for record in detections} == set(HISTORY[IDS[3]])
 
@@ -338,7 +338,7 @@ def test_semantic_latest_ranks_after_complete_time_membership(graph, monkeypatch
         # B has the latest summary date but no in-window detection. C wins
         # by its overall last date, rather than by its in-window witness.
         times = {r.get("time.mjd") for r in result.portfolios[0].records
-                 if r.semantic_type == "detection@ztf:lasair" and r.get("photometry.g.psf.mag") is not None}
+                 if r.semantic_type == "measurement@ztf:lasair" and r.get("photometry.g.psf.mag") is not None}
         assert times == set(HISTORY[expected])
     assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {expected}
 

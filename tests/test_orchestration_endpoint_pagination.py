@@ -304,7 +304,7 @@ def test_recorded_latests_alerts_keep_partition_and_detection_identity_below_the
         observed_ids.update(ids)
         observed_detections.update(
             record.fields["identity.source_id"]
-            for record in portfolio.records if record.semantic_type == "detection@ztf:fink"
+            for record in portfolio.records if record.semantic_type == "measurement@ztf:fink"
         )
     assert observed_ids == expected_ids
     assert observed_detections == {row["i:candid"] for row in payload}

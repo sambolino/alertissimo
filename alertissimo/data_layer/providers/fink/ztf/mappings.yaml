@@ -50,145 +50,145 @@ payloads:
     endpoint: resolver
     path: '[]'
 mappings:
-  detection@ztf:fink.position.ra:
+  measurement@ztf:fink.position.ra:
   - objects#i:ra
   - conesearch#i:ra
   - latests#i:ra
   - sso#i:ra
   - anomaly#i:ra
-  detection@ztf:fink.position.dec:
+  measurement@ztf:fink.position.dec:
   - objects#i:dec
   - conesearch#i:dec
   - latests#i:dec
   - sso#i:dec
   - anomaly#i:dec
-  detection@ztf:fink.position.image_x:
+  measurement@ztf:fink.position.image_x:
   - objects#i:xpos
   - sso#i:xpos
   - anomaly#i:xpos
   - latests#i:xpos
-  detection@ztf:fink.position.image_y:
+  measurement@ztf:fink.position.image_y:
   - objects#i:ypos
   - sso#i:ypos
   - anomaly#i:ypos
   - latests#i:ypos
-  detection@ztf:fink.position.distance_to_edge:
+  measurement@ztf:fink.position.distance_to_edge:
   - objects#i:mindtoedge
   - anomaly#i:mindtoedge
-  detection@ztf:fink.separation.from_search_center:
+  measurement@ztf:fink.separation.from_search_center:
   - conesearch#v:separation_degree
-  detection@ztf:fink.photometry.{filter}:
+  measurement@ztf:fink.photometry.{filter}:
   - objects#i:fid
   - conesearch#i:fid
   - latests#i:fid
   - sso#i:fid
   - anomaly#i:fid
-  detection@ztf:fink.photometry.{filter}.psf.mag:
+  measurement@ztf:fink.photometry.{filter}.psf.mag:
   - objects#i:magpsf
   - conesearch#i:magpsf
   - latests#i:magpsf
   - sso#i:magpsf
   - anomaly#i:magpsf
-  detection@ztf:fink.photometry.{filter}.psf.mag.error:
+  measurement@ztf:fink.photometry.{filter}.psf.mag.error:
   - objects#i:sigmapsf
   - conesearch#i:sigmapsf
   - sso#i:sigmapsf
   - latests#i:sigmapsf
   - anomaly#i:sigmapsf
-  detection@ztf:fink.time.mjd:
+  measurement@ztf:fink.time.mjd:
   - objects#i:jd
   - conesearch#i:jd
   - latests#i:jd
   - sso#i:jd
   - anomaly#i:jd
-  detection@ztf:fink.photometry.{filter}.limit.mag:
+  measurement@ztf:fink.photometry.{filter}.limit.mag:
   - objects#i:diffmaglim
   - sso#i:diffmaglim
   - latests#i:diffmaglim
   - anomaly#i:diffmaglim
-  detection@ztf:fink.photometry.{filter}.limit.mag_offset_from_limit:
+  measurement@ztf:fink.photometry.{filter}.limit.mag_offset_from_limit:
   - objects#i:magfromlim
   - anomaly#i:magfromlim
-  detection@ztf:fink.calibration.{filter}.zero_point:
+  measurement@ztf:fink.calibration.{filter}.zero_point:
   - objects#i:magzpsci
   - sso#i:magzpsci
   - latests#i:magzpsci
   - anomaly#i:magzpsci
-  detection@ztf:fink.calibration.{filter}.zero_point_rms:
+  measurement@ztf:fink.calibration.{filter}.zero_point_rms:
   - objects#i:magzpscirms
   - anomaly#i:magzpscirms
-  detection@ztf:fink.calibration.{filter}.zero_point_uncertainty:
+  measurement@ztf:fink.calibration.{filter}.zero_point_uncertainty:
   - objects#i:magzpsciunc
   - anomaly#i:magzpsciunc
-  detection@ztf:fink.time.exposure:
+  measurement@ztf:fink.time.exposure:
   - objects#i:exptime
   - anomaly#i:exptime
-  detection@ztf:fink.photometry.{filter}.aperture.mag:
+  measurement@ztf:fink.photometry.{filter}.aperture.mag:
   - objects#i:magap
   - anomaly#i:magap
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag:
+  measurement@ztf:fink.photometry.{filter}.aperture.large.mag:
   - objects#i:magapbig
   - anomaly#i:magapbig
-  detection@ztf:fink.photometry.{filter}.aperture.mag.error:
+  measurement@ztf:fink.photometry.{filter}.aperture.mag.error:
   - objects#i:sigmagap
   - anomaly#i:sigmagap
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag.error:
+  measurement@ztf:fink.photometry.{filter}.aperture.large.mag.error:
   - objects#i:sigmagapbig
   - anomaly#i:sigmagapbig
-  detection@ztf:fink.photometry.{filter}.mag_minus_psf:
+  measurement@ztf:fink.photometry.{filter}.mag_minus_psf:
   - objects#i:magdiff
   - anomaly#i:magdiff
-  detection@ztf:fink.quality.real_bogus:
+  measurement@ztf:fink.quality.real_bogus:
   - objects#i:drb
   - conesearch#i:drb
   - sso#i:drb
   - latests#i:drb
   - anomaly#i:drb
-  detection@ztf:fink.quality.rf_real_bogus:
+  measurement@ztf:fink.quality.rf_real_bogus:
   - objects#i:rb
   - sso#i:rb
   - latests#i:rb
   - anomaly#i:rb
-  detection@ztf:fink.photometry.{filter}.psf.fit_chi2:
+  measurement@ztf:fink.photometry.{filter}.psf.fit_chi2:
   - objects#i:chipsf
   - sso#i:chipsf
   - latests#i:chipsf
   - anomaly#i:chipsf
-  detection@ztf:fink.image_metrics.fwhm:
+  measurement@ztf:fink.image_metrics.fwhm:
   - objects#i:fwhm
   - anomaly#i:fwhm
-  detection@ztf:fink.image_metrics.elongation:
+  measurement@ztf:fink.image_metrics.elongation:
   - objects#i:elong
   - anomaly#i:elong
-  detection@ztf:fink.image_metrics.aimage:
+  measurement@ztf:fink.image_metrics.aimage:
   - objects#i:aimage
   - anomaly#i:aimage
-  detection@ztf:fink.image_metrics.bimage:
+  measurement@ztf:fink.image_metrics.bimage:
   - objects#i:bimage
   - anomaly#i:bimage
-  detection@ztf:fink.image_metrics.aimage_ratio:
+  measurement@ztf:fink.image_metrics.aimage_ratio:
   - objects#i:aimagerat
   - anomaly#i:aimagerat
-  detection@ztf:fink.image_metrics.bimage_ratio:
+  measurement@ztf:fink.image_metrics.bimage_ratio:
   - objects#i:bimagerat
   - anomaly#i:bimagerat
   # ZTF candidate distnr is in pixels; angular separation stays in arcsec.
-  detection@ztf:fink.reference_image.nearest_source.pixel_distance:
+  measurement@ztf:fink.reference_image.nearest_source.pixel_distance:
   - objects#i:distnr
   - conesearch#i:distnr
   - latests#i:distnr
   - anomaly#i:distnr
   - sso#i:distnr
-  detection@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
+  measurement@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
   - objects#i:chinr
   - anomaly#i:chinr
-  detection@ztf:fink.reference_image.nearest_source.image_metrics.sharpness:
+  measurement@ztf:fink.reference_image.nearest_source.image_metrics.sharpness:
   - objects#i:sharpnr
   - anomaly#i:sharpnr
-  detection@ztf:fink.quality.real_bogus.version:
+  measurement@ztf:fink.quality.real_bogus.version:
   - objects#i:drbversion
   - anomaly#i:drbversion
-  detection@ztf:fink.quality.rf_real_bogus.version:
+  measurement@ztf:fink.quality.rf_real_bogus.version:
   - objects#i:rbversion
   - anomaly#i:rbversion
   summary@ztf:fink.identity.object_id:
@@ -197,84 +197,84 @@ mappings:
   - latests#i:objectId
   - sso#i:objectId
   - anomaly#i:objectId
-  detection@ztf:fink.identity.field_id:
+  measurement@ztf:fink.identity.field_id:
   - objects#i:field
   - sso#i:field
   - latests#i:field
   - anomaly#i:field
-  detection@ztf:fink.identity.night_id:
+  measurement@ztf:fink.identity.night_id:
   - objects#i:nid
   - sso#i:nid
   - latests#i:nid
   - anomaly#i:nid
-  detection@ztf:fink.provenance.producer.program_id:
+  measurement@ztf:fink.provenance.producer.program_id:
   - objects#i:programid
   - anomaly#i:programid
-  detection@ztf:fink.provenance.producer.program_pi:
+  measurement@ztf:fink.provenance.producer.program_pi:
   - objects#i:programpi
   - anomaly#i:programpi
-  detection@ztf:fink.provenance.channel.name:
+  measurement@ztf:fink.provenance.channel.name:
   - objects#i:publisher
   - sso#i:publisher
   - latests#i:publisher
   - anomaly#i:publisher
-  detection@ztf:fink.provenance.channel.version:
+  measurement@ztf:fink.provenance.channel.version:
   - objects#i:fink_broker_version
   - anomaly#i:fink_broker_version
-  detection@ztf:fink.provenance.producer.schema_version:
+  measurement@ztf:fink.provenance.producer.schema_version:
   - objects#i:schemavsn
   - anomaly#i:schemavsn
-  detection@ztf:fink.provenance.producer.pipeline_id:
+  measurement@ztf:fink.provenance.producer.pipeline_id:
   - objects#i:pid
   - anomaly#i:pid
-  detection@ztf:fink.provenance.producer.reference_image_id:
+  measurement@ztf:fink.provenance.producer.reference_image_id:
   - objects#i:rfid
   - anomaly#i:rfid
-  detection@ztf:fink.provenance.producer.diffim_filename:
+  measurement@ztf:fink.provenance.producer.diffim_filename:
   - objects#i:pdiffimfilename
   - anomaly#i:pdiffimfilename
-  detection@ztf:fink.provenance.producer.too_flag:
+  measurement@ztf:fink.provenance.producer.too_flag:
   - objects#i:tooflag
   - sso#i:tooflag
   - latests#i:tooflag
   - anomaly#i:tooflag
-  detection@ztf:fink.provenance.producer.rcid:
+  measurement@ztf:fink.provenance.producer.rcid:
   - objects#i:rcid
   - sso#i:rcid
   - latests#i:rcid
   - anomaly#i:rcid
-  detection@ztf:fink.image_metrics.is_positive:
+  measurement@ztf:fink.image_metrics.is_positive:
   - objects#i:isdiffpos
   - sso#i:isdiffpos
   - latests#i:isdiffpos
   - anomaly#i:isdiffpos
-  detection@ztf:fink.photometry.{filter}.upper_limit:
+  measurement@ztf:fink.photometry.{filter}.upper_limit:
   - objects#d:tag
-  detection@ztf:fink.image_metrics.nbad_pixels:
+  measurement@ztf:fink.image_metrics.nbad_pixels:
   - objects#i:nbad
   - anomaly#i:nbad
-  detection@ztf:fink.image_metrics.nneg_pixels:
+  measurement@ztf:fink.image_metrics.nneg_pixels:
   - objects#i:nneg
   - anomaly#i:nneg
-  detection@ztf:fink.image_metrics.pixel_sum_ratio:
+  measurement@ztf:fink.image_metrics.pixel_sum_ratio:
   - objects#i:sumrat
   - anomaly#i:sumrat
-  detection@ztf:fink.image_metrics.scorr:
+  measurement@ztf:fink.image_metrics.scorr:
   - objects#i:scorr
   - anomaly#i:scorr
-  detection@ztf:fink.image_metrics.ssnrms:
+  measurement@ztf:fink.image_metrics.ssnrms:
   - objects#i:ssnrms
   - anomaly#i:ssnrms
-  detection@ztf:fink.image_metrics.dsnrms:
+  measurement@ztf:fink.image_metrics.dsnrms:
   - objects#i:dsnrms
   - anomaly#i:dsnrms
-  detection@ztf:fink.image_metrics.dsdiff:
+  measurement@ztf:fink.image_metrics.dsdiff:
   - objects#i:dsdiff
   - anomaly#i:dsdiff
-  detection@ztf:fink.image_metrics.seeratio:
+  measurement@ztf:fink.image_metrics.seeratio:
   - objects#i:seeratio
   - anomaly#i:seeratio
-  detection@ztf:fink.image_metrics.sky_background:
+  measurement@ztf:fink.image_metrics.sky_background:
   - objects#i:sky
   - anomaly#i:sky
   summary@ztf:fink.detection_count:
@@ -294,53 +294,53 @@ mappings:
   - sso#i:jdendhist
   - latests#i:jdendhist
   - anomaly#i:jdendhist
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag:
+  measurement@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag:
   - objects#i:magnr
   - sso#i:magnr
   - latests#i:magnr
   - anomaly#i:magnr
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
+  measurement@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
   - objects#i:sigmagnr
   - sso#i:sigmagnr
   - latests#i:sigmagnr
   - anomaly#i:sigmagnr
-  detection@ztf:fink.reference_image.nearest_source.position.ra:
+  measurement@ztf:fink.reference_image.nearest_source.position.ra:
   - objects#i:ranr
   - anomaly#i:ranr
-  detection@ztf:fink.reference_image.nearest_source.position.dec:
+  measurement@ztf:fink.reference_image.nearest_source.position.dec:
   - objects#i:decnr
   - anomaly#i:decnr
-  detection@ztf:fink.reference_image.time.first_mjd:
+  measurement@ztf:fink.reference_image.time.first_mjd:
   - objects#i:jdstartref
   - anomaly#i:jdstartref
-  detection@ztf:fink.reference_image.time.last_mjd:
+  measurement@ztf:fink.reference_image.time.last_mjd:
   - objects#i:jdendref
   - anomaly#i:jdendref
-  detection@ztf:fink.reference_image.nframes:
+  measurement@ztf:fink.reference_image.nframes:
   - objects#i:nframesref
   - anomaly#i:nframesref
   summary@ztf:fink.coverage_count:
   - objects#i:ncovhist
   - anomaly#i:ncovhist
-  detection@ztf:fink.calibration.{filter}.color_coefficient:
+  measurement@ztf:fink.calibration.{filter}.color_coefficient:
   - objects#i:clrcoeff
   - anomaly#i:clrcoeff
-  detection@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
+  measurement@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
   - objects#i:clrcounc
   - anomaly#i:clrcounc
-  detection@ztf:fink.calibration.nmatches:
+  measurement@ztf:fink.calibration.nmatches:
   - objects#i:nmatches
   - anomaly#i:nmatches
-  detection@ztf:fink.calibration.color_median:
+  measurement@ztf:fink.calibration.color_median:
   - objects#i:clrmed
   - anomaly#i:clrmed
-  detection@ztf:fink.calibration.color_rms:
+  measurement@ztf:fink.calibration.color_rms:
   - objects#i:clrrms
   - anomaly#i:clrrms
-  detection@ztf:fink.calibration.{filter}.zero_point_covariance:
+  measurement@ztf:fink.calibration.{filter}.zero_point_covariance:
   - objects#i:zpclrcov
   - anomaly#i:zpclrcov
-  detection@ztf:fink.calibration.zp_median:
+  measurement@ztf:fink.calibration.zp_median:
   - objects#i:zpmed
   - anomaly#i:zpmed
   summary@ztf:fink.time.first_detection:
@@ -413,21 +413,21 @@ mappings:
   - sso#d:is_transient
   - latests#d:is_transient
   - anomaly#d:is_transient
-  detection@ztf:fink.solar_system.roid:
+  measurement@ztf:fink.solar_system.roid:
   - objects#d:roid
   - sso#d:roid
   - latests#d:roid
   - anomaly#d:roid
-  detection@ztf:fink.solar_system.mpc_match.separation.total:
+  measurement@ztf:fink.solar_system.mpc_match.separation.total:
   - objects#i:ssdistnr
   - sso#i:ssdistnr
   - latests#i:ssdistnr
   - anomaly#i:ssdistnr
-  detection@ztf:fink.solar_system.iau_name:
+  measurement@ztf:fink.solar_system.iau_name:
   - sso#sso_name
-  detection@ztf:fink.solar_system.iau_number:
+  measurement@ztf:fink.solar_system.iau_number:
   - sso#sso_number
-  detection@ztf:fink.satellite.tracklet_id:
+  measurement@ztf:fink.satellite.tracklet_id:
   - objects#d:tracklet
   - sso#d:tracklet
   - latests#d:tracklet
@@ -519,21 +519,21 @@ mappings:
   - sso#i:classtar
   - latests#i:classtar
   - anomaly#i:classtar
-  detection@ztf:fink.identity.source_id:
+  measurement@ztf:fink.identity.source_id:
   - objects#i:candid
   - conesearch#i:candid
   - sso#i:candid
   - latests#i:candid
   - anomaly#i:candid
-  detection@ztf:fink.provenance.channel.science_version:
+  measurement@ztf:fink.provenance.channel.science_version:
   - objects#i:fink_science_version
   - anomaly#i:fink_science_version
-  detection@ztf:fink.solar_system.mpc_match.identity.object_id:
+  measurement@ztf:fink.solar_system.mpc_match.identity.object_id:
   - objects#i:ssnamenr
   - sso#i:ssnamenr
   - latests#i:ssnamenr
   - anomaly#i:ssnamenr
-  detection@ztf:fink.solar_system.mpc_magnitude:
+  measurement@ztf:fink.solar_system.mpc_magnitude:
   - objects#i:ssmagnr
   - sso#i:ssmagnr
   - latests#i:ssmagnr
@@ -864,7 +864,7 @@ transforms:
     cutouts_array#b:cutoutScience_stampData: {object_key: science}
     cutouts_array#b:cutoutTemplate_stampData: {object_key: template}
     cutouts_array#b:cutoutDifference_stampData: {object_key: difference}
-  detection@ztf:fink.reference_image.nearest_source.pixel_distance:
+  measurement@ztf:fink.reference_image.nearest_source.pixel_distance:
     objects#i:distnr:
       skip_null: true
     conesearch#i:distnr:
@@ -1496,7 +1496,7 @@ transforms:
         -1: null
         -1.0: null
       skip_null: true
-  detection@ztf:fink.photometry.{filter}:
+  measurement@ztf:fink.photometry.{filter}:
     objects#i:fid:
       type: value_map
       map:
@@ -1575,7 +1575,7 @@ transforms:
         '3': i
       default: null
       skip_null: true
-  detection@ztf:fink.time.mjd:
+  measurement@ztf:fink.time.mjd:
     objects#i:jd:
       type: jd_to_mjd
       skip_null: true
@@ -1620,21 +1620,21 @@ transforms:
     anomaly#i:jdendhist:
       type: jd_to_mjd
       skip_null: true
-  detection@ztf:fink.reference_image.time.first_mjd:
+  measurement@ztf:fink.reference_image.time.first_mjd:
     objects#i:jdstartref:
       type: jd_to_mjd
       skip_null: true
     anomaly#i:jdstartref:
       type: jd_to_mjd
       skip_null: true
-  detection@ztf:fink.reference_image.time.last_mjd:
+  measurement@ztf:fink.reference_image.time.last_mjd:
     objects#i:jdendref:
       type: jd_to_mjd
       skip_null: true
     anomaly#i:jdendref:
       type: jd_to_mjd
       skip_null: true
-  detection@ztf:fink.separation.from_search_center:
+  measurement@ztf:fink.separation.from_search_center:
     conesearch#v:separation_degree:
       type: scale
       factor: 3600
@@ -1667,7 +1667,7 @@ transforms:
         ? ''
         : null
       skip_null: true
-  detection@ztf:fink.identity.source_id:
+  measurement@ztf:fink.identity.source_id:
     objects#i:candid:
       type: value_map
       map:
@@ -1693,7 +1693,7 @@ transforms:
       map:
         -1: null
       skip_null: true
-  detection@ztf:fink.solar_system.mpc_match.identity.object_id:
+  measurement@ztf:fink.solar_system.mpc_match.identity.object_id:
     objects#i:ssnamenr:
       type: value_map
       map:
@@ -1726,7 +1726,7 @@ transforms:
         'null': null
         Unknown: null
       skip_null: true
-  detection@ztf:fink.solar_system.mpc_match.separation.total:
+  measurement@ztf:fink.solar_system.mpc_match.separation.total:
     objects#i:ssdistnr:
       type: value_map
       map:
@@ -1747,7 +1747,7 @@ transforms:
       map:
         -999: null
       skip_null: true
-  detection@ztf:fink.solar_system.mpc_magnitude:
+  measurement@ztf:fink.solar_system.mpc_magnitude:
     objects#i:ssmagnr:
       type: value_map
       map:
@@ -1768,7 +1768,7 @@ transforms:
       map:
         -999: null
       skip_null: true
-  detection@ztf:fink.satellite.tracklet_id:
+  measurement@ztf:fink.satellite.tracklet_id:
     objects#d:tracklet:
       type: value_map
       map:
@@ -2733,7 +2733,7 @@ transforms:
       map:
         -1: null
       skip_null: true
-  detection@ztf:fink.position.ra:
+  measurement@ztf:fink.position.ra:
     objects#i:ra:
       skip_null: true
     conesearch#i:ra:
@@ -2744,7 +2744,7 @@ transforms:
       skip_null: true
     anomaly#i:ra:
       skip_null: true
-  detection@ztf:fink.position.dec:
+  measurement@ztf:fink.position.dec:
     objects#i:dec:
       skip_null: true
     conesearch#i:dec:
@@ -2755,7 +2755,7 @@ transforms:
       skip_null: true
     anomaly#i:dec:
       skip_null: true
-  detection@ztf:fink.position.image_x:
+  measurement@ztf:fink.position.image_x:
     objects#i:xpos:
       skip_null: true
     sso#i:xpos:
@@ -2764,7 +2764,7 @@ transforms:
       skip_null: true
     latests#i:xpos:
       skip_null: true
-  detection@ztf:fink.position.image_y:
+  measurement@ztf:fink.position.image_y:
     objects#i:ypos:
       skip_null: true
     sso#i:ypos:
@@ -2773,12 +2773,12 @@ transforms:
       skip_null: true
     latests#i:ypos:
       skip_null: true
-  detection@ztf:fink.position.distance_to_edge:
+  measurement@ztf:fink.position.distance_to_edge:
     objects#i:mindtoedge:
       skip_null: true
     anomaly#i:mindtoedge:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.psf.mag:
+  measurement@ztf:fink.photometry.{filter}.psf.mag:
     objects#i:magpsf:
       skip_null: true
     conesearch#i:magpsf:
@@ -2789,7 +2789,7 @@ transforms:
       skip_null: true
     anomaly#i:magpsf:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.psf.mag.error:
+  measurement@ztf:fink.photometry.{filter}.psf.mag.error:
     objects#i:sigmapsf:
       skip_null: true
     conesearch#i:sigmapsf:
@@ -2800,7 +2800,7 @@ transforms:
       skip_null: true
     anomaly#i:sigmapsf:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.limit.mag:
+  measurement@ztf:fink.photometry.{filter}.limit.mag:
     objects#i:diffmaglim:
       skip_null: true
     sso#i:diffmaglim:
@@ -2809,12 +2809,12 @@ transforms:
       skip_null: true
     anomaly#i:diffmaglim:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.limit.mag_offset_from_limit:
+  measurement@ztf:fink.photometry.{filter}.limit.mag_offset_from_limit:
     objects#i:magfromlim:
       skip_null: true
     anomaly#i:magfromlim:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.zero_point:
+  measurement@ztf:fink.calibration.{filter}.zero_point:
     objects#i:magzpsci:
       skip_null: true
     sso#i:magzpsci:
@@ -2823,47 +2823,47 @@ transforms:
       skip_null: true
     anomaly#i:magzpsci:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.zero_point_rms:
+  measurement@ztf:fink.calibration.{filter}.zero_point_rms:
     objects#i:magzpscirms:
       skip_null: true
     anomaly#i:magzpscirms:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.zero_point_uncertainty:
+  measurement@ztf:fink.calibration.{filter}.zero_point_uncertainty:
     objects#i:magzpsciunc:
       skip_null: true
     anomaly#i:magzpsciunc:
       skip_null: true
-  detection@ztf:fink.time.exposure:
+  measurement@ztf:fink.time.exposure:
     objects#i:exptime:
       skip_null: true
     anomaly#i:exptime:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.aperture.mag:
+  measurement@ztf:fink.photometry.{filter}.aperture.mag:
     objects#i:magap:
       skip_null: true
     anomaly#i:magap:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag:
+  measurement@ztf:fink.photometry.{filter}.aperture.large.mag:
     objects#i:magapbig:
       skip_null: true
     anomaly#i:magapbig:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.aperture.mag.error:
+  measurement@ztf:fink.photometry.{filter}.aperture.mag.error:
     objects#i:sigmagap:
       skip_null: true
     anomaly#i:sigmagap:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.aperture.large.mag.error:
+  measurement@ztf:fink.photometry.{filter}.aperture.large.mag.error:
     objects#i:sigmagapbig:
       skip_null: true
     anomaly#i:sigmagapbig:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.mag_minus_psf:
+  measurement@ztf:fink.photometry.{filter}.mag_minus_psf:
     objects#i:magdiff:
       skip_null: true
     anomaly#i:magdiff:
       skip_null: true
-  detection@ztf:fink.quality.real_bogus:
+  measurement@ztf:fink.quality.real_bogus:
     objects#i:drb:
       skip_null: true
     conesearch#i:drb:
@@ -2874,7 +2874,7 @@ transforms:
       skip_null: true
     anomaly#i:drb:
       skip_null: true
-  detection@ztf:fink.quality.rf_real_bogus:
+  measurement@ztf:fink.quality.rf_real_bogus:
     objects#i:rb:
       skip_null: true
     sso#i:rb:
@@ -2883,7 +2883,7 @@ transforms:
       skip_null: true
     anomaly#i:rb:
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.psf.fit_chi2:
+  measurement@ztf:fink.photometry.{filter}.psf.fit_chi2:
     objects#i:chipsf:
       skip_null: true
     sso#i:chipsf:
@@ -2892,52 +2892,52 @@ transforms:
       skip_null: true
     anomaly#i:chipsf:
       skip_null: true
-  detection@ztf:fink.image_metrics.fwhm:
+  measurement@ztf:fink.image_metrics.fwhm:
     objects#i:fwhm:
       skip_null: true
     anomaly#i:fwhm:
       skip_null: true
-  detection@ztf:fink.image_metrics.elongation:
+  measurement@ztf:fink.image_metrics.elongation:
     objects#i:elong:
       skip_null: true
     anomaly#i:elong:
       skip_null: true
-  detection@ztf:fink.image_metrics.aimage:
+  measurement@ztf:fink.image_metrics.aimage:
     objects#i:aimage:
       skip_null: true
     anomaly#i:aimage:
       skip_null: true
-  detection@ztf:fink.image_metrics.bimage:
+  measurement@ztf:fink.image_metrics.bimage:
     objects#i:bimage:
       skip_null: true
     anomaly#i:bimage:
       skip_null: true
-  detection@ztf:fink.image_metrics.aimage_ratio:
+  measurement@ztf:fink.image_metrics.aimage_ratio:
     objects#i:aimagerat:
       skip_null: true
     anomaly#i:aimagerat:
       skip_null: true
-  detection@ztf:fink.image_metrics.bimage_ratio:
+  measurement@ztf:fink.image_metrics.bimage_ratio:
     objects#i:bimagerat:
       skip_null: true
     anomaly#i:bimagerat:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
+  measurement@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
     objects#i:chinr:
       skip_null: true
     anomaly#i:chinr:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.image_metrics.sharpness:
+  measurement@ztf:fink.reference_image.nearest_source.image_metrics.sharpness:
     objects#i:sharpnr:
       skip_null: true
     anomaly#i:sharpnr:
       skip_null: true
-  detection@ztf:fink.quality.real_bogus.version:
+  measurement@ztf:fink.quality.real_bogus.version:
     objects#i:drbversion:
       skip_null: true
     anomaly#i:drbversion:
       skip_null: true
-  detection@ztf:fink.quality.rf_real_bogus.version:
+  measurement@ztf:fink.quality.rf_real_bogus.version:
     objects#i:rbversion:
       skip_null: true
     anomaly#i:rbversion:
@@ -2953,7 +2953,7 @@ transforms:
       skip_null: true
     anomaly#i:objectId:
       skip_null: true
-  detection@ztf:fink.identity.field_id:
+  measurement@ztf:fink.identity.field_id:
     objects#i:field:
       skip_null: true
     sso#i:field:
@@ -2962,7 +2962,7 @@ transforms:
       skip_null: true
     anomaly#i:field:
       skip_null: true
-  detection@ztf:fink.identity.night_id:
+  measurement@ztf:fink.identity.night_id:
     objects#i:nid:
       skip_null: true
     sso#i:nid:
@@ -2971,17 +2971,17 @@ transforms:
       skip_null: true
     anomaly#i:nid:
       skip_null: true
-  detection@ztf:fink.provenance.producer.program_id:
+  measurement@ztf:fink.provenance.producer.program_id:
     objects#i:programid:
       skip_null: true
     anomaly#i:programid:
       skip_null: true
-  detection@ztf:fink.provenance.producer.program_pi:
+  measurement@ztf:fink.provenance.producer.program_pi:
     objects#i:programpi:
       skip_null: true
     anomaly#i:programpi:
       skip_null: true
-  detection@ztf:fink.provenance.channel.name:
+  measurement@ztf:fink.provenance.channel.name:
     objects#i:publisher:
       skip_null: true
     sso#i:publisher:
@@ -2990,32 +2990,32 @@ transforms:
       skip_null: true
     anomaly#i:publisher:
       skip_null: true
-  detection@ztf:fink.provenance.channel.version:
+  measurement@ztf:fink.provenance.channel.version:
     objects#i:fink_broker_version:
       skip_null: true
     anomaly#i:fink_broker_version:
       skip_null: true
-  detection@ztf:fink.provenance.producer.schema_version:
+  measurement@ztf:fink.provenance.producer.schema_version:
     objects#i:schemavsn:
       skip_null: true
     anomaly#i:schemavsn:
       skip_null: true
-  detection@ztf:fink.provenance.producer.pipeline_id:
+  measurement@ztf:fink.provenance.producer.pipeline_id:
     objects#i:pid:
       skip_null: true
     anomaly#i:pid:
       skip_null: true
-  detection@ztf:fink.provenance.producer.reference_image_id:
+  measurement@ztf:fink.provenance.producer.reference_image_id:
     objects#i:rfid:
       skip_null: true
     anomaly#i:rfid:
       skip_null: true
-  detection@ztf:fink.provenance.producer.diffim_filename:
+  measurement@ztf:fink.provenance.producer.diffim_filename:
     objects#i:pdiffimfilename:
       skip_null: true
     anomaly#i:pdiffimfilename:
       skip_null: true
-  detection@ztf:fink.provenance.producer.too_flag:
+  measurement@ztf:fink.provenance.producer.too_flag:
     objects#i:tooflag:
       skip_null: true
     sso#i:tooflag:
@@ -3024,7 +3024,7 @@ transforms:
       skip_null: true
     anomaly#i:tooflag:
       skip_null: true
-  detection@ztf:fink.provenance.producer.rcid:
+  measurement@ztf:fink.provenance.producer.rcid:
     objects#i:rcid:
       skip_null: true
     sso#i:rcid:
@@ -3033,7 +3033,7 @@ transforms:
       skip_null: true
     anomaly#i:rcid:
       skip_null: true
-  detection@ztf:fink.image_metrics.is_positive:
+  measurement@ztf:fink.image_metrics.is_positive:
     objects#i:isdiffpos:
       type: value_map
       map:
@@ -3070,7 +3070,7 @@ transforms:
         '0': false
       default: null
       skip_null: true
-  detection@ztf:fink.photometry.{filter}.upper_limit:
+  measurement@ztf:fink.photometry.{filter}.upper_limit:
     objects#d:tag:
       type: value_map
       map:
@@ -3078,47 +3078,47 @@ transforms:
         valid: false
       default: null
       skip_null: true
-  detection@ztf:fink.image_metrics.nbad_pixels:
+  measurement@ztf:fink.image_metrics.nbad_pixels:
     objects#i:nbad:
       skip_null: true
     anomaly#i:nbad:
       skip_null: true
-  detection@ztf:fink.image_metrics.nneg_pixels:
+  measurement@ztf:fink.image_metrics.nneg_pixels:
     objects#i:nneg:
       skip_null: true
     anomaly#i:nneg:
       skip_null: true
-  detection@ztf:fink.image_metrics.pixel_sum_ratio:
+  measurement@ztf:fink.image_metrics.pixel_sum_ratio:
     objects#i:sumrat:
       skip_null: true
     anomaly#i:sumrat:
       skip_null: true
-  detection@ztf:fink.image_metrics.scorr:
+  measurement@ztf:fink.image_metrics.scorr:
     objects#i:scorr:
       skip_null: true
     anomaly#i:scorr:
       skip_null: true
-  detection@ztf:fink.image_metrics.ssnrms:
+  measurement@ztf:fink.image_metrics.ssnrms:
     objects#i:ssnrms:
       skip_null: true
     anomaly#i:ssnrms:
       skip_null: true
-  detection@ztf:fink.image_metrics.dsnrms:
+  measurement@ztf:fink.image_metrics.dsnrms:
     objects#i:dsnrms:
       skip_null: true
     anomaly#i:dsnrms:
       skip_null: true
-  detection@ztf:fink.image_metrics.dsdiff:
+  measurement@ztf:fink.image_metrics.dsdiff:
     objects#i:dsdiff:
       skip_null: true
     anomaly#i:dsdiff:
       skip_null: true
-  detection@ztf:fink.image_metrics.seeratio:
+  measurement@ztf:fink.image_metrics.seeratio:
     objects#i:seeratio:
       skip_null: true
     anomaly#i:seeratio:
       skip_null: true
-  detection@ztf:fink.image_metrics.sky_background:
+  measurement@ztf:fink.image_metrics.sky_background:
     objects#i:sky:
       skip_null: true
     anomaly#i:sky:
@@ -3134,7 +3134,7 @@ transforms:
       skip_null: true
     anomaly#i:ndethist:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag:
+  measurement@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag:
     objects#i:magnr:
       skip_null: true
     sso#i:magnr:
@@ -3143,7 +3143,7 @@ transforms:
       skip_null: true
     anomaly#i:magnr:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
+  measurement@ztf:fink.reference_image.nearest_source.photometry.{filter}.mag.error:
     objects#i:sigmagnr:
       skip_null: true
     sso#i:sigmagnr:
@@ -3152,17 +3152,17 @@ transforms:
       skip_null: true
     anomaly#i:sigmagnr:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.position.ra:
+  measurement@ztf:fink.reference_image.nearest_source.position.ra:
     objects#i:ranr:
       skip_null: true
     anomaly#i:ranr:
       skip_null: true
-  detection@ztf:fink.reference_image.nearest_source.position.dec:
+  measurement@ztf:fink.reference_image.nearest_source.position.dec:
     objects#i:decnr:
       skip_null: true
     anomaly#i:decnr:
       skip_null: true
-  detection@ztf:fink.reference_image.nframes:
+  measurement@ztf:fink.reference_image.nframes:
     objects#i:nframesref:
       skip_null: true
     anomaly#i:nframesref:
@@ -3172,37 +3172,37 @@ transforms:
       skip_null: true
     anomaly#i:ncovhist:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.color_coefficient:
+  measurement@ztf:fink.calibration.{filter}.color_coefficient:
     objects#i:clrcoeff:
       skip_null: true
     anomaly#i:clrcoeff:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
+  measurement@ztf:fink.calibration.{filter}.color_coefficient_uncertainty:
     objects#i:clrcounc:
       skip_null: true
     anomaly#i:clrcounc:
       skip_null: true
-  detection@ztf:fink.calibration.nmatches:
+  measurement@ztf:fink.calibration.nmatches:
     objects#i:nmatches:
       skip_null: true
     anomaly#i:nmatches:
       skip_null: true
-  detection@ztf:fink.calibration.color_median:
+  measurement@ztf:fink.calibration.color_median:
     objects#i:clrmed:
       skip_null: true
     anomaly#i:clrmed:
       skip_null: true
-  detection@ztf:fink.calibration.color_rms:
+  measurement@ztf:fink.calibration.color_rms:
     objects#i:clrrms:
       skip_null: true
     anomaly#i:clrrms:
       skip_null: true
-  detection@ztf:fink.calibration.{filter}.zero_point_covariance:
+  measurement@ztf:fink.calibration.{filter}.zero_point_covariance:
     objects#i:zpclrcov:
       skip_null: true
     anomaly#i:zpclrcov:
       skip_null: true
-  detection@ztf:fink.calibration.zp_median:
+  measurement@ztf:fink.calibration.zp_median:
     objects#i:zpmed:
       skip_null: true
     anomaly#i:zpmed:
@@ -3253,7 +3253,7 @@ transforms:
       skip_null: true
     latests#v:sigma(rate):
       skip_null: true
-  detection@ztf:fink.solar_system.roid:
+  measurement@ztf:fink.solar_system.roid:
     objects#d:roid:
       skip_null: true
     sso#d:roid:
@@ -3262,10 +3262,10 @@ transforms:
       skip_null: true
     anomaly#d:roid:
       skip_null: true
-  detection@ztf:fink.solar_system.iau_name:
+  measurement@ztf:fink.solar_system.iau_name:
     sso#sso_name:
       skip_null: true
-  detection@ztf:fink.solar_system.iau_number:
+  measurement@ztf:fink.solar_system.iau_number:
     sso#sso_number:
       type: to_int
       skip_null: true
@@ -3312,7 +3312,7 @@ transforms:
       type: jd_to_mjd
     anomaly#i:jd:
       type: jd_to_mjd
-  detection@ztf:fink.provenance.channel.science_version:
+  measurement@ztf:fink.provenance.channel.science_version:
     objects#i:fink_science_version:
       skip_null: true
     anomaly#i:fink_science_version:

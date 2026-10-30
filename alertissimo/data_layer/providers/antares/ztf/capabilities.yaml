@@ -60,14 +60,14 @@ recipes:
         payload: locus_alerts
         complete: true
         time_scale: utc
-        detection_identity: detection.identity.source_id
+        detection_identity: measurement.identity.source_id
       latest_selection:
         call: 1
         complete: true
         history:
           payload: locus_alerts
           time_scale: utc
-          detection_identity: detection.identity.source_id
+          detection_identity: measurement.identity.source_id
     - calls:
         - endpoint: search
         - endpoint: get_by_ztf_object_id
@@ -80,7 +80,7 @@ recipes:
         payload: locus_alerts
         complete: true
         time_scale: utc
-        detection_identity: detection.identity.source_id
+        detection_identity: measurement.identity.source_id
         reduction: min
       latest_selection:
         call: 1
@@ -88,7 +88,7 @@ recipes:
         history:
           payload: locus_alerts
           time_scale: utc
-          detection_identity: detection.identity.source_id
+          detection_identity: measurement.identity.source_id
     - calls:
         - endpoint: search
         - endpoint: get_by_ztf_object_id
@@ -101,7 +101,7 @@ recipes:
         payload: locus_alerts
         complete: true
         time_scale: utc
-        detection_identity: detection.identity.source_id
+        detection_identity: measurement.identity.source_id
         reduction: max
       latest_selection:
         call: 1
@@ -109,7 +109,7 @@ recipes:
         history:
           payload: locus_alerts
           time_scale: utc
-          detection_identity: detection.identity.source_id
+          detection_identity: measurement.identity.source_id
     # Extra history is required only when latest is requested without within.
     - calls:
         - endpoint: search
@@ -122,7 +122,7 @@ recipes:
         history:
           payload: locus_alerts
           time_scale: utc
-          detection_identity: detection.identity.source_id
+          detection_identity: measurement.identity.source_id
   confirm:
     - calls:
         - endpoint: get_by_ztf_object_id

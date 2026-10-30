@@ -128,12 +128,12 @@ def test_membership_uses_detections_closed_edges_and_keeps_full_histories(graph,
     assert result.run.steps[0].time_reference == NOW
     proof = result.run.steps[0].endpoint_plans[0].time_selection
     assert proof.method == "material" and proof.complete and proof.evidence_plan_index == 1
-    assert proof.detection_identity == "detection.identity.source_id"
+    assert proof.detection_identity == "measurement.identity.source_id"
     restored = EndpointPlan.model_validate_json(result.run.steps[0].endpoint_plans[0].model_dump_json())
     assert restored.time_selection == proof
     for portfolio in result.portfolios:
         oid = summary_object_identity(portfolio)[1]
-        detections = [r for r in portfolio.records if r.semantic_type == "detection@ztf:antares"]
+        detections = [r for r in portfolio.records if r.semantic_type == "measurement@ztf:antares"]
         assert sorted(r.get("time.mjd") for r in detections if r.get("identity.source_id") is not None) == HISTORY[oid]
         assert any(r.get("photometry.g.limit.mag") == 22 for r in detections)
     assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == SURVIVORS
@@ -223,7 +223,7 @@ def test_incomplete_history_cannot_prove_that_a_gap_candidate_does_not_match(tmp
 
 @pytest.mark.parametrize("change,message", [
     (lambda r: r["calls"][1].update(required=False), "required call"),
-    (lambda r: r["time_selection"].update(detection_identity="detection.identity.alert_id"), "detection_identity"),
+    (lambda r: r["time_selection"].update(detection_identity="measurement.identity.alert_id"), "detection_identity"),
 ])
 def test_declared_evidence_must_be_required_and_map_the_origin_identity(tmp_path, change, message):
     root = contract(tmp_path, change)
@@ -259,7 +259,7 @@ def test_first_last_reduce_complete_unsorted_detection_history_and_ignore_limits
     assert result.run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=1)
     for portfolio in result.portfolios:
         oid = summary_object_identity(portfolio)[1]
-        records = [r for r in portfolio.records if r.semantic_type == "detection@ztf:antares"]
+        records = [r for r in portfolio.records if r.semantic_type == "measurement@ztf:antares"]
         assert sorted(r.get("time.mjd") for r in records if r.get("identity.source_id") is not None) == sorted(histories[oid])
         assert sorted(r.get("time.mjd") for r in records if r.get("photometry.g.limit.mag") is not None) == [58900, 59100]
     assert identities(normalize_workflow_execution(result.staged.execution).steps[-1].portfolios) == expected
@@ -318,7 +318,7 @@ def test_latest_ranks_complete_detection_history_after_membership(graph, monkeyp
     assert plan.latest_selection.discovery_partition == plan.latest_selection.evidence_partition == "locus_id"
     # The serialized plan carries exactly the same ranking evidence for replay.
     assert EndpointPlan.model_validate_json(plan.model_dump_json()) == plan
-    records = [r for r in result.portfolios[0].records if r.semantic_type == "detection@ztf:antares"]
+    records = [r for r in result.portfolios[0].records if r.semantic_type == "measurement@ztf:antares"]
     assert sorted(r.get("time.mjd") for r in records if r.get("identity.source_id") is not None) == sorted(HISTORY[expected])
     assert [r.get("time.mjd") for r in records if r.get("photometry.g.limit.mag") is not None] == [59150]
     assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {expected}

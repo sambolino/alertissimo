@@ -50,7 +50,7 @@ def test_locus_and_complete_alert_semantics():
     assert sf['identity.object_id']=='ZTF20aafqubg'; assert sf['identity.antares_locus_id']=='ANT2020nb5h6'
     assert sf['position.ra']==50.84810593071894; assert sf['position.dec']==37.46783501531417
     assert 'detection_count' not in sf and not any(r.semantic_type.startswith('classification@') for r in portfolio.records)
-    detections=records(portfolio,'detection@ztf:antares'); assert len(detections)==316
+    detections=records(portfolio,'measurement@ztf:antares'); assert len(detections)==316
     fields=[dict(r.fields) for r in detections]; assert all('identity.alert_id' in f for f in fields)
     assert sum(f.get('photometry.g.upper_limit') is False or f.get('photometry.r.upper_limit') is False for f in fields)==70
     assert sum(f.get('photometry.g.upper_limit') is True or f.get('photometry.r.upper_limit') is True for f in fields)==246
@@ -67,7 +67,7 @@ def test_strict_unknown_encodings_are_omitted():
     alert=copy.deepcopy(next(x for x in fixture('alerts.json') if 'ztf_isdiffpos' in x['properties']))
     alert['properties']['ztf_isdiffpos']='unknown'; alert['properties']['ant_survey']=99; alert['properties']['ant_passband']='X'
     payload=copy.deepcopy(fixture('get_by_ztf_object_id.json')); payload['alerts']=[alert]
-    fields=dict(records(build('get_by_ztf_object_id',payload),'detection@ztf:antares')[0].fields)
+    fields=dict(records(build('get_by_ztf_object_id',payload),'measurement@ztf:antares')[0].fields)
     assert 'image_metrics.is_positive' not in fields
     assert not any(k.endswith('upper_limit') for k in fields)
     assert not any('photometry.X' in k or '{filter}' in k for k in fields)
@@ -93,7 +93,7 @@ def test_alert_aliases_and_lightcurve_secondary_evidence():
     assert len(alert_ids-{r['alert_id'] for r in light})==36
     assert sum(r['alert_id'].startswith('ztf_candidate:') for r in light)==56
     portfolio=build('get_by_ztf_object_id',rich_locus())
-    assert len(records(portfolio,'detection@ztf:antares'))==316
+    assert len(records(portfolio,'measurement@ztf:antares'))==316
     lightcurves=records(portfolio,'lightcurve@ztf:antares');assert len(lightcurves)==1
     points=lightcurves[0].fields['points'];assert len(points)==len(alerts)==316
     assert sum(any(k.endswith('.upper_limit') and v is True for k,v in point.items()) for point in points)==246
@@ -105,7 +105,7 @@ def test_secondary_lightcurve_is_not_registered_as_a_runtime_payload():
     raw_references={raw for references in registry['mappings'].values() for raw in references}
     assert not any(raw.startswith('lightcurve_secondary#') for raw in raw_references)
     portfolio=build('get_by_ztf_object_id',LazyLightcurveLocus(rich_locus()))
-    assert len(records(portfolio,'detection@ztf:antares'))==316
+    assert len(records(portfolio,'measurement@ztf:antares'))==316
     assert len(records(portfolio,'lightcurve@ztf:antares')[0].fields['points'])==316
 
 def test_direct_catalog_rows_build_six_crossmatches():

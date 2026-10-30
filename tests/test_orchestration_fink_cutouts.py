@@ -97,12 +97,40 @@ def test_public_data_product_retains_all_stamps_under_the_correct_candidate(grap
     assert transport.payload == STAMPS  # No stretching, clipping or null replacement.
 
 
+def test_enrichment_family_executes_concrete_steps_and_replays_without_new_calls(graph):
+    transport = ReplayTransport()
+    endpoint_executor = executor(transport)
+    first = execute_dsl(SOURCE + "with enrichment\n", graph=graph,
+                        executor=endpoint_executor, continue_from=None)
+    assert {step.op for step in first.workflow.steps} == {
+        "lookup", "get_classification", "get_crossmatch", "get_data_product", "get_lightcurve",
+    }
+    assert {summary_object_identity(p)[1] for p in first.portfolios} == set(IDS)
+    for portfolio in first.portfolios:
+        families = {record.semantic_type.split("@", 1)[0] for record in portfolio.records}
+        assert {"measurement", "lightcurve", "data_product"} <= families
+        assert not {"detection", "enrichment"} & families
+    calls = deepcopy(transport.calls)
+    second = execute_dsl("with enrichment via fink\n", graph=graph,
+                         executor=endpoint_executor, continue_from=first)
+    assert second.workflow.steps == first.workflow.steps
+    assert transport.calls == calls
+    replay = normalize_workflow_execution(second.staged.execution)
+    assert {summary_object_identity(p)[1] for p in replay.steps[-1].portfolios} == set(IDS)
+
+
+def test_admitted_family_member_failure_is_not_silently_ignored(graph):
+    with pytest.raises(WorkflowExecutionError, match="required matri"):
+        execute_dsl(SOURCE + "with enrichment\n", graph=graph,
+                    executor=executor(ReplayTransport({})), continue_from=None)
+
+
 def test_continuation_fetches_images_only_for_filter_survivors(graph):
     transport = ReplayTransport()
     endpoint_executor = executor(transport)
     first = execute_dsl(SOURCE, graph=graph, executor=endpoint_executor, continue_from=None)
     before = deepcopy(transport.calls)
-    second = execute_dsl("filter detection@ztf:fink.quality.real_bogus >= 0.9\nwith data_product via fink\n",
+    second = execute_dsl("filter measurement@ztf:fink.quality.real_bogus >= 0.9\nwith data_product via fink\n",
                          graph=graph, executor=endpoint_executor, continue_from=first)
     assert transport.calls[:len(before)] == before
     assert [(endpoint, params["objectId"]) for endpoint, params in transport.calls[len(before):]] == [
