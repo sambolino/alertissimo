@@ -192,7 +192,8 @@ def test_public_facade_rechecks_structured_results_instead_of_trusting_the_query
 
 def test_ztf_activation_keeps_rubin_discovery_separate():
     graph = build_capability_graph()
-    recipe, = graph.query_recipes(broker="antares", origin="ztf", op="semantic_search")
+    recipes = graph.query_recipes(broker="antares", origin="ztf", op="semantic_search")
+    assert recipes
     assert all(item.elasticsearch_identity == "properties.ztf_object_id"
-               for item in recipe.calls[0].predicate_bindings)
+               for recipe in recipes for item in recipe.calls[0].predicate_bindings)
     assert graph.query_recipes(broker="antares", origin="lsst", op="semantic_search") == ()

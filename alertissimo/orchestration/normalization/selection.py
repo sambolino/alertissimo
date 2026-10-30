@@ -127,7 +127,10 @@ def validate_time_selection_payloads(step_run: StepRun, result) -> None:
                 require_path(item, path[3:])
             return
         if path == ".":
-            if not isinstance(value, Mapping):
+            # Native clients return attribute-based records such as Locus,
+            # already supported by the payload resolver. A null/scalar result
+            # still cannot establish a required object response.
+            if not isinstance(value, Mapping) and (not hasattr(value, "__dict__") or callable(value)):
                 raise ValueError("expected an object")
             return
         if path == "[]":
@@ -282,6 +285,13 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                             type(value) in (int, float) and math.isfinite(value) for value in limits
                         )
                         continue
+                    if proof.detection_identity is not None:
+                        identifier = record.get(proof.detection_identity.removeprefix("detection."))
+                        if type(identifier) not in (str, int) or str(identifier) == "":
+                            # Photometry alone cannot establish this survey's
+                            # witness in a broker's potentially mixed history.
+                            invalid = True
+                            continue
                 value = record.get(field)
                 if type(value) not in (int, float) or not math.isfinite(value):
                     invalid = True

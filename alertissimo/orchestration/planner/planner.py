@@ -205,6 +205,7 @@ def _recipe_plans(
                         response_identity=temporal.response_identity,
                         target_parameter=temporal.target_parameter,
                         target_collection=temporal.target_collection,
+                        detection_identity=temporal.detection_identity,
                     ) if index == 0 and temporal is not None else None}
         )
         for index, call in enumerate(recipe.calls)

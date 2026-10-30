@@ -104,6 +104,7 @@ class TimeSelectionCapability:
     response_identity: str | None = None
     target_parameter: str | None = None
     target_collection: str | None = None
+    detection_identity: str | None = None
 
 
 @dataclass(frozen=True)
@@ -654,7 +655,7 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     from .capability_graph import canonical_semantic_path
 
     proof = _mapping(raw, where)
-    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale"},
+    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale", "detection_identity"},
           {"mode", "method", "call", "payload", "complete", "time_scale"}, where)
     mode, method, index = proof["mode"], proof["method"], proof["call"]
     if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
@@ -684,6 +685,12 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
             fields = tuple(item for item in fields if item.raw_field in columns)
     if not any(canonical_semantic_path(item.semantic_path) == path for item in fields):
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
+    detection_identity = proof.get("detection_identity")
+    if "detection_identity" in proof and (
+        mode != "detection" or detection_identity != "detection.identity.source_id"
+        or not any(canonical_semantic_path(item.semantic_path) == detection_identity for item in fields)
+    ):
+        raise RecipeRegistryError(f"{where}: detection_identity requires a mapped source identity in the detection evidence payload")
     if mode == "detection" and not any(
         canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
         and item.relative_field_path.endswith((".mag", ".flux"))
@@ -740,7 +747,7 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
             raise RecipeRegistryError(f"{where}: batched temporal evidence requires direct singular or CSV target encoding")
     return TimeSelectionCapability(
         mode, method, index, payload, proof["complete"], "utc", paths.pop(), tuple(required_paths),
-        response_identity, target_parameter, target_collection,
+        response_identity, target_parameter, target_collection, detection_identity,
     )
 
 

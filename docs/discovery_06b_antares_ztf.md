@@ -58,6 +58,10 @@ Continuation replays discovery without contacting the native search function aga
 
 ## Temporal and latest follow-up
 
+Follow-up: [06c](discovery_06c_antares_within.md) now activates default within
+using required associated alert history. First/last and latest move to 06d. The
+following describes the original 06b activation boundary.
+
 `within`, `first within`, `last within` and `latest` remain deferred on this
 semantic recipe. They are the next ANTARES evidence step, 06c. The existing frozen
 ZTF history contains candidates and upper limits, and the client lightcurve omits
