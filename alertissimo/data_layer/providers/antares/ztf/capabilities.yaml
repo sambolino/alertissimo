@@ -48,6 +48,19 @@ recipes:
   semantic_search:
     - calls:
         - endpoint: search
+    - calls:
+        - endpoint: search
+        - endpoint: get_by_ztf_object_id
+          params:
+            ztf_object_id: {from: {call: 0, path: summary.identity.object_id}}
+      time_selection:
+        mode: detection
+        method: material
+        call: 1
+        payload: locus_alerts
+        complete: true
+        time_scale: utc
+        detection_identity: detection.identity.source_id
   confirm:
     - calls:
         - endpoint: get_by_ztf_object_id

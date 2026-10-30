@@ -144,7 +144,8 @@ review, keeping the same order and acceptance boundary.
 | `feat/selection-03-fink-ztf` | Audit Fink latest evidence; activate only if overall object recency is established |
 | `feat/discovery-06a-elasticsearch-bindings` | Compile bounded numeric structured queries in existing predicate bindings |
 | `feat/discovery-06b-antares-ztf` | Activate identity-scoped ANTARES ZTF numeric coordinate discovery and replayable iterator execution |
-| `feat/discovery-06c-antares-time` | Establish ANTARES detection history evidence for temporal and latest selection |
+| `feat/discovery-06c-antares-within` | Activate default within over required ANTARES ZTF alert histories |
+| `feat/discovery-06d-antares-extrema` | Establish detection extrema for ANTARES first/last and latest selection; review temporal cone evidence |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
@@ -453,7 +454,9 @@ the request includes temporal selection.
 scopes the mixed-survey index to ZTF object identity, and freezes Python result
 iterators for replay. Temporal and latest selection are separated into 06c:
 alert extrema/counts and the selected client lightcurve cannot silently replace
-complete detection evidence. Keep 06c before required material and result access.
+complete detection evidence. [06c](discovery_06c_antares_within.md) activates default
+within with required full alert history and mapped ZTF measurement identity.
+Detection extrema are separated into 06d, before required material and result access.
 
 Declare semantic discovery through the existing Elasticsearch `search` endpoint.
 Translate a bounded set of verified semantic predicates into its required query
@@ -768,8 +771,9 @@ not need redesign for this series.
 | Selection 02b | Lasair cone latest | [#314](https://github.com/sambolino/alertissimo/pull/314), integration `7b107d9`; matrix correction [#315](https://github.com/sambolino/alertissimo/pull/315), `9f4a7bd` | DSL checkpoint 1,220 passed / one stale matrix assertion, corrected in #315; skipped package check handed off locally | Final acceptance pending |
 | Selection 03 | Fink latest audit | [#316](https://github.com/sambolino/alertissimo/pull/316), integration `cc601ae` | Merged after implicit-classification fixture correction; activation blocked by object-recency contract | No live claim; retain explicit deferral |
 | 06a | Elasticsearch numeric bindings | [#317](https://github.com/sambolino/alertissimo/pull/317), integration `634b879` | Merged after local handoff; count not separately reported | No provider requests needed |
-| 06b | ANTARES ZTF numeric activation | Prepared on `feat/discovery-06b-antares-ztf` | Focused local handoff; manual DSL checkpoint after merge | Final acceptance pending |
-| 06c | ANTARES temporal/latest evidence | Next on updated integration branch | Pending | Pending |
+| 06b | ANTARES ZTF numeric activation | [#318](https://github.com/sambolino/alertissimo/pull/318), integration `a6909e8` | Manual DSL checkpoint [40984533355](https://github.com/sambolino/alertissimo/actions/runs/40984533355) passed | Final acceptance pending |
+| 06c | ANTARES default within | Prepared on `feat/discovery-06c-antares-within` | Focused local handoff; required full history, measurement identity and replay | Final acceptance pending |
+| 06d | ANTARES extrema/latest | Next on updated integration branch | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |

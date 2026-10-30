@@ -171,7 +171,7 @@ def test_missing_or_untranslated_query_is_not_a_full_catalog_scan(graph, predica
         plan_step(step, graph)
 
 
-@pytest.mark.parametrize("tail", ["within 7d\n", "first within 7d\n", "last within 7d\n", "latest 1\n"])
+@pytest.mark.parametrize("tail", ["first within 7d\n", "last within 7d\n", "latest 1\n"])
 def test_temporal_and_latest_contracts_are_separate_from_numeric_discovery(graph, monkeypatch, tail):
     client = NativeClient()
     endpoint_executor = executor(monkeypatch, client)
