@@ -1,6 +1,53 @@
 broker: antares
 origin: ztf
+predicate_bindings:
+  search:
+    # Numeric coordinate fields are shown in the official search tutorial.
+    # Scope the mixed-survey index to the mapped ZTF object identity.
+    - path: summary.position.ra
+      operator: "="
+      parameter: query
+      elasticsearch: {field: ra, identity_field: properties.ztf_object_id}
+    - path: summary.position.ra
+      operator: "<"
+      parameter: query
+      elasticsearch: {field: ra, identity_field: properties.ztf_object_id}
+    - path: summary.position.ra
+      operator: "<="
+      parameter: query
+      elasticsearch: {field: ra, identity_field: properties.ztf_object_id}
+    - path: summary.position.ra
+      operator: ">"
+      parameter: query
+      elasticsearch: {field: ra, identity_field: properties.ztf_object_id}
+    - path: summary.position.ra
+      operator: ">="
+      parameter: query
+      elasticsearch: {field: ra, identity_field: properties.ztf_object_id}
+    - path: summary.position.dec
+      operator: "="
+      parameter: query
+      elasticsearch: {field: dec, identity_field: properties.ztf_object_id}
+    - path: summary.position.dec
+      operator: "<"
+      parameter: query
+      elasticsearch: {field: dec, identity_field: properties.ztf_object_id}
+    - path: summary.position.dec
+      operator: "<="
+      parameter: query
+      elasticsearch: {field: dec, identity_field: properties.ztf_object_id}
+    - path: summary.position.dec
+      operator: ">"
+      parameter: query
+      elasticsearch: {field: dec, identity_field: properties.ztf_object_id}
+    - path: summary.position.dec
+      operator: ">="
+      parameter: query
+      elasticsearch: {field: dec, identity_field: properties.ztf_object_id}
 recipes:
+  semantic_search:
+    - calls:
+        - endpoint: search
   confirm:
     - calls:
         - endpoint: get_by_ztf_object_id

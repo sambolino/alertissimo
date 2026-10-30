@@ -11,7 +11,7 @@ _FIELD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*")
 _RANGE_OPERATOR = {"<": "lt", "<=": "lte", ">": "gt", ">=": "gte"}
 
 
-def numeric_comparison(field: str, operator: str, value: Any) -> dict:
+def numeric_comparison(field: str, operator: str, value: Any, *, identity_field: str | None = None) -> dict:
     """Encode one finite numeric comparison, without raw query-string syntax."""
     if not isinstance(field, str) or not _FIELD.fullmatch(field):
         raise ValueError("invalid Elasticsearch field identifier")
@@ -23,6 +23,10 @@ def numeric_comparison(field: str, operator: str, value: Any) -> dict:
         clause = {"range": {field: {_RANGE_OPERATOR[operator]: value}}}
     else:
         raise ValueError("unsupported Elasticsearch numeric operator")
+    if identity_field is not None:
+        if not isinstance(identity_field, str) or not _FIELD.fullmatch(identity_field):
+            raise ValueError("invalid Elasticsearch identity field identifier")
+        clause = {"bool": {"filter": [{"exists": {"field": identity_field}}, clause]}}
     return {"query": clause}
 
 

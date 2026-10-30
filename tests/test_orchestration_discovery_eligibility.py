@@ -26,7 +26,7 @@ def search(broker="example", origin="survey", **kwargs):
 
 
 @pytest.mark.parametrize("broker,origin", [
-    ("antares", "ztf"), ("antares", "lsst"), ("fink", "lsst"),
+    ("antares", "lsst"), ("fink", "lsst"),
 ])
 def test_untranslated_real_discovery_defers_before_binding(graph, broker, origin):
     step = search(broker, origin)
