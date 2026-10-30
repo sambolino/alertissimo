@@ -582,8 +582,10 @@ python -m pytest -q tests/test_application_portfolio_access.py tests/test_portfo
 Split into small reviews: **09a** supplies the
 [integration guide and support matrix](discovery_integration.md) plus recorded
 acceptance cases; **09b** adds the planned live runner and final local handoff.
-09a is prepared on `feat/integration-09a-recorded-acceptance`, based on `6daa6b4`
-/ PR #326. Neither offline validation nor recorded replay claims live acceptance.
+09a merged as PR #327, integration `b4ada2a`. **09b** is prepared on
+`feat/integration-09b-live-acceptance`, based on that revision, with the
+[live acceptance/verification guide](discovery_live_acceptance.md). Neither
+offline validation nor recorded replay claims live acceptance.
 
 Add `docs/discovery_integration.md`, the eight-provider/survey support matrix, and
 the material inventory from PR 07. Include runnable DSL examples only after their
@@ -817,8 +819,8 @@ not need redesign for this series.
 | Ontology | Measurement records and enrichment families | [#324](https://github.com/sambolino/alertissimo/pull/324), integration `f8e0909` | Paired shared checkpoints passed on `4d93b51` after 07c | No new provider/live support inferred from family membership |
 | 07c | ALeRCE reference-distance units | [#325](https://github.com/sambolino/alertissimo/pull/325), integration `4d93b51` | Merged after supplement-fixture correction; [DSL](https://github.com/sambolino/alertissimo/actions/runs/41077308992) and [registry](https://github.com/sambolino/alertissimo/actions/runs/41077292721) passed | Frozen evidence; TAP equivalence not claimed |
 | 08 | Application result access | [#326](https://github.com/sambolino/alertissimo/pull/326), integration `6daa6b4` | Merged after mixed-candidate source-provenance fixture correction | No provider requests needed for consumer isolation |
-| 09a | Recorded acceptance and support matrix | Prepared on `feat/integration-09a-recorded-acceptance` | Original reports, candidate flow, raw/normalized science comparison and public validation matrix | Offline fixtures; live evidence pending |
-| 09b | Live acceptance runner and final handoff | Pending | Pending | Pending |
+| 09a | Recorded acceptance and support matrix | [#327](https://github.com/sambolino/alertissimo/pull/327), integration `b4ada2a` | Merged after local handoff; final count not separately reported | Offline fixtures; live evidence pending |
+| 09b | Live acceptance runner and final handoff | Prepared on `feat/integration-09b-live-acceptance` | Offline CLI/replay regressions and final local commands | Explicit eight-scenario runner; local live results pending |
 
 ## References
 
