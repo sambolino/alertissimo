@@ -287,7 +287,7 @@ class SurfaceScript(SurfaceModel):
                 for clause in self.clauses
                 if isinstance(
                     clause,
-                    (InsideClause, WithinClause, LatestClause, WhereClause),
+                    (InsideClause, WithinClause, LatestClause),
                 )
             )
             if forbidden:

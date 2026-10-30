@@ -39,6 +39,8 @@ from alertissimo.orchestration.ir.models import (
     WorkflowIR,
 )
 from alertissimo.orchestration.ir.predicates import (
+    SemanticReference,
+    iter_semantic_references,
     predicate_requires_reference as _predicate_requires_reference,
 )
 from alertissimo.orchestration.runtime.models import (
@@ -170,6 +172,57 @@ def _recipe_assignments(call: RecipeCall, *, plan_offset: int, step: Step) -> di
     }
 
 
+def _require_discovery_residual_material(call: RecipeCall, plan: EndpointPlan) -> None:
+    """Do not prune discovery against evidence that a later call must supply.
+
+    Recipe outputs are call-specific, including declared SQL projections. A
+    mapping elsewhere in the provider/recipe is not material on this execution.
+    Material-aware scheduling is a separate planner extension; until then an
+    unproven dependency must fail planning rather than yield a false empty view.
+    """
+    realization = plan.predicate_realization
+    if realization is None or realization.residual is None:
+        return
+
+    def mapped(reference: SemanticReference) -> bool:
+        for field in call.outputs:
+            record = field.semantic_record_type
+            if canonical_semantic_noun(record) != reference.semantic_type:
+                continue
+            producer = _semantic_record_producer(record)
+            if reference.producer is not None and producer != reference.producer and not (
+                producer is not None and _DYNAMIC_QUALIFIER.fullmatch(producer)
+            ):
+                continue
+            channel = record.partition(":")[2] or plan.broker
+            if reference.channel is not None and reference.channel != channel:
+                continue
+            if not reference.field_path:
+                return True
+            declared = field.relative_field_path.split(".")
+            requested = reference.field_path.split(".")
+            if len(declared) == len(requested) and all(
+                actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
+                for actual, wanted in zip(declared, requested)
+            ):
+                return True
+        return False
+
+    missing = tuple(dict.fromkeys(
+        reference.qualified_record_type + (
+            "." + reference.field_path if reference.field_path else ""
+        )
+        for reference in iter_semantic_references(realization.residual)
+        if not mapped(reference)
+    ))
+    if missing:
+        raise PlanningDeferredError(
+            "discovery residual requires material unavailable from its discovery call "
+            f"({plan.broker}/{plan.origin}/{plan.endpoint}): {missing!r}; "
+            "evaluating it before the required retrieval would change candidate selection"
+        )
+
+
 def _recipe_plans(
     step: Step, recipe: RecipeCapability, validation: CapabilityValidationResult,
     graph: CapabilityGraph, *, plan_offset: int,
@@ -196,7 +249,7 @@ def _recipe_plans(
         ) if temporal is not None else None
 
     temporal = recipe.time_selection
-    return tuple(
+    plans = tuple(
         _endpoint_plan(
             step, endpoints[call.endpoint], validation, graph,
             predicate_constraints=call.predicate_bindings,
@@ -217,6 +270,8 @@ def _recipe_plans(
         )
         for index, call in enumerate(recipe.calls)
     )
+    _require_discovery_residual_material(recipe.calls[0], plans[0])
+    return plans
 
 
 def _endpoint_plan(

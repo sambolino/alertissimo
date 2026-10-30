@@ -196,6 +196,27 @@ def _first_filter_index(surface: SurfaceScript) -> int:
     )
 
 
+def _validate_candidate_clause_placement(surface: SurfaceScript) -> None:
+    """Reject candidate constraints that the current IR would otherwise drop."""
+    first_filter = _first_filter_index(surface)
+    for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, (InsideClause, WithinClause, LatestClause)) and isinstance(
+            surface.candidates, LookupCandidateSet
+        ):
+            raise SurfaceLoweringError(
+                f"{clause.kind} on an explicit lookup has no supported selection realization",
+                code="unsupported_lookup_constraint", clause_index=index,
+            )
+        if index > first_filter and isinstance(
+            clause, (InsideClause, WithinClause, LatestClause, WhereClause)
+        ):
+            raise SurfaceLoweringError(
+                f"top-level {clause.kind} cannot follow an explicit filter; "
+                "initial candidate constraints must precede later selection",
+                code="late_candidate_constraint", clause_index=index,
+            )
+
+
 def _semantic_predicate(
     expression: str,
     *,
@@ -354,6 +375,7 @@ def _candidate_operation(
 ) -> tuple[LookupStep | SemanticSearchStep | ConeSearchStep, frozenset[int]]:
     """Lower the initial named population or scientific candidate search."""
 
+    _validate_candidate_clause_placement(surface)
     if isinstance(surface.candidates, LookupCandidateSet):
         candidates = surface.candidates
         return (
@@ -714,8 +736,16 @@ def _lower_surface_intent(
     )
     steps = [candidate_step]
     first_filter = _first_filter_index(surface)
+    lookup = isinstance(candidate_step, LookupStep)
+    lookup_predicates: list[Predicate] = []
     emitted: set[tuple[str, str | None, str | None]] = set()
     view = ResultViewSpec()
+
+    def flush_lookup_predicates() -> None:
+        predicate = and_predicates(lookup_predicates)
+        if predicate is not None:
+            steps.append(FilterStep(predicate=predicate))
+            lookup_predicates.clear()
 
     explicit_signatures = {
         signature
@@ -728,6 +758,10 @@ def _lower_surface_intent(
     }
 
     for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, (FilterClause, ConfirmClause, MatchClause)):
+            # Named populations have no SearchStep predicate slot. Preserve the
+            # initial conditions after their requested Gets, before later work.
+            flush_lookup_predicates()
         if isinstance(clause, OrderByClause):
             view = ResultViewSpec(
                 order_by=ResultOrderSpec(
@@ -736,11 +770,11 @@ def _lower_surface_intent(
                 )
             )
             continue
-        if index in consumed:
-            adjacent_confirm = (
-                index + 1 < len(surface.clauses)
-                and isinstance(surface.clauses[index + 1], ConfirmClause)
-            )
+        adjacent_confirm = (
+            index + 1 < len(surface.clauses)
+            and isinstance(surface.clauses[index + 1], ConfirmClause)
+        )
+        if index in consumed or (lookup and isinstance(clause, WhereClause)):
             if isinstance(clause, WhereClause) and not adjacent_confirm:
                 for implied in _implicit_requirements_from_where(
                     surface,
@@ -752,7 +786,7 @@ def _lower_surface_intent(
                     )
                     if signature is None or signature in emitted:
                         continue
-                    if signature in explicit_signatures:
+                    if not lookup and signature in explicit_signatures:
                         continue
                     if signature == stop_before:
                         return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
@@ -765,6 +799,10 @@ def _lower_surface_intent(
                         )
                     )
                     emitted.add(signature)
+                if lookup:
+                    lookup_predicates.append(_semantic_predicate(
+                        clause.condition, record_types=record_types, clause_index=index,
+                    ))
             continue
 
         if isinstance(clause, RequirementClause):
@@ -791,7 +829,7 @@ def _lower_surface_intent(
                         steps.append(step)
                 emitted.add(signature)
 
-            if clause.predicates and index >= first_filter:
+            if clause.predicates and (lookup or index >= first_filter):
                 scoped = _scoped_requirement_predicate(
                     surface,
                     clause,
@@ -800,7 +838,10 @@ def _lower_surface_intent(
                     clause_index=index,
                 )
                 if scoped is not None:
-                    steps.append(FilterStep(predicate=scoped))
+                    if lookup and index < first_filter:
+                        lookup_predicates.append(scoped)
+                    else:
+                        steps.append(FilterStep(predicate=scoped))
         elif isinstance(clause, FilterClause):
             steps.append(
                 FilterStep(
@@ -836,7 +877,10 @@ def _lower_surface_intent(
                 clause_index=index,
             )
         elif isinstance(clause, (InsideClause, WithinClause, LatestClause, WhereClause)):
-            continue
+            raise SurfaceLoweringError(
+                "candidate constraint has no semantic realization",
+                code="unrealized_candidate_constraint", clause_index=index,
+            )
         else:  # pragma: no cover - discriminated surface union guards this.
             raise SurfaceLoweringError(
                 f"unsupported surface clause {type(clause).__name__}",
@@ -844,6 +888,7 @@ def _lower_surface_intent(
                 clause_index=index,
             )
 
+    flush_lookup_predicates()
     if stop_before is not None:
         raise SurfaceLoweringError(
             "requirement has no emitted retrieval occurrence in this workflow",

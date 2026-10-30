@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from importlib import metadata
@@ -171,6 +172,33 @@ def _deadline(seconds):
         signal.signal(signal.SIGALRM, previous)
 
 
+def _antares_error_status(error):
+    # The pinned native client raises AntaresException(response.json()), with
+    # JSON:API status codes in args[0], rather than an HTTP response attribute.
+    if (type(error).__module__ != "antares_client.exceptions"
+            or type(error).__name__ != "AntaresException"):
+        return None
+    if len(error.args) != 1:
+        return "FAIL"
+    payload = error.args[0]
+    entries = payload.get("errors") if isinstance(payload, Mapping) else None
+    if not isinstance(entries, list) or not entries:
+        return "FAIL"
+    codes = []
+    for entry in entries:
+        code = entry.get("status") if isinstance(entry, Mapping) else None
+        if isinstance(code, str) and re.fullmatch(r"[45]\d{2}", code, flags=re.ASCII):
+            code = int(code)
+        if type(code) is not int or not 400 <= code <= 599:
+            return "FAIL"
+        codes.append(code)
+    if all(code in (408, 429) or code >= 500 for code in codes):
+        return "UNAVAILABLE"
+    if all(code in (401, 403) for code in codes):
+        return "SKIP"
+    return "FAIL"  # Mixed/server+bad-request bodies must not hide contract errors.
+
+
 def classify_error(error):
     if isinstance(error, Unexercised):
         return "SKIP"
@@ -178,6 +206,9 @@ def classify_error(error):
     current = error
     while current is not None and id(current) not in seen:
         seen.add(id(current))
+        native_status = _antares_error_status(current)
+        if native_status is not None:
+            return native_status
         response = getattr(current, "response", None)
         code = getattr(current, "code", None) or getattr(response, "status_code", None)
         if isinstance(current, MissingEndpointCredentialError) or code in (401, 403):
