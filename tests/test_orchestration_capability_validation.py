@@ -1,5 +1,7 @@
 """Tests for the read-only orchestration-to-registry capability bridge."""
 
+from dataclasses import replace
+
 from alertissimo.orchestration.ir import TargetSelector
 import pytest
 
@@ -303,11 +305,27 @@ def test_product_response_evidence_is_required_before_physical_fanout():
     graph = build_capability_graph()
     one = GetCutoutStep(target=TargetSelector(ids=["A"], kind="object"), sources=[Source(broker="fink", origin="ztf")])
     many = GetCutoutStep(target=TargetSelector(ids=["A", "B"], kind="object"), sources=one.sources)
-    assert validate_step_capabilities(one, graph).status == "deferred"
-    result = validate_step_capabilities(many, graph)
-    assert result.status == "deferred"
-    assert result.candidates == ()
-    assert "response shape/mode" in result.source_results[0].reason
+    for step in (one, many):
+        result = validate_step_capabilities(step, graph)
+        assert result.status == "supported"
+        endpoint, = result.candidates
+        assert endpoint.endpoint == "cutouts_array"
+        assert endpoint.output_type == "object"
+        assert endpoint.output_format_params == ()
+
+    # Neither several target IDs nor mapped product fields can establish an
+    # unverified response shape or a dynamically selected image format.
+    for change in ({"output_type": "data_product"}, {"output_format_params": ("output-format",)}):
+        unverified = replace(graph, endpoint_capabilities=tuple(
+            replace(endpoint, **change)
+            if (endpoint.broker, endpoint.origin, endpoint.endpoint) == ("fink", "ztf", "cutouts_array")
+            else endpoint for endpoint in graph.endpoint_capabilities
+        ))
+        for step in (one, many):
+            result = validate_step_capabilities(step, unverified)
+            assert result.status == "deferred"
+            assert result.candidates == ()
+            assert "response shape/mode" in result.source_results[0].reason
 
     singular_product = EndpointCapability(
         "test", "ztf", "product", "/product", "GET",
