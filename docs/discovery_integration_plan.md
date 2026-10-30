@@ -813,6 +813,12 @@ live. The audit records exact dates and evidence roots. Historical rows below
 retain the outcomes known at each milestone rather than rewriting the earlier
 empty/failed attempts as successes.
 
+The first [predicate-preservation repair](dsl_predicate_preservation.md) is now
+prepared for focused local checks against integration. It also gates automatic
+jobs on the open draft #329 so small integration squashes do not repeatedly run
+the full CI. Manual checkpoints and ready-for-review execution remain available.
+Main remains on hold; preparation is not a passing or merged repair.
+
 | PR | Branch suffix | PR number / commit | Local verification | Live outcome |
 | --- | --- | --- | --- | --- |
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
