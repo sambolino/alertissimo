@@ -145,7 +145,10 @@ def test_recorded_ztf_time_range_prunes_before_global_latest_selection(graph, mo
     assert len(calls) == 3  # includes a row excluded by the residual upper bound
     assert all(params["lastmjd"] == [61000.0] and params["order_by"] == "lastmjd" for params in calls)
     plan, = result.run.steps[0].endpoint_plans
-    assert plan.predicate_realization.residual.operator == "<="
+    assert plan.predicate_realization.pushdown == predicate(value=61000)
+    # Native selection identifies objects, not a particular summary assertion.
+    # Keep both bounds for one-record rechecking before global latest.
+    assert plan.predicate_realization.residual == result.workflow.steps[0].predicate
 
 
 def test_rubin_reported_mjd_residuals_preserve_two_classifier_rows_for_one_object(graph, monkeypatch):
