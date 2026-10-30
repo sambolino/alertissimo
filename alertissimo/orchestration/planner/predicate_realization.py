@@ -23,6 +23,7 @@ from alertissimo.orchestration.ir.predicates import (
     PredicateLiteral,
     SemanticReference,
     and_predicates,
+    iter_semantic_references,
 )
 from alertissimo.orchestration.runtime.models import PredicateRealization
 
@@ -248,6 +249,20 @@ def realize_predicate(
                        and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
     result = _realize_predicate(predicate, endpoint=endpoint, graph=graph, constraints=constraints)
     if not sql and not structured:
+        if result.pushdown is not None and result.residual is not None:
+            pushed = {
+                (ref.semantic_type, ref.producer, ref.channel)
+                for ref in iter_semantic_references(result.pushdown)
+            }
+            residual = {
+                (ref.semantic_type, ref.producer, ref.channel)
+                for ref in iter_semantic_references(result.residual)
+            }
+            if pushed & residual:
+                # Native object selection does not bind an individual returned
+                # assertion. Recheck the original conjunction locally so a
+                # different class/version/measurement cannot supply its score.
+                return result.model_copy(update={"residual": predicate})
         return result
     if result.residual is not None or result.pushdown is None:
         return PredicateRealization(residual=predicate)

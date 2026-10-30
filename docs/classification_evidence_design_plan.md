@@ -203,6 +203,11 @@ The first local R1 run exposed missed surface/preflight guards; the follow-up
 aligns lookup `where` admission with lowering and corrects the audit's A2 public
 impact claim. Invalid late clauses remain rejected at their earliest entry point.
 
+R1 is now on integration as `ba59032` (#330). R2 is prepared locally on
+`fix/predicate-assertion-evidence`; see its
+[semantics, local suite and intermediate CI checkpoint](predicate_assertion_evidence.md).
+This records implementation scope, not passing tests or a merged R2 status.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population
