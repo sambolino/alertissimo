@@ -38,7 +38,7 @@ means a field can be retained when returned, not that every row contains it.
 | First/last reported historical detection times | Available | Fink `i:jdstarthist` / `i:jdendhist` become summary `time.first_mjd` / `time.last_mjd` | These follow ZTF's historical-count selection; no assumption that a broker's loaded history is exhaustive |
 | SIMBAD, TNS and Sherlock context | Available where returned | Fink `crossmatch@simbad:fink` / `crossmatch@tns:fink`; Lasair `classification@sherlock:lasair` and `classification@tns:lasair` from object/objects, with dedicated Sherlock recipes where admitted | Unknown/empty values remain absent under existing transforms; a TNS class is not its object name; do not replace classification with catalogue membership |
 | Classification and time discovery | Implemented with explicit limits | Earlier Fink class/time branches admit `SN candidate` and `Early SN Ia candidate`; ALeRCE/Lasair/ANTARES have their separately documented contracts | Saturated Fink responses fail explicitly; its full reference stream list and global object latest are not thereby supported |
-| Image cutouts | Deferred to 07b audit | Inspect Fink `cutouts` response modes against existing `data_product` before activation | This branch adds no product recipe or binary handling |
+| Image cutouts | Implemented in 07b | Fixed Fink ZTF JSON mode of `/api/v1/cutouts`, represented by `data_product@ztf:fink.payload` with science/template/difference keys | Native archived alert selected by the provider; missing/malformed stamps fail; PNG/FITS, resizing and Rubin alert ownership remain deferred |
 | Flare onset, age/new-known policy, brightest passing alert and cross-broker consensus | External | Nucleuswatch `recipes.py`, `core.py`, taxonomy and scoring | Broker evidence supports these calculations; Alertissimo does not adopt their scientific policies |
 | Legacy Surveys host TAP, TDE model, Zooniverse, notifications and scheduling | External | Nucleuswatch host/model/publishing functions | No extra endpoint or workflow layer is introduced here |
 | Additional Rubin discovery and classification joins | Deferred pending consultation | End-of-series discussion specified in the integration plan | Do not infer Rubin columns, units, table joins or producer identity from ZTF |
@@ -129,8 +129,8 @@ PYTHONPATH=. python -m pytest -q \
   2>&1 | tee /tmp/alertissimo-integration-07a-tests.log
 ```
 
-Target the integration branch and squash after these checks pass. The next small
-review is 07b, the cutout audit, followed by the small 07c ALeRCE unit audit.
+Target the integration branch and squash after these checks pass. [07b](integration_07b_fink_cutouts.md) completes the fixed JSON cutout path.
+The next small review is 07c, the ALeRCE unit audit.
 Because 07a changes ontology and mappings, run one manual **Semantic registry**
 checkpoint after this material sequence. Keep final full CI and live acceptance
 before main; the successful 06e DSL checkpoint is not registry validation of this

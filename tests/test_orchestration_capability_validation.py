@@ -222,8 +222,8 @@ def test_known_and_missing_data_products_report_cleanly():
         GetCutoutStep(sources=[Source(broker="fink", origin="ztf")]), graph
     )
     spectrum = validate_step_capabilities(GetSpectrumStep(), graph)
-    assert cutout.status == "deferred"
-    assert "response shape/mode" in cutout.source_results[0].reason
+    assert cutout.status == "supported"
+    assert {item.endpoint for item in cutout.candidates} == {"cutouts_array"}
     assert spectrum.status == "unsupported"
     assert "no compatible" in spectrum.source_results[0].reason
 

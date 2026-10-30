@@ -493,7 +493,9 @@ python -m pytest -q tests/test_antares_semantic_search.py tests/test_antares_reg
 
 Split into small reviews. [07a](reference_workflow_material.md) inventories the
 pinned reference application's actual inputs and maps Fink candidate `distnr`
-to an explicit pixel-valued leaf. 07b audits cutouts separately. Inspection also
+to an explicit pixel-valued leaf. [07b](integration_07b_fink_cutouts.md) isolates
+Fink's fixed JSON cutout mode and preserves all three named stamp arrays through
+the existing data-product payload. Inspection also
 found conflicting ALeRCE REST/TAP `distnr` unit documentation; 07c resolves the
 endpoint-specific contract before changing that existing mapping or advertising
 it as a verified angular input. These extend the original material/unit audit,
@@ -793,8 +795,8 @@ not need redesign for this series.
 | 06c | ANTARES default within | [#319](https://github.com/sambolino/alertissimo/pull/319), integration `20534f1` | Merged after null-photometry membership fix; final local count not separately reported | Final acceptance pending |
 | 06d | ANTARES first/last within | [#320](https://github.com/sambolino/alertissimo/pull/320), integration `adfccfb` | Merged after local handoff; count not separately reported | Final acceptance pending |
 | 06e | ANTARES latest and cone identity review | [#321](https://github.com/sambolino/alertissimo/pull/321), integration `b34eb1d` | Manual DSL checkpoint [41041721319](https://github.com/sambolino/alertissimo/actions/runs/41041721319) passed | Provider live acceptance pending; native cone temporal/latest deferred |
-| 07a | Reference input inventory and Fink pixel distance | Prepared on `feat/integration-07a-reference-material` | Focused local mapping/material checks handed off | Frozen evidence; live acceptance remains separate |
-| 07b | Fink cutout audit | Next | Pending | No product activation claim yet |
+| 07a | Reference input inventory and Fink pixel distance | [#322](https://github.com/sambolino/alertissimo/pull/322), integration `da31fd7` | Merged after per-alert count fixture correction | Frozen evidence; live acceptance remains separate |
+| 07b | Fink JSON cutout bundles | Prepared on `feat/integration-07b-cutouts` | Focused local execution/product checks handed off | Synthetic stamps and pinned API source; deployed cutout acceptance pending |
 | 07c | ALeRCE reference-distance units | After 07b | Resolve conflicting REST/TAP metadata against exact payload contracts | No new angular-support claim |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |

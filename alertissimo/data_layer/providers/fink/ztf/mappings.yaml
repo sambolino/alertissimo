@@ -30,6 +30,11 @@ payloads:
     path: .
     object_partition:
       mode: single
+  cutouts_array:
+    endpoint: cutouts_array
+    path: .
+    object_partition:
+      mode: single
   sso:
     endpoint: sso
     path: '[]'
@@ -506,6 +511,9 @@ mappings:
   - cutouts#b:cutoutScience_stampData
   - cutouts#b:cutoutTemplate_stampData
   - cutouts#b:cutoutDifference_stampData
+  - cutouts_array#b:cutoutScience_stampData
+  - cutouts_array#b:cutoutTemplate_stampData
+  - cutouts_array#b:cutoutDifference_stampData
   classification@sextractor:fink.assessment.star_galaxy.score:
   - objects#i:classtar
   - sso#i:classtar
@@ -849,6 +857,13 @@ mappings:
   lightcurve@ztf:fink.points.provenance.channel.science_version:
   - objects#i:fink_science_version
 transforms:
+  data_product@ztf:fink.payload:
+    cutouts#b:cutoutScience_stampData: {object_key: science}
+    cutouts#b:cutoutTemplate_stampData: {object_key: template}
+    cutouts#b:cutoutDifference_stampData: {object_key: difference}
+    cutouts_array#b:cutoutScience_stampData: {object_key: science}
+    cutouts_array#b:cutoutTemplate_stampData: {object_key: template}
+    cutouts_array#b:cutoutDifference_stampData: {object_key: difference}
   detection@ztf:fink.reference_image.nearest_source.pixel_distance:
     objects#i:distnr:
       skip_null: true

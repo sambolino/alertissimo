@@ -339,15 +339,47 @@ endpoints:
     output:
       type: data_product
       item: cutout
-    notes: '- output-format=PNG or FITS returns URL to image
-
-      - output-format=array returns 2D array as shown
-
-      '
+    notes: PNG and FITS modes return file bytes. Array mode returns a JSON object with named stamp arrays; kind=All returns all three.
     server_filters:
     - objectId
     - kind
     - candid
+    post_filter: false
+    projection:
+      supports_columns: false
+  cutouts_array:
+    path: /api/v1/cutouts
+    method: GET
+    description: Verified JSON mode of the existing cutouts route; all three raw image stamps for the latest archived alert of one object.
+    transport:
+      kind: rest
+      fixed_params:
+        kind: All
+        output-format: array
+    params:
+      objectId:
+        required: true
+        type: string
+        bind: target_id
+        description: ZTF object identifier; each request belongs to this object.
+      kind:
+        required: false
+        type: string
+        enum: [All]
+        description: Fixed bundle of Science, Template and Difference stamps.
+      output-format:
+        required: false
+        type: string
+        enum: [array]
+        description: Fixed JSON object containing the three raw image matrices.
+    output:
+      type: object
+      item: cutout_bundle
+      required_matrices:
+      - b:cutoutScience_stampData
+      - b:cutoutTemplate_stampData
+      - b:cutoutDifference_stampData
+    server_filters: [objectId, kind]
     post_filter: false
     projection:
       supports_columns: false
