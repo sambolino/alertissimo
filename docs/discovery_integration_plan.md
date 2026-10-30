@@ -790,6 +790,29 @@ not need redesign for this series.
 
 ## Progress
 
+### Final semantic audit — 30 October 2026
+
+The [semantic audit](discovery_semantic_audit.md) inspects the actual integration
+compiler, planner, evaluator, confirmation and continuation paths against the
+latest agreed declarative behavior. **Main merge is on hold** for predicate-loss,
+assertion-correlation and missing-evidence defects; a green existing suite alone
+does not resolve those counterexamples. Draft
+[PR #329](https://github.com/sambolino/alertissimo/pull/329) requests the three
+main-target baseline checks on integration `6aa9b16`.
+
+The end-topic consultation is now complete: map fields and retrieve evidence,
+then deliberate comparison, and additional classification endpoint searches
+last. The [new design/PR plan](classification_evidence_design_plan.md) preserves
+`with ... where` as declarative intent, existing `confirm` as proposition quorum,
+and `filter` as later selection. It does not claim those gaps are already fixed.
+
+Later user-run historical cases supplied a nonempty PASS for every one of the
+eight live scenario types across separate runs/windows/fields, plus ALeRCE and
+Lasair first/last. ANTARES first/last attempts returned 500 and remain unverified
+live. The audit records exact dates and evidence roots. Historical rows below
+retain the outcomes known at each milestone rather than rewriting the earlier
+empty/failed attempts as successes.
+
 | PR | Branch suffix | PR number / commit | Local verification | Live outcome |
 | --- | --- | --- | --- | --- |
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
