@@ -419,7 +419,7 @@ def validate_surface_semantics(
                             scoped_noun=noun,
                             scoped_producer=clause.source,
                             scoped_channel=(
-                                clause.via or surface.candidates.broker
+                                None if clause.brokers else clause.via or surface.candidates.broker
                             ),
                         )
                     )

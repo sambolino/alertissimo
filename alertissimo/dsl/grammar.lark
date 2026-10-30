@@ -81,7 +81,10 @@ confirm_clause: "confirm"i "by"i INT "via"i broker_list
 with_clause: "with"i requirement scoped_where?
 scoped_where: "where"i TEXT
 
-requirement: PRODUCT from_clause? via_clause? using_clause?
+requirement: PRODUCT from_clause? requirement_via? using_clause?
+// The surface model currently admits broker lists for classification only.
+// Candidate and match broker qualifiers remain singular.
+requirement_via: "via"i broker_list
 from_clause: "from"i NAME
 via_clause: "via"i NAME
 using_clause: "using"i METHOD

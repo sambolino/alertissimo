@@ -208,6 +208,14 @@ R1 is now on integration as `ba59032` (#330). R2 is prepared locally on
 [semantics, local suite and intermediate CI checkpoint](predicate_assertion_evidence.md).
 This records implementation scope, not passing tests or a merged R2 status.
 
+Subsequent progress: R2 is merged as `9b19e26` (#331), with successful manual
+DSL and registry checks on that SHA. C1 is prepared locally on
+`feat/classification-multi-broker-requirements`; see its
+[language scope, local checks and remaining limits](classification_multi_broker_requirements.md).
+The broker-list surface expands into existing retrieval Steps. Its inline
+condition uses a whole-condition OR across broker scopes, without introducing a
+quorum or cross-broker class/score mixing. C2-C7 remain outstanding.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

@@ -143,6 +143,10 @@ class _SurfaceTransformer(Transformer):
     def via_clause(self, items):
         return "via", str(items[0]).lower()
 
+    def requirement_via(self, items):
+        brokers = items[0]
+        return ("via", brokers[0]) if len(brokers) == 1 else ("brokers", brokers)
+
     def from_clause(self, items):
         return "from", str(items[0]).lower()
 
@@ -230,6 +234,7 @@ class _SurfaceTransformer(Transformer):
             product=product,
             source=qualifiers.get("from"),
             via=qualifiers.get("via"),
+            brokers=qualifiers.get("brokers", ()),
             method=qualifiers.get("using"),
         )
 
