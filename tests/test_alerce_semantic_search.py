@@ -211,19 +211,23 @@ def test_unsupported_class_operator_remains_a_local_residual(graph):
     assert plan.predicate_realization.params == {} and plan.predicate_realization.residual == condition
 
 
-def test_wrong_channel_classification_is_deferred_before_transport(graph, monkeypatch):
+def test_wrong_channel_classification_is_rejected_before_transport(graph, monkeypatch):
     condition = ComparisonPredicate(operator="=", left=SemanticReference(
         semantic_type="classification", producer="lc_classifier", channel="fink", field_path="best.class"),
         right=PredicateLiteral(value="SN"))
     with pytest.raises(PlanningDeferredError, match="classification@lc_classifier:fink.best.class"):
         plan_step(search("ztf", predicate=condition), graph)
     client = RecordedClient("ztf")
-    with pytest.raises(PlanningDeferredError, match="discovery residual requires material unavailable"):
+    # Public compilation rejects the unavailable classifier recipe before the
+    # planner's residual-material guard is reached.
+    with pytest.raises(SurfaceLoweringError, match="no classification recipe maps the requested classifier") as caught:
         execute_dsl(
             'objects from ztf via alerce\n'
             'where classification@lc_classifier:fink.best.class = "SN"\n',
             graph=graph, executor=install_client(monkeypatch, client), continue_from=None,
         )
+    assert caught.value.code == "unsupported_capability"
+    assert caught.value.clause_index == 0
     assert client.calls == []
 
 
