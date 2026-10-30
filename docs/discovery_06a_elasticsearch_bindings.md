@@ -8,6 +8,10 @@ activation and temporal/selection evidence, split further if needed). This first
 branch adds no production provider bindings or recipes. Existing ANTARES lookup,
 cone and retrieval behavior stays on its current declarations.
 
+Follow-up: [06b](discovery_06b_antares_ztf.md) activates scoped ZTF coordinates;
+temporal and latest evidence are separated into 06c. The isolated 06a fixtures
+remain independent of the production identity-scope declarations.
+
 ## Existing boundaries
 
 The existing `predicate_bindings` format gains one optional representation:

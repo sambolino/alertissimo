@@ -106,6 +106,7 @@ class RequestConstraintCapability:
     sql_order_by: str | None = None
     # Structured numeric query representation; no raw query language in IR.
     elasticsearch_field: str | None = None
+    elasticsearch_identity: str | None = None
 
 
 @dataclass(frozen=True)

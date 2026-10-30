@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+from collections.abc import Iterator
 from typing import Any, Mapping
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -103,4 +104,9 @@ class PythonClientTransport:
         module = importlib.import_module(spec.module or "")
         target: Any = getattr(module, spec.client)() if spec.client else module
         method = getattr(target, spec.client_method or "")
-        return TransportResult(payload=method(**dict(params)), method="python")
+        payload = method(**dict(params))
+        # Exhaust lazy client work inside execution, retaining one replayable
+        # snapshot. Iterator failures must fail this call, not normalization.
+        if isinstance(payload, Iterator):
+            payload = tuple(payload)
+        return TransportResult(payload=payload, method="python")

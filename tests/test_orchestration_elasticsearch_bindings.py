@@ -190,7 +190,9 @@ def test_public_facade_rechecks_structured_results_instead_of_trusting_the_query
     assert {summary_object_identity(p) for p in result.portfolios} == {("ztf", "ZTF20aaaaaaa")}
 
 
-def test_production_antares_is_not_activated_by_query_encoder_support():
+def test_ztf_activation_keeps_rubin_discovery_separate():
     graph = build_capability_graph()
-    assert graph.query_recipes(broker="antares", origin="ztf", op="semantic_search") == ()
+    recipe, = graph.query_recipes(broker="antares", origin="ztf", op="semantic_search")
+    assert all(item.elasticsearch_identity == "properties.ztf_object_id"
+               for item in recipe.calls[0].predicate_bindings)
     assert graph.query_recipes(broker="antares", origin="lsst", op="semantic_search") == ()

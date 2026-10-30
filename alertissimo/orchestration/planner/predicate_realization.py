@@ -18,6 +18,7 @@ from alertissimo.data_layer.transforms.elasticsearch import (
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
+    ExistsPredicate,
     Predicate,
     PredicateLiteral,
     SemanticReference,
@@ -155,6 +156,7 @@ def _atomic_pushdown(
         try:
             params[field_constraint.parameter] = elasticsearch_numeric_comparison(
                 field_constraint.elasticsearch_field, operator, value,
+                identity_field=field_constraint.elasticsearch_identity,
             )
         except (ValueError, OverflowError):
             return PredicateRealization(residual=predicate)
@@ -256,7 +258,13 @@ def realize_predicate(
             if len(ordering) != 1 or None in ordering:
                 return PredicateRealization(residual=predicate)
             params[parameter] += " ORDER BY " + next(iter(ordering))
-    return PredicateRealization(pushdown=result.pushdown, params=params, residual=predicate)
+    residual = predicate
+    if any(item.elasticsearch_identity is not None and item.parameter in params for item in structured):
+        residual = and_predicates((predicate, ExistsPredicate(reference=SemanticReference(
+            semantic_type="summary", field_path="identity.object_id",
+            producer=endpoint.origin, channel=endpoint.broker,
+        ))))
+    return PredicateRealization(pushdown=result.pushdown, params=params, residual=residual)
 
 
 __all__ = ["realize_predicate"]

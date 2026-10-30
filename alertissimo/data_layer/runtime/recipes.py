@@ -450,14 +450,18 @@ def _predicate_bindings(
                 if binding.get("exact", True) is not True or "values" in binding:
                     raise RecipeRegistryError(f"{location}: numeric SQL bindings require exact comparisons without a values domain")
             elasticsearch_field = None
+            elasticsearch_identity = None
             if "elasticsearch" in binding:
                 from ..transforms.elasticsearch import numeric_comparison
 
                 representation = _mapping(binding["elasticsearch"], location)
-                _keys(representation, {"field"}, {"field"}, location)
+                _keys(representation, {"field", "identity_field"}, {"field"}, location)
                 elasticsearch_field = representation["field"]
+                elasticsearch_identity = representation.get("identity_field")
+                if "identity_field" in representation and elasticsearch_identity is None:
+                    raise RecipeRegistryError(f"{location}: Elasticsearch identity field must be a mapped object identity")
                 try:
-                    numeric_comparison(elasticsearch_field, operator, 0)
+                    numeric_comparison(elasticsearch_field, operator, 0, identity_field=elasticsearch_identity)
                 except ValueError as error:
                     raise RecipeRegistryError(f"{location}: {error}") from error
                 if ("sql" in binding or declaration.get("type") != "dict" or roles or adapter is not None
@@ -468,6 +472,12 @@ def _predicate_bindings(
                                and item.raw_field == elasticsearch_field)
                 if not fields:
                     raise RecipeRegistryError(f"{location}: Elasticsearch field must match the endpoint output mapping")
+                if elasticsearch_identity is not None and not any(
+                    canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+                    and item.raw_field == elasticsearch_identity
+                    for item in graph.fields_for_endpoint(broker, origin, endpoint)
+                ):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch identity field must be a mapped object identity")
                 if any(item.broker == broker and item.origin == origin
                        and item.semantic_path in {field.semantic_path for field in fields}
                        and item.raw_ref in {field.raw_ref for field in fields}
@@ -491,7 +501,8 @@ def _predicate_bindings(
             previous = tuple(item for item in compiled if item.endpoint == endpoint and item.parameter == parameter)
             same_representation = (
                 sql_column is not None and all(item.sql_column is not None and item.sql_order_by == sql_order_by for item in previous)
-                or elasticsearch_field is not None and all(item.elasticsearch_field is not None for item in previous)
+                or elasticsearch_field is not None and all(item.elasticsearch_field is not None
+                    and item.elasticsearch_identity == elasticsearch_identity for item in previous)
             )
             if key in seen_constraints or parameter in seen_parameters and not same_representation:
                 raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
@@ -501,6 +512,7 @@ def _predicate_bindings(
                 broker, origin, endpoint, parameter, path, operator, values, exact,
                 sql_column, sql_subtract, sql_order_by,
                 elasticsearch_field,
+                elasticsearch_identity,
             ))
     return tuple(compiled)
 
