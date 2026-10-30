@@ -458,8 +458,12 @@ alert extrema/counts and the selected client lightcurve cannot silently replace
 complete detection evidence. [06c](discovery_06c_antares_within.md) activates default
 within with required full alert history and mapped ZTF measurement identity.
 [06d](discovery_06d_antares_extrema.md) adds first/last reductions over complete
-detection histories, including per-request response identity validation. Global
-latest is separated into 06e so its ranking proof can be reviewed independently.
+detection histories, including per-request response identity validation.
+[06e](discovery_06e_antares_latest.md) ranks the admitted coordinate population
+by complete identified detection histories, after membership and residual
+selection. It guards conflicting loci for one object and mismatched history
+partitions. Native cone temporal/latest forms remain deferred after source review:
+the shared-survey geometric query does not establish the required ZTF scope.
 Keep these before required material and result access.
 
 Declare semantic discovery through the existing Elasticsearch `search` endpoint.
@@ -777,8 +781,8 @@ not need redesign for this series.
 | 06a | Elasticsearch numeric bindings | [#317](https://github.com/sambolino/alertissimo/pull/317), integration `634b879` | Merged after local handoff; count not separately reported | No provider requests needed |
 | 06b | ANTARES ZTF numeric activation | [#318](https://github.com/sambolino/alertissimo/pull/318), integration `a6909e8` | Manual DSL checkpoint [40984533355](https://github.com/sambolino/alertissimo/actions/runs/40984533355) passed | Final acceptance pending |
 | 06c | ANTARES default within | [#319](https://github.com/sambolino/alertissimo/pull/319), integration `20534f1` | Merged after null-photometry membership fix; final local count not separately reported | Final acceptance pending |
-| 06d | ANTARES first/last within | Prepared on `feat/discovery-06d-antares-extrema` | Focused local handoff; history reduction and per-request identity checks | Final acceptance pending |
-| 06e | ANTARES latest and cone identity review | Next on updated integration branch | Pending | Pending |
+| 06d | ANTARES first/last within | [#320](https://github.com/sambolino/alertissimo/pull/320), integration `adfccfb` | Merged after local handoff; count not separately reported | Final acceptance pending |
+| 06e | ANTARES latest and cone identity review | Prepared on `feat/discovery-06e-antares-latest` | Focused local handoff; next manual DSL checkpoint after squash | Provider live acceptance pending; native cone temporal/latest deferred |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |

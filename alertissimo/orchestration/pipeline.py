@@ -692,7 +692,7 @@ def execute_staged_workflow_run(
             )
             view = apply_classification_selection(step, view)
             view = apply_time_selection(step, succeeded, view)
-            view = apply_search_selection(step, view)
+            view = apply_search_selection(step, view, succeeded)
             if isinstance(step, ConfirmStep):
                 source_reference = succeeded.material_input_from
                 if source_reference is None:

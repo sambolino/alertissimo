@@ -945,7 +945,7 @@ def _candidate_evidence_for_source(
         binding = material_latest or binding
         if step.semantic_type != "summary" or binding is None:
             continue
-        if material_latest is not None and step.predicate is not None:
+        if material_latest is not None and material_latest.history is None and step.predicate is not None:
             # The finite-discovery coverage proof precedes local pruning.
             # Summary predicates use SQL discovery instead of thin cone IDs.
             continue

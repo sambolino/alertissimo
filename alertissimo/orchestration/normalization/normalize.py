@@ -694,7 +694,7 @@ def normalize_workflow_execution(
         )
         normalized_steps.append(
             apply_classification_selection(step, _materialize_enrichment_view(
-                step_run, apply_search_selection(step, apply_time_selection(step, step_run, own)), normalized_steps,
+                step_run, apply_search_selection(step, apply_time_selection(step, step_run, own), step_run), normalized_steps,
             ))
         )
 
