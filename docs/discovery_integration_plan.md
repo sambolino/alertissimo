@@ -496,9 +496,12 @@ pinned reference application's actual inputs and maps Fink candidate `distnr`
 to an explicit pixel-valued leaf. [07b](integration_07b_fink_cutouts.md) isolates
 Fink's fixed JSON cutout mode and preserves all three named stamp arrays through
 the existing data-product payload. Inspection also
-found conflicting ALeRCE REST/TAP `distnr` unit documentation; 07c resolves the
-endpoint-specific contract before changing that existing mapping or advertising
-it as a verified angular input. These extend the original material/unit audit,
+found conflicting ALeRCE REST/TAP `distnr` unit documentation;
+[07c](integration_07c_alerce_distance_units.md) follows the registered client
+contracts: detection responses populate the existing pixel-distance field, while
+forced photometry retains angular separation. PR #324's intermediate ontology
+change (`measurement`, abstract `enrichment` and concrete Get expansion) is the
+baseline for the remaining work. These extend the original material/unit audit,
 without a new representation or orchestration layer.
 
 Inventory the reference workflow's actual inputs before editing mappings. Keep
@@ -796,8 +799,9 @@ not need redesign for this series.
 | 06d | ANTARES first/last within | [#320](https://github.com/sambolino/alertissimo/pull/320), integration `adfccfb` | Merged after local handoff; count not separately reported | Final acceptance pending |
 | 06e | ANTARES latest and cone identity review | [#321](https://github.com/sambolino/alertissimo/pull/321), integration `b34eb1d` | Manual DSL checkpoint [41041721319](https://github.com/sambolino/alertissimo/actions/runs/41041721319) passed | Provider live acceptance pending; native cone temporal/latest deferred |
 | 07a | Reference input inventory and Fink pixel distance | [#322](https://github.com/sambolino/alertissimo/pull/322), integration `da31fd7` | Merged after per-alert count fixture correction | Frozen evidence; live acceptance remains separate |
-| 07b | Fink JSON cutout bundles | Prepared on `feat/integration-07b-cutouts` | Focused local execution/product checks handed off | Synthetic stamps and pinned API source; deployed cutout acceptance pending |
-| 07c | ALeRCE reference-distance units | After 07b | Resolve conflicting REST/TAP metadata against exact payload contracts | No new angular-support claim |
+| 07b | Fink JSON cutout bundles | [#323](https://github.com/sambolino/alertissimo/pull/323), integration `0fc3759` | Merged after capability fanout expectation correction | Synthetic stamps and pinned API source; deployed cutout acceptance pending |
+| Ontology | Measurement records and enrichment families | [#324](https://github.com/sambolino/alertissimo/pull/324), integration `f8e0909` | New baseline; paired shared checkpoint scheduled after 07c | No new provider/live support inferred from family membership |
+| 07c | ALeRCE reference-distance units | Prepared on `fix/integration-07c-alerce-distance-units` | Documented pixel/arcsecond client contracts separated; local handoff | Frozen evidence; TAP equivalence not claimed |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |
 

@@ -264,9 +264,12 @@ mappings:
   - query_detections#isdiffpos
   - query_lightcurve.detections#isdiffpos
   - query_forced_photometry#isdiffpos
-  measurement@ztf:alerce.reference_image.nearest_source.separation.total:
+  # Client detection responses follow the ZTF candidate pixel-distance contract.
+  measurement@ztf:alerce.reference_image.nearest_source.pixel_distance:
   - query_detections#distnr
   - query_lightcurve.detections#distnr
+  # Forced-photometry distnr has a distinct, documented arcsecond contract.
+  measurement@ztf:alerce.reference_image.nearest_source.separation.total:
   - query_forced_photometry#distnr
   measurement@ztf:alerce.reference_image.nearest_source.position.ra:
   - query_lightcurve.detections#ranr

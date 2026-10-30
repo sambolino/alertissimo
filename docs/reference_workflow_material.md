@@ -31,7 +31,7 @@ means a field can be retained when returned, not that every row contains it.
 | Classifier identity, version, label, probability and rank | Implemented in PR 01; existing mappings | ALeRCE `query_probabilities`: `classification@{producer}:alerce`, `provenance.producer.name`, `.version`, `assessment.{output}.class`, `.probability`, `.rank` | Do not fabricate a missing version/probability; classifier names and channels are separate qualifiers |
 | Pan-STARRS rank-one association distance | Available | Fink `objects`, `latests`, `anomaly`, `sso`: `crossmatch@panstarrs:fink.separation.total` from `i:distpsnr1` | Arcseconds; it is the associated catalogue source, not a measured host-centre offset |
 | Pan-STARRS star/galaxy score | Available | Same endpoints: `classification.assessment.star_galaxy.score` from `i:sgscore1` in the Pan-STARRS record | Keep the association and score together; unavailable score does not mean galaxy |
-| Nearest reference-source image distance | Implemented in 07a | Fink `i:distnr` becomes `measurement@ztf:fink.reference_image.nearest_source.pixel_distance` | Pixels, with no angular conversion; a nearby reference source is not automatically a host nucleus |
+| Nearest reference-source image distance | Implemented in 07a/07c | Fink candidate `i:distnr` and ALeRCE detection `distnr` populate `measurement@ztf:{channel}.reference_image.nearest_source.pixel_distance` | Pixels, with no angular conversion; ALeRCE forced-photometry distance retains its separate angular field; a nearby reference source is not automatically a host nucleus |
 | Reported detection-history count | Available | Fink `i:ndethist` becomes `summary@ztf:fink.detection_count` | Each alert retains its historical snapshot; the first captured row reports 17, earlier rows report lower counts, and the loaded history has 14 ordinary detections |
 | Historical coverage count | Available | Fink `objects`/`anomaly`: `coverage_count` from `i:ncovhist` | Distinct from detection count and loaded upper-limit count |
 | Positive subtraction | Available | Fink `objects`, `latests`, `anomaly`, `sso`: `image_metrics.is_positive` from `i:isdiffpos` | Existing value mapping preserves negative subtraction as `false`; this does not remove its measurement |
@@ -81,14 +81,16 @@ raw execution payloads retain their original representation. This branch neither
 invents a sentinel conversion nor changes existing positive/negative-subtraction
 transforms.
 
-An existing ALeRCE detection mapping uses angular separation for its `distnr`.
-Its [REST client documentation](https://alerce.readthedocs.io/en/latest/models/ztf_detection.html)
-describes pixels, whereas its [TAP column metadata](https://tap.alerce.online/__system__/dc_tables/show/tableinfo/alerce_tap.ztf_detection)
-describes arcseconds. This is the explicitly scheduled 07c unit audit;
-neither reinterpret that field nor claim it is a verified angular substitute for
-the new Fink pixel field. No ALeRCE mapping is changed by 07a. ZTF's separate
-forced-photometry schema also documents a same-named angular field, reinforcing
-the need to check the exact payload contract.
+[07c](integration_07c_alerce_distance_units.md) separates ALeRCE's documented
+client response units. `query_detections` and `query_lightcurve.detections` now
+populate `measurement@ztf:alerce.reference_image.nearest_source.pixel_distance`;
+`query_forced_photometry` retains the angular `separation.total` mapping. No
+numbers are rescaled. The separate TAP detection metadata discrepancy is recorded
+without using it to override the registered client methods' contracts.
+
+The current record noun is `measurement`, following PR #324. The abstract
+`enrichment` requirement expands into supported concrete Gets; it does not merge
+measurement fields or their units.
 
 ## Scientific equivalence and application boundary
 
@@ -130,8 +132,7 @@ PYTHONPATH=. python -m pytest -q \
 ```
 
 Target the integration branch and squash after these checks pass. [07b](integration_07b_fink_cutouts.md) completes the fixed JSON cutout path.
-The next small review is 07c, the ALeRCE unit audit.
-Because 07a changes ontology and mappings, run one manual **Semantic registry**
-checkpoint after this material sequence. Keep final full CI and live acceptance
-before main; the successful 06e DSL checkpoint is not registry validation of this
-new leaf.
+[07c](integration_07c_alerce_distance_units.md) completes the endpoint-specific
+ALeRCE unit correction. Run the shared registry and DSL checkpoints on updated
+integration after this material sequence, including PR #324's measurement/family
+changes. Keep final full CI and live acceptance before main.
