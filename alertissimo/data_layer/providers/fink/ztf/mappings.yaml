@@ -167,6 +167,13 @@ mappings:
   detection@ztf:fink.image_metrics.bimage_ratio:
   - objects#i:bimagerat
   - anomaly#i:bimagerat
+  # ZTF candidate distnr is in pixels; angular separation stays in arcsec.
+  detection@ztf:fink.reference_image.nearest_source.pixel_distance:
+  - objects#i:distnr
+  - conesearch#i:distnr
+  - latests#i:distnr
+  - anomaly#i:distnr
+  - sso#i:distnr
   detection@ztf:fink.reference_image.nearest_source.image_metrics.fit_chi:
   - objects#i:chinr
   - anomaly#i:chinr
@@ -842,6 +849,17 @@ mappings:
   lightcurve@ztf:fink.points.provenance.channel.science_version:
   - objects#i:fink_science_version
 transforms:
+  detection@ztf:fink.reference_image.nearest_source.pixel_distance:
+    objects#i:distnr:
+      skip_null: true
+    conesearch#i:distnr:
+      skip_null: true
+    latests#i:distnr:
+      skip_null: true
+    anomaly#i:distnr:
+      skip_null: true
+    sso#i:distnr:
+      skip_null: true
   survey@fink.filter_counts:
     statistics#basic:n_g:
       type: to_int

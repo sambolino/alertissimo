@@ -124,6 +124,7 @@ def test_candid_history_reference_times_calibration_and_fixed_color():
 
 def test_distnr_pixels_are_not_emitted_as_angular_reference_separation():
     detection = _records(_build("objects"), "detection@ztf:fink")[0]
+    assert detection.fields["reference_image.nearest_source.pixel_distance"] == 2.359998
     assert "reference_image.nearest_source.separation.total" not in detection.fields
 
 

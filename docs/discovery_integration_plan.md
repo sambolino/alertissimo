@@ -147,7 +147,9 @@ review, keeping the same order and acceptance boundary.
 | `feat/discovery-06c-antares-within` | Activate default within over required ANTARES ZTF alert histories |
 | `feat/discovery-06d-antares-extrema` | Activate first/last within by reducing complete detection histories |
 | `feat/discovery-06e-antares-latest` | Rank ANTARES candidates using complete detection recency; review temporal cone identity scope |
-| `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
+| `feat/integration-07a-reference-material` | Inventory reference inputs and retain Fink reference-source distance in pixels |
+| `feat/integration-07b-cutouts` | Audit the Fink array cutout response against existing data products; activate only if the current representation suffices |
+| `fix/integration-07c-alerce-distance-units` | Resolve the REST/TAP unit discrepancy for existing ALeRCE reference-distance mappings before claiming equivalent angular material |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
 
@@ -489,6 +491,14 @@ python -m pytest -q tests/test_antares_semantic_search.py tests/test_antares_reg
 
 ### PR 07 — Material required by the reference workflow
 
+Split into small reviews. [07a](reference_workflow_material.md) inventories the
+pinned reference application's actual inputs and maps Fink candidate `distnr`
+to an explicit pixel-valued leaf. 07b audits cutouts separately. Inspection also
+found conflicting ALeRCE REST/TAP `distnr` unit documentation; 07c resolves the
+endpoint-specific contract before changing that existing mapping or advertising
+it as a verified angular input. These extend the original material/unit audit,
+without a new representation or orchestration layer.
+
 Inventory the reference workflow's actual inputs before editing mappings. Keep
 the inventory with the final integration guide and classify each item as:
 available; implemented in this series; externally supplied by nucleuswatch; or
@@ -782,8 +792,10 @@ not need redesign for this series.
 | 06b | ANTARES ZTF numeric activation | [#318](https://github.com/sambolino/alertissimo/pull/318), integration `a6909e8` | Manual DSL checkpoint [40984533355](https://github.com/sambolino/alertissimo/actions/runs/40984533355) passed | Final acceptance pending |
 | 06c | ANTARES default within | [#319](https://github.com/sambolino/alertissimo/pull/319), integration `20534f1` | Merged after null-photometry membership fix; final local count not separately reported | Final acceptance pending |
 | 06d | ANTARES first/last within | [#320](https://github.com/sambolino/alertissimo/pull/320), integration `adfccfb` | Merged after local handoff; count not separately reported | Final acceptance pending |
-| 06e | ANTARES latest and cone identity review | Prepared on `feat/discovery-06e-antares-latest` | Focused local handoff; next manual DSL checkpoint after squash | Provider live acceptance pending; native cone temporal/latest deferred |
-| 07 | required-material | Pending | Pending | Pending where applicable |
+| 06e | ANTARES latest and cone identity review | [#321](https://github.com/sambolino/alertissimo/pull/321), integration `b34eb1d` | Manual DSL checkpoint [41041721319](https://github.com/sambolino/alertissimo/actions/runs/41041721319) passed | Provider live acceptance pending; native cone temporal/latest deferred |
+| 07a | Reference input inventory and Fink pixel distance | Prepared on `feat/integration-07a-reference-material` | Focused local mapping/material checks handed off | Frozen evidence; live acceptance remains separate |
+| 07b | Fink cutout audit | Next | Pending | No product activation claim yet |
+| 07c | ALeRCE reference-distance units | After 07b | Resolve conflicting REST/TAP metadata against exact payload contracts | No new angular-support claim |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |
 
