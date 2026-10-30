@@ -11,6 +11,10 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_path,
 )
 from alertissimo.data_layer.transforms.sql import numeric_comparison
+from alertissimo.data_layer.transforms.elasticsearch import (
+    conjoin as conjoin_elasticsearch,
+    numeric_comparison as elasticsearch_numeric_comparison,
+)
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
@@ -147,6 +151,13 @@ def _atomic_pushdown(
             )
         except (ValueError, OverflowError):
             return PredicateRealization(residual=predicate)
+    if field_constraint.elasticsearch_field is not None:
+        try:
+            params[field_constraint.parameter] = elasticsearch_numeric_comparison(
+                field_constraint.elasticsearch_field, operator, value,
+            )
+        except (ValueError, OverflowError):
+            return PredicateRealization(residual=predicate)
     return PredicateRealization(
         pushdown=predicate, params=params, residual=None if exact else predicate,
     )
@@ -189,6 +200,10 @@ def _realize_predicate(
         )
         for name, value in realization.params.items():
             if name in params and params[name] != value:
+                if any(item.parameter == name and item.elasticsearch_field is not None
+                       for matches in lookup.values() for item in matches):
+                    params[name] = conjoin_elasticsearch(params[name], value)
+                    continue
                 if any(item.parameter == name and item.sql_column is not None
                        for matches in lookup.values() for item in matches):
                     # SQL conditions form a conjunction; range bounds do not
@@ -215,20 +230,22 @@ def realize_predicate(
     predicate: Predicate, *, endpoint: EndpointCapability, graph: CapabilityGraph,
     constraints: tuple[RequestConstraintCapability, ...] | None = None,
 ) -> PredicateRealization:
-    """Realize declared filters, including a bounded numeric SQL conjunction.
+    """Realize declared filters, including numeric SQL/Elasticsearch conjunctions.
 
-    SQL admits only completely translated comparisons/conjunctions. Unsupported
+    Structured queries admit only fully translated comparisons/conjunctions. Unsupported
     types, qualifiers, OR/NOT, or leaves cannot silently broaden discovery. The
     existing required-parameter check then defers the missing conditions before
-    binding. SQL results retain a full normalized recheck as scientific evidence.
+    binding. These results retain a full normalized recheck as scientific evidence.
     """
     available = constraints if constraints is not None else graph.request_constraints_for(
         endpoint.broker, endpoint.origin, endpoint.endpoint,
     )
     sql = tuple(item for item in available if item.sql_column is not None
                 and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
+    structured = tuple(item for item in available if item.elasticsearch_field is not None
+                       and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
     result = _realize_predicate(predicate, endpoint=endpoint, graph=graph, constraints=constraints)
-    if not sql:
+    if not sql and not structured:
         return result
     if result.residual is not None or result.pushdown is None:
         return PredicateRealization(residual=predicate)

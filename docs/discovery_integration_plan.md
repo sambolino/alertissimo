@@ -142,7 +142,8 @@ review, keeping the same order and acceptance boundary.
 | `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
 | `feat/selection-02b-lasair-cone` | Prove required summary recency and complete cone population before admitting cone latest |
 | `feat/selection-03-fink-ztf` | Audit Fink latest evidence; activate only if overall object recency is established |
-| `feat/discovery-06-antares-ztf` | Implement verified ANTARES ZTF search with temporal and latest selection |
+| `feat/discovery-06a-elasticsearch-bindings` | Compile bounded numeric structured queries in existing predicate bindings |
+| `feat/discovery-06b-antares-ztf` | Activate verified ANTARES ZTF search with temporal and latest selection, splitting further if needed |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
@@ -440,6 +441,11 @@ end-of-series discussion with Veljko before those implementation branches. Keep
 existing Rubin support valid; an audit or deferral is not a new activation.
 
 ### PR 06 — ANTARES semantic discovery
+
+Split this milestone into [06a structured numeric bindings](discovery_06a_elasticsearch_bindings.md)
+and provider activation in 06b. The prerequisite changes existing compiler/planner
+paths with isolated declaration fixtures; no production endpoint is activated
+until the field/population/time evidence is established.
 
 Declare semantic discovery through the existing Elasticsearch `search` endpoint.
 Translate a bounded set of verified semantic predicates into its required query
@@ -752,8 +758,9 @@ not need redesign for this series.
 | Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
 | Selection 02 | Lasair ZTF semantic latest | [#313](https://github.com/sambolino/alertissimo/pull/313), integration `1680d38` | Merged after focused local run and fixture correction | Final acceptance pending |
 | Selection 02b | Lasair cone latest | [#314](https://github.com/sambolino/alertissimo/pull/314), integration `7b107d9`; matrix correction [#315](https://github.com/sambolino/alertissimo/pull/315), `9f4a7bd` | DSL checkpoint 1,220 passed / one stale matrix assertion, corrected in #315; skipped package check handed off locally | Final acceptance pending |
-| Selection 03 | Fink latest audit | Prepared on `feat/selection-03-fink-ztf` | Local regression handoff; activation blocked by object-recency contract | No live claim; retain explicit deferral |
-| 06 | antares | Pending | Pending | Pending |
+| Selection 03 | Fink latest audit | [#316](https://github.com/sambolino/alertissimo/pull/316), integration `cc601ae` | Merged after implicit-classification fixture correction; activation blocked by object-recency contract | No live claim; retain explicit deferral |
+| 06a | Elasticsearch numeric bindings | Prepared on `feat/discovery-06a-elasticsearch-bindings` | Focused local handoff; no production activation | No provider requests needed |
+| 06b | ANTARES ZTF activation | Next on updated integration branch | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |

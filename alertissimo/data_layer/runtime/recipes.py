@@ -389,7 +389,7 @@ def _predicate_bindings(
         for index, raw_binding in enumerate(bindings):
             location = f"{where}[{index}]"
             binding = _mapping(raw_binding, location)
-            _keys(binding, {"path", "operator", "parameter", "values", "exact", "sql"}, {"path", "operator", "parameter"}, location)
+            _keys(binding, {"path", "operator", "parameter", "values", "exact", "sql", "elasticsearch"}, {"path", "operator", "parameter"}, location)
             parameter, path, operator = binding["parameter"], binding["path"], binding["operator"]
             if not isinstance(parameter, str) or parameter not in parameters:
                 raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
@@ -449,6 +449,30 @@ def _predicate_bindings(
                     raise RecipeRegistryError(f"{location}: SQL subtraction must match the output mapping transform")
                 if binding.get("exact", True) is not True or "values" in binding:
                     raise RecipeRegistryError(f"{location}: numeric SQL bindings require exact comparisons without a values domain")
+            elasticsearch_field = None
+            if "elasticsearch" in binding:
+                from ..transforms.elasticsearch import numeric_comparison
+
+                representation = _mapping(binding["elasticsearch"], location)
+                _keys(representation, {"field"}, {"field"}, location)
+                elasticsearch_field = representation["field"]
+                try:
+                    numeric_comparison(elasticsearch_field, operator, 0)
+                except ValueError as error:
+                    raise RecipeRegistryError(f"{location}: {error}") from error
+                if ("sql" in binding or declaration.get("type") != "dict" or roles or adapter is not None
+                    or binding.get("exact", True) is not True or "values" in binding):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch requires a dict filter, exact numeric comparisons and no other encoder")
+                fields = tuple(item for item in graph.fields_for_endpoint(broker, origin, endpoint)
+                               if canonical_semantic_path(item.semantic_path) == path
+                               and item.raw_field == elasticsearch_field)
+                if not fields:
+                    raise RecipeRegistryError(f"{location}: Elasticsearch field must match the endpoint output mapping")
+                if any(item.broker == broker and item.origin == origin
+                       and item.semantic_path in {field.semantic_path for field in fields}
+                       and item.raw_ref in {field.raw_ref for field in fields}
+                       for item in graph.transform_capabilities):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch numeric bindings require untransformed output fields")
             exact = binding.get("exact", True)
             if type(exact) is not bool:
                 raise RecipeRegistryError(f"{location}: exact must be boolean")
@@ -465,15 +489,18 @@ def _predicate_bindings(
                 )
             key = (path, operator)
             previous = tuple(item for item in compiled if item.endpoint == endpoint and item.parameter == parameter)
-            if key in seen_constraints or parameter in seen_parameters and (
-                sql_column is None or any(item.sql_column is None or item.sql_order_by != sql_order_by for item in previous)
-            ):
+            same_representation = (
+                sql_column is not None and all(item.sql_column is not None and item.sql_order_by == sql_order_by for item in previous)
+                or elasticsearch_field is not None and all(item.elasticsearch_field is not None for item in previous)
+            )
+            if key in seen_constraints or parameter in seen_parameters and not same_representation:
                 raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
             seen_parameters.add(parameter)
             seen_constraints.add(key)
             compiled.append(RequestConstraintCapability(
                 broker, origin, endpoint, parameter, path, operator, values, exact,
                 sql_column, sql_subtract, sql_order_by,
+                elasticsearch_field,
             ))
     return tuple(compiled)
 

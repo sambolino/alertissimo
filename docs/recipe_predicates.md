@@ -62,6 +62,12 @@ construction error directing authors to `predicate_bindings` in provider
 provider YAML contracts. The branch 07 behavior above describes the migration
 stage; see `recipe_predicate_cleanup.md` for the current handoff.
 
+Extension (discovery 06a): an optional `elasticsearch: {field: ...}` representation
+supports numeric dictionary queries and AND composition through these same
+bindings. Sharing a structured query parameter is allowed; duplicate semantic
+path/operator pairs remain invalid. See
+[the structured binding contract](discovery_06a_elasticsearch_bindings.md).
+
 ## Local verification and PR
 
 Tests were not executed in the editing environment. Import and check locally:
