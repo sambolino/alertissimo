@@ -102,8 +102,11 @@ def test_missing_duplicate_and_mixed_candidate_identities_are_explicit_errors():
         select_candidate((a,), origin="ztf", object_id=IDS[1])
     with pytest.raises(ValueError, match="found 2"):
         select_candidate((a, a), origin="ztf", object_id=IDS[0])
+    # Keep the copied record's execution audit valid so the consumer identity
+    # check, rather than Portfolio's source-integrity guard, rejects the union.
+    mixed = replace(a, records=a.records + (b.records[0],), executions=a.executions + b.executions)
     with pytest.raises(ValueError, match="one candidate identity"):
-        candidate_identity(replace(a, records=a.records + (b.records[0],)))
+        candidate_identity(mixed)
     with pytest.raises(ValueError, match="one candidate identity"):
         candidate_identity(Portfolio(InternalPortfolioId("empty")))
     with pytest.raises(ValueError, match="qualified survey/object"):
