@@ -25,6 +25,7 @@ on:
       - 'tests/test_orchestration_crossmatch_capability.py'
       - 'tests/test_orchestration_crossmatch_recipes.py'
       - 'tests/test_orchestration_product_recipes.py'
+      - 'tests/test_orchestration_fink_cutouts.py'
       - 'tests/test_orchestration_predicate_recipes.py'
       - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_orchestration_search_recipes.py'
@@ -102,6 +103,7 @@ jobs:
             tests/test_orchestration_crossmatch_capability.py \
             tests/test_orchestration_crossmatch_recipes.py \
             tests/test_orchestration_product_recipes.py \
+            tests/test_orchestration_fink_cutouts.py \
             tests/test_orchestration_predicate_recipes.py \
             tests/test_orchestration_selection_recipes.py \
             tests/test_orchestration_search_recipes.py \

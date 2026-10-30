@@ -56,6 +56,9 @@ class EndpointRegistry:
         if not url and top_path and kind == "rest":
             url = urljoin(f"{str(base_url).rstrip('/')}/", str(top_path).lstrip("/"))
 
+        output = endpoint_data.get("output") or {}
+        if output.get("required_matrices") and output.get("type") != "object":
+            raise ValueError("required_matrices requires an object output contract")
         return EndpointSpec(
             broker=document.get("broker", broker),
             origin=document.get("origin", origin),
@@ -70,4 +73,5 @@ class EndpointRegistry:
             client=client,
             client_method=client_method,
             headers=endpoint_data.get("headers") or {},
+            required_matrices=output.get("required_matrices", ()),
         )

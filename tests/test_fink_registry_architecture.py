@@ -49,7 +49,7 @@ def test_cutout_mappings_are_data_products():
     for origin in ORIGINS:
         mappings = load(origin, "mappings.yaml")["mappings"]
         for path, refs in mappings.items():
-            if any(ref.startswith("cutouts#") for ref in refs):
+            if any(ref.split("#", 1)[0] in {"cutouts", "cutouts_array"} for ref in refs):
                 assert path.startswith(f"data_product@{origin}:fink.")
 
 
