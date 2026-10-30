@@ -38,6 +38,7 @@ on:
       - 'scripts/check_release_package.py'
       - 'scripts/live_dsl_complex.py'
       - 'scripts/live_dsl_continuation.py'
+      - 'scripts/live_dsl_discovery.py'
       - 'setup.py'
       - 'pyproject.toml'
       - 'MANIFEST.in'

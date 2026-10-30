@@ -2,8 +2,8 @@
 
 This guide consolidates the current integration contracts. It accompanies step
 09a, `feat/integration-09a-recorded-acceptance`, based on `6daa6b4` / PR #326 on
-`integration/discovery-completion`. Step 09b will add the explicit live runner;
-final live acceptance and the main merge remain pending.
+`integration/discovery-completion`. The [09b live runner and verification guide](discovery_live_acceptance.md)
+adds explicit local scenarios; final live acceptance and the main merge remain pending.
 
 The starting reports came from Bibin Thomas's
 [nucleuswatch integration notes](https://github.com/bibinthomas123/nucleuswatch/blob/f0b4ee7fff4db6faf508d01e5b8b0311f0e3d52d/docs/alertissimo.md).
@@ -198,9 +198,10 @@ PYTHONPATH=. python -m pytest -q \
 Squash into integration after focused local success; the branch's automatic-CI
 exclusion remains. The DSL workflow includes this recorded suite for the final
 shared check. The last paired shared checkpoints passed on `4d93b51` before the
-consumer-only 08 step. Step 09b will supply the live script with explicit scenario
-selection, paired historical bounds, credentials, serialized evidence and outcome
-classification. A passing offline matrix is not a live acceptance result.
+consumer-only 08 step. The [09b guide](discovery_live_acceptance.md) supplies the
+live script with explicit scenario selection, paired historical bounds,
+credentials, serialized evidence and outcome classification. A passing offline
+matrix is not a live acceptance result.
 
 Keep the final offline sweep, package checks, live provider acceptance and the
 integration-to-main CI gate. Do not silently mark unavailable providers as passed
