@@ -237,13 +237,16 @@ def test_class_alert_recency_can_rank_objects_differently_from_later_history(gra
     assert max(discovery, key=discovery.get) == IDS[1]
     assert max(enriched, key=enriched.get) == IDS[0]
     assert identities(result.portfolios) == set(IDS[:2])
-    assert transport.calls[0][0] == "latests"
-    histories = transport.calls[1:]
-    assert histories and all(name == "objects" for name, _ in histories)
-    # Target batching is independent of this recency counterexample. Require
-    # exactly one retrieval of each candidate, whether batched or fanned out.
-    requested_ids = [oid for _, params in histories for oid in params["objectId"].split(",")]
-    assert sorted(requested_ids) == sorted(IDS[:2])
+    # The WHERE reference emits an implicit classification Get before the
+    # explicit lightcurve Get. These are separate occurrences, both backed by
+    # objects; repeated IDs across those occurrences are expected.
+    assert [step.op for step in result.run.workflow.steps] == [
+        "semantic_search", "get_classification", "get_lightcurve",
+    ]
+    assert [name for name, _ in transport.calls] == ["latests", "objects", "objects"]
+    for _, params in transport.calls[1:]:
+        assert sorted(params["objectId"].split(",")) == sorted(IDS[:2])
+    assert [len(step.executions) for step in result.staged.execution.steps] == [1, 1, 1]
 
 
 @pytest.mark.parametrize("padding", [True, -1, "10800", float("inf"), float("nan"), 1e300])

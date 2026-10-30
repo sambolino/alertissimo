@@ -30,6 +30,10 @@ reveals A's greater last date. The class response can be complete and far below
 its cap while still lacking the ranking evidence. The test executes ordinary
 class discovery and lightcurve retrieval with these synthetic rows through the
 real registry/executor/normalizer and checks the differing normalized recencies.
+The classification WHERE reference also emits an implicit classification Get.
+That occurrence and the explicit lightcurve Get each use an `objects` request
+bound to both candidates; they are not one request per object. The regression
+checks all three semantic occurrences and both retrievals separately.
 It is not a captured response or a claim that a particular live source changed
 classification this way.
 
