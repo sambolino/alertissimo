@@ -199,6 +199,9 @@ R1 is prepared on `fix/dsl-predicate-preservation`; see its
 [scope, local checks and draft-PR CI policy](dsl_predicate_preservation.md).
 This is a local handoff, not a reported passing test result or merged status.
 The public replay regressions cover A1/A2 and the unsafe A5 case. R2 remains next.
+The first local R1 run exposed missed surface/preflight guards; the follow-up
+aligns lookup `where` admission with lowering and corrects the audit's A2 public
+impact claim. Invalid late clauses remain rejected at their earliest entry point.
 
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.

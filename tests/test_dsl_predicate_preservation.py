@@ -13,7 +13,10 @@ from alertissimo.api import execute_dsl, validate_dsl
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
-from alertissimo.dsl import SurfaceLoweringError, lower_surface, parse_surface_script
+from alertissimo.dsl import (
+    DSLParseError, FilterClause, SurfaceLoweringError, SurfaceScript,
+    lower_surface, parse_surface_script,
+)
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.planner import PlanningDeferredError
 
@@ -142,12 +145,11 @@ def test_lookup_adjacent_confirmation_keeps_its_proposition_in_confirm():
 ])
 def test_unrepresented_lookup_constraints_fail_before_execution(graph, clause):
     source = LOOKUP + clause + "\n"
-    with pytest.raises(SurfaceLoweringError) as caught:
-        lower_surface(parse_surface_script(source))
-    assert caught.value.code == "unsupported_lookup_constraint"
+    with pytest.raises(DSLParseError, match="lookup candidates cannot carry search constraints"):
+        parse_surface_script(source)
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = ReplayExecutor()
-    with pytest.raises(SurfaceLoweringError):
+    with pytest.raises(DSLParseError, match="lookup candidates cannot carry search constraints"):
         execute_dsl(source, graph=graph, executor=executor, continue_from=None)
     assert executor.calls == []
 
@@ -158,14 +160,29 @@ def test_unrepresented_lookup_constraints_fail_before_execution(graph, clause):
 ])
 def test_late_candidate_constraints_are_rejected_instead_of_dropped(graph, clause):
     source = CONE + "filter exists summary.identity.object_id\n" + clause + "\n"
-    with pytest.raises(SurfaceLoweringError) as caught:
-        lower_surface(parse_surface_script(source))
-    assert caught.value.code == "late_candidate_constraint"
+    with pytest.raises(DSLParseError, match="initial candidate pass"):
+        parse_surface_script(source)
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = ReplayExecutor()
-    with pytest.raises(SurfaceLoweringError):
+    with pytest.raises(DSLParseError, match="initial candidate pass"):
         execute_dsl(source, graph=graph, executor=executor, continue_from=None)
     assert executor.calls == []
+
+
+@pytest.mark.parametrize("clause", [
+    "where summary.detection_count > 2", "inside (1, 2, 5arcsec)",
+    "within 7d", "latest 1",
+])
+def test_direct_surface_input_cannot_bypass_late_constraint_guard(clause):
+    base = parse_surface_script(CONE)
+    late = parse_surface_script("objects from ztf via alerce\n" + clause + "\n").clauses[0]
+    surface = SurfaceScript(
+        candidates=base.candidates,
+        clauses=(*base.clauses, FilterClause(condition="exists summary.identity.object_id"), late),
+    )
+    with pytest.raises(SurfaceLoweringError) as caught:
+        lower_surface(surface)
+    assert caught.value.code == "late_candidate_constraint"
 
 
 @pytest.mark.parametrize("source", [

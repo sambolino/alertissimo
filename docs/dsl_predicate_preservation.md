@@ -19,11 +19,18 @@ scientific predicate evaluator.
   requested initial retrievals and before later Filter/Confirm/Match operations.
   General qualified conditions can supply their implied existing Get operation;
   an equivalent explicit requirement does not issue a duplicate retrieval.
+  The surface model accepts lookup `where`, including after an initial `with`;
+  a subsequent explicit `filter` still ends the initial candidate pass. The
+  existing discovery-only restriction on general `where` after `with` remains
+  until C4 supplies the corresponding material-aware scheduling.
 - A top-level where/inside/within/latest after an explicit filter is rejected
   before execution. Those clauses used to fall through without realization.
   Existing scoped refinement after a filter and in continuation remains valid.
-- Inside/within/latest on an explicit lookup is rejected until a supported
-  selection realization exists. This replaces silent loss, not working support.
+- Inside/within/latest on an explicit lookup remains rejected by the existing
+  surface guard until a supported selection realization exists. Existing parser
+  guards likewise reject late candidate constraints; the lowering guards also
+  protect directly supplied surface models. Public regressions assert the
+  earliest rejection stage rather than expecting parsing to succeed.
 - A selected discovery recipe must materialize every reference in the residual
   evaluated on its first call. The check uses that call's compiled outputs,
   including SQL projection restrictions, qualified producers/channels and dynamic
@@ -84,6 +91,7 @@ Run locally from the feature branch:
 set -o pipefail
 PYTHONPATH=. python -m pytest -q \
   tests/test_dsl_predicate_preservation.py \
+  tests/test_dsl_surface.py \
   tests/test_dsl_lowering.py \
   tests/test_dsl_fragments.py \
   tests/test_dsl_confirm.py \

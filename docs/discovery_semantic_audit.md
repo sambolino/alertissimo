@@ -61,8 +61,11 @@ with classification via fink where best.class = "SN candidate"
 consumed set. It does not process predicates. In `_lower_surface_intent`, a
 requirement emits its Get, but its predicate only emits a `FilterStep` when its
 index is at or after the first explicit `filter`. With no explicit filter, that
-condition never holds. A general `WhereClause` on a lookup also reaches the final
-skip branch. Ontology/capability checks do not add the missing condition.
+condition never holds. Ontology/capability checks do not add the missing
+condition. The original audit also identified a general `WhereClause` skip
+branch on lookups, but overlooked the earlier SurfaceScript guard: the public
+parser rejected that form before lowering. R1 therefore adds public lookup
+`where` support as well as repairing the already accepted scoped form.
 
 Result inferred directly from lowering: lookup plus retrieval, with no scientific
 predicate in either Step. By contrast, `_lower_fragment_intent` emits Get plus
@@ -73,24 +76,26 @@ after the required material is available. Never require users to insert an
 unrelated `filter` as a compiler workaround. Add public validation, compiled-IR,
 execution and continuation regressions for matching and rejected candidates.
 
-Also audit lookup clauses such as within/inside/latest: unsupported combinations
-must fail clearly rather than fall through the same silent skip path.
+Lookup within/inside/latest already fail in the surface model. Preserve those
+rejections; lowering guards additionally protect directly supplied surface
+models. These combinations were not publicly accepted silent-loss cases.
 
-### A2 — Accepted clauses after a filter can be silently ignored (merge blocker)
+### A2 — Lowering skips late clauses; public parser already rejects them
 
-The full-script grammar accepts general `where`, `inside`, `within` and `latest`
-clauses at arbitrary clause positions. `_candidate_search` only consumes the
-prefix before the first `FilterClause`. The later general clauses are skipped
-by `_lower_surface_intent` without an equivalent Step or an explicit error.
+The full-script grammar permits general `where`, `inside`, `within` and `latest`
+clauses at arbitrary clause positions. However, `_preflight_structure` rejects
+these clauses after a filter before invoking that grammar. The original audit
+overstated the public impact by examining grammar/lowering without this guard.
 
-A supported shape such as a bounded discovery, an explicit filter, an explicit
-classification retrieval and then a general classification `where` can therefore
-retain the retrieval while losing the last condition. Fragment grammar already
-rejects standalone `where`; full-script behavior must be equally deliberate.
+Directly supplied SurfaceScript models can bypass parser preflight.
+`_candidate_search` only consumes the prefix before the first `FilterClause`,
+and `_lower_surface_intent` previously skipped later general clauses. This is
+a lowering API gap, not a demonstrated accepted textual-program defect.
 
-Repair: define which clauses are declarative initial constraints and which add a
-later operation; lower every admitted condition or reject the placement before
-execution. Do not silently move a continuation condition across a selection.
+Repair: keep the existing public parser rejections and reject the same placement
+when a caller supplies a surface model directly. Do not silently move a
+continuation condition across a selection. A1, A3/A4 and unsafe A5 remain release
+blockers independently of this narrower A2 finding.
 
 ### A3 — Same-assertion correlation breaks in mixed conjunctions (merge blocker)
 
