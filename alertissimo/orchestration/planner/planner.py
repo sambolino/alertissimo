@@ -181,6 +181,20 @@ def _recipe_plans(
     }
     from alertissimo.orchestration.runtime.models import TimeSelectionRealization, LatestSelectionRealization
 
+    def time_realization(temporal):
+        return TimeSelectionRealization(
+            mode=temporal.mode, method=temporal.method,
+            evidence_plan_index=plan_offset + temporal.call_index,
+            payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
+            payload_path=temporal.payload_path,
+            required_payload_paths={plan_offset + index: path for index, path in temporal.required_payload_paths},
+            response_identity=temporal.response_identity,
+            target_parameter=temporal.target_parameter,
+            target_collection=temporal.target_collection,
+            detection_identity=temporal.detection_identity,
+            reduction=temporal.reduction,
+        ) if temporal is not None else None
+
     temporal = recipe.time_selection
     return tuple(
         _endpoint_plan(
@@ -195,19 +209,11 @@ def _recipe_plans(
                         discovery_identity=recipe.latest_selection.discovery_identity,
                         evidence_identity=recipe.latest_selection.evidence_identity,
                         recency_field=recipe.latest_selection.recency_field,
+                        history=time_realization(recipe.latest_selection.history),
+                        discovery_partition=recipe.latest_selection.discovery_partition,
+                        evidence_partition=recipe.latest_selection.evidence_partition,
                     ) if index == 0 and recipe.latest_selection is not None and getattr(step, "selection", None) is not None else None,
-                    "time_selection": TimeSelectionRealization(
-                        mode=temporal.mode, method=temporal.method,
-                        evidence_plan_index=plan_offset + temporal.call_index,
-                        payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
-                        payload_path=temporal.payload_path,
-                        required_payload_paths={plan_offset + index: path for index, path in temporal.required_payload_paths},
-                        response_identity=temporal.response_identity,
-                        target_parameter=temporal.target_parameter,
-                        target_collection=temporal.target_collection,
-                        detection_identity=temporal.detection_identity,
-                        reduction=temporal.reduction,
-                    ) if index == 0 and temporal is not None else None}
+                    "time_selection": time_realization(temporal) if index == 0 and temporal is not None else None}
         )
         for index, call in enumerate(recipe.calls)
     )

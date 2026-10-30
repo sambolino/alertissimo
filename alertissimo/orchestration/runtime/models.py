@@ -105,6 +105,9 @@ class LatestSelectionRealization(RuntimeModel):
     discovery_identity: str
     evidence_identity: str
     recency_field: str
+    history: TimeSelectionRealization | None = None
+    discovery_partition: str | None = None
+    evidence_partition: str | None = None
 
 
 class EndpointPlan(RuntimeModel):

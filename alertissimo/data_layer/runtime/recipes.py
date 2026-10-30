@@ -75,6 +75,9 @@ class LatestSelectionCapability:
     discovery_identity: str = ""
     evidence_identity: str = ""
     recency_field: str = ""
+    history: TimeSelectionCapability | None = None
+    discovery_partition: str | None = None
+    evidence_partition: str | None = None
 
 
 @dataclass(frozen=True)
@@ -610,11 +613,11 @@ def _latest_selections(
 
 
 
-def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], where: str) -> LatestSelectionCapability:
-    """Compile a complete finite discovery plus required identity-bound summary."""
+def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], graph: CapabilityGraph, where: str) -> LatestSelectionCapability:
+    """Compile complete discovery plus required summary or detection recency."""
     from .capability_graph import canonical_semantic_path
     proof = _mapping(raw, where)
-    _keys(proof, {"call", "complete"}, {"call", "complete"}, where)
+    _keys(proof, {"call", "complete", "history"}, {"call", "complete"}, where)
     index = proof["call"]
     if proof["complete"] is not True or type(index) is not int or not 0 < index < len(calls):
         raise RecipeRegistryError(f"{where}: latest evidence requires complete finite discovery and a later call")
@@ -624,6 +627,48 @@ def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[s
     root_spec, spec = endpoint_defs[root.endpoint], endpoint_defs[evidence.endpoint]
     if any(p.get("role") in {"pagination", "result_limit"} for p in root_spec.get("params", {}).values()):
         raise RecipeRegistryError(f"{where}: material latest requires an uncapped finite discovery contract")
+    if "history" in proof:
+        history = _mapping(proof["history"], f"{where}.history")
+        _keys(history, {"payload", "time_scale", "detection_identity"},
+              {"payload", "time_scale", "detection_identity"}, f"{where}.history")
+        # The pinned native iterator exhausts discovery. Histories must be
+        # singular, identity-checked and unfiltered; no top-N enters either call.
+        if root_spec.get("method") != "python" or root_spec.get("output", {}).get("type") != "iterator":
+            raise RecipeRegistryError(f"{where}: history latest requires complete native iterator discovery")
+        if not root.predicate_bindings or any(item.elasticsearch_identity is None for item in root.predicate_bindings):
+            raise RecipeRegistryError(f"{where}: history latest requires identity-scoped discovery predicates")
+        if (len(evidence.params) != 1 or not isinstance(evidence.params[0].source, CallValueSource)
+            or evidence.params[0].source.call_index != 0
+            or evidence.params[0].source.semantic_path != "summary.identity.object_id"
+            or set(spec.get("params", {})) != {evidence.params[0].parameter}
+            or any(p.get("role") in {"pagination", "result_limit"} for p in spec.get("params", {}).values())):
+            raise RecipeRegistryError(f"{where}: history latest requires unfiltered identity-bound history")
+        temporal = _time_selection({**history, "mode": "last", "method": "material", "call": index,
+                                    "complete": True, "reduction": "max"}, calls, endpoint_defs, graph, where)
+        if temporal.response_identity is None or temporal.target_collection is not None:
+            raise RecipeRegistryError(f"{where}: history latest requires singular response identity coverage")
+        identities = {(f.broker, f.origin) for f in root.outputs
+                      if canonical_semantic_path(f.semantic_path) == "summary.identity.object_id"}
+        if len(identities) != 1:
+            raise RecipeRegistryError(f"{where}: history latest requires one discovery identity namespace")
+        broker, origin = identities.pop()
+        root_ids = [f for f in root.outputs if canonical_semantic_path(f.semantic_path) == "summary.identity.object_id"]
+        partitions = [p for p in graph.payload_capabilities if p.broker == broker and p.origin == origin
+                      and p.endpoint == root.endpoint and p.payload_key == root_ids[0].payload_key]
+        if len(root_ids) != 1 or len(partitions) != 1 or partitions[0].partition_mode != "field" or partitions[0].path != "[]":
+            raise RecipeRegistryError(f"{where}: history latest requires one mapped discovery partition")
+        partition_fields = [f for f in root.outputs if f.payload_key == root_ids[0].payload_key
+                            and f.raw_field == partitions[0].partition_field]
+        evidence_fields = [f for f in evidence.outputs if f.payload_path == "." and len(partition_fields) == 1
+                           and f.semantic_path == partition_fields[0].semantic_path]
+        if len(partition_fields) != 1 or len(evidence_fields) != 1:
+            raise RecipeRegistryError(f"{where}: history latest requires mapped matching response partitions")
+        return LatestSelectionCapability(
+            broker, origin, root.endpoint, "detection.time.mjd", (), index,
+            discovery_identity=root_ids[0].raw_field, evidence_identity=temporal.response_identity,
+            history=temporal, discovery_partition=partition_fields[0].raw_field,
+            evidence_partition=evidence_fields[0].raw_field,
+        )
     if root_spec.get("output", {}).get("type") != "array" or spec.get("output", {}).get("type") != "array":
         raise RecipeRegistryError(f"{where}: material latest requires array responses")
     targets = [p for p in evidence.params if isinstance(p.source, CallValueSource)]
@@ -996,7 +1041,7 @@ def load_provider_capabilities(
                     for call in calls for item in call.params
                 ):
                     raise RecipeRegistryError(f"{where}: candidate-time encoders require time_selection evidence")
-                latest = _material_latest(recipe["latest_selection"], calls, endpoint_defs, where) if "latest_selection" in recipe else None
+                latest = _material_latest(recipe["latest_selection"], calls, endpoint_defs, graph, where) if "latest_selection" in recipe else None
                 compiled.append(RecipeCapability(
                     broker, origin, op, alternative_index, tuple(calls), target_kind, temporal,
                     latest,

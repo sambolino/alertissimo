@@ -18,7 +18,7 @@ from alertissimo.api import execute_dsl, validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraphError, build_capability_graph
-from alertissimo.orchestration.normalization import TimeSelectionError, normalize_workflow_execution, summary_object_identity
+from alertissimo.orchestration.normalization import SearchSelectionError, TimeSelectionError, normalize_workflow_execution, summary_object_identity
 from alertissimo.orchestration.runtime import EndpointPlan, EndpointPlanRef, WorkflowExecutionError
 
 
@@ -294,3 +294,195 @@ def test_extrema_proof_requires_matching_reduction_and_complete_identified_histo
     path.write_text(yaml.safe_dump(document, sort_keys=False))
     with pytest.raises(CapabilityGraphError, match="reduction requires"):
         build_capability_graph(root)
+
+
+@pytest.mark.parametrize("mode,expected", [(None, IDS[1]), ("detection", IDS[0]),
+                                           ("first", IDS[3]), ("last", IDS[3])])
+def test_latest_ranks_complete_detection_history_after_membership(graph, monkeypatch, mode, expected):
+    client = NativeClient(ids=IDS[:4], limit_times=(59150,))
+    source = program(mode=mode or "detection", tail="latest 1\n")
+    if mode is None:
+        source = source.replace("within 10d\n", "")
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    assert identities(result.portfolios) == {expected}
+    assert [name for name, _ in client.calls] == ["search"] + ["get_by_ztf_object_id"] * 4
+    assert [value for _, value in client.calls[1:]] == list(IDS[:4])
+    plan = result.run.steps[0].endpoint_plans[0]
+    proof = plan.latest_selection.history
+    assert proof.mode == "last" and proof.reduction == "max" and proof.complete
+    assert proof.evidence_plan_index == plan.latest_selection.evidence_plan_index == 1
+    assert proof.response_identity == "properties.ztf_object_id" and proof.target_parameter == "ztf_object_id"
+    assert plan.latest_selection.discovery_partition == plan.latest_selection.evidence_partition == "locus_id"
+    # The serialized plan carries exactly the same ranking evidence for replay.
+    assert EndpointPlan.model_validate_json(plan.model_dump_json()) == plan
+    records = [r for r in result.portfolios[0].records if r.semantic_type == "detection@ztf:antares"]
+    assert sorted(r.get("time.mjd") for r in records if r.get("identity.source_id") is not None) == sorted(HISTORY[expected])
+    assert [r.get("time.mjd") for r in records if r.get("photometry.g.limit.mag") is not None] == [59150]
+    assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {expected}
+
+
+def test_latest_is_global_deduplicates_objects_and_breaks_ties_by_identity(graph, monkeypatch):
+    # Deliberately reverse discovery order and repeat a locus/object. Upper-limit
+    # dates cannot make the earlier object win the detection-time ranking.
+    client = NativeClient(ids=(IDS[3], IDS[2], IDS[1], IDS[0], IDS[1]),
+                          histories={IDS[0]: [59000], IDS[1]: [59020, 59001],
+                                     IDS[2]: [59020], IDS[3]: [59010]}, limit_times=(59999,))
+    source = program(tail="latest 2\n").replace("within 10d\n", "")
+    result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    assert [summary_object_identity(p)[1] for p in result.portfolios] == [IDS[1], IDS[2]]
+    assert sorted(value for _, value in client.calls[1:]) == sorted(IDS[:4])
+    assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {IDS[1], IDS[2]}
+
+
+def test_latest_prunes_overbroad_root_rows_before_history_requests(graph, monkeypatch):
+    class BroadClient(NativeClient):
+        def search(self, query):
+            yield from super().search(query)
+            yield SimpleNamespace(locus_id="ANT-outside", ra=49.0, dec=37.0,
+                                  properties={"ztf_object_id": IDS[1]})
+            yield SimpleNamespace(locus_id="ANT-foreign", ra=50.0, dec=37.0,
+                                  properties={"lsst_dia_object_id": "123"})
+    client = BroadClient(ids=(IDS[0], IDS[2]))
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    assert identities(result.portfolios) == {IDS[0]}
+    assert [value for _, value in client.calls[1:]] == [IDS[0], IDS[2]]
+    assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == {IDS[0]}
+
+
+@pytest.mark.parametrize("failure", ["null", "missing", "collection", "time", "identity", "photometry", "response_identity"])
+def test_latest_rejects_missing_or_malformed_history_even_below_the_cutoff(graph, monkeypatch, failure):
+    class BrokenClient(NativeClient):
+        def get_by_ztf_object_id(self, ztf_object_id):
+            self.failure = failure if ztf_object_id == IDS[0] else None
+            return super().get_by_ztf_object_id(ztf_object_id)
+    # B is newer than A. An incomplete A could hide an even newer detection.
+    client = BrokenClient(ids=IDS[:2])
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    with pytest.raises(SearchSelectionError, match="latest|temporal"):
+        execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)
+
+
+@pytest.mark.parametrize("limits", [False, True])
+def test_latest_cannot_rank_a_candidate_with_no_detections(graph, monkeypatch, limits):
+    client = NativeClient(ids=(IDS[4],), limits=limits)
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    with pytest.raises(SearchSelectionError, match="complete valid detection recency"):
+        execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)
+
+
+def test_latest_empty_discovery_needs_no_history(graph, monkeypatch):
+    client = NativeClient(ids=())
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    assert result.portfolios == () and len(client.calls) == 1
+    assert normalize_workflow_execution(result.staged.execution).steps[0].portfolios == ()
+
+
+def test_latest_continuation_replays_all_history_and_fetches_only_selected_ids(graph, monkeypatch):
+    client = NativeClient()
+    endpoint_executor = executor(monkeypatch, client)
+    first = execute_dsl(program(tail="latest 2\n"), graph=graph, executor=endpoint_executor,
+                        continue_from=None, reference_time=NOW)
+    assert identities(first.portfolios) == {IDS[0], IDS[3]}
+    calls = deepcopy(client.calls)
+    second = execute_dsl("filter summary.position.ra >= 50.03\nwith lightcurve via antares\n",
+                         graph=graph, executor=endpoint_executor, continue_from=first,
+                         reference_time=NOW + timedelta(days=2))
+    # Selection is a reuse barrier: the new retrieval is explicitly bound to D.
+    assert client.calls == calls + [("get_by_ztf_object_id", IDS[3])]
+    assert identities(second.portfolios) == {IDS[3]}
+    assert identities(first.portfolios) == {IDS[0], IDS[3]}
+    assert second.run.steps[0].time_reference == NOW
+    assert second.run.steps[-1].endpoint_plans[0].execution_reuse_from is None
+    assert identities(normalize_workflow_execution(second.staged.execution).steps[-1].portfolios) == {IDS[3]}
+
+
+@pytest.mark.parametrize("change,message", [
+    (lambda r: r["latest_selection"].update(complete=False), "complete finite discovery"),
+    (lambda r: r["latest_selection"].update(call=0), "complete finite discovery"),
+    (lambda r: r["latest_selection"]["history"].update(detection_identity=None), "reduction requires"),
+    (lambda r: r["latest_selection"]["history"].update(payload="locus"), "mapped time evidence"),
+    (lambda r: r["latest_selection"]["history"].update(time_scale="tai"), "time_scale"),
+    (lambda r: r["calls"][1].update(required=False), "must be required"),
+])
+def test_latest_history_requires_a_complete_identified_required_contract(tmp_path, change, message):
+    root = tmp_path / "providers"
+    destination = root / "antares/ztf"
+    shutil.copytree(PROVIDERS_ROOT / "antares/ztf", destination)
+    path = destination / "capabilities.yaml"
+    document = yaml.safe_load(path.read_text())
+    recipe, = [r for r in document["recipes"]["semantic_search"]
+               if "latest_selection" in r and "time_selection" not in r]
+    change(recipe)
+    path.write_text(yaml.safe_dump(document, sort_keys=False))
+    with pytest.raises(CapabilityGraphError, match=message):
+        build_capability_graph(root)
+
+
+@pytest.mark.parametrize("tail", ["within 10d\n", "first within 10d\n", "last within 10d\n", "latest 1\n"])
+def test_native_cone_cannot_claim_unscoped_ztf_time_or_ranking(graph, tail):
+    source = "objects from ztf via antares\ninside (50, 37, 5arcsec)\n" + tail
+    assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+
+
+def test_latest_required_history_failure_is_owned_by_execution(graph, monkeypatch):
+    client = NativeClient(ids=(IDS[0],), failure="request")
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    with pytest.raises(WorkflowExecutionError, match="controlled required history failure"):
+        execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)
+
+
+@pytest.mark.parametrize("change", ["root_cap", "history_cap", "unscoped"])
+def test_latest_cannot_claim_capped_or_unscoped_complete_discovery(tmp_path, change):
+    root = tmp_path / "providers"
+    destination = root / "antares/ztf"
+    shutil.copytree(PROVIDERS_ROOT / "antares/ztf", destination)
+    if change == "unscoped":
+        path = destination / "capabilities.yaml"
+        document = yaml.safe_load(path.read_text())
+        for binding in document["predicate_bindings"]["search"]:
+            binding["elasticsearch"].pop("identity_field")
+        message = "identity-scoped"
+    else:
+        path = destination / "endpoints.yaml"
+        document = yaml.safe_load(path.read_text())
+        endpoint = "search" if change == "root_cap" else "get_by_ztf_object_id"
+        document["endpoints"][endpoint]["params"]["limit"] = {
+            "type": "int", "required": False, "default": 1, "role": "result_limit",
+        }
+        message = "uncapped|unfiltered"
+    path.write_text(yaml.safe_dump(document, sort_keys=False))
+    with pytest.raises(CapabilityGraphError, match=message):
+        build_capability_graph(root)
+
+
+@pytest.mark.parametrize("failure", ["conflicting_discovery", "wrong_history_locus"])
+def test_latest_rejects_ambiguous_or_wrong_locus_history_for_the_same_ztf_id(graph, monkeypatch, failure):
+    class PartitionClient(NativeClient):
+        def search(self, query):
+            for locus in super().search(query):
+                yield locus
+                if failure == "conflicting_discovery":
+                    other = Locus(IDS[0], [])
+                    other.locus_id += "-other"
+                    yield other
+        def get_by_ztf_object_id(self, ztf_object_id):
+            locus = super().get_by_ztf_object_id(ztf_object_id)
+            if failure == "wrong_history_locus":
+                locus.locus_id += "-other"
+            return locus
+    client = PartitionClient(ids=(IDS[0],))
+    source = program(tail="latest 1\n").replace("within 10d\n", "")
+    with pytest.raises(SearchSelectionError, match="latest history partition"):
+        execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)

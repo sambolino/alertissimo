@@ -57,13 +57,85 @@ def validate_latest_selection_payloads(step_run: StepRun, result) -> None:
             if len(values) != len(set(values)):
                 raise SearchSelectionError("duplicate latest discovery/summary identity")
             return set(values)
+        if proof.history is not None:
+            if proof.history.evidence_plan_index != proof.evidence_plan_index:
+                raise SearchSelectionError("latest history conflicts with its evidence plan")
+            # Histories are requested after normalized root predicate pruning.
+            # Raw per-request identity coverage is checked by the temporal guard;
+            # normalized candidate coverage is checked before global ranking.
+            partitions = {}
+            try:
+                if proof.discovery_partition is None or proof.evidence_partition is None:
+                    raise ValueError("missing mapped partition identity")
+                for index, execution in zip(indexes, result.executions):
+                    if index != owner:
+                        continue
+                    if not isinstance(execution.payload, (list, tuple)):
+                        raise ValueError("expected complete discovery collection")
+                    for row in execution.payload:
+                        try:
+                            object_id = extract_raw_field(row, proof.discovery_identity)
+                        except RawFieldMissing:
+                            continue  # The source-qualified identity residual excludes foreign rows.
+                        if object_id is None:
+                            continue
+                        partition = extract_raw_field(row, proof.discovery_partition)
+                        if any(type(value) not in (str, int) or str(value) == "" for value in (object_id, partition)):
+                            raise ValueError("invalid discovery object/partition identity")
+                        previous = partitions.setdefault(str(object_id), str(partition))
+                        if previous != str(partition):
+                            raise ValueError("conflicting history partitions for one object")
+                for index, execution in zip(indexes, result.executions):
+                    if index != proof.evidence_plan_index:
+                        continue
+                    object_id = extract_raw_field(execution.payload, proof.evidence_identity)
+                    partition = extract_raw_field(execution.payload, proof.evidence_partition)
+                    if type(partition) not in (str, int) or str(partition) == "" or partitions[str(object_id)] != str(partition):
+                        raise ValueError("history response does not match discovery partition")
+            except (RawFieldMissing, KeyError, TypeError, ValueError) as error:
+                raise SearchSelectionError(f"missing or conflicting latest history partition: {error}") from error
+            continue
         expected = identities(owner, proof.discovery_identity)
         actual = identities(proof.evidence_plan_index, proof.evidence_identity, True)
         if expected != actual:
             raise SearchSelectionError("latest summary does not cover exactly the discovery identities")
 
 
-def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfolioResult:
+def _latest_history_scopes(step_run: StepRun, view: StepPortfolioResult):
+    """Locate complete histories and the normalized population that owns them."""
+    plans = tuple((i, p) for i, p in enumerate(step_run.endpoint_plans)
+                  if p.latest_selection is not None and p.latest_selection.history is not None)
+    if not plans:
+        return ()
+    indexes = step_run.execution_plan_indexes or tuple(range(len(step_run.endpoint_plans)))
+    executions = {execution.execution_id: execution for execution in view.executions}
+    if len(indexes) != len(step_run.execution_ids) or not set(step_run.execution_ids).issubset(executions):
+        raise SearchSelectionError("latest history requires aligned normalized executions")
+    def ids_for_plan(index):
+        return {eid for eid, owner in zip(step_run.execution_ids, indexes) if owner == index}
+    scopes = []
+    for owner, plan in plans:
+        proof = plan.latest_selection.history
+        index = proof.evidence_plan_index
+        if (proof.mode != "last" or proof.reduction != "max" or proof.method != "material"
+            or not proof.complete or proof.time_scale != "utc"
+            or proof.detection_identity != "detection.identity.source_id"
+            or proof.response_identity is None or proof.target_parameter is None
+            or proof.target_collection is not None or index >= len(step_run.endpoint_plans)):
+            raise SearchSelectionError("latest requires complete identified detection history")
+        evidence = step_run.endpoint_plans[index]
+        if (not plan.required or not evidence.required
+            or (plan.broker, plan.origin) != (evidence.broker, evidence.origin)
+            or evidence.candidate_input_from_plan is None
+            or evidence.candidate_input_from_plan.plan_index != owner):
+            raise SearchSelectionError("latest history must belong to its required discovery")
+        candidates = {summary_object_identity(portfolio) for eid in ids_for_plan(owner)
+                      for portfolio in executions[eid].portfolios}
+        scopes.append((plan, proof, candidates, ids_for_plan(index)))
+    return tuple(scopes)
+
+
+def apply_search_selection(step: Step, view: StepPortfolioResult, step_run: StepRun | None = None) -> StepPortfolioResult:
     """Apply latest once, after residual pruning and object consolidation.
 
     Physical execution groups remain available for audit. The selected immutable
@@ -74,6 +146,8 @@ def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfol
         return view
     if step.semantic_type != "summary":
         raise SearchSelectionError("latest currently requires summary candidates")
+    histories = _latest_history_scopes(step_run, view) if step_run is not None else ()
+    history_sources = {(plan.origin, plan.broker) for plan, _, _, _ in histories}
     ranked = []
     for portfolio in view.portfolios:
         identity = summary_object_identity(portfolio)
@@ -84,6 +158,7 @@ def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfol
         for record in portfolio.records:
             if (
                 not record.semantic_type.startswith(f"summary@{origin}:")
+                or (origin, record.semantic_type.partition(":")[2]) in history_sources
                 or str(record.get("identity.object_id")) != object_id
             ):
                 continue
@@ -93,8 +168,15 @@ def apply_search_selection(step: Step, view: StepPortfolioResult) -> StepPortfol
             if type(value) not in (int, float) or not math.isfinite(value):
                 raise SearchSelectionError(f"latest candidate {identity!r} has a non-finite/non-numeric recency value")
             values.append(value)
+        for plan, proof, candidates, evidence_ids in histories:
+            if identity not in candidates:
+                continue
+            dates, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, "detection", "time.mjd")
+            if invalid or not dates or not evidence_ids:
+                raise SearchSelectionError(f"latest candidate {identity!r} lacks complete valid detection recency")
+            values.append(max(dates))
         if not values:
-            raise SearchSelectionError(f"latest candidate {identity!r} lacks summary.time.last_mjd")
+            raise SearchSelectionError(f"latest candidate {identity!r} lacks summary.time.last_mjd or proven detection recency")
         # Repeated provider records do not increase candidate cardinality. Keep
         # every record; choose the most recent known detection for this object.
         ranked.append((-max(values), identity, portfolio))
@@ -144,10 +226,10 @@ def validate_time_selection_payloads(step_run: StepRun, result) -> None:
             raise ValueError("expected an evidence collection")
 
     indexes = step_run.execution_plan_indexes or tuple(range(len(step_run.endpoint_plans)))
-    for plan in step_run.endpoint_plans:
-        proof = plan.time_selection
-        if proof is None:
-            continue
+    proofs = tuple(plan.time_selection for plan in step_run.endpoint_plans if plan.time_selection is not None)
+    proofs += tuple(plan.latest_selection.history for plan in step_run.endpoint_plans
+                    if plan.latest_selection is not None and plan.latest_selection.history is not None)
+    for proof in proofs:
         for index, execution in zip(indexes, result.executions):
             if index in proof.required_payload_paths:
                 try:
@@ -176,6 +258,49 @@ def validate_time_selection_payloads(step_run: StepRun, result) -> None:
                         raise ValueError("missing, duplicate or unexpected temporal response identities")
             except (RawFieldMissing, KeyError, ValueError, TypeError) as error:
                 raise TimeSelectionError(f"missing or malformed temporal evidence payload {proof.payload!r}") from error
+
+
+def _temporal_values(portfolio, plan, proof, evidence_ids, noun, field):
+    """Read only mapped, source-aligned ordinary detections (or native summaries)."""
+    values, invalid = [], False
+    for record in portfolio.records:
+        if record.semantic_type != f"{noun}@{plan.origin}:{plan.broker}":
+            continue
+        source = record.internal_source
+        if source is None:
+            # Normalization may add an identity-only summary without a
+            # physical source; it says nothing about temporal evidence.
+            invalid = invalid or noun == "detection" or record.get(field) is not None
+            continue
+        if source.internal_execution_id.value not in evidence_ids or source.payload_key != proof.payload:
+            continue
+        if noun == "detection":
+            ordinary = [value for key, value in record.fields.items()
+                        if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
+                        and "limit" not in key.split(".") and value is not None]
+            if not any(type(value) in (int, float) and math.isfinite(value) for value in ordinary):
+                # Mixed history arrays retain upper limits as records.
+                # A limit-only row is not a positive detection witness.
+                limits = [value for key, value in record.fields.items()
+                          if key.startswith("photometry.") and ".limit." in key
+                          and key.endswith((".mag", ".flux"))]
+                invalid = invalid or bool(ordinary) or record.get("identity.source_id") is not None or not any(
+                    type(value) in (int, float) and math.isfinite(value) for value in limits
+                )
+                continue
+            if proof.detection_identity is not None:
+                identifier = record.get(proof.detection_identity.removeprefix("detection."))
+                if type(identifier) not in (str, int) or str(identifier) == "":
+                    # Photometry alone cannot establish this survey's
+                    # witness in a broker's potentially mixed history.
+                    invalid = True
+                    continue
+        value = record.get(field)
+        if type(value) not in (int, float) or not math.isfinite(value):
+            invalid = True
+            continue
+        values.append(value)
+    return values, invalid
 
 
 def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResult) -> StepPortfolioResult:
@@ -266,44 +391,7 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                 continue
             noun = "detection" if context.mode == "detection" or proof.reduction else "summary"
             field = "time.mjd" if noun == "detection" else f"time.{context.mode}_mjd"
-            values, invalid = [], False
-            for record in portfolio.records:
-                if record.semantic_type != f"{noun}@{plan.origin}:{plan.broker}":
-                    continue
-                source = record.internal_source
-                if source is None:
-                    # Normalization may add an identity-only summary without a
-                    # physical source; it says nothing about temporal evidence.
-                    invalid = invalid or noun == "detection" or record.get(field) is not None
-                    continue
-                if source.internal_execution_id.value not in evidence_ids or source.payload_key != proof.payload:
-                    continue
-                if noun == "detection":
-                    ordinary = [value for key, value in record.fields.items()
-                                if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
-                                and "limit" not in key.split(".") and value is not None]
-                    if not any(type(value) in (int, float) and math.isfinite(value) for value in ordinary):
-                        # Mixed history arrays retain upper limits as records.
-                        # A limit-only row is not a positive detection witness.
-                        limits = [value for key, value in record.fields.items()
-                                  if key.startswith("photometry.") and ".limit." in key
-                                  and key.endswith((".mag", ".flux"))]
-                        invalid = invalid or bool(ordinary) or record.get("identity.source_id") is not None or not any(
-                            type(value) in (int, float) and math.isfinite(value) for value in limits
-                        )
-                        continue
-                    if proof.detection_identity is not None:
-                        identifier = record.get(proof.detection_identity.removeprefix("detection."))
-                        if type(identifier) not in (str, int) or str(identifier) == "":
-                            # Photometry alone cannot establish this survey's
-                            # witness in a broker's potentially mixed history.
-                            invalid = True
-                            continue
-                value = record.get(field)
-                if type(value) not in (int, float) or not math.isfinite(value):
-                    invalid = True
-                    continue
-                values.append(value)
+            values, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, noun, field)
             if context.mode == "detection":
                 if any(start <= value <= end for value in values):
                     outcomes.append(True)

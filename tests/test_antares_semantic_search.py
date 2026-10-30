@@ -18,7 +18,6 @@ from alertissimo.api import execute_dsl, validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry, RegistryEndpointExecutor
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraphError, build_capability_graph
-from alertissimo.dsl import SurfaceLoweringError
 from alertissimo.orchestration.binding import bind_endpoint
 from alertissimo.orchestration.ir import (
     BooleanPredicate, ComparisonPredicate, PredicateLiteral,
@@ -171,14 +170,16 @@ def test_missing_or_untranslated_query_is_not_a_full_catalog_scan(graph, predica
         plan_step(step, graph)
 
 
-def test_latest_requires_its_own_ranking_evidence(graph, monkeypatch):
-    tail = "latest 1\n"
+def test_latest_requires_complete_histories_before_ranking(graph, monkeypatch):
     client = NativeClient()
     endpoint_executor = executor(monkeypatch, client)
-    assert not validate_dsl(source(tail), graph=graph, continue_from=None).is_runnable
-    with pytest.raises(SurfaceLoweringError):
-        execute_dsl(source(tail), graph=graph, executor=endpoint_executor, continue_from=None)
-    assert client.calls == []
+    validation = validate_dsl(source("latest 1\n"), graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    result = execute_dsl(source("latest 1\n"), graph=graph, executor=endpoint_executor, continue_from=None)
+    assert identities(result.portfolios) == {min(IDS)}  # equal detection dates: stable object-ID tie
+    assert [name for name, _ in client.calls] == ["search", "get_by_ztf_object_id", "get_by_ztf_object_id"]
+    assert {value for _, value in client.calls[1:]} == set(IDS)
+    assert result.run.steps[0].endpoint_plans[0].latest_selection.history.complete
 
 
 @pytest.mark.parametrize("identity", [None, "properties.missing", "properties.ztf_object_id;script"])
