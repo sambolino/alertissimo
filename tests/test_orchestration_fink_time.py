@@ -134,7 +134,7 @@ def test_exact_recheck_rejects_overlap_and_margin_only_candidates_before_retriev
     assert all(set(params["objectId"].split(",")) == set(IDS[:3]) for params in retrievals)
     survivor = next(p for p in result.portfolios if summary_object_identity(p)[1] == IDS[0])
     assert {r.get("time.mjd") for r in survivor.records
-            if r.semantic_type == "detection@ztf:fink"} == {59010.0, 59040.0}
+            if r.semantic_type == "measurement@ztf:fink"} == {59010.0, 59040.0}
 
 
 def test_cap_guard_runs_before_exact_temporal_pruning(graph):

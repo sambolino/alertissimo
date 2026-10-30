@@ -35,8 +35,8 @@ def test_live_object_variants_are_fully_accounted_and_build_records():
  summary=next(r for r in portfolio.records if r.semantic_type=='summary@lsst:lasair');f=dict(summary.fields)
  assert f['identity.object_id']=='313761042336317573';assert f['detection_count']==259
  assert f['time.first_mjd']==pytest.approx(61003.324393250674);assert f['time.last_mjd']==pytest.approx(61235.41918367943)
- types={r.semantic_type for r in portfolio.records};assert 'detection@lsst:lasair' in types;assert 'classification@sherlock:lasair' in types;assert 'crossmatch@desi_legacy_survey:lasair' in types
- det=[r for r in portfolio.records if r.semantic_type=='detection@lsst:lasair'];assert len(det)>=len(p['diaSourcesList'])
+ types={r.semantic_type for r in portfolio.records};assert 'measurement@lsst:lasair' in types;assert 'classification@sherlock:lasair' in types;assert 'crossmatch@desi_legacy_survey:lasair' in types
+ det=[r for r in portfolio.records if r.semantic_type=='measurement@lsst:lasair'];assert len(det)>=len(p['diaSourcesList'])
  assert any(any(k.startswith('photometry.') and k.endswith('.psf.flux') for k in r.fields) for r in det)
  assert any(any(k.startswith('forced_photometry.') and k.endswith('.psf.flux') for k in r.fields) for r in det)
  lightcurves=[r for r in portfolio.records if r.semantic_type=='lightcurve@lsst:lasair'];assert len(lightcurves)==1

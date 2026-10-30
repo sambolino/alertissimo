@@ -30,7 +30,7 @@ def _base_workflow():
 
 def test_fragment_parser_produces_clause_only_surface_without_candidates():
     fragment = parse_surface_fragment(
-        """filter detection@ztf:fink.quality.real_bogus >= 0.8
+        """filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """
     )
@@ -61,7 +61,7 @@ def test_fragment_parser_rejects_initial_candidate_intent(source):
 def test_fragment_compilation_extends_ir_exactly_without_reconstructing_dsl():
     base = _base_workflow()
     fragment = parse_surface_fragment(
-        """filter detection@ztf:fink.quality.real_bogus >= 0.8
+        """filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """
     )

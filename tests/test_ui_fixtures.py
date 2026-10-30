@@ -60,7 +60,7 @@ def test_composed_objects_preserve_provenance_and_native_ids(generated):
 
 def test_minimal_portfolios(generated):
     for name, family in (("minimal_summary_real.json", "summary"),
-                         ("minimal_detection_real.json", "detection")):
+                         ("minimal_detection_real.json", "measurement")):
         records = _load(generated / name)["records"]
         assert len(records) == 1
         assert records[0]["semantic_type"].split("@", 1)[0] == family
@@ -82,10 +82,10 @@ def test_real_summary_search_coverage(generated):
 
 
 @pytest.mark.parametrize(("name", "families"), [
-    ("lsst_antares_170587117485817955.json", {"summary", "detection"}),
-    ("ztf_antares_ZTF20aafqubg.json", {"summary", "detection", "crossmatch"}),
-    ("lsst_alerce_170587117485817955.json", {"summary", "detection", "classification"}),
-    ("ztf_alerce_ZTF18abbuksn.json", {"summary", "detection", "classification"}),
+    ("lsst_antares_170587117485817955.json", {"summary", "measurement"}),
+    ("ztf_antares_ZTF20aafqubg.json", {"summary", "measurement", "crossmatch"}),
+    ("lsst_alerce_170587117485817955.json", {"summary", "measurement", "classification"}),
+    ("ztf_alerce_ZTF18abbuksn.json", {"summary", "measurement", "classification"}),
 ])
 def test_real_object_evidence_families(generated, name, families):
     records = _load(generated / name)["records"]

@@ -20,7 +20,7 @@ from alertissimo.data_layer.representations import (
 from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 
 
-def record(record_id: str, fields: dict, semantic_type: str = "detection@ztf:fink") -> SemanticRecord:
+def record(record_id: str, fields: dict, semantic_type: str = "measurement@ztf:fink") -> SemanticRecord:
     return SemanticRecord(InternalRecordId(record_id), semantic_type, fields)
 
 
@@ -38,7 +38,7 @@ def test_projects_magnitude_and_pairs_its_error():
     assert list(frame.columns) == LIGHTCURVE_COLUMNS
     assert frame.to_dict("records") == [{
         "record_id": "r1",
-        "semantic_type": "detection@ztf:fink",
+        "semantic_type": "measurement@ztf:fink",
         "mjd": 60001.25,
         "band": "g",
         "measurement_kind": "ordinary",
@@ -89,7 +89,7 @@ def test_unrelated_semantic_records_and_photometry_paths_are_ignored():
     frame = portfolio_lightcurve_dataframe(portfolio(
         record("summary", {"time.mjd": 1, "photometry.g.psf.mag": 10}, "summary@ztf:fink"),
         record("crossmatch", {"time.mjd": 1, "photometry.g.psf.mag": 11}, "crossmatch@gaia:fink"),
-        record("detection", {
+        record("measurement", {
             "time.mjd": 1,
             "reference_image.photometry.g.psf.mag": 12,
             "photometry.g.aperture.mag": 13,
@@ -101,10 +101,10 @@ def test_unrelated_semantic_records_and_photometry_paths_are_ignored():
 
 
 @pytest.mark.parametrize("semantic_type", [
-    "detection",
-    "detection@ztf",
-    "detection@ztf:fink",
-    "detection@lsst:alerce",
+    "measurement",
+    "measurement@ztf",
+    "measurement@ztf:fink",
+    "measurement@lsst:alerce",
 ])
 def test_producer_and_broker_qualification_do_not_affect_extraction(semantic_type):
     frame = portfolio_lightcurve_dataframe(portfolio(record(

@@ -85,7 +85,7 @@ def test_lasair_ztf_semantic_records():
         if item.broker == "lasair" and item.origin == "ztf"
     }
     assert {
-        "summary@ztf:lasair", "detection@ztf:lasair",
+        "summary@ztf:lasair", "measurement@ztf:lasair",
         "classification@sherlock:lasair",
         "classification@tns:lasair", "crossmatch@tns:lasair",
         "crossmatch@{producer}:lasair",
@@ -126,8 +126,8 @@ def test_endpoint_fields_do_not_inherit_other_endpoints_outputs():
 def test_semantic_paths_are_split_at_first_dot():
     graph = build_capability_graph()
     expected = {
-        "detection@ztf:lasair.photometry.{filter}.psf.mag": (
-            "detection@ztf:lasair", "photometry.{filter}.psf.mag"
+        "measurement@ztf:lasair.photometry.{filter}.psf.mag": (
+            "measurement@ztf:lasair", "photometry.{filter}.psf.mag"
         ),
         "classification@{producer}:alerce.assessment.{output}.probability": (
             "classification@{producer}:alerce", "assessment.{output}.probability"
@@ -146,7 +146,7 @@ def test_lasair_ztf_payload_and_raw_references():
         for item in graph.field_mapping_capabilities
         if item.broker == "lasair"
         and item.origin == "ztf"
-        and item.semantic_path == "detection@ztf:lasair.photometry.{filter}.psf.mag"
+        and item.semantic_path == "measurement@ztf:lasair.photometry.{filter}.psf.mag"
     }
     assert mappings == {
         "lightcurve_candidates#magpsf": "lightcurves",
@@ -155,13 +155,13 @@ def test_lasair_ztf_payload_and_raw_references():
 
 def test_lasair_ztf_transforms():
     graph = build_capability_graph()
-    mjd = graph.transforms_for("detection@ztf:lasair.time.mjd")
+    mjd = graph.transforms_for("measurement@ztf:lasair.time.mjd")
     assert {(item.raw_ref, item.transform_type) for item in mjd} == {
         ("candidates#jd", "jd_to_mjd"),
         ("lightcurve_candidates#jd", "jd_to_mjd"),
         ("objects_candidates#jd", "jd_to_mjd"),
     }
-    filters = graph.transforms_for("detection@ztf:lasair.photometry.{filter}")
+    filters = graph.transforms_for("measurement@ztf:lasair.photometry.{filter}")
     assert {(item.raw_ref, item.transform_type) for item in filters} == {
         ("candidates#fid", "value_map"),
         ("lightcurve_candidates#fid", "value_map"),
@@ -187,7 +187,7 @@ def test_capability_graph_does_not_define_portfolio_records():
 
 def test_canonical_semantic_nouns_preserve_qualified_graph_types():
     assert canonical_semantic_noun("summary@ztf:lasair") == "summary"
-    assert canonical_semantic_noun("detection@lsst:fink") == "detection"
+    assert canonical_semantic_noun("measurement@lsst:fink") == "measurement"
     assert canonical_semantic_noun("crossmatch@gaia:fink") == "crossmatch"
     assert semantic_record_noun_matches("crossmatch@gaia:fink", "crossmatch")
     assert not semantic_record_noun_matches("crossmatch@gaia:fink", "summary")

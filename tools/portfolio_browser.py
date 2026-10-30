@@ -172,13 +172,13 @@ def render_portfolio_html(portfolio: dict[str, Any]) -> str:
           {_fields_tree(fields, semantic_type)}<p class="record-no-match empty">No matching fields.</p></article>''')
 
     record_html = "".join(
-        f'<details class="record-group" {"open" if base in ("summary", "detection") else ""}>'
+        f'<details class="record-group" {"open" if base in ("summary", "measurement") else ""}>'
         f'<summary>{_text(base)} ({len(record_cards[base])})</summary>'
         f'<div class="record-group-cards">{"".join(record_cards[base])}</div></details>'
         for base in bases
     ) or '<div class="empty-state"><strong>No records.</strong><span>This dossier does not contain semantic records yet.</span></div>'
     nav_html = "".join(
-        f'<details class="rail-record-group" {"open" if base in ("summary", "detection") else ""}>'
+        f'<details class="rail-record-group" {"open" if base in ("summary", "measurement") else ""}>'
         f'<summary>{_text(base)} ({len(navigation[base])})</summary>'
         f'{"".join(navigation[base])}</details>'
         for base in bases

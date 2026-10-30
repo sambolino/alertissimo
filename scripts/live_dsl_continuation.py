@@ -4,7 +4,7 @@
 The first public-facade call discovers a bounded Lasair/ZTF candidate set and
 materializes Fink evidence. The second call appends only::
 
-    filter detection@ztf:fink.quality.real_bogus >= <threshold>
+    filter measurement@ztf:fink.quality.real_bogus >= <threshold>
     with lightcurve via lasair
 
 The acceptance proves that prior provider calls are replayed from the first result,
@@ -161,7 +161,7 @@ def main() -> int:
 inside ({args.ra}, {args.dec}, {args.radius_arcsec}arcsec)
 with lightcurve via fink
 """
-    continuation_source = f"""filter detection@ztf:fink.quality.real_bogus >= {args.threshold}
+    continuation_source = f"""filter measurement@ztf:fink.quality.real_bogus >= {args.threshold}
 with lightcurve via lasair
 """
 

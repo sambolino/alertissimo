@@ -112,7 +112,7 @@ def test_recorded_class_response_partitions_objects_and_rechecks_qualified_evide
     assert identities(result.portfolios) == {("ztf", row["i:objectId"]) for row in rows}
     assert len(result.portfolios) == 7
     discovery = result.result.steps[0].portfolios
-    assert sum(record.semantic_type == "detection@ztf:fink" for p in discovery for record in p.records) == 10
+    assert sum(record.semantic_type == "measurement@ztf:fink" for p in discovery for record in p.records) == 10
     assert sum(endpoint == "latests" for endpoint, _ in transport.calls) == 1
     # General where clauses also emit the DSL's classification requirement.
     # Its fresh objects retrieval is distinct from the class-index discovery.
@@ -152,7 +152,7 @@ def test_residual_selection_feeds_only_survivor_ids_to_downstream_retrieval(grap
     rows = recorded("latests.json")
     transport = ReplayTransport(rows)
     source = program("Early SN Ia candidate")
-    condition = "detection@ztf:fink.position.ra > 30"
+    condition = "measurement@ztf:fink.position.ra > 30"
     source = source + f"filter {condition}\n" if filter_step else source.rstrip() + f" and {condition}\n"
     # An explicit classification clause after selection avoids the DSL's
     # implicit retrieval being inserted ahead of the filter.

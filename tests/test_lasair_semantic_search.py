@@ -174,7 +174,7 @@ def test_public_facade_exhausts_then_binds_only_survivors_and_retains_all_measur
     retrievals = [params for endpoint, params in transport.calls if endpoint == "lightcurves"]
     assert len(retrievals) == 1 and set(retrievals[0]["objectIds"].split(",")) == {"ZTF20acpwljl", "ZTF20aaaaaaa"}
     for portfolio in result.portfolios:
-        detections = [record for record in portfolio.records if record.semantic_type == "detection@ztf:lasair"]
+        detections = [record for record in portfolio.records if record.semantic_type == "measurement@ztf:lasair"]
         assert len(detections) == 1
         # Measurement lies outside the object's admitted summary-time interval.
         assert detections[0].get("time.mjd") == 59000.0
