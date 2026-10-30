@@ -66,6 +66,11 @@ Empty complete history, an upper-limit-only history, and empty discovery are
 valid negative/empty results. A request failure or unproven evidence cannot become
 a successful empty result.
 
+An explicitly null ordinary magnitude is absent photometry, just like an omitted
+field. A finite upper limit with either representation is a valid non-detection.
+Non-null malformed magnitude values remain unknown evidence rather than a proven
+negative. The membership check does not change the retained measurement records.
+
 Full history can satisfy a subsequent lightcurve Get through the existing
 execution reuse proof. The reused raw executions include rejected candidates,
 but their semantic material is restricted to the selected identities. Continuation

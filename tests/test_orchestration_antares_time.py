@@ -81,6 +81,12 @@ class NativeClient:
             locus.alerts[0].mjd = None
         elif self.failure == "identity":
             locus.alerts[0].properties.pop("ztf_candid")
+        elif self.failure == "photometry":
+            locus.alerts[0].properties["ant_mag"] = "not numeric"
+        elif self.failure == "omitted_mag":
+            for row in locus.alerts:
+                if row.properties["ant_survey"] == 2:
+                    row.properties.pop("ant_mag")
         return locus
 
 
@@ -166,12 +172,21 @@ def test_complete_empty_discovery_or_history_is_a_valid_empty_result(graph, monk
     assert len(client.calls) == 1 + len(ids)
 
 
-@pytest.mark.parametrize("failure", ["null", "missing", "collection", "time", "identity"])
+@pytest.mark.parametrize("failure", ["null", "missing", "collection", "time", "identity", "photometry"])
 def test_missing_history_or_unproven_detection_is_unknown_instead_of_a_negative(graph, monkeypatch, failure):
     client = NativeClient(ids=(IDS[2],), failure=failure)
     with pytest.raises(TimeSelectionError, match="temporal"):
         execute_dsl(program(), graph=graph, executor=executor(monkeypatch, client),
                     continue_from=None, reference_time=NOW)
+
+
+@pytest.mark.parametrize("failure", [None, "omitted_mag"], ids=["null-magnitude", "absent-magnitude"])
+def test_upper_limit_with_no_ordinary_magnitude_is_a_proven_negative(graph, monkeypatch, failure):
+    client = NativeClient(ids=(IDS[4],), failure=failure)
+    result = execute_dsl(program(), graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    assert result.portfolios == ()
+    assert [name for name, _ in client.calls] == ["search", "get_by_ztf_object_id"]
 
 
 def test_required_history_request_failure_stops_execution(graph, monkeypatch):

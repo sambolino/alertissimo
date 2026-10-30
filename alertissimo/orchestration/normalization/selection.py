@@ -274,7 +274,7 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                 if context.mode == "detection":
                     ordinary = [value for key, value in record.fields.items()
                                 if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
-                                and "limit" not in key.split(".")]
+                                and "limit" not in key.split(".") and value is not None]
                     if not any(type(value) in (int, float) and math.isfinite(value) for value in ordinary):
                         # Mixed history arrays retain upper limits as records.
                         # A limit-only row is not a positive detection witness.
