@@ -12,6 +12,10 @@ from alertissimo.data_layer.execution import MissingEndpointCredentialError, Reg
 from scripts import live_dsl_discovery as runner
 
 
+# Exact public exception shape without importing/instantiating a native client.
+AntaresException = type("AntaresException", (Exception,), {"__module__": "antares_client.exceptions"})
+
+
 @pytest.fixture
 def isolated(monkeypatch):
     monkeypatch.setattr(runner, "load_dotenv", lambda *a, **kw: None)
@@ -147,6 +151,47 @@ def test_failure_classification_keeps_contract_failures_separate(error, status):
         raise RuntimeError("step execution failed") from error
     except RuntimeError as wrapped:
         assert runner.classify_error(wrapped) == status
+
+
+@pytest.mark.parametrize("payload,status", [
+    ({"errors": [{"detail": "A server-side problem occured.", "status": 500,
+                  "title": "Internal Server Error"}]}, "UNAVAILABLE"),
+    ({"errors": [{"status": "500"}]}, "UNAVAILABLE"),
+    ({"errors": [{"status": 429}, {"status": 503}]}, "UNAVAILABLE"),
+    ({"errors": [{"status": 401}, {"status": "403"}]}, "SKIP"),
+    ({"errors": [{"status": 400}]}, "FAIL"),
+    ({"errors": [{"status": 500}, {"status": 400}]}, "FAIL"),
+    ({"errors": [{"status": 500}, {}]}, "FAIL"),
+    ({"errors": [{"status": "500abc"}]}, "FAIL"),
+    ({"errors": [{"status": True}]}, "FAIL"),
+    ({"errors": []}, "FAIL"),
+])
+def test_native_antares_jsonapi_errors_keep_server_and_contract_failures_separate(payload, status):
+    try:
+        raise RuntimeError("step_index 0 execution failed") from AntaresException(payload)
+    except RuntimeError as wrapped:
+        assert runner.classify_error(wrapped) == status
+    assert runner.classify_error(RuntimeError(payload)) == "FAIL"
+
+
+def test_antares_outage_is_recorded_and_other_scenarios_continue(isolated, monkeypatch, tmp_path):
+    transport = FinkReplay()
+    executor = RegistryEndpointExecutor(transports={"rest": transport})
+
+    def replay(source, **kwargs):
+        if "via antares" in source:
+            raise AntaresException({"errors": [{"status": 500, "title": "Internal Server Error"}]})
+        return execute_dsl(source, executor=executor, **kwargs)
+
+    monkeypatch.setattr(runner, "execute_dsl", replay)
+    output = tmp_path / "antares-outage"
+    assert runner.main(["--scenario", "antares-ztf-time", "--scenario", "multi-object-consumer",
+                        "--require-all-pass", "--output-dir", str(output)]) == 2
+    manifest = json.loads((output / "run.json").read_text())
+    assert [r["status"] for r in manifest["results"]] == ["UNAVAILABLE", "PASS"]
+    assert (output / "antares-ztf-time/00.dsl").is_file()
+    assert "Internal Server Error" in (output / "antares-ztf-time/error.log").read_text()
+    assert (output / "multi-object-consumer/00.result.json").is_file()
 
 
 def test_success_saves_final_candidates_physical_provenance_and_counts(isolated, monkeypatch, tmp_path):

@@ -101,6 +101,16 @@ Artifacts include:
 | UNAVAILABLE | Observable provider/network timeout, connection failure, HTTP 408/429/5xx or per-workflow deadline |
 | SKIP | Missing credentials/access, valid empty population, missing requested live material, or incomplete optional supplements; no successful nonempty acceptance is claimed |
 
+ANTARES's pinned native client raises `AntaresException(response.json())` rather
+than attaching an HTTP response. Its JSON:API `errors[].status` entries are now
+read from the chained native exception: integer/string 5xx, 408 or 429 classify
+as UNAVAILABLE; 401/403 as SKIP. Malformed entries, other 4xx and mixed server/
+bad-request bodies remain FAIL. The classifier does not infer an outage from an
+arbitrary exception dictionary or the text of a scientific validation error.
+This follows read-only inspection of client v1.14.0, commit
+`944197ad2bdae5b46641ddf5f76711e1e327e6f0`, `antares_client/_api/api.py` and
+`antares_client/exceptions.py`; no provider request was made for the fix.
+
 By default the diagnostic sweep returns 1 for FAIL, otherwise 0, while still
 reporting every unavailable/skipped scenario. `--require-all-pass` also returns 2
 when any scenario is SKIP or UNAVAILABLE. Review phase and statuses, not just a
@@ -109,6 +119,13 @@ exercise a downstream nonempty acceptance case. The recorded suite tests the
 empty and incomplete branches deterministically.
 
 ## Local handoff
+
+The first user-run live sweep on 09b reported PASS for ALeRCE classification,
+the original seven-day Fink query, multi-object access and cutouts. The filter,
+ALeRCE time and Lasair time cases returned valid empty populations (SKIP).
+ANTARES returned a native server-side status 500, initially mislabeled FAIL by
+the runner; the follow-up fixes that classification only. This is not a successful
+ANTARES acceptance, nor evidence for the three unexercised nonempty paths.
 
 Run focused offline checks before pushing the small PR:
 
