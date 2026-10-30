@@ -237,7 +237,13 @@ def test_class_alert_recency_can_rank_objects_differently_from_later_history(gra
     assert max(discovery, key=discovery.get) == IDS[1]
     assert max(enriched, key=enriched.get) == IDS[0]
     assert identities(result.portfolios) == set(IDS[:2])
-    assert [name for name, _ in transport.calls] == ["latests", "objects"]
+    assert transport.calls[0][0] == "latests"
+    histories = transport.calls[1:]
+    assert histories and all(name == "objects" for name, _ in histories)
+    # Target batching is independent of this recency counterexample. Require
+    # exactly one retrieval of each candidate, whether batched or fanned out.
+    requested_ids = [oid for _, params in histories for oid in params["objectId"].split(",")]
+    assert sorted(requested_ids) == sorted(IDS[:2])
 
 
 @pytest.mark.parametrize("padding", [True, -1, "10800", float("inf"), float("nan"), 1e300])
