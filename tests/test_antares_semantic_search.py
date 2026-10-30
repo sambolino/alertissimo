@@ -171,8 +171,8 @@ def test_missing_or_untranslated_query_is_not_a_full_catalog_scan(graph, predica
         plan_step(step, graph)
 
 
-@pytest.mark.parametrize("tail", ["first within 7d\n", "last within 7d\n", "latest 1\n"])
-def test_temporal_and_latest_contracts_are_separate_from_numeric_discovery(graph, monkeypatch, tail):
+def test_latest_requires_its_own_ranking_evidence(graph, monkeypatch):
+    tail = "latest 1\n"
     client = NativeClient()
     endpoint_executor = executor(monkeypatch, client)
     assert not validate_dsl(source(tail), graph=graph, continue_from=None).is_runnable

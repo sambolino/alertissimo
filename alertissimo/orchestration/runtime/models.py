@@ -95,6 +95,7 @@ class TimeSelectionRealization(RuntimeModel):
     target_parameter: str | None = None
     target_collection: Literal["csv"] | None = None
     detection_identity: Literal["detection.identity.source_id"] | None = None
+    reduction: Literal["min", "max"] | None = None
 
 
 class LatestSelectionRealization(RuntimeModel):

@@ -105,6 +105,10 @@ membership. This branch preserves all frozen evidence.
 
 ## Remaining ANTARES work
 
+Follow-up: [06d](discovery_06d_antares_extrema.md) now implements first/last
+membership. Latest ranking is separated into 06e. The following records the
+original 06c boundary.
+
 06d will address detection extrema for first/last and global latest. Semantic
 first/last/latest and temporal cone discovery remain unactivated in this branch.
 There is no new Rubin discovery or classification join; those retain the agreed

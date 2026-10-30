@@ -52,11 +52,12 @@ class Locus:
 
 
 class NativeClient:
-    def __init__(self, ids=IDS, histories=HISTORY, *, failure=None, limits=True):
+    def __init__(self, ids=IDS, histories=HISTORY, *, failure=None, limits=True, limit_times=(59015,)):
         self.ids = ids
         self.histories = deepcopy(histories)
         self.failure = failure
         self.limits = limits
+        self.limit_times = limit_times
         self.calls = []
 
     def search(self, query):
@@ -71,7 +72,8 @@ class NativeClient:
             return None
         history = [alert(ztf_object_id, mjd, index) for index, mjd in enumerate(self.histories[ztf_object_id])]
         if self.limits:
-            history.append(alert(ztf_object_id, 59015, 999, limit=True))
+            history.extend(alert(ztf_object_id, mjd, 999 + index, limit=True)
+                           for index, mjd in enumerate(self.limit_times))
         locus = Locus(ztf_object_id, history)
         if self.failure == "missing":
             del locus.alerts
@@ -87,6 +89,8 @@ class NativeClient:
             for row in locus.alerts:
                 if row.properties["ant_survey"] == 2:
                     row.properties.pop("ant_mag")
+        elif self.failure == "response_identity":
+            locus.properties["ztf_object_id"] = "ZTF20foreign"
         return locus
 
 
@@ -97,10 +101,11 @@ def executor(monkeypatch, client, registry=None):
     return RegistryEndpointExecutor(registry=registry)
 
 
-def program(window="10d", tail=""):
+def program(window="10d", tail="", mode="detection"):
+    prefix = "" if mode == "detection" else mode + " "
     return ("objects from ztf via antares\n"
             "where summary.position.ra >= 50 and summary.position.ra <= 51\n"
-            f"within {window}\n{tail}")
+            f"{prefix}within {window}\n{tail}")
 
 
 def identities(portfolios):
@@ -172,7 +177,7 @@ def test_complete_empty_discovery_or_history_is_a_valid_empty_result(graph, monk
     assert len(client.calls) == 1 + len(ids)
 
 
-@pytest.mark.parametrize("failure", ["null", "missing", "collection", "time", "identity", "photometry"])
+@pytest.mark.parametrize("failure", ["null", "missing", "collection", "time", "identity", "photometry", "response_identity"])
 def test_missing_history_or_unproven_detection_is_unknown_instead_of_a_negative(graph, monkeypatch, failure):
     client = NativeClient(ids=(IDS[2],), failure=failure)
     with pytest.raises(TimeSelectionError, match="temporal"):
@@ -229,3 +234,63 @@ def test_declared_evidence_must_be_required_and_map_the_origin_identity(tmp_path
 def test_a_time_window_alone_does_not_replace_the_required_discovery_condition(graph):
     assert not validate_dsl("objects from ztf via antares\nwithin 10d\n",
                             graph=graph, continue_from=None).is_runnable
+
+
+@pytest.mark.parametrize("mode,expected,reduction", [
+    ("first", {IDS[1], IDS[2], IDS[3]}, "min"),
+    ("last", {IDS[0], IDS[2], IDS[3]}, "max"),
+])
+@pytest.mark.parametrize("window", ["10d", "[2020-06-10T00:00:00Z, 2020-06-20T00:00:00Z]"])
+def test_first_last_reduce_complete_unsorted_detection_history_and_ignore_limits(graph, monkeypatch, mode, expected, reduction, window):
+    histories = {IDS[0]: [59012, 59005], IDS[1]: [59025, 59015],
+                 IDS[2]: [59010], IDS[3]: [59020], IDS[4]: []}
+    client = NativeClient(histories=histories, limit_times=(58900, 59100))
+    endpoint_executor = executor(monkeypatch, client)
+    source = program(window, mode=mode, tail="with lightcurve via antares\n")
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    result = execute_dsl(source, graph=graph, executor=endpoint_executor, continue_from=None, reference_time=NOW)
+    assert identities(result.portfolios) == expected
+    assert len(client.calls) == 1 + len(IDS)
+    proof = result.run.steps[0].endpoint_plans[0].time_selection
+    assert proof.reduction == reduction and proof.complete
+    assert proof.response_identity == "properties.ztf_object_id"
+    assert proof.target_parameter == "ztf_object_id" and proof.target_collection is None
+    assert result.run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=1)
+    for portfolio in result.portfolios:
+        oid = summary_object_identity(portfolio)[1]
+        records = [r for r in portfolio.records if r.semantic_type == "detection@ztf:antares"]
+        assert sorted(r.get("time.mjd") for r in records if r.get("identity.source_id") is not None) == sorted(histories[oid])
+        assert sorted(r.get("time.mjd") for r in records if r.get("photometry.g.limit.mag") is not None) == [58900, 59100]
+    assert identities(normalize_workflow_execution(result.staged.execution).steps[-1].portfolios) == expected
+    previous_calls = deepcopy(client.calls)
+    continued = execute_dsl("filter summary.position.ra >= 50.02\n", graph=graph,
+                            executor=endpoint_executor, continue_from=result, reference_time=NOW + timedelta(days=1))
+    assert client.calls == previous_calls
+    assert identities(continued.portfolios) == {IDS[2], IDS[3]}
+    assert continued.run.steps[0].time_reference == NOW
+
+
+@pytest.mark.parametrize("mode", ["first", "last"])
+@pytest.mark.parametrize("failure", ["time", "identity", "photometry", "response_identity"])
+def test_first_last_cannot_ignore_unknown_history_even_with_an_in_window_detection(graph, monkeypatch, mode, failure):
+    client = NativeClient(ids=(IDS[2],), histories={IDS[2]: [59010, 59015]}, failure=failure)
+    with pytest.raises(TimeSelectionError, match="temporal"):
+        execute_dsl(program(mode=mode), graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)
+
+
+@pytest.mark.parametrize("change", [
+    {"reduction": "max"}, {"reduction": None}, {"complete": False}, {"detection_identity": None},
+])
+def test_extrema_proof_requires_matching_reduction_and_complete_identified_history(tmp_path, change):
+    root = tmp_path / "providers"
+    destination = root / "antares/ztf"
+    shutil.copytree(PROVIDERS_ROOT / "antares/ztf", destination)
+    path = destination / "capabilities.yaml"
+    document = yaml.safe_load(path.read_text())
+    recipe, = [r for r in document["recipes"]["semantic_search"] if r.get("time_selection", {}).get("mode") == "first"]
+    recipe["time_selection"].update(change)
+    path.write_text(yaml.safe_dump(document, sort_keys=False))
+    with pytest.raises(CapabilityGraphError, match="reduction requires"):
+        build_capability_graph(root)

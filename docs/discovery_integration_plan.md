@@ -145,7 +145,8 @@ review, keeping the same order and acceptance boundary.
 | `feat/discovery-06a-elasticsearch-bindings` | Compile bounded numeric structured queries in existing predicate bindings |
 | `feat/discovery-06b-antares-ztf` | Activate identity-scoped ANTARES ZTF numeric coordinate discovery and replayable iterator execution |
 | `feat/discovery-06c-antares-within` | Activate default within over required ANTARES ZTF alert histories |
-| `feat/discovery-06d-antares-extrema` | Establish detection extrema for ANTARES first/last and latest selection; review temporal cone evidence |
+| `feat/discovery-06d-antares-extrema` | Activate first/last within by reducing complete detection histories |
+| `feat/discovery-06e-antares-latest` | Rank ANTARES candidates using complete detection recency; review temporal cone identity scope |
 | `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
@@ -456,7 +457,10 @@ iterators for replay. Temporal and latest selection are separated into 06c:
 alert extrema/counts and the selected client lightcurve cannot silently replace
 complete detection evidence. [06c](discovery_06c_antares_within.md) activates default
 within with required full alert history and mapped ZTF measurement identity.
-Detection extrema are separated into 06d, before required material and result access.
+[06d](discovery_06d_antares_extrema.md) adds first/last reductions over complete
+detection histories, including per-request response identity validation. Global
+latest is separated into 06e so its ranking proof can be reviewed independently.
+Keep these before required material and result access.
 
 Declare semantic discovery through the existing Elasticsearch `search` endpoint.
 Translate a bounded set of verified semantic predicates into its required query
@@ -772,8 +776,9 @@ not need redesign for this series.
 | Selection 03 | Fink latest audit | [#316](https://github.com/sambolino/alertissimo/pull/316), integration `cc601ae` | Merged after implicit-classification fixture correction; activation blocked by object-recency contract | No live claim; retain explicit deferral |
 | 06a | Elasticsearch numeric bindings | [#317](https://github.com/sambolino/alertissimo/pull/317), integration `634b879` | Merged after local handoff; count not separately reported | No provider requests needed |
 | 06b | ANTARES ZTF numeric activation | [#318](https://github.com/sambolino/alertissimo/pull/318), integration `a6909e8` | Manual DSL checkpoint [40984533355](https://github.com/sambolino/alertissimo/actions/runs/40984533355) passed | Final acceptance pending |
-| 06c | ANTARES default within | Prepared on `feat/discovery-06c-antares-within` | Focused local handoff; required full history, measurement identity and replay | Final acceptance pending |
-| 06d | ANTARES extrema/latest | Next on updated integration branch | Pending | Pending |
+| 06c | ANTARES default within | [#319](https://github.com/sambolino/alertissimo/pull/319), integration `20534f1` | Merged after null-photometry membership fix; final local count not separately reported | Final acceptance pending |
+| 06d | ANTARES first/last within | Prepared on `feat/discovery-06d-antares-extrema` | Focused local handoff; history reduction and per-request identity checks | Final acceptance pending |
+| 06e | ANTARES latest and cone identity review | Next on updated integration branch | Pending | Pending |
 | 07 | required-material | Pending | Pending | Pending where applicable |
 | 08 | result-access | Pending | Pending | Through acceptance |
 | 09 | acceptance | Pending | Pending | Pending |
