@@ -105,6 +105,7 @@ class TimeSelectionCapability:
     target_parameter: str | None = None
     target_collection: str | None = None
     detection_identity: str | None = None
+    reduction: str | None = None
 
 
 @dataclass(frozen=True)
@@ -655,7 +656,7 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     from .capability_graph import canonical_semantic_path
 
     proof = _mapping(raw, where)
-    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale", "detection_identity"},
+    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale", "detection_identity", "reduction"},
           {"mode", "method", "call", "payload", "complete", "time_scale"}, where)
     mode, method, index = proof["mode"], proof["method"], proof["call"]
     if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
@@ -669,8 +670,15 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     payload = proof["payload"]
     if not isinstance(payload, str):
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence")
-    path = "detection.time.mjd" if mode == "detection" else f"summary.time.{mode}_mjd"
-    noun = "detection" if mode == "detection" else "summary"
+    reduction = proof.get("reduction")
+    if "reduction" in proof and (
+        (mode, reduction) not in (("first", "min"), ("last", "max"))
+        or method != "material" or index == 0 or not proof["complete"]
+        or proof.get("detection_identity") != "detection.identity.source_id"
+    ):
+        raise RecipeRegistryError(f"{where}: reduction requires complete material detection history, source identity and matching first/min or last/max")
+    path = "detection.time.mjd" if mode == "detection" or reduction else f"summary.time.{mode}_mjd"
+    noun = "detection" if mode == "detection" or reduction else "summary"
     fields = tuple(item for item in calls[index].outputs if item.payload_key == payload
                    and item.semantic_record_type == f"{noun}@{item.origin}:{item.broker}")
     spec = endpoint_defs[calls[index].endpoint]
@@ -687,11 +695,11 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
     detection_identity = proof.get("detection_identity")
     if "detection_identity" in proof and (
-        mode != "detection" or detection_identity != "detection.identity.source_id"
+        noun != "detection" or detection_identity != "detection.identity.source_id"
         or not any(canonical_semantic_path(item.semantic_path) == detection_identity for item in fields)
     ):
         raise RecipeRegistryError(f"{where}: detection_identity requires a mapped source identity in the detection evidence payload")
-    if mode == "detection" and not any(
+    if noun == "detection" and not any(
         canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
         and item.relative_field_path.endswith((".mag", ".flux"))
         and "limit" not in item.relative_field_path.split(".") for item in fields
@@ -745,9 +753,20 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         target_collection = declaration.get("binding", {}).get("collection")
         if target_collection not in (None, "csv") or declaration.get("binding", {}).get("adapter") is not None:
             raise RecipeRegistryError(f"{where}: batched temporal evidence requires direct singular or CSV target encoding")
+    elif index and detection_identity is not None and payload_spec.partition_mode == "single" and spec.get("output", {}).get("type") in {"object", "object_or_null"}:
+        targets = [item for item in calls[index].params if isinstance(item.source, CallValueSource)]
+        identities = [item for item in calls[index].outputs
+                      if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+                      and item.payload_path == "."]
+        if len(targets) != 1 or len(identities) != 1:
+            raise RecipeRegistryError(f"{where}: single-object temporal evidence requires one mapped root identity and target")
+        declaration = spec["params"][targets[0].parameter]
+        if declaration.get("binding", {}).get("collection") is not None or declaration.get("binding", {}).get("adapter") is not None:
+            raise RecipeRegistryError(f"{where}: single-object temporal evidence requires singular target encoding")
+        response_identity, target_parameter = identities[0].raw_field, targets[0].parameter
     return TimeSelectionCapability(
         mode, method, index, payload, proof["complete"], "utc", paths.pop(), tuple(required_paths),
-        response_identity, target_parameter, target_collection, detection_identity,
+        response_identity, target_parameter, target_collection, detection_identity, reduction,
     )
 
 

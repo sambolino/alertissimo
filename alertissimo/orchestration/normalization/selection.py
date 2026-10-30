@@ -166,7 +166,8 @@ def validate_time_selection_payloads(step_run: StepRun, result) -> None:
                         expected = raw.split(",")
                     else:
                         expected = [raw]
-                    actual = [extract_raw_field(item, proof.response_identity) for item in execution.payload]
+                    rows = execution.payload if proof.payload_path.startswith("[].") else (execution.payload,)
+                    actual = [extract_raw_field(item, proof.response_identity) for item in rows]
                     if any(not isinstance(value, (str, int)) or isinstance(value, bool) or str(value) == ""
                            for value in expected + actual):
                         raise ValueError("invalid temporal response identity")
@@ -231,6 +232,12 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
         proof = plan.time_selection
         if proof.mode != context.mode or proof.time_scale != "utc":
             raise TimeSelectionError("time selection proof conflicts with canonical intent")
+        if proof.reduction is not None and (
+            (proof.mode, proof.reduction) not in (("first", "min"), ("last", "max"))
+            or proof.method != "material" or not proof.complete
+            or proof.detection_identity != "detection.identity.source_id"
+        ):
+            raise TimeSelectionError("invalid complete detection reduction proof")
         evidence_index = proof.evidence_plan_index
         if evidence_index >= len(step_run.endpoint_plans):
             raise TimeSelectionError("time selection references an unavailable evidence plan")
@@ -257,8 +264,8 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
         for plan, proof, candidates, evidence_ids in scoped:
             if identity not in candidates:
                 continue
-            noun = "detection" if context.mode == "detection" else "summary"
-            field = "time.mjd" if context.mode == "detection" else f"time.{context.mode}_mjd"
+            noun = "detection" if context.mode == "detection" or proof.reduction else "summary"
+            field = "time.mjd" if noun == "detection" else f"time.{context.mode}_mjd"
             values, invalid = [], False
             for record in portfolio.records:
                 if record.semantic_type != f"{noun}@{plan.origin}:{plan.broker}":
@@ -271,7 +278,7 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                     continue
                 if source.internal_execution_id.value not in evidence_ids or source.payload_key != proof.payload:
                     continue
-                if context.mode == "detection":
+                if noun == "detection":
                     ordinary = [value for key, value in record.fields.items()
                                 if key.startswith("photometry.") and key.endswith((".mag", ".flux"))
                                 and "limit" not in key.split(".") and value is not None]
@@ -302,6 +309,14 @@ def apply_time_selection(step: Step, step_run: StepRun, view: StepPortfolioResul
                     outcomes.append(True)
                 else:
                     outcomes.append(False if proof.complete and not invalid and evidence_ids else None)
+            elif proof.reduction is not None:
+                if not proof.complete or invalid or not evidence_ids:
+                    outcomes.append(None)
+                elif not values:
+                    outcomes.append(False)
+                else:
+                    extremum = min(values) if proof.reduction == "min" else max(values)
+                    outcomes.append(start <= extremum <= end)
             else:
                 unique = set(values)
                 outcomes.append(start <= values[0] <= end if len(unique) == 1 and not invalid else None)
