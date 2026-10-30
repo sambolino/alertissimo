@@ -59,6 +59,7 @@ on:
       - 'scripts/smoke/**'
       - 'tests/test_smoke_scenarios.py'
       - 'tests/test_antares_ztf_authoritative_payloads.py'
+      - 'tests/test_reference_workflow_material.py'
       - 'tests/test_fink_ztf_authoritative_payloads.py'
       - 'tests/test_fink_lsst_authoritative_payloads.py'
       - 'tests/fixtures/fink/**'
@@ -115,6 +116,7 @@ jobs:
             tests/test_endpoint_execution.py \
             tests/test_orchestration_endpoint_pagination.py \
             tests/test_antares_ztf_authoritative_payloads.py \
+            tests/test_reference_workflow_material.py \
             tests/test_fink_ztf_authoritative_payloads.py \
             tests/test_fink_lsst_authoritative_payloads.py \
             tests/test_lasair_registry_architecture.py \

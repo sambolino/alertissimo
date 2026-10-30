@@ -1649,6 +1649,9 @@ levels:
     $ref: <provenance> # description of the catalog
     $ref: <position>(L1)
     $ref: <separation>
+    [pixel_distance]:
+      description: "Distance to the nearest reference-catalog source in image pixels; not an angular separation"
+      unit: pixels
     $ref: <photometry>(L1) # magnitude of the source
     $ref: <image_metrics> # e.g. DAOPhot chi and sharpness of the nearest source
     $ref: <astrometric_solution>
