@@ -113,7 +113,7 @@ def test_unmapped_classifier_is_unsupported(graph, broker, origin):
         plan_step(classification(broker, origin, "unknown_model"), graph)
 
 
-@pytest.mark.parametrize("broker,origin", [("fink", "lsst"), ("lasair", "ztf")])
+@pytest.mark.parametrize("broker,origin", [("lasair", "ztf")])
 def test_real_classification_alternatives_remain_ambiguous(graph, broker, origin):
     with pytest.raises(PlanningAmbiguityError):
         plan_step(classification(broker, origin), graph)

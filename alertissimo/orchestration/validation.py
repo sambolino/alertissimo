@@ -471,7 +471,7 @@ def _semantic_record_producer(semantic_record_type: str) -> str | None:
 def _classification_recipe_evidence(
     step: GetClassificationStep, graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
-    """Require targeted retrieval and authored translation of dynamic selectors."""
+    """Validate every required targeted classification call in an authored recipe."""
     declared = graph.query_recipes(
         broker=source.broker if source else None,
         origin=source.origin if source else None, op=step.op,
@@ -490,32 +490,34 @@ def _classification_recipe_evidence(
     choices = [(endpoint, None) for endpoint in legacy]
     raw, reasons = list(legacy), []
     for recipe in declared:
-        call = recipe.calls[0]
-        outputs = tuple(
-            output for output in call.outputs
-            if semantic_record_noun_matches(output.semantic_record_type, "classification")
-        )
-        if not call.required or not outputs:
-            continue
-        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
-        raw.append(endpoint)
-        paths = {
-            parameter.source.path for parameter in call.params
-            if isinstance(parameter.source, StepValueSource)
-        }
-        if len(recipe.calls) != 1 or any(
-            isinstance(parameter.source, (CallValueSource, EncoderValueSource))
-            for parameter in call.params
+        first = recipe.calls[0]
+        if not first.required or not any(
+            semantic_record_noun_matches(output.semantic_record_type, "classification")
+            for output in first.outputs
         ):
-            reasons.append("classification recipes require one call with direct Step inputs")
             continue
-        if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
-            reasons.append("classification recipe does not bind the target identities")
-            continue
-        if step.classifier is not None:
-            producers = tuple(
-                _semantic_record_producer(output.semantic_record_type) for output in outputs
-            )
+        primary = endpoints[(recipe.broker, recipe.origin, first.endpoint)]
+        raw.append(primary)
+        for call in recipe.calls:
+            endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+            outputs = tuple(output for output in call.outputs
+                            if semantic_record_noun_matches(output.semantic_record_type, "classification"))
+            if not call.required or not outputs:
+                reasons.append("each classification recipe call must be required and map classification material")
+                break
+            paths = {
+                parameter.source.path for parameter in call.params
+                if isinstance(parameter.source, StepValueSource)
+            }
+            if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
+                reasons.append("classification recipes require direct Step inputs on every call")
+                break
+            if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
+                reasons.append("classification recipe does not bind the target identities on every call")
+                break
+            if step.classifier is None:
+                continue
+            producers = tuple(_semantic_record_producer(output.semantic_record_type) for output in outputs)
             exact = any(
                 producer is not None and producer.lower() == step.classifier.lower()
                 for producer in producers
@@ -530,13 +532,10 @@ def _classification_recipe_evidence(
                 and parameter.parameter in endpoint.server_filters
                 for parameter in call.params
             )
-            # A targeted response can supply several classifiers. Its mapped
-            # producer identity lets normalization select records locally; it
-            # does not require, or invent, a physical classifier parameter.
+            # Mapped producer identity permits local selection without inventing
+            # a classifier request parameter. Each composed call needs its own proof.
             local_selector = any(
-                output.relative_field_path in {
-                    "provenance.producer.name", "provenance.producer.id",
-                }
+                output.relative_field_path in {"provenance.producer.name", "provenance.producer.id"}
                 and (producer := _semantic_record_producer(output.semantic_record_type)) is not None
                 and _DYNAMIC_QUALIFIER.fullmatch(producer)
                 for output in outputs
@@ -547,8 +546,9 @@ def _classification_recipe_evidence(
                         "requested classifier has only a dynamic producer mapping "
                         "without mapped producer identity or a declared server-filter translation"
                     )
-                continue
-        choices.append((endpoint, recipe))
+                break
+        else:
+            choices.append((primary, recipe))
     if step.target is not None and len(step.target.ids) > 1:
         collection = [
             choice for choice in choices
