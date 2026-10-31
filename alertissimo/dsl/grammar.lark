@@ -99,7 +99,9 @@ ranked_clause: "ranked"i "by"i TEXT
 
 duration: DURATION
 
-PRODUCT.2: /[^:#\n]+?(?=\s+(?i:from|via|using|where)\s+[A-Za-z]|\s*(?:#|\n|$))/
+// End the product at a qualifier even when its argument is malformed or absent.
+// Otherwise "classification via ,fink" becomes an opaque product name.
+PRODUCT.2: /[^:#\n]+?(?=\s+(?i:from|via|using|where)(?=\s|,|#|$)|\s*(?:#|\n|$))/
 TEXT: /[^#\n]+/
 WINDOW_BOUND: /[^\s,\[\]#"][^,\[\]#"\n]*/
 DURATION: /[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:s|min|h|d|w)/i

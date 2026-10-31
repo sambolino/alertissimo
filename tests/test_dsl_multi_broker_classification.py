@@ -55,12 +55,22 @@ def test_list_preserves_one_authored_clause_and_single_broker_compatibility():
     LOOKUP + "with classification via fink, FINK\n",
     LOOKUP + "with classification via alerce,\n",
     LOOKUP + "with classification via ,fink\n",
+    LOOKUP + "with classification via,fink\n",
+    LOOKUP + "with classification via\n",
     LOOKUP + "with lightcurve via alerce, fink\n",
     "objects from ztf via alerce, fink\n",
 ])
 def test_invalid_or_out_of_scope_lists_fail_at_parsing(source):
     with pytest.raises(DSLParseError):
         parse_surface_script(source)
+
+
+@pytest.mark.parametrize("clause", [
+    "with classification via ,fink\n", "with classification via\n",
+])
+def test_malformed_broker_qualifiers_also_fail_in_continuation(clause):
+    with pytest.raises(DSLParseError):
+        parse_surface_fragment(clause)
 
 
 def test_list_and_explicit_requirements_emit_identical_existing_ir():
