@@ -437,7 +437,7 @@ def test_semantic_target_planning_uses_only_collection_candidate(step_type, noun
     )[0].endpoint == f"{noun}_many"
 
 
-@pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
+@pytest.mark.parametrize("step_type", [GetCrossmatchStep])
 def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
     ztf = step_type(
         target=TargetSelector(ids=["A", "B"], kind="object"),

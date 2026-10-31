@@ -134,16 +134,14 @@ def test_lasair_ztf_classification_uses_targeted_semantic_recipes():
         build_capability_graph(),
     )
     assert classification.status == "supported"
-    assert {item.endpoint for item in classification.candidates} >= {
-        "object", "objects", "sherlock_object", "sherlock_objects",
-    }
+    assert {item.endpoint for item in classification.candidates} == {"objects"}
     assert all(
         "target_id" in item.binding_roles
         for item in classification.candidates
     )
 
 
-@pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
+@pytest.mark.parametrize("step_type", [GetCrossmatchStep])
 def test_lasair_sherlock_candidates_respect_target_cardinality(step_type):
     graph = build_capability_graph()
     ztf_source = [Source(broker="lasair", origin="ztf")]
