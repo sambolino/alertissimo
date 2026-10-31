@@ -216,6 +216,13 @@ The broker-list surface expands into existing retrieval Steps. Its inline
 condition uses a whole-condition OR across broker scopes, without introducing a
 quorum or cross-broker class/score mixing. C2-C7 remain outstanding.
 
+C1 is now on integration as `bed9c8c` (#332), as confirmed by the user. C2 is
+split by provider: `fix/classification-fink-lsst-contract` prepares the first
+repair, composing Fink LSST object labels and source assessments in one existing
+recipe. See its [contract and local handoff](classification_fink_lsst_contract.md).
+Lasair alternatives remain for the next small branch; this entry does not claim
+C2 local success or a merged status.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

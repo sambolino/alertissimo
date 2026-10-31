@@ -362,6 +362,19 @@ def _retrieval_requirement_checks(
             )
             for item in material
         )
+
+    def retrieval_endpoints(item):
+        if noun != "classification" or not item.recipes:
+            return item.candidates
+        # Candidate selection identifies a recipe by its primary endpoint.
+        # Capability evidence must still expose all required classification calls.
+        keys = {
+            (recipe.broker, recipe.origin, call.endpoint)
+            for recipe in item.recipes for call in recipe.calls if call.required
+        }
+        return tuple(endpoint for endpoint in graph.endpoint_capabilities
+                     if (endpoint.broker, endpoint.origin, endpoint.endpoint) in keys)
+
     return tuple(
         SurfaceCapabilityCheck(
             subject="requirement", status=SurfaceCapabilityStatus(item.status),
@@ -371,7 +384,7 @@ def _retrieval_requirement_checks(
             semantic_noun=noun, producer=clause.source, channel=broker,
             evidence=(
                 _qualified_endpoint_evidence(
-                    item.candidates, graph, noun=noun, producer=clause.source, channel=broker,
+                    retrieval_endpoints(item), graph, noun=noun, producer=clause.source, channel=broker,
                 ) if noun in {"crossmatch", "classification"} else _endpoint_evidence(item.candidates)
             ),
         )

@@ -24,6 +24,7 @@ on:
       - 'tests/test_orchestration_binding.py'
       - 'tests/test_orchestration_capability_validation.py'
       - 'tests/test_orchestration_classification_recipes.py'
+      - 'tests/test_orchestration_fink_lsst_classification.py'
       - 'tests/test_orchestration_crossmatch_capability.py'
       - 'tests/test_orchestration_crossmatch_recipes.py'
       - 'tests/test_orchestration_product_recipes.py'
@@ -110,6 +111,7 @@ jobs:
             tests/test_orchestration_binding.py \
             tests/test_orchestration_capability_validation.py \
             tests/test_orchestration_classification_recipes.py \
+            tests/test_orchestration_fink_lsst_classification.py \
             tests/test_orchestration_crossmatch_capability.py \
             tests/test_orchestration_crossmatch_recipes.py \
             tests/test_orchestration_product_recipes.py \
