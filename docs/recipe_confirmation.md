@@ -33,7 +33,7 @@ the compatibility path. These tiers do not rank competing declarations within th
 same endpoint or invent a provider preference.
 
 Both existence and predicate confirmation require an endpoint-local mapped
-`summary.identity.object_id` or `detection.identity.object_id`. Predicate checks
+`summary.identity.object_id` or `measurement.identity.object_id`. Predicate checks
 also require every referenced field, producer, and channel on that same endpoint.
 Previously the check read family-wide record fields, which combine mappings from
 several endpoints. A discovery mapping could therefore falsely establish a field

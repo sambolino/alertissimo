@@ -48,7 +48,6 @@ def edit_yaml(path, update):
 @pytest.mark.parametrize("broker,origin,kind,reason", [
     ("alerce", "ztf", "object", "no mapped data_product material"),
     ("alerce", "lsst", "object", "no mapped data_product material"),
-    ("fink", "ztf", "object", "response shape/mode"),
     ("fink", "lsst", "alert", "identity ownership lacks normalization evidence"),
 ])
 def test_production_product_gaps_are_deferred_without_tag_fallback(graph, step_type, broker, origin, kind, reason):
@@ -81,8 +80,13 @@ def test_output_format_controls_are_compiled_from_existing_physical_roles(graph)
         call, = recipe.calls
         endpoint, = (item for item in graph.endpoints_for("fink", origin)
                      if item.endpoint == call.endpoint)
-        assert endpoint.output_format_params == ("output-format",)
+        assert endpoint.output_format_params == (() if origin == "ztf" else ("output-format",))
         assert endpoint.binding_roles == ("target_id",)
+        if origin == "ztf":
+            assert endpoint.endpoint == "cutouts_array" and endpoint.output_type == "object"
+            assert EndpointRegistry().resolve("fink", "ztf", endpoint.endpoint).fixed_params == {
+                "kind": "All", "output-format": "array",
+            }
     assert all(
         call.endpoint != "get_avro"
         for recipe in graph.query_recipes(broker="alerce", origin="lsst", op="get_data_product")
@@ -124,11 +128,14 @@ def json_product_provider(tmp_path):
     edit_yaml(destination / "endpoints.yaml", json_endpoint)
     def json_calls(doc):
         for op in ("get_cutout", "get_data_product"):
-            params = doc["recipes"][op][0]["calls"][0]["params"]
-            params.pop("kind")
-            params.pop("output-format")
+            call = doc["recipes"][op][0]["calls"][0]
+            call["endpoint"] = "cutouts"
+            params = call["params"]
+            params.pop("kind", None)
+            params.pop("output-format", None)
     edit_yaml(destination / "capabilities.yaml", json_calls)
     def json_fields(doc):
+        doc["transforms"].pop("data_product@ztf:fink.payload", None)
         doc["mappings"]["data_product@ztf:fink.payload"] = ["cutouts#content"]
         doc["mappings"]["data_product@ztf:fink.type"] = ["cutouts#type"]
     edit_yaml(destination / "mappings.yaml", json_fields)
@@ -162,6 +169,11 @@ def test_declared_json_type_does_not_override_unverified_response_modes(tmp_path
     def json_type(doc):
         doc["endpoints"]["cutouts"]["output"]["type"] = "object"
     edit_yaml(destination / "endpoints.yaml", json_type)
+    def legacy_mode(doc):
+        call = doc["recipes"]["get_cutout"][0]["calls"][0]
+        call["endpoint"] = "cutouts"
+        call["params"].update({"kind": {"value": "All"}, "output-format": {"value": "array"}})
+    edit_yaml(destination / "capabilities.yaml", legacy_mode)
     with pytest.raises(PlanningDeferredError, match="response shape/mode"):
         plan_step(product(), build_capability_graph(root))
 

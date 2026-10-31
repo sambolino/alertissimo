@@ -23,11 +23,11 @@ def record(identifier: str, semantic_type: str, **fields: object) -> SemanticRec
 
 def test_portfolio_allows_repeated_semantic_records():
     summary = record("rec:summary", "summary@ztf:lasair", **{"identity.object_id": "ZTF25abc"})
-    first = record("rec:detection:123", "detection@ztf:lasair", **{"time.mjd": 60321.123})
-    second = record("rec:detection:124", "detection@ztf:lasair", **{"time.mjd": 60321.124})
+    first = record("rec:detection:123", "measurement@ztf:lasair", **{"time.mjd": 60321.123})
+    second = record("rec:detection:124", "measurement@ztf:lasair", **{"time.mjd": 60321.124})
     portfolio = Portfolio(InternalPortfolioId("portfolio:1"), (summary, first, second))
 
-    detections = portfolio.records_of_type("detection@ztf:lasair")
+    detections = portfolio.records_of_type("measurement@ztf:lasair")
     assert len(portfolio.records) == 3
     assert len(detections) == 2
     assert {item.internal_record_id for item in detections} == {
@@ -40,7 +40,7 @@ def test_portfolio_allows_repeated_semantic_records():
 def test_record_fields_are_relative_paths_and_allow_semantic_provenance():
     item = record(
         "rec:valid",
-        "detection@ztf:lasair",
+        "measurement@ztf:lasair",
         **{
             "identity.object_id": "ZTF25abc",
             "time.mjd": 60321.123,
@@ -56,9 +56,9 @@ def test_record_fields_are_relative_paths_and_allow_semantic_provenance():
 @pytest.mark.parametrize(
     "field_path",
     [
-        "detection@ztf:lasair.photometry.g.psf.mag",
-        "portfolio.detection@ztf:lasair.photometry.g.psf.mag",
-        "portfolio.detection.photometry.g.psf.mag",
+        "measurement@ztf:lasair.photometry.g.psf.mag",
+        "portfolio.measurement@ztf:lasair.photometry.g.psf.mag",
+        "portfolio.measurement.photometry.g.psf.mag",
         "photometry.g@lsst.psf.mag",
     ],
 )
@@ -66,7 +66,7 @@ def test_record_fields_reject_qualified_paths(field_path: str):
     with pytest.raises(PortfolioModelError, match="relative"):
         record(
             "rec:invalid",
-            "detection@ztf:lasair",
+            "measurement@ztf:lasair",
             **{field_path: 19.46},
         )
 
@@ -85,7 +85,7 @@ def test_edge_fields_reject_qualified_paths():
 
 
 def test_record_edges_are_first_class_and_require_existing_local_participants():
-    detection = record("rec:detection", "detection@ztf:lasair", **{"time.mjd": 1.0})
+    detection = record("rec:detection", "measurement@ztf:lasair", **{"time.mjd": 1.0})
     spectrum = record("rec:spectrum", "spectrum@gemini:archive", **{"identity.source_id": "s1"})
     edge = SemanticEdge(
         InternalEdgeId("edge:followup"),
@@ -196,7 +196,7 @@ def test_execution_provenance_is_call_scoped_and_source_is_compact():
     source = InternalRecordSource(execution_id, "candidates", "candidates[]", 4)
     item = SemanticRecord(
         InternalRecordId("rec:detection:source"),
-        "detection@ztf:lasair",
+        "measurement@ztf:lasair",
         {"identity.object_id": "ZTF25abc"},
         source,
     )
@@ -215,7 +215,7 @@ def test_duplicate_internal_ids_are_rejected(kind: str):
     first = record("rec:first", "summary@ztf:lasair")
     kwargs: dict[str, object] = {"records": (first,)}
     if kind == "record":
-        kwargs["records"] = (first, record("rec:first", "detection@ztf:lasair"))
+        kwargs["records"] = (first, record("rec:first", "measurement@ztf:lasair"))
     elif kind == "edge":
         edge = SemanticEdge(InternalEdgeId("edge:1"), "--association--", first.internal_record_id, first.internal_record_id)
         kwargs["edges"] = (edge, edge)
@@ -230,7 +230,7 @@ def test_mappings_are_defensively_copied_and_top_level_immutable():
     record_fields = {"time.mjd": 1.0}
     edge_fields = {"basis": "initial"}
     params = {"objectId": "ZTF25abc"}
-    item = SemanticRecord(InternalRecordId("rec:1"), "detection@ztf:lasair", record_fields)
+    item = SemanticRecord(InternalRecordId("rec:1"), "measurement@ztf:lasair", record_fields)
     edge = SemanticEdge(InternalEdgeId("edge:1"), "--association--", item.internal_record_id, item.internal_record_id, edge_fields)
     execution = InternalExecutionProvenance(InternalExecutionId("exec:1"), "lasair", "ztf", "object", params)
     record_fields["time.mjd"] = 2.0
@@ -245,7 +245,7 @@ def test_mappings_are_defensively_copied_and_top_level_immutable():
 
 
 def test_convenience_helpers_are_deterministic():
-    detection = record("rec:detection", "detection@ztf:lasair", **{"time.mjd": 1.0})
+    detection = record("rec:detection", "measurement@ztf:lasair", **{"time.mjd": 1.0})
     spectrum = record("rec:spectrum", "spectrum@gemini:archive")
     edge = SemanticEdge(InternalEdgeId("edge:1"), "--followup_of-->", spectrum.internal_record_id, detection.internal_record_id, {"basis": "follow-up"})
     execution = InternalExecutionProvenance(InternalExecutionId("exec:1"), "lasair", "ztf", "object")
@@ -256,7 +256,7 @@ def test_convenience_helpers_are_deterministic():
     assert edge.has("basis") and edge.get("basis") == "follow-up"
     assert portfolio.get_record("rec:detection") is detection
     assert portfolio.get_edge(InternalEdgeId("edge:1")) is edge
-    assert portfolio.semantic_types() == ("detection@ztf:lasair", "spectrum@gemini:archive")
+    assert portfolio.semantic_types() == ("measurement@ztf:lasair", "spectrum@gemini:archive")
     assert portfolio.edges_of_type("--followup_of-->") == (edge,)
     assert portfolio.execution("exec:1") is execution
 

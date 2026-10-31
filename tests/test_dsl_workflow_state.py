@@ -24,7 +24,7 @@ FIRST_PASS = f"""objects from ztf via lasair
 inside ({RA}, {DEC}, {RADIUS_ARCSEC}arcsec)
 with lightcurve via fink
 """
-CONTINUATION = """filter detection@ztf:fink.quality.real_bogus >= 0.8
+CONTINUATION = """filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """
 

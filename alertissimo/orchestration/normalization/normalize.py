@@ -34,7 +34,7 @@ from .models import (
     summary_object_identity,
 )
 from .predicate import prune_portfolios
-from .selection import apply_search_selection, apply_time_selection, validate_time_selection_payloads
+from .selection import apply_search_selection, apply_time_selection, validate_time_selection_payloads, validate_latest_selection_payloads
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -258,6 +258,7 @@ def _normalize_planned_step(
 
     plan_indexes = _execution_plan_indexes(step_run, result)
     validate_time_selection_payloads(step_run, result)
+    validate_latest_selection_payloads(step_run, result)
     return StepPortfolioResult(
         step_index=result.step_index,
         executions=tuple(
@@ -693,7 +694,7 @@ def normalize_workflow_execution(
         )
         normalized_steps.append(
             apply_classification_selection(step, _materialize_enrichment_view(
-                step_run, apply_search_selection(step, apply_time_selection(step, step_run, own)), normalized_steps,
+                step_run, apply_search_selection(step, apply_time_selection(step, step_run, own), step_run), normalized_steps,
             ))
         )
 

@@ -25,7 +25,7 @@ def graph():
     ("lasair", "lsst", "lightcurve", "supported"),
     ("antares", "ztf", "lightcurve", "supported"),
     ("alerce", "lsst", "lightcurve", "supported"),
-    ("fink", "ztf", "data_product", "deferred"),
+    ("fink", "ztf", "data_product", "supported"),
     ("fink", "lsst", "data_product", "unsupported"),
     ("alerce", "ztf", "data_product", "deferred"),
     ("alerce", "lsst", "data_product", "deferred"),
@@ -86,9 +86,10 @@ def test_cutout_routing_respects_the_supplied_ontology_gate(graph):
     result = validate_step_capabilities(step, graph)
     report = validate_surface_capabilities(surface, graph=graph, semantic_paths=Paths())
     check, = (check for check in report.checks if check.subject == "requirement")
-    assert check.status.value == result.status == "deferred"
+    assert check.status.value == result.status == "supported"
     assert check.reason == result.source_results[0].reason
-    assert "response shape/mode" in check.reason
+    plan, = plan_step(step, graph)
+    assert plan.endpoint == "cutouts_array"
 
 
 def local_provider(tmp_path, broker="alerce", origin="lsst"):
@@ -150,11 +151,14 @@ def test_verified_json_product_recipe_support_does_not_need_operation_tags(tmp_p
     edit_yaml(destination / "endpoints.yaml", json_endpoint)
     def json_calls(document):
         for op in ("get_cutout", "get_data_product"):
-            params = document["recipes"][op][0]["calls"][0]["params"]
-            params.pop("kind")
-            params.pop("output-format")
+            call = document["recipes"][op][0]["calls"][0]
+            call["endpoint"] = "cutouts"
+            params = call["params"]
+            params.pop("kind", None)
+            params.pop("output-format", None)
     edit_yaml(destination / "capabilities.yaml", json_calls)
     def json_fields(document):
+        document["transforms"].pop("data_product@ztf:fink.payload", None)
         document["mappings"]["data_product@ztf:fink.payload"] = ["cutouts#content"]
         document["mappings"]["data_product@ztf:fink.type"] = ["cutouts#type"]
     edit_yaml(destination / "mappings.yaml", json_fields)

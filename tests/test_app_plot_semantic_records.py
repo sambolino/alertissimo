@@ -28,7 +28,7 @@ def test_portfolio_adapter_exposes_ontology_record_families():
     families = {record["family"] for record in records}
     assert families <= set(SEMANTIC_RECORD_FAMILIES)
     assert {
-        "summary", "detection", "crossmatch", "lightcurve", "classification",
+        "summary", "measurement", "crossmatch", "lightcurve", "classification",
     } <= families
     assert all("@" in record["semantic_type"] for record in records)
 
@@ -37,7 +37,7 @@ def test_detection_records_are_concrete_and_lightcurve_is_grouped():
     data = portfolio_data()
     records = semantic_record_index(data)
 
-    detections = [record for record in records if record["family"] == "detection"]
+    detections = [record for record in records if record["family"] == "measurement"]
     lightcurves = [record for record in records if record["family"] == "lightcurve"]
     assert len(detections) >= len(data["lightCurve"])
     assert lightcurves
@@ -75,7 +75,7 @@ def detection_evidence_portfolio():
         "records": [
             {
                 "internal_record_id": f"record:{broker}",
-                "semantic_type": f"detection@ztf:{broker}",
+                "semantic_type": f"measurement@ztf:{broker}",
                 "fields": {
                     "identity.object_id": "ZTF-test", "time.mjd": 60001,
                     "photometry.g.psf.mag": 20.1, "photometry.g.psf.mag.error": 0.1,
@@ -105,7 +105,7 @@ def test_detection_projection_exposes_provider_quality_and_preserves_overlapping
     assert points["fink"]["real_bogus"] == 0.0
     assert points["lasair"]["real_bogus"] is None
     assert points["fink"]["endpoint"] == "objects"
-    assert points["fink"]["semantic_type"] == "detection@ztf:fink"
+    assert points["fink"]["semantic_type"] == "measurement@ztf:fink"
     assert loaded_photometry_counts(display) == (("fink", 1), ("lasair", 1))
     assert display["semantic_records"][1]["internal_source"] == portfolio["records"][1]["internal_source"]
 

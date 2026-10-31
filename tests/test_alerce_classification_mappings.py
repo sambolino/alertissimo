@@ -107,7 +107,7 @@ def test_isdiffpos_uses_ztf_sign_semantics_without_unsafe_default():
         (
             record
             for record in portfolio.records
-            if record.semantic_type == "detection@ztf:alerce"
+            if record.semantic_type == "measurement@ztf:alerce"
         ),
         key=lambda record: record.fields["time.mjd"],
     )
@@ -129,7 +129,7 @@ def test_payload_selection_uses_only_authoritative_nested_lightcurve_rows():
     detections = [
         record
         for record in lightcurve.records
-        if record.semantic_type == "detection@ztf:alerce"
+        if record.semantic_type == "measurement@ztf:alerce"
     ]
     lightcurves = [
         record

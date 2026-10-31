@@ -175,6 +175,8 @@ def _search_recipe_evidence(
     discovery = "cone" if isinstance(step, ConeSearchStep) else "SQL" if isinstance(step, SqlQueryStep) else "semantic search"
     for recipe in declared:
         temporal = recipe.time_selection
+        if recipe.latest_selection is not None and temporal is None and step.selection is None:
+            continue
         context = getattr(step, "time_context", None)
         if temporal is not None and (context is None or context.mode != temporal.mode):
             reasons.append("temporal recipe requires its matching time_context mode")
@@ -939,13 +941,50 @@ def _candidate_evidence_for_source(
         binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
         recipe_index = index - (len(evidence.compatible) - len(evidence.recipes))
         recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
+        material_latest = recipe.latest_selection if recipe is not None else None
+        binding = material_latest or binding
         if step.semantic_type != "summary" or binding is None:
             continue
+        if material_latest is not None and material_latest.history is None and step.predicate is not None:
+            # The finite-discovery coverage proof precedes local pruning.
+            # Summary predicates use SQL discovery instead of thin cone IDs.
+            continue
+        temporal = recipe.time_selection if recipe is not None else None
         if step.criteria or getattr(step, "time_context", None) is not None and (
-            recipe is None or recipe.time_selection is None
+            temporal is None or not temporal.complete
         ):
             continue
-        fields = graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        if recipe is not None and (
+            recipe.calls[0].latest_selection is None and material_latest is None
+            or any(item.parameter in {"page", "offset", "count"} for item in recipe.calls[0].params)
+            or len(recipe.calls) > 1 and material_latest is None and (temporal is None or not temporal.complete)
+            or any(
+                source.path[0] == "selection"
+                for call in recipe.calls for item in call.params
+                for source in (tuple(value for _, value in item.source.inputs)
+                               if isinstance(item.source, EncoderValueSource) else (item.source,))
+                if isinstance(source, StepValueSource)
+            )
+        ):
+            continue
+        # Predicates are applied to discovery material before supplementary
+        # calls. A mapping on another call, or outside an authored projection,
+        # cannot establish that this candidate population is fully selected.
+        fields = recipe.calls[0].outputs if recipe is not None else graph.fields_for_endpoint(
+            endpoint.broker, endpoint.origin, endpoint.endpoint
+        )
+        if recipe is not None and endpoint.supports_projection:
+            projection = next((item.source for item in recipe.calls[0].params
+                               if item.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                fields = tuple(item for item in fields if item.raw_field in columns)
+        ranking_fields = recipe.calls[material_latest.call_index].outputs if material_latest is not None else fields
+        if (not any(canonical_semantic_path(item.semantic_path) == "summary.identity.object_id" for item in fields)
+            or not any(canonical_semantic_path(item.semantic_path) == binding.path for item in ranking_fields)):
+            continue
         if step.predicate is not None and any(
             not any(
                 (canonical_semantic_path(item.semantic_path) == reference.ontology_path
@@ -961,18 +1000,13 @@ def _candidate_evidence_for_source(
             for reference in iter_semantic_references(step.predicate)
         ):
             continue
-        if recipe is not None and (
-            len(recipe.calls) != 1 or recipe.calls[0].latest_selection is None
-            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
-        ):
-            continue
         compatible.append(endpoint)
         if recipe is not None:
             recipes.append(recipe)
     return replace(
         evidence, compatible=tuple(compatible), recipes=tuple(recipes),
         empty_status="deferred",
-        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; composite or untranslated populations are deferred",
+        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; temporal composites also require complete membership evidence",
     )
 
 
@@ -1166,7 +1200,7 @@ def validate_step_capabilities(
     operation = getattr(step, "op", type(step).__name__)
     semantic_type = getattr(step, "semantic_type", None)
     if isinstance(step, LookupStep):
-        semantic_type = "summary" if step.target.kind == "object" else "detection"
+        semantic_type = "summary" if step.target.kind == "object" else "measurement"
 
     if isinstance(
         step,

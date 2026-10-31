@@ -227,10 +227,11 @@ def test_present_empty_history_and_empty_discovery_are_valid(graph, monkeypatch,
     assert result.portfolios == ()  # Non-detection at 59012 cannot supply a witness.
 
 
-def test_pagination_limit_stops_before_partial_histories_are_accepted(graph, monkeypatch):
+@pytest.mark.parametrize("latest", [False, True])
+def test_pagination_limit_stops_before_partial_histories_are_accepted(graph, monkeypatch, latest):
     client = NativeClient()
     with pytest.raises(WorkflowExecutionError, match="execution-policy limit"):
-        execute_dsl(program(), graph=graph, executor=executor(monkeypatch, client, max_pages=1),
+        execute_dsl(program(tail="latest 1\n" if latest else ""), graph=graph, executor=executor(monkeypatch, client, max_pages=1),
                     continue_from=None, reference_time=NOW)
     assert [name for name, _ in client.calls] == ["query_objects"]
 
@@ -281,7 +282,81 @@ def test_window_range_composition_requires_a_matching_declared_proof(tmp_path, c
         build_capability_graph(root)
 
 
-def test_default_with_latest_remains_explicitly_deferred_until_composite_admission(graph):
-    result = validate_dsl(program(tail="latest 1\n"), graph=graph, continue_from=None)
-    assert not result.is_runnable
-    assert result.lowering_error is not None
+@pytest.mark.parametrize("cone", [False, True])
+@pytest.mark.parametrize("latest,expected", [(1, [IDS[2]]), (2, [IDS[2], IDS[0]])])
+def test_default_latest_follows_complete_discovery_and_temporal_membership(graph, monkeypatch, cone, latest, expected):
+    source = program(cone=cone, tail=f"latest {latest}\nwith classification via alerce\n")
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    client = NativeClient()
+    result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, client),
+                         continue_from=None, reference_time=NOW)
+    selected = result.result.steps[0].portfolios
+    assert [summary_object_identity(p)[1] for p in selected] == expected
+    assert identities(result.portfolios) == set(expected)
+    queries = [params for name, params in client.calls if name == "query_objects"]
+    assert len(queries) == 2  # Even latest 1 must exhaust both discovery pages.
+    assert all(p["order_by"] == "lastmjd" and p["order_mode"] == "DESC" and p["page_size"] == 2 for p in queries)
+    assert [name for name, _ in client.calls[:2]] == ["query_objects", "query_objects"]
+    histories = [p["oid"] for name, p in client.calls if name == "query_lightcurve"]
+    assert len(histories) == 4 and set(histories) == set(IDS[:4])
+    assert {p["oid"] for name, p in client.calls if name == "query_probabilities"} == set(expected)
+    # B has the greatest summary last date but no detection inside the window.
+    # C wins over A by its overall last date, despite A's later in-window witness.
+    for portfolio in selected:
+        oid = summary_object_identity(portfolio)[1]
+        times = [r.get("time.mjd") for r in portfolio.records
+                 if r.internal_source is not None and r.internal_source.payload_key == "query_lightcurve.detections"]
+        assert sorted(times) == HISTORY[oid]
+    assert result.run.steps[0].time_reference == NOW
+    offline = normalize_workflow_execution(result.staged.execution)
+    assert [summary_object_identity(p)[1] for p in offline.steps[0].portfolios] == expected
+
+
+@pytest.mark.parametrize("filtered", [False, True])
+def test_composite_latest_continuation_fetches_only_current_selected_ids(graph, monkeypatch, filtered):
+    client = NativeClient()
+    endpoint_executor = executor(monkeypatch, client)
+    first = execute_dsl(program(tail="latest 2\n"), graph=graph, executor=endpoint_executor,
+                        continue_from=None, reference_time=NOW)
+    before = deepcopy(client.calls)
+    fragment = ("filter summary.time.last_mjd >= 59040\n" if filtered else "") + "with lightcurve via alerce\n"
+    second = execute_dsl(fragment, graph=graph, executor=endpoint_executor, continue_from=first,
+                         reference_time=NOW + timedelta(days=1))
+    expected = {IDS[2]} if filtered else {IDS[0], IDS[2]}
+    added = client.calls[len(before):]
+    assert len(added) == len(expected)
+    assert all(name == "query_lightcurve" for name, _ in added)
+    assert {p["oid"] for _, p in added} == expected
+    assert client.calls[:len(before)] == before
+    assert identities(second.portfolios) == expected
+    assert identities(first.portfolios) == {IDS[0], IDS[2]}
+    assert second.run.steps[0].time_reference == NOW
+    assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
+    plan, = second.run.steps[-1].endpoint_plans
+    assert plan.execution_reuse_from is None
+
+
+def test_residual_and_temporal_pruning_both_precede_composite_latest(graph, monkeypatch):
+    client = NativeClient()
+    result = execute_dsl(program(tail="where summary.time.first_mjd != 59011\nlatest 1\nwith classification via alerce\n"),
+                         graph=graph, executor=executor(monkeypatch, client), continue_from=None, reference_time=NOW)
+    assert identities(result.portfolios) == {IDS[0]}
+    # Residual excludes C; temporal membership excludes the higher-ranked B.
+    assert {p["oid"] for name, p in client.calls if name == "query_lightcurve"} == {IDS[0], IDS[1], IDS[3]}
+    assert [p["oid"] for name, p in client.calls if name == "query_probabilities"] == [IDS[0]]
+    assert all("firstmjd" not in p for name, p in client.calls if name == "query_objects")
+
+
+def test_latest_cannot_ignore_failed_required_history_for_a_lower_ranked_object(graph, monkeypatch):
+    client = NativeClient()
+    def history(oid, *, survey, format):
+        if oid == IDS[3]:
+            client.calls.append(("query_lightcurve", {"oid": oid}))
+            raise RuntimeError("required lower-ranked history unavailable")
+        return NativeClient.query_lightcurve(client, oid, survey=survey, format=format)
+    client.query_lightcurve = history
+    with pytest.raises(WorkflowExecutionError, match="required lower-ranked history unavailable"):
+        execute_dsl(program(tail="latest 1\n"), graph=graph, executor=executor(monkeypatch, client),
+                    continue_from=None, reference_time=NOW)
+    assert {p["oid"] for name, p in client.calls if name == "query_lightcurve"} == set(IDS[:4])

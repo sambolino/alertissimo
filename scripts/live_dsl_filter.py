@@ -6,7 +6,7 @@ The scenario is the live counterpart of ``test_dsl_filter_candidate_flow``:
     objects from ztf via lasair
         inside (...)
         with lightcurve via fink
-        filter detection@ztf:fink.quality.real_bogus >= <threshold>
+        filter measurement@ztf:fink.quality.real_bogus >= <threshold>
         with lightcurve via lasair
 
 The local FilterStep must own no provider endpoint, must consume the materialized
@@ -74,7 +74,7 @@ def main() -> int:
     dsl = f"""objects from ztf via lasair
     inside ({args.ra}, {args.dec}, {args.radius_arcsec}arcsec)
     with lightcurve via fink
-    filter detection@ztf:fink.quality.real_bogus >= {args.threshold}
+    filter measurement@ztf:fink.quality.real_bogus >= {args.threshold}
     with lightcurve via lasair
 """
 

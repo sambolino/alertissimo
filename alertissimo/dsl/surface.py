@@ -189,8 +189,34 @@ class RequirementClause(SurfaceModel):
     product: str
     source: str | None = None
     via: str | None = None
+    brokers: tuple[str, ...] = ()
     method: str | None = None
     predicates: tuple[str, ...] = ()
+
+    @field_validator("brokers")
+    @classmethod
+    def normalize_brokers(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(broker.strip().lower() for broker in value)
+
+    @model_validator(mode="after")
+    def validate_broker_list(self) -> "RequirementClause":
+        if self.brokers:
+            if self.via is not None:
+                raise ValueError("with must use either one via broker or a broker list")
+            if len(self.brokers) < 2 or any(not broker.strip() for broker in self.brokers):
+                raise ValueError("with broker list requires at least two non-empty brokers")
+            if len({broker.lower() for broker in self.brokers}) != len(self.brokers):
+                raise ValueError("with brokers must be unique")
+            if self.product.strip().lower() != "classification":
+                raise ValueError("with broker lists currently require classification")
+        return self
+
+    def broker_requirements(self) -> tuple["RequirementClause", ...]:
+        """Keep one authored clause while emitting existing broker-bound Gets."""
+        if not self.brokers:
+            return (self,)
+        return tuple(self.model_copy(update={"via": broker.lower(), "brokers": ()})
+                     for broker in self.brokers)
 
     @field_validator("product")
     @classmethod
@@ -287,7 +313,7 @@ class SurfaceScript(SurfaceModel):
                 for clause in self.clauses
                 if isinstance(
                     clause,
-                    (InsideClause, WithinClause, LatestClause, WhereClause),
+                    (InsideClause, WithinClause, LatestClause),
                 )
             )
             if forbidden:

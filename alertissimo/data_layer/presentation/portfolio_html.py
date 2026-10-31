@@ -325,7 +325,7 @@ def portfolio_to_html(portfolio: Portfolio) -> str:
                          f'<small>{len(record.get("fields") or {})} fields · {_h(_source(record.get("internal_source")))}</small>'
                          f'<code>{_h(record["semantic_type"])}</code></a>')
             cards.append(_record(index, record))
-        opened = ' open' if group_index == 0 or base in {"summary", "detection"} else ''
+        opened = ' open' if group_index == 0 or base in {"summary", "measurement"} else ''
         nav.append(f'<details class="rail-record-group"{opened}><summary>{_h(base)} ({len(items)})</summary>{"".join(links)}</details>')
         main.append(f'<details class="record-group"{opened}><summary>{_h(base)} ({len(items)})</summary><div class="record-group-cards">{"".join(cards)}</div></details>')
 

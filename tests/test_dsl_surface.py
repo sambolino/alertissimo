@@ -52,10 +52,32 @@ def test_singular_lookup_spelling_requires_exactly_one_id():
         parse_surface_script("object A, B from ztf via fink")
 
 
-@pytest.mark.parametrize("clause", ["inside (1, 2, 3arcsec)", "latest 2", "where x = 1"])
+@pytest.mark.parametrize("clause", [
+    "inside (1, 2, 3arcsec)", "within 7d", "first within 7d", "latest 2",
+])
 def test_lookup_population_rejects_search_only_constraints(clause):
     with pytest.raises(DSLParseError, match="lookup candidates"):
         parse_surface_script(f"object ZTF20abc from ztf via fink\n{clause}\n")
+
+
+@pytest.mark.parametrize("requirement", ["", "with classification via fink\n"])
+def test_lookup_population_preserves_general_where_after_initial_retrievals(requirement):
+    result = parse_surface_script(
+        "object ZTF20abc from ztf via fink\n" + requirement
+        + 'where classification@fink:fink.best.class = "SN candidate"\n'
+    )
+    assert isinstance(result.clauses[-1], WhereClause)
+    assert result.clauses[-1].condition == (
+        'classification@fink:fink.best.class = "SN candidate"'
+    )
+
+
+def test_lookup_general_where_still_cannot_follow_an_explicit_filter():
+    with pytest.raises(DSLParseError, match="where belongs to the initial candidate pass"):
+        parse_surface_script(
+            "object ZTF20abc from ztf via fink\nwith classification via fink\n"
+            'filter summary.detection_count >= 1\nwhere classification.best.class = "SN"\n'
+        )
 
 
 def test_objects_without_origin_are_rejected():

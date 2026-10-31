@@ -46,13 +46,13 @@ def test_build_portfolio_from_saved_lasair_payload():
     semantic_types = {record.semantic_type for record in portfolio.records}
 
     assert "summary@ztf:lasair" in semantic_types
-    assert "detection@ztf:lasair" in semantic_types
+    assert "measurement@ztf:lasair" in semantic_types
     assert "classification@sherlock:lasair" in semantic_types
     assert "crossmatch@unknown:lasair" in semantic_types
     assert "crossmatch@{producer}:lasair" not in semantic_types
     assert "crossmatch@sherlock:lasair" not in semantic_types
     assert portfolio.edges == ()
-    assert sum(record.semantic_type == "detection@ztf:lasair" for record in portfolio.records) == 3
+    assert sum(record.semantic_type == "measurement@ztf:lasair" for record in portfolio.records) == 3
     assert portfolio.executions[0].params == {"objectId": "ZTF25realistic"}
 
 
@@ -104,7 +104,7 @@ def test_payload_script_reads_file_and_reports_summary(tmp_path):
 
     portfolio = json.loads(result.stdout)
     assert len(portfolio["edges"]) == 0
-    assert len([record for record in portfolio["records"] if record["semantic_type"] == "detection@ztf:lasair"]) == 3
+    assert len([record for record in portfolio["records"] if record["semantic_type"] == "measurement@ztf:lasair"]) == 3
     assert "payload keys:" in result.stderr
     assert "endpoint: object" in result.stderr
     assert "records built:" in result.stderr

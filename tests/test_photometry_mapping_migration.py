@@ -34,7 +34,7 @@ OBSOLETE = re.compile(
     r"aperture\.(?:mag_error|flux_error|large\.mag_error)))$"
 )
 PHASE_2_PATHS = {
-    "detection@lsst:fink.reference_image.photometry.{filter}.flux_error",
+    "measurement@lsst:fink.reference_image.photometry.{filter}.flux_error",
     "lightcurve@lsst:fink.forced_photometry.{filter}.psf.flux_error",
 }
 MIGRATED = re.compile(
