@@ -705,25 +705,19 @@ def _validate_surface_capabilities(
             ))
         elif isinstance(clause, RequirementClause):
             noun = resolve_record_type(clause.product, semantic_model.record_types)
-            signature = (
-                noun or clause.product,
-                clause.source,
-                clause.via or surface.candidates.broker,
-            )
-            if signature in checked_requirements:
-                continue
-            checked_requirements.add(signature)
-            checks.extend(
-                _requirement_checks(
-                    surface,
-                    clause,
-                    clause_index=index,
-                    graph=capability_graph,
-                    record_types=semantic_model.record_types,
-                    base_workflow=base_workflow,
-                    semantic_paths=semantic_model,
+            for requirement in clause.broker_requirements():
+                signature = (
+                    noun or requirement.product, requirement.source,
+                    requirement.via or surface.candidates.broker,
                 )
-            )
+                if signature in checked_requirements:
+                    continue
+                checked_requirements.add(signature)
+                checks.extend(_requirement_checks(
+                    surface, requirement, clause_index=index, graph=capability_graph,
+                    record_types=semantic_model.record_types, base_workflow=base_workflow,
+                    semantic_paths=semantic_model,
+                ))
         elif isinstance(clause, WhereClause):
             for ref in extract_semantic_record_references(
                 clause.condition, semantic_model.record_types

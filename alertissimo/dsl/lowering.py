@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph
 from alertissimo.orchestration.ir import (
+    BooleanPredicate,
     ClassifyStep,
     ColorColorStep,
     ColorMagnitudeStep,
@@ -250,6 +251,21 @@ def _scoped_requirement_predicate(
     record_types: frozenset[str],
     clause_index: int,
 ) -> Predicate | None:
+    if clause.brokers:
+        alternatives = tuple(dict.fromkeys(
+            predicate
+            for requirement in clause.broker_requirements()
+            for predicate in [_scoped_requirement_predicate(
+                surface, requirement, noun=noun, record_types=record_types,
+                clause_index=clause_index,
+            )]
+            if predicate is not None
+        ))
+        if not alternatives:
+            return None
+        return alternatives[0] if len(alternatives) == 1 else BooleanPredicate(
+            operator="or", operands=alternatives,
+        )
     predicates = [
         _semantic_predicate(
             expression,
@@ -751,8 +767,9 @@ def _lower_surface_intent(
         signature
         for clause in surface.clauses
         if isinstance(clause, RequirementClause)
+        for requirement in clause.broker_requirements()
         for signature in [
-            _requirement_signature(surface, clause, record_types)
+            _requirement_signature(surface, requirement, record_types)
         ]
         if signature is not None
     }
@@ -806,23 +823,19 @@ def _lower_surface_intent(
             continue
 
         if isinstance(clause, RequirementClause):
-            signature = _requirement_signature(
-                surface, clause, record_types
-            )
-            if signature is None:
-                raise SurfaceLoweringError(
-                    "requirement must resolve to one ontology record type before lowering",
-                    code="unresolved_requirement",
-                    clause_index=index,
-                )
-            if signature not in emitted:
+            for requirement in clause.broker_requirements():
+                signature = _requirement_signature(surface, requirement, record_types)
+                if signature is None:
+                    raise SurfaceLoweringError(
+                        "requirement must resolve to one ontology record type before lowering",
+                        code="unresolved_requirement", clause_index=index,
+                    )
+                if signature in emitted:
+                    continue
                 if signature == stop_before:
                     return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
                 for step in _lower_requirements(
-                    surface,
-                    clause,
-                    clause_index=index,
-                    record_types=record_types,
+                    surface, requirement, clause_index=index, record_types=record_types,
                     semantic_paths=semantic_paths, graph=graph,
                 ):
                     if step not in steps:
@@ -1033,25 +1046,23 @@ def _lower_fragment_intent(
             )
             continue
         if isinstance(clause, RequirementClause):
-            requested = _lower_requirements(
-                context,
-                clause,
-                clause_index=index,
-                record_types=record_types,
-                semantic_paths=semantic_paths, graph=graph,
-            )
-            if _requirement_signature(context, clause, record_types) == stop_before:
-                step = requested[0]
-                prefix = steps[:steps.index(step)] if step in steps else steps
-                if not prefix:
-                    raise SurfaceLoweringError(
-                        "existing retrieval has no earlier discovery context",
-                        code="missing_requirement_occurrence",
-                    )
-                return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
-            for step in requested:
-                if step not in steps:
-                    steps.append(step)
+            for requirement in clause.broker_requirements():
+                requested = _lower_requirements(
+                    context, requirement, clause_index=index, record_types=record_types,
+                    semantic_paths=semantic_paths, graph=graph,
+                )
+                if _requirement_signature(context, requirement, record_types) == stop_before:
+                    step = requested[0]
+                    prefix = steps[:steps.index(step)] if step in steps else steps
+                    if not prefix:
+                        raise SurfaceLoweringError(
+                            "existing retrieval has no earlier discovery context",
+                            code="missing_requirement_occurrence",
+                        )
+                    return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
+                for step in requested:
+                    if step not in steps:
+                        steps.append(step)
             if clause.predicates:
                 noun = resolve_record_type(clause.product, record_types)
                 assert noun is not None
