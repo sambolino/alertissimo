@@ -145,7 +145,10 @@ def test_recorded_ztf_time_range_prunes_before_global_latest_selection(graph, mo
     assert len(calls) == 3  # includes a row excluded by the residual upper bound
     assert all(params["lastmjd"] == [61000.0] and params["order_by"] == "lastmjd" for params in calls)
     plan, = result.run.steps[0].endpoint_plans
-    assert plan.predicate_realization.residual.operator == "<="
+    assert plan.predicate_realization.pushdown == predicate(value=61000)
+    # Native selection identifies objects, not a particular summary assertion.
+    # Keep both bounds for one-record rechecking before global latest.
+    assert plan.predicate_realization.residual == result.workflow.steps[0].predicate
 
 
 def test_rubin_reported_mjd_residuals_preserve_two_classifier_rows_for_one_object(graph, monkeypatch):
@@ -203,13 +206,32 @@ def test_rubin_within_stays_deferred_without_its_own_time_scale_contract(graph, 
         plan_step(search(origin, time_context=TimeContext(window=timedelta(days=7), relative_to="now")), graph)
 
 
-def test_missing_class_operator_and_wrong_channel_do_not_gain_pushdown(graph):
-    for operator, channel in (("!=", None), ("=", "fink")):
-        condition = ComparisonPredicate(operator=operator, left=SemanticReference(
-            semantic_type="classification", producer="lc_classifier", channel=channel, field_path="best.class"),
-            right=PredicateLiteral(value="SN"))
-        plan, = plan_step(search("ztf", predicate=condition), graph)
-        assert plan.predicate_realization.params == {} and plan.predicate_realization.residual == condition
+def test_unsupported_class_operator_remains_a_local_residual(graph):
+    condition = ComparisonPredicate(operator="!=", left=SemanticReference(
+        semantic_type="classification", producer="lc_classifier", field_path="best.class"),
+        right=PredicateLiteral(value="SN"))
+    plan, = plan_step(search("ztf", predicate=condition), graph)
+    assert plan.predicate_realization.params == {} and plan.predicate_realization.residual == condition
+
+
+def test_wrong_channel_classification_is_rejected_before_transport(graph, monkeypatch):
+    condition = ComparisonPredicate(operator="=", left=SemanticReference(
+        semantic_type="classification", producer="lc_classifier", channel="fink", field_path="best.class"),
+        right=PredicateLiteral(value="SN"))
+    with pytest.raises(PlanningDeferredError, match="classification@lc_classifier:fink.best.class"):
+        plan_step(search("ztf", predicate=condition), graph)
+    client = RecordedClient("ztf")
+    # Public compilation rejects the unavailable classifier recipe before the
+    # planner's residual-material guard is reached.
+    with pytest.raises(SurfaceLoweringError, match="no classification recipe maps the requested classifier") as caught:
+        execute_dsl(
+            'objects from ztf via alerce\n'
+            'where classification@lc_classifier:fink.best.class = "SN"\n',
+            graph=graph, executor=install_client(monkeypatch, client), continue_from=None,
+        )
+    assert caught.value.code == "unsupported_capability"
+    assert caught.value.clause_index == 0
+    assert client.calls == []
 
 
 def test_operational_pagination_limit_is_not_silent_search_truncation(graph, monkeypatch):

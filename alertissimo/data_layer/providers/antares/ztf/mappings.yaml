@@ -79,81 +79,81 @@ mappings:
   - locus_by_id#dec
   - search_loci#dec
   - cone_loci#dec
-  detection@ztf:antares.identity.alert_id:
+  measurement@ztf:antares.identity.alert_id:
   - locus_alerts#alert_id
-  detection@ztf:antares.identity.source_id:
+  measurement@ztf:antares.identity.source_id:
   - locus_alerts#properties.ztf_candid
-  detection@ztf:antares.identity.object_id:
+  measurement@ztf:antares.identity.object_id:
   - locus_alerts#properties.ztf_object_id
-  detection@ztf:antares.time.mjd:
+  measurement@ztf:antares.time.mjd:
   - locus_alerts#mjd
-  detection@ztf:antares.position.ra:
+  measurement@ztf:antares.position.ra:
   - locus_alerts#properties.ant_ra
-  detection@ztf:antares.position.dec:
+  measurement@ztf:antares.position.dec:
   - locus_alerts#properties.ant_dec
-  detection@ztf:antares.photometry.{filter}:
+  measurement@ztf:antares.photometry.{filter}:
   - locus_alerts#properties.ant_passband
-  detection@ztf:antares.photometry.{filter}.psf.mag:
+  measurement@ztf:antares.photometry.{filter}.psf.mag:
   - locus_alerts#properties.ant_mag
-  detection@ztf:antares.photometry.{filter}.psf.mag.error:
+  measurement@ztf:antares.photometry.{filter}.psf.mag.error:
   - locus_alerts#properties.ant_magerr
-  detection@ztf:antares.photometry.{filter}.limit.mag:
+  measurement@ztf:antares.photometry.{filter}.limit.mag:
   - locus_alerts#properties.ant_maglim
-  detection@ztf:antares.photometry.{filter}.upper_limit:
+  measurement@ztf:antares.photometry.{filter}.upper_limit:
   - locus_alerts#properties.ant_survey
-  detection@ztf:antares.photometry.{filter}.aperture.mag:
+  measurement@ztf:antares.photometry.{filter}.aperture.mag:
   - locus_alerts#properties.ztf_magap
-  detection@ztf:antares.photometry.{filter}.aperture.mag.error:
+  measurement@ztf:antares.photometry.{filter}.aperture.mag.error:
   - locus_alerts#properties.ztf_sigmagap
-  detection@ztf:antares.photometry.{filter}.aperture.large.mag:
+  measurement@ztf:antares.photometry.{filter}.aperture.large.mag:
   - locus_alerts#properties.ztf_magapbig
-  detection@ztf:antares.photometry.{filter}.aperture.large.mag.error:
+  measurement@ztf:antares.photometry.{filter}.aperture.large.mag.error:
   - locus_alerts#properties.ztf_sigmagapbig
-  detection@ztf:antares.time.exposure:
+  measurement@ztf:antares.time.exposure:
   - locus_alerts#properties.ztf_exptime
-  detection@ztf:antares.calibration.{filter}.zero_point:
+  measurement@ztf:antares.calibration.{filter}.zero_point:
   - locus_alerts#properties.ztf_magzpsci
-  detection@ztf:antares.calibration.{filter}.zero_point_uncertainty:
+  measurement@ztf:antares.calibration.{filter}.zero_point_uncertainty:
   - locus_alerts#properties.ztf_magzpsciunc
-  detection@ztf:antares.calibration.{filter}.zero_point_rms:
+  measurement@ztf:antares.calibration.{filter}.zero_point_rms:
   - locus_alerts#properties.ztf_magzpscirms
-  detection@ztf:antares.calibration.{filter}.color_coefficient:
+  measurement@ztf:antares.calibration.{filter}.color_coefficient:
   - locus_alerts#properties.ztf_clrcoeff
-  detection@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
+  measurement@ztf:antares.calibration.{filter}.color_coefficient_uncertainty:
   - locus_alerts#properties.ztf_clrcounc
-  detection@ztf:antares.provenance.processing_id:
+  measurement@ztf:antares.provenance.processing_id:
   - locus_alerts#properties.ztf_pid
-  detection@ztf:antares.provenance.night_id:
+  measurement@ztf:antares.provenance.night_id:
   - locus_alerts#properties.ztf_nid
-  detection@ztf:antares.provenance.reference_image_id:
+  measurement@ztf:antares.provenance.reference_image_id:
   - locus_alerts#properties.ztf_rfid
-  detection@ztf:antares.provenance.producer.program.field:
+  measurement@ztf:antares.provenance.producer.program.field:
   - locus_alerts#properties.ztf_field
-  detection@ztf:antares.provenance.producer.program.id:
+  measurement@ztf:antares.provenance.producer.program.id:
   - locus_alerts#properties.ztf_programid
-  detection@ztf:antares.quality.rf_real_bogus:
+  measurement@ztf:antares.quality.rf_real_bogus:
   - locus_alerts#properties.ztf_rb
-  detection@ztf:antares.quality.rf_real_bogus.version:
+  measurement@ztf:antares.quality.rf_real_bogus.version:
   - locus_alerts#properties.ztf_rbversion
-  detection@ztf:antares.quality.real_bogus:
+  measurement@ztf:antares.quality.real_bogus:
   - locus_alerts#properties.ztf_drb
-  detection@ztf:antares.quality.real_bogus.version:
+  measurement@ztf:antares.quality.real_bogus.version:
   - locus_alerts#properties.ztf_drbversion
-  detection@ztf:antares.image_metrics.is_positive:
+  measurement@ztf:antares.image_metrics.is_positive:
   - locus_alerts#properties.ztf_isdiffpos
-  detection@ztf:antares.reference_image.nearest_source.separation.total:
+  measurement@ztf:antares.reference_image.nearest_source.separation.total:
   - locus_alerts#properties.ztf_distnr
-  detection@ztf:antares.reference_image.nearest_source.position.ra:
+  measurement@ztf:antares.reference_image.nearest_source.position.ra:
   - locus_alerts#properties.ztf_ranr
-  detection@ztf:antares.reference_image.nearest_source.position.dec:
+  measurement@ztf:antares.reference_image.nearest_source.position.dec:
   - locus_alerts#properties.ztf_decnr
-  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
+  measurement@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag:
   - locus_alerts#properties.ztf_magnr
-  detection@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag.error:
+  measurement@ztf:antares.reference_image.nearest_source.photometry.{filter}.mag.error:
   - locus_alerts#properties.ztf_sigmagnr
-  detection@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
+  measurement@ztf:antares.reference_image.nearest_source.image_metrics.fit_chi:
   - locus_alerts#properties.ztf_chinr
-  detection@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
+  measurement@ztf:antares.reference_image.nearest_source.image_metrics.sharpness:
   - locus_alerts#properties.ztf_sharpnr
   lightcurve@ztf:antares.points.identity.alert_id:
   - locus_alerts#alert_id
@@ -304,7 +304,7 @@ transforms:
       default: null
       skip_null: true
       note: 'ANTARES survey discriminator: candidate=1, upper limit=2.'
-  detection@ztf:antares.photometry.{filter}:
+  measurement@ztf:antares.photometry.{filter}:
     locus_alerts#properties.ant_passband:
       type: value_map
       map:
@@ -313,7 +313,7 @@ transforms:
       default: null
       skip_null: true
       note: Strict authoritative ANTARES passband normalization.
-  detection@ztf:antares.photometry.{filter}.upper_limit:
+  measurement@ztf:antares.photometry.{filter}.upper_limit:
     locus_alerts#properties.ant_survey:
       type: value_map
       map:
@@ -322,7 +322,7 @@ transforms:
       default: null
       skip_null: true
       note: 'ANTARES survey discriminator: candidate=1, upper limit=2.'
-  detection@ztf:antares.image_metrics.is_positive:
+  measurement@ztf:antares.image_metrics.is_positive:
     locus_alerts#properties.ztf_isdiffpos:
       type: value_map
       map:

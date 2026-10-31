@@ -11,13 +11,19 @@ from alertissimo.data_layer.runtime.capability_graph import (
     canonical_semantic_path,
 )
 from alertissimo.data_layer.transforms.sql import numeric_comparison
+from alertissimo.data_layer.transforms.elasticsearch import (
+    conjoin as conjoin_elasticsearch,
+    numeric_comparison as elasticsearch_numeric_comparison,
+)
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
+    ExistsPredicate,
     Predicate,
     PredicateLiteral,
     SemanticReference,
     and_predicates,
+    iter_semantic_references,
 )
 from alertissimo.orchestration.runtime.models import PredicateRealization
 
@@ -147,6 +153,14 @@ def _atomic_pushdown(
             )
         except (ValueError, OverflowError):
             return PredicateRealization(residual=predicate)
+    if field_constraint.elasticsearch_field is not None:
+        try:
+            params[field_constraint.parameter] = elasticsearch_numeric_comparison(
+                field_constraint.elasticsearch_field, operator, value,
+                identity_field=field_constraint.elasticsearch_identity,
+            )
+        except (ValueError, OverflowError):
+            return PredicateRealization(residual=predicate)
     return PredicateRealization(
         pushdown=predicate, params=params, residual=None if exact else predicate,
     )
@@ -189,6 +203,10 @@ def _realize_predicate(
         )
         for name, value in realization.params.items():
             if name in params and params[name] != value:
+                if any(item.parameter == name and item.elasticsearch_field is not None
+                       for matches in lookup.values() for item in matches):
+                    params[name] = conjoin_elasticsearch(params[name], value)
+                    continue
                 if any(item.parameter == name and item.sql_column is not None
                        for matches in lookup.values() for item in matches):
                     # SQL conditions form a conjunction; range bounds do not
@@ -215,20 +233,36 @@ def realize_predicate(
     predicate: Predicate, *, endpoint: EndpointCapability, graph: CapabilityGraph,
     constraints: tuple[RequestConstraintCapability, ...] | None = None,
 ) -> PredicateRealization:
-    """Realize declared filters, including a bounded numeric SQL conjunction.
+    """Realize declared filters, including numeric SQL/Elasticsearch conjunctions.
 
-    SQL admits only completely translated comparisons/conjunctions. Unsupported
+    Structured queries admit only fully translated comparisons/conjunctions. Unsupported
     types, qualifiers, OR/NOT, or leaves cannot silently broaden discovery. The
     existing required-parameter check then defers the missing conditions before
-    binding. SQL results retain a full normalized recheck as scientific evidence.
+    binding. These results retain a full normalized recheck as scientific evidence.
     """
     available = constraints if constraints is not None else graph.request_constraints_for(
         endpoint.broker, endpoint.origin, endpoint.endpoint,
     )
     sql = tuple(item for item in available if item.sql_column is not None
                 and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
+    structured = tuple(item for item in available if item.elasticsearch_field is not None
+                       and (item.broker, item.origin, item.endpoint) == (endpoint.broker, endpoint.origin, endpoint.endpoint))
     result = _realize_predicate(predicate, endpoint=endpoint, graph=graph, constraints=constraints)
-    if not sql:
+    if not sql and not structured:
+        if result.pushdown is not None and result.residual is not None:
+            pushed = {
+                (ref.semantic_type, ref.producer, ref.channel)
+                for ref in iter_semantic_references(result.pushdown)
+            }
+            residual = {
+                (ref.semantic_type, ref.producer, ref.channel)
+                for ref in iter_semantic_references(result.residual)
+            }
+            if pushed & residual:
+                # Native object selection does not bind an individual returned
+                # assertion. Recheck the original conjunction locally so a
+                # different class/version/measurement cannot supply its score.
+                return result.model_copy(update={"residual": predicate})
         return result
     if result.residual is not None or result.pushdown is None:
         return PredicateRealization(residual=predicate)
@@ -239,7 +273,13 @@ def realize_predicate(
             if len(ordering) != 1 or None in ordering:
                 return PredicateRealization(residual=predicate)
             params[parameter] += " ORDER BY " + next(iter(ordering))
-    return PredicateRealization(pushdown=result.pushdown, params=params, residual=predicate)
+    residual = predicate
+    if any(item.elasticsearch_identity is not None and item.parameter in params for item in structured):
+        residual = and_predicates((predicate, ExistsPredicate(reference=SemanticReference(
+            semantic_type="summary", field_path="identity.object_id",
+            producer=endpoint.origin, channel=endpoint.broker,
+        ))))
+    return PredicateRealization(pushdown=result.pushdown, params=params, residual=residual)
 
 
 __all__ = ["realize_predicate"]

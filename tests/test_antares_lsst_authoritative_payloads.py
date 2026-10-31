@@ -30,7 +30,7 @@ def test_authoritative_alert_semantics_and_aliases():
  assert all(a['mjd']==a['properties']['ant_mjd']==a['properties']['lsst_diaSource_midpointMjdTai'] for a in alerts)
  assert all(a['properties']['ant_ra']==a['properties']['lsst_diaSource_ra'] and a['properties']['ant_dec']==a['properties']['lsst_diaSource_dec'] for a in alerts)
  assert all(a['properties']['ant_maglim']==a['properties']['ant_mag'] for a in alerts)
- p=build('get_by_lsst_dia_object_id',rich_locus());ds=records(p,'detection@lsst:antares');assert len(ds)==16
+ p=build('get_by_lsst_dia_object_id',rich_locus());ds=records(p,'measurement@lsst:antares');assert len(ds)==16
  sf=dict(records(p,'summary@lsst:antares')[0].fields);assert sf['identity.object_id']==170587117485817955 and isinstance(sf['identity.object_id'],int) and sf['identity.antares_locus_id']=='ANT2026rq61krn5dipt';assert 'detection_count' not in sf and not any(k.startswith('time.') for k in sf)
  assert all(dict(d.fields)['identity.object_id']==170587117485817955 and isinstance(dict(d.fields)['identity.object_id'],int) for d in ds)
  index=next(i for i,a in enumerate(alerts) if a['properties'].get('lsst_diaSource_reliabilityVersion') is not None and a['properties'].get('lsst_diaSource_trailAlgorithm') is not None)
@@ -48,27 +48,27 @@ def test_authoritative_alert_semantics_and_aliases():
  assert f[f'forced_photometry.{band}.psf.flags.edge'] is props['lsst_diaSource_forced_PsfFlux_flag_edge']
  assert f[f'forced_photometry.{band}.psf.flags.no_good_pixels'] is props['lsst_diaSource_forced_PsfFlux_flag_noGoodPixels']
 def test_strict_unknown_band_is_omitted():
- x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
+ x=rich_locus();x['alerts']=[copy.deepcopy(x['alerts'][0])];x['alerts'][0]['properties']['lsst_diaSource_band']='X';f=dict(records(build('get_by_lsst_dia_object_id',x),'measurement@lsst:antares')[0].fields);assert not any(k.startswith(('photometry.','calibration.')) or '{filter}' in k or 'photometry.X' in k for k in f)
 def test_optional_ss_object_id_suppresses_zero_and_preserves_integer():
  x=rich_locus()
- detections=records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')
+ detections=records(build('get_by_lsst_dia_object_id',x),'measurement@lsst:antares')
  assert all('solar_system.identity.object_id' not in d.fields for d in detections)
 
  row=copy.deepcopy(x['alerts'][0])
  row['properties']['lsst_diaSource_ssObjectId']=123456789
  x['alerts']=[row]
- fields=dict(records(build('get_by_lsst_dia_object_id',x),'detection@lsst:antares')[0].fields)
+ fields=dict(records(build('get_by_lsst_dia_object_id',x),'measurement@lsst:antares')[0].fields)
  assert fields['solar_system.identity.object_id']==123456789
  assert type(fields['solar_system.identity.object_id']) is int
 def test_lightcurve_is_fixture_only_and_lazy_untouched():
  light=fixture('lightcurve.json');cols={k for r in light for k in r};debt=yaml.safe_load((FIXTURES/'lightcurve_secondary_debt.yaml').read_text())['lightcurve_secondary'];assert len(light)==16 and len(cols)==14 and cols==set(debt);assert all(v['reason']=='secondary_duplicate_representation' for v in debt.values())
  registry=yaml.safe_load(MAPPINGS.read_text());assert all('lightcurve' not in d['path'] for d in registry['payloads'].values())
- portfolio=build('get_by_lsst_dia_object_id',LazyLocus(rich_locus()));assert len(records(portfolio,'detection@lsst:antares'))==16
+ portfolio=build('get_by_lsst_dia_object_id',LazyLocus(rich_locus()));assert len(records(portfolio,'measurement@lsst:antares'))==16
  lightcurves=records(portfolio,'lightcurve@lsst:antares');assert len(lightcurves)==1;assert len(lightcurves[0].fields['points'])==16
  assert 'forced_photometry_points' not in lightcurves[0].fields
 def test_catalog_probe_direct_rows_zero_unaccounted_and_no_edges():
  x=rich_locus(True);report=audit_payload(x,broker='antares',origin='lsst',endpoint='get_by_lsst_dia_object_id');assert 'Unaccounted leaves: 0' in report
- p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'detection@lsst:antares'))==16 and p.edges==()
+ p=build('get_by_lsst_dia_object_id',x);assert {r.semantic_type for r in p.records if r.semantic_type.startswith('crossmatch@')}=={'crossmatch@allwise:antares','crossmatch@gsc:antares','crossmatch@gaia:antares','crossmatch@gaia_variability:antares','crossmatch@milliquas:antares','crossmatch@ned:antares'};assert len(records(p,'measurement@lsst:antares'))==16 and p.edges==()
  gaia=[dict(r.fields) for r in records(p,'crossmatch@gaia:antares')]
  expected={'color.BP-RP.diff':0.6110668,'color.BP-G.diff':0.053186417,'color.G-RP.diff':0.5578804,'classification.assessment.gaia_dsc_galaxy.probability':1.3322759e-08,'classification.assessment.gaia_dsc_quasar.probability':0.97776324,'classification.assessment.gaia_dsc_star.probability':0.022236746}
  assert any(all(row.get(key)==value for key,value in expected.items()) for row in gaia)
@@ -90,7 +90,7 @@ def test_promoted_antares_features_have_locus_surface_parity():
 def test_historical_diaobject_snapshots_and_antares_feature_producer():
  alerts=fixture('alerts.json');p=build('get_by_lsst_dia_object_id',rich_locus())
  snapshots=[dict(r.fields) for r in records(p,'summary@lsst:antares') if 'time.snapshot_mjd' in dict(r.fields)]
- assert len(records(p,'detection@lsst:antares'))==len(snapshots)==16
+ assert len(records(p,'measurement@lsst:antares'))==len(snapshots)==16
  expected=['identity.object_id','time.snapshot_mjd','position.ra','position.dec','position.ra_error','position.dec_error','position.ra_dec_covariance','detection_count']
  for raw,snapshot in zip(alerts,snapshots,strict=True):
   props=raw['properties'];assert all(k in snapshot for k in expected)

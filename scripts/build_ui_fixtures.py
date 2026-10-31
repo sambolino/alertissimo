@@ -129,10 +129,10 @@ def _build_real(name: str, broker: str, survey: str, inputs: list[tuple[str, Pat
 
 
 def portfolio_families() -> tuple[str, ...]:
-    """Mechanically read the first-level record references in ``<portfolio>``."""
-    source = ONTOLOGY.read_text(encoding="utf-8")
-    block = source.split("<portfolio>:", 1)[1]
-    return tuple(re.findall(r"^  \$refs: <([^>]+)>", block, re.MULTILINE))
+    """Read concrete Portfolio records, including abstract-family descendants."""
+    from alertissimo.data_layer.semantic_model import SemanticPathModel
+
+    return tuple(sorted(SemanticPathModel.from_ontology(ONTOLOGY).concrete_record_types))
 
 
 def _gallery(real: list[Portfolio]) -> Portfolio:
@@ -215,7 +215,7 @@ def build_corpus(output: Path = DEFAULT_OUTPUT) -> dict[str, Portfolio]:
     corpus["minimal_summary_real.json"] = _single("minimal_summary_real", next(
         r for r in source.records if r.semantic_type.startswith("summary@")), source)
     corpus["minimal_detection_real.json"] = _single("minimal_detection_real", next(
-        r for r in source.records if r.semantic_type.startswith("detection@")), source)
+        r for r in source.records if r.semantic_type.startswith("measurement@")), source)
     corpus["semantic_gallery_synthetic.json"] = _gallery(list(corpus.values()))
     for name, portfolio in corpus.items():
         (output / name).write_text(portfolio_to_json(portfolio) + "\n", encoding="utf-8")

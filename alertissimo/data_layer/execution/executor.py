@@ -29,6 +29,22 @@ class ExecutionPolicyLimitError(EndpointPaginationError):
 
 
 class RegistryEndpointExecutor:
+    @staticmethod
+    def _check_required_matrices(spec: EndpointSpec, result: TransportResult) -> None:
+        """Guard opt-in JSON image products without modifying their pixels."""
+        if not spec.required_matrices:
+            return
+        context = f"{spec.broker}/{spec.origin}/{spec.endpoint}"
+        if not isinstance(result.payload, Mapping):
+            raise ValueError(f"{context}: required matrices need a JSON object response")
+        for name in spec.required_matrices:
+            matrix = result.payload.get(name)
+            if (not isinstance(matrix, (list, tuple)) or not matrix
+                or not isinstance(matrix[0], (list, tuple)) or not matrix[0]
+                or any(not isinstance(row, (list, tuple)) or len(row) != len(matrix[0]) for row in matrix)
+                or any(value is not None and type(value) not in (int, float) for row in matrix for value in row)):
+                raise ValueError(f"{context}: missing or malformed required matrix {name!r}")
+
     def __init__(
         self,
         registry: EndpointRegistry | None = None,
@@ -501,6 +517,7 @@ class RegistryEndpointExecutor:
                 caller_supplied_page=caller_supplied_page,
             )
         self._check_result_limit(spec, transport_result, result_limit)
+        self._check_required_matrices(spec, transport_result)
         elapsed_ms = (perf_counter() - timer) * 1000
         finished = datetime.now(timezone.utc)
         provenance = InternalExecutionProvenance(

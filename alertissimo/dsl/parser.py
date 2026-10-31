@@ -143,6 +143,10 @@ class _SurfaceTransformer(Transformer):
     def via_clause(self, items):
         return "via", str(items[0]).lower()
 
+    def requirement_via(self, items):
+        brokers = items[0]
+        return ("via", brokers[0]) if len(brokers) == 1 else ("brokers", brokers)
+
     def from_clause(self, items):
         return "from", str(items[0]).lower()
 
@@ -230,6 +234,7 @@ class _SurfaceTransformer(Transformer):
             product=product,
             source=qualifiers.get("from"),
             via=qualifiers.get("via"),
+            brokers=qualifiers.get("brokers", ()),
             method=qualifiers.get("using"),
         )
 
@@ -356,7 +361,9 @@ def _preflight_structure(script: str) -> None:
                     "only one general where clause is allowed",
                     line=line_no,
                 )
-            if with_seen:
+            # Named candidates can be selected after their initial retrievals.
+            # Discovery scheduling remains constrained until material-aware planning.
+            if with_seen and lookup_prefix is None:
                 raise DSLParseError(
                     "general where must precede with clauses; scoped with predicates "
                     "must be inline as 'with <requirement> where <expression>'",

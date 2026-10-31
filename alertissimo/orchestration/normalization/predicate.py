@@ -7,6 +7,7 @@ Portfolios without changing the semantic condition itself.
 
 from __future__ import annotations
 
+import math
 import operator
 from typing import Any
 
@@ -71,41 +72,30 @@ def _record_value(record: SemanticRecord, reference: SemanticReference, portfoli
     return record.get(reference.field_path, _MISSING)
 
 
-def _compare(left: Any, operator_name: str, right: Any) -> bool:
-    if left is _MISSING or right is _MISSING:
-        return False
+def _available(value: Any) -> bool:
+    return value is not _MISSING and value is not None and not (
+        isinstance(value, float) and not math.isfinite(value)
+    )
+
+
+def _compare(left: Any, operator_name: str, right: Any) -> bool | None:
+    """None is unavailable evidence, and must remain unavailable under NOT."""
+    if not _available(left) or not _available(right):
+        return None
+    numeric = (int, float)
+    if isinstance(left, bool) or isinstance(right, bool):
+        compatible = isinstance(left, bool) and isinstance(right, bool)
+    else:
+        compatible = (
+            isinstance(left, numeric) and isinstance(right, numeric)
+            or isinstance(left, str) and isinstance(right, str)
+        )
+    if not compatible:
+        return None
     try:
         return bool(_COMPARATORS[operator_name](left, right))
     except (TypeError, ValueError):
-        return False
-
-
-def _operand_on_record(operand, record: SemanticRecord, portfolio: Portfolio) -> Any:
-    if isinstance(operand, PredicateLiteral):
-        return operand.value
-    return _record_value(record, operand, portfolio)
-
-
-def _evaluate_on_record(predicate: Predicate, record: SemanticRecord, portfolio: Portfolio) -> bool:
-    if isinstance(predicate, ComparisonPredicate):
-        return _compare(
-            _operand_on_record(predicate.left, record, portfolio),
-            predicate.operator,
-            _operand_on_record(predicate.right, record, portfolio),
-        )
-    if isinstance(predicate, ExistsPredicate):
-        return _record_value(record, predicate.reference, portfolio) is not _MISSING
-    if isinstance(predicate, NotPredicate):
-        return not _evaluate_on_record(predicate.operand, record, portfolio)
-    if isinstance(predicate, BooleanPredicate):
-        values = (_evaluate_on_record(item, record, portfolio) for item in predicate.operands)
-        return all(values) if predicate.operator == "and" else any(values)
-    return False
-
-
-def _single_selector(predicate: Predicate):
-    selectors = {_selector(ref) for ref in iter_semantic_references(predicate)}
-    return next(iter(selectors)) if len(selectors) == 1 else None
+        return None
 
 
 def _matching_records(
@@ -120,50 +110,80 @@ def _matching_records(
     return tuple(record for record in portfolio.records if _record_matches(record, probe, portfolio))
 
 
-def _values(portfolio: Portfolio, operand) -> tuple[Any, ...]:
-    if isinstance(operand, PredicateLiteral):
-        return (operand.value,)
-    return tuple(
-        value
-        for record in portfolio.records
-        for value in [_record_value(record, operand, portfolio)]
-        if value is not _MISSING
-    )
-
-
 def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> bool:
     """Return whether a normalized candidate Portfolio satisfies ``predicate``.
 
-    When a predicate subtree references one semantic record selector, it is
-    evaluated against individual matching records so conjunctive fields remain
-    correlated to the same semantic assertion instead of being satisfied by
-    unrelated records.
+    Bind one record per exact (noun, producer, channel) selector for the whole
+    expression, independent of Boolean grouping. Repeated fields therefore
+    belong to the same assertion even in a mixed classification/summary AND.
+    Different explicitly qualified selectors retain independent witnesses.
+
+    Comparisons use three-valued logic: missing, null, nonfinite and incompatible
+    values are unknown; NOT cannot turn them into evidence. Only True selects.
+    Explicit NOT EXISTS asks about absence in this materialized Portfolio, not
+    absence from an unqueried provider. A partial record cannot establish field
+    absence if another matching record supplies that field.
     """
+    selectors = tuple(dict.fromkeys(_selector(ref) for ref in iter_semantic_references(predicate)))
+    records = {key: _matching_records(portfolio, key) for key in selectors}
+    bound: dict[tuple[str, str | None, str | None], SemanticRecord | None] = {}
 
-    selector = _single_selector(predicate)
-    if selector is not None:
-        return any(
-            _evaluate_on_record(predicate, record, portfolio)
-            for record in _matching_records(portfolio, selector)
-        )
+    def operand_value(operand):
+        if isinstance(operand, PredicateLiteral):
+            return operand.value
+        record = bound.get(_selector(operand))
+        return _MISSING if record is None else _record_value(record, operand, portfolio)
 
-    if isinstance(predicate, ComparisonPredicate):
-        return any(
-            _compare(left, predicate.operator, right)
-            for left in _values(portfolio, predicate.left)
-            for right in _values(portfolio, predicate.right)
-        )
-    if isinstance(predicate, ExistsPredicate):
-        return bool(_values(portfolio, predicate.reference))
-    if isinstance(predicate, NotPredicate):
-        return not evaluate_portfolio_predicate(portfolio, predicate.operand)
-    if isinstance(predicate, BooleanPredicate):
-        values = (
-            evaluate_portfolio_predicate(portfolio, item)
-            for item in predicate.operands
-        )
-        return all(values) if predicate.operator == "and" else any(values)
-    return False
+    def evaluate(node: Predicate, *, negate: bool = False) -> bool | None:
+        if isinstance(node, NotPredicate):
+            return evaluate(node.operand, negate=not negate)
+        if isinstance(node, ExistsPredicate) and negate:
+            # Absence is a property of the complete current view of this
+            # selector, not of whichever partial row is being tried as witness.
+            return not any(
+                _available(_record_value(record, node.reference, portfolio))
+                for record in records[_selector(node.reference)]
+            )
+        if isinstance(node, ComparisonPredicate):
+            value = _compare(operand_value(node.left), node.operator, operand_value(node.right))
+        elif isinstance(node, ExistsPredicate):
+            if _selector(node.reference) not in bound:
+                return None
+            value = _available(operand_value(node.reference))
+        elif isinstance(node, BooleanPredicate):
+            # Applying negation recursively preserves unknown values and also
+            # makes NOT (EXISTS ...) consistent through De Morgan's laws.
+            conjunction = (node.operator == "and") != negate
+            unknown = False
+            for child in node.operands:
+                value = evaluate(child, negate=negate)
+                if value is None:
+                    unknown = True
+                elif value != conjunction:
+                    return value
+            return None if unknown else conjunction
+        else:
+            return None
+        return None if value is None else (not value if negate else value)
+
+    def search(index: int) -> bool:
+        value = evaluate(predicate)
+        if value is not None:
+            return value
+        if index == len(selectors):
+            return False
+        key = selectors[index]
+        # An absent selector must leave OR branches evaluable. Its comparisons
+        # remain unknown; positive existence is false, explicit absence is true.
+        for record in records[key] or (None,):
+            bound[key] = record
+            if search(index + 1):
+                return True
+        del bound[key]
+        return False
+
+    # Search lazily and stop on a proved result; no Cartesian product is stored.
+    return search(0)
 
 
 def prune_portfolios(

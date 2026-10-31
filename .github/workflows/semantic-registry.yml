@@ -2,11 +2,15 @@ name: Semantic registry
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches-ignore:
+      - 'integration/discovery-completion'
     paths:
       - 'alertissimo/data_layer/**'
       - 'alertissimo/orchestration/confirmation/**'
       - 'tests/test_mapping_schema.py'
       - 'tests/test_semantic_paths.py'
+      - 'tests/test_semantic_families.py'
       - 'tests/test_semantic_model_validation.py'
       - 'tests/test_semantic_record_builder.py'
       - 'tests/test_normalization_cardinality.py'
@@ -20,9 +24,11 @@ on:
       - 'tests/test_orchestration_binding.py'
       - 'tests/test_orchestration_capability_validation.py'
       - 'tests/test_orchestration_classification_recipes.py'
+      - 'tests/test_orchestration_fink_lsst_classification.py'
       - 'tests/test_orchestration_crossmatch_capability.py'
       - 'tests/test_orchestration_crossmatch_recipes.py'
       - 'tests/test_orchestration_product_recipes.py'
+      - 'tests/test_orchestration_fink_cutouts.py'
       - 'tests/test_orchestration_predicate_recipes.py'
       - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_orchestration_search_recipes.py'
@@ -48,6 +54,7 @@ on:
       - 'tests/test_alerce_classification_mappings.py'
       - 'tests/test_alerce_lsst_authoritative_payloads.py'
       - 'tests/test_alerce_ztf_authoritative_payloads.py'
+      - 'tests/test_alerce_reference_distance_units.py'
       - 'tests/test_payload_mapping_coverage.py'
       - 'tests/test_ui_fixtures.py'
       - 'examples/build_lasair_portfolio_from_payload.py'
@@ -57,6 +64,7 @@ on:
       - 'scripts/smoke/**'
       - 'tests/test_smoke_scenarios.py'
       - 'tests/test_antares_ztf_authoritative_payloads.py'
+      - 'tests/test_reference_workflow_material.py'
       - 'tests/test_fink_ztf_authoritative_payloads.py'
       - 'tests/test_fink_lsst_authoritative_payloads.py'
       - 'tests/fixtures/fink/**'
@@ -70,6 +78,12 @@ on:
 
 jobs:
   validate:
+    # Keep the integration PR open without rerunning every small squash.
+    # Manual checkpoints and marking the PR ready still run the complete job.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.ref != 'integration/discovery-completion' ||
+      github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,12 +91,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install focused test dependencies
-        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1'
+        run: python -m pip install --disable-pip-version-check pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1' 'lark==1.2.2'
       - name: Run semantic core and Lasair live-capture tests
         run: |
           PYTHONPATH=. pytest -q \
             tests/test_mapping_schema.py \
             tests/test_semantic_paths.py \
+            tests/test_semantic_families.py \
             tests/test_semantic_model_validation.py \
             tests/test_semantic_record_builder.py \
             tests/test_normalization_cardinality.py \
@@ -96,9 +111,11 @@ jobs:
             tests/test_orchestration_binding.py \
             tests/test_orchestration_capability_validation.py \
             tests/test_orchestration_classification_recipes.py \
+            tests/test_orchestration_fink_lsst_classification.py \
             tests/test_orchestration_crossmatch_capability.py \
             tests/test_orchestration_crossmatch_recipes.py \
             tests/test_orchestration_product_recipes.py \
+            tests/test_orchestration_fink_cutouts.py \
             tests/test_orchestration_predicate_recipes.py \
             tests/test_orchestration_selection_recipes.py \
             tests/test_orchestration_search_recipes.py \
@@ -113,6 +130,7 @@ jobs:
             tests/test_endpoint_execution.py \
             tests/test_orchestration_endpoint_pagination.py \
             tests/test_antares_ztf_authoritative_payloads.py \
+            tests/test_reference_workflow_material.py \
             tests/test_fink_ztf_authoritative_payloads.py \
             tests/test_fink_lsst_authoritative_payloads.py \
             tests/test_lasair_registry_architecture.py \
@@ -123,6 +141,7 @@ jobs:
             tests/test_alerce_classification_mappings.py \
             tests/test_alerce_lsst_authoritative_payloads.py \
             tests/test_alerce_ztf_authoritative_payloads.py \
+            tests/test_alerce_reference_distance_units.py \
             tests/test_lasair_lsst_live_capture.py \
             tests/test_lasair_payload_example.py \
             tests/test_lasair_ztf_authoritative_payloads.py \

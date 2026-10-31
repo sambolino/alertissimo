@@ -332,6 +332,14 @@ def _validate_expression_paths(
 
     issues: list[SurfaceValidationIssue] = []
     for reference in iter_references(resolved):
+        if reference.record_type in getattr(model, "abstract_record_types", ()):
+            issues.append(SurfaceValidationIssue(
+                severity=ValidationSeverity.ERROR,
+                code=code,
+                message="abstract families are retrieval requirements; predicates must name a concrete record type",
+                clause_index=clause_index,
+            ))
+            continue
         if (
             reference.record_type is None
             and (reference.producer is not None or reference.channel is not None)
@@ -411,7 +419,7 @@ def validate_surface_semantics(
                             scoped_noun=noun,
                             scoped_producer=clause.source,
                             scoped_channel=(
-                                clause.via or surface.candidates.broker
+                                None if clause.brokers else clause.via or surface.candidates.broker
                             ),
                         )
                     )

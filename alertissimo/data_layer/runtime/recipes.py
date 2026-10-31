@@ -64,13 +64,20 @@ class RecipeParameter:
 
 @dataclass(frozen=True)
 class LatestSelectionCapability:
-    """Order a fully paginated discovery; semantic top-N remains local."""
+    """Prove a fully paginated discovery; semantic top-N remains local."""
 
     broker: str
     origin: str
     endpoint: str
     path: str
     params: tuple[RecipeParameter, ...]
+    call_index: int = 0
+    discovery_identity: str = ""
+    evidence_identity: str = ""
+    recency_field: str = ""
+    history: TimeSelectionCapability | None = None
+    discovery_partition: str | None = None
+    evidence_partition: str | None = None
 
 
 @dataclass(frozen=True)
@@ -100,6 +107,8 @@ class TimeSelectionCapability:
     response_identity: str | None = None
     target_parameter: str | None = None
     target_collection: str | None = None
+    detection_identity: str | None = None
+    reduction: str | None = None
 
 
 @dataclass(frozen=True)
@@ -112,6 +121,7 @@ class RecipeCapability:
     # Input identity namespace; output record families still come from mappings.
     target_kind: str | None = None
     time_selection: TimeSelectionCapability | None = None
+    latest_selection: LatestSelectionCapability | None = None
 
 
 @dataclass(frozen=True)
@@ -384,7 +394,7 @@ def _predicate_bindings(
         for index, raw_binding in enumerate(bindings):
             location = f"{where}[{index}]"
             binding = _mapping(raw_binding, location)
-            _keys(binding, {"path", "operator", "parameter", "values", "exact", "sql"}, {"path", "operator", "parameter"}, location)
+            _keys(binding, {"path", "operator", "parameter", "values", "exact", "sql", "elasticsearch"}, {"path", "operator", "parameter"}, location)
             parameter, path, operator = binding["parameter"], binding["path"], binding["operator"]
             if not isinstance(parameter, str) or parameter not in parameters:
                 raise RecipeRegistryError(f"{location}: parameter must name a declared parameter")
@@ -444,6 +454,40 @@ def _predicate_bindings(
                     raise RecipeRegistryError(f"{location}: SQL subtraction must match the output mapping transform")
                 if binding.get("exact", True) is not True or "values" in binding:
                     raise RecipeRegistryError(f"{location}: numeric SQL bindings require exact comparisons without a values domain")
+            elasticsearch_field = None
+            elasticsearch_identity = None
+            if "elasticsearch" in binding:
+                from ..transforms.elasticsearch import numeric_comparison
+
+                representation = _mapping(binding["elasticsearch"], location)
+                _keys(representation, {"field", "identity_field"}, {"field"}, location)
+                elasticsearch_field = representation["field"]
+                elasticsearch_identity = representation.get("identity_field")
+                if "identity_field" in representation and elasticsearch_identity is None:
+                    raise RecipeRegistryError(f"{location}: Elasticsearch identity field must be a mapped object identity")
+                try:
+                    numeric_comparison(elasticsearch_field, operator, 0, identity_field=elasticsearch_identity)
+                except ValueError as error:
+                    raise RecipeRegistryError(f"{location}: {error}") from error
+                if ("sql" in binding or declaration.get("type") != "dict" or roles or adapter is not None
+                    or binding.get("exact", True) is not True or "values" in binding):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch requires a dict filter, exact numeric comparisons and no other encoder")
+                fields = tuple(item for item in graph.fields_for_endpoint(broker, origin, endpoint)
+                               if canonical_semantic_path(item.semantic_path) == path
+                               and item.raw_field == elasticsearch_field)
+                if not fields:
+                    raise RecipeRegistryError(f"{location}: Elasticsearch field must match the endpoint output mapping")
+                if elasticsearch_identity is not None and not any(
+                    canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+                    and item.raw_field == elasticsearch_identity
+                    for item in graph.fields_for_endpoint(broker, origin, endpoint)
+                ):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch identity field must be a mapped object identity")
+                if any(item.broker == broker and item.origin == origin
+                       and item.semantic_path in {field.semantic_path for field in fields}
+                       and item.raw_ref in {field.raw_ref for field in fields}
+                       for item in graph.transform_capabilities):
+                    raise RecipeRegistryError(f"{location}: Elasticsearch numeric bindings require untransformed output fields")
             exact = binding.get("exact", True)
             if type(exact) is not bool:
                 raise RecipeRegistryError(f"{location}: exact must be boolean")
@@ -460,15 +504,20 @@ def _predicate_bindings(
                 )
             key = (path, operator)
             previous = tuple(item for item in compiled if item.endpoint == endpoint and item.parameter == parameter)
-            if key in seen_constraints or parameter in seen_parameters and (
-                sql_column is None or any(item.sql_column is None or item.sql_order_by != sql_order_by for item in previous)
-            ):
+            same_representation = (
+                sql_column is not None and all(item.sql_column is not None and item.sql_order_by == sql_order_by for item in previous)
+                or elasticsearch_field is not None and all(item.elasticsearch_field is not None
+                    and item.elasticsearch_identity == elasticsearch_identity for item in previous)
+            )
+            if key in seen_constraints or parameter in seen_parameters and not same_representation:
                 raise RecipeRegistryError(f"{location}: duplicate parameter or path/operator binding")
             seen_parameters.add(parameter)
             seen_constraints.add(key)
             compiled.append(RequestConstraintCapability(
                 broker, origin, endpoint, parameter, path, operator, values, exact,
                 sql_column, sql_subtract, sql_order_by,
+                elasticsearch_field,
+                elasticsearch_identity,
             ))
     return tuple(compiled)
 
@@ -476,6 +525,7 @@ def _predicate_bindings(
 def _latest_selections(
     raw: Any, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str, defaults: Mapping[str, Any],
+    predicates: tuple[RequestConstraintCapability, ...],
 ) -> tuple[LatestSelectionCapability, ...]:
     from alertissimo.orchestration.ir.models import SearchSelection
     from .capability_graph import canonical_semantic_path
@@ -507,8 +557,10 @@ def _latest_selections(
             raise RecipeRegistryError(f"{where}: selection requires a mapped object identity")
         spec = _mapping(endpoint_defs[endpoint], where)
         declarations = _mapping(spec.get("params", {}), where)
-        # This matches the executor's existing exhaustive page/page_size contract.
-        if any(
+        # These are the executor's two existing exhaustive pagination contracts.
+        offset_scan = all(_mapping(declarations.get(name, {}), where).get("role") == "pagination"
+                          for name in ("offset", "limit")) and "page" not in declarations
+        if not offset_scan and any(
             _mapping(declarations.get(name, {}), where).get("role") != "pagination"
             for name in ("page", "page_size")
         ):
@@ -529,7 +581,7 @@ def _latest_selections(
             **_mapping(defaults.get("fixed_params", {}), where),
             **_mapping(transport.get("fixed_params", {}), where),
         }
-        if "page" in fixed or fixed.get("count") or _mapping(declarations.get("count", {}), where).get("default"):
+        if "page" in fixed or "offset" in fixed or fixed.get("count") or _mapping(declarations.get("count", {}), where).get("default"):
             raise RecipeRegistryError(f"{where}: latest cannot select one page or a count-only response")
         assignments = []
         for name, raw_assignment in sorted(_mapping(latest["params"], where).items()):
@@ -544,11 +596,104 @@ def _latest_selections(
             assignments.append(RecipeParameter(name, constant))
         values = [item.source.value for item in assignments]
         raw_fields = {item.raw_field for item in fields}
-        if len(values) != 2 or "DESC" not in values or not any(value in raw_fields for value in values if isinstance(value, str)):
+        if offset_scan:
+            # SQL discovery already compiles a mapped identity ORDER BY and a
+            # constant projection. Exhaust it in that stable order, then rank
+            # the whole normalized population locally; never inject top-N SQL.
+            sql = tuple(item for item in predicates if item.endpoint == endpoint and item.sql_column is not None)
+            offset_default = declarations["offset"].get("default", 0)
+            if (assignments or output.get("type") != "array" or not sql
+                or len({item.sql_order_by for item in sql}) != 1
+                or type(offset_default) is not int or offset_default != 0):
+                raise RecipeRegistryError(f"{where}: offset latest requires mapped SQL identity ordering and empty params")
+        elif len(values) != 2 or "DESC" not in values or not any(value in raw_fields for value in values if isinstance(value, str)):
             raise RecipeRegistryError(f"{where}: latest requires the mapped raw ordering field and DESC")
         compiled.append(LatestSelectionCapability(broker, origin, endpoint, path, tuple(assignments)))
     return tuple(compiled)
 
+
+
+def _material_latest(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], graph: CapabilityGraph, where: str) -> LatestSelectionCapability:
+    """Compile complete discovery plus required summary or detection recency."""
+    from .capability_graph import canonical_semantic_path
+    proof = _mapping(raw, where)
+    _keys(proof, {"call", "complete", "history"}, {"call", "complete"}, where)
+    index = proof["call"]
+    if proof["complete"] is not True or type(index) is not int or not 0 < index < len(calls):
+        raise RecipeRegistryError(f"{where}: latest evidence requires complete finite discovery and a later call")
+    root, evidence = calls[0], calls[index]
+    if not root.required or not evidence.required:
+        raise RecipeRegistryError(f"{where}: latest discovery and summary must be required")
+    root_spec, spec = endpoint_defs[root.endpoint], endpoint_defs[evidence.endpoint]
+    if any(p.get("role") in {"pagination", "result_limit"} for p in root_spec.get("params", {}).values()):
+        raise RecipeRegistryError(f"{where}: material latest requires an uncapped finite discovery contract")
+    if "history" in proof:
+        history = _mapping(proof["history"], f"{where}.history")
+        _keys(history, {"payload", "time_scale", "detection_identity"},
+              {"payload", "time_scale", "detection_identity"}, f"{where}.history")
+        # The pinned native iterator exhausts discovery. Histories must be
+        # singular, identity-checked and unfiltered; no top-N enters either call.
+        if root_spec.get("method") != "python" or root_spec.get("output", {}).get("type") != "iterator":
+            raise RecipeRegistryError(f"{where}: history latest requires complete native iterator discovery")
+        if not root.predicate_bindings or any(item.elasticsearch_identity is None for item in root.predicate_bindings):
+            raise RecipeRegistryError(f"{where}: history latest requires identity-scoped discovery predicates")
+        if (len(evidence.params) != 1 or not isinstance(evidence.params[0].source, CallValueSource)
+            or evidence.params[0].source.call_index != 0
+            or evidence.params[0].source.semantic_path != "summary.identity.object_id"
+            or set(spec.get("params", {})) != {evidence.params[0].parameter}
+            or any(p.get("role") in {"pagination", "result_limit"} for p in spec.get("params", {}).values())):
+            raise RecipeRegistryError(f"{where}: history latest requires unfiltered identity-bound history")
+        temporal = _time_selection({**history, "mode": "last", "method": "material", "call": index,
+                                    "complete": True, "reduction": "max"}, calls, endpoint_defs, graph, where)
+        if temporal.response_identity is None or temporal.target_collection is not None:
+            raise RecipeRegistryError(f"{where}: history latest requires singular response identity coverage")
+        identities = {(f.broker, f.origin) for f in root.outputs
+                      if canonical_semantic_path(f.semantic_path) == "summary.identity.object_id"}
+        if len(identities) != 1:
+            raise RecipeRegistryError(f"{where}: history latest requires one discovery identity namespace")
+        broker, origin = identities.pop()
+        root_ids = [f for f in root.outputs if canonical_semantic_path(f.semantic_path) == "summary.identity.object_id"]
+        partitions = [p for p in graph.payload_capabilities if p.broker == broker and p.origin == origin
+                      and p.endpoint == root.endpoint and p.payload_key == root_ids[0].payload_key]
+        if len(root_ids) != 1 or len(partitions) != 1 or partitions[0].partition_mode != "field" or partitions[0].path != "[]":
+            raise RecipeRegistryError(f"{where}: history latest requires one mapped discovery partition")
+        partition_fields = [f for f in root.outputs if f.payload_key == root_ids[0].payload_key
+                            and f.raw_field == partitions[0].partition_field]
+        evidence_fields = [f for f in evidence.outputs if f.payload_path == "." and len(partition_fields) == 1
+                           and f.semantic_path == partition_fields[0].semantic_path]
+        if len(partition_fields) != 1 or len(evidence_fields) != 1:
+            raise RecipeRegistryError(f"{where}: history latest requires mapped matching response partitions")
+        return LatestSelectionCapability(
+            broker, origin, root.endpoint, "measurement.time.mjd", (), index,
+            discovery_identity=root_ids[0].raw_field, evidence_identity=temporal.response_identity,
+            history=temporal, discovery_partition=partition_fields[0].raw_field,
+            evidence_partition=evidence_fields[0].raw_field,
+        )
+    if root_spec.get("output", {}).get("type") != "array" or spec.get("output", {}).get("type") != "array":
+        raise RecipeRegistryError(f"{where}: material latest requires array responses")
+    targets = [p for p in evidence.params if isinstance(p.source, CallValueSource)]
+    if len(targets) != 1 or targets[0].source.call_index != 0:
+        raise RecipeRegistryError(f"{where}: latest summary must consume discovery identities")
+    limit = spec["params"][targets[0].parameter].get("binding", {}).get("max_items")
+    constants = {p.parameter: p.source.value for p in evidence.params if isinstance(p.source, ConstantValueSource)}
+    if type(limit) is not int or limit <= 0 or type(constants.get("limit")) is not int or constants["limit"] < limit or constants.get("offset") != 0:
+        raise RecipeRegistryError(f"{where}: latest summary needs a bounded identity batch and a covering limit with offset zero")
+    projection = constants.get(spec.get("projection", {}).get("param"))
+    if not isinstance(projection, str):
+        raise RecipeRegistryError(f"{where}: latest summary requires a constant projection")
+    columns = {c.strip().split(".")[-1] for c in projection.split(",")}
+    def field(call, path, projected=False):
+        fields = [f for f in call.outputs if canonical_semantic_path(f.semantic_path) == path
+                  and f.semantic_record_type == f"summary@{f.origin}:{f.broker}"
+                  and f.payload_path == "[]" and (not projected or f.raw_field in columns)]
+        if len(fields) != 1:
+            raise RecipeRegistryError(f"{where}: latest requires one projected identity/recency field per response")
+        return fields[0]
+    identity = field(root, "summary.identity.object_id")
+    summary_id = field(evidence, "summary.identity.object_id", True)
+    recency = field(evidence, "summary.time.last_mjd", True)
+    return LatestSelectionCapability(identity.broker, identity.origin, root.endpoint, "summary.time.last_mjd", (),
+                                     index, identity.raw_field, summary_id.raw_field, recency.raw_field)
 
 
 def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[str, Any], graph: CapabilityGraph, where: str) -> TimeSelectionCapability:
@@ -556,7 +701,7 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     from .capability_graph import canonical_semantic_path
 
     proof = _mapping(raw, where)
-    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale"},
+    _keys(proof, {"mode", "method", "call", "payload", "complete", "time_scale", "detection_identity", "reduction"},
           {"mode", "method", "call", "payload", "complete", "time_scale"}, where)
     mode, method, index = proof["mode"], proof["method"], proof["call"]
     if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
@@ -570,8 +715,15 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     payload = proof["payload"]
     if not isinstance(payload, str):
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence")
-    path = "detection.time.mjd" if mode == "detection" else f"summary.time.{mode}_mjd"
-    noun = "detection" if mode == "detection" else "summary"
+    reduction = proof.get("reduction")
+    if "reduction" in proof and (
+        (mode, reduction) not in (("first", "min"), ("last", "max"))
+        or method != "material" or index == 0 or not proof["complete"]
+        or proof.get("detection_identity") != "measurement.identity.source_id"
+    ):
+        raise RecipeRegistryError(f"{where}: reduction requires complete material detection history, source identity and matching first/min or last/max")
+    path = "measurement.time.mjd" if mode == "detection" or reduction else f"summary.time.{mode}_mjd"
+    noun = "measurement" if mode == "detection" or reduction else "summary"
     fields = tuple(item for item in calls[index].outputs if item.payload_key == payload
                    and item.semantic_record_type == f"{noun}@{item.origin}:{item.broker}")
     spec = endpoint_defs[calls[index].endpoint]
@@ -586,8 +738,14 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
             fields = tuple(item for item in fields if item.raw_field in columns)
     if not any(canonical_semantic_path(item.semantic_path) == path for item in fields):
         raise RecipeRegistryError(f"{where}: payload must identify mapped time evidence for {path}")
-    if mode == "detection" and not any(
-        canonical_semantic_path(item.semantic_path).startswith("detection.photometry.")
+    detection_identity = proof.get("detection_identity")
+    if "detection_identity" in proof and (
+        noun != "measurement" or detection_identity != "measurement.identity.source_id"
+        or not any(canonical_semantic_path(item.semantic_path) == detection_identity for item in fields)
+    ):
+        raise RecipeRegistryError(f"{where}: detection_identity requires a mapped source identity in the detection evidence payload")
+    if noun == "measurement" and not any(
+        canonical_semantic_path(item.semantic_path).startswith("measurement.photometry.")
         and item.relative_field_path.endswith((".mag", ".flux"))
         and "limit" not in item.relative_field_path.split(".") for item in fields
     ):
@@ -640,9 +798,20 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
         target_collection = declaration.get("binding", {}).get("collection")
         if target_collection not in (None, "csv") or declaration.get("binding", {}).get("adapter") is not None:
             raise RecipeRegistryError(f"{where}: batched temporal evidence requires direct singular or CSV target encoding")
+    elif index and detection_identity is not None and payload_spec.partition_mode == "single" and spec.get("output", {}).get("type") in {"object", "object_or_null"}:
+        targets = [item for item in calls[index].params if isinstance(item.source, CallValueSource)]
+        identities = [item for item in calls[index].outputs
+                      if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
+                      and item.payload_path == "."]
+        if len(targets) != 1 or len(identities) != 1:
+            raise RecipeRegistryError(f"{where}: single-object temporal evidence requires one mapped root identity and target")
+        declaration = spec["params"][targets[0].parameter]
+        if declaration.get("binding", {}).get("collection") is not None or declaration.get("binding", {}).get("adapter") is not None:
+            raise RecipeRegistryError(f"{where}: single-object temporal evidence requires singular target encoding")
+        response_identity, target_parameter = identities[0].raw_field, targets[0].parameter
     return TimeSelectionCapability(
         mode, method, index, payload, proof["complete"], "utc", paths.pop(), tuple(required_paths),
-        response_identity, target_parameter, target_collection,
+        response_identity, target_parameter, target_collection, detection_identity, reduction,
     )
 
 
@@ -671,7 +840,7 @@ def load_provider_capabilities(
         defaults = _mapping(transport_defaults or {}, "transport_defaults")
         selections = _latest_selections(
             document.get("selection_bindings", {}), graph, endpoint_defs,
-            broker=broker, origin=origin, defaults=defaults,
+            broker=broker, origin=origin, defaults=defaults, predicates=predicates,
         )
         if any(
             binding.endpoint == selection.endpoint
@@ -692,7 +861,7 @@ def load_provider_capabilities(
                 recipe = _mapping(raw_recipe, where)
                 targeted = op in {"lookup", "get_cutout", "get_data_product"}
                 required_keys = {"calls", "target_kind"} if targeted else {"calls"}
-                keys = required_keys | ({"time_selection"} if issubclass(models[op], SearchStep) else set())
+                keys = required_keys | ({"time_selection", "latest_selection"} if issubclass(models[op], SearchStep) else set())
                 _keys(recipe, keys, required_keys, where)
                 raw_temporal = _mapping(recipe["time_selection"], where) if "time_selection" in recipe else {}
                 target_kind = None
@@ -757,6 +926,7 @@ def load_provider_capabilities(
                         raise RecipeRegistryError(f"{call_where}: required call depends on an optional call")
                     if index == 0 and issubclass(models[op], SearchStep):
                         bounds = set()
+                        padded = False
                         for assignment in assignments:
                             if isinstance(assignment.source, ConstantValueSource):
                                 continue
@@ -768,8 +938,12 @@ def load_provider_capabilities(
                                 proof_mode = raw_temporal.get("mode", "detection")
                                 try:
                                     bounds.update(time_binding_bounds(declarations[assignment.parameter], mode=proof_mode))
+                                    options = time_context_declaration(declarations[assignment.parameter]).get("binding", {}).get("adapter_options", {})
+                                    padded = padded or bool(options.get("padding_seconds", 0))
                                 except ValueError as exc:
                                     raise RecipeRegistryError(f"{call_where}: {exc}") from exc
+                        if padded and not raw_temporal:
+                            raise RecipeRegistryError(f"{call_where}: padded discovery bounds require time_selection evidence")
                         material_detection = (
                             raw_temporal.get("mode") == "detection"
                             and raw_temporal.get("method") == "material"
@@ -867,8 +1041,10 @@ def load_provider_capabilities(
                     for call in calls for item in call.params
                 ):
                     raise RecipeRegistryError(f"{where}: candidate-time encoders require time_selection evidence")
+                latest = _material_latest(recipe["latest_selection"], calls, endpoint_defs, graph, where) if "latest_selection" in recipe else None
                 compiled.append(RecipeCapability(
                     broker, origin, op, alternative_index, tuple(calls), target_kind, temporal,
+                    latest,
                 ))
         return ProviderCapabilities(tuple(compiled), predicates, selections)
     except (OSError, yaml.YAMLError, RecipeRegistryError) as exc:

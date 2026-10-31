@@ -184,7 +184,7 @@ def test_documented_object_upper_limit_does_not_fabricate_measured_psf_mag():
     }
     portfolio = _build("object", payload)
     detection = next(
-        r for r in portfolio.records if r.semantic_type == "detection@ztf:lasair"
+        r for r in portfolio.records if r.semantic_type == "measurement@ztf:lasair"
     )
     fields = dict(detection.fields)
     assert fields["time.mjd"] == 59994.351793999784
@@ -198,7 +198,7 @@ def test_lightcurve_surface_keeps_measured_difference_photometry():
     payload = _fixture("lightcurves")
     portfolio = _build("lightcurves", payload)
     detection = next(
-        r for r in portfolio.records if r.semantic_type == "detection@ztf:lasair"
+        r for r in portfolio.records if r.semantic_type == "measurement@ztf:lasair"
     )
     fields = dict(detection.fields)
     assert fields["identity.source_id"] == 1

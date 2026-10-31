@@ -69,7 +69,7 @@ def _mapping(tmp_path, semantic_type: str):
 def test_real_ontology_builds_lexical_index():
     index = load_semantic_model_index()
 
-    assert {"detection", "summary", "classification", "crossmatch"} <= index.containers
+    assert {"measurement", "summary", "classification", "crossmatch"} <= index.containers
     assert "source_id" in index.fields
     assert index.edge_types
     assert {
@@ -95,20 +95,25 @@ def test_portfolio_declares_starter_adjacency_edges():
 def test_temporary_ontology_index_ignores_dynamic_declarations(tmp_path):
     path = tmp_path / "ontology.yaml"
     path.write_text(
-        "# ignored\n<detection>:\n  <_internal>:\n  <{filter}>:\n"
+        "# ignored\n<measurement>:\n  <_internal>:\n  <{filter}>:\n"
         "  [source_id]:\n  [{field}]:\n--followup_of-->:\n",
         encoding="utf-8",
     )
 
     index = load_semantic_model_index(path)
 
-    assert index.containers == frozenset({"detection", "_internal"})
+    assert index.containers == frozenset({"measurement", "_internal"})
     assert index.fields == frozenset({"source_id"})
     assert index.edge_types == frozenset({"--followup_of-->"})
 
 
 def test_valid_portfolio_passes():
-    validate_portfolio_against_semantic_model(_portfolio("detection@ztf:lasair"))
+    validate_portfolio_against_semantic_model(_portfolio("measurement@ztf:lasair"))
+
+
+def test_abstract_enrichment_cannot_be_instantiated():
+    with pytest.raises(SemanticModelValidationError, match="abstract"):
+        validate_portfolio_against_semantic_model(_portfolio("enrichment@ztf:fink"))
 
 
 def test_unknown_record_type_fails():
@@ -118,7 +123,7 @@ def test_unknown_record_type_fails():
 
 def test_record_builder_semantic_validation_is_opt_in(tmp_path):
     ids = count()
-    semantic_type = "detection@ztf:lasair"
+    semantic_type = "measurement@ztf:lasair"
     arguments = {
         "mappings_path": _mapping(tmp_path, semantic_type),
         "internal_portfolio_id": InternalPortfolioId("portfolio:test"),
@@ -139,7 +144,7 @@ def test_record_builder_rejects_ontology_invalid_mapping(tmp_path):
 def test_semantic_enrichment_paths_and_summary_canonical_declaration():
  from alertissimo.data_layer.semantic_model.semantic_paths import SemanticPathModel
  model=SemanticPathModel.from_ontology()
- for path in ('summary@lsst:antares.time.snapshot_mjd','summary@antares.photometry.i.mag.mean','summary@antares.photometry.i.mag.chi2','summary@antares.photometry.i.mag.half_amplitude','summary@antares.photometry.i.mag.maximum_deviation_from_median','summary@antares.photometry.i.mag.excess_kurtosis','summary@antares.photometry.i.flux.chi2','summary@antares.photometry.i.flux.excess_kurtosis','summary@antares.photometry.i.flux.coefficient_of_variation','detection@lsst:antares.photometry.i.flux'):
+ for path in ('summary@lsst:antares.time.snapshot_mjd','summary@antares.photometry.i.mag.mean','summary@antares.photometry.i.mag.chi2','summary@antares.photometry.i.mag.half_amplitude','summary@antares.photometry.i.mag.maximum_deviation_from_median','summary@antares.photometry.i.mag.excess_kurtosis','summary@antares.photometry.i.flux.chi2','summary@antares.photometry.i.flux.excess_kurtosis','summary@antares.photometry.i.flux.coefficient_of_variation','measurement@lsst:antares.photometry.i.flux'):
   assert model.is_valid(path),path
  for path in ('summary@antares.photometry.i.mag.amplitude','summary@antares.photometry.i.mag.percent_amplitude','summary@antares.photometry.i.mag.kurtosis','summary@antares.photometry.i.flux.kurtosis','summary@antares.photometry.i.flux.mean_variance'):
   assert not model.is_valid(path),path

@@ -2,6 +2,9 @@ name: DSL compiler
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches-ignore:
+      - 'integration/discovery-completion'
     paths:
       - 'alertissimo/api.py'
       - 'alertissimo/app_dsl.py'
@@ -23,10 +26,12 @@ on:
       - 'alertissimo/orchestration/validation.py'
       - 'tests/test_dsl_*.py'
       - 'tests/test_api_continuation.py'
+      - 'tests/test_discovery_integration_acceptance.py'
       - 'tests/test_discovery_time_bindings.py'
       - 'tests/test_fink_semantic_search.py'
       - 'tests/test_alerce_semantic_search.py'
       - 'tests/test_lasair_semantic_search.py'
+      - 'tests/test_antares_semantic_search.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_recipe_registry.py'
       - 'tests/test_lasair_ztf_compact_cone_summary.py'
@@ -34,6 +39,7 @@ on:
       - 'scripts/check_release_package.py'
       - 'scripts/live_dsl_complex.py'
       - 'scripts/live_dsl_continuation.py'
+      - 'scripts/live_dsl_discovery.py'
       - 'setup.py'
       - 'pyproject.toml'
       - 'MANIFEST.in'
@@ -42,6 +48,12 @@ on:
 
 jobs:
   validate:
+    # Keep the integration PR open without rerunning every small squash.
+    # Manual checkpoints and marking the PR ready still run the complete job.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.ref != 'integration/discovery-completion' ||
+      github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,10 +70,12 @@ jobs:
           PYTHONPATH=. pytest -q \
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
+            tests/test_discovery_integration_acceptance.py \
             tests/test_discovery_time_bindings.py \
             tests/test_fink_semantic_search.py \
             tests/test_alerce_semantic_search.py \
             tests/test_lasair_semantic_search.py \
+          tests/test_antares_semantic_search.py \
             tests/test_capability_graph.py \
             tests/test_recipe_registry.py \
             tests/test_lasair_ztf_compact_cone_summary.py \

@@ -175,6 +175,8 @@ def _search_recipe_evidence(
     discovery = "cone" if isinstance(step, ConeSearchStep) else "SQL" if isinstance(step, SqlQueryStep) else "semantic search"
     for recipe in declared:
         temporal = recipe.time_selection
+        if recipe.latest_selection is not None and temporal is None and step.selection is None:
+            continue
         context = getattr(step, "time_context", None)
         if temporal is not None and (context is None or context.mode != temporal.mode):
             reasons.append("temporal recipe requires its matching time_context mode")
@@ -469,7 +471,7 @@ def _semantic_record_producer(semantic_record_type: str) -> str | None:
 def _classification_recipe_evidence(
     step: GetClassificationStep, graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
-    """Require targeted retrieval and authored translation of dynamic selectors."""
+    """Validate every required targeted classification call in an authored recipe."""
     declared = graph.query_recipes(
         broker=source.broker if source else None,
         origin=source.origin if source else None, op=step.op,
@@ -488,32 +490,34 @@ def _classification_recipe_evidence(
     choices = [(endpoint, None) for endpoint in legacy]
     raw, reasons = list(legacy), []
     for recipe in declared:
-        call = recipe.calls[0]
-        outputs = tuple(
-            output for output in call.outputs
-            if semantic_record_noun_matches(output.semantic_record_type, "classification")
-        )
-        if not call.required or not outputs:
-            continue
-        endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
-        raw.append(endpoint)
-        paths = {
-            parameter.source.path for parameter in call.params
-            if isinstance(parameter.source, StepValueSource)
-        }
-        if len(recipe.calls) != 1 or any(
-            isinstance(parameter.source, (CallValueSource, EncoderValueSource))
-            for parameter in call.params
+        first = recipe.calls[0]
+        if not first.required or not any(
+            semantic_record_noun_matches(output.semantic_record_type, "classification")
+            for output in first.outputs
         ):
-            reasons.append("classification recipes require one call with direct Step inputs")
             continue
-        if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
-            reasons.append("classification recipe does not bind the target identities")
-            continue
-        if step.classifier is not None:
-            producers = tuple(
-                _semantic_record_producer(output.semantic_record_type) for output in outputs
-            )
+        primary = endpoints[(recipe.broker, recipe.origin, first.endpoint)]
+        raw.append(primary)
+        for call in recipe.calls:
+            endpoint = endpoints[(recipe.broker, recipe.origin, call.endpoint)]
+            outputs = tuple(output for output in call.outputs
+                            if semantic_record_noun_matches(output.semantic_record_type, "classification"))
+            if not call.required or not outputs:
+                reasons.append("each classification recipe call must be required and map classification material")
+                break
+            paths = {
+                parameter.source.path for parameter in call.params
+                if isinstance(parameter.source, StepValueSource)
+            }
+            if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
+                reasons.append("classification recipes require direct Step inputs on every call")
+                break
+            if ("target", "ids") not in paths or "target_id" not in endpoint.binding_roles:
+                reasons.append("classification recipe does not bind the target identities on every call")
+                break
+            if step.classifier is None:
+                continue
+            producers = tuple(_semantic_record_producer(output.semantic_record_type) for output in outputs)
             exact = any(
                 producer is not None and producer.lower() == step.classifier.lower()
                 for producer in producers
@@ -528,13 +532,10 @@ def _classification_recipe_evidence(
                 and parameter.parameter in endpoint.server_filters
                 for parameter in call.params
             )
-            # A targeted response can supply several classifiers. Its mapped
-            # producer identity lets normalization select records locally; it
-            # does not require, or invent, a physical classifier parameter.
+            # Mapped producer identity permits local selection without inventing
+            # a classifier request parameter. Each composed call needs its own proof.
             local_selector = any(
-                output.relative_field_path in {
-                    "provenance.producer.name", "provenance.producer.id",
-                }
+                output.relative_field_path in {"provenance.producer.name", "provenance.producer.id"}
                 and (producer := _semantic_record_producer(output.semantic_record_type)) is not None
                 and _DYNAMIC_QUALIFIER.fullmatch(producer)
                 for output in outputs
@@ -545,8 +546,9 @@ def _classification_recipe_evidence(
                         "requested classifier has only a dynamic producer mapping "
                         "without mapped producer identity or a declared server-filter translation"
                     )
-                continue
-        choices.append((endpoint, recipe))
+                break
+        else:
+            choices.append((primary, recipe))
     if step.target is not None and len(step.target.ids) > 1:
         collection = [
             choice for choice in choices
@@ -939,13 +941,50 @@ def _candidate_evidence_for_source(
         binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
         recipe_index = index - (len(evidence.compatible) - len(evidence.recipes))
         recipe = evidence.recipes[recipe_index] if recipe_index >= 0 else None
+        material_latest = recipe.latest_selection if recipe is not None else None
+        binding = material_latest or binding
         if step.semantic_type != "summary" or binding is None:
             continue
+        if material_latest is not None and material_latest.history is None and step.predicate is not None:
+            # The finite-discovery coverage proof precedes local pruning.
+            # Summary predicates use SQL discovery instead of thin cone IDs.
+            continue
+        temporal = recipe.time_selection if recipe is not None else None
         if step.criteria or getattr(step, "time_context", None) is not None and (
-            recipe is None or recipe.time_selection is None
+            temporal is None or not temporal.complete
         ):
             continue
-        fields = graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        if recipe is not None and (
+            recipe.calls[0].latest_selection is None and material_latest is None
+            or any(item.parameter in {"page", "offset", "count"} for item in recipe.calls[0].params)
+            or len(recipe.calls) > 1 and material_latest is None and (temporal is None or not temporal.complete)
+            or any(
+                source.path[0] == "selection"
+                for call in recipe.calls for item in call.params
+                for source in (tuple(value for _, value in item.source.inputs)
+                               if isinstance(item.source, EncoderValueSource) else (item.source,))
+                if isinstance(source, StepValueSource)
+            )
+        ):
+            continue
+        # Predicates are applied to discovery material before supplementary
+        # calls. A mapping on another call, or outside an authored projection,
+        # cannot establish that this candidate population is fully selected.
+        fields = recipe.calls[0].outputs if recipe is not None else graph.fields_for_endpoint(
+            endpoint.broker, endpoint.origin, endpoint.endpoint
+        )
+        if recipe is not None and endpoint.supports_projection:
+            projection = next((item.source for item in recipe.calls[0].params
+                               if item.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                fields = tuple(item for item in fields if item.raw_field in columns)
+        ranking_fields = recipe.calls[material_latest.call_index].outputs if material_latest is not None else fields
+        if (not any(canonical_semantic_path(item.semantic_path) == "summary.identity.object_id" for item in fields)
+            or not any(canonical_semantic_path(item.semantic_path) == binding.path for item in ranking_fields)):
+            continue
         if step.predicate is not None and any(
             not any(
                 (canonical_semantic_path(item.semantic_path) == reference.ontology_path
@@ -961,18 +1000,13 @@ def _candidate_evidence_for_source(
             for reference in iter_semantic_references(step.predicate)
         ):
             continue
-        if recipe is not None and (
-            len(recipe.calls) != 1 or recipe.calls[0].latest_selection is None
-            or any(item.parameter in {"page", "count"} for item in recipe.calls[0].params)
-        ):
-            continue
         compatible.append(endpoint)
         if recipe is not None:
             recipes.append(recipe)
     return replace(
         evidence, compatible=tuple(compatible), recipes=tuple(recipes),
         empty_status="deferred",
-        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; composite or untranslated populations are deferred",
+        empty_reason="latest requires a declared recency ordering, mapped predicate material, and complete discovery pagination; temporal composites also require complete membership evidence",
     )
 
 
@@ -1166,7 +1200,7 @@ def validate_step_capabilities(
     operation = getattr(step, "op", type(step).__name__)
     semantic_type = getattr(step, "semantic_type", None)
     if isinstance(step, LookupStep):
-        semantic_type = "summary" if step.target.kind == "object" else "detection"
+        semantic_type = "summary" if step.target.kind == "object" else "measurement"
 
     if isinstance(
         step,

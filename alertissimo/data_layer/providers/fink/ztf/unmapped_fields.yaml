@@ -11,10 +11,6 @@ unmapped:
 - anomaly#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
     note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
-- anomaly#i:distnr:
-    reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
-      is angular arcsec. No lossless generic conversion is represented.
 - anomaly#i:distpsnr2:
     reason: structural_multiplicity
     note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
@@ -74,10 +70,6 @@ unmapped:
 - anomaly#i:tblid:
     reason: provider_internal
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
-- conesearch#i:distnr:
-    reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
-      is angular arcsec. No lossless generic conversion is represented.
 - conesearch#i:tblid:
     reason: provider_internal
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
@@ -90,10 +82,6 @@ unmapped:
 - latests#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
     note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
-- latests#i:distnr:
-    reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
-      is angular arcsec. No lossless generic conversion is represented.
 - latests#i:tblid:
     reason: provider_internal
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.
@@ -106,10 +94,6 @@ unmapped:
 - objects#d:blazar_stats_m2:
     reason: upstream_legacy_semantics
     note: Legacy Fink Science field, documented by the current object API as pre-8.42.0 and related to low-state duration. Current primary documentation does not define the exact formula/scale sufficiently for lossless normalization.
-- objects#i:distnr:
-    reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
-      is angular arcsec. No lossless generic conversion is represented.
 - objects#i:distpsnr2:
     reason: structural_multiplicity
     note: The flat-row record builder cannot emit repeated same-producer Pan-STARRS records
@@ -273,10 +257,6 @@ unmapped:
     reason: ontology_gap
     note: Captured field has no exact, lossless current semantic leaf or established representation
       contract.
-- sso#i:distnr:
-    reason: unit_mismatch
-    note: ZTF distnr is detector pixels; the current nearest-source separation semantic leaf
-      is angular arcsec. No lossless generic conversion is represented.
 - sso#i:tblid:
     reason: provider_internal
     note: ZTF internal pipeline/table extraction identifier is a storage implementation detail.

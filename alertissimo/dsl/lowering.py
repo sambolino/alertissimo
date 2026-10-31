@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph
 from alertissimo.orchestration.ir import (
+    BooleanPredicate,
     ClassifyStep,
     ColorColorStep,
     ColorMagnitudeStep,
@@ -29,6 +30,7 @@ from alertissimo.orchestration.ir import (
     GetForcedPhotometryStep,
     GetLightcurveStep,
     GetSpectrumStep,
+    GetStep,
     LookupStep,
     MatchStep,
     Predicate,
@@ -124,17 +126,6 @@ _ANGLE_TO_ARCSEC = {
     "deg": 3600.0,
 }
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
-_IMPLICIT_GET_NOUNS = frozenset(
-    {
-        "classification",
-        "crossmatch",
-        "lightcurve",
-        "forced_photometry",
-        "cutout",
-        "spectrum",
-        "data_product",
-    }
-)
 
 
 def _semantic_path_model() -> _SemanticPaths:
@@ -206,6 +197,27 @@ def _first_filter_index(surface: SurfaceScript) -> int:
     )
 
 
+def _validate_candidate_clause_placement(surface: SurfaceScript) -> None:
+    """Reject candidate constraints that the current IR would otherwise drop."""
+    first_filter = _first_filter_index(surface)
+    for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, (InsideClause, WithinClause, LatestClause)) and isinstance(
+            surface.candidates, LookupCandidateSet
+        ):
+            raise SurfaceLoweringError(
+                f"{clause.kind} on an explicit lookup has no supported selection realization",
+                code="unsupported_lookup_constraint", clause_index=index,
+            )
+        if index > first_filter and isinstance(
+            clause, (InsideClause, WithinClause, LatestClause, WhereClause)
+        ):
+            raise SurfaceLoweringError(
+                f"top-level {clause.kind} cannot follow an explicit filter; "
+                "initial candidate constraints must precede later selection",
+                code="late_candidate_constraint", clause_index=index,
+            )
+
+
 def _semantic_predicate(
     expression: str,
     *,
@@ -239,6 +251,21 @@ def _scoped_requirement_predicate(
     record_types: frozenset[str],
     clause_index: int,
 ) -> Predicate | None:
+    if clause.brokers:
+        alternatives = tuple(dict.fromkeys(
+            predicate
+            for requirement in clause.broker_requirements()
+            for predicate in [_scoped_requirement_predicate(
+                surface, requirement, noun=noun, record_types=record_types,
+                clause_index=clause_index,
+            )]
+            if predicate is not None
+        ))
+        if not alternatives:
+            return None
+        return alternatives[0] if len(alternatives) == 1 else BooleanPredicate(
+            operator="or", operands=alternatives,
+        )
     predicates = [
         _semantic_predicate(
             expression,
@@ -364,6 +391,7 @@ def _candidate_operation(
 ) -> tuple[LookupStep | SemanticSearchStep | ConeSearchStep, frozenset[int]]:
     """Lower the initial named population or scientific candidate search."""
 
+    _validate_candidate_clause_placement(surface)
     if isinstance(surface.candidates, LookupCandidateSet):
         candidates = surface.candidates
         return (
@@ -528,6 +556,70 @@ def _lower_requirement(
     )
 
 
+def _lower_requirements(
+    surface: SurfaceScript,
+    clause: RequirementClause,
+    *,
+    clause_index: int,
+    record_types: frozenset[str],
+    semantic_paths=None,
+    graph: CapabilityGraph | None = None,
+):
+    """Expand an abstract ontology family to supported existing retrievals.
+
+    Family membership supplies the vocabulary; canonical Get operations and
+    provider capability admission supply availability. No enum aliases or local
+    derivations are invented, and no new executable IR operation is required.
+    """
+    model = semantic_paths or _semantic_path_model()
+    noun = resolve_record_type(clause.product, record_types)
+    if noun not in getattr(model, "abstract_record_types", ()):
+        return (_lower_requirement(
+            surface, clause, clause_index=clause_index, record_types=record_types,
+        ),)
+    _require_plain_product(clause, noun, clause_index=clause_index)
+    if clause.source is not None or clause.method is not None or clause.predicates:
+        raise SurfaceLoweringError(
+            "family retrieval requires concrete requirements for producer, method or predicate constraints",
+            code="constrained_family_requirement", clause_index=clause_index,
+        )
+    broker = clause.via or surface.candidates.broker
+    if broker is None:
+        raise SurfaceLoweringError(
+            "family retrieval requires a broker through via or the candidate clause",
+            code="family_broker_required", clause_index=clause_index,
+        )
+    from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+    from alertissimo.orchestration.validation import validate_step_capabilities
+
+    capability_graph = graph if graph is not None else build_capability_graph()
+    steps = []
+    for child in model.descendants(noun):
+        requirement = clause.model_copy(update={"product": child})
+        try:
+            step = _lower_requirement(
+                surface, requirement, clause_index=clause_index, record_types=record_types,
+            )
+        except SurfaceLoweringError:
+            # A recognized concept without a provider Get realization is not an
+            # available broker enrichment (e.g. a local color-color derivation).
+            continue
+        if not isinstance(step, GetStep):
+            continue
+        supported = [
+            item.source for item in validate_step_capabilities(step, capability_graph).source_results
+            if item.status == "supported" and item.source is not None
+        ]
+        if supported:
+            steps.append(step.model_copy(update={"sources": supported}))
+    if not steps:
+        raise SurfaceLoweringError(
+            f"broker {broker!r} has no supported retrievals in ontology family {noun!r} for the candidate origins",
+            code="unsupported_family_requirement", clause_index=clause_index,
+        )
+    return tuple(steps)
+
+
 def _lower_match(
     surface: SurfaceScript,
     clause: MatchClause,
@@ -617,15 +709,18 @@ def _implicit_requirements_from_where(
 ) -> tuple[RequirementClause, ...]:
     requirements: list[RequirementClause] = []
     for ref in extract_semantic_record_references(clause.condition, record_types):
-        if ref.noun == "summary" or ref.noun not in _IMPLICIT_GET_NOUNS:
-            continue
-        requirements.append(
-            RequirementClause(
-                product=ref.noun,
-                source=ref.producer,
-                via=ref.channel,
-            )
+        requirement = RequirementClause(
+            product=ref.noun, source=ref.producer, via=ref.channel,
         )
+        try:
+            step = _lower_requirement(
+                surface, RequirementClause(product=ref.noun),
+                clause_index=0, record_types=record_types,
+            )
+        except SurfaceLoweringError:
+            continue
+        if isinstance(step, GetStep):
+            requirements.append(requirement)
     return tuple(requirements)
 
 
@@ -633,17 +728,22 @@ def lower_surface(
     surface: SurfaceScript,
     *,
     semantic_paths: _SemanticPaths | None = None,
+    graph: CapabilityGraph | None = None,
     name: str | None = None,
 ) -> SurfaceCompilation:
     """Lower ontology-valid surface intent into scientific IR plus view metadata."""
     semantic_model = semantic_paths or _semantic_path_model()
     _validate_semantics(surface, semantic_model)
-    return _lower_surface_intent(surface, record_types=semantic_model.record_types, name=name)
+    return _lower_surface_intent(
+        surface, record_types=semantic_model.record_types, name=name,
+        semantic_paths=semantic_model, graph=graph,
+    )
 
 
 def _lower_surface_intent(
     surface: SurfaceScript, *, record_types: frozenset[str], name: str | None = None,
     stop_before: tuple[str, str | None, str | None] | None = None,
+    semantic_paths=None, graph: CapabilityGraph | None = None,
 ) -> SurfaceCompilation:
     """Build canonical intent, optionally stopping at one retrieval occurrence."""
     candidate_step, consumed = _candidate_operation(
@@ -652,20 +752,33 @@ def _lower_surface_intent(
     )
     steps = [candidate_step]
     first_filter = _first_filter_index(surface)
+    lookup = isinstance(candidate_step, LookupStep)
+    lookup_predicates: list[Predicate] = []
     emitted: set[tuple[str, str | None, str | None]] = set()
     view = ResultViewSpec()
+
+    def flush_lookup_predicates() -> None:
+        predicate = and_predicates(lookup_predicates)
+        if predicate is not None:
+            steps.append(FilterStep(predicate=predicate))
+            lookup_predicates.clear()
 
     explicit_signatures = {
         signature
         for clause in surface.clauses
         if isinstance(clause, RequirementClause)
+        for requirement in clause.broker_requirements()
         for signature in [
-            _requirement_signature(surface, clause, record_types)
+            _requirement_signature(surface, requirement, record_types)
         ]
         if signature is not None
     }
 
     for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, (FilterClause, ConfirmClause, MatchClause)):
+            # Named populations have no SearchStep predicate slot. Preserve the
+            # initial conditions after their requested Gets, before later work.
+            flush_lookup_predicates()
         if isinstance(clause, OrderByClause):
             view = ResultViewSpec(
                 order_by=ResultOrderSpec(
@@ -674,11 +787,11 @@ def _lower_surface_intent(
                 )
             )
             continue
-        if index in consumed:
-            adjacent_confirm = (
-                index + 1 < len(surface.clauses)
-                and isinstance(surface.clauses[index + 1], ConfirmClause)
-            )
+        adjacent_confirm = (
+            index + 1 < len(surface.clauses)
+            and isinstance(surface.clauses[index + 1], ConfirmClause)
+        )
+        if index in consumed or (lookup and isinstance(clause, WhereClause)):
             if isinstance(clause, WhereClause) and not adjacent_confirm:
                 for implied in _implicit_requirements_from_where(
                     surface,
@@ -690,7 +803,7 @@ def _lower_surface_intent(
                     )
                     if signature is None or signature in emitted:
                         continue
-                    if signature in explicit_signatures:
+                    if not lookup and signature in explicit_signatures:
                         continue
                     if signature == stop_before:
                         return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
@@ -703,32 +816,33 @@ def _lower_surface_intent(
                         )
                     )
                     emitted.add(signature)
+                if lookup:
+                    lookup_predicates.append(_semantic_predicate(
+                        clause.condition, record_types=record_types, clause_index=index,
+                    ))
             continue
 
         if isinstance(clause, RequirementClause):
-            signature = _requirement_signature(
-                surface, clause, record_types
-            )
-            if signature is None:
-                raise SurfaceLoweringError(
-                    "requirement must resolve to one ontology record type before lowering",
-                    code="unresolved_requirement",
-                    clause_index=index,
-                )
-            if signature not in emitted:
+            for requirement in clause.broker_requirements():
+                signature = _requirement_signature(surface, requirement, record_types)
+                if signature is None:
+                    raise SurfaceLoweringError(
+                        "requirement must resolve to one ontology record type before lowering",
+                        code="unresolved_requirement", clause_index=index,
+                    )
+                if signature in emitted:
+                    continue
                 if signature == stop_before:
                     return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
-                steps.append(
-                    _lower_requirement(
-                        surface,
-                        clause,
-                        clause_index=index,
-                        record_types=record_types,
-                    )
-                )
+                for step in _lower_requirements(
+                    surface, requirement, clause_index=index, record_types=record_types,
+                    semantic_paths=semantic_paths, graph=graph,
+                ):
+                    if step not in steps:
+                        steps.append(step)
                 emitted.add(signature)
 
-            if clause.predicates and index >= first_filter:
+            if clause.predicates and (lookup or index >= first_filter):
                 scoped = _scoped_requirement_predicate(
                     surface,
                     clause,
@@ -737,7 +851,10 @@ def _lower_surface_intent(
                     clause_index=index,
                 )
                 if scoped is not None:
-                    steps.append(FilterStep(predicate=scoped))
+                    if lookup and index < first_filter:
+                        lookup_predicates.append(scoped)
+                    else:
+                        steps.append(FilterStep(predicate=scoped))
         elif isinstance(clause, FilterClause):
             steps.append(
                 FilterStep(
@@ -773,7 +890,10 @@ def _lower_surface_intent(
                 clause_index=index,
             )
         elif isinstance(clause, (InsideClause, WithinClause, LatestClause, WhereClause)):
-            continue
+            raise SurfaceLoweringError(
+                "candidate constraint has no semantic realization",
+                code="unrealized_candidate_constraint", clause_index=index,
+            )
         else:  # pragma: no cover - discriminated surface union guards this.
             raise SurfaceLoweringError(
                 f"unsupported surface clause {type(clause).__name__}",
@@ -781,6 +901,7 @@ def _lower_surface_intent(
                 clause_index=index,
             )
 
+    flush_lookup_predicates()
     if stop_before is not None:
         raise SurfaceLoweringError(
             "requirement has no emitted retrieval occurrence in this workflow",
@@ -850,6 +971,7 @@ def compile_surface(
     return lower_surface(
         surface,
         semantic_paths=semantic_model,
+        graph=graph,
         name=name,
     )
 
@@ -901,6 +1023,7 @@ def compile_surface_fragment(
 
     return _lower_fragment_intent(
         context, base_workflow, record_types=semantic_model.record_types, name=name,
+        semantic_paths=semantic_model, graph=graph,
     )
 
 
@@ -908,6 +1031,7 @@ def _lower_fragment_intent(
     context: SurfaceScript, base_workflow: WorkflowIR, *,
     record_types: frozenset[str], name: str | None = None,
     stop_before: tuple[str, str | None, str | None] | None = None,
+    semantic_paths=None, graph: CapabilityGraph | None = None,
 ) -> SurfaceCompilation:
     """Lower continuation intent using its actual canonical base."""
     steps = list(base_workflow.steps)
@@ -922,22 +1046,23 @@ def _lower_fragment_intent(
             )
             continue
         if isinstance(clause, RequirementClause):
-            step = _lower_requirement(
-                context,
-                clause,
-                clause_index=index,
-                record_types=record_types,
-            )
-            if _requirement_signature(context, clause, record_types) == stop_before:
-                prefix = steps[:steps.index(step)] if step in steps else steps
-                if not prefix:
-                    raise SurfaceLoweringError(
-                        "existing retrieval has no earlier discovery context",
-                        code="missing_requirement_occurrence",
-                    )
-                return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
-            if step not in steps:
-                steps.append(step)
+            for requirement in clause.broker_requirements():
+                requested = _lower_requirements(
+                    context, requirement, clause_index=index, record_types=record_types,
+                    semantic_paths=semantic_paths, graph=graph,
+                )
+                if _requirement_signature(context, requirement, record_types) == stop_before:
+                    step = requested[0]
+                    prefix = steps[:steps.index(step)] if step in steps else steps
+                    if not prefix:
+                        raise SurfaceLoweringError(
+                            "existing retrieval has no earlier discovery context",
+                            code="missing_requirement_occurrence",
+                        )
+                    return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
+                for step in requested:
+                    if step not in steps:
+                        steps.append(step)
             if clause.predicates:
                 noun = resolve_record_type(clause.product, record_types)
                 assert noun is not None
@@ -998,15 +1123,23 @@ def _lower_fragment_intent(
 def _requirement_prefix(
     surface: SurfaceScript, clause: RequirementClause, *,
     record_types: frozenset[str], base_workflow: WorkflowIR | None = None,
+    graph: CapabilityGraph | None = None,
+    semantic_paths=None,
 ):
     """Use the compiler's real occurrence order for discovery-material proof."""
     signature = _requirement_signature(surface, clause, record_types)
     if signature is None:
         raise SurfaceLoweringError("requirement has no canonical signature", code="unresolved_requirement")
     if base_workflow is None:
-        compilation = _lower_surface_intent(surface, record_types=record_types, stop_before=signature)
+        compilation = _lower_surface_intent(
+            surface, record_types=record_types, stop_before=signature, graph=graph,
+            semantic_paths=semantic_paths,
+        )
     else:
-        compilation = _lower_fragment_intent(surface, base_workflow, record_types=record_types, stop_before=signature)
+        compilation = _lower_fragment_intent(
+            surface, base_workflow, record_types=record_types, stop_before=signature, graph=graph,
+            semantic_paths=semantic_paths,
+        )
     return tuple(compilation.workflow.steps)
 
 
@@ -1014,6 +1147,7 @@ def lower_surface_to_ir(
     surface: SurfaceScript,
     *,
     semantic_paths: _SemanticPaths | None = None,
+    graph: CapabilityGraph | None = None,
     name: str | None = None,
 ) -> WorkflowIR:
     """Compatibility helper for callers that explicitly require WorkflowIR only.
@@ -1021,7 +1155,7 @@ def lower_surface_to_ir(
     It refuses to discard an ``order by`` result-view instruction silently.
     """
 
-    compilation = lower_surface(surface, semantic_paths=semantic_paths, name=name)
+    compilation = lower_surface(surface, semantic_paths=semantic_paths, graph=graph, name=name)
     if compilation.view.order_by is not None:
         raise SurfaceLoweringError(
             "surface contains result-view intent; use lower_surface() to preserve it",

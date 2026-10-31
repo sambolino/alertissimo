@@ -35,6 +35,10 @@ def validate_portfolio_against_semantic_model(
 
     for record in portfolio.records:
         base_type = record.semantic_type.split("@", 1)[0]
+        if base_type in model.abstract_containers:
+            raise SemanticModelValidationError(
+                f"abstract semantic record type {base_type!r} cannot be instantiated"
+            )
         if base_type.startswith("_") or base_type not in model.containers:
             raise SemanticModelValidationError(
                 f"unknown semantic record type {base_type!r} "

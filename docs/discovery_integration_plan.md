@@ -117,9 +117,9 @@ every response, response mode, or requested projection contains it.
 
 ## Sequential PRs
 
-Each branch starts from updated `main` after its predecessor is merged. Do not
-pre-create future branches. The branch names below are proposed names, not
-existing refs. Split a branch further if its implementation becomes difficult to
+Through Time 03b each branch started from updated `main`. From Time 04 onward,
+use the integration branch described below. Do not pre-create future feature
+branches. Split a branch further if its implementation becomes difficult to
 review, keeping the same order and acceptance boundary.
 
 | Branch | Deliverable |
@@ -140,9 +140,16 @@ review, keeping the same order and acceptance boundary.
 | `feat/time-04-fink-ztf` | Align Fink native windows and admitted first/last modes |
 | `feat/selection-01-latest-admission` | Complete shared latest admission after temporal verification |
 | `feat/selection-02-lasair-ztf` | Activate complete Lasair latest selection |
-| `feat/selection-03-fink-ztf` | Activate complete Fink latest selection |
-| `feat/discovery-06-antares-ztf` | Implement verified ANTARES ZTF search with temporal and latest selection |
-| `feat/integration-07-required-material` | Complete the small set of normalized inputs required by the reference ZTF workflow |
+| `feat/selection-02b-lasair-cone` | Prove required summary recency and complete cone population before admitting cone latest |
+| `feat/selection-03-fink-ztf` | Audit Fink latest evidence; activate only if overall object recency is established |
+| `feat/discovery-06a-elasticsearch-bindings` | Compile bounded numeric structured queries in existing predicate bindings |
+| `feat/discovery-06b-antares-ztf` | Activate identity-scoped ANTARES ZTF numeric coordinate discovery and replayable iterator execution |
+| `feat/discovery-06c-antares-within` | Activate default within over required ANTARES ZTF alert histories |
+| `feat/discovery-06d-antares-extrema` | Activate first/last within by reducing complete detection histories |
+| `feat/discovery-06e-antares-latest` | Rank ANTARES candidates using complete detection recency; review temporal cone identity scope |
+| `feat/integration-07a-reference-material` | Inventory reference inputs and retain Fink reference-source distance in pixels |
+| `feat/integration-07b-cutouts` | Audit the Fink array cutout response against existing data products; activate only if the current representation suffices |
+| `fix/integration-07c-alerce-distance-units` | Resolve the REST/TAP unit discrepancy for existing ALeRCE reference-distance mappings before claiming equivalent angular material |
 | `feat/integration-08-result-access` | Document and complete application access to per-candidate Portfolio evidence |
 | `test/integration-09-acceptance` | Add the reference workflow, direct-versus-Alertissimo comparison, support matrix, and handoff runbook |
 
@@ -397,7 +404,38 @@ Time 03a is merged as [PR #308](https://github.com/sambolino/alertissimo/pull/30
 main `108e57e`. [Time 03b](time_03b_lasair_ztf.md) now prepares ZTF semantic/cone
 within activation: actual detection witnesses, required first/last summaries,
 per-object batch response coverage, and source-aligned replay/reuse. Lasair
-latest remains separate. Fink ZTF follows this milestone.
+latest remains separate. Time 03b is merged as PR #309, main `7536b2d`.
+
+[Time 04](time_04_fink_ztf.md) now prepares Fink ZTF's explicit native detection
+proof, conservative physical scan envelope, and exact closed-window recheck.
+Fink first/last and temporal cone discovery remain deferred for the specific
+population/completeness reasons in that audit. Time 04 is merged as PR #310,
+integration commit `4356353`.
+
+[Shared latest admission](selection_01_latest_admission.md) now prepares complete
+temporal composites for ALeRCE ZTF, while retaining declared discovery ordering,
+projection/material checks, complete membership evidence and selected-ID
+continuation. Its integration merge is the intermediate shared DSL/registry CI
+checkpoint. Its single stale Fink recipe-count assertion is corrected in PR #312,
+integration `4ee3b6f`; the skipped wheel check was handed off locally.
+
+[Lasair semantic latest](selection_02_lasair_ztf.md) now prepares exhaustive
+identity-ordered SQL scans followed by global ranking after temporal membership.
+Numeric-predicate and default/first/last within searches are covered. Cone latest
+remains deferred pending its distinct required-summary ranking proof, scheduled
+as the small Selection 02b follow-up before Fink latest. Selection 02 is now
+merged as PR #313, integration `1680d38`, including its local fixture correction.
+[Selection 02b](selection_02b_lasair_cone.md) prepares required summary coverage
+for cone latest in the existing recipe/planner/normalization paths. Retain the
+focused-local merge discipline.
+
+[Fink latest audit](selection_03_fink_ztf.md) now records a concrete blocker:
+complete historical class alerts can rank objects differently from later object
+history. The `objects` API also has a server-configured cap without an exposed
+exhaustion/newest-summary contract. Selection 03 preserves pre-transport deferral
+and adds counterexample/admission regressions instead of declaring unsupported
+completeness. Carry this limitation into acceptance; ANTARES is next. Fink latest
+activation remains open pending a verified authoritative object-recency source.
 
 The original required-material inventory, unit-correct distnr mapping, optional
 verified cutout mode, per-candidate result access, recorded/live comparison, and
@@ -408,6 +446,27 @@ end-of-series discussion with Veljko before those implementation branches. Keep
 existing Rubin support valid; an audit or deferral is not a new activation.
 
 ### PR 06 — ANTARES semantic discovery
+
+Split this milestone into [06a structured numeric bindings](discovery_06a_elasticsearch_bindings.md)
+and provider activation in 06b. The prerequisite changes existing compiler/planner
+paths with isolated declaration fixtures; production activation requires the
+field/population evidence for the particular request, plus time evidence when
+the request includes temporal selection.
+
+[06b](discovery_06b_antares_ztf.md) activates verified RA/Dec numeric discovery,
+scopes the mixed-survey index to ZTF object identity, and freezes Python result
+iterators for replay. Temporal and latest selection are separated into 06c:
+alert extrema/counts and the selected client lightcurve cannot silently replace
+complete detection evidence. [06c](discovery_06c_antares_within.md) activates default
+within with required full alert history and mapped ZTF measurement identity.
+[06d](discovery_06d_antares_extrema.md) adds first/last reductions over complete
+detection histories, including per-request response identity validation.
+[06e](discovery_06e_antares_latest.md) ranks the admitted coordinate population
+by complete identified detection histories, after membership and residual
+selection. It guards conflicting loci for one object and mismatched history
+partitions. Native cone temporal/latest forms remain deferred after source review:
+the shared-survey geometric query does not establish the required ZTF scope.
+Keep these before required material and result access.
 
 Declare semantic discovery through the existing Elasticsearch `search` endpoint.
 Translate a bounded set of verified semantic predicates into its required query
@@ -431,6 +490,19 @@ python -m pytest -q tests/test_antares_semantic_search.py tests/test_antares_reg
 ```
 
 ### PR 07 — Material required by the reference workflow
+
+Split into small reviews. [07a](reference_workflow_material.md) inventories the
+pinned reference application's actual inputs and maps Fink candidate `distnr`
+to an explicit pixel-valued leaf. [07b](integration_07b_fink_cutouts.md) isolates
+Fink's fixed JSON cutout mode and preserves all three named stamp arrays through
+the existing data-product payload. Inspection also
+found conflicting ALeRCE REST/TAP `distnr` unit documentation;
+[07c](integration_07c_alerce_distance_units.md) follows the registered client
+contracts: detection responses populate the existing pixel-distance field, while
+forced photometry retains angular separation. PR #324's intermediate ontology
+change (`measurement`, abstract `enrichment` and concrete Get expansion) is the
+baseline for the remaining work. These extend the original material/unit audit,
+without a new representation or orchestration layer.
 
 Inventory the reference workflow's actual inputs before editing mappings. Keep
 the inventory with the final integration guide and classify each item as:
@@ -468,6 +540,14 @@ python -m pytest -q tests/test_reference_workflow_material.py tests/test_semanti
 
 ### PR 08 — Application access to results
 
+Prepared as `feat/integration-08-portfolio-access`, based on `4d93b51` / PR #325.
+The [application access guide](application_portfolio_access.md) and checkout
+example use existing APIs; no backend layer or provider contract changes.
+The paired shared checkpoints after 07c both passed on `4d93b51`:
+[DSL](https://github.com/sambolino/alertissimo/actions/runs/41077308992) and
+[Semantic registry](https://github.com/sambolino/alertissimo/actions/runs/41077292721).
+Use focused local verification for this step; keep the final shared acceptance.
+
 Use `execute_dsl`, `DSLExecutionResult.portfolios`, and existing Portfolio
 serialization as the application entry points. Extend existing presentation
 helpers only where the consumer genuinely lacks access. Add clear examples for
@@ -498,6 +578,16 @@ python -m pytest -q tests/test_application_portfolio_access.py tests/test_portfo
 ```
 
 ### PR 09 — Reference workflow and acceptance handoff
+
+Split into small reviews: **09a** supplies the
+[integration guide and support matrix](discovery_integration.md) plus recorded
+acceptance cases; **09b** adds the planned live runner and final local handoff.
+09a merged as PR #327, integration `b4ada2a`; **09b** merged as PR #328,
+integration `6aa9b16`, with the
+[live acceptance/verification guide](discovery_live_acceptance.md). A follow-up
+on `fix/integration-09b-antares-outage` handles the native client's structured
+server-error body. Neither offline validation nor recorded replay claims live
+acceptance; the progress table records the first user-run live results separately.
 
 Add `docs/discovery_integration.md`, the eight-provider/survey support matrix, and
 the material inventory from PR 07. Include runnable DSL examples only after their
@@ -563,16 +653,64 @@ All application tests and live provider calls for this implementation series run
 on Veljko's machine. This document adds no implementation and claims no planned
 test has passed. Do not install the entire stack in a document-editing session.
 
+### Integration branch from Time 04 — 29 October 2026
+
+`integration/discovery-completion` starts at merged Time 03b, main `7536b2d`
+([PR #309](https://github.com/sambolino/alertissimo/pull/309)). It is the base for
+the remaining Time 04, shared/provider latest, ANTARES ZTF, required-material,
+result-access, and acceptance branches above. Classification joins and additional
+Rubin discovery remain consultation items at the end, before implementing them.
+
+Each small PR targets this integration branch and is squash-merged there after
+its focused local checks pass. All three workflows exclude this exact PR base
+from automatic runs; other PR bases retain their existing CI. No skip-CI commit
+markers, global workflow disabling, or changes to main's checks are needed.
+`workflow_dispatch` remains available on the integration branch. Local test
+commands and a log path accompany every handoff. Keep dependent work sequential
+by starting the next branch from the updated remote integration tip.
+
+CI is required on the final integration PR into `main`, against its current
+base. Do not merge that PR until all applicable checks and the final local
+offline/live handoff pass (record unavailable providers separately). If main
+changes, integrate it and verify the resulting final revision before merging.
+Do not use administrative bypasses for a blocked merge.
+
+After the last small PR is merged, remove the three temporary `branches-ignore`
+sections in a cleanup commit on the integration branch before opening its main
+PR. There are no push-triggered jobs in these workflows. This restores the
+original automatic-trigger policy for the completed main branch while the final
+integration PR still receives all applicable checks.
+
+An intermediate manual DSL/registry run is recommended when shared latest
+admission is implemented, since it changes candidate ordering and reuse across
+providers. Flag any earlier change to shared IR, binding, execution, or
+normalization that creates equivalent cross-provider uncertainty. A provider
+declaration alone does not require another full CI run after its focused local
+checks pass. Run the UI job early only if shared facade/result changes affect it.
+
+For a manual checkpoint on the current integration revision:
+
+```bash
+gh workflow run dsl.yml --ref integration/discovery-completion
+gh workflow run semantic-registry.yml --ref integration/discovery-completion
+gh run list --branch integration/discovery-completion --event workflow_dispatch --limit 6
+```
+
+Use `gh run watch RUN_ID --exit-status` for each returned checkpoint run. At the
+final PR, use `gh pr checks integration/discovery-completion --watch` and record
+the tested head SHA. These commands intentionally run no workflow automatically
+on intermediate feature PRs.
+
 For each PR:
 
-1. Rebase the work onto current `main` and implement only the named boundary.
+1. Rebase the work onto the current integration branch and implement only the named boundary.
 2. Add focused regressions for changed contracts and meaningful failure cases.
 3. Run its focused commands locally and record the exact outcome.
 4. Run `git diff --check`; review declarations, payload evidence, and package/CI
    inclusion when adding runtime files or resources.
 5. Include the commands and any live limitation in the PR description. A missing
    token or upstream outage is not a passing live result.
-6. Merge, update `main`, and create the next branch. Keep the plan's progress table
+6. Squash-merge, update the integration branch, and create the next branch. Keep the plan's progress table
    current with PR numbers and resulting commits.
 
 After the relevant provider milestones, run the existing facade checks:
@@ -652,6 +790,35 @@ not need redesign for this series.
 
 ## Progress
 
+### Final semantic audit — 30 October 2026
+
+The [semantic audit](discovery_semantic_audit.md) inspects the actual integration
+compiler, planner, evaluator, confirmation and continuation paths against the
+latest agreed declarative behavior. **Main merge is on hold** for predicate-loss,
+assertion-correlation and missing-evidence defects; a green existing suite alone
+does not resolve those counterexamples. Draft
+[PR #329](https://github.com/sambolino/alertissimo/pull/329) requests the three
+main-target baseline checks on integration `6aa9b16`.
+
+The end-topic consultation is now complete: map fields and retrieve evidence,
+then deliberate comparison, and additional classification endpoint searches
+last. The [new design/PR plan](classification_evidence_design_plan.md) preserves
+`with ... where` as declarative intent, existing `confirm` as proposition quorum,
+and `filter` as later selection. It does not claim those gaps are already fixed.
+
+Later user-run historical cases supplied a nonempty PASS for every one of the
+eight live scenario types across separate runs/windows/fields, plus ALeRCE and
+Lasair first/last. ANTARES first/last attempts returned 500 and remain unverified
+live. The audit records exact dates and evidence roots. Historical rows below
+retain the outcomes known at each milestone rather than rewriting the earlier
+empty/failed attempts as successes.
+
+The first [predicate-preservation repair](dsl_predicate_preservation.md) is now
+prepared for focused local checks against integration. It also gates automatic
+jobs on the open draft #329 so small integration squashes do not repeatedly run
+the full CI. Manual checkpoints and ready-for-review execution remain available.
+Main remains on hold; preparation is not a passing or merged repair.
+
 | PR | Branch suffix | PR number / commit | Local verification | Live outcome |
 | --- | --- | --- | --- | --- |
 | 01 | alerce-classification | [#293](https://github.com/sambolino/alertissimo/pull/293), main `1673fa0` | User confirmed successful verification | Not separately reported |
@@ -666,12 +833,26 @@ not need redesign for this series.
 | Time 01b | within-membership | [#306](https://github.com/sambolino/alertissimo/pull/306), main `37ba25c` | Merged after reported fixture/runtime fixes; final local count not separately reported | Shared evidence checks; production declarations unchanged |
 | Time 02 | alerce-ztf | [#307](https://github.com/sambolino/alertissimo/pull/307), main `5840d31` | Merged after fixture fixes; final local count not separately reported | No new live result separately reported |
 | Time 03a | sql-bindings | [#308](https://github.com/sambolino/alertissimo/pull/308), main `108e57e` | Merged; local count not separately reported | No production activation |
-| Time 03b | lasair-ztf | Prepared on `feat/time-03b-lasair-ztf`; PR pending | Not run here; recorded/synthetic local handoff | Pending on user's machine |
-| Time 04 onward | Fink within activation, latest | Next after Time 03b | Pending | Pending |
-| 06 | antares | Pending | Pending | Pending |
-| 07 | required-material | Pending | Pending | Pending where applicable |
-| 08 | result-access | Pending | Pending | Through acceptance |
-| 09 | acceptance | Pending | Pending | Pending |
+| Time 03b | lasair-ztf | [#309](https://github.com/sambolino/alertissimo/pull/309), main `7536b2d` | Merged after local follow-ups | Provider live evidence remains separate |
+| Integration | Remaining plan through acceptance | `integration/discovery-completion`, based on `7536b2d` | Focused local checks per small PR; final CI into main | Explicit local handoff |
+| Time 04 | Fink ZTF within alignment | [#310](https://github.com/sambolino/alertissimo/pull/310), integration `4356353` | Merged after local handoff; count not separately reported | Final provider acceptance pending |
+| Selection 01 | Shared latest admission | [#311](https://github.com/sambolino/alertissimo/pull/311), integration `4ecb37e` | Registry CI passed; DSL 1,195 passed / one stale recipe-count assertion; test correction and skipped wheel check handed off locally | No provider calls needed for admission |
+| Selection 02 | Lasair ZTF semantic latest | [#313](https://github.com/sambolino/alertissimo/pull/313), integration `1680d38` | Merged after focused local run and fixture correction | Final acceptance pending |
+| Selection 02b | Lasair cone latest | [#314](https://github.com/sambolino/alertissimo/pull/314), integration `7b107d9`; matrix correction [#315](https://github.com/sambolino/alertissimo/pull/315), `9f4a7bd` | DSL checkpoint 1,220 passed / one stale matrix assertion, corrected in #315; skipped package check handed off locally | Final acceptance pending |
+| Selection 03 | Fink latest audit | [#316](https://github.com/sambolino/alertissimo/pull/316), integration `cc601ae` | Merged after implicit-classification fixture correction; activation blocked by object-recency contract | No live claim; retain explicit deferral |
+| 06a | Elasticsearch numeric bindings | [#317](https://github.com/sambolino/alertissimo/pull/317), integration `634b879` | Merged after local handoff; count not separately reported | No provider requests needed |
+| 06b | ANTARES ZTF numeric activation | [#318](https://github.com/sambolino/alertissimo/pull/318), integration `a6909e8` | Manual DSL checkpoint [40984533355](https://github.com/sambolino/alertissimo/actions/runs/40984533355) passed | Final acceptance pending |
+| 06c | ANTARES default within | [#319](https://github.com/sambolino/alertissimo/pull/319), integration `20534f1` | Merged after null-photometry membership fix; final local count not separately reported | Final acceptance pending |
+| 06d | ANTARES first/last within | [#320](https://github.com/sambolino/alertissimo/pull/320), integration `adfccfb` | Merged after local handoff; count not separately reported | Final acceptance pending |
+| 06e | ANTARES latest and cone identity review | [#321](https://github.com/sambolino/alertissimo/pull/321), integration `b34eb1d` | Manual DSL checkpoint [41041721319](https://github.com/sambolino/alertissimo/actions/runs/41041721319) passed | Provider live acceptance pending; native cone temporal/latest deferred |
+| 07a | Reference input inventory and Fink pixel distance | [#322](https://github.com/sambolino/alertissimo/pull/322), integration `da31fd7` | Merged after per-alert count fixture correction | Frozen evidence; live acceptance remains separate |
+| 07b | Fink JSON cutout bundles | [#323](https://github.com/sambolino/alertissimo/pull/323), integration `0fc3759` | Merged after capability fanout expectation correction | Synthetic stamps and pinned API source; deployed cutout acceptance pending |
+| Ontology | Measurement records and enrichment families | [#324](https://github.com/sambolino/alertissimo/pull/324), integration `f8e0909` | Paired shared checkpoints passed on `4d93b51` after 07c | No new provider/live support inferred from family membership |
+| 07c | ALeRCE reference-distance units | [#325](https://github.com/sambolino/alertissimo/pull/325), integration `4d93b51` | Merged after supplement-fixture correction; [DSL](https://github.com/sambolino/alertissimo/actions/runs/41077308992) and [registry](https://github.com/sambolino/alertissimo/actions/runs/41077292721) passed | Frozen evidence; TAP equivalence not claimed |
+| 08 | Application result access | [#326](https://github.com/sambolino/alertissimo/pull/326), integration `6daa6b4` | Merged after mixed-candidate source-provenance fixture correction | No provider requests needed for consumer isolation |
+| 09a | Recorded acceptance and support matrix | [#327](https://github.com/sambolino/alertissimo/pull/327), integration `b4ada2a` | Merged after local handoff; final count not separately reported | Offline fixtures; live evidence pending |
+| 09b | Live acceptance runner and final handoff | [#328](https://github.com/sambolino/alertissimo/pull/328), integration `6aa9b16` | Merged after local handoff | Four live PASS; three valid-empty SKIP; ANTARES server 500 initially misclassified FAIL |
+| 09b fix | Native ANTARES outage reporting | Prepared on `fix/integration-09b-antares-outage` | Chained JSON:API status regressions; local handoff | Reporting fix only; ANTARES and nonempty temporal/filter acceptance remain pending |
 
 ## References
 

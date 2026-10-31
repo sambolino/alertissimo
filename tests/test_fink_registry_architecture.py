@@ -49,7 +49,7 @@ def test_cutout_mappings_are_data_products():
     for origin in ORIGINS:
         mappings = load(origin, "mappings.yaml")["mappings"]
         for path, refs in mappings.items():
-            if any(ref.startswith("cutouts#") for ref in refs):
+            if any(ref.split("#", 1)[0] in {"cutouts", "cutouts_array"} for ref in refs):
                 assert path.startswith(f"data_product@{origin}:fink.")
 
 
@@ -104,10 +104,10 @@ def test_valid_fink_semantic_paths_are_preserved():
     ztf = load("ztf", "mappings.yaml")["mappings"]
     lsst = load("lsst", "mappings.yaml")["mappings"]
     for path in (
-        "detection@ztf:fink.position.image_x", "detection@ztf:fink.position.image_y",
-        "detection@ztf:fink.position.distance_to_edge", "detection@ztf:fink.separation.from_search_center",
-        "detection@ztf:fink.calibration.{filter}.zero_point", "detection@ztf:fink.time.exposure",
-        "detection@ztf:fink.quality.real_bogus",
+        "measurement@ztf:fink.position.image_x", "measurement@ztf:fink.position.image_y",
+        "measurement@ztf:fink.position.distance_to_edge", "measurement@ztf:fink.separation.from_search_center",
+        "measurement@ztf:fink.calibration.{filter}.zero_point", "measurement@ztf:fink.time.exposure",
+        "measurement@ztf:fink.quality.real_bogus",
     ):
         assert path in ztf
     assert "summary@lsst:fink.detection_count" in lsst

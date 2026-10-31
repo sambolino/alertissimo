@@ -98,8 +98,8 @@ def test_exact_required_query_validates_and_binds_without_sampling_a_clock(graph
     assert plan.predicate_realization.residual == step.predicate
     bound = bind_endpoint(step, plan, EndpointRegistry(), reference_time=NOW)
     assert bound.params == {
-        "class": "SN candidate", "startdate": "2021-11-18T00:00:00.000000Z",
-        "stopdate": "2021-11-25T00:00:00.000000Z",
+        "class": "SN candidate", "startdate": "2021-11-17T21:00:00.000000Z",
+        "stopdate": "2021-11-25T03:00:00.000000Z",
     }
 
 
@@ -112,7 +112,7 @@ def test_recorded_class_response_partitions_objects_and_rechecks_qualified_evide
     assert identities(result.portfolios) == {("ztf", row["i:objectId"]) for row in rows}
     assert len(result.portfolios) == 7
     discovery = result.result.steps[0].portfolios
-    assert sum(record.semantic_type == "detection@ztf:fink" for p in discovery for record in p.records) == 10
+    assert sum(record.semantic_type == "measurement@ztf:fink" for p in discovery for record in p.records) == 10
     assert sum(endpoint == "latests" for endpoint, _ in transport.calls) == 1
     # General where clauses also emit the DSL's classification requirement.
     # Its fresh objects retrieval is distinct from the class-index discovery.
@@ -134,8 +134,8 @@ def test_exact_sn_query_retrieves_all_measurements_after_candidate_selection(gra
     source = program() + "with lightcurve via fink\nwith classification via fink\n"
     result = execute_dsl(source, graph=graph, executor=executor(transport), continue_from=None, reference_time=SN_NOW)
     assert identities(result.portfolios) == {("ztf", "ZTF21abfmbix")}
-    assert transport.calls[0][1]["startdate"] == "2021-06-25T00:00:00.000000Z"
-    assert transport.calls[0][1]["stopdate"] == "2021-07-02T00:00:00.000000Z"
+    assert transport.calls[0][1]["startdate"] == "2021-06-24T21:00:00.000000Z"
+    assert transport.calls[0][1]["stopdate"] == "2021-07-02T03:00:00.000000Z"
     objects_calls = [params for endpoint, params in transport.calls if endpoint == "objects"]
     assert objects_calls and all(params["objectId"] == "ZTF21abfmbix" for params in objects_calls)
     # within selects candidates. It must not trim the subsequently fetched LC.
@@ -152,7 +152,7 @@ def test_residual_selection_feeds_only_survivor_ids_to_downstream_retrieval(grap
     rows = recorded("latests.json")
     transport = ReplayTransport(rows)
     source = program("Early SN Ia candidate")
-    condition = "detection@ztf:fink.position.ra > 30"
+    condition = "measurement@ztf:fink.position.ra > 30"
     source = source + f"filter {condition}\n" if filter_step else source.rstrip() + f" and {condition}\n"
     # An explicit classification clause after selection avoids the DSL's
     # implicit retrieval being inserted ahead of the filter.
@@ -215,8 +215,8 @@ def test_absolute_windows_and_no_window_keep_physical_contract_defaults(graph):
     absolute = step.model_copy(update={"time_context": TimeContext(
         start_time="2021-11-18T02:00:00+02:00", end_time="2021-11-25T02:00:00+02:00")})
     call = bind_endpoint(absolute, plan_step(absolute, graph)[0], EndpointRegistry())
-    assert call.params["startdate"] == "2021-11-18T00:00:00.000000Z"
-    assert call.params["stopdate"] == "2021-11-25T00:00:00.000000Z"
+    assert call.params["startdate"] == "2021-11-17T21:00:00.000000Z"
+    assert call.params["stopdate"] == "2021-11-25T03:00:00.000000Z"
     unbounded = step.model_copy(update={"time_context": None})
     call = bind_endpoint(unbounded, plan_step(unbounded, graph)[0], EndpointRegistry())
     assert call.params == {"class": "SN candidate"}
@@ -247,7 +247,7 @@ def test_fink_continuation_replays_the_original_window_and_fresh_search_resolves
                 continue_from=None, reference_time=later)
     fresh_discovery = [params for endpoint, params in transport.calls if endpoint == "latests"]
     assert len(fresh_discovery) == 2
-    assert fresh_discovery[-1]["stopdate"] == "2021-11-26T00:00:00.000000Z"
+    assert fresh_discovery[-1]["stopdate"] == "2021-11-26T03:00:00.000000Z"
 
 
 @pytest.mark.parametrize("producer", ["other", "{producer}"])

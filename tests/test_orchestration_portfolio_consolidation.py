@@ -37,7 +37,7 @@ def _portfolio(
     )
     detection = SemanticRecord(
         internal_record_id=InternalRecordId(f"record:{marker}:detection"),
-        semantic_type=f"detection@{origin}:{broker}",
+        semantic_type=f"measurement@{origin}:{broker}",
         fields={"identity.object_id": object_id, "measurement.marker": marker},
         internal_source=InternalRecordSource(
             internal_execution_id=execution.internal_execution_id,
@@ -253,7 +253,7 @@ def test_unidentified_or_ambiguous_portfolio_remains_independent():
         records=(
             SemanticRecord(
                 InternalRecordId("record:no-id"),
-                "detection@lsst:fink",
+                "measurement@lsst:fink",
                 {"identity.object_id": "A"},
             ),
         ),
