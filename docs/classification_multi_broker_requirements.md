@@ -87,6 +87,7 @@ Run locally:
 set -o pipefail
 PYTHONPATH=. python -m pytest -q \
   tests/test_dsl_multi_broker_classification.py \
+  tests/test_dsl_formal_grammar.py \
   tests/test_dsl_surface.py \
   tests/test_dsl_lowering.py \
   tests/test_dsl_fragments.py \
