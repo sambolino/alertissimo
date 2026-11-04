@@ -17,12 +17,14 @@ from pydantic import BaseModel, ConfigDict
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    FieldMappingCapability,
     SemanticRecordCapability,
     build_capability_graph,
 )
+from alertissimo.data_layer.runtime.recipes import ConstantValueSource
 from alertissimo.orchestration.ir import ConfirmStep, GetStep, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
-    classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
+    SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
 )
 
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
@@ -305,6 +307,35 @@ def _qualified_endpoint_evidence(
     return tuple(evidence)
 
 
+def _required_material_variants(
+    item: SourceCapabilityResult, graph: CapabilityGraph,
+) -> tuple[tuple[FieldMappingCapability, ...], ...]:
+    """Inspect each eligible route's required, projected call outputs without choosing one."""
+    variants, owned = [], set()
+    for recipe in item.recipes:
+        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
+        fields = []
+        for call in recipe.calls:
+            if not call.required:
+                continue
+            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
+                         if endpoint.endpoint == call.endpoint)
+            outputs = call.outputs
+            projection = next((param.source for param in call.params
+                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue  # A dynamic projection is not a field-availability proof.
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                outputs = tuple(field for field in outputs if field.raw_field in columns)
+            fields.extend(outputs)
+        variants.append(tuple(fields))
+    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+                    for endpoint in item.candidates
+                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
+    return tuple(variants) or ((),)
+
+
 def _retrieval_requirement_checks(
     surface: SurfaceScript,
     clause: RequirementClause,
@@ -341,6 +372,7 @@ def _retrieval_requirement_checks(
 
     result = validate_step_capabilities(step, graph)
     scheduled_predicate = None
+    discovery = None
     if noun == "classification" and base_workflow is None:
         try:
             candidate, _ = _candidate_operation(surface, record_types=record_types)
@@ -348,6 +380,8 @@ def _retrieval_requirement_checks(
             pass  # The candidate capability check retains its original diagnostic.
         else:
             scheduled_predicate = _external_cone_predicate(surface, candidate)
+            if scheduled_predicate is not None:
+                discovery = validate_step_capabilities(candidate.model_copy(update={"predicate": None}), graph)
     material = ()
     if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
@@ -392,24 +426,23 @@ def _retrieval_requirement_checks(
         if scheduled_predicate is None or item.status != "supported":
             return ()
         from alertissimo.orchestration.ir import iter_semantic_references
-        channels = {ref.channel for ref in iter_semantic_references(scheduled_predicate)}
+        channels = {ref.channel for ref in iter_semantic_references(scheduled_predicate)
+                    if ref.semantic_type == "classification"}
         if item.source is None or item.source.broker not in channels:
             return ()
-        variants = [tuple(field for call in recipe.calls if call.required for field in call.outputs)
-                    for recipe in item.recipes]
-        if not variants:
-            variants = [graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
-                        for endpoint in item.candidates]
-        if not variants:
-            variants = [()]
-        return tuple(dict.fromkeys(gap for outputs in variants for gap in predicate_material_gaps(
-            scheduled_predicate, tuple(outputs), broker=item.source.broker,
+        discovery_variants = [outputs for source in discovery.source_results
+                              if source.status == "supported" and source.source is not None
+                              and source.source.origin == item.source.origin
+                              for outputs in _required_material_variants(source, graph)] if discovery is not None else []
+        return tuple(dict.fromkeys(gap for outputs in _required_material_variants(item, graph)
+                                  for earlier in discovery_variants or [()] for gap in predicate_material_gaps(
+            scheduled_predicate, earlier + outputs, broker=item.source.broker,
         )))
 
     return tuple(
         SurfaceCapabilityCheck(
             subject="requirement", status=SurfaceCapabilityStatus.DEFERRED if gaps else SurfaceCapabilityStatus(item.status),
-            reason=("initial predicate requires material unmapped by its targeted retrieval: " + repr(gaps)
+            reason=("initial predicate requires material unmapped by its targeted retrieval and required discovery: " + repr(gaps)
                     if gaps else item.reason), clause_index=clause_index,
             origin=item.source.origin if item.source is not None else None,
             broker=item.source.broker if item.source is not None else None,

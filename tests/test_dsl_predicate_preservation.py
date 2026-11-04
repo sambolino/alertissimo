@@ -273,10 +273,9 @@ def test_cross_broker_cone_unproven_time_contract_remains_deferred_before_transp
 
 @pytest.mark.parametrize("source", [
     'objects from ztf via alerce\nwith classification via fink where best.class = "SN candidate"\n',
-    CONE + 'with classification via fink where best.class = "SN candidate" and summary.detection_count >= 1\n',
     CONE + f"where {CONDITION}\nconfirm by 1 via fink\n",
 ])
-def test_unbounded_mixed_and_confirmation_cases_keep_their_existing_guards(graph, source):
+def test_unbounded_and_confirmation_cases_keep_their_existing_guards(graph, source):
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = ReplayExecutor()
     with pytest.raises((PlanningDeferredError, SurfaceLoweringError)):

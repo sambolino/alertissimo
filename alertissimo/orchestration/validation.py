@@ -483,7 +483,9 @@ def predicate_material_gaps(
                 producer is not None and _DYNAMIC_QUALIFIER.fullmatch(producer)
             ):
                 continue
-            channel = record.partition(":")[2] or broker
+            # A material union may contain calls at several brokers. A legacy
+            # record's channel belongs to its own field mapping, not its caller.
+            channel = record.partition(":")[2] or field.broker or broker
             if reference.channel is not None and reference.channel != channel:
                 continue
             if not reference.field_path:

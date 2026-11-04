@@ -282,13 +282,13 @@ def _scoped_requirement_predicate(
 
 
 def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
-    """Identify a bounded first pass whose whole condition needs one other broker.
+    """Identify a bounded first pass needing classification at one other broker.
 
     This is semantic scheduling only. It does not choose endpoints or broaden a
     predicate-defined search stream. Retrieval capability checks prove field
     mappings separately. Temporal membership remains on discovery and uses its
-    existing capability proof before any targeted retrieval. Mixed-owner cases
-    keep their guards.
+    existing capability proof before any targeted retrieval. Summary conditions
+    travel with the whole predicate; no Boolean branch is pruned on its own.
     """
     if not isinstance(step, ConeSearchStep) or step.predicate is None:
         return None
@@ -298,12 +298,19 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
     if any(isinstance(clause, (ConfirmClause, MatchClause)) for clause in initial):
         return None
     references = tuple(iter_semantic_references(step.predicate))
-    channels = {ref.channel for ref in references}
+    if any(ref.semantic_type not in {"summary", "classification"} for ref in references):
+        return None
+    classifications = tuple(ref for ref in references if ref.semantic_type == "classification")
+    channels = {ref.channel for ref in classifications}
     if len(channels) != 1 or None in channels:
         return None
     if channels & {source.broker for source in step.sources}:
         return None
-    if any(ref.semantic_type != "classification" for ref in references):
+    summaries = tuple(ref for ref in references if ref.semantic_type == "summary")
+    if summaries and (len(step.sources) != 1 or any(
+        ref.channel is not None and ref.channel not in channels | {step.sources[0].broker}
+        for ref in summaries
+    )):
         return None
     generic_material = False
     for clause in initial:
@@ -317,11 +324,11 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
             if requirement.source is None:
                 generic_material = True
                 continue
-            if any(ref.producer is None or ref.producer.lower() != requirement.source.lower() for ref in references):
+            if any(ref.producer is None or ref.producer.lower() != requirement.source.lower() for ref in classifications):
                 # Local model selection must not remove another model needed by
                 # the original condition before it can be evaluated.
                 return None
-    if len({ref.producer for ref in references}) > 1 and not generic_material:
+    if len({ref.producer for ref in classifications}) > 1 and not generic_material:
         # Several implicit model-specific Gets would successively select away
         # other needed models. Require a generic material request for this case.
         return None
