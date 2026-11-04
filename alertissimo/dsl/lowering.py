@@ -286,11 +286,11 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
 
     This is semantic scheduling only. It does not choose endpoints or broaden a
     predicate-defined search stream. Retrieval capability checks prove field
-    mappings separately; temporal and mixed-owner cases keep their guards.
+    mappings separately. Temporal membership remains on discovery and uses its
+    existing capability proof before any targeted retrieval. Mixed-owner cases
+    keep their guards.
     """
     if not isinstance(step, ConeSearchStep) or step.predicate is None:
-        return None
-    if step.time_context is not None:
         return None
     if not step.sources or any(source.broker is None for source in step.sources):
         return None

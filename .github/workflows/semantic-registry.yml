@@ -33,6 +33,7 @@ on:
       - 'tests/test_orchestration_predicate_recipes.py'
       - 'tests/test_orchestration_selection_recipes.py'
       - 'tests/test_dsl_latest_evidence.py'
+      - 'tests/test_dsl_temporal_evidence.py'
       - 'tests/test_orchestration_search_recipes.py'
       - 'tests/test_orchestration_confirmation_recipes.py'
       - 'tests/test_orchestration_sql_recipes.py'
@@ -123,6 +124,7 @@ jobs:
             tests/test_orchestration_predicate_recipes.py \
             tests/test_orchestration_selection_recipes.py \
             tests/test_dsl_latest_evidence.py \
+            tests/test_dsl_temporal_evidence.py \
             tests/test_orchestration_search_recipes.py \
             tests/test_orchestration_confirmation_recipes.py \
             tests/test_orchestration_sql_recipes.py \
