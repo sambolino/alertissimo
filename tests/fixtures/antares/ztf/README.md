@@ -27,6 +27,28 @@ The rich audit separately selects the locus core, 316 Alert rows, and each of th
 
 ## Follow-up convergence audit
 
+### Catalogue classification follow-up
+
+The original audit table above is retained as historical evidence. Five former
+debt leaves now map to classification fields on their existing crossmatch records:
+the Gaia DSC-Combmod galaxy/quasar/star probabilities, and the Gaia variability
+class and classifier-name fields. The paths match the existing ANTARES/LSST
+catalogue mappings. No capture bytes changed, and no candidate-level
+classification record or retrieval recipe was introduced.
+
+| Current evidence branch | Mapped | Intentionally unmapped | Delegated / structural | Unaccounted |
+|---|---:|---:|---:|---:|
+| rich `get_by_ztf_object_id` composite | 90 | 812 | 712 | 0 |
+| Gaia DR3 source | 17 | 135 | 0 | 0 |
+| Gaia DR3 variability | 5 | 1 | 0 | 0 |
+
+The variability classifier string is retained verbatim. No probability is inferred
+from the remaining `solid` field. Locus anomaly outputs remain explicit debt pending
+a verified method and validity interpretation; catalogue membership and filter tags
+are not promoted to a transient physical class.
+
+### Alert and lightcurve convergence
+
 The Alert audit now converges 17 additional established ZTF fields: aperture photometry (`ztf_magap`, `ztf_sigmagap`, `ztf_magapbig`, `ztf_sigmagapbig`), exposure (`ztf_exptime`), calibration (`ztf_magzpsci`, `ztf_magzpsciunc`, `ztf_magzpscirms`, `ztf_clrcoeff`, `ztf_clrcounc`), reference-source image metrics (`ztf_chinr`, `ztf_sharpnr`), and provenance (`ztf_pid`, `ztf_nid`, `ztf_rfid`, `ztf_field`, `ztf_programid`). All observed values of these mapped fields were inspected; none uses a missing-value sentinel in this fixture, so no sentinel transform is justified for them. Sentinel-bearing provider fields remain explicit debt rather than being cleaned generically.
 
 The fixture-driven lightcurve audit mechanically unions every row's keys and compares them with an explicit audit-only secondary-debt namespace, confirming exactly 14 observed columns, 0 mapped columns, 14 intentionally secondary columns, and 0 unaccounted columns. It produces 0 semantic records and therefore does not duplicate the 316 Alert-derived detections. Alerts remain the runtime-authoritative observations; production portfolio construction neither requests nor accesses the lazy client lightcurve property.

@@ -39,8 +39,8 @@ def test_core_fixtures_have_zero_unaccounted(name,endpoint):
 
 def test_rich_composite_has_zero_unaccounted():
     report=audit_payload(rich_locus(),broker='antares',origin='ztf',endpoint='get_by_ztf_object_id')
-    assert 'Mapped leaves: 85' in report
-    assert 'Intentionally unmapped leaves: 817' in report
+    assert 'Mapped leaves: 90' in report
+    assert 'Intentionally unmapped leaves: 812' in report
     assert 'Delegated / structural leaves: 712' in report
     assert 'Unaccounted leaves: 0' in report
 

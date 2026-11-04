@@ -32,6 +32,7 @@ on:
       - 'tests/test_alerce_semantic_search.py'
       - 'tests/test_lasair_semantic_search.py'
       - 'tests/test_antares_semantic_search.py'
+      - 'tests/test_antares_ztf_classification_context.py'
       - 'tests/test_capability_graph.py'
       - 'tests/test_recipe_registry.py'
       - 'tests/test_lasair_ztf_compact_cone_summary.py'
@@ -76,6 +77,7 @@ jobs:
             tests/test_alerce_semantic_search.py \
             tests/test_lasair_semantic_search.py \
           tests/test_antares_semantic_search.py \
+            tests/test_antares_ztf_classification_context.py \
             tests/test_capability_graph.py \
             tests/test_recipe_registry.py \
             tests/test_lasair_ztf_compact_cone_summary.py \

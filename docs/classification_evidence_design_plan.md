@@ -231,6 +231,14 @@ This is a prepared handoff, not a reported passing or merged C2b result. C3-C7
 remain outstanding, including the separate material-scheduling and Confirm-scope
 work; endpoint classification discovery remains last.
 
+C2b is now merged as `2b1bcf4`. C3a is prepared locally on
+`feat/classification-antares-ztf-context`: five Gaia catalogue classification
+fields converge with the already mapped ANTARES/LSST paths. See the
+[mapping scope, primary definitions and remaining gaps](classification_antares_ztf_context.md).
+These are crossmatch classifications; no candidate-level ANTARES classification
+recipe is claimed. Unverified anomaly/mask semantics and tags remain explicit
+limits. This entry is a prepared handoff, not reported local/CI/live success.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population
