@@ -234,10 +234,10 @@ def test_legacy_classifier_producer_does_not_borrow_another_calls_broker(graph):
 
 
 @pytest.mark.parametrize("condition", [
-    f'{LABEL} = "SN candidate" and classification@lc_classifier:alerce.best.class = "SN"',
+    f'{LABEL} = "SN candidate" and classification@lc_classifier.best.class = "SN"',
     f'{LABEL} = "SN candidate" and measurement@ztf:fink.quality.real_bogus >= 0.9',
 ])
-def test_broader_classification_channels_and_measurement_dependencies_stay_deferred(graph, condition):
+def test_unqualified_classification_channels_and_measurement_dependencies_stay_deferred(graph, condition):
     source = program(condition)
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = Executor()

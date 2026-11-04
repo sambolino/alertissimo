@@ -22,7 +22,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     build_capability_graph,
 )
 from alertissimo.data_layer.runtime.recipes import ConstantValueSource
-from alertissimo.orchestration.ir import ConfirmStep, GetStep, Source, WorkflowIR
+from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
     SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
 )
@@ -336,6 +336,39 @@ def _required_material_variants(
     return tuple(variants) or ((),)
 
 
+def _initial_material_gaps(
+    surface: SurfaceScript, predicate: Predicate, *, origin: str, graph: CapabilityGraph,
+    record_types: frozenset[str], semantic_paths: _SemanticPaths | None,
+) -> tuple[str, ...]:
+    """Prove each reference from required material in the compiler's initial IR.
+
+    A field must be available in every route of at least one emitted operation.
+    This is equivalent to checking all independent route combinations without
+    constructing their Cartesian product. Predicate evaluation stays whole.
+    """
+    from .lowering import _first_filter_index, _lower_surface_intent
+    from alertissimo.orchestration.ir import FilterStep, GetClassificationStep
+
+    initial = surface.model_copy(update={"clauses": surface.clauses[:_first_filter_index(surface)]})
+    workflow = _lower_surface_intent(initial, record_types=record_types, graph=graph,
+                                    semantic_paths=semantic_paths).workflow
+    missing = None
+    for index, step in enumerate(workflow.steps):
+        if isinstance(step, FilterStep):
+            break  # Later refinements/retrievals cannot supply initial material.
+        if index != 0 and not isinstance(step, GetClassificationStep):
+            continue
+        validation = validate_step_capabilities(step, graph)
+        variants = [outputs for source in validation.source_results
+                    if source.status == "supported" and source.source is not None and source.source.origin == origin
+                    for outputs in _required_material_variants(source, graph)]
+        absent = {gap for outputs in variants or [()] for gap in predicate_material_gaps(
+            predicate, outputs, broker="",  # Field mappings retain their own brokers.
+        )}
+        missing = absent if missing is None else missing & absent
+    return tuple(sorted(missing or ()))
+
+
 def _retrieval_requirement_checks(
     surface: SurfaceScript,
     clause: RequirementClause,
@@ -372,7 +405,6 @@ def _retrieval_requirement_checks(
 
     result = validate_step_capabilities(step, graph)
     scheduled_predicate = None
-    discovery = None
     if noun == "classification" and base_workflow is None:
         try:
             candidate, _ = _candidate_operation(surface, record_types=record_types)
@@ -380,8 +412,6 @@ def _retrieval_requirement_checks(
             pass  # The candidate capability check retains its original diagnostic.
         else:
             scheduled_predicate = _external_cone_predicate(surface, candidate)
-            if scheduled_predicate is not None:
-                discovery = validate_step_capabilities(candidate.model_copy(update={"predicate": None}), graph)
     material = ()
     if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
@@ -430,14 +460,13 @@ def _retrieval_requirement_checks(
                     if ref.semantic_type == "classification"}
         if item.source is None or item.source.broker not in channels:
             return ()
-        discovery_variants = [outputs for source in discovery.source_results
-                              if source.status == "supported" and source.source is not None
-                              and source.source.origin == item.source.origin
-                              for outputs in _required_material_variants(source, graph)] if discovery is not None else []
-        return tuple(dict.fromkeys(gap for outputs in _required_material_variants(item, graph)
-                                  for earlier in discovery_variants or [()] for gap in predicate_material_gaps(
-            scheduled_predicate, earlier + outputs, broker=item.source.broker,
-        )))
+        try:
+            return _initial_material_gaps(
+                surface, scheduled_predicate, origin=item.source.origin, graph=graph,
+                record_types=record_types, semantic_paths=semantic_paths,
+            )
+        except SurfaceLoweringError as error:
+            return (str(error),)
 
     return tuple(
         SurfaceCapabilityCheck(

@@ -282,7 +282,7 @@ def _scoped_requirement_predicate(
 
 
 def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
-    """Identify a bounded first pass needing classification at one other broker.
+    """Identify a bounded first pass needing classification at other brokers.
 
     This is semantic scheduling only. It does not choose endpoints or broaden a
     predicate-defined search stream. Retrieval capability checks prove field
@@ -302,9 +302,11 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
         return None
     classifications = tuple(ref for ref in references if ref.semantic_type == "classification")
     channels = {ref.channel for ref in classifications}
-    if len(channels) != 1 or None in channels:
+    if not channels or None in channels:
         return None
-    if channels & {source.broker for source in step.sources}:
+    if channels <= {source.broker for source in step.sources}:
+        return None  # Preserve existing native-only discovery realization.
+    if len(channels) > 1 and len(step.sources) != 1:
         return None
     summaries = tuple(ref for ref in references if ref.semantic_type == "summary")
     if summaries and (len(step.sources) != 1 or any(
@@ -312,23 +314,26 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
         for ref in summaries
     )):
         return None
-    generic_material = False
+    generic_material = set()
     for clause in initial:
         if not isinstance(clause, RequirementClause):
             continue
         if resolve_record_type(clause.product, frozenset({"classification"})) != "classification":
             continue
         for requirement in clause.broker_requirements():
-            if (requirement.via or surface.candidates.broker) not in channels:
+            channel = requirement.via or surface.candidates.broker
+            if channel not in channels:
                 continue
             if requirement.source is None:
-                generic_material = True
+                generic_material.add(channel)
                 continue
-            if any(ref.producer is None or ref.producer.lower() != requirement.source.lower() for ref in classifications):
+            if any(ref.producer is None or ref.producer.lower() != requirement.source.lower()
+                   for ref in classifications if ref.channel == channel):
                 # Local model selection must not remove another model needed by
                 # the original condition before it can be evaluated.
                 return None
-    if len({ref.producer for ref in classifications}) > 1 and not generic_material:
+    if any(len({ref.producer for ref in classifications if ref.channel == channel}) > 1
+           and channel not in generic_material for channel in channels):
         # Several implicit model-specific Gets would successively select away
         # other needed models. Require a generic material request for this case.
         return None

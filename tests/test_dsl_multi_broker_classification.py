@@ -199,9 +199,12 @@ def test_unavailable_list_member_is_not_silently_dropped(graph, clause):
     assert executor.calls == []
 
 
-def test_discovery_still_defers_conditions_requiring_later_broker_material(graph):
+def test_bounded_discovery_schedules_each_brokers_material_before_the_condition(graph):
     source = ('objects from ztf via alerce\ninside (120, -6, 5arcsec)\n'
               'with classification via alerce, fink where best.class = "SN candidate"\n')
     validation = validate_dsl(source, graph=graph, continue_from=None)
-    assert validation.is_valid and not validation.is_runnable
-    assert "discovery residual requires material unavailable" in str(validation.lowering_error)
+    assert validation.is_runnable, validation.lowering_error
+    workflow = validation.compilation.workflow
+    assert [step.op for step in workflow.steps] == ["cone_search", "get_classification", "get_classification", "filter"]
+    assert workflow.steps[0].predicate is None
+    assert {ref.channel for ref in iter_semantic_references(workflow.steps[-1].predicate)} == {"alerce", "fink"}
