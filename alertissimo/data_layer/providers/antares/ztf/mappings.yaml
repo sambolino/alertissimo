@@ -223,12 +223,24 @@ mappings:
   - locus_catalog_gaia#ra
   crossmatch@gaia:antares.position.dec:
   - locus_catalog_gaia#dec
+  # Class probabilities of the matched Gaia source; align with the LSST paths.
+  # These are DSC-Combmod outputs, not classification of the transient candidate.
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_galaxy.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_galaxy
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_quasar.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_quasar
+  crossmatch@gaia:antares.classification.assessment.gaia_dsc_star.probability:
+  - locus_catalog_gaia#classprob_dsc_combmod_star
   crossmatch@gaia_variability:antares.identity.object_id:
   - locus_catalog_gaia_variability#source
   crossmatch@gaia_variability:antares.position.ra:
   - locus_catalog_gaia_variability#ra_icrs
   crossmatch@gaia_variability:antares.position.dec:
   - locus_catalog_gaia_variability#de_icrs
+  crossmatch@gaia_variability:antares.classification.assessment.gaia_variability.class:
+  - locus_catalog_gaia_variability#class
+  crossmatch@gaia_variability:antares.classification.assessment.gaia_variability.method:
+  - locus_catalog_gaia_variability#classifier
   crossmatch@bailer_jones:antares.identity.object_id:
   - locus_catalog_bailer_jones#source
   crossmatch@bailer_jones:antares.position.ra:
