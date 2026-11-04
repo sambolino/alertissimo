@@ -77,6 +77,7 @@ class ReplayExecutor:
 
 @pytest.mark.parametrize("tail", [
     'with classification via fink where best.class = "SN candidate"\n',
+    'with classification via fink where (best.class = "SN candidate" or best.class = "Kilonova") and exists best.class\n',
     f"where {CONDITION}\n",
     f"where {CONDITION}\nwith classification from fink via fink\n",
     f"with classification from fink via fink\nwhere {CONDITION}\n",
@@ -186,8 +187,6 @@ def test_direct_surface_input_cannot_bypass_late_constraint_guard(clause):
 
 
 @pytest.mark.parametrize("source", [
-    CONE + 'with classification via fink where best.class = "SN candidate"\n',
-    CONE + 'where classification@fink:fink.best.class = "SN candidate"\n',
     "objects from ztf via lasair\ninside (124.87996115142856, -6.0205001, 5arcsec)\n"
     "where summary.detection_count >= 5\n",
 ])
@@ -197,6 +196,90 @@ def test_unavailable_discovery_material_defers_before_any_provider_call(graph, s
     assert "discovery residual requires material unavailable" in str(validation.lowering_error)
     executor = ReplayExecutor()
     with pytest.raises(PlanningDeferredError, match="discovery residual requires material unavailable"):
+        execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert executor.calls == []
+
+
+@pytest.mark.parametrize("tail", [
+    'with classification via fink where best.class = "SN candidate"\n',
+    f"where {CONDITION}\n",
+    f"where {CONDITION}\nwith classification via fink\n",
+    f"with classification via fink\nwhere {CONDITION}\n",
+    'with classification via fink where (best.class = "SN candidate" or best.class = "Kilonova") and exists best.class\n',
+])
+def test_cross_broker_cone_condition_runs_after_its_classification_retrieval(graph, tail):
+    executor = ReplayExecutor()
+    source = CONE + tail
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    assert executor.calls == []
+    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert [step.op for step in result.workflow.steps] == ["cone_search", "get_classification", "filter"]
+    assert result.workflow.steps[0].predicate is None
+    assert result.workflow.steps[-1].predicate is not None
+    assert identities(result.result.steps[0].portfolios) == {("ztf", A), ("ztf", B)}
+    assert identities(result.result.steps[1].portfolios) == {("ztf", A), ("ztf", B)}
+    assert identities(result.portfolios) == {("ztf", A)}
+    assert [name for _, name, _ in executor.calls] == ["query_objects", "objects"]
+    assert executor.calls[-1][2] == {"objectId": f"{A},{B}"}
+    assert sum(r.semantic_type == "measurement@ztf:fink" for p in result.portfolios for r in p.records) == 2
+
+
+def test_cross_broker_initial_selection_precedes_later_filter_and_retrieval(graph):
+    executor = ReplayExecutor()
+    source = CONE + 'with classification via fink where best.class = "SN candidate"\n'
+    first = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    snapshot = first.to_dict()
+    second = execute_dsl("filter summary.detection_count >= 1\nwith lightcurve via fink\n",
+                         graph=graph, executor=executor, continue_from=first)
+    assert first.to_dict() == snapshot
+    assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
+    assert identities(second.portfolios) == {("ztf", A)}
+    assert [name for _, name, _ in executor.calls] == ["query_objects", "objects", "objects"]
+    assert executor.calls[-1][2] == {"objectId": A}
+
+
+def test_later_explicit_request_does_not_suppress_initial_evidence_retrieval(graph):
+    source = (CONE + f"where {CONDITION}\n"
+              + "filter summary.detection_count >= 1\nwith classification from fink via fink\n")
+    executor = ReplayExecutor()
+    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert [step.op for step in result.workflow.steps[:3]] == ["cone_search", "get_classification", "filter"]
+    assert identities(result.result.steps[1].portfolios) == {("ztf", A), ("ztf", B)}
+    assert identities(result.portfolios) == {("ztf", A)}
+    assert executor.calls[1][2] == {"objectId": f"{A},{B}"}
+
+
+def test_initial_cross_broker_predicate_requires_mapped_get_fields(graph):
+    source = CONE + "with classification via fink where best.probability >= 0.8\n"
+    validation = validate_dsl(source, graph=graph, continue_from=None)
+    assert validation.is_valid and not validation.is_runnable
+    assert "unmapped by its targeted retrieval" in str(validation.lowering_error)
+    executor = ReplayExecutor()
+    with pytest.raises(SurfaceLoweringError, match="unmapped by its targeted retrieval"):
+        execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert executor.calls == []
+
+
+@pytest.mark.parametrize("extra", ["latest 1\n", "within 7d\n"])
+def test_cross_broker_cone_selection_and_time_remain_deferred_before_transport(graph, extra):
+    source = CONE + extra + 'with classification via fink where best.class = "SN candidate"\n'
+    assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+    executor = ReplayExecutor()
+    with pytest.raises((PlanningDeferredError, SurfaceLoweringError)):
+        execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert executor.calls == []
+
+
+@pytest.mark.parametrize("source", [
+    'objects from ztf via alerce\nwith classification via fink where best.class = "SN candidate"\n',
+    CONE + 'with classification via fink where best.class = "SN candidate" and summary.detection_count >= 1\n',
+    CONE + f"where {CONDITION}\nconfirm by 1 via fink\n",
+])
+def test_unbounded_mixed_and_confirmation_cases_keep_their_existing_guards(graph, source):
+    assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+    executor = ReplayExecutor()
+    with pytest.raises((PlanningDeferredError, SurfaceLoweringError)):
         execute_dsl(source, graph=graph, executor=executor, continue_from=None)
     assert executor.calls == []
 

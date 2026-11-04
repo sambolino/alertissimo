@@ -323,7 +323,6 @@ def _preflight_structure(script: str) -> None:
         )
 
     filter_seen = False
-    with_seen = False
     where_count = 0
     for line_no, text in lines[1:]:
         lowered = text.lower()
@@ -346,7 +345,6 @@ def _preflight_structure(script: str) -> None:
                     line=line_no,
                 )
         if lowered.startswith("with "):
-            with_seen = True
             if text.endswith(":"):
                 raise DSLParseError(
                     "with predicates are inline; use 'with <requirement> where <expression>'",
@@ -359,14 +357,6 @@ def _preflight_structure(script: str) -> None:
             if where_count > 1:
                 raise DSLParseError(
                     "only one general where clause is allowed",
-                    line=line_no,
-                )
-            # Named candidates can be selected after their initial retrievals.
-            # Discovery scheduling remains constrained until material-aware planning.
-            if with_seen and lookup_prefix is None:
-                raise DSLParseError(
-                    "general where must precede with clauses; scoped with predicates "
-                    "must be inline as 'with <requirement> where <expression>'",
                     line=line_no,
                 )
             if filter_seen:

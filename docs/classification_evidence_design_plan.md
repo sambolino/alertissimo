@@ -239,6 +239,15 @@ These are crossmatch classifications; no candidate-level ANTARES classification
 recipe is claimed. Unverified anomaly/mask semantics and tags remain explicit
 limits. This entry is a prepared handoff, not reported local/CI/live success.
 
+C3a is merged as `4b2cc07`. C4 is split into small, reviewable scheduling changes.
+The first, `fix/dsl-cross-broker-cone-predicates`, prepares bounded cone → external
+classification retrieval → initial Filter ordering and admits general where after
+initial with clauses. See its [scope, guards and handoff](dsl_cross_broker_cone_predicates.md).
+It intentionally retains latest/time and mixed-owner deferrals; C4 is not complete
+until later material is evaluated before initial latest using the declared
+discovery recency. C5-C7 remain outstanding. No passing or merged C4a result is
+claimed by this prepared entry.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

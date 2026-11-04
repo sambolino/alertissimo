@@ -41,6 +41,7 @@ from alertissimo.orchestration.ir import (
     TimeContext,
     WorkflowIR,
     and_predicates,
+    iter_semantic_references,
 )
 from alertissimo.orchestration.results import ResultOrderSpec, ResultViewSpec
 
@@ -278,6 +279,53 @@ def _scoped_requirement_predicate(
         for expression in clause.predicates
     ]
     return and_predicates(predicates)
+
+
+def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
+    """Identify a bounded first pass whose whole condition needs one other broker.
+
+    This is semantic scheduling only. It does not choose endpoints or broaden a
+    predicate-defined search stream. Retrieval capability checks prove field
+    mappings separately; selection/time and mixed-owner cases keep their guards.
+    """
+    if not isinstance(step, ConeSearchStep) or step.predicate is None:
+        return None
+    if step.selection is not None or step.time_context is not None:
+        return None
+    if not step.sources or any(source.broker is None for source in step.sources):
+        return None
+    initial = surface.clauses[:_first_filter_index(surface)]
+    if any(isinstance(clause, (ConfirmClause, MatchClause)) for clause in initial):
+        return None
+    references = tuple(iter_semantic_references(step.predicate))
+    channels = {ref.channel for ref in references}
+    if len(channels) != 1 or None in channels:
+        return None
+    if channels & {source.broker for source in step.sources}:
+        return None
+    if any(ref.semantic_type != "classification" for ref in references):
+        return None
+    generic_material = False
+    for clause in initial:
+        if not isinstance(clause, RequirementClause):
+            continue
+        if resolve_record_type(clause.product, frozenset({"classification"})) != "classification":
+            continue
+        for requirement in clause.broker_requirements():
+            if (requirement.via or surface.candidates.broker) not in channels:
+                continue
+            if requirement.source is None:
+                generic_material = True
+                continue
+            if any(ref.producer is None or ref.producer.lower() != requirement.source.lower() for ref in references):
+                # Local model selection must not remove another model needed by
+                # the original condition before it can be evaluated.
+                return None
+    if len({ref.producer for ref in references}) > 1 and not generic_material:
+        # Several implicit model-specific Gets would successively select away
+        # other needed models. Require a generic material request for this case.
+        return None
+    return step.predicate
 
 
 def _candidate_search(
@@ -750,22 +798,25 @@ def _lower_surface_intent(
         surface,
         record_types=record_types,
     )
+    material_predicate = _external_cone_predicate(surface, candidate_step)
+    if material_predicate is not None:
+        candidate_step = candidate_step.model_copy(update={"predicate": None})
     steps = [candidate_step]
     first_filter = _first_filter_index(surface)
     lookup = isinstance(candidate_step, LookupStep)
-    lookup_predicates: list[Predicate] = []
+    initial_predicates: list[Predicate] = [material_predicate] if material_predicate is not None else []
     emitted: set[tuple[str, str | None, str | None]] = set()
     view = ResultViewSpec()
 
-    def flush_lookup_predicates() -> None:
-        predicate = and_predicates(lookup_predicates)
+    def flush_initial_predicates() -> None:
+        predicate = and_predicates(initial_predicates)
         if predicate is not None:
             steps.append(FilterStep(predicate=predicate))
-            lookup_predicates.clear()
+            initial_predicates.clear()
 
     explicit_signatures = {
         signature
-        for clause in surface.clauses
+        for clause in (surface.clauses[:first_filter] if material_predicate is not None else surface.clauses)
         if isinstance(clause, RequirementClause)
         for requirement in clause.broker_requirements()
         for signature in [
@@ -776,9 +827,9 @@ def _lower_surface_intent(
 
     for index, clause in enumerate(surface.clauses):
         if isinstance(clause, (FilterClause, ConfirmClause, MatchClause)):
-            # Named populations have no SearchStep predicate slot. Preserve the
-            # initial conditions after their requested Gets, before later work.
-            flush_lookup_predicates()
+            # Preserve initial conditions after the requested material arrives,
+            # before any explicit later operation consumes the candidate view.
+            flush_initial_predicates()
         if isinstance(clause, OrderByClause):
             view = ResultViewSpec(
                 order_by=ResultOrderSpec(
@@ -805,6 +856,10 @@ def _lower_surface_intent(
                         continue
                     if not lookup and signature in explicit_signatures:
                         continue
+                    if material_predicate is not None and (signature[0], None, signature[2]) in explicit_signatures:
+                        # A generic explicit Get supplies the requested model too;
+                        # field admission below verifies the qualified evidence.
+                        continue
                     if signature == stop_before:
                         return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
                     steps.append(
@@ -817,7 +872,7 @@ def _lower_surface_intent(
                     )
                     emitted.add(signature)
                 if lookup:
-                    lookup_predicates.append(_semantic_predicate(
+                    initial_predicates.append(_semantic_predicate(
                         clause.condition, record_types=record_types, clause_index=index,
                     ))
             continue
@@ -852,7 +907,7 @@ def _lower_surface_intent(
                 )
                 if scoped is not None:
                     if lookup and index < first_filter:
-                        lookup_predicates.append(scoped)
+                        initial_predicates.append(scoped)
                     else:
                         steps.append(FilterStep(predicate=scoped))
         elif isinstance(clause, FilterClause):
@@ -901,7 +956,7 @@ def _lower_surface_intent(
                 clause_index=index,
             )
 
-    flush_lookup_predicates()
+    flush_initial_predicates()
     if stop_before is not None:
         raise SurfaceLoweringError(
             "requirement has no emitted retrieval occurrence in this workflow",

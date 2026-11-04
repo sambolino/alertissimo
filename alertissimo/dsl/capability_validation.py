@@ -22,7 +22,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
 )
 from alertissimo.orchestration.ir import ConfirmStep, GetStep, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
-    classification_material_capabilities, validate_step_capabilities,
+    classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
 )
 
 from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
@@ -248,10 +248,12 @@ def _candidate_checks(
     """Validate the same candidate operation that compilation will emit."""
     # Import lazily: lowering calls this validator before building the workflow.
     # These helpers only construct IR; they never resolve or execute providers.
-    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources
+    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources, _external_cone_predicate
 
     try:
         step, _ = _candidate_operation(surface, record_types=record_types)
+        if _external_cone_predicate(surface, step) is not None:
+            step = step.model_copy(update={"predicate": None})
     except SurfaceLoweringError as error:
         return tuple(
             SurfaceCapabilityCheck(
@@ -316,7 +318,10 @@ def _retrieval_requirement_checks(
 ) -> tuple[SurfaceCapabilityCheck, ...]:
     """Check the exact retrieval emitted by lowering, before endpoint selection."""
     # Pure IR construction; the lazy import avoids the compiler validation cycle.
-    from .lowering import SurfaceLoweringError, _lower_requirement, _requirement_prefix
+    from .lowering import (
+        SurfaceLoweringError, _candidate_operation, _external_cone_predicate,
+        _lower_requirement, _requirement_prefix,
+    )
 
     broker = clause.via or surface.candidates.broker
     try:
@@ -335,6 +340,14 @@ def _retrieval_requirement_checks(
         )
 
     result = validate_step_capabilities(step, graph)
+    scheduled_predicate = None
+    if noun == "classification" and base_workflow is None:
+        try:
+            candidate, _ = _candidate_operation(surface, record_types=record_types)
+        except SurfaceLoweringError:
+            pass  # The candidate capability check retains its original diagnostic.
+        else:
+            scheduled_predicate = _external_cone_predicate(surface, candidate)
     material = ()
     if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
@@ -375,10 +388,29 @@ def _retrieval_requirement_checks(
         return tuple(endpoint for endpoint in graph.endpoint_capabilities
                      if (endpoint.broker, endpoint.origin, endpoint.endpoint) in keys)
 
+    def material_gaps(item):
+        if scheduled_predicate is None or item.status != "supported":
+            return ()
+        from alertissimo.orchestration.ir import iter_semantic_references
+        channels = {ref.channel for ref in iter_semantic_references(scheduled_predicate)}
+        if item.source is None or item.source.broker not in channels:
+            return ()
+        variants = [tuple(field for call in recipe.calls if call.required for field in call.outputs)
+                    for recipe in item.recipes]
+        if not variants:
+            variants = [graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+                        for endpoint in item.candidates]
+        if not variants:
+            variants = [()]
+        return tuple(dict.fromkeys(gap for outputs in variants for gap in predicate_material_gaps(
+            scheduled_predicate, tuple(outputs), broker=item.source.broker,
+        )))
+
     return tuple(
         SurfaceCapabilityCheck(
-            subject="requirement", status=SurfaceCapabilityStatus(item.status),
-            reason=item.reason, clause_index=clause_index,
+            subject="requirement", status=SurfaceCapabilityStatus.DEFERRED if gaps else SurfaceCapabilityStatus(item.status),
+            reason=("initial predicate requires material unmapped by its targeted retrieval: " + repr(gaps)
+                    if gaps else item.reason), clause_index=clause_index,
             origin=item.source.origin if item.source is not None else None,
             broker=item.source.broker if item.source is not None else None,
             semantic_noun=noun, producer=clause.source, channel=broker,
@@ -388,7 +420,7 @@ def _retrieval_requirement_checks(
                 ) if noun in {"crossmatch", "classification"} else _endpoint_evidence(item.candidates)
             ),
         )
-        for item in result.source_results
+        for item in result.source_results for gaps in [material_gaps(item)]
     )
 
 
