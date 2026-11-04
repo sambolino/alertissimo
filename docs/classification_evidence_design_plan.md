@@ -248,6 +248,16 @@ until later material is evaluated before initial latest using the declared
 discovery recency. C5-C7 remain outstanding. No passing or merged C4a result is
 claimed by this prepared entry.
 
+C4a is now merged as `a54aab3`; its DSL/registry CI checkpoint passed, as reported
+by the local operator. C4b, `fix/dsl-latest-after-classification`, extends that same
+bounded-cone scope to initial latest after evidence filtering. It retains the
+discovery's latest contract and recency snapshot through an explicit
+`SearchSelection.after_step` boundary; no new Step kind or architecture layer is
+added. See [C4b implementation and local handoff](dsl_latest_after_classification.md).
+This entry records preparation, not a passing C4b test/CI result. Temporal
+composition, mixed-owner/multi-channel conditions and unbounded dependency
+scheduling remain guarded; C4 and C5-C7 are still outstanding.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

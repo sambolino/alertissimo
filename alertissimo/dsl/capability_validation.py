@@ -731,10 +731,12 @@ def _validate_surface_capabilities(
         if isinstance(clause, LatestClause):
             # Reuse the exact candidate lowering, including predicate scope.
             # This helper performs no capability validation or provider calls.
-            from .lowering import SurfaceLoweringError, _candidate_search
+            from .lowering import SurfaceLoweringError, _candidate_search, _external_cone_predicate
 
             try:
                 step, _ = _candidate_search(surface, record_types=semantic_model.record_types)
+                if _external_cone_predicate(surface, step) is not None:
+                    step = step.model_copy(update={"predicate": None})
             except SurfaceLoweringError as error:
                 checks.append(SurfaceCapabilityCheck(
                     subject="selection", clause_index=index,

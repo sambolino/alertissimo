@@ -16,7 +16,9 @@ from alertissimo.data_layer.transforms.temporal import utc_instant
 from alertissimo.data_layer.representations import Portfolio
 from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.binding.models import StepBindingResult
-from alertissimo.orchestration.normalization.selection import validate_time_selection_payloads, validate_latest_selection_payloads
+from alertissimo.orchestration.normalization.selection import (
+    apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
+)
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
@@ -392,6 +394,9 @@ def execute_staged_workflow_run(
                         f"{reference.step_index} for step_index {step_index}"
                     ) from error
                 view = _filter_view(step, step_index, source_view)
+                view = apply_deferred_search_selection(
+                    run.workflow, view, candidate_views_by_step, updated_run.steps,
+                )
                 candidate_views_by_step[step_index] = view
                 candidate_ids_by_origin_by_step[step_index] = (
                     _candidate_ids_by_origin_from_view(view)

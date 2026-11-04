@@ -143,3 +143,11 @@ gh workflow run semantic-registry.yml --ref integration/discovery-completion
 
 Keep #329 draft. Final main-target checks remain separate and must validate the
 eventual head, not a previous checkpoint or skipped draft job.
+
+## C4b follow-up
+
+C4a merged as `a54aab3`, and the operator reported its CI checkpoint passed.
+The next [C4b branch](dsl_latest_after_classification.md) prepares latest after
+the initial evidence Filter. Its scope supersedes only C4a's latest deferral;
+the remaining guards above still apply. C4b has its own local verification and
+checkpoint instructions; no C4b success is implied by C4a's green checkpoint.
