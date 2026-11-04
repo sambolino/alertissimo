@@ -261,8 +261,9 @@ def test_initial_cross_broker_predicate_requires_mapped_get_fields(graph):
     assert executor.calls == []
 
 
-def test_cross_broker_cone_time_remains_deferred_before_transport(graph):
-    source = CONE + 'within 7d\nwith classification via fink where best.class = "SN candidate"\n'
+def test_cross_broker_cone_unproven_time_contract_remains_deferred_before_transport(graph):
+    source = (CONE.replace("from ztf", "from lsst")
+              + 'within 7d\nwith classification via fink where best.class = "SN candidate"\n')
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = ReplayExecutor()
     with pytest.raises((PlanningDeferredError, SurfaceLoweringError)):

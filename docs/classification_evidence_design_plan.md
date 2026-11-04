@@ -258,6 +258,15 @@ This entry records preparation, not a passing C4b test/CI result. Temporal
 composition, mixed-owner/multi-channel conditions and unbounded dependency
 scheduling remain guarded; C4 and C5-C7 are still outstanding.
 
+C4b is merged as `9f3649a`. C4c, `fix/dsl-time-classification-composition`, prepares
+the same bounded-cone scheduling with existing detection/first/last membership
+contracts, followed by external classification, the initial condition and optional
+latest. See [temporal composition and local handoff](dsl_time_classification_composition.md).
+Only the compiler's blanket temporal scheduling guard changes; provider contracts,
+IR, planner, runtime and reference-clock logic stay intact. No C4c passing result is
+claimed. Mixed-owner/multi-channel predicates and unbounded scheduling remain
+guarded. C4 and C5-C7 are still outstanding.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

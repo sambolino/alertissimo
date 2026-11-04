@@ -123,3 +123,11 @@ gh workflow run semantic-registry.yml --ref integration/discovery-completion
 
 No new live provider acceptance is needed for this lifecycle change. Final
 main-target CI remains required on its eventual head; keep #329 draft.
+
+## C4c follow-up
+
+C4b merged as `9f3649a`. The [C4c branch](dsl_time_classification_composition.md)
+prepares composition with existing temporal membership contracts, superseding
+only the blanket temporal guard recorded above. Its focused local suite must
+verify the time → classification → initial predicate → latest order and pinned
+continuation clock. C4b's requested checkpoint is not a reported C4c result.
