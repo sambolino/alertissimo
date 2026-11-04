@@ -286,11 +286,11 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
 
     This is semantic scheduling only. It does not choose endpoints or broaden a
     predicate-defined search stream. Retrieval capability checks prove field
-    mappings separately; selection/time and mixed-owner cases keep their guards.
+    mappings separately; temporal and mixed-owner cases keep their guards.
     """
     if not isinstance(step, ConeSearchStep) or step.predicate is None:
         return None
-    if step.selection is not None or step.time_context is not None:
+    if step.time_context is not None:
         return None
     if not step.sources or any(source.broker is None for source in step.sources):
         return None
@@ -811,6 +811,10 @@ def _lower_surface_intent(
     def flush_initial_predicates() -> None:
         predicate = and_predicates(initial_predicates)
         if predicate is not None:
+            if material_predicate is not None and candidate_step.selection is not None:
+                steps[0] = candidate_step.model_copy(update={"selection": candidate_step.selection.model_copy(
+                    update={"after_step": len(steps)},
+                )})
             steps.append(FilterStep(predicate=predicate))
             initial_predicates.clear()
 

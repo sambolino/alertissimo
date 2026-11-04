@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
-from alertissimo.orchestration.ir import SearchStep, Step
+from alertissimo.orchestration.ir import SearchStep, Step, WorkflowIR
 from alertissimo.orchestration.runtime.models import StepRun
 
 from .models import StepPortfolioResult, summary_object_identity
@@ -135,27 +135,54 @@ def _latest_history_scopes(step_run: StepRun, view: StepPortfolioResult):
     return tuple(scopes)
 
 
-def apply_search_selection(step: Step, view: StepPortfolioResult, step_run: StepRun | None = None) -> StepPortfolioResult:
+def apply_search_selection(
+    step: Step, view: StepPortfolioResult, step_run: StepRun | None = None, *,
+    recency_view: StepPortfolioResult | None = None,
+) -> StepPortfolioResult:
     """Apply latest once, after residual pruning and object consolidation.
 
     Physical execution groups remain available for audit. The selected immutable
     material snapshot supplies downstream IDs and final semantic results. No
     per-page, per-source, or per-batch limits are imposed here.
+    A deferred boundary supplies the owner's ``recency_view`` separately so
+    enrichment changes retained material without changing the ranking evidence.
     """
     if not isinstance(step, SearchStep) or step.selection is None:
         return view
+    if step.selection.after_step is not None:
+        if step_run is None:
+            raise SearchSelectionError("deferred latest requires its discovery StepRun")
+        if view.step_index != step.selection.after_step:
+            if view.step_index != step_run.step_index:
+                raise SearchSelectionError("deferred latest must run at discovery or its initial Filter")
+            return view
+        if recency_view is None or recency_view.step_index != step_run.step_index:
+            raise SearchSelectionError("deferred latest requires its original discovery recency view")
     if step.semantic_type != "summary":
         raise SearchSelectionError("latest currently requires summary candidates")
-    histories = _latest_history_scopes(step_run, view) if step_run is not None else ()
+    ranking_view = recency_view if recency_view is not None else view
+    histories = _latest_history_scopes(step_run, ranking_view) if step_run is not None else ()
     history_sources = {(plan.origin, plan.broker) for plan, _, _, _ in histories}
+    originals = {}
+    if recency_view is not None:
+        for portfolio in recency_view.portfolios:
+            identity = summary_object_identity(portfolio)
+            if identity is None or identity in originals:
+                raise SearchSelectionError("latest discovery recency requires unique candidate identities")
+            originals[identity] = portfolio
     ranked = []
     for portfolio in view.portfolios:
         identity = summary_object_identity(portfolio)
         if identity is None:
             raise SearchSelectionError("latest candidate lacks an unambiguous summary object identity")
         origin, object_id = identity
+        original = portfolio
+        if recency_view is not None:
+            if identity not in originals:
+                raise SearchSelectionError("latest survivor is outside its original discovery population")
+            original = originals[identity]
         values = []
-        for record in portfolio.records:
+        for record in original.records:
             if (
                 not record.semantic_type.startswith(f"summary@{origin}:")
                 or (origin, record.semantic_type.partition(":")[2]) in history_sources
@@ -171,7 +198,7 @@ def apply_search_selection(step: Step, view: StepPortfolioResult, step_run: Step
         for plan, proof, candidates, evidence_ids in histories:
             if identity not in candidates:
                 continue
-            dates, invalid = _temporal_values(portfolio, plan, proof, evidence_ids, "measurement", "time.mjd")
+            dates, invalid = _temporal_values(original, plan, proof, evidence_ids, "measurement", "time.mjd")
             if invalid or not dates or not evidence_ids:
                 raise SearchSelectionError(f"latest candidate {identity!r} lacks complete valid detection recency")
             values.append(max(dates))
@@ -186,6 +213,22 @@ def apply_search_selection(step: Step, view: StepPortfolioResult, step_run: Step
         executions=view.executions,
         materialized_portfolios=tuple(item[2] for item in ranked[:step.selection.latest]),
     )
+
+
+def apply_deferred_search_selection(
+    workflow: WorkflowIR, view: StepPortfolioResult,
+    earlier_views: Mapping[int, StepPortfolioResult], step_runs: tuple[StepRun, ...],
+) -> StepPortfolioResult:
+    """Finish an initial Filter using only its discovery owner's frozen recency."""
+    for owner, step in enumerate(workflow.steps[:view.step_index]):
+        if not isinstance(step, SearchStep) or step.selection is None:
+            continue
+        if step.selection.after_step != view.step_index:
+            continue
+        if owner not in earlier_views:
+            raise SearchSelectionError("deferred latest discovery view is unavailable")
+        view = apply_search_selection(step, view, step_runs[owner], recency_view=earlier_views[owner])
+    return view
 
 
 class TimeSelectionError(SearchSelectionError):

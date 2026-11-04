@@ -34,7 +34,10 @@ from .models import (
     summary_object_identity,
 )
 from .predicate import prune_portfolios
-from .selection import apply_search_selection, apply_time_selection, validate_time_selection_payloads, validate_latest_selection_payloads
+from .selection import (
+    apply_deferred_search_selection, apply_search_selection, apply_time_selection,
+    validate_time_selection_payloads, validate_latest_selection_payloads,
+)
 
 
 class WorkflowNormalizationAlignmentError(ValueError):
@@ -682,7 +685,10 @@ def normalize_workflow_execution(
             continue
         if isinstance(step, FilterStep):
             normalized_steps.append(
-                _filter_candidate_view(step, step_run, normalized_steps)
+                apply_deferred_search_selection(
+                    result.run.workflow, _filter_candidate_view(step, step_run, normalized_steps),
+                    {item.step_index: item for item in normalized_steps}, result.run.steps,
+                )
             )
             continue
         own = _normalize_planned_step(
