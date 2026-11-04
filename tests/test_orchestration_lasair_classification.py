@@ -1,6 +1,7 @@
 """Lasair classification uses context-bearing object routes; offline captures."""
 
 from copy import deepcopy
+from collections import Counter
 from itertools import count
 import json
 from pathlib import Path
@@ -11,6 +12,7 @@ from alertissimo.api import execute_dsl, validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 from alertissimo.dsl import SurfaceLoweringError
 from alertissimo.orchestration.binding import bind_endpoint_calls
 from alertissimo.orchestration.ir import GetClassificationStep, GetCrossmatchStep, Source, TargetSelector
@@ -122,12 +124,29 @@ def test_continuation_keeps_previous_material_and_all_survivor_records(graph, or
                         graph=graph, executor=executor, continue_from=None)
     snapshot = first.to_dict()
     second = execute_dsl("with classification via lasair\n", graph=graph, executor=executor, continue_from=first)
+    second_snapshot = second.to_dict()
     third = execute_dsl("filter classification@sherlock:lasair.best.score >= 2\n",
                         graph=graph, executor=executor, continue_from=second)
     assert first.to_dict() == snapshot
+    assert second.to_dict() == second_snapshot
     assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
     assert third.workflow.steps[:len(second.workflow.steps)] == second.workflow.steps
-    assert third.portfolios[0].records == second.portfolios[0].records
+    before, = second.portfolios
+    after, = third.portfolios
+    assert summary_object_identity(before) == summary_object_identity(after) == (origin, oid)
+
+    def record_evidence(portfolio):
+        # Replay re-normalizes saved payloads with fresh record UUIDs. Keep all
+        # fields and full source attribution, including duplicate multiplicity.
+        return Counter(json.dumps({key: value for key, value in record.items()
+                                   if key != "internal_record_id"}, sort_keys=True)
+                       for record in portfolio_to_dict(portfolio)["records"])
+
+    assert record_evidence(after) == record_evidence(before)
+    assert after.executions == before.executions
+    # Within the rebuilt snapshot, Filter must retain the exact source records.
+    rebuilt_before, = third.result.steps[len(second.workflow.steps) - 1].portfolios
+    assert after.records == rebuilt_before.records
     assert executor.calls == (["object", "objects"] if origin == "ztf" else ["object"])
 
 
