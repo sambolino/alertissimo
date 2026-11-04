@@ -223,6 +223,14 @@ recipe. See its [contract and local handoff](classification_fink_lsst_contract.m
 Lasair alternatives remain for the next small branch; this entry does not claim
 C2 local success or a merged status.
 
+C2a is now merged as `474b7bc` (#333). C2b is prepared locally on
+`fix/classification-lasair-contract`, using context-bearing object recipes for
+Lasair ZTF/LSST classification without altering the generic resolver. See its
+[contract, boundaries and local checks](classification_lasair_contract.md).
+This is a prepared handoff, not a reported passing or merged C2b result. C3-C7
+remain outstanding, including the separate material-scheduling and Confirm-scope
+work; endpoint classification discovery remains last.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population
