@@ -267,6 +267,15 @@ IR, planner, runtime and reference-clock logic stay intact. No C4c passing resul
 claimed. Mixed-owner/multi-channel predicates and unbounded scheduling remain
 guarded. C4 and C5-C7 are still outstanding.
 
+C4c merged as `91f350c`. C4d, `fix/dsl-mixed-cone-predicates`, prepares whole
+initial Boolean expressions combining summary fields with classification at one
+external broker. Required discovery/retrieval calls jointly prove mapped material,
+including projection and call-local broker attribution. Existing runtime and IR
+remain unchanged. See [mixed predicates and local handoff](dsl_mixed_cone_predicates.md).
+This is preparation, not a passing or merged C4d result. Multiple classification
+channels, mixed multisurvey populations, unbounded discovery and initial
+Confirm/Match still need later work; C4 and C5-C7 are not complete.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

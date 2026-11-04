@@ -109,3 +109,10 @@ CI checkpoint is requested for this compiler-only composition slice. C4b's
 previous checkpoint requirement remains; subsequent broader/core changes and the
 final actual integration head need their planned CI. No additional live provider
 acceptance is requested here. Keep #329 draft.
+
+## C4d follow-up
+
+C4c merged as `91f350c`. [C4d](dsl_mixed_cone_predicates.md) prepares summary and
+external classification references within one complete initial predicate. It
+supersedes the mixed-summary guard for its declared single-source scope, with
+required call/projection evidence. Other outstanding guards remain as recorded.
