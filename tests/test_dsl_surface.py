@@ -178,14 +178,23 @@ with classification from lc_classifier:
         )
 
 
-def test_newline_where_after_with_is_not_treated_as_scoped_predicate():
-    with pytest.raises(DSLParseError, match="scoped with predicates must be inline"):
-        parse_surface_script(
-            """objects from lsst via alerce
-with classification from lc_classifier
-    where best.class = "LPV" AND best.probability >= 0.8
-"""
-        )
+@pytest.mark.parametrize("indent", ["", "    "])
+def test_newline_where_after_with_is_not_treated_as_scoped_predicate(indent):
+    condition = 'best.class = "LPV" AND best.probability >= 0.8'
+    result = parse_surface_script(
+        "objects from lsst via alerce\n"
+        "with classification from lc_classifier\n"
+        f"{indent}where {condition}\n"
+    )
+
+    assert len(result.clauses) == 2
+    requirement, where = result.clauses
+    assert isinstance(requirement, RequirementClause)
+    assert requirement.product == "classification"
+    assert requirement.source == "lc_classifier"
+    assert requirement.predicates == ()
+    assert isinstance(where, WhereClause)
+    assert where.condition == condition
 
 
 def test_filter_then_with_remains_top_level_when_indentation_is_cosmetic():

@@ -102,6 +102,13 @@ Existing parser tests now verify general where after with is preserved. Shared
 predicate correlation, mapping/projection and provider suites remain in the local
 check list. No additional live provider acceptance is requested for this slice.
 
+The first local run reported 374 passed and one stale parser expectation. Its
+correction checks that a newline `where` remains a separate general clause,
+including with cosmetic indentation, while the preceding requirement has no
+scoped predicates. It preserves the condition verbatim rather than inheriting
+the preceding requirement's classifier. The adjacent inline predicate test
+continues to check the scoped form. This correction changes tests only.
+
 ```bash
 set -o pipefail
 PYTHONPATH=. python -m pytest -q \
