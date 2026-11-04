@@ -223,11 +223,13 @@ def test_general_where_is_not_allowed_after_filter():
         )
 
 
-def test_general_where_is_not_allowed_after_with():
-    with pytest.raises(DSLParseError, match="general where must precede with"):
-        parse_surface_script(
-            "objects from lsst\nwith lightcurve\nwhere summary.time.last_mjd > 60000\n"
-        )
+def test_general_where_after_with_remains_an_initial_condition():
+    surface = parse_surface_script(
+        "objects from lsst\nwith lightcurve\nwhere summary.time.last_mjd > 60000\n"
+    )
+    assert isinstance(surface.clauses[0], RequirementClause)
+    assert isinstance(surface.clauses[1], WhereClause)
+    assert surface.clauses[1].condition == "summary.time.last_mjd > 60000"
 
 
 def test_match_can_associate_candidate_origins_without_external_counterpart():

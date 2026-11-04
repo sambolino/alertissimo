@@ -39,8 +39,6 @@ from alertissimo.orchestration.ir.models import (
     WorkflowIR,
 )
 from alertissimo.orchestration.ir.predicates import (
-    SemanticReference,
-    iter_semantic_references,
     predicate_requires_reference as _predicate_requires_reference,
 )
 from alertissimo.orchestration.runtime.models import (
@@ -57,6 +55,7 @@ from alertissimo.orchestration.validation import (
     CapabilityValidationResult,
     SourceCapabilityResult,
     classification_material_capabilities,
+    predicate_material_gaps,
     retrieval_record_requirement as _get_record_requirement,
     validate_step_capabilities,
 )
@@ -184,37 +183,7 @@ def _require_discovery_residual_material(call: RecipeCall, plan: EndpointPlan) -
     if realization is None or realization.residual is None:
         return
 
-    def mapped(reference: SemanticReference) -> bool:
-        for field in call.outputs:
-            record = field.semantic_record_type
-            if canonical_semantic_noun(record) != reference.semantic_type:
-                continue
-            producer = _semantic_record_producer(record)
-            if reference.producer is not None and producer != reference.producer and not (
-                producer is not None and _DYNAMIC_QUALIFIER.fullmatch(producer)
-            ):
-                continue
-            channel = record.partition(":")[2] or plan.broker
-            if reference.channel is not None and reference.channel != channel:
-                continue
-            if not reference.field_path:
-                return True
-            declared = field.relative_field_path.split(".")
-            requested = reference.field_path.split(".")
-            if len(declared) == len(requested) and all(
-                actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
-                for actual, wanted in zip(declared, requested)
-            ):
-                return True
-        return False
-
-    missing = tuple(dict.fromkeys(
-        reference.qualified_record_type + (
-            "." + reference.field_path if reference.field_path else ""
-        )
-        for reference in iter_semantic_references(realization.residual)
-        if not mapped(reference)
-    ))
+    missing = predicate_material_gaps(realization.residual, call.outputs, broker=plan.broker)
     if missing:
         raise PlanningDeferredError(
             "discovery residual requires material unavailable from its discovery call "

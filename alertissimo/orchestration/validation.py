@@ -24,6 +24,7 @@ from typing import Literal
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    FieldMappingCapability,
     canonical_semantic_path,
     semantic_record_noun_matches,
 )
@@ -32,7 +33,7 @@ from alertissimo.data_layer.runtime.recipes import (
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
 from alertissimo.orchestration.ir.predicates import (
-    SemanticReference, iter_semantic_references, predicate_requires_reference,
+    Predicate, SemanticReference, iter_semantic_references, predicate_requires_reference,
 )
 
 from .ir.models import (
@@ -466,6 +467,39 @@ def _semantic_record_producer(semantic_record_type: str) -> str | None:
         return None
     producer, _, _ = qualifiers.partition(":")
     return producer or None
+
+
+def predicate_material_gaps(
+    predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
+) -> tuple[str, ...]:
+    """Inspect call-scoped mapped material without selecting or executing a route."""
+    def mapped(reference: SemanticReference) -> bool:
+        for field in outputs:
+            record = field.semantic_record_type
+            if not semantic_record_noun_matches(record, reference.semantic_type):
+                continue
+            producer = _semantic_record_producer(record)
+            if reference.producer is not None and producer != reference.producer and not (
+                producer is not None and _DYNAMIC_QUALIFIER.fullmatch(producer)
+            ):
+                continue
+            channel = record.partition(":")[2] or broker
+            if reference.channel is not None and reference.channel != channel:
+                continue
+            if not reference.field_path:
+                return True
+            declared, requested = field.relative_field_path.split("."), reference.field_path.split(".")
+            if len(declared) == len(requested) and all(
+                actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
+                for actual, wanted in zip(declared, requested)
+            ):
+                return True
+        return False
+
+    return tuple(dict.fromkeys(
+        ref.qualified_record_type + ("." + ref.field_path if ref.field_path else "")
+        for ref in iter_semantic_references(predicate) if not mapped(ref)
+    ))
 
 
 def _classification_recipe_evidence(
