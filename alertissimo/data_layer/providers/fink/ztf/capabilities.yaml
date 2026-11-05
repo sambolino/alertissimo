@@ -14,6 +14,12 @@ predicate_bindings:
       values:
         - SN candidate
         - Early SN Ia candidate
+        - Kilonova candidate
+        - Microlensing candidate
+        - Tracklet
+        - Solar System MPC
+        - Solar System candidate
+        - Ambiguous
       # Keep the returned v:classification as scientific evidence; the stream
       # selector alone does not establish a current classification per object.
       exact: false

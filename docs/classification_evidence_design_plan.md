@@ -324,6 +324,18 @@ C6 or passing remote CI/live result. Coarse normalization and consensus policies
 remain deferred; no extra plan step is inserted. C7 and the remaining guarded
 C4 discovery limits are still outstanding.
 
+C6 is now merged as `06393f9` (#344), including the generated-fixture refresh;
+local tests and its UI checkpoint passed, as reported by the user. C7 is split
+by provider/survey. C7a, `feat/classification-fink-ztf-native-labels`, audits the
+official Fink/ZTF class list and endpoint dispatcher, then admits the six
+remaining ordinary class-index labels through the existing literal binding.
+See the [native label audit and checks](classification_fink_ztf_native_labels.md).
+The 354 offline cases passed during preparation; this is not a merged C7a or
+new deployed-capture result. Native filter/recheck, alert-cap, identity,
+time/continuation and full-history contracts are preserved. Special routes,
+catalogue aliases, coarse normalization, global Fink object latest, Lasair joins
+and the remaining C4/C7 work retain their explicit boundaries.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population
