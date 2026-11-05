@@ -115,9 +115,14 @@ def test_endpoint_fields_do_not_inherit_other_endpoints_outputs():
         (item.broker, item.origin, item.endpoint) == ("lasair", "ztf", "query")
         for item in query
     )
-    assert graph.fields_for_endpoint(
+    classification = graph.fields_for_endpoint(
         "lasair", "ztf", "query", semantic_record_noun="classification"
-    ) == ()
+    )
+    assert {item.semantic_path for item in classification} == {
+        "classification@sherlock:lasair.best.class",
+        "classification@sherlock:lasair.best.score",
+        "classification@sherlock:lasair.best.description",
+    }
     assert graph.fields_for_endpoint("lasair", "ztf", "missing") == ()
     assert graph.fields_for_endpoint("lasair", "missing", "query") == ()
     assert graph.fields_for_endpoint("missing", "ztf", "query") == ()

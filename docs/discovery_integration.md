@@ -73,7 +73,7 @@ request can fail explicitly when execution cannot establish the required evidenc
 | ALeRCE / LSST | Existing class/model/probability discovery and mapped explicit first/last MJD minima | Admitted | Deferred: UTC membership and complete-history evidence are not declared for this survey | Deferred: no admitted complete recency-selection contract |
 | Fink / ZTF | Admitted discovery for the eight [audited ordinary class-index labels](classification_fink_ztf_native_labels.md); eligible literal class equality required | Admitted as its separate native cone population | Default admitted for the eligible class/time route only; first/last and temporal cone remain deferred | Deferred: historical class-alert order is not current object recency; object-history caps/per-pixel cone limits lack the needed proof |
 | Fink / LSST | Deferred: mandatory physical search inputs have no generic semantic recipe translation | Admitted | Deferred: ZTF class/index/time contracts are not inherited | Deferred |
-| Lasair / ZTF | Admitted finite numeric conjunctions on object count and first/last time; no bare unconstrained scan | Admitted; compact summary supplement retained | All three admitted through declared SQL/summary/history evidence | Admitted for SQL discovery and unpredicated cones; cone summary coverage is required |
+| Lasair / ZTF | Admitted finite numeric summary conjunctions and [native Sherlock label equality](classification_lasair_ztf_native_join.md); no bare unconstrained scan | Admitted; compact summary supplement retained | All three admitted through declared SQL/summary/history evidence | Admitted for SQL discovery and unpredicated cones; cone summary coverage is required |
 | Lasair / LSST | Unsupported by current semantic-discovery contract; raw query availability does not establish a semantic projection | Admitted | Deferred: Rubin schema/projection/time proof needs its own audit | Deferred |
 | ANTARES / ZTF | Admitted numeric RA/Dec conditions scoped to mapped ZTF identities; coordinate condition required | Admitted as its existing shared-sky population | All three admitted on the scoped coordinate-search route; native temporal cone remains deferred | Admitted on scoped coordinate search with complete ordinary-detection histories; native cone latest remains deferred |
 | ANTARES / LSST | Deferred: mandatory native query has no generic semantic recipe translation | Admitted | Deferred: no surveyed identity/history membership recipe | Deferred |
@@ -93,11 +93,12 @@ Important provider limits:
   matching classification. Do not infer new join tables from a client parameter.
 - Lasair ZTF SQL discovery supports numeric `=`, `<`, `<=`, `>`, `>=` conjunctions
   on `summary.detection_count`, `summary.time.first_mjd`, `summary.time.last_mjd`.
-  `!=`, OR/NOT, classification joins, untranslated fields and arbitrary raw SQL
-  lowering remain deferred. Initial predicates on thin-ID cone/latest discovery
-  remain deferred; use the admitted SQL route for those summary conditions.
-- Fink admits only the two audited ordinary class streams. Its finite default
-  `n=100` counts alert rows, not unique objects. A response reaching that limit
+  The [audited Sherlock join](classification_lasair_ztf_native_join.md) also admits
+  eight native label equalities. `!=`, OR/NOT, other joins, untranslated fields
+  and arbitrary raw SQL lowering remain deferred. Initial predicates on thin-ID
+  cone/latest discovery remain deferred; use the admitted SQL route for those summary conditions.
+- Fink admits the eight [audited ordinary class streams](classification_fink_ztf_native_labels.md).
+  Its finite default `n=100` counts alert rows, not unique objects. A response reaching that limit
   fails as incomplete even if its unique-object count is small. The physical
   request pads the seven-day window outward by three hours at each edge for the
   native index encoding; local selection uses the original closed interval.
@@ -109,6 +110,7 @@ Important provider limits:
 Detailed evidence and remaining limitations are in
 [ALeRCE time](time_02_alerce_ztf.md),
 [Lasair SQL](discovery_05b_lasair.md),
+[Lasair Sherlock discovery](classification_lasair_ztf_native_join.md),
 [Lasair cone latest](selection_02b_lasair_cone.md),
 [Fink latest deferral](selection_03_fink_ztf.md), and
 [ANTARES latest/identity review](discovery_06e_antares_latest.md).

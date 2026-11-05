@@ -53,6 +53,20 @@ def numeric_comparison(column: str, operator: str, value: Any, *, subtract: floa
     return f"{expression} {operator} {value!r}"
 
 
+def enum_comparison(column: str, operator: str, value: Any, *, values: tuple) -> str:
+    """Render equality to an explicitly declared, SQL-safe symbolic label.
+
+    No escaping policy or database SQL mode is inferred. Both the domain and
+    the requested value must be simple symbols; arbitrary strings stay local.
+    Database collation can make this a superset, so callers retain a recheck.
+    """
+    if (not _COLUMN.fullmatch(column) or operator != "=" or not values
+        or any(type(item) is not str or not re.fullmatch(r"[A-Z][A-Z0-9_]*", item) for item in values)
+        or type(value) is not str or value not in values):
+        raise ValueError("SQL symbolic equality requires an admitted safe label")
+    return f'{column} = "{value}"'
+
+
 def validate_time_window_options(*, first_column: str, last_column: str,
                                  subtract: float, order_by: str) -> None:
     for column in (first_column, last_column, order_by):
@@ -104,5 +118,5 @@ def conjoin_ordered_conditions(left: str, right: str) -> str:
     return f"({parts[0]}) AND ({parts[1]}) ORDER BY {ordering}"
 
 
-__all__ = ["string_membership_condition", "numeric_comparison", "time_window_condition",
+__all__ = ["string_membership_condition", "numeric_comparison", "enum_comparison", "time_window_condition",
            "validate_time_window_options", "conjoin_ordered_conditions"]

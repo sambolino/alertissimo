@@ -277,6 +277,7 @@ def _search_recipe_evidence(
                 realize_predicate(
                     step.predicate, endpoint=endpoint, graph=graph,
                     constraints=call.predicate_bindings,
+                    sql_join=call.sql_join,
                 ).params if step.predicate is not None else {}
             )
             time_parameters = {
@@ -304,6 +305,9 @@ def _search_recipe_evidence(
                     + (f"; admitted literal values: {domains!r}" if domains else "")
                 )
                 continue
+        if call.sql_join is not None and step.predicate is None:
+            reasons.append("SQL identity join requires a positive translated condition on its material")
+            continue
         feasible.append(recipe)
     compatible = legacy + tuple(
         endpoints[(recipe.broker, recipe.origin, recipe.calls[0].endpoint)]
