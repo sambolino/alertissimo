@@ -704,20 +704,61 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             render_record_evidence(data, by_id[selected_id])
 
 
-def render_classification(data: dict[str, Any]) -> None:
+def classification_table_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Keep each display output tied to its original assertion and quantity kind."""
+    columns = {
+        "broker": "Broker", "producer": "Producer", "version": "Version",
+        "output": "Output", "class": "Class", "probability": "Probability",
+        "score": "Score", "rank": "Rank", "model": "Model name", "method": "Method",
+        "target": "Target", "value": "Value", "description": "Description",
+        "other_values": "Other outputs", "observation_mjd": "Observation MJD",
+        "source_id": "Source ID", "assertion_mjd": "Assertion MJD",
+        "produced_mjd": "Produced MJD", "assertion_datetime": "Assertion datetime",
+        "retrieved_at": "Retrieved at", "origin": "Survey", "endpoint": "Endpoint",
+        "record_id": "Record ID",
+    }
+    assertions = _rows(data, "classifications")
+    mandatory = {"broker", "producer", "version", "output", "class", "probability", "score", "rank"}
+    visible = [key for key in columns if key in mandatory or any(
+        row.get(key) is not None and row.get(key) != {} and row.get(key) != "" for row in assertions
+    )]
+    return [{columns[key]: row.get(key) for key in visible} for row in assertions]
+
+
+def render_classification(data: dict[str, Any], *, widget_key: str = "classification") -> None:
     """Render per-broker model outputs without pretending disagreement is resolved."""
     st.markdown("#### Classification evidence")
-    classifications = pd.DataFrame(_rows(data, "classifications"))
-    if classifications.empty:
+    rows = classification_table_rows(data)
+    if not rows:
         st.info("No classification evidence is available.")
         return
     st.dataframe(
-        classifications.rename(columns={"broker": "Broker", "model": "Model", "class": "Class", "probability": "Probability", "computedAt": "Computed at"}),
+        arrow_safe_dataframe(rows),
         use_container_width=True,
         hide_index=True,
-        column_config={"Probability": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0%")},
+        column_config={
+            "Probability": st.column_config.NumberColumn(help="Reported probability for this output."),
+            "Score": st.column_config.NumberColumn(help="Reported score in its original scale; no probability conversion."),
+        },
     )
-    st.warning("Demo interpretation: broker classifications are consistent with an extragalactic transient, but they are not identical and should not be merged automatically.")
+    st.caption(
+        "Each row is one reported best or named assessment from one source record. "
+        "Versions and repeated assertions are retained; no overall class is selected. "
+        "Probabilities and scores keep their original meanings. Empty cells are unreported values."
+    )
+    st.caption(
+        "Observation epochs, assertion production times and retrieval times are distinct. "
+        "Available times are shown separately; missing times are not inferred."
+    )
+    records = records_by_family(data, "classification")
+    if records:
+        by_id = {record["record_id"]: record for record in records}
+        selected = st.selectbox(
+            "Inspect classification record", list(by_id),
+            format_func=lambda record_id: f"{by_id[record_id]['semantic_type']} · {record_id}",
+            key=f"classification_inspector_{widget_key}",
+        )
+        render_record_evidence(data, by_id[selected])
 
 
 def render_context(data: dict[str, Any]) -> None:
@@ -789,9 +830,11 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
     if not data.get("lightCurve"):
         object_name = data.get("diaObjectId") or "Object"
         st.subheader(f"{object_name} — object portfolio")
-        st.caption(f"{evidence_label} · summary-level Portfolio")
-        st.info("This cone result contains a summary record only; no light-curve endpoint was captured for this locus.")
-        summary, records, provenance = st.tabs(["Summary", "Semantic Records", "Provenance"])
+        st.caption(f"{evidence_label} · Portfolio without loaded photometry")
+        st.info("This Portfolio has no loaded light-curve measurements.")
+        summary, classification, records, provenance = st.tabs([
+            "Summary", "Classifications", "Semantic Records", "Provenance",
+        ])
         with summary:
             st.markdown("#### Identity and sky position")
             st.write(f"**Survey:** {data.get('survey', '—')}")
@@ -807,6 +850,8 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
             else:
                 st.write("**RA / Dec:** —")
             render_summary_records(data)
+        with classification:
+            render_classification(data, widget_key=widget_key)
         with records:
             render_semantic_record_browser(data, widget_key=widget_key)
         with provenance:
@@ -834,7 +879,7 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
         st.caption("Hybrid view: this portfolio's lightcurve together with its detection SemanticRecords.")
         render_photometry(data, frame, rejected_count, widget_key)
     with classification:
-        render_classification(data)
+        render_classification(data, widget_key=widget_key)
     with crossmatches:
         render_context(data)
     with spectra:

@@ -312,6 +312,18 @@ All 220 focused offline cases passed during preparation. This is not a merged C5
 or passing remote CI/live result. C4's
 remaining guarded discovery limits and C6-C7 are still outstanding.
 
+C5 is merged as `b666c34` (#343); its CI checkpoint passed, as reported by the
+user. C6, `feat/classification-comparison-view`, prepares the existing assertion
+comparison view with output-local labels/metrics, producer/source/version
+identity, distinct available timing and record-linked provenance. Repeated and
+conflicting assertions remain visible, including in classification-only
+Portfolios. Cards no longer choose an overall leading assertion or display a
+score as a probability. See the [comparison view and checks](classification_comparison_view.md).
+All 102 offline UI/consumer cases passed during preparation. This is not a merged
+C6 or passing remote CI/live result. Coarse normalization and consensus policies
+remain deferred; no extra plan step is inserted. C7 and the remaining guarded
+C4 discovery limits are still outstanding.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

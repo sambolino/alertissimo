@@ -38,6 +38,7 @@ from alertissimo.orchestration.planner import PlanningError
 from alertissimo.orchestration.runtime import WorkflowExecutionError
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
+    classification_card_summary,
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
     loaded_photometry_counts,
@@ -61,16 +62,15 @@ def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         points = portfolio["lightCurve"]
         if not points:
             continue
-        classes = portfolio["classifications"]
-        leading = classes[0] if classes else {}
+        label, probability = classification_card_summary(portfolio)
         brokers = sorted({str(row["broker"]) for row in portfolio["provenance"] if row.get("broker")})
         candidates.append({
             "object_id": object_id, "survey": portfolio["survey"],
             "ra_deg": portfolio["coordinates"]["ra"], "dec_deg": portfolio["coordinates"]["dec"],
             "first_detection": points[0]["date"], "last_detection": points[-1]["date"],
             "detections": len(points), "latest_mag": points[-1]["magnitude"],
-            "classification": leading.get("class", "No classification"),
-            "probability": leading.get("probability"), "brokers": brokers,
+            "classification": label,
+            "probability": probability, "brokers": brokers,
             "status": "Frozen broker evidence",
         })
     candidates = [candidate for candidate in candidates if isinstance(candidate["ra_deg"], (int, float)) and isinstance(candidate["dec_deg"], (int, float))]
@@ -84,7 +84,7 @@ def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 @st.cache_data
 def load_demo_candidate_portfolios() -> dict[str, dict[str, Any]]:
-    """Load real Portfolio fixtures and project them only for the existing layout."""
+    """Project frozen Portfolios with every named classification output retained."""
     portfolios = {}
     for name in SEARCH_PORTFOLIOS:
         display = portfolio_to_display(load_ui_portfolio(name))
@@ -198,7 +198,7 @@ def render_cone_result_cards(
             metrics[1].metric("Latest mag", candidate["latest_mag"] or "—")
             probability = candidate.get("probability")
             metrics[2].metric(
-                "Leading class",
+                "Class labels",
                 candidate["classification"],
                 None if probability is None else f"{probability:.0%}",
             )
@@ -249,8 +249,7 @@ def render_live_portfolio_cards(
         summary, action = st.columns((5, 1), vertical_alignment="center")
         lightcurve = display.get("lightCurve", [])
         latest = lightcurve[-1].get("magnitude") if lightcurve else None
-        classifications = display.get("classifications", [])
-        leading = classifications[0] if classifications else {}
+        label, probability = classification_card_summary(display)
         brokers = [
             str(item.get("broker"))
             for item in display.get("brokerCoverage", [])
@@ -281,10 +280,9 @@ def render_live_portfolio_cards(
             metrics[1].metric(
                 "Latest mag", "—" if latest is None else f"{float(latest):.2f}"
             )
-            probability = leading.get("probability")
             metrics[2].metric(
-                "Leading class",
-                leading.get("class") or "—",
+                "Class labels",
+                label,
                 f"{float(probability):.0%}"
                 if isinstance(probability, (int, float))
                 else None,
