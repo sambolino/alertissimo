@@ -20,8 +20,9 @@ from alertissimo.orchestration.runtime import WorkflowExecutionError
 
 IDS = tuple(f"ZTF20{letter * 7}" for letter in "abcd")
 CONE = "objects from ztf via alerce\ninside (124.88, -6.02, 5arcsec)\n"
-ALABEL = "classification@lc_classifier:alerce.best.class"
-APROB = "classification@lc_classifier:alerce.best.probability"
+# query_probabilities maps class-specific assessments, not a synthesized best.
+ALABEL = "classification@lc_classifier:alerce.assessment.snia.class"
+APROB = "classification@lc_classifier:alerce.assessment.snia.probability"
 FLABEL = "classification@fink:fink.best.class"
 FSCORE = "classification@fink:fink.assessment.sn_vs_all.probability"
 SUMMARY = "summary@ztf:alerce.detection_count"
@@ -45,9 +46,10 @@ def program(requirements="with classification via alerce, fink\n", *, condition=
 
 
 class Executor:
-    def __init__(self, *, empty=None, fail=None):
+    def __init__(self, *, empty=None, fail=None, discovery_classification=False):
         self.calls, self.ids = [], count()
         self.empty, self.fail = empty, fail
+        self.discovery_classification = discovery_classification
 
     def execute(self, broker, origin, endpoint, params=None, headers=None):
         params = deepcopy(dict(params or {}))
@@ -58,6 +60,11 @@ class Executor:
             payload = {"items": [{"oid": oid, "meanra": 124.88, "meandec": -6.02,
                                   "firstmjd": 58000, "lastmjd": 61004 - i,
                                   "ndet": (10, 1, 10, None)[i]} for i, oid in enumerate(IDS)]}
+            if self.discovery_classification:
+                # best.* is mapped from object-search rows when supplied there.
+                for row in payload["items"][:3]:
+                    row.update(classifier="lc_classifier", probability=0.95,
+                               **{"class": "AGN" if row["oid"] == IDS[1] else "SNIa"})
         elif (broker, endpoint) == ("alerce", "query_probabilities"):
             if self.fail == broker:
                 raise RuntimeError("alerce classification unavailable")
@@ -122,17 +129,19 @@ def test_explicit_cross_broker_and_is_not_changed_to_or_or_quorum(graph):
     assert result.workflow.steps[-1].predicate.operator == "and"
 
 
-def test_explicit_label_comparison_uses_both_qualified_assertions(graph):
-    result = execute_dsl(program(condition=f"{ALABEL} != {FLABEL}"), graph=graph,
+@pytest.mark.parametrize("assessment,expected", [("snia", [IDS[0], IDS[2]]), ("agn", [IDS[1]])])
+def test_explicit_label_comparison_uses_both_qualified_assertions(graph, assessment, expected):
+    label = f"classification@lc_classifier:alerce.assessment.{assessment}.class"
+    result = execute_dsl(program(condition=f"{label} != {FLABEL}"), graph=graph,
                          executor=Executor(), continue_from=None)
-    assert identities(result.portfolios) == list(IDS[:3])
+    assert identities(result.portfolios) == expected
     # This compares the supplied labels literally; no taxonomy or winner is inferred.
     assert result.workflow.steps[-1].predicate.right.semantic_type == "classification"
 
 
 def test_scoped_broker_list_keeps_its_existing_whole_condition_or_semantics(graph):
     source = CONE + 'with classification via alerce, fink where best.class = "SNIa" or best.class = "SN candidate"\n'
-    result = execute_dsl(source, graph=graph, executor=Executor(), continue_from=None)
+    result = execute_dsl(source, graph=graph, executor=Executor(discovery_classification=True), continue_from=None)
     assert identities(result.portfolios) == list(IDS[:3])
     assert result.workflow.steps[-1].predicate.operator == "or"
 
