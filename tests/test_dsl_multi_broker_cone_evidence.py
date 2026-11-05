@@ -39,10 +39,11 @@ def identities(portfolios):
     return [summary_object_identity(portfolio)[1] for portfolio in portfolios]
 
 
-def program(requirements="with classification via alerce, fink\n", *, condition=CONDITION, latest=None, timed=False):
+def program(requirements="with classification via alerce, fink\n", *, condition=CONDITION, latest=None, timed=False, spatial=True):
     selection = "" if latest is None else f"latest {latest}\n"
     window = "first within 10d\n" if timed else ""
-    return CONE + window + selection + requirements + f"where {condition}\n"
+    discovery = CONE if spatial else "objects from ztf via alerce\n"
+    return discovery + window + selection + requirements + f"where {condition}\n"
 
 
 class Executor:
@@ -100,13 +101,16 @@ class Executor:
     "with classification from lc_classifier via alerce\nwith classification from fink via fink\n",
     "",  # Both qualified channels imply their existing targeted Gets.
 ])
-def test_all_initial_broker_evidence_arrives_before_whole_predicate_evaluation(graph, requirements):
-    source = program(requirements)
+@pytest.mark.parametrize("temporal_only", [False, True])
+def test_all_initial_broker_evidence_arrives_before_whole_predicate_evaluation(graph, requirements, temporal_only):
+    source = program(requirements, timed=temporal_only, spatial=not temporal_only)
     validation = validate_dsl(source, graph=graph, continue_from=None)
     assert validation.is_runnable, validation.lowering_error
     executor = Executor()
-    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
-    assert [step.op for step in result.workflow.steps] == ["cone_search", "get_classification", "get_classification", "filter"]
+    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None, reference_time=NOW)
+    assert [step.op for step in result.workflow.steps] == [
+        "semantic_search" if temporal_only else "cone_search", "get_classification", "get_classification", "filter",
+    ]
     assert result.workflow.steps[0].predicate is None
     assert result.workflow.steps[-1].predicate == lower_expression_predicate(CONDITION, frozenset({"classification"}))
     assert identities(result.portfolios) == list(IDS[:2])
@@ -158,10 +162,10 @@ def test_required_broker_failure_does_not_drop_that_member_and_report_success(gr
         execute_dsl(program(), graph=graph, executor=Executor(fail=fail), continue_from=None)
 
 
-@pytest.mark.parametrize("timed", [False, True])
-def test_latest_and_continuation_follow_all_material_without_refill(graph, timed):
+@pytest.mark.parametrize("timed,spatial", [(False, True), (True, True), (True, False)])
+def test_latest_and_continuation_follow_all_material_without_refill(graph, timed, spatial):
     executor = Executor()
-    first = execute_dsl(program(latest=1, timed=timed), graph=graph, executor=executor,
+    first = execute_dsl(program(latest=1, timed=timed, spatial=spatial), graph=graph, executor=executor,
                         continue_from=None, reference_time=NOW)
     assert identities(first.portfolios) == [IDS[0]]
     assert first.workflow.steps[0].selection.after_step == 3
@@ -182,9 +186,11 @@ def test_latest_and_continuation_follow_all_material_without_refill(graph, timed
         assert executor.calls[0][2]["firstmjd"] == [57995.0, 58005.0]
 
 
-def test_summary_condition_can_join_the_multi_broker_expression(graph):
+@pytest.mark.parametrize("temporal_only", [False, True])
+def test_summary_condition_can_join_the_multi_broker_expression(graph, temporal_only):
     condition = f"{SUMMARY} >= 5 and ({CONDITION})"
-    result = execute_dsl(program(condition=condition), graph=graph, executor=Executor(), continue_from=None)
+    result = execute_dsl(program(condition=condition, timed=temporal_only, spatial=not temporal_only),
+                         graph=graph, executor=Executor(), continue_from=None, reference_time=NOW)
     assert identities(result.portfolios) == [IDS[0]]
 
 

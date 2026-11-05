@@ -287,6 +287,19 @@ not a passing C4e result. Unbounded scheduling, mixed multisurvey populations,
 measurement dependencies and initial Confirm/Match remain guarded. C4 and C5-C7
 are not complete.
 
+C4e merged as `8bd28cd` (#341); its focused local tests passed, as reported by
+the user. C4f, `fix/dsl-temporal-discovery-evidence`, extends the existing initial
+material scheduling to single-source time-bounded discovery without a cone.
+It retains the declared temporal/coverage proofs, whole-condition evaluation,
+discovery recency and pinned continuation clock. See the
+[temporal discovery scope and checks](dsl_temporal_discovery_evidence.md).
+Unconstrained scans, unsupported provider contracts, mixed discovery sources,
+measurement dependencies and initial Confirm/Match remain guarded. Initial
+latest position remains declarative; explicit later filtering does not refill.
+No new IR, runtime or provider declarations are introduced. The 223 focused
+offline cases passed during preparation. This is not a merged C4f or passing
+remote CI/live result; C4 and C5-C7 are still incomplete.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population
