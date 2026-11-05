@@ -70,7 +70,8 @@ def load_lightcurve_document(data: Any) -> dict[str, Any]:
 def lightcurve_dataframe(data: dict[str, Any]) -> tuple[pd.DataFrame, int]:
     """Normalize valid measurements and return their frame and rejected count."""
     frame = pd.DataFrame(data["lightCurve"])
-    required = {"date", "band", "magnitude"}
+    required = {"date", "band"}
+    required.add("value" if "value" in frame else "magnitude")
     missing = required.difference(frame.columns)
     if missing:
         raise ValueError(
@@ -79,18 +80,28 @@ def lightcurve_dataframe(data: dict[str, Any]) -> tuple[pd.DataFrame, int]:
 
     frame = frame.copy()
     frame["date"] = pd.to_datetime(frame["date"], errors="coerce", utc=True)
-    frame["magnitude"] = pd.to_numeric(frame["magnitude"], errors="coerce")
-    if "magnitudeError" not in frame:
-        frame["magnitudeError"] = 0.0
-    frame["magnitudeError"] = (
-        pd.to_numeric(frame["magnitudeError"], errors="coerce").fillna(0).clip(lower=0)
+    if "quantity" not in frame:
+        frame["quantity"] = "mag"
+    if "measurement_kind" not in frame:
+        frame["measurement_kind"] = "ordinary"
+    if "is_upper_limit" not in frame:
+        frame["is_upper_limit"] = False
+    frame["value"] = pd.to_numeric(frame.get("value", frame.get("magnitude")), errors="coerce")
+    frame["error"] = pd.to_numeric(
+        frame.get("error", frame.get("magnitudeError", pd.Series(index=frame.index, dtype=float))),
+        errors="coerce",
     )
+    frame.loc[frame["error"] < 0, "error"] = float("nan")
+    frame["magnitude"] = frame["value"].where(frame["quantity"] == "mag")
+    frame["magnitudeError"] = frame["error"].where(frame["quantity"] == "mag")
     frame["band"] = frame["band"].astype("string").fillna("unknown")
 
     initial_count = len(frame)
-    frame = frame.dropna(subset=["date", "magnitude"]).sort_values("date")
+    frame = frame.dropna(subset=["date", "value"]).sort_values("date", kind="stable")
     frame["magnitudeLow"] = frame["magnitude"] - frame["magnitudeError"]
     frame["magnitudeHigh"] = frame["magnitude"] + frame["magnitudeError"]
+    frame["valueLow"] = frame["value"] - frame["error"]
+    frame["valueHigh"] = frame["value"] + frame["error"]
     return frame, initial_count - len(frame)
 
 
@@ -157,6 +168,16 @@ def lightcurve_chart(
     selection_name: str | None = None,
 ) -> alt.Chart | alt.LayerChart:
     """Create the interactive chart used by the Streamlit page."""
+    quantities = frame["quantity"].unique() if "quantity" in frame else ["mag"]
+    if len(quantities) != 1:
+        raise ValueError("lightcurve_chart requires exactly one quantity")
+    quantity = quantities[0]
+    frame = frame.copy()
+    frame["display_kind"] = frame.get("measurement_kind", "ordinary")
+    if "is_upper_limit" in frame:
+        frame.loc[frame["is_upper_limit"], "display_kind"] = "upper limit"
+    value_column = "value" if "value" in frame else "magnitude"
+    error_column = "error" if "error" in frame else "magnitudeError"
     if band_counts is None:
         band_counts = frame["band"].astype(str).value_counts().to_dict()
     count_label_expr = "datum.label"
@@ -195,30 +216,35 @@ def lightcurve_chart(
         ),
     )
     y_axis = alt.Y(
-        "magnitude:Q",
-        title="sci mag",
-        scale=alt.Scale(zero=False, reverse=True, padding=20),
+        f"{value_column}:Q",
+        title="Magnitude" if quantity == "mag" else "Flux",
+        scale=alt.Scale(zero=False, reverse=quantity == "mag", padding=20),
     )
 
     base = alt.Chart(frame)
-    error_bars = base.mark_rule(strokeWidth=1.25).encode(
+    error_bars = base.transform_filter(f"isValid(datum.{error_column}) && datum.display_kind !== 'upper limit'").mark_rule(strokeWidth=1.25).encode(
         x=x_axis,
         y=alt.Y(
-            "magnitudeLow:Q",
-            scale=alt.Scale(zero=False, reverse=True, padding=20),
+            "valueLow:Q" if "valueLow" in frame else "magnitudeLow:Q",
+            scale=alt.Scale(zero=False, reverse=quantity == "mag", padding=20),
         ),
-        y2="magnitudeHigh:Q",
+        y2="valueHigh:Q" if "valueHigh" in frame else "magnitudeHigh:Q",
         color=color,
     )
 
-    points = base.mark_circle(size=95, cursor="pointer" if selection_name is not None else None).encode(
+    points = base.mark_point(filled=True, size=95, cursor="pointer" if selection_name is not None else None).encode(
         x=x_axis,
         y=y_axis,
         color=color,
+        shape=alt.Shape("display_kind:N", title="Measurement", scale=alt.Scale(
+            domain=["ordinary", "forced", "upper limit"], range=["circle", "square", "triangle-down"],
+        )),
         tooltip=[
             alt.Tooltip("date:T", title="Time (UTC)", format="%d/%m/%Y %H:%M:%S"),
-            alt.Tooltip("magnitude:Q", title="sci mag", format=".2f"),
-            alt.Tooltip("magnitudeError:Q", title="Error", format=".2f"),
+            alt.Tooltip(f"{value_column}:Q", title="Magnitude" if quantity == "mag" else "Flux", format=".5g"),
+            alt.Tooltip(f"{error_column}:Q", title="Error", format=".5g"),
+            alt.Tooltip("measurement_kind:N", title="Kind"),
+            alt.Tooltip("is_upper_limit:N", title="Upper limit"),
             alt.Tooltip("band:N", title="Filter"),
             *([
                 alt.Tooltip("broker:N", title="Broker"),
@@ -276,8 +302,8 @@ def render_lightcurve_table(
     # click interaction; it is intentionally not a grid column because Arrow
     # tables cannot hash nested dictionaries.
     table = table[[column for column in (
-        "date", "mjd", "broker", "origin", "endpoint", "band", "magnitude",
-        "magnitudeError", "real_bogus", "record_id"
+        "date", "mjd", "broker", "origin", "endpoint", "band", "quantity", "measurement_kind",
+        "value", "error", "is_upper_limit", "real_bogus", "record_id"
     ) if column in table]]
     st.subheader("Light curve data")
 
@@ -310,10 +336,10 @@ def render_lightcurve_table(
         headerClass="ag-right-aligned-header",
         cellClass="ag-right-aligned-cell",
     )
-    grid.configure_column("magnitude", header_name="Magnitude", minWidth=130, flex=1)
+    grid.configure_column("value", header_name="Value", minWidth=130, flex=1)
     grid.configure_column(
-        "magnitudeError",
-        header_name="Magnitude error",
+        "error",
+        header_name="Uncertainty",
         minWidth=160,
         flex=1,
     )
@@ -582,7 +608,7 @@ def render_overview(data: dict[str, Any], frame: pd.DataFrame) -> None:
     st.markdown("#### Quick photometry readout")
     summary = data.get("summary", {})
     st.write(
-        f"{len(frame)} displayed detection points from {summary.get('firstDetection', '—')} "
+        f"{len(frame)} displayed photometric values from {summary.get('firstDetection', '—')} "
         f"to {summary.get('lastDetection', '—')}. Brightest local point: "
         f"{summary.get('brightestMagnitude', '—')} mag."
     )
@@ -635,8 +661,12 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
             "The threshold uses each record's normalized real/bogus value. "
             "A blank value is missing, not zero. Broker scores are not recalibrated."
         )
+    quantities = list(dict.fromkeys(frame["quantity"]))
+    quantity = st.selectbox("Quantity", quantities,
+                            index=quantities.index("mag") if "mag" in quantities else 0,
+                            key=f"quantity_filter_{widget_key}")
     filtered_frame = filter_photometry_frame(
-        frame, bands=selected_bands, brokers=selected_brokers,
+        frame[frame["quantity"] == quantity], bands=selected_bands, brokers=selected_brokers,
         min_real_bogus=threshold if apply_quality else None,
         include_missing=include_missing,
     )
@@ -649,14 +679,11 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
         ))
     detection_col, upper_col, forced_col, band_col = st.columns(4)
     detection_col.metric("Shown points", len(filtered_frame))
-    record_counts = data.get("record_counts", {})
-    upper_col.metric("Loaded non-detections", record_counts.get("non_detection", "—"))
-    forced_col.metric("Loaded forced photometry", record_counts.get("forced_photometry", "—"))
+    upper_col.metric("Loaded upper-limit points", int(frame["is_upper_limit"].sum()))
+    forced_col.metric("Loaded forced points", int((frame["measurement_kind"] == "forced").sum()))
     band_col.metric("Shown bands", len(filtered_frame["band"].unique()))
 
-    image_col, chart_col = st.columns([1, 5], gap="large")
-    with image_col:
-        st.image(DEFAULT_IMAGE_PATH, caption="Object image", use_container_width=True)
+    chart_col = st.container()
     with chart_col:
         band_counts = filtered_frame["band"].astype(str).value_counts().to_dict()
         if filtered_frame.empty:
@@ -680,16 +707,16 @@ def render_photometry(data: dict[str, Any], frame: pd.DataFrame, rejected_count:
                 render_detection_details(data, selected)
             else:
                 st.caption("Click a detection point to inspect its SemanticRecord.")
-    st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source.")
+    st.caption("Magnitude axes are inverted: a lower magnitude means a brighter source." if quantity == "mag"
+               else "Flux increases upward; flux values are not converted to magnitudes.")
+    st.caption("Squares indicate forced measurements; downward triangles indicate upper limits.")
     st.caption("Counts and plotted measurements come from normalized semantic records.")
     if rejected_count:
         st.warning(f"Skipped {rejected_count} invalid measurement(s).")
     render_lightcurve_table(data, key=f"lightcurve_table_{widget_key}", frame=filtered_frame)
-    visible_ids = set(filtered_frame.get("record_id", ()))
-    detections = [
-        record for record in records_by_family(data, "measurement")
-        if record["record_id"] in visible_ids
-    ]
+    visible_ids = dict.fromkeys(filtered_frame.get("record_id", ()))
+    records = {record["record_id"]: record for record in records_by_family(data, "measurement")}
+    detections = [records[record_id] for record_id in visible_ids if record_id in records]
     if detections:
         with st.expander("Inspect shown detection records"):
             by_id = {record["record_id"]: record for record in detections}
@@ -867,7 +894,8 @@ def render_object_portfolio(data: dict[str, Any], *, widget_key: str = "single")
     first, last, brightest, count = st.columns(4)
     first.metric("First measurement", format_utc(frame.iloc[0]["date"]))
     last.metric("Last measurement", format_utc(frame.iloc[-1]["date"]))
-    brightest.metric("Brightest", f'{frame["magnitude"].min():.2f} mag')
+    magnitudes = frame.loc[(frame["quantity"] == "mag") & ~frame["is_upper_limit"], "value"]
+    brightest.metric("Brightest", f'{magnitudes.min():.2f} mag' if not magnitudes.empty else "—")
     count.metric("Loaded points", len(frame))
     summary, photometry, classification, crossmatches, spectra, products, records, provenance = st.tabs([
         "Summary", "Detections & light curve", "Classifications", "Crossmatches", "Spectra",

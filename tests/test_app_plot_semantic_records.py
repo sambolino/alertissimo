@@ -39,7 +39,9 @@ def test_detection_records_are_concrete_and_lightcurve_is_grouped():
 
     detections = [record for record in records if record["family"] == "measurement"]
     lightcurves = [record for record in records if record["family"] == "lightcurve"]
-    assert len(detections) >= len(data["lightCurve"])
+    # One record may contain several bands/quantities; every displayed value
+    # still belongs to a retained concrete measurement record.
+    assert {p["record_id"] for p in data["lightCurve"]} <= {r["record_id"] for r in detections}
     assert lightcurves
 
 
@@ -64,7 +66,9 @@ def test_clickable_lightcurve_is_a_single_view_chart_for_streamlit_selection():
     frame, _ = lightcurve_dataframe(portfolio_data())
     frame = frame.assign(_point_id=frame.index.astype(str))
 
-    spec = lightcurve_chart(frame, selection_name="detection_point_test").to_dict()
+    with pytest.raises(ValueError, match="exactly one quantity"):
+        lightcurve_chart(frame, selection_name="detection_point_test")
+    spec = lightcurve_chart(frame[frame["quantity"] == "mag"], selection_name="detection_point_test").to_dict()
     assert "layer" not in spec
     assert "detection_point_test" in spec["params"][0]["name"]
     assert next(item for item in spec["encoding"]["tooltip"] if item["field"] == "real_bogus")["format"] == ".6f"
@@ -180,9 +184,9 @@ def test_display_filters_combine_band_broker_and_quality_and_allow_empty_selecti
 
 
 @pytest.mark.parametrize("enabled,include_missing,selected_bands,expected", [
-    (False, False, ["g"], ["record:lasair", "record:fink", "record:below"]),
+    (False, False, ["g"], ["record:below", "record:fink", "record:lasair"]),
     (True, False, ["g"], ["record:fink"]),
-    (True, True, ["g"], ["record:lasair", "record:fink"]),
+    (True, True, ["g"], ["record:fink", "record:lasair"]),
     (True, False, [], []),
 ])
 def test_photometry_controls_share_one_selection_with_chart_table_count_and_inspector(
@@ -200,6 +204,9 @@ def test_photometry_controls_share_one_selection_with_chart_table_count_and_insp
     captured = {"chart": [], "table": [], "inspector": [], "metrics": {}}
 
     class FakeStreamlit:
+        def container(self):
+            return nullcontext(self)
+
         def columns(self, layout, **_kwargs):
             if isinstance(layout, int):
                 return [self] * layout
@@ -239,6 +246,8 @@ def test_photometry_controls_share_one_selection_with_chart_table_count_and_insp
             return nullcontext()
 
         def selectbox(self, _label, options, **_kwargs):
+            if _label == "Quantity":
+                return options[0]
             captured["inspector"] = list(options)
             return options[0]
 

@@ -89,7 +89,7 @@ def test_explicit_selection_never_relabels_the_union_or_confuses_surveys():
     assert selected is a
     assert candidate_identity(selected) == ("ztf", IDS[0])
     points = portfolio_lightcurve_dataframe(selected)
-    assert points[points["measurement_kind"] == "ordinary"]["value"].tolist() == [19.0]
+    assert points[(points["measurement_kind"] == "ordinary") & ~points["is_upper_limit"]]["value"].tolist() == [19.0]
     exported = json.loads(portfolio_to_json(selected))
     assert exported == portfolio_to_dict(a)
     assert {r["fields"]["identity.object_id"] for r in exported["records"]
@@ -147,7 +147,9 @@ def test_views_keep_limits_counts_exact_identifiers_and_auditable_crossmatches()
     plotting = portfolio_lightcurve_dataframe(p)
     assert set(plotting["measurement_kind"]) == {"ordinary", "forced"}
     assert plotting[plotting["measurement_kind"] == "forced"]["value"].tolist() == [-2.0]
-    assert len(plotting) == 2 and len(frame) == 3  # A limit is not an ordinary detection.
+    assert len(plotting) == 3 and len(frame) == 3
+    assert plotting.loc[plotting["is_upper_limit"], "value"].tolist() == [21.0]
+    assert len(plotting[~plotting["is_upper_limit"]]) == 2  # A limit is not an ordinary detection.
     audited = plotting.merge(frame, left_on="record_id", right_on="internal_record_id", validate="many_to_one")
     assert set(audited["source.internal_execution_id"]) <= {e.internal_execution_id.value for e in p.executions}
     assert portfolio_to_dict(p) == before

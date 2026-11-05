@@ -25,6 +25,7 @@ LIGHTCURVE_COLUMNS = [
     "quantity",
     "value",
     "error",
+    "is_upper_limit",
 ]
 
 # Ordered explicitly so adding another normalized observation-time field is a
@@ -34,7 +35,7 @@ DEFAULT_TIME_FIELD_PATHS = ("time.mjd",)
 _MEASUREMENT_PATH = re.compile(
     r"^(?P<kind>photometry|forced_photometry)\."
     r"(?P<band>[^.]+)\."
-    r"(?:(?:psf)\.)?"
+    r"(?:(?P<form>psf|limit)\.)?"
     r"(?P<quantity>mag|flux)$"
 )
 
@@ -88,10 +89,23 @@ def _rows_for_record(
         match = _MEASUREMENT_PATH.fullmatch(path)
         if match is None:
             continue
+        if match.group("form") == "limit" and any(
+            measured is not None and measured.group("form") != "limit"
+            and measured.group("kind") == match.group("kind")
+            and measured.group("band") == match.group("band")
+            and _finite_number(raw) is not None
+            for key, raw in fields.items()
+            for measured in (_MEASUREMENT_PATH.fullmatch(key),)
+        ):
+            # A positive measurement can also report the exposure's limiting
+            # sensitivity. That metadata is not another non-detection point.
+            continue
         value = _finite_number(raw_value)
         if value is None:
             continue
         error = _finite_number(fields.get(f"{path}.error"))
+        if error is not None and error < 0:
+            error = None
         yield {
             "record_id": record_id,
             "semantic_type": semantic_type,
@@ -103,6 +117,7 @@ def _rows_for_record(
             "quantity": match.group("quantity"),
             "value": value,
             "error": error,
+            "is_upper_limit": match.group("form") == "limit",
         }
 
 

@@ -45,6 +45,7 @@ def test_projects_magnitude_and_pairs_its_error():
         "quantity": "mag",
         "value": 19.4,
         "error": 0.12,
+        "is_upper_limit": False,
     }]
 
 
