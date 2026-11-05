@@ -85,6 +85,10 @@ def time_window_condition(*, time_context: Mapping, first_column: str,
     Detection mode is a safe summary-overlap prefilter, never an existence proof.
     A recipe must supply required detection evidence for actual membership.
     First/last modes encode the corresponding closed summary-time interval.
+
+    JD columns additionally get a wider, indexable raw-column prefilter. Keep
+    the canonical subtraction comparisons: inverting their bounds alone could
+    change membership through floating-point rounding.
     """
     validate_time_window_options(first_column=first_column, last_column=last_column,
                                  subtract=subtract, order_by=order_by)
@@ -94,7 +98,17 @@ def time_window_condition(*, time_context: Mapping, first_column: str,
     upper_column = first_column if mode in ("detection", "first") else last_column
     lower = numeric_comparison(lower_column, ">=", start, subtract=subtract)
     upper = numeric_comparison(upper_column, "<=", end, subtract=subtract)
-    return f"({lower}) AND ({upper}) ORDER BY {order_by}"
+    conditions = [lower, upper]
+    if subtract == 2400000.5:
+        # One second is wider than double rounding across datetime's supported
+        # JD range. Pad encoded numbers, avoiding datetime min/max overflow;
+        # nextafter ensures the prefilter bounds round outwards as well.
+        padding_days = 1 / 86400
+        native_start = math.nextafter(start + subtract - padding_days, -math.inf)
+        native_end = math.nextafter(end + subtract + padding_days, math.inf)
+        conditions[:0] = [numeric_comparison(lower_column, ">=", native_start),
+                          numeric_comparison(upper_column, "<=", native_end)]
+    return " AND ".join(f"({condition})" for condition in conditions) + f" ORDER BY {order_by}"
 
 
 def conjoin_ordered_conditions(left: str, right: str) -> str:

@@ -5,6 +5,7 @@ Detection-mode SQL is deliberately only a safe overlap prefilter in this file.
 """
 
 from datetime import datetime, timedelta, timezone
+import math
 import shutil
 import sqlite3
 
@@ -15,7 +16,8 @@ from alertissimo.api import validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraphError, build_capability_graph
-from alertissimo.data_layer.transforms.sql import conjoin_ordered_conditions
+from alertissimo.data_layer.transforms.sql import conjoin_ordered_conditions, time_window_condition
+from alertissimo.data_layer.transforms.temporal import time_bound
 from alertissimo.orchestration.binding import ParameterBindingError, UnsupportedParameterBindingError, bind_endpoint
 from alertissimo.orchestration.ir import (
     BooleanPredicate, ComparisonPredicate, ConeSearchStep, PredicateLiteral, SemanticReference,
@@ -81,6 +83,65 @@ def select_ids(conditions):
         db.execute("CREATE TABLE objects(objectId TEXT PRIMARY KEY, ncand INTEGER, jdmin REAL, jdmax REAL)")
         db.executemany("INSERT INTO objects VALUES (?,?,?,?)", ROWS)
         return [row[0] for row in db.execute("SELECT objectId FROM objects WHERE " + conditions)]
+
+
+@pytest.mark.parametrize("mode", ["detection", "first", "last"])
+@pytest.mark.parametrize("start", [
+    datetime.min.replace(tzinfo=timezone.utc),
+    NOW + timedelta(microseconds=123456),
+    datetime.max.replace(tzinfo=timezone.utc) - timedelta(seconds=2),
+])
+def test_index_prefilter_preserves_exact_boundary_membership(mode, start):
+    context = {"mode": mode, "start": start, "end": start + timedelta(seconds=2)}
+    lo, hi = time_bound(time_context=context, bound="range", encoding="mjd", mode=mode)
+    # Probe both adjacent representable values and values inside the one-second
+    # guard but outside the exact window. Equal first/last dates isolate the
+    # boundary arithmetic; the overlap fixture below exercises spanning objects.
+    dates = sorted({value for bound in (lo + 2400000.5, hi + 2400000.5)
+                    for value in (math.nextafter(bound, -math.inf), bound,
+                                  math.nextafter(bound, math.inf),
+                                  bound - 0.5 / 86400, bound + 0.5 / 86400)})
+    rows = [(f"object-{i:02}", jd, jd) for i, jd in enumerate(dates)]
+    expected = [object_id for object_id, jd, _ in rows if lo <= jd - 2400000.5 <= hi]
+    assert expected and len(expected) < len(rows)
+    with sqlite3.connect(":memory:") as db:
+        db.execute("CREATE TABLE objects(objectId TEXT PRIMARY KEY, jdmin REAL, jdmax REAL)")
+        db.executemany("INSERT INTO objects VALUES (?,?,?)", rows)
+        sql = time_window_condition(time_context=context, **OPTIONS)
+        actual = [r[0] for r in db.execute("SELECT objectId FROM objects WHERE " + sql)]
+    assert actual == expected
+
+
+def test_sherlock_time_join_can_use_date_index_without_changing_results():
+    context = {"mode": "last", "start": NOW, "end": NOW + timedelta(hours=1)}
+    lo, hi = time_bound(time_context=context, bound="range", encoding="mjd", mode="last")
+    join = ('objects.objectId = sherlock_classifications.objectId AND '
+            'sherlock_classifications.classification = "AGN"')
+    query = ("SELECT objects.objectId FROM objects, sherlock_classifications WHERE "
+             + join + " AND ")
+    legacy = (f"(objects.jdmax - 2400000.5) >= {lo!r} AND "
+              f"(objects.jdmax - 2400000.5) <= {hi!r} ORDER BY objects.objectId")
+    guarded = time_window_condition(time_context=context, **OPTIONS)
+    with sqlite3.connect(":memory:") as db:
+        db.execute("CREATE TABLE objects(objectId TEXT PRIMARY KEY, jdmin REAL, jdmax REAL)")
+        db.execute("CREATE INDEX idx_jdmax ON objects(jdmax)")
+        db.execute("CREATE TABLE sherlock_classifications(objectId TEXT PRIMARY KEY, classification TEXT)")
+        db.executemany("INSERT INTO objects VALUES (?,?,?)",
+                       [(f"ZTF{i:07}", 2459000.5 + i / 100, 2459000.5 + i / 100) for i in range(5000)])
+        db.executemany("INSERT INTO sherlock_classifications VALUES (?,?)",
+                       [(f"ZTF{i:07}", "AGN" if i % 2 == 0 else "SN") for i in range(5000)])
+        db.execute("ANALYZE")
+        expected = db.execute(query + legacy).fetchall()
+        assert expected
+        assert db.execute(query + guarded).fetchall() == expected
+        plan = db.execute("EXPLAIN QUERY PLAN " + query + guarded).fetchall()
+    assert any("SEARCH objects USING INDEX idx_jdmax" in row[3] for row in plan), plan
+
+
+def test_unshifted_time_columns_keep_their_existing_bare_comparisons():
+    context = {"mode": "last", "start": NOW, "end": NOW + timedelta(days=1)}
+    assert time_window_condition(time_context=context, **{**OPTIONS, "subtract": 0}) == (
+        "(objects.jdmax >= 59020.0) AND (objects.jdmax <= 59021.0) ORDER BY objects.objectId")
 
 
 @pytest.mark.parametrize("mode,unfiltered,filtered", [
