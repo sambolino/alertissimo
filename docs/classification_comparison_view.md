@@ -91,6 +91,15 @@ PYTHONPATH=. python -m pytest -q \
 Preparation passed 102 offline cases across these modules, including the
 Streamlit rendering checks. No live provider request was run.
 
+A local upgrade exposed six failures from old generated UI files, including
+pre-rename `detection` records and obsolete classification fields. The fixture
+loader now checks a deterministic revision of the generator, normalization code,
+registry/ontology and frozen inputs. Unversioned or stale generated files rebuild
+from the captures; fresh output is reused. Streamlit's Portfolio and search-row
+caches include that same revision. The scientific assertions and captures are
+unchanged. The follow-up passed 111 offline checks, including an old-corpus
+upgrade regression, input-change checks and cache-key propagation.
+
 After local checks and squash, run the UI workflow on the integration head.
 No additional DSL/registry checkpoint is requested for this presentation-only
 slice. Final integration checks and live acceptance remain required; #329 stays

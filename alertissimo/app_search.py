@@ -53,10 +53,16 @@ from alertissimo.ui_portfolios import (
 load_dotenv(Path(__file__).parents[1] / ".env", override=False)
 
 
-@st.cache_data
 def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Build searchable rows exclusively from frozen, normalized Portfolios."""
-    portfolios = load_demo_candidate_portfolios()
+    from scripts.build_ui_fixtures import corpus_fingerprint
+
+    return _load_demo_search_data(corpus_fingerprint())
+
+
+@st.cache_data
+def _load_demo_search_data(corpus_revision: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    portfolios = _load_demo_candidate_portfolios(corpus_revision)
     candidates = []
     for object_id, portfolio in portfolios.items():
         points = portfolio["lightCurve"]
@@ -82,9 +88,16 @@ def load_demo_search_data() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     return candidates, presets
 
 
-@st.cache_data
 def load_demo_candidate_portfolios() -> dict[str, dict[str, Any]]:
     """Project frozen Portfolios with every named classification output retained."""
+    from scripts.build_ui_fixtures import corpus_fingerprint
+
+    return _load_demo_candidate_portfolios(corpus_fingerprint())
+
+
+@st.cache_data
+def _load_demo_candidate_portfolios(corpus_revision: str) -> dict[str, dict[str, Any]]:
+    """Include the frozen corpus revision in the Streamlit cache key."""
     portfolios = {}
     for name in SEARCH_PORTFOLIOS:
         display = portfolio_to_display(load_ui_portfolio(name))

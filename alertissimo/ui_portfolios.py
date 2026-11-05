@@ -30,10 +30,13 @@ DEFAULT_PORTFOLIO = "multibroker_lsst_170587117485817955.json"
 
 
 def ensure_ui_portfolios() -> Path:
-    """Build ignored UI output from frozen broker evidence when it is absent."""
-    if not all((UI_PORTFOLIOS / name).is_file() for name in SEARCH_PORTFOLIOS):
-        from scripts.build_ui_fixtures import build_corpus
+    """Refresh generated UI output when its frozen inputs or normalizer change."""
+    from scripts.build_ui_fixtures import CORPUS_STAMP, build_corpus, corpus_fingerprint
 
+    stamp = UI_PORTFOLIOS / CORPUS_STAMP
+    current = corpus_fingerprint()
+    if (not all((UI_PORTFOLIOS / name).is_file() for name in SEARCH_PORTFOLIOS)
+            or not stamp.is_file() or stamp.read_text(encoding="utf-8").strip() != current):
         build_corpus(UI_PORTFOLIOS)
     return UI_PORTFOLIOS
 
