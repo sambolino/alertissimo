@@ -300,6 +300,18 @@ No new IR, runtime or provider declarations are introduced. The 223 focused
 offline cases passed during preparation. This is not a merged C4f or passing
 remote CI/live result; C4 and C5-C7 are still incomplete.
 
+C4f is now merged as `e2be63c` (#342). C5,
+`fix/dsl-confirm-proposition-scope`, prepares stable proposition attachment across
+plain material/layout/initial-selector clauses, including scoped requirements
+and continuation. Fresh lowering and capability validation share one explicit
+scope rule; competing conditions fail before provider calls. Scoped qualifiers
+are retained, and legacy Fink channel evidence belongs to its own field mapping.
+Existing occurrence-local votes, distinct-broker quorum and bare existence remain
+unchanged. See the [confirmation scope and handoff](dsl_confirm_proposition_scope.md).
+All 220 focused offline cases passed during preparation. This is not a merged C5
+or passing remote CI/live result. C4's
+remaining guarded discovery limits and C6-C7 are still outstanding.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

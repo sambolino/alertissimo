@@ -58,25 +58,27 @@ def test_adjacent_where_attaches_its_canonical_predicate_to_confirm():
     }
 
 
-def test_nonadjacent_where_does_not_turn_later_confirm_into_predicate_quorum():
+@pytest.mark.parametrize("constraint", [
+    "latest 1", "within 7d", "first within 7d", "last within 7d", "inside (1, 2, 5arcsec)",
+])
+def test_initial_constraints_do_not_turn_proposition_confirmation_into_existence(constraint):
     surface = parse_surface_script(
         "objects from ztf via alerce\n"
         'where classification.best.class = "SN"\n'
-        "latest 1\n"
+        f"{constraint}\n"
         "confirm by 2 via fink, lasair\n"
     )
     workflow = lower_surface(surface).workflow
 
     assert [step.op for step in workflow.steps] == [
-        "semantic_search",
-        "get_classification",
-        "confirm",
+        "cone_search" if constraint.startswith("inside") else "semantic_search", "confirm",
     ]
     search = workflow.steps[0]
-    assert isinstance(search, SemanticSearchStep)
     assert search.predicate is not None
     confirm = next(step for step in workflow.steps if isinstance(step, ConfirmStep))
-    assert confirm.predicate is None
+    assert confirm.predicate == search.predicate
+    if constraint == "latest 1":
+        assert search.selection.latest == 1
 
 
 def test_predicate_confirm_requires_broker_endpoint_that_can_materialize_predicate():
