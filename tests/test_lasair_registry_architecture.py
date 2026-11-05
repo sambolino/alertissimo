@@ -196,6 +196,7 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
     payloads = document["payloads"]
 
     assert set(mappings["classification@sherlock:lasair.best.class"]) == {
+        "query#classification",
         "object#sherlock.classification",
         "objects#sherlock.classification",
         "sherlock_position_classifications#_value.0",
@@ -203,6 +204,7 @@ def test_ztf_context_collection_mappings_and_transforms() -> None:
         "sherlock_object_classifications#_value.0",
     }
     assert set(mappings["classification@sherlock:lasair.best.description"]) == {
+        "query#description",
         "object#sherlock.description",
         "objects#sherlock.description",
         "sherlock_position_classifications#_value.1",

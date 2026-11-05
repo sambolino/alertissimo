@@ -14,7 +14,7 @@ from collections.abc import Mapping
 
 from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCall, RecipeCapability,
-    StepValueSource, LatestSelectionCapability,
+    StepValueSource, LatestSelectionCapability, SqlJoinCapability,
 )
 
 from alertissimo.data_layer.runtime.capability_graph import (
@@ -222,6 +222,7 @@ def _recipe_plans(
         _endpoint_plan(
             step, endpoints[call.endpoint], validation, graph,
             predicate_constraints=call.predicate_bindings,
+            sql_join=call.sql_join,
             realize_search_predicate=index == 0,
             selection_binding=recipe.latest_selection if index == 0 else None,
         ).model_copy(
@@ -250,6 +251,7 @@ def _endpoint_plan(
     graph: CapabilityGraph,
     *,
     predicate_constraints: tuple[RequestConstraintCapability, ...] | None = None,
+    sql_join: SqlJoinCapability | None = None,
     realize_search_predicate: bool = True,
     selection_binding: LatestSelectionCapability | None = None,
 ) -> EndpointPlan:
@@ -260,6 +262,7 @@ def _endpoint_plan(
             endpoint=endpoint,
             graph=graph,
             constraints=predicate_constraints,
+            sql_join=sql_join,
         )
     request_params = {}
     if realize_search_predicate and isinstance(step, SearchStep) and step.selection is not None:

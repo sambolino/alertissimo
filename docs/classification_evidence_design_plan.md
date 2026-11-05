@@ -336,6 +336,19 @@ time/continuation and full-history contracts are preserved. Special routes,
 catalogue aliases, coarse normalization, global Fink object latest, Lasair joins
 and the remaining C4/C7 work retain their explicit boundaries.
 
+
+C7a is merged as `5964737` (#345), confirmed from the integration remote.
+C7b, `feat/classification-lasair-ztf-native-join`, prepares the audited ZTF
+objects/Sherlock identity join and eight native label equalities. See the
+[join contract and verification](classification_lasair_ztf_native_join.md).
+Its positive class condition, complete object pagination, normalized recheck and
+local recency ranking retain missing-context and identity boundaries. The shared
+recipe/SQL extensions remain provider-neutral. Rubin joins, other tables,
+score filtering and coarse class/consensus normalization remain deferred. This
+entry records 2,481 workflow cases covered across the regression run and the
+updated architecture-expectation recheck, plus the passing installed-wheel check.
+It does not claim C7b merged, remote CI passed, or a new live deployment capture.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

@@ -81,6 +81,14 @@ class LatestSelectionCapability:
 
 
 @dataclass(frozen=True)
+class SqlJoinCapability:
+    """Authored equality to a unique object key, never a free SQL expression."""
+
+    left: str
+    right: str
+
+
+@dataclass(frozen=True)
 class RecipeCall:
     endpoint: str
     required: bool
@@ -90,6 +98,7 @@ class RecipeCall:
     # Only the candidate discovery call may consume the SearchStep predicate.
     predicate_bindings: tuple[RequestConstraintCapability, ...] = ()
     latest_selection: LatestSelectionCapability | None = None
+    sql_join: SqlJoinCapability | None = None
 
 
 @dataclass(frozen=True)
@@ -438,7 +447,7 @@ def _predicate_bindings(
                 identities = tuple(item for item in fields
                                    if canonical_semantic_path(item.semantic_path) == "summary.identity.object_id"
                                    and item.raw_field == sql_order_by.split(".")[1])
-                if not matches or not identities or sql_column.split(".")[0] != sql_order_by.split(".")[0]:
+                if not matches or not identities:
                     raise RecipeRegistryError(f"{location}: SQL column and ordering must reference mapped output and identity")
                 if type(sql_subtract) not in (int, float) or not math.isfinite(sql_subtract):
                     raise RecipeRegistryError(f"{location}: SQL subtract must be a finite number")
@@ -452,7 +461,17 @@ def _predicate_bindings(
                     pass
                 elif sql_subtract != 0 or transforms:
                     raise RecipeRegistryError(f"{location}: SQL subtraction must match the output mapping transform")
-                if binding.get("exact", True) is not True or "values" in binding:
+                if "values" in binding:
+                    from ..transforms.sql import enum_comparison
+                    try:
+                        if not isinstance(binding["values"], list):
+                            raise ValueError("SQL label domain must be a list")
+                        enum_comparison(sql_column, operator, binding["values"][0], values=tuple(binding["values"]))
+                    except (ValueError, TypeError, IndexError) as error:
+                        raise RecipeRegistryError(f"{location}: SQL symbolic equality requires an admitted safe label") from error
+                    if sql_subtract != 0 or binding.get("exact") is not False:
+                        raise RecipeRegistryError(f"{location}: SQL symbolic equality requires no subtraction and an explicit residual recheck")
+                elif binding.get("exact", True) is not True:
                     raise RecipeRegistryError(f"{location}: numeric SQL bindings require exact comparisons without a values domain")
             elasticsearch_field = None
             elasticsearch_identity = None
@@ -887,7 +906,7 @@ def load_provider_capabilities(
                     call_where = f"{where}.calls[{index}]"
                     call = _mapping(raw_call, call_where)
                     _keys(
-                        call, {"endpoint", "required", "params"},
+                        call, {"endpoint", "required", "params", "sql_join"},
                         {"endpoint"}, call_where,
                     )
                     endpoint, required = call["endpoint"], call.get("required", True)
@@ -953,6 +972,30 @@ def load_provider_capabilities(
                     call_bindings = tuple(
                         item for item in predicates if item.endpoint == endpoint
                     ) if index == 0 and required and issubclass(models[op], SearchStep) else ()
+                    sql_join = None
+                    if "sql_join" in call:
+                        join = _mapping(call["sql_join"], call_where)
+                        _keys(join, {"left", "right", "right_unique"}, {"left", "right", "right_unique"}, call_where)
+                        left, right = join["left"], join["right"]
+                        if (not call_bindings or join["right_unique"] is not True
+                            or any(not isinstance(column, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*", column)
+                                   for column in (left, right))
+                            or left.split(".")[0] == right.split(".")[0]
+                            or left.split(".")[1] != right.split(".")[1]
+                            or not all(item.sql_order_by == left for item in call_bindings)
+                            or len({item.parameter for item in call_bindings}) != 1
+                            or not all(declarations[item.parameter].get("required") for item in call_bindings)
+                            or not any(item.sql_column and item.sql_column.split(".")[0] == right.split(".")[0]
+                                       for item in call_bindings)):
+                            raise RecipeRegistryError(f"{call_where}: SQL join requires mapped identity ordering and a unique matching object key")
+                        sql_join = SqlJoinCapability(left, right)
+                    else:
+                        # A bound column on another table is usable only by a
+                        # call explicitly declaring its identity join. Ordinary
+                        # summary searches keep their original object population.
+                        call_bindings = tuple(item for item in call_bindings
+                                              if item.sql_column is None
+                                              or item.sql_column.split(".")[0] == item.sql_order_by.split(".")[0])
                     composable_ranges = {
                         assignment.parameter for assignment in assignments
                         if isinstance(assignment.source, StepValueSource)
@@ -988,9 +1031,13 @@ def load_provider_capabilities(
                         selected = constants.get(projection.get("param"))
                         columns = {item.sql_column for item in sql_bindings} | {item.sql_order_by for item in sql_bindings}
                         tables = {column.split(".")[0] for column in columns}
+                        declared_tables = constants.get("tables")
                         if (not projection.get("supports_columns") or not isinstance(selected, str)
                             or not columns.issubset({column.strip() for column in selected.split(",")})
-                            or len(tables) != 1 or constants.get("tables") not in tables):
+                            or (sql_join is None and (len(tables) != 1 or declared_tables not in tables))
+                            or (sql_join is not None and (tables != {sql_join.left.split(".")[0], sql_join.right.split(".")[0]}
+                                or not isinstance(declared_tables, str)
+                                or declared_tables.split(",") != [sql_join.left.split(".")[0], sql_join.right.split(".")[0]]))):
                             raise RecipeRegistryError(f"{call_where}: SQL discovery requires a constant mapped projection and one declared table")
                         if ("offset" in params or "offset" in fixed
                             or declarations.get("offset", {}).get("role") != "pagination"
@@ -1023,6 +1070,7 @@ def load_provider_capabilities(
                         endpoint, required, tuple(assignments), outputs,
                         call_bindings,
                         latest_selection,
+                        sql_join,
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
@@ -1064,7 +1112,7 @@ def load_provider_recipes(
 
 
 __all__ = [
-    "CallValueSource", "ConstantValueSource", "EncoderValueSource", "RecipeCall",
+    "CallValueSource", "ConstantValueSource", "EncoderValueSource", "RecipeCall", "SqlJoinCapability",
     "RecipeCapability", "RecipeParameter", "RecipeRegistryError", "StepValueSource",
     "LatestSelectionCapability", "TimeSelectionCapability", "ProviderCapabilities", "load_provider_capabilities", "load_provider_recipes",
 ]
