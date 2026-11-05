@@ -276,6 +276,17 @@ This is preparation, not a passing or merged C4d result. Multiple classification
 channels, mixed multisurvey populations, unbounded discovery and initial
 Confirm/Match still need later work; C4 and C5-C7 are not complete.
 
+C4d merged as `964244f`; its CI checkpoint passed, as reported by the local
+operator. C4e, `fix/dsl-multi-broker-cone-evidence`, prepares bounded conditions
+over several classification channels, including retrieval from the discovery
+broker and other brokers. It proves required material against the compiler's
+actual initial Gets, with model-erasure guards scoped per broker. See the
+[multi-broker cone handoff](dsl_multi_broker_cone_evidence.md). No new architecture
+layer or IR/runtime/provider contract is introduced. This entry is preparation,
+not a passing C4e result. Unbounded scheduling, mixed multisurvey populations,
+measurement dependencies and initial Confirm/Match remain guarded. C4 and C5-C7
+are not complete.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

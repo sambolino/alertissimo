@@ -35,6 +35,7 @@ on:
       - 'tests/test_dsl_latest_evidence.py'
       - 'tests/test_dsl_temporal_evidence.py'
       - 'tests/test_dsl_mixed_evidence.py'
+      - 'tests/test_dsl_multi_broker_cone_evidence.py'
       - 'tests/test_orchestration_search_recipes.py'
       - 'tests/test_orchestration_confirmation_recipes.py'
       - 'tests/test_orchestration_sql_recipes.py'
@@ -127,6 +128,7 @@ jobs:
             tests/test_dsl_latest_evidence.py \
             tests/test_dsl_temporal_evidence.py \
             tests/test_dsl_mixed_evidence.py \
+            tests/test_dsl_multi_broker_cone_evidence.py \
             tests/test_orchestration_search_recipes.py \
             tests/test_orchestration_confirmation_recipes.py \
             tests/test_orchestration_sql_recipes.py \

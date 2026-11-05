@@ -120,3 +120,11 @@ gh workflow run semantic-registry.yml --ref integration/discovery-completion
 
 No extra live provider acceptance is requested here. Keep #329 draft; final
 main-target checks must still validate the eventual head.
+
+## C4e follow-up
+
+C4d merged as `964244f`, and the operator reported its CI checkpoint passed.
+[C4e](dsl_multi_broker_cone_evidence.md) prepares several classification channels
+in the same bounded cone, superseding the single-classification-channel guard
+above. Per-broker model guards and required projected material remain essential;
+this is not a new consensus or cross-survey identity policy.
