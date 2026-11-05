@@ -74,6 +74,9 @@ def _emits_reference(
         actual_noun, actual_producer, actual_channel = _record_parts(
             mapping.semantic_record_type
         )
+        # Legacy fixed-producer records omit the channel suffix. Their channel
+        # still belongs to this field's provider, as in normalized evaluation.
+        actual_channel = actual_channel or mapping.broker
         if actual_noun != noun:
             continue
         if field_path and field_path != mapping.relative_field_path:

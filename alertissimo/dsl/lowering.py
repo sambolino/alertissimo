@@ -348,6 +348,57 @@ def _initial_material_predicate(surface: SurfaceScript, step) -> Predicate | Non
     return step.predicate
 
 
+def _confirmation_scope(
+    surface: SurfaceScript, *, record_types: frozenset[str],
+) -> tuple[dict[int, Predicate | None], frozenset[int]]:
+    """Bind one authored condition per confirmation stage, preserving qualifiers.
+
+    Material requests and initial selectors do not change the question. Explicit
+    filters, matches and previous confirmations end its scope. Only conditions
+    in this surface are considered: a continuation cannot inherit an old one.
+    """
+    pending: list[int] = []
+    propositions: dict[int, Predicate | None] = {}
+    confirmed_where: set[int] = set()
+    for index, clause in enumerate(surface.clauses):
+        if isinstance(clause, (FilterClause, MatchClause)):
+            pending.clear()
+        elif isinstance(clause, WhereClause) or (
+            isinstance(clause, RequirementClause) and clause.predicates
+        ):
+            pending.append(index)
+        elif isinstance(clause, ConfirmClause):
+            conditions: list[Predicate] = []
+            for owner in pending:
+                condition = surface.clauses[owner]
+                if isinstance(condition, WhereClause):
+                    predicate = _semantic_predicate(
+                        condition.condition, record_types=record_types, clause_index=owner,
+                    )
+                else:
+                    noun = resolve_record_type(condition.product, record_types)
+                    if noun is None:
+                        raise SurfaceLoweringError(
+                            "confirmation condition must resolve to one ontology record type",
+                            code="unresolved_confirm_condition", clause_index=owner,
+                        )
+                    predicate = _scoped_requirement_predicate(
+                        surface, condition, noun=noun, record_types=record_types, clause_index=owner,
+                    )
+                if predicate is not None and predicate not in conditions:
+                    conditions.append(predicate)
+            if len(conditions) > 1:
+                raise SurfaceLoweringError(
+                    "confirm has multiple preceding conditions; state one explicit proposition "
+                    "for this confirmation stage instead of choosing between conditions",
+                    code="ambiguous_confirm_proposition", clause_index=index,
+                )
+            propositions[index] = conditions[0] if conditions else None
+            confirmed_where.update(owner for owner in pending if isinstance(surface.clauses[owner], WhereClause))
+            pending.clear()
+    return propositions, frozenset(confirmed_where)
+
+
 def _candidate_search(
     surface: SurfaceScript,
     *,
@@ -814,6 +865,7 @@ def _lower_surface_intent(
     semantic_paths=None, graph: CapabilityGraph | None = None,
 ) -> SurfaceCompilation:
     """Build canonical intent, optionally stopping at one retrieval occurrence."""
+    confirm_predicates, confirmed_where = _confirmation_scope(surface, record_types=record_types)
     candidate_step, consumed = _candidate_operation(
         surface,
         record_types=record_types,
@@ -862,12 +914,8 @@ def _lower_surface_intent(
                 )
             )
             continue
-        adjacent_confirm = (
-            index + 1 < len(surface.clauses)
-            and isinstance(surface.clauses[index + 1], ConfirmClause)
-        )
         if index in consumed or (lookup and isinstance(clause, WhereClause)):
-            if isinstance(clause, WhereClause) and not adjacent_confirm:
+            if isinstance(clause, WhereClause) and index not in confirmed_where:
                 for implied in _implicit_requirements_from_where(
                     surface,
                     clause,
@@ -945,19 +993,11 @@ def _lower_surface_intent(
                 )
             )
         elif isinstance(clause, ConfirmClause):
-            attached_predicate = None
-            if index > 0 and isinstance(surface.clauses[index - 1], WhereClause):
-                previous = surface.clauses[index - 1]
-                attached_predicate = _semantic_predicate(
-                    previous.condition,
-                    record_types=record_types,
-                    clause_index=index - 1,
-                )
             steps.append(
                 _lower_confirm(
                     surface,
                     clause,
-                    predicate=attached_predicate,
+                    predicate=confirm_predicates[index],
                 )
             )
         elif isinstance(clause, MatchClause):
@@ -1113,6 +1153,7 @@ def _lower_fragment_intent(
     semantic_paths=None, graph: CapabilityGraph | None = None,
 ) -> SurfaceCompilation:
     """Lower continuation intent using its actual canonical base."""
+    confirm_predicates, _ = _confirmation_scope(context, record_types=record_types)
     steps = list(base_workflow.steps)
     view = ResultViewSpec()
     for index, clause in enumerate(context.clauses):
@@ -1167,7 +1208,7 @@ def _lower_fragment_intent(
             )
             continue
         if isinstance(clause, ConfirmClause):
-            steps.append(_lower_confirm(context, clause))
+            steps.append(_lower_confirm(context, clause, predicate=confirm_predicates[index]))
             continue
         if isinstance(clause, MatchClause):
             steps.append(_lower_match(context, clause, clause_index=index))

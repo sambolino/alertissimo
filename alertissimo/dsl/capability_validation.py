@@ -27,7 +27,6 @@ from alertissimo.orchestration.validation import (
     SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
 )
 
-from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
@@ -638,23 +637,6 @@ def _requirement_checks(
     return tuple(checks)
 
 
-def _adjacent_confirm_predicate(
-    surface: SurfaceScript,
-    *,
-    clause_index: int,
-    record_types: frozenset[str],
-):
-    if clause_index == 0 or not isinstance(surface.clauses[clause_index - 1], WhereClause):
-        return None
-    where = surface.clauses[clause_index - 1]
-    try:
-        return lower_expression_predicate(where.condition, record_types)
-    except PredicateLoweringError as exc:  # semantic validation should normally guard this
-        raise SurfaceCapabilityValidationError(
-            f"cannot lower adjacent where predicate for confirmation: {exc}"
-        ) from exc
-
-
 def _confirm_checks(
     surface: SurfaceScript,
     clause: ConfirmClause,
@@ -663,11 +645,17 @@ def _confirm_checks(
     graph: CapabilityGraph,
     record_types: frozenset[str],
 ) -> tuple[SurfaceCapabilityCheck, ...]:
-    predicate = _adjacent_confirm_predicate(
-        surface,
-        clause_index=clause_index,
-        record_types=record_types,
-    )
+    from .lowering import SurfaceLoweringError, _confirmation_scope
+
+    try:
+        propositions, _ = _confirmation_scope(surface, record_types=record_types)
+    except SurfaceLoweringError as error:
+        return tuple(SurfaceCapabilityCheck(
+            subject="confirm", status=SurfaceCapabilityStatus.DEFERRED,
+            reason=str(error), clause_index=error.clause_index, origin=origin,
+            broker=broker, channel=broker,
+        ) for origin in surface.candidates.origins for broker in clause.brokers)
+    predicate = propositions[clause_index]
     checks: list[SurfaceCapabilityCheck] = []
     for origin in surface.candidates.origins:
         for broker in clause.brokers:
