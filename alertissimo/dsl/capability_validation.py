@@ -250,11 +250,11 @@ def _candidate_checks(
     """Validate the same candidate operation that compilation will emit."""
     # Import lazily: lowering calls this validator before building the workflow.
     # These helpers only construct IR; they never resolve or execute providers.
-    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources, _external_cone_predicate
+    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources, _initial_material_predicate
 
     try:
         step, _ = _candidate_operation(surface, record_types=record_types)
-        if _external_cone_predicate(surface, step) is not None:
+        if _initial_material_predicate(surface, step) is not None:
             step = step.model_copy(update={"predicate": None})
     except SurfaceLoweringError as error:
         return tuple(
@@ -383,7 +383,7 @@ def _retrieval_requirement_checks(
     """Check the exact retrieval emitted by lowering, before endpoint selection."""
     # Pure IR construction; the lazy import avoids the compiler validation cycle.
     from .lowering import (
-        SurfaceLoweringError, _candidate_operation, _external_cone_predicate,
+        SurfaceLoweringError, _candidate_operation, _initial_material_predicate,
         _lower_requirement, _requirement_prefix,
     )
 
@@ -411,7 +411,7 @@ def _retrieval_requirement_checks(
         except SurfaceLoweringError:
             pass  # The candidate capability check retains its original diagnostic.
         else:
-            scheduled_predicate = _external_cone_predicate(surface, candidate)
+            scheduled_predicate = _initial_material_predicate(surface, candidate)
     material = ()
     if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
@@ -793,11 +793,11 @@ def _validate_surface_capabilities(
         if isinstance(clause, LatestClause):
             # Reuse the exact candidate lowering, including predicate scope.
             # This helper performs no capability validation or provider calls.
-            from .lowering import SurfaceLoweringError, _candidate_search, _external_cone_predicate
+            from .lowering import SurfaceLoweringError, _candidate_search, _initial_material_predicate
 
             try:
                 step, _ = _candidate_search(surface, record_types=semantic_model.record_types)
-                if _external_cone_predicate(surface, step) is not None:
+                if _initial_material_predicate(surface, step) is not None:
                     step = step.model_copy(update={"predicate": None})
             except SurfaceLoweringError as error:
                 checks.append(SurfaceCapabilityCheck(

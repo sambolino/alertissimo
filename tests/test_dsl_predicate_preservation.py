@@ -273,6 +273,9 @@ def test_cross_broker_cone_unproven_time_contract_remains_deferred_before_transp
 
 @pytest.mark.parametrize("source", [
     'objects from ztf via alerce\nwith classification via fink where best.class = "SN candidate"\n',
+    'objects from ztf via alerce\nlatest 10\nwith classification via fink where best.class = "SN candidate"\n',
+    'objects from ztf, lsst via alerce\nwithin 7d\nwith classification via fink where best.class = "SN candidate"\n',
+    f"objects from ztf via alerce\nwithin 7d\nwhere {CONDITION}\nconfirm by 1 via fink\n",
     CONE + f"where {CONDITION}\nconfirm by 1 via fink\n",
 ])
 def test_unbounded_and_confirmation_cases_keep_their_existing_guards(graph, source):

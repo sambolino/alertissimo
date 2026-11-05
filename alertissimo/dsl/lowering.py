@@ -281,8 +281,8 @@ def _scoped_requirement_predicate(
     return and_predicates(predicates)
 
 
-def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
-    """Identify a bounded first pass needing classification at other brokers.
+def _initial_material_predicate(surface: SurfaceScript, step) -> Predicate | None:
+    """Identify cone- or time-bounded discovery needing broker classification.
 
     This is semantic scheduling only. It does not choose endpoints or broaden a
     predicate-defined search stream. Retrieval capability checks prove field
@@ -290,7 +290,15 @@ def _external_cone_predicate(surface: SurfaceScript, step) -> Predicate | None:
     existing capability proof before any targeted retrieval. Summary conditions
     travel with the whole predicate; no Boolean branch is pruned on its own.
     """
-    if not isinstance(step, ConeSearchStep) or step.predicate is None:
+    if not isinstance(step, (ConeSearchStep, SemanticSearchStep)) or step.predicate is None:
+        return None
+    if not isinstance(step, ConeSearchStep) and not (
+        isinstance(step, SemanticSearchStep)
+        and step.time_context is not None
+        and len(step.sources) == 1
+    ):
+        # Without a cone, require a temporal population and its existing proof.
+        # Never turn an external condition or latest into an archive-wide scan.
         return None
     if not step.sources or any(source.broker is None for source in step.sources):
         return None
@@ -810,7 +818,7 @@ def _lower_surface_intent(
         surface,
         record_types=record_types,
     )
-    material_predicate = _external_cone_predicate(surface, candidate_step)
+    material_predicate = _initial_material_predicate(surface, candidate_step)
     if material_predicate is not None:
         candidate_step = candidate_step.model_copy(update={"predicate": None})
     steps = [candidate_step]

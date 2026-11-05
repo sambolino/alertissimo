@@ -50,12 +50,13 @@ def identities(portfolios):
     return [summary_object_identity(portfolio)[1] for portfolio in portfolios]
 
 
-def program(broker="alerce", mode="detection", latest=2, *, general=False, extra=""):
+def program(broker="alerce", mode="detection", latest=2, *, general=False, extra="", spatial=True):
     mode_prefix = "" if mode == "detection" else mode + " "
     selection = "" if latest is None else f"latest {latest}\n"
     condition = (f"with classification via fink\nwhere {QUALIFIED}\n" if general else
                  'with classification via fink where best.class = "SN candidate"\n')
-    return (f"objects from ztf via {broker}\ninside (124.88, -6.02, 5arcsec)\n"
+    cone = "inside (124.88, -6.02, 5arcsec)\n" if spatial else ""
+    return (f"objects from ztf via {broker}\n{cone}"
             f"{mode_prefix}within 10d\n{selection}{condition}{extra}")
 
 
@@ -146,14 +147,17 @@ def executor(monkeypatch, transport, *, max_pages=8):
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
 @pytest.mark.parametrize("mode", ["detection", "first", "last"])
 @pytest.mark.parametrize("latest", [None, 2])
-def test_time_membership_precedes_classification_then_optional_latest(graph, monkeypatch, broker, mode, latest):
-    source = program(broker, mode, latest)
+@pytest.mark.parametrize("spatial", [True, False])
+def test_time_membership_precedes_classification_then_optional_latest(graph, monkeypatch, broker, mode, latest, spatial):
+    source = program(broker, mode, latest, spatial=spatial)
     validation = validate_dsl(source, graph=graph, continue_from=None)
     assert validation.is_runnable, validation.lowering_error
     transport = TemporalTransport()
     result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, transport),
                          continue_from=None, reference_time=NOW)
-    assert [step.op for step in result.workflow.steps] == ["cone_search", "get_classification", "filter"]
+    assert [step.op for step in result.workflow.steps] == [
+        "cone_search" if spatial else "semantic_search", "get_classification", "filter",
+    ]
     assert result.workflow.steps[0].time_context.mode == mode
     assert result.workflow.steps[0].predicate is None
     assert result.run.steps[0].time_reference == result.staged.bindings[0].reference_time == NOW
@@ -182,17 +186,42 @@ def test_time_membership_precedes_classification_then_optional_latest(graph, mon
 
 
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
-def test_general_where_after_with_uses_the_same_window_and_selection(graph, monkeypatch, broker):
+@pytest.mark.parametrize("spatial", [True, False])
+def test_general_where_after_with_uses_the_same_window_and_selection(graph, monkeypatch, broker, spatial):
     transport = TemporalTransport()
-    result = execute_dsl(program(broker, general=True), graph=graph, executor=executor(monkeypatch, transport),
+    result = execute_dsl(program(broker, general=True, spatial=spatial), graph=graph, executor=executor(monkeypatch, transport),
                          continue_from=None, reference_time=NOW)
     assert identities(result.portfolios) == [IDS[2], IDS[4]]
     assert set(transport.calls[-1][2]["objectId"].split(",")) == TEMPORAL["detection"]
 
 
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
-def test_absolute_interval_does_not_move_with_a_later_reference_time(graph, monkeypatch, broker):
-    source = program(broker).replace("within 10d", 'within ["2020-06-10T00:00:00Z", "2020-06-20T00:00:00Z"]')
+def test_temporal_latest_position_is_declarative_and_filter_is_a_later_stage(graph, monkeypatch, broker):
+    source = program(broker, latest=1, general=True, spatial=False)
+    at_end = source.replace("latest 1\n", "") + "latest 1\n"
+    before = validate_dsl(source, graph=graph, continue_from=None)
+    after = validate_dsl(at_end, graph=graph, continue_from=None)
+    assert before.is_runnable and after.is_runnable
+    assert before.compilation.workflow == after.compilation.workflow
+    transport = TemporalTransport()
+    initial = execute_dsl(at_end, graph=graph, executor=executor(monkeypatch, transport),
+                          continue_from=None, reference_time=NOW)
+    assert identities(initial.portfolios) == [IDS[2]]
+    # A is the newest temporal member, but its classification rejects it. An
+    # explicit later filter does not refill A's slot with the older matching C.
+    later_source = source.replace(f"where {QUALIFIED}", f"filter {QUALIFIED}")
+    later_transport = TemporalTransport()
+    later = execute_dsl(later_source, graph=graph, executor=executor(monkeypatch, later_transport),
+                        continue_from=None, reference_time=NOW)
+    assert later.portfolios == ()
+    assert later.workflow.steps[0].selection.after_step is None
+    assert later_transport.calls[-1][2]["objectId"] == IDS[0]
+
+
+@pytest.mark.parametrize("broker", ["alerce", "lasair"])
+@pytest.mark.parametrize("spatial", [True, False])
+def test_absolute_interval_does_not_move_with_a_later_reference_time(graph, monkeypatch, broker, spatial):
+    source = program(broker, spatial=spatial).replace("within 10d", 'within ["2020-06-10T00:00:00Z", "2020-06-20T00:00:00Z"]')
     transport = TemporalTransport()
     result = execute_dsl(source, graph=graph, executor=executor(monkeypatch, transport),
                          continue_from=None, reference_time=NOW + timedelta(days=100))
@@ -200,8 +229,9 @@ def test_absolute_interval_does_not_move_with_a_later_reference_time(graph, monk
     assert set(transport.calls[-1][2]["objectId"].split(",")) == TEMPORAL["detection"]
 
 
-def test_temporal_composition_still_requires_mapped_classification_fields(graph, monkeypatch):
-    source = program().replace('best.class = "SN candidate"', "best.probability >= 0.8")
+@pytest.mark.parametrize("spatial", [True, False])
+def test_temporal_composition_still_requires_mapped_classification_fields(graph, monkeypatch, spatial):
+    source = program(spatial=spatial).replace('best.class = "SN candidate"', "best.probability >= 0.8")
     validation = validate_dsl(source, graph=graph, continue_from=None)
     assert validation.is_valid and not validation.is_runnable
     transport = TemporalTransport()
@@ -211,10 +241,11 @@ def test_temporal_composition_still_requires_mapped_classification_fields(graph,
 
 
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
-def test_continuation_preserves_clock_and_never_refills_a_filtered_latest(graph, monkeypatch, broker):
+@pytest.mark.parametrize("spatial", [True, False])
+def test_continuation_preserves_clock_and_never_refills_a_filtered_latest(graph, monkeypatch, broker, spatial):
     transport = TemporalTransport()
     endpoint_executor = executor(monkeypatch, transport)
-    first = execute_dsl(program(broker), graph=graph, executor=endpoint_executor,
+    first = execute_dsl(program(broker, spatial=spatial), graph=graph, executor=endpoint_executor,
                         continue_from=None, reference_time=NOW)
     snapshot, before = first.to_dict(), deepcopy(transport.calls)
     second = execute_dsl("with lightcurve via fink\n", graph=graph, executor=endpoint_executor,
@@ -236,9 +267,10 @@ def test_continuation_preserves_clock_and_never_refills_a_filtered_latest(graph,
 
 
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
-def test_initial_history_reuse_cannot_resurrect_time_rejected_objects(graph, monkeypatch, broker):
+@pytest.mark.parametrize("spatial", [True, False])
+def test_initial_history_reuse_cannot_resurrect_time_rejected_objects(graph, monkeypatch, broker, spatial):
     transport = TemporalTransport()
-    result = execute_dsl(program(broker, latest=None, extra=f"with lightcurve via {broker}\n"),
+    result = execute_dsl(program(broker, latest=None, extra=f"with lightcurve via {broker}\n", spatial=spatial),
                          graph=graph, executor=executor(monkeypatch, transport),
                          continue_from=None, reference_time=NOW)
     assert result.run.steps[2].endpoint_plans[0].execution_reuse_from is not None
@@ -250,19 +282,21 @@ def test_initial_history_reuse_cannot_resurrect_time_rejected_objects(graph, mon
 
 @pytest.mark.parametrize("broker", ["alerce", "lasair"])
 @pytest.mark.parametrize("failure", ["missing_history", "history_request", "classification_request"])
-def test_missing_required_evidence_never_becomes_a_partial_success(graph, monkeypatch, broker, failure):
+@pytest.mark.parametrize("spatial", [True, False])
+def test_missing_required_evidence_never_becomes_a_partial_success(graph, monkeypatch, broker, failure, spatial):
     transport = TemporalTransport(failure=failure)
     with pytest.raises((TimeSelectionError, WorkflowExecutionError), match="history|temporal|classification"):
-        execute_dsl(program(broker), graph=graph, executor=executor(monkeypatch, transport),
+        execute_dsl(program(broker, spatial=spatial), graph=graph, executor=executor(monkeypatch, transport),
                     continue_from=None, reference_time=NOW)
     if failure != "classification_request":
         assert not any(owner == "fink" for owner, _, _ in transport.calls)
 
 
-def test_pagination_exhaustion_stops_before_history_and_classification(graph, monkeypatch):
+@pytest.mark.parametrize("spatial", [True, False])
+def test_pagination_exhaustion_stops_before_history_and_classification(graph, monkeypatch, spatial):
     transport = TemporalTransport()
     with pytest.raises(WorkflowExecutionError) as error:
-        execute_dsl(program(), graph=graph, executor=executor(monkeypatch, transport, max_pages=1),
+        execute_dsl(program(spatial=spatial), graph=graph, executor=executor(monkeypatch, transport, max_pages=1),
                     continue_from=None, reference_time=NOW)
     assert isinstance(error.value.__cause__, ExecutionPolicyLimitError)
     assert [name for _, name, _ in transport.calls] == ["query_objects"]
@@ -278,9 +312,12 @@ def test_lasair_required_summary_coverage_still_precedes_external_classification
 
 @pytest.mark.parametrize("broker,origin,evidence", [
     ("fink", "ztf", "lasair"), ("alerce", "lsst", "fink"), ("lasair", "lsst", "fink"),
+    ("antares", "ztf", "fink"),
 ])
-def test_unproven_temporal_contracts_still_fail_before_provider_calls(graph, monkeypatch, broker, origin, evidence):
-    source = (f"objects from {origin} via {broker}\ninside (124.88, -6.02, 5arcsec)\nwithin 10d\n"
+@pytest.mark.parametrize("spatial", [True, False])
+def test_unproven_temporal_contracts_still_fail_before_provider_calls(graph, monkeypatch, broker, origin, evidence, spatial):
+    cone = "inside (124.88, -6.02, 5arcsec)\n" if spatial else ""
+    source = (f"objects from {origin} via {broker}\n{cone}within 10d\n"
               f'with classification via {evidence} where best.class = "SN"\n')
     validation = validate_dsl(source, graph=graph, continue_from=None)
     assert validation.is_valid and not validation.is_runnable
