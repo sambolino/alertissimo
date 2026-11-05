@@ -111,7 +111,7 @@ def test_multi_target_collection_binding_and_honest_object_identity():
         assert portfolio.executions[0].endpoint == "objects"
     assert set(found) == set(BATCH_TARGETS)
     assert len(found) == len(set(found))
-    assert len(fink_output.portfolios[0].records_of_type("detection@ztf:fink")) == 2
+    assert len(fink_output.portfolios[0].records_of_type("measurement@ztf:fink")) == 2
 
     assert len(lasair_output.portfolios) == len(BATCH_TARGETS)
     all_portfolios = fink_output.portfolios + lasair_output.portfolios

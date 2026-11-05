@@ -75,7 +75,7 @@ order by summary.time.last_mjd desc
         """objects from ztf via lasair
 inside (124.87996115142856, -6.0205001, 300.0arcsec)
 with lightcurve via fink
-filter detection@ztf:fink.quality.real_bogus >= 0.8
+filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """,
         required_env=("LASAIR_ZTF_TOKEN",),

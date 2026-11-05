@@ -26,7 +26,7 @@ def concrete_steps():
             sources=[source],
         ),
         SemanticSearchStep(semantic_type="summary", criteria={"classification": "SN"}, time_context=time),
-        ConeSearchStep(semantic_type="detection", ra=12.5, dec=-20, radius=0.1),
+        ConeSearchStep(semantic_type="measurement", ra=12.5, dec=-20, radius=0.1),
         SqlQueryStep(semantic_type="classification", query="SELECT class FROM classifications"),
         FilterStep(criteria={"magnitude": {"lt": 20}}),
         GetLightcurveStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g", "r"], time_context=time),
@@ -64,7 +64,7 @@ def test_constructs_every_concrete_step():
 def test_hierarchies_express_operation_concepts():
     searches = [
         SemanticSearchStep(semantic_type="summary"),
-        ConeSearchStep(semantic_type="detection", ra=1, dec=2, radius=0.1),
+        ConeSearchStep(semantic_type="measurement", ra=1, dec=2, radius=0.1),
         SqlQueryStep(semantic_type="classification", query="SELECT class FROM records"),
     ]
     assert all(isinstance(step, SearchStep) for step in searches)
@@ -171,7 +171,7 @@ def test_time_context_rejects_reversed_range():
 ])
 def test_cone_search_rejects_invalid_coordinates_or_radius(kwargs):
     with pytest.raises(ValidationError):
-        ConeSearchStep(semantic_type="detection", **kwargs)
+        ConeSearchStep(semantic_type="measurement", **kwargs)
 
 
 def test_crossmatch_radius_must_be_positive():

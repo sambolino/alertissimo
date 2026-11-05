@@ -243,7 +243,7 @@ def test_conflicting_root_values_fail_instead_of_silently_overwriting(tmp_path):
 
 def test_non_lightcurve_records_keep_row_cardinality(tmp_path):
     mappings = {
-        "detection@ztf:test.time.mjd": ["row#jd"],
+        "measurement@ztf:test.time.mjd": ["row#jd"],
         "lightcurve@ztf:test.points.time.mjd": ["row#jd"],
         "lightcurve@ztf:test.points.photometry.g.psf.mag": ["row#mag"],
     }
@@ -255,7 +255,7 @@ def test_non_lightcurve_records_keep_row_cardinality(tmp_path):
     detections = [
         record
         for record in portfolio.records
-        if record.semantic_type == "detection@ztf:test"
+        if record.semantic_type == "measurement@ztf:test"
     ]
     lightcurves = [
         record

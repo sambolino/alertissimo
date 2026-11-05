@@ -94,7 +94,7 @@ Check cards and object drill-down. Return to the cards and submit this in the
 continuation editor:
 
 ```text
-filter detection@ztf:fink.quality.real_bogus >= 0.8
+filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 ```
 

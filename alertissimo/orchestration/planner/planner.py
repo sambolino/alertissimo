@@ -14,7 +14,7 @@ from collections.abc import Mapping
 
 from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCall, RecipeCapability,
-    StepValueSource,
+    StepValueSource, LatestSelectionCapability, SqlJoinCapability,
 )
 
 from alertissimo.data_layer.runtime.capability_graph import (
@@ -55,6 +55,7 @@ from alertissimo.orchestration.validation import (
     CapabilityValidationResult,
     SourceCapabilityResult,
     classification_material_capabilities,
+    predicate_material_gaps,
     retrieval_record_requirement as _get_record_requirement,
     validate_step_capabilities,
 )
@@ -170,6 +171,27 @@ def _recipe_assignments(call: RecipeCall, *, plan_offset: int, step: Step) -> di
     }
 
 
+def _require_discovery_residual_material(call: RecipeCall, plan: EndpointPlan) -> None:
+    """Do not prune discovery against evidence that a later call must supply.
+
+    Recipe outputs are call-specific, including declared SQL projections. A
+    mapping elsewhere in the provider/recipe is not material on this execution.
+    Material-aware scheduling is a separate planner extension; until then an
+    unproven dependency must fail planning rather than yield a false empty view.
+    """
+    realization = plan.predicate_realization
+    if realization is None or realization.residual is None:
+        return
+
+    missing = predicate_material_gaps(realization.residual, call.outputs, broker=plan.broker)
+    if missing:
+        raise PlanningDeferredError(
+            "discovery residual requires material unavailable from its discovery call "
+            f"({plan.broker}/{plan.origin}/{plan.endpoint}): {missing!r}; "
+            "evaluating it before the required retrieval would change candidate selection"
+        )
+
+
 def _recipe_plans(
     step: Step, recipe: RecipeCapability, validation: CapabilityValidationResult,
     graph: CapabilityGraph, *, plan_offset: int,
@@ -179,29 +201,47 @@ def _recipe_plans(
         endpoint.endpoint: endpoint
         for endpoint in graph.endpoints_for(recipe.broker, recipe.origin)
     }
-    from alertissimo.orchestration.runtime.models import TimeSelectionRealization
+    from alertissimo.orchestration.runtime.models import TimeSelectionRealization, LatestSelectionRealization
+
+    def time_realization(temporal):
+        return TimeSelectionRealization(
+            mode=temporal.mode, method=temporal.method,
+            evidence_plan_index=plan_offset + temporal.call_index,
+            payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
+            payload_path=temporal.payload_path,
+            required_payload_paths={plan_offset + index: path for index, path in temporal.required_payload_paths},
+            response_identity=temporal.response_identity,
+            target_parameter=temporal.target_parameter,
+            target_collection=temporal.target_collection,
+            detection_identity=temporal.detection_identity,
+            reduction=temporal.reduction,
+        ) if temporal is not None else None
 
     temporal = recipe.time_selection
-    return tuple(
+    plans = tuple(
         _endpoint_plan(
             step, endpoints[call.endpoint], validation, graph,
             predicate_constraints=call.predicate_bindings,
+            sql_join=call.sql_join,
             realize_search_predicate=index == 0,
+            selection_binding=recipe.latest_selection if index == 0 else None,
         ).model_copy(
             update={**_recipe_assignments(call, plan_offset=plan_offset, step=step),
-                    "time_selection": TimeSelectionRealization(
-                        mode=temporal.mode, method=temporal.method,
-                        evidence_plan_index=plan_offset + temporal.call_index,
-                        payload=temporal.payload, complete=temporal.complete, time_scale=temporal.time_scale,
-                        payload_path=temporal.payload_path,
-                        required_payload_paths={plan_offset + index: path for index, path in temporal.required_payload_paths},
-                        response_identity=temporal.response_identity,
-                        target_parameter=temporal.target_parameter,
-                        target_collection=temporal.target_collection,
-                    ) if index == 0 and temporal is not None else None}
+                    "latest_selection": LatestSelectionRealization(
+                        evidence_plan_index=plan_offset + recipe.latest_selection.call_index,
+                        discovery_identity=recipe.latest_selection.discovery_identity,
+                        evidence_identity=recipe.latest_selection.evidence_identity,
+                        recency_field=recipe.latest_selection.recency_field,
+                        history=time_realization(recipe.latest_selection.history),
+                        discovery_partition=recipe.latest_selection.discovery_partition,
+                        evidence_partition=recipe.latest_selection.evidence_partition,
+                    ) if index == 0 and recipe.latest_selection is not None and getattr(step, "selection", None) is not None else None,
+                    "time_selection": time_realization(temporal) if index == 0 and temporal is not None else None}
         )
         for index, call in enumerate(recipe.calls)
     )
+    _require_discovery_residual_material(recipe.calls[0], plans[0])
+    return plans
 
 
 def _endpoint_plan(
@@ -211,7 +251,9 @@ def _endpoint_plan(
     graph: CapabilityGraph,
     *,
     predicate_constraints: tuple[RequestConstraintCapability, ...] | None = None,
+    sql_join: SqlJoinCapability | None = None,
     realize_search_predicate: bool = True,
+    selection_binding: LatestSelectionCapability | None = None,
 ) -> EndpointPlan:
     realization = None
     if realize_search_predicate and isinstance(step, SearchStep) and step.predicate is not None:
@@ -220,10 +262,11 @@ def _endpoint_plan(
             endpoint=endpoint,
             graph=graph,
             constraints=predicate_constraints,
+            sql_join=sql_join,
         )
     request_params = {}
     if realize_search_predicate and isinstance(step, SearchStep) and step.selection is not None:
-        binding = graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
+        binding = selection_binding or graph.latest_selection_for(endpoint.broker, endpoint.origin, endpoint.endpoint)
         if binding is None:
             raise PlanningDeferredError("latest has no declared discovery selection contract")
         request_params = {item.parameter: item.source.value for item in binding.params}

@@ -117,9 +117,14 @@ class SearchSelection(IRModel):
     Equal timestamps use (origin, object_id) ascending as a deterministic tie break.
     A planner may push limits/order into provider parameters when equivalent, but
     must preserve global semantics when several sources participate.
+
+    ``after_step`` names the initial evidence Filter occurrence when its material
+    must arrive before selection. Recency still belongs to the discovery Step;
+    later enrichment never supplies ranking values. None selects at discovery.
     """
 
     latest: Annotated[int, Field(gt=0)] | None = None
+    after_step: Annotated[int, Field(ge=0, strict=True)] | None = None
 
     @model_validator(mode="after")
     def require_selector(self) -> SearchSelection:

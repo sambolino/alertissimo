@@ -54,7 +54,7 @@ def edit_yaml(path, update):
     ("alerce", "ztf", "lc_classifier", "query_probabilities", "oid", ["1", "2"]),
     ("fink", "ztf", "FINK", "objects", "objectId", ["1,2"]),
     ("lasair", "ztf", "tns", "objects", "objectIds", ["1,2"]),
-    ("lasair", "lsst", "sherlock", "sherlock_object", "objectId", ["1,2"]),
+    ("lasair", "lsst", "sherlock", "object", "objectId", ["1", "2"]),
 ])
 def test_classification_recipes_preserve_target_encoding(
     graph, broker, origin, classifier, endpoint, physical, values,
@@ -113,10 +113,10 @@ def test_unmapped_classifier_is_unsupported(graph, broker, origin):
         plan_step(classification(broker, origin, "unknown_model"), graph)
 
 
-@pytest.mark.parametrize("broker,origin", [("fink", "lsst"), ("lasair", "ztf")])
-def test_real_classification_alternatives_remain_ambiguous(graph, broker, origin):
-    with pytest.raises(PlanningAmbiguityError):
-        plan_step(classification(broker, origin), graph)
+@pytest.mark.parametrize("origin,endpoint", [("ztf", "objects"), ("lsst", "object")])
+def test_lasair_classification_has_one_context_bearing_recipe(graph, origin, endpoint):
+    plan, = plan_step(classification("lasair", origin), graph)
+    assert plan.endpoint == endpoint
 
 
 def test_search_and_position_endpoints_are_not_fresh_classification_retrievals(graph):

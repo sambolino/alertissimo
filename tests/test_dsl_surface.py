@@ -52,10 +52,32 @@ def test_singular_lookup_spelling_requires_exactly_one_id():
         parse_surface_script("object A, B from ztf via fink")
 
 
-@pytest.mark.parametrize("clause", ["inside (1, 2, 3arcsec)", "latest 2", "where x = 1"])
+@pytest.mark.parametrize("clause", [
+    "inside (1, 2, 3arcsec)", "within 7d", "first within 7d", "latest 2",
+])
 def test_lookup_population_rejects_search_only_constraints(clause):
     with pytest.raises(DSLParseError, match="lookup candidates"):
         parse_surface_script(f"object ZTF20abc from ztf via fink\n{clause}\n")
+
+
+@pytest.mark.parametrize("requirement", ["", "with classification via fink\n"])
+def test_lookup_population_preserves_general_where_after_initial_retrievals(requirement):
+    result = parse_surface_script(
+        "object ZTF20abc from ztf via fink\n" + requirement
+        + 'where classification@fink:fink.best.class = "SN candidate"\n'
+    )
+    assert isinstance(result.clauses[-1], WhereClause)
+    assert result.clauses[-1].condition == (
+        'classification@fink:fink.best.class = "SN candidate"'
+    )
+
+
+def test_lookup_general_where_still_cannot_follow_an_explicit_filter():
+    with pytest.raises(DSLParseError, match="where belongs to the initial candidate pass"):
+        parse_surface_script(
+            "object ZTF20abc from ztf via fink\nwith classification via fink\n"
+            'filter summary.detection_count >= 1\nwhere classification.best.class = "SN"\n'
+        )
 
 
 def test_objects_without_origin_are_rejected():
@@ -156,14 +178,23 @@ with classification from lc_classifier:
         )
 
 
-def test_newline_where_after_with_is_not_treated_as_scoped_predicate():
-    with pytest.raises(DSLParseError, match="scoped with predicates must be inline"):
-        parse_surface_script(
-            """objects from lsst via alerce
-with classification from lc_classifier
-    where best.class = "LPV" AND best.probability >= 0.8
-"""
-        )
+@pytest.mark.parametrize("indent", ["", "    "])
+def test_newline_where_after_with_is_not_treated_as_scoped_predicate(indent):
+    condition = 'best.class = "LPV" AND best.probability >= 0.8'
+    result = parse_surface_script(
+        "objects from lsst via alerce\n"
+        "with classification from lc_classifier\n"
+        f"{indent}where {condition}\n"
+    )
+
+    assert len(result.clauses) == 2
+    requirement, where = result.clauses
+    assert isinstance(requirement, RequirementClause)
+    assert requirement.product == "classification"
+    assert requirement.source == "lc_classifier"
+    assert requirement.predicates == ()
+    assert isinstance(where, WhereClause)
+    assert where.condition == condition
 
 
 def test_filter_then_with_remains_top_level_when_indentation_is_cosmetic():
@@ -201,11 +232,13 @@ def test_general_where_is_not_allowed_after_filter():
         )
 
 
-def test_general_where_is_not_allowed_after_with():
-    with pytest.raises(DSLParseError, match="general where must precede with"):
-        parse_surface_script(
-            "objects from lsst\nwith lightcurve\nwhere summary.time.last_mjd > 60000\n"
-        )
+def test_general_where_after_with_remains_an_initial_condition():
+    surface = parse_surface_script(
+        "objects from lsst\nwith lightcurve\nwhere summary.time.last_mjd > 60000\n"
+    )
+    assert isinstance(surface.clauses[0], RequirementClause)
+    assert isinstance(surface.clauses[1], WhereClause)
+    assert surface.clauses[1].condition == "summary.time.last_mjd > 60000"
 
 
 def test_match_can_associate_candidate_origins_without_external_counterpart():

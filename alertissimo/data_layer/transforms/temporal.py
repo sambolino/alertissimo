@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
+import math
 
 
 def utc_instant(value: datetime) -> datetime:
@@ -45,22 +46,30 @@ def resolve_time_context(context: Mapping, reference_time: datetime | None) -> d
     return {**bounds, "mode": context.get("mode", "detection")}
 
 
-def validate_time_encoding(bound: str, encoding: str, mode: str = "detection") -> None:
+def validate_time_encoding(bound: str, encoding: str, mode: str = "detection", *, padding_seconds: float = 0) -> None:
     if not isinstance(mode, str) or mode not in {"detection", "first", "last"}:
         raise ValueError("time encoding mode must be detection, first, or last")
     if not isinstance(bound, str) or bound not in {"start", "end", "range"}:
         raise ValueError("time bound must be start, end, or range")
     if not isinstance(encoding, str) or encoding not in {"utc_iso", "mjd", "jd"}:
         raise ValueError("time encoding must be utc_iso, mjd, or jd")
+    if type(padding_seconds) not in (int, float) or not math.isfinite(padding_seconds) or padding_seconds < 0:
+        raise ValueError("time padding_seconds must be a finite nonnegative number")
+    try:
+        timedelta(seconds=padding_seconds)
+    except OverflowError as error:
+        raise ValueError("time padding_seconds exceeds datetime limits") from error
 
 
-def time_bound(*, time_context: Mapping, bound: str, encoding: str, mode: str = "detection"):
-    """Encode resolved UTC bounds exactly as declared; never shift boundaries.
+def time_bound(*, time_context: Mapping, bound: str, encoding: str, mode: str = "detection", padding_seconds: float = 0):
+    """Encode resolved UTC bounds with optional outward physical padding.
 
     MJD/JD are UTC day numbers, subject to floating-point precision. No conversion
     to TAI/TT or leap-second representation is implied by this datetime encoder.
+    Padding belongs to a declared candidate-superset request; exact scientific
+    bounds must still be checked against returned evidence. The default is zero.
     """
-    validate_time_encoding(bound, encoding, mode)
+    validate_time_encoding(bound, encoding, mode, padding_seconds=padding_seconds)
     if time_context.get("mode", "detection") != mode:
         raise ValueError("first/last within requires a declared candidate-time translation; time encoder mode does not match intent")
 
@@ -71,6 +80,11 @@ def time_bound(*, time_context: Mapping, bound: str, encoding: str, mode: str = 
         mjd = (value - datetime(1858, 11, 17, tzinfo=timezone.utc)).total_seconds() / 86400
         return mjd if encoding == "mjd" else mjd + 2400000.5
 
+    def padded(edge):
+        delta = timedelta(seconds=padding_seconds)
+        value = utc_instant(time_context[edge])
+        return encode(value - delta if edge == "start" else value + delta)
+
     if bound == "range":
-        return [encode(time_context["start"]), encode(time_context["end"])]
-    return encode(time_context[bound])
+        return [padded("start"), padded("end")]
+    return padded(bound)

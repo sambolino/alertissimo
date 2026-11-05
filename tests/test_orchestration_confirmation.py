@@ -42,7 +42,7 @@ def _portfolio(
     records.extend(
         SemanticRecord(
             internal_record_id=InternalRecordId(f"record:{portfolio_id}:{index}"),
-            semantic_type=f"detection@ztf:{broker}",
+            semantic_type=f"measurement@ztf:{broker}",
             fields={"identity.object_id": object_id, "identity.source_id": str(index)},
         )
         for index in range(extra_records)

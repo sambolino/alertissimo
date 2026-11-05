@@ -116,15 +116,15 @@ def test_object_psf_aggregates_are_scientifically_reproduced():
 def test_core_mapping_contract_and_debt_are_disjoint():
     document = registry(); mappings = document["mappings"]
     assert mappings["summary@lsst:fink.time.snapshot_mjd"] == ["objects#r:validityStartMjdTai", "conesearch#r:validityStartMjdTai"]
-    forbidden = {"summary@lsst:fink.time.first_mjd_fink", "detection@lsst:fink.image_metrics.is_negative"}
+    forbidden = {"summary@lsst:fink.time.first_mjd_fink", "measurement@lsst:fink.image_metrics.is_negative"}
     forbidden |= {path for path in mappings if any(token in path for token in ("position.pixel.", ".psf.log_likelihood", ".centroid.flag", ".shape.flags.", ".pixel_flags.failed", ".dipole.fit_ndata", ".trail.fit_ndata", ".trail.flags.edge"))}
     assert not forbidden & mappings.keys()
-    expected = {"detection@lsst:fink.position.image_x", "detection@lsst:fink.position.image_x_error", "detection@lsst:fink.position.image_y", "detection@lsst:fink.position.image_y_error", "detection@lsst:fink.time.exposure", "detection@lsst:fink.photometry.{filter}.psf.fit_log_likelihood", "detection@lsst:fink.image_metrics.centroid_flag", "detection@lsst:fink.image_metrics.trail.is_glint", "detection@lsst:fink.image_metrics.shape.flag", "detection@lsst:fink.image_metrics.pixel_flags.any", "detection@lsst:fink.image_metrics.dipole.ndata", "detection@lsst:fink.image_metrics.trail.ndata", "detection@lsst:fink.image_metrics.trail.flag_edge"}
+    expected = {"measurement@lsst:fink.position.image_x", "measurement@lsst:fink.position.image_x_error", "measurement@lsst:fink.position.image_y", "measurement@lsst:fink.position.image_y_error", "measurement@lsst:fink.time.exposure", "measurement@lsst:fink.photometry.{filter}.psf.fit_log_likelihood", "measurement@lsst:fink.image_metrics.centroid_flag", "measurement@lsst:fink.image_metrics.trail.is_glint", "measurement@lsst:fink.image_metrics.shape.flag", "measurement@lsst:fink.image_metrics.pixel_flags.any", "measurement@lsst:fink.image_metrics.dipole.ndata", "measurement@lsst:fink.image_metrics.trail.ndata", "measurement@lsst:fink.image_metrics.trail.flag_edge"}
     assert expected <= mappings.keys()
-    assert document["transforms"]["detection@lsst:fink.image_metrics.is_positive"]["sources#r:isNegative"] == {"type": "boolean_not"}
+    assert document["transforms"]["measurement@lsst:fink.image_metrics.is_positive"]["sources#r:isNegative"] == {"type": "boolean_not"}
     assert "lightcurve@lsst:fink.points.photometry.{filter}.psf.flux" in mappings
     assert "lightcurve@lsst:fink.forced_photometry_points.forced_photometry.{filter}.psf.flux" in mappings
-    assert "fp#r:diaForcedSourceId" in mappings["detection@lsst:fink.identity.source_id"]
+    assert "fp#r:diaForcedSourceId" in mappings["measurement@lsst:fink.identity.source_id"]
     mapped = {ref for refs in mappings.values() for ref in refs}
     debt = {next(iter(entry)) for entry in yaml.safe_load(UNMAPPED.read_text())["unmapped"]}
     assert mapped.isdisjoint(debt)
@@ -155,7 +155,7 @@ def test_cone_separation_is_scaled_to_arcseconds(tmp_path):
     row = fixture("conesearch")[0]
     portfolio = _build_filtered(
         tmp_path, "conesearch", [row],
-        ["detection@lsst:fink.separation.from_search_center"],
+        ["measurement@lsst:fink.separation.from_search_center"],
     )
     assert portfolio.records[0].fields["separation.from_search_center"] == pytest.approx(
         0.13504932
@@ -165,8 +165,8 @@ def test_cone_separation_is_scaled_to_arcseconds(tmp_path):
 @pytest.mark.parametrize("endpoint", ("sources", "conesearch"))
 def test_optional_ss_object_id_suppresses_zero_and_preserves_integer(tmp_path, endpoint):
     row = copy.deepcopy(fixture(endpoint)[0])
-    path = "detection@lsst:fink.solar_system.identity.object_id"
-    paths = [path, "detection@lsst:fink.identity.source_id"]
+    path = "measurement@lsst:fink.solar_system.identity.object_id"
+    paths = [path, "measurement@lsst:fink.identity.source_id"]
     fields = dict(_build_filtered(tmp_path, endpoint, [row], paths).records[0].fields)
     assert "solar_system.identity.object_id" not in fields
     row["r:ssObjectId"] = 123456789
@@ -191,10 +191,10 @@ def _build_filtered(tmp_path, endpoint, payload, semantic_paths):
 
 
 def test_real_source_and_boolean_not_end_to_end(tmp_path):
-    paths = [path for path in registry()["mappings"] if path.startswith("detection@lsst:fink.") and any(ref.startswith("sources#") for ref in registry()["mappings"][path]) and not any(token in path for token in ("solar_system", "classification", "crossmatch"))]
+    paths = [path for path in registry()["mappings"] if path.startswith("measurement@lsst:fink.") and any(ref.startswith("sources#") for ref in registry()["mappings"][path]) and not any(token in path for token in ("solar_system", "classification", "crossmatch"))]
     row = next(row for row in fixture("sources") if row["r:diaSourceId"] != row["r:diaObjectId"])
     portfolio = _build_filtered(tmp_path, "sources", [row, {**copy.deepcopy(row), "r:isNegative": True}], paths)
-    records = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
+    records = [record for record in portfolio.records if record.semantic_type == "measurement@lsst:fink"]
     assert len(records) == 2
     first, second = map(lambda record: dict(record.fields), records)
     band = row["r:band"]
@@ -205,11 +205,11 @@ def test_real_source_and_boolean_not_end_to_end(tmp_path):
 
 def test_lifecycle_reliability_and_trail_debt_converges_end_to_end(tmp_path):
     paths = [
-        "detection@lsst:fink.time.processed_mjd",
-        "detection@lsst:fink.time.invalidated_mjd",
-        "detection@lsst:fink.quality.reliability.version",
-        "detection@lsst:fink.image_metrics.trail.algorithm",
-        "detection@lsst:fink.image_metrics.trail.fit_failed",
+        "measurement@lsst:fink.time.processed_mjd",
+        "measurement@lsst:fink.time.invalidated_mjd",
+        "measurement@lsst:fink.quality.reliability.version",
+        "measurement@lsst:fink.image_metrics.trail.algorithm",
+        "measurement@lsst:fink.image_metrics.trail.fit_failed",
     ]
     rows = fixture("sources")
     recent = next(row for row in rows if row["r:reliabilityVersion"] == "0.3")
@@ -230,7 +230,7 @@ def test_lifecycle_reliability_and_trail_debt_converges_end_to_end(tmp_path):
 def test_fp_endpoint_preserves_twenty_detection_records_while_exposing_lightcurve_semantics(tmp_path):
     paths = [path for path, refs in registry()["mappings"].items() if any(ref.startswith("fp#") for ref in refs)]
     portfolio = _build_filtered(tmp_path, "fp", fixture("fp"), paths)
-    detections = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
+    detections = [record for record in portfolio.records if record.semantic_type == "measurement@lsst:fink"]
     assert len(detections) == 20
     assert any(record.semantic_type == "lightcurve@lsst:fink" for record in portfolio.records)
     row, fields = fixture("fp")[0], dict(detections[0].fields); band = row["r:band"]
@@ -247,7 +247,7 @@ def test_authoritative_detection_payload_cardinality(endpoint, count_expected):
     (portfolio,) = build_portfolios_from_execution(
         execution, mappings_path=MAPPINGS, validate_semantic_model=True
     )
-    detections = [record for record in portfolio.records if record.semantic_type == "detection@lsst:fink"]
+    detections = [record for record in portfolio.records if record.semantic_type == "measurement@lsst:fink"]
     assert len(detections) == count_expected
     assert {record.fields["identity.object_id"] for record in detections} == {170587117485817955}
     assert portfolio.executions[0].internal_execution_id == InternalExecutionId(f"execution:{endpoint}")
@@ -265,7 +265,7 @@ def test_synthetic_sso_partitions_by_physical_solar_system_identity():
         {"r:ssObjectId": 42, "r:diaObjectId": 1002, "r:diaSourceId": 2},
     ])
     assert len(one) == 1
-    detections = [r for r in one[0].records if r.semantic_type == "detection@lsst:fink"]
+    detections = [r for r in one[0].records if r.semantic_type == "measurement@lsst:fink"]
     assert len(detections) == 2
     assert {r.fields["identity.object_id"] for r in detections} == {1001, 1002}
     assert {r.fields["solar_system.identity.object_id"] for r in detections} == {42}

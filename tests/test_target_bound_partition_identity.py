@@ -53,7 +53,7 @@ def _provider_root(tmp_path, *, partition):
                     }
                 },
                 "mappings": {
-                    "detection@testorigin:testbroker.position.ra": ["rows#ra"]
+                    "measurement@testorigin:testbroker.position.ra": ["rows#ra"]
                 },
             },
             sort_keys=False,

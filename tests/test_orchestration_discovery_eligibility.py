@@ -26,7 +26,7 @@ def search(broker="example", origin="survey", **kwargs):
 
 
 @pytest.mark.parametrize("broker,origin", [
-    ("antares", "ztf"), ("antares", "lsst"), ("fink", "lsst"),
+    ("antares", "lsst"), ("fink", "lsst"),
 ])
 def test_untranslated_real_discovery_defers_before_binding(graph, broker, origin):
     step = search(broker, origin)
@@ -38,10 +38,12 @@ def test_untranslated_real_discovery_defers_before_binding(graph, broker, origin
         plan_step(step, graph)
 
 
-def test_owned_fink_discovery_requires_an_eligible_class_before_planning(graph):
-    step = search("fink", "ztf")
-    recipe, = graph.query_recipes(broker="fink", origin="ztf", op="semantic_search")
-    assert recipe.calls[0].endpoint == "latests"
+@pytest.mark.parametrize("windowed", [False, True], ids=["physical-defaults", "within"])
+def test_owned_fink_discovery_requires_an_eligible_class_before_planning(graph, windowed):
+    context = TimeContext(window=timedelta(days=7), relative_to="now") if windowed else None
+    step = search("fink", "ztf", time_context=context)
+    recipes = graph.query_recipes(broker="fink", origin="ztf", op="semantic_search")
+    assert recipes and all(recipe.calls[0].endpoint == "latests" for recipe in recipes)
     evidence = validate_step_capabilities(step, graph)
     assert evidence.status == "deferred"
     assert "required physical parameters ('class',)" in evidence.source_results[0].reason
@@ -57,11 +59,20 @@ def test_owned_fink_discovery_requires_an_eligible_class_before_planning(graph):
         operator="=", right=PredicateLiteral(value="SN candidate"),
     )
     supplied = step.model_copy(update={"predicate": predicate})
-    assert validate_step_capabilities(supplied, graph).status == "supported"
+    admitted = validate_step_capabilities(supplied, graph)
+    assert admitted.status == "supported"
+    recipe, = admitted.source_results[0].recipes
+    assert recipe in recipes
+    assert (recipe.time_selection is not None) == windowed
     plan, = plan_step(supplied, graph)
     assert plan.endpoint == "latests"
     assert plan.predicate_realization.params == {"class": "SN candidate"}
     assert plan.predicate_realization.residual == predicate
+    assert (plan.time_selection is not None) == windowed
+    if windowed:
+        assert plan.time_selection.mode == "detection"
+        assert plan.time_selection.method == "native"
+        assert plan.time_selection.complete
 
 
 def test_lasair_rubin_without_a_verified_discovery_contract_remains_unsupported(graph):

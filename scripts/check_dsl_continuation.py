@@ -21,7 +21,7 @@ inside ({RA}, {DEC}, {RADIUS_ARCSEC}arcsec)
 with lightcurve via fink
 """
 
-SECOND_PASS = """filter detection@ztf:fink.quality.real_bogus >= 0.8
+SECOND_PASS = """filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """
 
@@ -154,9 +154,9 @@ def main() -> int:
         for portfolio in second.portfolios
         for record in portfolio.records
     }
-    if not any(value.startswith("detection@ztf:fink") for value in semantic_types):
+    if not any(value.startswith("measurement@ztf:fink") for value in semantic_types):
         raise RuntimeError("final Portfolio lost inherited Fink evidence")
-    if not any(value.startswith("detection@ztf:lasair") for value in semantic_types):
+    if not any(value.startswith("measurement@ztf:lasair") for value in semantic_types):
         raise RuntimeError("final Portfolio did not gain Lasair evidence")
 
     first_execution_ids = {

@@ -17,7 +17,7 @@ from alertissimo.data_layer.runtime.record_builder import (
 )
 
 
-_TRANSFORM_SEMANTIC_PATH = "detection@ztf:lasair.quality.test_value"
+_TRANSFORM_SEMANTIC_PATH = "measurement@ztf:lasair.quality.test_value"
 _TRANSFORM_FIELD = "quality.test_value"
 
 
@@ -58,14 +58,14 @@ def test_root_object_builds_one_record_with_relative_fields(tmp_path):
         "broker": "lasair", "origin": "ztf",
         "payloads": {"object": {"endpoint": "object", "path": "."}},
         "mappings": {
-            "detection@ztf:lasair.identity.source_id": ["object#objectId"],
-            "detection@ztf:lasair.position.ra": ["object#ra"],
-            "detection@ztf:lasair.position.dec": ["object#dec"],
+            "measurement@ztf:lasair.identity.source_id": ["object#objectId"],
+            "measurement@ztf:lasair.position.ra": ["object#ra"],
+            "measurement@ztf:lasair.position.dec": ["object#dec"],
         },
     })
     assert len(portfolio.records) == 1
     record = portfolio.records[0]
-    assert record.semantic_type == "detection@ztf:lasair"
+    assert record.semantic_type == "measurement@ztf:lasair"
     assert dict(record.fields) == {
         "identity.source_id": "ZTF25aazqavg", "position.ra": 123.4, "position.dec": 22.2,
     }
@@ -83,8 +83,8 @@ def test_list_payload_builds_one_record_per_item(tmp_path):
         "broker": "lasair", "origin": "ztf",
         "payloads": {"candidate": {"endpoint": "object", "path": "candidates[]"}},
         "mappings": {
-            "detection@ztf:lasair.identity.source_id": ["candidate#candid"],
-            "detection@ztf:lasair.photometry.mag": ["candidate#magpsf"],
+            "measurement@ztf:lasair.identity.source_id": ["candidate#candid"],
+            "measurement@ztf:lasair.photometry.mag": ["candidate#magpsf"],
         },
     })
     assert [record.internal_source.payload_index for record in portfolio.records] == [0, 1]
@@ -100,11 +100,11 @@ def test_jd_transform_and_missing_fields(tmp_path):
         "broker": "lasair", "origin": "ztf",
         "payloads": {"candidate": {"endpoint": "object", "path": "candidates[]"}},
         "mappings": {
-            "detection@ztf:lasair.time.mjd": ["candidate#jd"],
-            "detection@ztf:lasair.position.ra": ["candidate#ra"],
+            "measurement@ztf:lasair.time.mjd": ["candidate#jd"],
+            "measurement@ztf:lasair.position.ra": ["candidate#ra"],
             "summary@ztf:lasair.identity.object_id": ["candidate#missing"],
         },
-        "transforms": {"detection@ztf:lasair.time.mjd": {
+        "transforms": {"measurement@ztf:lasair.time.mjd": {
             "candidate#jd": {"type": "jd_to_mjd"},
         }},
     })
@@ -117,14 +117,14 @@ def test_boolean_not_and_value_map(tmp_path):
         "broker": "lasair", "origin": "ztf",
         "payloads": {"row": {"endpoint": "object", "path": "rows[]"}},
         "mappings": {
-            "detection@ztf:lasair.image_metrics.is_positive": ["row#flag"],
-            "detection@ztf:lasair.quality.test_label": ["row#code"],
+            "measurement@ztf:lasair.image_metrics.is_positive": ["row#flag"],
+            "measurement@ztf:lasair.quality.test_label": ["row#code"],
         },
         "transforms": {
-            "detection@ztf:lasair.image_metrics.is_positive": {
+            "measurement@ztf:lasair.image_metrics.is_positive": {
                 "row#flag": {"type": "boolean_not"}
             },
-            "detection@ztf:lasair.quality.test_label": {
+            "measurement@ztf:lasair.quality.test_label": {
                 "row#code": {"type": "value_map", "map": {"A": "star"}}
             },
         },
@@ -233,7 +233,7 @@ def test_skip_null_omits_null_field_when_no_fallback_exists(tmp_path):
 
 
 def test_skip_null_precedes_jd_arithmetic_and_preserves_real_transform(tmp_path):
-    path = "detection@ztf:lasair.time.mjd"
+    path = "measurement@ztf:lasair.time.mjd"
     document = {
         "broker": "lasair", "origin": "ztf",
         "payloads": {"object": {"path": "."}},
@@ -293,12 +293,12 @@ def _dynamic_mapping():
         "broker": "lasair", "origin": "ztf",
         "payloads": {"candidate": {"endpoint": "object", "path": "candidates[]"}},
         "mappings": {
-            "detection@ztf:lasair.photometry.{filter}": ["candidate#fid"],
-            "detection@ztf:lasair.photometry.{filter}.psf.mag": ["candidate#magpsf"],
-            "detection@ztf:lasair.photometry.{filter}.psf.mag.error": ["candidate#sigmapsf"],
+            "measurement@ztf:lasair.photometry.{filter}": ["candidate#fid"],
+            "measurement@ztf:lasair.photometry.{filter}.psf.mag": ["candidate#magpsf"],
+            "measurement@ztf:lasair.photometry.{filter}.psf.mag.error": ["candidate#sigmapsf"],
         },
         "transforms": {
-            "detection@ztf:lasair.photometry.{filter}": {
+            "measurement@ztf:lasair.photometry.{filter}": {
                 "candidate#fid": {"type": "value_map", "map": {1: "g", 2: "r", 3: "i"}}
             }
         },
@@ -423,8 +423,8 @@ def test_missing_dynamic_binder_omits_dependent_fields(tmp_path):
 
 def test_conflicting_dynamic_binders_raise_builder_error(tmp_path):
     mapping = _dynamic_mapping()
-    mapping["mappings"]["detection@ztf:lasair.calibration.{filter}"] = ["candidate#other_fid"]
-    mapping["transforms"]["detection@ztf:lasair.calibration.{filter}"] = {
+    mapping["mappings"]["measurement@ztf:lasair.calibration.{filter}"] = ["candidate#other_fid"]
+    mapping["transforms"]["measurement@ztf:lasair.calibration.{filter}"] = {
         "candidate#other_fid": {"type": "value_map", "map": {2: "r"}}
     }
     with pytest.raises(

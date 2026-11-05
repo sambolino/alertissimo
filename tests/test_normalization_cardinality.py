@@ -122,7 +122,7 @@ def test_field_and_root_field_branches_combine_per_object(tmp_path):
         "payloads": payloads,
         "mappings": {
             "summary@ztf:alerce.identity.object_id": ["rows#oid"],
-            "detection@ztf:alerce.position.ra": ["candidates#ra"],
+            "measurement@ztf:alerce.position.ra": ["candidates#ra"],
         },
     }
     path = tmp_path / "root.yaml"
@@ -151,7 +151,7 @@ def test_partition_identity_alone_does_not_synthesize_summary(tmp_path):
                 "object_partition": {"mode": "field", "field": "oid"},
             }
         },
-        "mappings": {"detection@ztf:alerce.position.ra": ["rows#ra"]},
+        "mappings": {"measurement@ztf:alerce.position.ra": ["rows#ra"]},
     }
     path = tmp_path / "detections-only.yaml"
     path.write_text(yaml.safe_dump(document, sort_keys=False))
@@ -213,7 +213,7 @@ def test_single_target_request_seeds_id_only_summary_when_payload_has_no_object_
                         "object_partition": {"mode": "single"},
                     }
                 },
-                "mappings": {"detection@ztf:alerce.position.ra": ["rows#ra"]},
+                "mappings": {"measurement@ztf:alerce.position.ra": ["rows#ra"]},
             },
             sort_keys=False,
         )

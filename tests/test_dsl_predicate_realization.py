@@ -157,7 +157,9 @@ def test_partial_conjunction_pushdown_keeps_unsupported_part_residual():
     realization = realize_predicate(predicate, endpoint=endpoint, graph=graph)
 
     assert realization.pushdown == pushable
-    assert realization.residual == residual
+    # A server-selected object can still contain several summary assertions.
+    # Recheck kind and score together on one returned record.
+    assert realization.residual == predicate
     assert realization.params == {"kind": "SN"}
 
 

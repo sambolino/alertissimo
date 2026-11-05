@@ -17,15 +17,16 @@ from pydantic import BaseModel, ConfigDict
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
+    FieldMappingCapability,
     SemanticRecordCapability,
     build_capability_graph,
 )
-from alertissimo.orchestration.ir import ConfirmStep, Source, WorkflowIR
+from alertissimo.data_layer.runtime.recipes import ConstantValueSource
+from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
-    classification_material_capabilities, validate_step_capabilities,
+    SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
 )
 
-from .predicate_lowering import PredicateLoweringError, lower_expression_predicate
 from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
@@ -133,7 +134,6 @@ class SurfaceCapabilityReport(BaseModel):
 
 
 _DYNAMIC_QUALIFIER = re.compile(r"^\{[^{}]+\}$")
-_RETRIEVAL_REQUIREMENTS = frozenset({"lightcurve", "cutout", "data_product", "crossmatch", "classification"})
 _LOCAL_REQUIREMENTS = frozenset({"color_magnitude", "color_color"})
 
 
@@ -249,10 +249,12 @@ def _candidate_checks(
     """Validate the same candidate operation that compilation will emit."""
     # Import lazily: lowering calls this validator before building the workflow.
     # These helpers only construct IR; they never resolve or execute providers.
-    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources
+    from .lowering import SurfaceLoweringError, _candidate_operation, _candidate_sources, _initial_material_predicate
 
     try:
         step, _ = _candidate_operation(surface, record_types=record_types)
+        if _initial_material_predicate(surface, step) is not None:
+            step = step.model_copy(update={"predicate": None})
     except SurfaceLoweringError as error:
         return tuple(
             SurfaceCapabilityCheck(
@@ -304,6 +306,68 @@ def _qualified_endpoint_evidence(
     return tuple(evidence)
 
 
+def _required_material_variants(
+    item: SourceCapabilityResult, graph: CapabilityGraph,
+) -> tuple[tuple[FieldMappingCapability, ...], ...]:
+    """Inspect each eligible route's required, projected call outputs without choosing one."""
+    variants, owned = [], set()
+    for recipe in item.recipes:
+        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
+        fields = []
+        for call in recipe.calls:
+            if not call.required:
+                continue
+            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
+                         if endpoint.endpoint == call.endpoint)
+            outputs = call.outputs
+            projection = next((param.source for param in call.params
+                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue  # A dynamic projection is not a field-availability proof.
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                outputs = tuple(field for field in outputs if field.raw_field in columns)
+            fields.extend(outputs)
+        variants.append(tuple(fields))
+    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+                    for endpoint in item.candidates
+                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
+    return tuple(variants) or ((),)
+
+
+def _initial_material_gaps(
+    surface: SurfaceScript, predicate: Predicate, *, origin: str, graph: CapabilityGraph,
+    record_types: frozenset[str], semantic_paths: _SemanticPaths | None,
+) -> tuple[str, ...]:
+    """Prove each reference from required material in the compiler's initial IR.
+
+    A field must be available in every route of at least one emitted operation.
+    This is equivalent to checking all independent route combinations without
+    constructing their Cartesian product. Predicate evaluation stays whole.
+    """
+    from .lowering import _first_filter_index, _lower_surface_intent
+    from alertissimo.orchestration.ir import FilterStep, GetClassificationStep
+
+    initial = surface.model_copy(update={"clauses": surface.clauses[:_first_filter_index(surface)]})
+    workflow = _lower_surface_intent(initial, record_types=record_types, graph=graph,
+                                    semantic_paths=semantic_paths).workflow
+    missing = None
+    for index, step in enumerate(workflow.steps):
+        if isinstance(step, FilterStep):
+            break  # Later refinements/retrievals cannot supply initial material.
+        if index != 0 and not isinstance(step, GetClassificationStep):
+            continue
+        validation = validate_step_capabilities(step, graph)
+        variants = [outputs for source in validation.source_results
+                    if source.status == "supported" and source.source is not None and source.source.origin == origin
+                    for outputs in _required_material_variants(source, graph)]
+        absent = {gap for outputs in variants or [()] for gap in predicate_material_gaps(
+            predicate, outputs, broker="",  # Field mappings retain their own brokers.
+        )}
+        missing = absent if missing is None else missing & absent
+    return tuple(sorted(missing or ()))
+
+
 def _retrieval_requirement_checks(
     surface: SurfaceScript,
     clause: RequirementClause,
@@ -313,10 +377,14 @@ def _retrieval_requirement_checks(
     graph: CapabilityGraph,
     record_types: frozenset[str],
     base_workflow: WorkflowIR | None = None,
+    semantic_paths=None,
 ) -> tuple[SurfaceCapabilityCheck, ...]:
     """Check the exact retrieval emitted by lowering, before endpoint selection."""
     # Pure IR construction; the lazy import avoids the compiler validation cycle.
-    from .lowering import SurfaceLoweringError, _lower_requirement, _requirement_prefix
+    from .lowering import (
+        SurfaceLoweringError, _candidate_operation, _initial_material_predicate,
+        _lower_requirement, _requirement_prefix,
+    )
 
     broker = clause.via or surface.candidates.broker
     try:
@@ -335,11 +403,21 @@ def _retrieval_requirement_checks(
         )
 
     result = validate_step_capabilities(step, graph)
+    scheduled_predicate = None
+    if noun == "classification" and base_workflow is None:
+        try:
+            candidate, _ = _candidate_operation(surface, record_types=record_types)
+        except SurfaceLoweringError:
+            pass  # The candidate capability check retains its original diagnostic.
+        else:
+            scheduled_predicate = _initial_material_predicate(surface, candidate)
     material = ()
     if noun == "classification" and result.status in {"supported", "deferred"}:
         try:
             earlier = _requirement_prefix(
                 surface, clause, record_types=record_types, base_workflow=base_workflow,
+                graph=graph,
+                semantic_paths=semantic_paths,
             )
         except SurfaceLoweringError:
             # Keep the fresh-call diagnostic when no actual occurrence is proven.
@@ -360,20 +438,50 @@ def _retrieval_requirement_checks(
             )
             for item in material
         )
+
+    def retrieval_endpoints(item):
+        if noun != "classification" or not item.recipes:
+            return item.candidates
+        # Candidate selection identifies a recipe by its primary endpoint.
+        # Capability evidence must still expose all required classification calls.
+        keys = {
+            (recipe.broker, recipe.origin, call.endpoint)
+            for recipe in item.recipes for call in recipe.calls if call.required
+        }
+        return tuple(endpoint for endpoint in graph.endpoint_capabilities
+                     if (endpoint.broker, endpoint.origin, endpoint.endpoint) in keys)
+
+    def material_gaps(item):
+        if scheduled_predicate is None or item.status != "supported":
+            return ()
+        from alertissimo.orchestration.ir import iter_semantic_references
+        channels = {ref.channel for ref in iter_semantic_references(scheduled_predicate)
+                    if ref.semantic_type == "classification"}
+        if item.source is None or item.source.broker not in channels:
+            return ()
+        try:
+            return _initial_material_gaps(
+                surface, scheduled_predicate, origin=item.source.origin, graph=graph,
+                record_types=record_types, semantic_paths=semantic_paths,
+            )
+        except SurfaceLoweringError as error:
+            return (str(error),)
+
     return tuple(
         SurfaceCapabilityCheck(
-            subject="requirement", status=SurfaceCapabilityStatus(item.status),
-            reason=item.reason, clause_index=clause_index,
+            subject="requirement", status=SurfaceCapabilityStatus.DEFERRED if gaps else SurfaceCapabilityStatus(item.status),
+            reason=("initial predicate requires material unmapped by its targeted retrieval and required discovery: " + repr(gaps)
+                    if gaps else item.reason), clause_index=clause_index,
             origin=item.source.origin if item.source is not None else None,
             broker=item.source.broker if item.source is not None else None,
             semantic_noun=noun, producer=clause.source, channel=broker,
             evidence=(
                 _qualified_endpoint_evidence(
-                    item.candidates, graph, noun=noun, producer=clause.source, channel=broker,
+                    retrieval_endpoints(item), graph, noun=noun, producer=clause.source, channel=broker,
                 ) if noun in {"crossmatch", "classification"} else _endpoint_evidence(item.candidates)
             ),
         )
-        for item in result.source_results
+        for item in result.source_results for gaps in [material_gaps(item)]
     )
 
 
@@ -385,6 +493,7 @@ def _requirement_checks(
     graph: CapabilityGraph,
     record_types: frozenset[str],
     base_workflow: WorkflowIR | None = None,
+    semantic_paths=None,
 ) -> tuple[SurfaceCapabilityCheck, ...]:
     noun = resolve_record_type(clause.product, record_types)
     if noun is None:
@@ -394,6 +503,33 @@ def _requirement_checks(
 
     broker = clause.via or surface.candidates.broker
     channel = broker
+
+    model = semantic_paths or _semantic_path_model()
+    if noun in getattr(model, "abstract_record_types", ()):
+        from .lowering import SurfaceLoweringError, _lower_requirements
+
+        try:
+            steps = _lower_requirements(
+                surface, clause, clause_index=clause_index,
+                record_types=record_types, semantic_paths=model, graph=graph,
+            )
+        except SurfaceLoweringError as error:
+            return (SurfaceCapabilityCheck(
+                subject="requirement", status=SurfaceCapabilityStatus.UNSUPPORTED,
+                reason=str(error), clause_index=clause_index,
+                broker=broker, semantic_noun=noun,
+            ),)
+        endpoints = tuple(
+            endpoint for step in steps
+            for endpoint in validate_step_capabilities(step, graph).candidates
+        )
+        return (SurfaceCapabilityCheck(
+            subject="requirement", status=SurfaceCapabilityStatus.SUPPORTED,
+            reason="all supported broker retrievals in the ontology family: "
+                + ", ".join(step.op for step in steps),
+            clause_index=clause_index, broker=broker, semantic_noun=noun,
+            evidence=_endpoint_evidence(endpoints),
+        ),)
 
     if clause.method is not None:
         return tuple(
@@ -414,11 +550,22 @@ def _requirement_checks(
             for origin in surface.candidates.origins
         )
 
-    if noun in _RETRIEVAL_REQUIREMENTS:
+    # Reuse canonical lowering to recognize Get operations. Ontology nouns are
+    # not duplicated in a second DSL retrieval vocabulary.
+    from .lowering import SurfaceLoweringError, _lower_requirement
+    try:
+        canonical = _lower_requirement(
+            surface, RequirementClause(product=noun),
+            clause_index=clause_index, record_types=record_types,
+        )
+    except SurfaceLoweringError:
+        canonical = None
+    if isinstance(canonical, GetStep):
         return _retrieval_requirement_checks(
             surface, clause, clause_index=clause_index, noun=noun,
             graph=graph, record_types=record_types,
             base_workflow=base_workflow,
+            semantic_paths=model,
         )
 
     checks: list[SurfaceCapabilityCheck] = []
@@ -490,23 +637,6 @@ def _requirement_checks(
     return tuple(checks)
 
 
-def _adjacent_confirm_predicate(
-    surface: SurfaceScript,
-    *,
-    clause_index: int,
-    record_types: frozenset[str],
-):
-    if clause_index == 0 or not isinstance(surface.clauses[clause_index - 1], WhereClause):
-        return None
-    where = surface.clauses[clause_index - 1]
-    try:
-        return lower_expression_predicate(where.condition, record_types)
-    except PredicateLoweringError as exc:  # semantic validation should normally guard this
-        raise SurfaceCapabilityValidationError(
-            f"cannot lower adjacent where predicate for confirmation: {exc}"
-        ) from exc
-
-
 def _confirm_checks(
     surface: SurfaceScript,
     clause: ConfirmClause,
@@ -515,11 +645,17 @@ def _confirm_checks(
     graph: CapabilityGraph,
     record_types: frozenset[str],
 ) -> tuple[SurfaceCapabilityCheck, ...]:
-    predicate = _adjacent_confirm_predicate(
-        surface,
-        clause_index=clause_index,
-        record_types=record_types,
-    )
+    from .lowering import SurfaceLoweringError, _confirmation_scope
+
+    try:
+        propositions, _ = _confirmation_scope(surface, record_types=record_types)
+    except SurfaceLoweringError as error:
+        return tuple(SurfaceCapabilityCheck(
+            subject="confirm", status=SurfaceCapabilityStatus.DEFERRED,
+            reason=str(error), clause_index=error.clause_index, origin=origin,
+            broker=broker, channel=broker,
+        ) for origin in surface.candidates.origins for broker in clause.brokers)
+    predicate = propositions[clause_index]
     checks: list[SurfaceCapabilityCheck] = []
     for origin in surface.candidates.origins:
         for broker in clause.brokers:
@@ -645,10 +781,12 @@ def _validate_surface_capabilities(
         if isinstance(clause, LatestClause):
             # Reuse the exact candidate lowering, including predicate scope.
             # This helper performs no capability validation or provider calls.
-            from .lowering import SurfaceLoweringError, _candidate_search
+            from .lowering import SurfaceLoweringError, _candidate_search, _initial_material_predicate
 
             try:
                 step, _ = _candidate_search(surface, record_types=semantic_model.record_types)
+                if _initial_material_predicate(surface, step) is not None:
+                    step = step.model_copy(update={"predicate": None})
             except SurfaceLoweringError as error:
                 checks.append(SurfaceCapabilityCheck(
                     subject="selection", clause_index=index,
@@ -664,24 +802,19 @@ def _validate_surface_capabilities(
             ))
         elif isinstance(clause, RequirementClause):
             noun = resolve_record_type(clause.product, semantic_model.record_types)
-            signature = (
-                noun or clause.product,
-                clause.source,
-                clause.via or surface.candidates.broker,
-            )
-            if signature in checked_requirements:
-                continue
-            checked_requirements.add(signature)
-            checks.extend(
-                _requirement_checks(
-                    surface,
-                    clause,
-                    clause_index=index,
-                    graph=capability_graph,
-                    record_types=semantic_model.record_types,
-                    base_workflow=base_workflow,
+            for requirement in clause.broker_requirements():
+                signature = (
+                    noun or requirement.product, requirement.source,
+                    requirement.via or surface.candidates.broker,
                 )
-            )
+                if signature in checked_requirements:
+                    continue
+                checked_requirements.add(signature)
+                checks.extend(_requirement_checks(
+                    surface, requirement, clause_index=index, graph=capability_graph,
+                    record_types=semantic_model.record_types, base_workflow=base_workflow,
+                    semantic_paths=semantic_model,
+                ))
         elif isinstance(clause, WhereClause):
             for ref in extract_semantic_record_references(
                 clause.condition, semantic_model.record_types
@@ -706,6 +839,7 @@ def _validate_surface_capabilities(
                         graph=capability_graph,
                         record_types=semantic_model.record_types,
                         base_workflow=base_workflow,
+                        semantic_paths=semantic_model,
                     )
                 )
         elif isinstance(clause, ConfirmClause):

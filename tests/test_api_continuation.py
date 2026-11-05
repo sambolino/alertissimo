@@ -25,7 +25,7 @@ FIRST_PASS = f"""objects from ztf via lasair
 inside ({RA}, {DEC}, {RADIUS_ARCSEC}arcsec)
 with lightcurve via fink
 """
-SECOND_PASS = """filter detection@ztf:fink.quality.real_bogus >= 0.8
+SECOND_PASS = """filter measurement@ztf:fink.quality.real_bogus >= 0.8
 with lightcurve via lasair
 """
 
@@ -80,8 +80,8 @@ def test_continuation_replays_prior_provider_calls_and_executes_only_new_enrichm
         for portfolio in second.portfolios
         for record in portfolio.records
     }
-    assert any(value.startswith("detection@ztf:fink") for value in semantic_types)
-    assert any(value.startswith("detection@ztf:lasair") for value in semantic_types)
+    assert any(value.startswith("measurement@ztf:fink") for value in semantic_types)
+    assert any(value.startswith("measurement@ztf:lasair") for value in semantic_types)
 
     first_execution_ids = {
         execution.internal_execution_id.value

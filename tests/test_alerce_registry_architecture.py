@@ -36,7 +36,7 @@ def test_payload_shapes_and_semantic_paths(origin):
     for semantic_path, references in document["mappings"].items():
         assert ".raw." not in semantic_path
         assert ".classifier." not in semantic_path
-        if semantic_path.startswith(("detection@", "non_detection@", "forced_photometry@")):
+        if semantic_path.startswith(("measurement@", "non_measurement@", "forced_photometry@")):
             assert not any(ref.startswith("query_lightcurve#") for ref in references)
 
 

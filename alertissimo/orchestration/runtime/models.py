@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from alertissimo.orchestration.ir.models import Step, WorkflowIR
+from alertissimo.orchestration.ir.models import FilterStep, GetStep, SearchStep, Step, WorkflowIR
 from alertissimo.orchestration.ir.predicates import Predicate
 
 
@@ -94,6 +94,20 @@ class TimeSelectionRealization(RuntimeModel):
     response_identity: str | None = None
     target_parameter: str | None = None
     target_collection: Literal["csv"] | None = None
+    detection_identity: Literal["measurement.identity.source_id"] | None = None
+    reduction: Literal["min", "max"] | None = None
+
+
+class LatestSelectionRealization(RuntimeModel):
+    """Mapped coverage fields for required finite-population ranking evidence."""
+
+    evidence_plan_index: int = Field(gt=0)
+    discovery_identity: str
+    evidence_identity: str
+    recency_field: str
+    history: TimeSelectionRealization | None = None
+    discovery_partition: str | None = None
+    evidence_partition: str | None = None
 
 
 class EndpointPlan(RuntimeModel):
@@ -125,6 +139,7 @@ class EndpointPlan(RuntimeModel):
     semantic_type: str | None = None
     predicate_realization: PredicateRealization | None = None
     time_selection: TimeSelectionRealization | None = None
+    latest_selection: LatestSelectionRealization | None = None
     request_params: dict[str, Any] = Field(default_factory=dict)
     # None retains legacy endpoint-role binding. A recipe supplies an authoritative
     # map from physical parameters to IR paths, named operands, or a runtime role.
@@ -242,6 +257,22 @@ class WorkflowRun(RuntimeModel):
 
     @model_validator(mode="after")
     def validate_step_alignment(self) -> "WorkflowRun":
+        # Full workflow validation belongs here: compiler material proofs may
+        # inspect a temporary IR prefix before its initial Filter is emitted.
+        for owner, step in enumerate(self.workflow.steps):
+            if not isinstance(step, SearchStep) or step.selection is None:
+                continue
+            boundary = step.selection.after_step
+            if boundary is None:
+                continue
+            if not owner < boundary < len(self.workflow.steps):
+                raise ValueError("latest after_step must reference a later existing initial Filter")
+            selected_at = self.workflow.steps[boundary]
+            if not isinstance(selected_at, FilterStep) or selected_at.predicate is None:
+                raise ValueError("latest after_step must reference an initial Filter with a predicate")
+            if any(not isinstance(item, GetStep) or item.target is not None
+                   for item in self.workflow.steps[owner + 1:boundary]):
+                raise ValueError("latest after_step may cross only targetless evidence Gets")
         expected = list(range(len(self.workflow.steps)))
         actual = [step.step_index for step in self.steps]
         if actual != expected:

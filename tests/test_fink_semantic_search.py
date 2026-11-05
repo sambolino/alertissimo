@@ -5,6 +5,8 @@ unchanged alert rows from objects_core.json to simulate the same class response
 shape; it is not claimed to be a new captured latests response. For multi-object
 binding tests, the transport replays selected latests rows as object responses.
 All transport routing is a fixture: no HTTP call or upstream package is used.
+Additional native-label cases explicitly relabel copied templates and control
+their IDs/times; they are not new captures for those labels.
 """
 
 from copy import deepcopy
@@ -33,6 +35,10 @@ from alertissimo.orchestration.runtime import EndpointPlan, WorkflowExecutionErr
 FIXTURES = Path(__file__).parent / "fixtures/fink/ztf"
 NOW = datetime(2021, 11, 25, tzinfo=timezone.utc)
 SN_NOW = datetime(2021, 7, 2, tzinfo=timezone.utc)
+ADDITIONAL_NATIVE_LABELS = (
+    "Kilonova candidate", "Microlensing candidate", "Tracklet",
+    "Solar System MPC", "Solar System candidate", "Ambiguous",
+)
 
 
 @pytest.fixture(scope="module")
@@ -98,8 +104,8 @@ def test_exact_required_query_validates_and_binds_without_sampling_a_clock(graph
     assert plan.predicate_realization.residual == step.predicate
     bound = bind_endpoint(step, plan, EndpointRegistry(), reference_time=NOW)
     assert bound.params == {
-        "class": "SN candidate", "startdate": "2021-11-18T00:00:00.000000Z",
-        "stopdate": "2021-11-25T00:00:00.000000Z",
+        "class": "SN candidate", "startdate": "2021-11-17T21:00:00.000000Z",
+        "stopdate": "2021-11-25T03:00:00.000000Z",
     }
 
 
@@ -112,7 +118,7 @@ def test_recorded_class_response_partitions_objects_and_rechecks_qualified_evide
     assert identities(result.portfolios) == {("ztf", row["i:objectId"]) for row in rows}
     assert len(result.portfolios) == 7
     discovery = result.result.steps[0].portfolios
-    assert sum(record.semantic_type == "detection@ztf:fink" for p in discovery for record in p.records) == 10
+    assert sum(record.semantic_type == "measurement@ztf:fink" for p in discovery for record in p.records) == 10
     assert sum(endpoint == "latests" for endpoint, _ in transport.calls) == 1
     # General where clauses also emit the DSL's classification requirement.
     # Its fresh objects retrieval is distinct from the class-index discovery.
@@ -134,8 +140,8 @@ def test_exact_sn_query_retrieves_all_measurements_after_candidate_selection(gra
     source = program() + "with lightcurve via fink\nwith classification via fink\n"
     result = execute_dsl(source, graph=graph, executor=executor(transport), continue_from=None, reference_time=SN_NOW)
     assert identities(result.portfolios) == {("ztf", "ZTF21abfmbix")}
-    assert transport.calls[0][1]["startdate"] == "2021-06-25T00:00:00.000000Z"
-    assert transport.calls[0][1]["stopdate"] == "2021-07-02T00:00:00.000000Z"
+    assert transport.calls[0][1]["startdate"] == "2021-06-24T21:00:00.000000Z"
+    assert transport.calls[0][1]["stopdate"] == "2021-07-02T03:00:00.000000Z"
     objects_calls = [params for endpoint, params in transport.calls if endpoint == "objects"]
     assert objects_calls and all(params["objectId"] == "ZTF21abfmbix" for params in objects_calls)
     # within selects candidates. It must not trim the subsequently fetched LC.
@@ -152,7 +158,7 @@ def test_residual_selection_feeds_only_survivor_ids_to_downstream_retrieval(grap
     rows = recorded("latests.json")
     transport = ReplayTransport(rows)
     source = program("Early SN Ia candidate")
-    condition = "detection@ztf:fink.position.ra > 30"
+    condition = "measurement@ztf:fink.position.ra > 30"
     source = source + f"filter {condition}\n" if filter_step else source.rstrip() + f" and {condition}\n"
     # An explicit classification clause after selection avoids the DSL's
     # implicit retrieval being inserted ahead of the filter.
@@ -215,8 +221,8 @@ def test_absolute_windows_and_no_window_keep_physical_contract_defaults(graph):
     absolute = step.model_copy(update={"time_context": TimeContext(
         start_time="2021-11-18T02:00:00+02:00", end_time="2021-11-25T02:00:00+02:00")})
     call = bind_endpoint(absolute, plan_step(absolute, graph)[0], EndpointRegistry())
-    assert call.params["startdate"] == "2021-11-18T00:00:00.000000Z"
-    assert call.params["stopdate"] == "2021-11-25T00:00:00.000000Z"
+    assert call.params["startdate"] == "2021-11-17T21:00:00.000000Z"
+    assert call.params["stopdate"] == "2021-11-25T03:00:00.000000Z"
     unbounded = step.model_copy(update={"time_context": None})
     call = bind_endpoint(unbounded, plan_step(unbounded, graph)[0], EndpointRegistry())
     assert call.params == {"class": "SN candidate"}
@@ -247,7 +253,7 @@ def test_fink_continuation_replays_the_original_window_and_fresh_search_resolves
                 continue_from=None, reference_time=later)
     fresh_discovery = [params for endpoint, params in transport.calls if endpoint == "latests"]
     assert len(fresh_discovery) == 2
-    assert fresh_discovery[-1]["stopdate"] == "2021-11-26T00:00:00.000000Z"
+    assert fresh_discovery[-1]["stopdate"] == "2021-11-26T03:00:00.000000Z"
 
 
 @pytest.mark.parametrize("producer", ["other", "{producer}"])
@@ -302,3 +308,131 @@ def test_rubin_tag_search_does_not_inherit_ztf_class_equality(graph):
     assert graph.query_recipes(broker="fink", origin="lsst", op="semantic_search") == ()
     source = program().replace("from ztf", "from lsst")
     assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+
+
+def synthetic_class_population(label):
+    """Controlled alert rows, not newly captured responses for these classes."""
+    template = recorded("latests.json")[0]
+    stop = NOW.timestamp() / 86400 + 2440587.5
+    specs = [
+        ("ZTF21aaaaaaa", label, stop - 1),
+        ("ZTF21aaaaaaa", label, stop - 2),  # repeated object in the class stream
+        ("ZTF21bbbbbbb", "Unknown", stop - 1),
+        ("ZTF21ccccccc", None, stop - 1),
+        ("ZTF21ddddddd", label, stop - 10),  # outside the requested interval
+    ]
+    rows = []
+    for index, (oid, value, jd) in enumerate(specs):
+        row = {**deepcopy(template), "i:objectId": oid, "i:candid": 1000 + index, "i:jd": jd}
+        row.pop("v:classification", None)
+        if value is not None:
+            row["v:classification"] = value
+        rows.append(row)
+    history = rows + [{**deepcopy(rows[0]), "i:candid": 2000, "i:jd": stop - 100,
+                       "v:classification": "Unknown"}]
+    return rows, history
+
+
+@pytest.mark.parametrize("label", ADDITIONAL_NATIVE_LABELS)
+@pytest.mark.parametrize("reference", [
+    "classification.best.class", "classification@fink.best.class", "classification@fink:fink.best.class",
+])
+def test_additional_ordinary_class_labels_bind_their_exact_native_value_and_keep_recheck(graph, label, reference):
+    validation = validate_dsl(program(label, reference), graph=graph, continue_from=None)
+    assert validation.is_runnable, validation.lowering_error
+    step = validation.compilation.workflow.steps[0]
+    plan, = plan_step(step, graph)
+    assert plan.predicate_realization.params == {"class": label}
+    assert plan.predicate_realization.residual == step.predicate
+    restored = EndpointPlan.model_validate_json(plan.model_dump_json())
+    call = bind_endpoint(step, restored, EndpointRegistry(), reference_time=NOW)
+    assert call.params == {"class": label, "startdate": "2021-11-17T21:00:00.000000Z",
+                           "stopdate": "2021-11-25T03:00:00.000000Z"}
+    with pytest.raises(PlanningDeferredError, match="latest requires"):
+        plan_step(step.model_copy(update={"selection": SearchSelection(latest=1)}), graph)
+
+
+@pytest.mark.parametrize("label", ADDITIONAL_NATIVE_LABELS)
+@pytest.mark.parametrize("scoped", [False, True])
+def test_native_selection_and_complete_local_recheck_agree_with_duplicate_objects_and_full_history(graph, label, scoped):
+    population, history = synthetic_class_population(label)
+    native = [row for row in population if row.get("v:classification") == label]
+    runs = []
+    for discovery in (native, population):
+        # The second replay deliberately returns the entire controlled
+        # population. Local evaluation must select the same scientific objects.
+        transport = ReplayTransport(discovery, objects=history)
+        source = (f'objects from ztf via fink\nwithin 7d\nwith classification via fink where best.class = "{label}"\n'
+                  if scoped else program(label))
+        result = execute_dsl(source + "with lightcurve via fink\nwith classification via fink\n",
+                             graph=graph, executor=executor(transport), continue_from=None, reference_time=NOW)
+        assert identities(result.portfolios) == {("ztf", "ZTF21aaaaaaa")}
+        assert identities(result.result.steps[0].portfolios) == identities(result.portfolios)
+        assert identities(normalize_workflow_execution(result.staged.execution).steps[0].portfolios) == identities(result.portfolios)
+        assert transport.calls[0][1]["class"] == label
+        assert all(params["objectId"] == "ZTF21aaaaaaa" for name, params in transport.calls if name == "objects")
+        # Both matching alerts remain attached to one candidate; subsequent
+        # history retains the old differently classified point as well.
+        initial = result.result.steps[0].portfolios[0]
+        assert sum(r.semantic_type == "measurement@ztf:fink" for r in initial.records) == 2
+        points = [point for p in result.portfolios for r in p.records
+                  if r.semantic_type == "lightcurve@ztf:fink" for point in r.fields["points"]]
+        assert {p["identity.source_id"] for p in points} == {1000, 1001, 2000}
+        runs.append(identities(result.portfolios))
+    assert runs[0] == runs[1]
+
+
+@pytest.mark.parametrize("label", ADDITIONAL_NATIVE_LABELS)
+@pytest.mark.parametrize("kind", ["empty", "different-class", "missing-class", "saturated"])
+def test_additional_label_does_not_bypass_missing_evidence_or_alert_cap(graph, label, kind):
+    population, _ = synthetic_class_population(label)
+    row = population[0]
+    if kind == "empty":
+        rows = []
+    elif kind == "different-class":
+        rows = [{**row, "v:classification": "Unknown"}]
+    elif kind == "missing-class":
+        rows = [{key: value for key, value in row.items() if key != "v:classification"}]
+    else:
+        # The cap applies to raw alerts before local pruning, even if all
+        # returned labels are wrong and would otherwise produce no survivors.
+        rows = [{**row, "v:classification": "Unknown"}] * 100
+    transport = ReplayTransport(rows)
+    kwargs = dict(graph=graph, executor=executor(transport), continue_from=None, reference_time=NOW)
+    source = program(label) + "with lightcurve via fink\n"
+    if kind == "saturated":
+        with pytest.raises(WorkflowExecutionError, match=r"incomplete result.*n=100"):
+            execute_dsl(source, **kwargs)
+    else:
+        assert execute_dsl(source, **kwargs).portfolios == ()
+    assert [name for name, _ in transport.calls] == ["latests"]
+
+
+@pytest.mark.parametrize("label", ADDITIONAL_NATIVE_LABELS)
+def test_additional_native_class_continuation_keeps_population_clock_and_execution_prefix(graph, label):
+    population, history = synthetic_class_population(label)
+    transport = ReplayTransport(population, objects=history)
+    endpoint_executor = executor(transport)
+    first = execute_dsl(program(label), graph=graph, executor=endpoint_executor,
+                        continue_from=None, reference_time=NOW)
+    before, snapshot = deepcopy(transport.calls), first.to_dict()
+    second = execute_dsl("with lightcurve via fink\n", graph=graph, executor=endpoint_executor,
+                         continue_from=first, reference_time=NOW + timedelta(days=20))
+    assert identities(second.portfolios) == identities(first.portfolios) == {("ztf", "ZTF21aaaaaaa")}
+    assert first.to_dict() == snapshot
+    assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
+    assert second.staged.bindings[0].reference_time == NOW
+    assert transport.calls[:len(before)] == before
+    assert sum(name == "latests" for name, _ in transport.calls) == 1
+
+
+@pytest.mark.parametrize("label", [
+    "AGN", "SNII", "KN candidate", "(SIMBAD) AGN", "(TNS) SN II",
+    "SLSN candidate", "(CTA) Blazar low state", "(CTA) Blazar high state",
+])
+def test_coarse_aliases_and_special_routes_are_not_inferred_from_native_label_support(graph, label):
+    transport = ReplayTransport([])
+    assert not validate_dsl(program(label), graph=graph, continue_from=None).is_runnable
+    with pytest.raises(SurfaceLoweringError):
+        execute_dsl(program(label), graph=graph, executor=executor(transport), continue_from=None)
+    assert transport.calls == []

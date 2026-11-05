@@ -22,6 +22,7 @@ class SemanticModelIndex:
     containers: frozenset[str]
     fields: frozenset[str]
     edge_types: frozenset[str]
+    abstract_containers: frozenset[str] = frozenset()
 
 
 def load_semantic_model_index(path: Path | None = None) -> SemanticModelIndex:
@@ -34,6 +35,8 @@ def load_semantic_model_index(path: Path | None = None) -> SemanticModelIndex:
     containers: set[str] = set()
     fields: set[str] = set()
     edge_types: set[str] = set()
+    abstract_containers: set[str] = set()
+    root_container: str | None = None
 
     for source_line in source_path.read_text(encoding="utf-8").splitlines():
         line = source_line.lstrip()
@@ -43,6 +46,10 @@ def load_semantic_model_index(path: Path | None = None) -> SemanticModelIndex:
         container = _CONTAINER.match(line)
         if container and "{" not in container.group(1):
             containers.add(container.group(1))
+        if source_line == line:
+            root_container = container.group(1) if container else None
+        if line.strip() == "abstract: true" and root_container is not None and len(source_line) - len(line) == 2:
+            abstract_containers.add(root_container)
 
         field = _FIELD.match(line)
         if field and "{" not in field.group(1):
@@ -57,4 +64,5 @@ def load_semantic_model_index(path: Path | None = None) -> SemanticModelIndex:
         containers=frozenset(containers),
         fields=frozenset(fields),
         edge_types=frozenset(edge_types),
+        abstract_containers=frozenset(abstract_containers),
     )

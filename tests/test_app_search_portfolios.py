@@ -23,6 +23,7 @@ from alertissimo.dsl import SurfaceLoweringError, parse_surface_script
 from alertissimo.orchestration.ir import ConeSearchStep
 from alertissimo.ui_portfolios import load_ui_portfolio, portfolio_to_display, records_by_family
 import alertissimo.app_search as app_search
+import scripts.build_ui_fixtures as fixture_builder
 
 
 def serialized_summary_portfolio(*records):
@@ -247,6 +248,23 @@ def test_every_demo_search_result_has_a_distinct_portfolio_fixture():
     assert all(portfolio["semantic_records"] for portfolio in portfolios.values())
     assert all(portfolio["provenance"] for portfolio in portfolios.values())
     assert all(portfolio["lightCurve"] for portfolio in portfolios.values())
+
+
+def test_search_and_portfolio_caches_follow_the_frozen_corpus_revision(monkeypatch):
+    revision = {"value": "test-corpus-before"}
+    monkeypatch.setattr(fixture_builder, "corpus_fingerprint", lambda: revision["value"])
+
+    def portfolios_for_revision(key):
+        return {key: {"diaObjectId": key, "survey": "ZTF", "coordinates": {"ra": 1, "dec": 2},
+                      "lightCurve": [{"date": "2026-01-01", "magnitude": 20}],
+                      "classifications": [], "provenance": []}}
+
+    monkeypatch.setattr(app_search, "_load_demo_candidate_portfolios", portfolios_for_revision)
+    assert set(load_demo_candidate_portfolios()) == {"test-corpus-before"}
+    assert load_demo_search_data()[0][0]["object_id"] == "test-corpus-before"
+    revision["value"] = "test-corpus-after"
+    assert set(load_demo_candidate_portfolios()) == {"test-corpus-after"}
+    assert load_demo_search_data()[0][0]["object_id"] == "test-corpus-after"
 
 
 def test_frozen_cone_fixture_returns_all_captured_loci():

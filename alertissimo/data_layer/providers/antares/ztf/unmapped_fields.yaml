@@ -3749,15 +3749,6 @@ unmapped:
 - locus_catalog_gaia#bp_rp:
     reason: catalog_specific_quantity
     candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
-- locus_catalog_gaia#classprob_dsc_combmod_galaxy:
-    reason: catalog_specific_quantity
-    candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
-- locus_catalog_gaia#classprob_dsc_combmod_quasar:
-    reason: catalog_specific_quantity
-    candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
-- locus_catalog_gaia#classprob_dsc_combmod_star:
-    reason: catalog_specific_quantity
-    candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
 - locus_catalog_gaia#dec_error:
     reason: catalog_specific_quantity
     candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
@@ -4098,12 +4089,6 @@ unmapped:
     reason: catalog_specific_quantity
     candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
 - locus_catalog_gaia#visibility_periods_used:
-    reason: catalog_specific_quantity
-    candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
-- locus_catalog_gaia_variability#class:
-    reason: catalog_specific_quantity
-    candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
-- locus_catalog_gaia_variability#classifier:
     reason: catalog_specific_quantity
     candidate_meaning: Catalog-native field lacking a conservative exact normalized concept in the current ontology.
 - locus_catalog_gaia_variability#solid:

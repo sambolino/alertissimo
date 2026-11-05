@@ -26,7 +26,7 @@ def _dsl(threshold: float) -> str:
     return f"""objects from ztf via lasair
     inside ({RA}, {DEC}, 5arcsec)
     with lightcurve via fink
-    filter detection@ztf:fink.quality.real_bogus >= {threshold}
+    filter measurement@ztf:fink.quality.real_bogus >= {threshold}
     with lightcurve via lasair
 """
 

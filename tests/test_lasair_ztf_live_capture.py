@@ -115,7 +115,7 @@ def test_live_object_and_plural_object_are_fully_accounted() -> None:
     assert tns.fields["separation.total"] == pytest.approx(0.12)
     assert tns.fields["photometry.r.mag"] == pytest.approx(19.7399)
     plural = _build("objects", objs)
-    assert len([r for r in plural.records if r.semantic_type == "detection@ztf:lasair"]) == 92
+    assert len([r for r in plural.records if r.semantic_type == "measurement@ztf:lasair"]) == 92
 
 
 def test_plural_objects_keep_nested_candidates_with_their_root() -> None:
@@ -138,7 +138,7 @@ def test_plural_objects_keep_nested_candidates_with_their_root() -> None:
     assert {
         object_id: len([
             record for record in portfolio.records
-            if record.semantic_type == "detection@ztf:lasair"
+            if record.semantic_type == "measurement@ztf:lasair"
         ])
         for object_id, portfolio in by_object_id.items()
     } == {first["objectId"]: len(first["candidates"]), second["objectId"]: 7}
@@ -160,7 +160,7 @@ def test_live_lightcurve_is_fully_accounted_with_detections_and_limits() -> None
     portfolio = _build("lightcurves", payload)
     detections = [
         record for record in portfolio.records
-        if record.semantic_type == "detection@ztf:lasair"
+        if record.semantic_type == "measurement@ztf:lasair"
     ]
     measured = next(
         record for record in detections

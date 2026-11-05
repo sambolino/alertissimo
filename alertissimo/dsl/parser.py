@@ -143,6 +143,10 @@ class _SurfaceTransformer(Transformer):
     def via_clause(self, items):
         return "via", str(items[0]).lower()
 
+    def requirement_via(self, items):
+        brokers = items[0]
+        return ("via", brokers[0]) if len(brokers) == 1 else ("brokers", brokers)
+
     def from_clause(self, items):
         return "from", str(items[0]).lower()
 
@@ -230,6 +234,7 @@ class _SurfaceTransformer(Transformer):
             product=product,
             source=qualifiers.get("from"),
             via=qualifiers.get("via"),
+            brokers=qualifiers.get("brokers", ()),
             method=qualifiers.get("using"),
         )
 
@@ -318,7 +323,6 @@ def _preflight_structure(script: str) -> None:
         )
 
     filter_seen = False
-    with_seen = False
     where_count = 0
     for line_no, text in lines[1:]:
         lowered = text.lower()
@@ -341,7 +345,6 @@ def _preflight_structure(script: str) -> None:
                     line=line_no,
                 )
         if lowered.startswith("with "):
-            with_seen = True
             if text.endswith(":"):
                 raise DSLParseError(
                     "with predicates are inline; use 'with <requirement> where <expression>'",
@@ -354,12 +357,6 @@ def _preflight_structure(script: str) -> None:
             if where_count > 1:
                 raise DSLParseError(
                     "only one general where clause is allowed",
-                    line=line_no,
-                )
-            if with_seen:
-                raise DSLParseError(
-                    "general where must precede with clauses; scoped with predicates "
-                    "must be inline as 'with <requirement> where <expression>'",
                     line=line_no,
                 )
             if filter_seen:

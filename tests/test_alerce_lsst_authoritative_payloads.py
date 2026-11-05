@@ -186,7 +186,7 @@ def test_unsupported_psf_flag_value_is_omitted_instead_of_coerced_to_false(endpo
 
 def test_real_forced_row_maps_canonical_forced_photometry_branch():
     row=fixture("query_forced_photometry")[0]; p=build("query_forced_photometry",[row]); f=dict(p.records[0].fields)
-    assert p.records[0].semantic_type=="detection@lsst:alerce"
+    assert p.records[0].semantic_type=="measurement@lsst:alerce"
     assert f["forced_photometry.i.psf.flux"]==3118.2173 and f["forced_photometry.i.psf.flux.error"]==256.24115
     assert f["time.mjd"]==61217.425639118446 and f["identity.visit_id"]==2026062500656 and p.edges==()
 
@@ -209,7 +209,7 @@ def test_shared_rubin_detection_fields_converge_with_antares_semantic_paths():
         matches = [
             target.split(f"@lsst:{provider}.", 1)[1]
             for target, sources in registries[provider].items()
-            if raw in sources and target.startswith(f"detection@lsst:{provider}.")
+            if raw in sources and target.startswith(f"measurement@lsst:{provider}.")
         ]
         assert len(matches) == 1
         return matches[0]
@@ -253,7 +253,7 @@ def test_probability_row_is_classifier_produced_assessment_not_computed_best():
 
 def test_lightcurve_delegates_all_three_branches_without_edges():
     p=build("query_lightcurve",fixture("query_lightcurve"))
-    detections=[r for r in p.records if r.semantic_type=="detection@lsst:alerce"]
+    detections=[r for r in p.records if r.semantic_type=="measurement@lsst:alerce"]
     lightcurves=[r for r in p.records if r.semantic_type=="lightcurve@lsst:alerce"]
     assert len(detections)==26
     assert len(lightcurves)==1

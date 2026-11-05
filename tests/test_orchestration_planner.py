@@ -364,13 +364,15 @@ def test_legacy_constrained_lightcurve_does_not_invent_a_supplement():
     )
 
 
-def test_unverified_cutout_response_is_deferred_for_one_or_many_targets(graph):
+def test_verified_cutout_json_mode_plans_for_one_or_many_object_targets(graph):
     source = [Source(broker="fink", origin="ztf")]
     for ids in (["A"], ["A", "B"]):
-        with pytest.raises(PlanningDeferredError, match="response shape/mode"):
-            plan_step(GetCutoutStep(
-                target=TargetSelector(ids=ids, kind="object"), sources=source,
-            ), graph)
+        plan, = plan_step(GetCutoutStep(
+            target=TargetSelector(ids=ids, kind="object"), sources=source,
+        ), graph)
+        assert plan.endpoint == "cutouts_array"
+        assert plan.execution_reuse_from is None
+        assert plan.parameter_sources == {"objectId": ("target", "ids")}
 
 
 def test_singular_data_product_can_be_fanned_out_for_multiple_targets():
@@ -435,7 +437,7 @@ def test_semantic_target_planning_uses_only_collection_candidate(step_type, noun
     )[0].endpoint == f"{noun}_many"
 
 
-@pytest.mark.parametrize("step_type", [GetClassificationStep, GetCrossmatchStep])
+@pytest.mark.parametrize("step_type", [GetCrossmatchStep])
 def test_lasair_sherlock_planning_preserves_real_ambiguity(step_type, graph):
     ztf = step_type(
         target=TargetSelector(ids=["A", "B"], kind="object"),

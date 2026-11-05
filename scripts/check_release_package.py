@@ -139,6 +139,10 @@ if policy.max_auto_pages != 3:
 semantic_model = load_semantic_model_index()
 if not semantic_model.containers or not semantic_model.fields:
     raise RuntimeError("packaged semantic ontology did not load substantive declarations")
+if "measurement" not in semantic_model.containers or "detection" in semantic_model.containers:
+    raise RuntimeError("packaged ontology does not use the measurement record name")
+if "enrichment" not in semantic_model.abstract_containers:
+    raise RuntimeError("packaged ontology lost the abstract enrichment family")
 
 registry = EndpointRegistry()
 registry.resolve("alerce", "lsst", "query_objects")
@@ -174,6 +178,18 @@ validation = validate_dsl(dsl, graph=graph, name="0.1.0 installed-wheel acceptan
 if not validation.is_valid or not validation.is_runnable:
     raise RuntimeError(f"installed-wheel DSL validation failed: {validation!r}")
 
+family = validate_dsl(
+    "objects ZTF21abfmbix from ztf via fink\nwith enrichment\n",
+    graph=graph, continue_from=None,
+)
+if not family.is_runnable:
+    raise RuntimeError(f"installed-wheel enrichment validation failed: {family!r}")
+if {step.op for step in family.compilation.workflow.steps} != {
+    "lookup", "get_classification", "get_crossmatch", "get_data_product", "get_lightcurve",
+}:
+    raise RuntimeError("installed-wheel enrichment expansion lost supported concrete retrievals")
+plan_workflow(family.compilation.workflow, graph)
+
 print(package_path)
 '''
     environment = dict(os.environ)
@@ -204,6 +220,7 @@ def main() -> int:
         print("public API:        alertissimo.api")
         print("static DSL:        VALID / RUNNABLE")
         print("cone recipes:      8 broker/survey pairs VALID / PLANNED")
+        print("enrichment family: VALID / EXPANDED / PLANNED")
         print("provider APIs:     not contacted")
         print("PASS: Alertissimo 0.1.0 wheel is self-contained for declarative runtime data")
     return 0

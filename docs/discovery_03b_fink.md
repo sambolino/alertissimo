@@ -95,7 +95,7 @@ including measurements outside the discovery interval:
 objects from ztf via fink
 within 7d
 where classification.best.class = "SN candidate"
-filter detection@ztf:fink.quality.real_bogus >= 0.9
+filter measurement@ztf:fink.quality.real_bogus >= 0.9
 with lightcurve via fink
 with classification via fink
 ```

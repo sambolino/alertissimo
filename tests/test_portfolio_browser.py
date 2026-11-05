@@ -29,8 +29,8 @@ def test_field_tree_nests_dot_path_segments():
 
 
 def test_semantic_type_parts_are_tolerant():
-    assert _semantic_type_parts("detection@ztf:lasair") == {
-        "base": "detection", "namespace": "ztf", "producer": "lasair",
+    assert _semantic_type_parts("measurement@ztf:lasair") == {
+        "base": "measurement", "namespace": "ztf", "producer": "lasair",
     }
     assert _semantic_type_parts("summary") == {
         "base": "summary", "namespace": None, "producer": None,
@@ -42,7 +42,7 @@ def test_browser_renders_connection_cards_and_escapes_edge_metadata():
         "internal_portfolio_id": "portfolio:edges",
         "executions": [],
         "records": [
-            {"internal_record_id": "record:d", "semantic_type": "detection@ztf:lasair", "fields": {}},
+            {"internal_record_id": "record:d", "semantic_type": "measurement@ztf:lasair", "fields": {}},
             {"internal_record_id": "record:s", "semantic_type": "summary@ztf:lasair", "fields": {}},
         ],
         "edges": [{
@@ -53,7 +53,7 @@ def test_browser_renders_connection_cards_and_escapes_edge_metadata():
         }],
     })
     for expected in (
-        "Connection browser", "--duplicate--", "detection@ztf:lasair",
+        "Connection browser", "--duplicate--", "measurement@ztf:lasair",
         "summary@ztf:lasair", "same_execution_summary_context", "edge:1",
     ):
         assert expected in page
@@ -71,7 +71,7 @@ def test_browser_groups_lasair_example_records_and_explains_no_edges():
     assert "crossmatch@sherlock:lasair" not in semantic_types
     assert portfolio.edges == ()
     for expected in (
-        "summary (1)", "classification (2)", "crossmatch (2)", "detection (2)",
+        "summary (1)", "classification (2)", "crossmatch (2)", "measurement (2)",
         '<details class="record-group"', '<details class="rail-record-group"',
         "No semantic edges.", "Containment is represented by the portfolio itself.",
         "crossmatch@unknown:lasair",

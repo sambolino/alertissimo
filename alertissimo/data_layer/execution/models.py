@@ -24,8 +24,14 @@ class EndpointSpec:
     client_method: str | None = None
     headers: Mapping[str, Any] = field(default_factory=dict)
     request_encoding: str = "json"
+    required_matrices: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        if (not isinstance(self.required_matrices, (list, tuple))
+            or any(not isinstance(name, str) or not name for name in self.required_matrices)
+            or len(set(self.required_matrices)) != len(self.required_matrices)):
+            raise ValueError("required_matrices must be distinct nonempty JSON field names")
+        object.__setattr__(self, "required_matrices", tuple(self.required_matrices))
         if self.request_encoding not in {"json", "form"}:
             raise ValueError(
                 f"unsupported REST request encoding: {self.request_encoding}"

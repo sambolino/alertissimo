@@ -9,9 +9,9 @@ records with missing quality values. A later retrieval can add measurements.
 
 | Reference | Evidence selected |
 | --- | --- |
-| `detection@ztf:fink.quality.real_bogus` | Fink detections from ZTF |
-| `detection@ztf:lasair.quality.real_bogus` | Lasair detections from ZTF |
-| `detection@lasair:fink.quality.real_bogus` | An incorrect qualifier for these ZTF detections; Lasair is a broker, not their survey |
+| `measurement@ztf:fink.quality.real_bogus` | Fink detections from ZTF |
+| `measurement@ztf:lasair.quality.real_bogus` | Lasair detections from ZTF |
+| `measurement@lasair:fink.quality.real_bogus` | An incorrect qualifier for these ZTF detections; Lasair is a broker, not their survey |
 
 A local filter can name a qualifier for which no records exist. It does not
 retrieve matching records or prove provider support. A successfully executed
@@ -51,7 +51,7 @@ with lightcurve via lasair
 Then submit this in its continuation editor:
 
 ```text
-filter detection@ztf:fink.quality.real_bogus >= 0.999
+filter measurement@ztf:fink.quality.real_bogus >= 0.999
 ```
 
 This keeps objects with qualifying Fink evidence. To view only their qualifying

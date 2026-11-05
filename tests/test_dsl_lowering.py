@@ -38,7 +38,7 @@ class _FakeSemanticPaths:
     record_types = frozenset(
         {
             "summary",
-            "detection",
+            "measurement",
             "lightcurve",
             "crossmatch",
             "classification",

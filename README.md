@@ -47,7 +47,7 @@ Interactive clients should make continuation context explicit:
 validation = validate_dsl(source, continue_from=None)
 if validation.is_runnable:
     first = execute_dsl(source, continue_from=None)
-    fragment = "filter detection@ztf:fink.quality.real_bogus >= 0.8"
+    fragment = "filter measurement@ztf:fink.quality.real_bogus >= 0.8"
     continuation = validate_dsl(fragment, continue_from=first)
     if continuation.is_runnable:
         second = execute_dsl(fragment, continue_from=first)
@@ -58,6 +58,15 @@ a supplied result owns continuation without reading or replacing process-wide
 active state. Omitting `continue_from` retains implicit continuation for existing
 single-client scripts. Planning, credentials, and provider execution can still
 fail after validation; the previous result remains available.
+
+Read final candidates through `result.portfolios`. The
+[application access guide](docs/application_portfolio_access.md) shows per-object
+selection, classification and crossmatch evidence, photometry views, reported
+counts, and serialization with provenance. Its checkout example preserves each
+candidate's survey identity and qualified records.
+The [discovery integration guide](docs/discovery_integration.md) records the
+eight-provider/survey support matrix, original reference-workflow regressions,
+and explicit temporal/completeness limits.
 
 ## Declarative runtime
 

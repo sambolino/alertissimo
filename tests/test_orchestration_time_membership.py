@@ -245,7 +245,7 @@ def test_another_execution_or_broker_cannot_supply_the_witness(tmp_path, broker)
     view = result.result.steps[0]
     raw = StepPortfolioResult(step_index=0, executions=view.executions).portfolios[0]
     other = InternalExecutionProvenance(InternalExecutionId("execution:other"), broker, "ztf", "query_lightcurve")
-    witness = SemanticRecord(InternalRecordId("record:unrelated"), f"detection@ztf:{broker}",
+    witness = SemanticRecord(InternalRecordId("record:unrelated"), f"measurement@ztf:{broker}",
                              {"time.mjd": 59012, "photometry.g.psf.mag": 19},
                              InternalRecordSource(other.internal_execution_id, "query_lightcurve.detections", "detections[]"))
     augmented = replace(raw, records=raw.records + (witness,), executions=raw.executions + (other,))

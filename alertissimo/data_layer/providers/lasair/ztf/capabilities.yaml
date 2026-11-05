@@ -1,5 +1,11 @@
 broker: lasair
 origin: ztf
+selection_bindings:
+  query:
+    latest:
+      path: summary.time.last_mjd
+      # Exhaust the compiled identity-ordered SQL scan; rank objects locally.
+      params: {}
 recipes:
   semantic_search:
     - calls:
@@ -53,6 +59,74 @@ recipes:
               value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
             tables: {value: objects}
             conditions: {from: step.time_context}
+    # A positive native Sherlock equality is required for these inner joins.
+    - calls:
+        - endpoint: query
+          sql_join:
+            left: objects.objectId
+            right: sherlock_classifications.objectId
+            right_unique: true
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax,sherlock_classifications.classification,sherlock_classifications.classificationReliability,sherlock_classifications.description
+            tables: {value: "objects,sherlock_classifications"}
+    - time_selection:
+        mode: detection
+        method: material
+        call: 1
+        payload: lightcurve_candidates
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          sql_join:
+            left: objects.objectId
+            right: sherlock_classifications.objectId
+            right_unique: true
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax,sherlock_classifications.classification,sherlock_classifications.classificationReliability,sherlock_classifications.description
+            tables: {value: "objects,sherlock_classifications"}
+            conditions: {from: step.time_context}
+        - endpoint: lightcurves
+          params:
+            objectIds: {from: {call: 0, path: summary.identity.object_id}}
+    - time_selection:
+        mode: first
+        method: native
+        call: 0
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          sql_join:
+            left: objects.objectId
+            right: sherlock_classifications.objectId
+            right_unique: true
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax,sherlock_classifications.classification,sherlock_classifications.classificationReliability,sherlock_classifications.description
+            tables: {value: "objects,sherlock_classifications"}
+            conditions: {from: step.time_context}
+    - time_selection:
+        mode: last
+        method: native
+        call: 0
+        payload: query
+        complete: true
+        time_scale: utc
+      calls:
+        - endpoint: query
+          sql_join:
+            left: objects.objectId
+            right: sherlock_classifications.objectId
+            right_unique: true
+          params:
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax,sherlock_classifications.classification,sherlock_classifications.classificationReliability,sherlock_classifications.description
+            tables: {value: "objects,sherlock_classifications"}
+            conditions: {from: step.time_context}
   confirm:
     - calls:
         - endpoint: object
@@ -93,7 +167,8 @@ recipes:
             offset: {value: 0}
     # Temporal cone selection keeps the finite cone population and upgrades
     # summary retrieval to required evidence. The old optional recipe stays.
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: detection
         method: material
         call: 2
@@ -106,6 +181,7 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
@@ -117,7 +193,8 @@ recipes:
         - endpoint: lightcurves
           params:
             objectIds: {from: {call: 0, path: summary.identity.object_id}}
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: first
         method: material
         call: 1
@@ -130,6 +207,7 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
@@ -138,7 +216,8 @@ recipes:
             tables: {value: objects}
             limit: {value: 100}
             offset: {value: 0}
-    - time_selection:
+    - latest_selection: {call: 1, complete: true}
+      time_selection:
         mode: last
         method: material
         call: 1
@@ -151,9 +230,29 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+            requestType: {value: all}
         - endpoint: query
           params:
             conditions: {from: {call: 0, path: summary.identity.object_id}}
+            selected:
+              value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
+            tables: {value: objects}
+            limit: {value: 100}
+            offset: {value: 0}
+    # Unwindowed latest needs required summary coverage.
+    - latest_selection: {call: 1, complete: true}
+      calls:
+        - endpoint: cone
+          params:
+            ra: {from: step.ra}
+            dec: {from: step.dec}
+            radius: {from: step.radius}
+            requestType: {value: all}
+        - endpoint: query
+          required: true
+          params:
+            conditions:
+              from: {call: 0, path: summary.identity.object_id}
             selected:
               value: objects.objectId,objects.ramean,objects.decmean,objects.ncand,objects.jdmin,objects.jdmax
             tables: {value: objects}
@@ -176,20 +275,10 @@ recipes:
           params:
             objectIds: {from: step.target.ids}
   get_classification:
-    - calls:
-        - endpoint: object
-          params:
-            objectId: {from: step.target.ids}
+    # The context-bearing object response maps Sherlock class, description and
+    # reliability plus TNS type. Use its native collection route even for one ID.
     - calls:
         - endpoint: objects
-          params:
-            objectIds: {from: step.target.ids}
-    - calls:
-        - endpoint: sherlock_object
-          params:
-            objectId: {from: step.target.ids}
-    - calls:
-        - endpoint: sherlock_objects
           params:
             objectIds: {from: step.target.ids}
   get_crossmatch:
@@ -210,7 +299,7 @@ recipes:
           params:
             objectIds: {from: step.target.ids}
 
-# Numeric object summaries only. Conditions are compiled from these declarations,
+# Numeric object summaries and finite native Sherlock labels. Conditions are compiled,
 # never supplied as target IDs. Every comparison operator is explicit.
 predicate_bindings:
   query:
@@ -274,3 +363,9 @@ predicate_bindings:
       operator: ">="
       parameter: conditions
       sql: {column: objects.jdmax, subtract: 2400000.5, order_by: objects.objectId}
+    - path: classification.best.class
+      operator: "="
+      parameter: conditions
+      values: [AGN, BS, CV, NT, ORPHAN, SN, UNCLEAR, VS]
+      exact: false
+      sql: {column: sherlock_classifications.classification, order_by: objects.objectId}

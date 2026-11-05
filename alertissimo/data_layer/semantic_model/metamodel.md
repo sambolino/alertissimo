@@ -43,12 +43,12 @@ are retained to make the extraction traceable.
 
     Example:
 
-        <detection>:
+        <measurement>:
           $ref: <photometry>(L1)
 
     allows paths such as:
 
-        detection.photometry.g.psf.flux
+        measurement.photometry.g.psf.flux
 
     The container name is part of the meaning. It should not be introduced
     merely to mirror a storage layout or a broker payload section.
@@ -146,7 +146,32 @@ are retained to make the extraction traceable.
     The underscored trait name is never propagated into the path.
 ```
 
-### 4b. Edge carriers
+### 4b. Container families
+
+```text
+<enrichment>:
+  abstract: true
+
+<lightcurve>:
+  $is: <enrichment>
+```
+
+A container `$is` declares transitive family membership. An abstract container
+cannot be instantiated as a Portfolio record. A Portfolio `$refs` declaration
+for a family admits its concrete descendants, including indirect descendants.
+Unknown parents and cycles are invalid.
+
+In this revision, container membership does not copy fields or create path
+segments. Field composition remains governed by `$ref`, underscore projections,
+and existing level declarations. A lightcurve remains `lightcurve@ztf:fink`,
+not `enrichment.lightcurve@ztf:fink`. Edge-carrier inheritance below retains its
+existing, separate field-inheritance semantics.
+
+Concrete Portfolio record names and admitted abstract families supply the DSL
+requirement vocabulary. Nested substructures, internal schema fragments and enum
+values do not become standalone requirement nouns.
+
+### 4c. Edge carriers
 
 ```text
 --edge--
@@ -156,8 +181,8 @@ are retained to make the extraction traceable.
 
     Examples:
 
-        detection@vidojevica --followup_of--> detection@lsst:fink
-        detection@lsst:fink --association-- detection@lvk:gcn
+        measurement@vidojevica --followup_of--> measurement@lsst:fink
+        measurement@lsst:fink --association-- measurement@lvk:gcn
 
     The arrow, or lack of arrow, is part of the edge name. Direction is
     therefore explicit in the carrier symbol itself:
@@ -234,7 +259,7 @@ $refs: <container>
 
         <portfolio>:
           $refs: <summary>
-          $refs: <detection>
+          $refs: <measurement>
           $refs: <crossmatch>
 
     $refs defines semantic cardinality. It does not pluralize the semantic
@@ -242,9 +267,9 @@ $refs: <container>
 
     Repeated instances may have the same semantic path:
 
-        portfolio.detection@lsst:fink
-        portfolio.detection@lsst:fink
-        portfolio.detection@lsst:fink
+        portfolio.measurement@lsst:fink
+        portfolio.measurement@lsst:fink
+        portfolio.measurement@lsst:fink
 
     The path identifies the kind of record and its semantic qualification,
     not necessarily one concrete instance. Implementations may use internal
@@ -271,11 +296,11 @@ type: array
 ```text
 Do not repeat information already expressed by the enclosing hierarchy.
 
-    detection.forced_photometry.g.psf.flux
+    measurement.forced_photometry.g.psf.flux
 
 means forced photometry on the science/detection side, while:
 
-    detection.reference.forced_photometry.g.psf.flux
+    measurement.reference.forced_photometry.g.psf.flux
 
 means forced photometry on the reference/template image.
 
@@ -304,7 +329,7 @@ First-level semantic records may be qualified as:
 Examples:
 
     portfolio.summary@lsst.identity.object_id
-    portfolio.detection@lsst:lasair.photometry.g.psf.flux
+    portfolio.measurement@lsst:lasair.photometry.g.psf.flux
     portfolio.lightcurve@ztf:fink.points.photometry.r.psf.mag
     portfolio.crossmatch@gaia:fink.identity.object_id
     portfolio.classification@fink.best.class
@@ -313,7 +338,7 @@ The producer is the producer of the addressed value, not necessarily the
 producer of the original alert packet. A single broker payload may therefore
 split into several semantic records:
 
-    detection@lsst:fink          LSST detection delivered through Fink
+    measurement@lsst:fink          LSST detection delivered through Fink
     classification@fink          Fink classification product
     crossmatch@gaia:fink         Gaia catalog match exposed by Fink
 
@@ -336,20 +361,20 @@ qualifier is inherited by nested fields of that record.
 
 Valid:
 
-    portfolio.detection@lsst:lasair.position.ra
+    portfolio.measurement@lsst:lasair.position.ra
     portfolio.lightcurve@alertissimo.points.photometry.r.psf.mag
     portfolio.crossmatch@gaia:fink.astrometric_solution.parallax
 
 Invalid as ordinary field qualification:
 
-    portfolio.detection.photometry.g@lsst.psf.flux
+    portfolio.measurement.photometry.g@lsst.psf.flux
     portfolio.lightcurve.points.photometry.r@ztf.psf.mag
 
 Edge participants are the exception. A connection may point to another
 semantic record by using the record type with its qualifier:
 
-    portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
-    portfolio.detection@lsst:fink --association-- portfolio.detection@lvk:gcn
+    portfolio.measurement@vidojevica --followup_of--> portfolio.measurement@lsst:fink
+    portfolio.measurement@lsst:fink --association-- portfolio.measurement@lvk:gcn
 
 This is a reference to an existing record in the same portfolio, not a nested
 copy of that record and not a second first-level record. Edge expressions are
@@ -373,7 +398,7 @@ in <provenance>, not in the main semantic path.
 <provenance> describes the immediately enclosing record or assertion. This
 rule is important because provenance can appear at several depths:
 
-    detection.provenance
+    measurement.provenance
         provenance of the detection record
 
     edge.provenance
@@ -407,13 +432,13 @@ them to producer or channel rather than adding parallel canonical branches.
 Dot paths describe contained data. Edges describe connections between
 semantic records. The edge plane is separate from the noun/data plane:
 
-    portfolio.detection@lsst:fink.photometry.g.psf.flux
+    portfolio.measurement@lsst:fink.photometry.g.psf.flux
         contained data field
 
-    portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
+    portfolio.measurement@vidojevica --followup_of--> portfolio.measurement@lsst:fink
         directed connection between records
 
-    portfolio.detection@lsst:fink --association-- portfolio.detection@lvk:gcn
+    portfolio.measurement@lsst:fink --association-- portfolio.measurement@lvk:gcn
         nondirectional connection between records
 
 Edge carrier symbols are meaningful. A symbol with an arrow is directional;
@@ -435,9 +460,9 @@ be exposed as dot-path children of either participating record.
 
 A record declares possible edge participation with $edges:
 
-    <detection>:
+    <measurement>:
       $edges:
-        --edge-- <detection>@{producer}:{channel}
+        --edge-- <measurement>@{producer}:{channel}
 
 If the named edge carrier is abstract, any concrete edge whose $is chain
 resolves to that carrier is allowed. Thus a detection can participate in
@@ -472,13 +497,13 @@ Examples:
 
     portfolio.summary@lsst.identity.object_id
     portfolio.summary@lsst.photometry.g.psf.mean
-    portfolio.detection@lsst:lasair.position.ra
-    portfolio.detection@lvk:gcn.localization.skymap
-    portfolio.detection@fermi_gbm:gcn.gamma_ray.duration_t90
-    portfolio.detection@swift_xrt:gcn.xray.flux
-    portfolio.detection@lsst:lasair.photometry.g.aperture.flux
-    portfolio.detection@lsst:lasair.reference.nearest_source.separation.total
-    portfolio.detection@lsst:lasair.reference.forced_photometry.g.psf.flux
+    portfolio.measurement@lsst:lasair.position.ra
+    portfolio.measurement@lvk:gcn.localization.skymap
+    portfolio.measurement@fermi_gbm:gcn.gamma_ray.duration_t90
+    portfolio.measurement@swift_xrt:gcn.xray.flux
+    portfolio.measurement@lsst:lasair.photometry.g.aperture.flux
+    portfolio.measurement@lsst:lasair.reference.nearest_source.separation.total
+    portfolio.measurement@lsst:lasair.reference.forced_photometry.g.psf.flux
     portfolio.lightcurve@ztf:fink.points.photometry.r.psf.mag
     portfolio.spectrum@gemini:archive.feature.si_ii_6355.velocity
     portfolio.data_product@gemini:archive.uri
@@ -490,7 +515,7 @@ Examples:
 
 Connection-plane example:
 
-    portfolio.detection@vidojevica --followup_of--> portfolio.detection@lsst:fink
+    portfolio.measurement@vidojevica --followup_of--> portfolio.measurement@lsst:fink
 ```
 
 ### 19. Parser requirements

@@ -55,7 +55,7 @@ def test_native_python_client_parameters_serialize_as_stable_text():
 
 def test_record_edge_serialization_keeps_existing_endpoint_keys():
     first = SemanticRecord(InternalRecordId("record:1"), "summary@ztf:lasair", {})
-    second = SemanticRecord(InternalRecordId("record:2"), "detection@ztf:lasair", {})
+    second = SemanticRecord(InternalRecordId("record:2"), "measurement@ztf:lasair", {})
     edge = SemanticEdge(
         InternalEdgeId("edge:record"),
         "--association--",

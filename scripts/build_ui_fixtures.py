@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import re
 import sys
@@ -33,6 +34,7 @@ FIXTURES = ROOT / "tests" / "fixtures"
 PROVIDERS = ROOT / "alertissimo" / "data_layer" / "providers"
 ONTOLOGY = ROOT / "alertissimo" / "data_layer" / "semantic_model" / "ontology.yaml"
 DEFAULT_OUTPUT = ROOT / ".ui-fixtures" / "portfolios"
+CORPUS_STAMP = ".corpus.sha256"
 
 # filename: broker, survey, [(endpoint, frozen payload)]
 SPECS = {
@@ -129,10 +131,10 @@ def _build_real(name: str, broker: str, survey: str, inputs: list[tuple[str, Pat
 
 
 def portfolio_families() -> tuple[str, ...]:
-    """Mechanically read the first-level record references in ``<portfolio>``."""
-    source = ONTOLOGY.read_text(encoding="utf-8")
-    block = source.split("<portfolio>:", 1)[1]
-    return tuple(re.findall(r"^  \$refs: <([^>]+)>", block, re.MULTILINE))
+    """Read concrete Portfolio records, including abstract-family descendants."""
+    from alertissimo.data_layer.semantic_model import SemanticPathModel
+
+    return tuple(sorted(SemanticPathModel.from_ontology(ONTOLOGY).concrete_record_types))
 
 
 def _gallery(real: list[Portfolio]) -> Portfolio:
@@ -201,6 +203,23 @@ def _single(name: str, record: SemanticRecord, source: Portfolio) -> Portfolio:
     return Portfolio(_portfolio_id(name), records=(record,), executions=executions)
 
 
+def corpus_fingerprint() -> str:
+    """Identify the generator, normalization resources and frozen input bytes."""
+    data_layer = ROOT / "alertissimo" / "data_layer"
+    paths = {Path(__file__).resolve(), *data_layer.rglob("*.py"), *data_layer.rglob("*.yaml")}
+    for broker, _survey, inputs in SPECS.values():
+        for endpoint, path in inputs:
+            paths.add(path)
+            if broker == "antares" and endpoint.startswith("get_by_"):
+                paths.update(path.parent / name for name in ("alerts.json", "catalog_objects.json"))
+    digest = hashlib.sha256()
+    for path in sorted(paths):
+        digest.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def build_corpus(output: Path = DEFAULT_OUTPUT) -> dict[str, Portfolio]:
     output.mkdir(parents=True, exist_ok=True)
     corpus = {name: _build_real(name, *spec) for name, spec in SPECS.items()}
@@ -215,10 +234,12 @@ def build_corpus(output: Path = DEFAULT_OUTPUT) -> dict[str, Portfolio]:
     corpus["minimal_summary_real.json"] = _single("minimal_summary_real", next(
         r for r in source.records if r.semantic_type.startswith("summary@")), source)
     corpus["minimal_detection_real.json"] = _single("minimal_detection_real", next(
-        r for r in source.records if r.semantic_type.startswith("detection@")), source)
+        r for r in source.records if r.semantic_type.startswith("measurement@")), source)
     corpus["semantic_gallery_synthetic.json"] = _gallery(list(corpus.values()))
     for name, portfolio in corpus.items():
         (output / name).write_text(portfolio_to_json(portfolio) + "\n", encoding="utf-8")
+    # Publish freshness only after every generated Portfolio was written.
+    (output / CORPUS_STAMP).write_text(corpus_fingerprint() + "\n", encoding="utf-8")
     return corpus
 
 

@@ -148,6 +148,23 @@ def test_utc_iso_keeps_microseconds_and_utc_day_numbers_keep_subday_precision():
         assert (value - base) * 86400 == pytest.approx((NOW - midnight).total_seconds(), abs=0.0001, rel=0)
 
 
+@pytest.mark.parametrize("encoding", ["utc_iso", "mjd", "jd"])
+def test_declared_padding_expands_only_physical_bounds_and_preserves_resolved_intent(encoding):
+    resolved = {"start": NOW - timedelta(days=7), "end": NOW, "mode": "detection"}
+    before = dict(resolved)
+    options = {"encoding": encoding, "padding_seconds": 10800}
+    actual = apply_binding_adapter(ADAPTER, {"time_context": resolved}, options={**options, "bound": "range"})
+    expected_context = {**resolved, "start": resolved["start"] - timedelta(hours=3),
+                        "end": resolved["end"] + timedelta(hours=3)}
+    expected = apply_binding_adapter(ADAPTER, {"time_context": expected_context},
+                                     options={"encoding": encoding, "bound": "range"})
+    assert actual == expected
+    for index, bound in enumerate(("start", "end")):
+        assert apply_binding_adapter(ADAPTER, {"time_context": resolved},
+                                     options={**options, "bound": bound}) == actual[index]
+    assert resolved == before
+
+
 def test_one_occurrence_uses_one_clock_for_both_bounds_and_all_sources(tmp_path, monkeypatch):
     root = contract(tmp_path, origins=("lsst", "ztf"))
     samples = []

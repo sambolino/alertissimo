@@ -102,7 +102,7 @@ def test_current_blazar_cdf_quantile_contract_maps_value_and_omits_sentinel():
 
 def test_candid_history_reference_times_calibration_and_fixed_color():
     portfolio = _build("objects")
-    detection = _records(portfolio, "detection@ztf:fink")[0]
+    detection = _records(portfolio, "measurement@ztf:fink")[0]
     summary = _records(portfolio, "summary@ztf:fink")[0]
     assert detection.fields["identity.source_id"] == 1642249732315015013
     assert "identity.alert_id" not in detection.fields
@@ -123,7 +123,8 @@ def test_candid_history_reference_times_calibration_and_fixed_color():
 
 
 def test_distnr_pixels_are_not_emitted_as_angular_reference_separation():
-    detection = _records(_build("objects"), "detection@ztf:fink")[0]
+    detection = _records(_build("objects"), "measurement@ztf:fink")[0]
+    assert detection.fields["reference_image.nearest_source.pixel_distance"] == 2.359998
     assert "reference_image.nearest_source.separation.total" not in detection.fields
 
 
@@ -144,7 +145,7 @@ def test_gaia_and_panstarrs_rank_one_crossmatches_are_exact():
 
 def test_solar_system_identity_feature_vectors_and_sentinels():
     portfolio = _build("sso")
-    detection = _records(portfolio, "detection@ztf:fink")[0]
+    detection = _records(portfolio, "measurement@ztf:fink")[0]
     lightcurve = _records(portfolio, "lightcurve@fink")[0]
     assert detection.fields["solar_system.roid"] == 3
     assert detection.fields["solar_system.iau_name"] == "Benoitcarry"
@@ -154,7 +155,7 @@ def test_solar_system_identity_feature_vectors_and_sentinels():
     assert any("g.value" in point for point in feature_points)
     assert any("r.value" in point for point in feature_points)
     synthetic = _build("objects", [{"i:objectId": "ZTF-synthetic", "i:ssdistnr": -999.0, "i:ssmagnr": -999.0, "i:candid": -1}])
-    assert not _records(synthetic, "detection@ztf:fink")
+    assert not _records(synthetic, "measurement@ztf:fink")
 
 
 def test_anomaly_splits_gaia_dr1_and_dr3_and_rejects_default_astrometry():
@@ -209,7 +210,7 @@ def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
     assert len(payload) == 33
     assert tags == {"valid": 14, "upperlim": 19}
     portfolio = _build("objects_withupperlim")
-    detections = _records(portfolio, "detection@ztf:fink")
+    detections = _records(portfolio, "measurement@ztf:fink")
     assert len(detections) == 33
     for raw, record in zip(payload, detections, strict=True):
         band = {1: "g", 2: "r", 3: "i", "1": "g", "2": "r", "3": "i"}[raw["i:fid"]]
@@ -221,7 +222,7 @@ def test_upper_limit_fixture_preserves_limit_semantics_without_measurements():
         else:
             # Policy A: an upstream-valid measured detection explicitly is not an upper limit.
             assert record.fields[f"photometry.{band}.upper_limit"] is False
-    bad = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "i:fid": "1", "d:tag": "badquality"}]), "detection@ztf:fink")
+    bad = _records(_build("objects", [{"i:objectId": "ZTF-synthetic", "i:fid": "1", "d:tag": "badquality"}]), "measurement@ztf:fink")
     assert not bad  # badquality is neither a valid detection nor an upper limit
 
 
@@ -321,7 +322,7 @@ def test_authoritative_multi_object_cardinalities_and_provenance():
     latest = _build_all("latests")
     raw_counts = Counter(row["i:objectId"] for row in _payload("latests"))
     assert len(latest) == 7
-    actual = {next(r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"): len(_records(p, "detection@ztf:fink")) for p in latest}
+    actual = {next(r.fields["identity.object_id"] for r in p.records if r.semantic_type == "summary@ztf:fink"): len(_records(p, "measurement@ztf:fink")) for p in latest}
     assert actual == raw_counts
     assert all(
         p.executions[0].internal_execution_id == InternalExecutionId("execution:fixture:latests")
@@ -335,7 +336,7 @@ def test_authoritative_sso_is_one_solar_system_object():
     rows = _payload("sso")
     assert len(rows) == 327 and {row["sso_number"] for row in rows} == {8467}
     (portfolio,) = _build_all("sso")
-    assert len(_records(portfolio, "detection@ztf:fink")) == 327
+    assert len(_records(portfolio, "measurement@ztf:fink")) == 327
     assert portfolio.executions[0].internal_execution_id == InternalExecutionId("execution:fixture:sso")
 
 

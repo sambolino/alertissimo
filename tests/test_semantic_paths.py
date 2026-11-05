@@ -9,10 +9,10 @@ def test_projection_reference_flattens_ordinary_container_contents():
     model = SemanticPathModel.from_ontology()
 
     assert model.is_valid(
-        "detection@lsst:test.forced_photometry.g.psf.flux"
+        "measurement@lsst:test.forced_photometry.g.psf.flux"
     )
     assert not model.is_valid(
-        "detection@lsst:test.forced_photometry.photometry.g.psf.flux"
+        "measurement@lsst:test.forced_photometry.photometry.g.psf.flux"
     )
 
 
@@ -58,20 +58,20 @@ def test_invalid_record_qualifiers(semantic_path):
 @pytest.mark.parametrize(
     "semantic_path",
     [
-        "detection@lsst:test.photometry.g.mag",
-        "detection@lsst:test.photometry.g.mag.error",
+        "measurement@lsst:test.photometry.g.mag",
+        "measurement@lsst:test.photometry.g.mag.error",
         "summary@antares.photometry.i.mag.mean",
         "summary@antares.photometry.i.mag.half_amplitude",
         "summary@antares.photometry.i.flux.chi2",
-        "detection@lsst:test.photometry.g.psf.flux",
-        "detection@lsst:test.photometry.g.psf.flux.error",
+        "measurement@lsst:test.photometry.g.psf.flux",
+        "measurement@lsst:test.photometry.g.psf.flux.error",
         "summary@lsst:test.photometry.g.psf.flux.mean",
         "summary@lsst:test.photometry.g.psf.flux.mean_error",
         "summary@lsst:test.photometry.g.psf.flux.error_mean",
-        "detection@lsst:test.photometry.g.psf.mag",
-        "detection@lsst:test.photometry.g.psf.mag.error",
-        "detection@lsst:test.photometry.g.aperture.mag",
-        "detection@lsst:test.photometry.g.aperture.mag.error",
+        "measurement@lsst:test.photometry.g.psf.mag",
+        "measurement@lsst:test.photometry.g.psf.mag.error",
+        "measurement@lsst:test.photometry.g.aperture.mag",
+        "measurement@lsst:test.photometry.g.aperture.mag.error",
     ],
 )
 def test_photometric_quantities_and_their_children_are_materializable(semantic_path):
@@ -96,7 +96,7 @@ def test_photometric_quantities_and_their_children_are_materializable(semantic_p
 def test_corrected_magnitude_paths_are_materializable(relative_path):
     model = SemanticPathModel.from_ontology()
 
-    assert model.is_valid(f"detection@ztf:alerce.{relative_path}")
+    assert model.is_valid(f"measurement@ztf:alerce.{relative_path}")
 
 
 @pytest.mark.parametrize(
@@ -112,14 +112,14 @@ def test_corrected_magnitude_paths_are_materializable(relative_path):
 def test_provider_shaped_forced_magnitude_paths_are_invalid(relative_path):
     model = SemanticPathModel.from_ontology()
 
-    assert not model.is_valid(f"detection@ztf:alerce.{relative_path}")
+    assert not model.is_valid(f"measurement@ztf:alerce.{relative_path}")
 
 
 def test_generic_photometric_flux_is_materializable_and_unit_neutral():
     model = SemanticPathModel.from_ontology()
 
-    assert model.is_valid("detection@lsst:test.photometry.g.flux")
-    assert model.is_valid("detection@lsst:test.photometry.g.flux.error")
+    assert model.is_valid("measurement@lsst:test.photometry.g.flux")
+    assert model.is_valid("measurement@lsst:test.photometry.g.flux.error")
 
     ontology_path = (
         Path(__file__).parents[1]
@@ -158,5 +158,5 @@ def test_generic_photometric_flux_is_materializable_and_unit_neutral():
 def test_obsolete_photometry_paths_are_invalid(relative_path):
     model = SemanticPathModel.from_ontology()
 
-    assert not model.is_valid(f"detection@lsst:test.{relative_path}")
+    assert not model.is_valid(f"measurement@lsst:test.{relative_path}")
     assert not model.is_valid(f"summary@antares.{relative_path}")

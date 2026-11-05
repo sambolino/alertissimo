@@ -84,7 +84,8 @@ def time_binding_bounds(declaration: Mapping[str, Any], *, mode: str | None = No
     if adapter != "alertissimo.data_layer.transforms.temporal:time_bound":
         raise RequestTransformError("time_context requires its declared time encoder")
     declared_mode = options.get("mode", "detection")
-    validate_time_encoding(options.get("bound"), options.get("encoding"), declared_mode)
+    validate_time_encoding(options.get("bound"), options.get("encoding"), declared_mode,
+                           padding_seconds=options.get("padding_seconds", 0))
     if mode is not None and mode != declared_mode:
         raise RequestTransformError("time encoder mode conflicts with selection mode")
     bound = options["bound"]

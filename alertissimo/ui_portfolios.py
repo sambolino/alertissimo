@@ -30,10 +30,13 @@ DEFAULT_PORTFOLIO = "multibroker_lsst_170587117485817955.json"
 
 
 def ensure_ui_portfolios() -> Path:
-    """Build ignored UI output from frozen broker evidence when it is absent."""
-    if not all((UI_PORTFOLIOS / name).is_file() for name in SEARCH_PORTFOLIOS):
-        from scripts.build_ui_fixtures import build_corpus
+    """Refresh generated UI output when its frozen inputs or normalizer change."""
+    from scripts.build_ui_fixtures import CORPUS_STAMP, build_corpus, corpus_fingerprint
 
+    stamp = UI_PORTFOLIOS / CORPUS_STAMP
+    current = corpus_fingerprint()
+    if (not all((UI_PORTFOLIOS / name).is_file() for name in SEARCH_PORTFOLIOS)
+            or not stamp.is_file() or stamp.read_text(encoding="utf-8").strip() != current):
         build_corpus(UI_PORTFOLIOS)
     return UI_PORTFOLIOS
 
@@ -172,13 +175,98 @@ def _magnitude(fields: dict[str, Any]) -> tuple[str, float, float] | None:
     return None
 
 
-def _classification(fields: dict[str, Any]) -> tuple[Any, Any]:
-    label = fields.get("best.class")
-    probability = fields.get("best.probability", fields.get("best.score"))
-    if label is None:
-        label = next((value for key, value in fields.items() if key.endswith(".class")), None)
-    if probability is None:
-        probability = next((value for key, value in fields.items() if key.endswith((".probability", ".score"))), None)
+def classification_rows(portfolio: dict[str, Any]) -> list[dict[str, Any]]:
+    """Project every named classification output with its own source and fields.
+
+    These are transient presentation rows, not selected/merged scientific
+    assertions. Probability and score remain different quantities, and neither
+    payload order, version strings nor retrieval dates choose a winner.
+    """
+    records = [r for r in portfolio.get("records", []) if isinstance(r, dict)]
+    executions = {e.get("internal_execution_id"): e for e in portfolio.get("executions", [])
+                  if isinstance(e, dict)}
+
+    def source_key(record):
+        source = record.get("internal_source")
+        if not isinstance(source, dict) or source.get("internal_execution_id") is None:
+            return None
+        # Incomplete legacy provenance cannot establish a shared physical row.
+        if source.get("payload_key") is None or source.get("payload_path") is None:
+            return None
+        return tuple(source.get(k) for k in (
+            "internal_execution_id", "payload_key", "payload_path", "payload_index",
+        ))
+
+    observations: dict[tuple, list[dict[str, Any]]] = {}
+    for record in records:
+        key = source_key(record)
+        if _family(record) == "measurement" and key is not None:
+            observations.setdefault(key, []).append(_fields(record))
+
+    def associated(records, path):
+        values = list(dict.fromkeys(str(r[path]) for r in records if r.get(path) is not None))
+        return " · ".join(values) or None
+
+    rows = []
+    for record in records:
+        if _family(record) != "classification":
+            continue
+        fields = _fields(record)
+        source = record.get("internal_source")
+        source = source if isinstance(source, dict) else {}
+        execution = executions.get(source.get("internal_execution_id"), {})
+        qualifier = str(record.get("semantic_type", "")).partition("@")[2]
+        producer, _, channel = qualifier.partition(":")
+        linked = observations.get(source_key(record), [])
+        outputs = list(dict.fromkeys(
+            "best" if key.startswith("best.") else ".".join(key.split(".")[:2])
+            for key in fields if key.startswith(("best.", "assessment."))
+        ))
+        # A provenance-only classification is still material worth inspecting.
+        for output in outputs or [""]:
+            attributes = {key[len(output) + 1:]: value for key, value in fields.items()
+                          if output and key.startswith(output + ".")}
+            rows.append({
+                "broker": execution.get("broker") or channel or None,
+                "origin": execution.get("origin"),
+                "producer": producer or None,
+                "model": fields.get("provenance.producer.name") or producer or None,
+                "version": fields.get("provenance.producer.version"),
+                "output": output or None,
+                "class": attributes.get("class"),
+                "probability": attributes.get("probability"),
+                "score": attributes.get("score"),
+                "rank": attributes.get("rank"),
+                "method": attributes.get("method", fields.get("provenance.producer.method")),
+                "target": attributes.get("target"),
+                "value": attributes.get("value", fields.get(output)),
+                "description": attributes.get("description"),
+                "other_values": {key: value for key, value in attributes.items() if key not in {
+                    "class", "probability", "score", "rank", "method", "target", "value", "description",
+                }},
+                "observation_mjd": associated(linked, "time.mjd"),
+                "source_id": associated(linked, "identity.source_id"),
+                "assertion_mjd": fields.get("provenance.time.mjd"),
+                "produced_mjd": fields.get("provenance.time.processed_mjd"),
+                "assertion_datetime": fields.get("provenance.time.datetime"),
+                "retrieved_at": execution.get("finished_at"),
+                "endpoint": execution.get("endpoint"),
+                "record_id": record.get("internal_record_id"),
+                "semantic_type": record.get("semantic_type"),
+                "execution_id": source.get("internal_execution_id"),
+            })
+    return rows
+
+
+def classification_card_summary(data: dict[str, Any]) -> tuple[str, float | None]:
+    """Summarize reported labels without selecting an authoritative assertion."""
+    rows = data.get("classifications", [])
+    labels = list(dict.fromkeys(str(r["class"]) for r in rows if r.get("class") is not None))
+    label = labels[0] if len(labels) == 1 else f"{len(labels)} labels" if labels else "—"
+    probability = rows[0].get("probability") if len(rows) == 1 and labels else None
+    if (isinstance(probability, bool) or not isinstance(probability, (int, float))
+            or not math.isfinite(probability) or not 0 <= probability <= 1):
+        probability = None
     return label, probability
 
 
@@ -194,7 +282,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
     execution_index = {item.get("internal_execution_id"): item for item in executions}
     summary_identity = _summary_identity(records)
     summary = _first(records, "summary")
-    detections = [record for record in records if _family(record) == "detection"]
+    detections = [record for record in records if _family(record) == "measurement"]
     points = []
     for record in detections:
         fields = _fields(record)
@@ -228,15 +316,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
         "ra": summary.get("position.ra") or next((_fields(record).get("position.ra") for record in detections if _fields(record).get("position.ra") is not None), None),
         "dec": summary.get("position.dec") or next((_fields(record).get("position.dec") for record in detections if _fields(record).get("position.dec") is not None), None),
     }
-    classifications = []
-    for record in records:
-        if _family(record) != "classification":
-            continue
-        fields = _fields(record)
-        label, probability = _classification(fields)
-        semantic_type = str(record.get("semantic_type", ""))
-        source, _, broker = semantic_type.partition("@")
-        classifications.append({"broker": broker or source, "model": fields.get("provenance.producer.name", source), "class": label, "probability": probability})
+    classifications = classification_rows(portfolio)
     execution_rows = []
     for execution in portfolio.get("executions", []):
         if not isinstance(execution, dict):

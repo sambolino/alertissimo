@@ -6,7 +6,11 @@ from alertissimo.data_layer.runtime.capability_graph import build_capability_gra
 from alertissimo.dsl import compile_surface_to_ir, parse_surface_script
 from alertissimo.dsl.lowering import SurfaceLoweringError
 from alertissimo.orchestration.planner import plan_workflow
-from alertissimo.orchestration.runtime import CandidateInputRef, MaterialInputRef
+from alertissimo.orchestration.runtime import (
+    CandidateInputRef,
+    MaterialInputRef,
+    PlanCandidateInputRef,
+)
 from scripts.live_dsl_material_lineage import (
     SCENARIOS,
     assert_plan_contract,
@@ -49,10 +53,22 @@ def test_live_matrix_latest_requires_a_verified_discovery_contract(scenario):
     lines.insert(2, "latest 1")
     surface = parse_surface_script("\n".join(lines) + "\n")
     graph = build_capability_graph()
-    if scenario.discovery_broker == "alerce":
+    if scenario.discovery_broker in {"alerce", "lasair"}:
         workflow = compile_surface_to_ir(surface, graph=graph)
         assert workflow.steps[0].selection.latest == 1
-        assert_plan_contract(scenario, workflow, plan_workflow(workflow, graph))
+        run = plan_workflow(workflow, graph)
+        assert_plan_contract(scenario, workflow, run)
+        if scenario.discovery_broker == "lasair":
+            discovery, summary = run.steps[0].endpoint_plans
+            assert discovery.required and summary.required
+            assert discovery.request_params["requestType"] == "all"
+            proof = discovery.latest_selection
+            assert proof is not None
+            assert proof.evidence_plan_index == 1
+            assert proof.discovery_identity == "object"
+            assert proof.evidence_identity == "objectId"
+            assert proof.recency_field == "jdmax"
+            assert summary.candidate_input_from_plan == PlanCandidateInputRef(plan_index=0)
     else:
         with pytest.raises(SurfaceLoweringError, match="latest requires") as raised:
             compile_surface_to_ir(surface, graph=graph)
