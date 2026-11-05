@@ -2,8 +2,11 @@
 
 Current verification: the [5 November closeout checkpoint](discovery_integration_closeout.md)
 records 2,613 passing local tests, all eight mapping validations and installed-wheel
-verification on `3b4288e`. The native Sherlock live attempt remains UNAVAILABLE
-(HTTP 504); final cleanup-head CI and main review remain pending.
+verification on `3b4288e`. Cleanup-head CI subsequently passed. The Sherlock
+recheck returned HTTP 200 pages, including one known-object join and an empty
+window; it identified a likely query-cost issue. The subsequent indexed-window
+prefilter needs updated-head CI and fresh live acceptance. No nonempty native
+Sherlock end-to-end PASS or main merge is claimed; see the checkpoint's follow-up.
 
 This guide consolidates the current integration contracts. It accompanies step
 09a, `feat/integration-09a-recorded-acceptance`, based on `6daa6b4` / PR #326 on

@@ -116,3 +116,50 @@ This cleanup changes workflow controls and documentation only. Runtime code,
 provider declarations, scientific predicates and test bodies remain at the
 tested implementation revision. Final remote workflow success has not been
 claimed during preparation.
+
+## Sherlock follow-up after the cleanup checkpoint
+
+The operator subsequently reported successful cleanup-head CI, then supplied
+four diagnostic pages from `/tmp/alertissimo-sherlock-recheck-k00pszrj`:
+
+| Probe | HTTP | Rows on page | Seconds |
+| --- | --- | --- | --- |
+| Known-object identity join | 200 | 1 | 1.507 |
+| Native JD window alone | 200 | 0 | 0.540 |
+| Generated query with wider raw-JD guard | 200 | 0 | 0.894 |
+| Original generated query | 200 | 0 | 18.251 |
+
+These operator-local pages show a working join and substantially different
+elapsed times for the empty-window probes. Query cost is a credible explanation
+for the earlier 504, but the probes do not prove its cause, completeness,
+nonempty acceptance or downstream retrieval success.
+
+The subsequent runtime patch adds bare-column JD range predicates to the SQL
+window transform when the declared subtraction is JD-to-MJD (`2400000.5`).
+Both bounds are padded outward by one second, with outward floating-point
+rounding. The original canonical subtraction conditions remain mandatory, so
+the padding does not widen the scientific interval. Padding encoded numbers
+also avoids overflowing datetime's minimum/maximum values. Detection mode keeps
+its last/first overlap bounds; first/last modes keep their respective columns.
+Ordering, pagination, class conditions, normalized rechecking and global latest
+selection retain their existing contracts.
+
+The audited official objects schema cited in the
+[native-join handoff](classification_lasair_ztf_native_join.md) declares indexes
+on `jdmin` and `jdmax`. Bare-column range comparisons make an index range access
+possible; they do not force a deployed MySQL execution plan. Independent SQLite
+regressions check exact membership near both bounds (including extreme dates),
+all three modes and a date-indexed Sherlock join with unchanged ordered results.
+SQLite query-plan evidence is not a deployed MySQL benchmark.
+
+Preparation verification for this follow-up: 412 focused tests passed (235
+SQL-window/Lasair/native-scenario cases and 177 shared transform, recipe,
+temporal, cone and continuation cases), including 11 new regressions. The
+Sherlock scenario also passed offline validation/planning with a 24-hour window;
+no provider calls were made. Whitespace checks passed.
+
+The earlier full-suite and cleanup CI results cover their original revisions,
+not this runtime follow-up. Require focused regressions, CI on the updated
+integration head and a fresh native live acceptance attempt before completing
+the main-target review. Keep #329 draft meanwhile. A complete empty live result
+remains SKIP; obtain a nonempty result before claiming end-to-end PASS.
