@@ -127,3 +127,21 @@ Preparation checks on this slice:
   resources and the public static/cone/enrichment planning probes.
 - Whitespace checks passed. The handoff's nine-module local command collects
   302 cases; its Lasair module must collect 126 to confirm the bundle was imported.
+
+## Native deployment acceptance
+
+The existing discovery runner now includes `lasair-ztf-sherlock`. It uses
+`last within` (one hour by default), native Sherlock `AGN` equality, global
+`latest`, and full lightcurves for survivors. The cone scenarios' `--time-mode`
+option does not change this scenario's last-detection contract.
+
+PASS requires a nonempty result, the discovery query's actual joined tables
+and class selector, its own normalized Sherlock AGN evidence, the requested
+candidate limit, and returned lightcurve material. Empty complete populations
+remain SKIP; use `--require-all-pass` when collecting acceptance evidence.
+Provider errors, policy exhaustion and outages retain the existing status rules.
+
+The new offline replay uses synthetic summary/context/history rows and checks
+outside-window history retention. Run the new scenario explicitly with
+`--validate-only` first, then live using the existing `LASAIR_ZTF_TOKEN`.
+No deployed PASS is claimed by preparing this addition.

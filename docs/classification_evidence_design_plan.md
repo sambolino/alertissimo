@@ -349,6 +349,15 @@ entry records 2,481 workflow cases covered across the regression run and the
 updated architecture-expectation recheck, plus the passing installed-wheel check.
 It does not claim C7b merged, remote CI passed, or a new live deployment capture.
 
+
+C7b is merged as `57a2966` (#346). The registry fixture-dependency repair is
+merged as `2189f02` (#347), after its successful branch CI checkpoint.
+The next scoped C7 handoff adds `lasair-ztf-sherlock` to the existing live
+acceptance runner: native AGN join, last-detection window, latest, source
+assertions and full survivor histories. Its offline replay is synthetic and
+does not constitute live acceptance. It changes no provider/runtime contract.
+Final integration acceptance and the remaining explicit deferrals still apply.
+
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.
 - Native and local realizations use the same frozen candidate/evidence population

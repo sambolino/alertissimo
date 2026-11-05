@@ -44,9 +44,10 @@ SCENARIOS = {
     "lasair-ztf-time": "Small cone, required summaries/history, temporal membership and latest",
     "antares-ztf-time": "Scoped RA/Dec box, complete histories, temporal membership and latest",
     "fink-cutouts": "One object, fixed JSON cutout mode, all three named stamp arrays",
+    "lasair-ztf-sherlock": "Native Sherlock AGN join; last-detection window, latest, full histories",
 }
 TIME_SCENARIOS = {"alerce-ztf-time", "lasair-ztf-time", "antares-ztf-time"}
-WINDOW_SCENARIOS = TIME_SCENARIOS | {"fink-class-time", "discovery-filter-retrieve"}
+WINDOW_SCENARIOS = TIME_SCENARIOS | {"fink-class-time", "discovery-filter-retrieve", "lasair-ztf-sherlock"}
 OBJECT_ID = "ZTF21abfmbix"
 SECOND_ID = "ZTF20acpwljl"
 CREDENTIAL_NAMES = ("LASAIR_ZTF_TOKEN", "LASAIR_LSST_TOKEN")
@@ -90,7 +91,7 @@ def _parser():
     parser.add_argument("--window-hours", type=int, default=1, help="short-window scenarios only; default 1")
     parser.add_argument("--time-mode", choices=("detection", "first", "last"), default="detection",
                         help="applies only to the three *-ztf-time scenarios")
-    parser.add_argument("--latest", type=int, default=3, help="candidate count for *-ztf-time; no early row limit")
+    parser.add_argument("--latest", type=int, default=3, help="candidate count for time/Sherlock scenarios; no early row limit")
     parser.add_argument("--ra", type=float, default=124.87996115142856)
     parser.add_argument("--dec", type=float, default=-6.0205001)
     parser.add_argument("--radius-arcsec", type=float, default=5.0,
@@ -115,13 +116,21 @@ def _check_args(parser, args):
         parser.error("the acceptance field must fit inside RA [0,360) and Dec [-90,90] without wrapping")
 
 
+def _time_mode(name, args):
+    # Current native Sherlock acceptance uses summary time, avoiding a history
+    # scan of the whole discovered population before selecting survivors.
+    if name == "lasair-ztf-sherlock":
+        return "last"
+    return args.time_mode if name in TIME_SCENARIOS else "detection"
+
+
 def _bounds(name, args, reference):
     if name not in WINDOW_SCENARIOS:
         return None
     duration = timedelta(days=7) if name == "fink-class-time" else timedelta(hours=args.window_hours)
     start = args.start if args.start is not None else reference - duration
     stop = args.stop if args.stop is not None else reference
-    mode = args.time_mode if name in TIME_SCENARIOS else "detection"
+    mode = _time_mode(name, args)
     return {"start": start.isoformat(), "stop": stop.isoformat(), "mode": mode,
             "fixed_override": args.start is not None}
 
@@ -135,13 +144,17 @@ def programs(name, args):
         return (f"objects {OBJECT_ID}, {SECOND_ID} from ztf via fink\nwith lightcurve via fink\n",)
     if name == "fink-cutouts":
         return (f"objects {OBJECT_ID} from ztf via fink\nwith data_product via fink\n",)
-    mode = args.time_mode if name in TIME_SCENARIOS else "detection"
+    mode = _time_mode(name, args)
     prefix = "" if mode == "detection" else f"{mode} "
     if args.start is not None:
         window = f'{prefix}within ["{args.start.isoformat()}", "{args.stop.isoformat()}"]\n'
     else:
         duration = "7d" if name == "fink-class-time" else f"{args.window_hours}h"
         window = f"{prefix}within {duration}\n"
+    if name == "lasair-ztf-sherlock":
+        return ("objects from ztf via lasair\n" + window
+                + 'where classification@sherlock:lasair.best.class = "AGN"\n'
+                + f"latest {args.latest}\nwith lightcurve via lasair\n",)
     if name in {"fink-class-time", "discovery-filter-retrieve"}:
         filter_clause = "filter measurement@ztf:fink.quality.real_bogus >= 0.9\n" if name == "discovery-filter-retrieve" else ""
         return ("objects from ztf via fink\n" + window
@@ -300,11 +313,26 @@ def _assert_result(name, result, args, program_index):
         discovered = _identities(result.result.steps[0].portfolios)
         if not final <= discovered:
             raise RuntimeError("retrieval resurrected an undiscovered or rejected candidate")
+        if name == "lasair-ztf-sherlock":
+            queries = [item for item in _execution_evidence(result)
+                       if item["step_index"] == 0 and item["broker"] == "lasair"
+                       and item["origin"] == "ztf" and item["endpoint"] == "query"]
+            if not queries or any(
+                item["params"].get("tables") != "objects,sherlock_classifications"
+                or 'sherlock_classifications.classification = "AGN"'
+                not in item["params"].get("conditions", "")
+                for item in queries
+            ):
+                raise RuntimeError("native Sherlock discovery join/selector was not exercised")
+            for portfolio in result.result.steps[0].portfolios:
+                if not any(record.get("best.class") == "AGN"
+                           for record in portfolio.records_of_type("classification@sherlock:lasair")):
+                    raise RuntimeError("native Sherlock discovery lacks its own AGN assertion")
         if name == "discovery-filter-retrieve":
             filter_index, = [i for i, step in enumerate(result.workflow.steps) if step.op == "filter"]
             if final != _identities(result.result.steps[filter_index].portfolios):
                 raise RuntimeError("final retrieval differs from Filter survivors")
-        if name in TIME_SCENARIOS and len(final) > args.latest:
+        if (name in TIME_SCENARIOS or name == "lasair-ztf-sherlock") and len(final) > args.latest:
             raise RuntimeError("latest returned more candidates than requested")
         if not any(r.semantic_type.startswith("lightcurve@") for p in result.portfolios for r in p.records):
             raise Unexercised("no returned lightcurve material; retrieval acceptance unexercised")
