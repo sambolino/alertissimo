@@ -5,6 +5,13 @@ Alertissimo is a provider-neutral orchestration backend for astronomical transie
 
 The **0.1.0** release is a dissertation research prototype. Its public interfaces may change during further development. The packaged provider registry currently covers ALeRCE, ANTARES, Fink, and Lasair. The public user-facing language in this release is the Alertissimo DSL; natural-language and visual-block front ends can target the same canonical workflow layer later without changing provider execution semantics.
 
+For current ownership and contributor procedures, read [ARCHITECTURE.md](ARCHITECTURE.md)
+and [AGENTS.md](AGENTS.md). Deployment is currently deploy-yourself. The retired
+executable-model/broker prototype is replaced by the public facade; retained old
+data-layer import paths are aliases, not another execution engine. The
+[next functional work](docs/next_functional_work.md) records coarse classification,
+universal `best` and collection-level DSL requirements; these are not yet implemented.
+
 ## Install
 
 From a source checkout:
