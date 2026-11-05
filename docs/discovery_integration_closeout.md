@@ -158,8 +158,43 @@ temporal, cone and continuation cases), including 11 new regressions. The
 Sherlock scenario also passed offline validation/planning with a 24-hour window;
 no provider calls were made. Whitespace checks passed.
 
+### Operator's nonempty native acceptance
+
+After applying runtime patch `5ce985d`, the operator reported the same four
+focused modules passing: **235 passed in 114.01 seconds**. The subsequent
+24-hour live attempt reached the unchanged `max_auto_pages=3` safety boundary
+at discovery step 0 (`/tmp/alertissimo-discovery-8i08cjct`). Three full pages do
+not establish that discovery is complete; this run remains FAIL, with no
+silently truncated population or claimed downstream success.
+
+A one-page diagnostic of the currently generated, guarded query then returned
+HTTP 200 with 1,000 rows in 4.121 seconds
+(`/tmp/alertissimo-sherlock-window-Ymi9dX`). That page only supplied a timestamp
+for choosing a smaller acceptance window. It is not completeness evidence.
+
+The operator subsequently ran the ordinary live acceptance scenario in that
+fixed window and reported:
+
+| Item | Reported evidence |
+| --- | --- |
+| Scenario | `lasair-ztf-sherlock` |
+| Start (UTC, inclusive) | `2026-11-05T09:09:17.001604+00:00` |
+| Stop (UTC, inclusive) | `2026-11-05T09:10:17.001604+00:00` |
+| Diagnostic anchor | `ZTF17aaabhnn`, latest reported detection `2026-11-05T09:09:47.001604+00:00` |
+| Full workflow evidence | `/tmp/alertissimo-discovery-baun7qsn` |
+| Outcome | **PASS=1, FAIL=0, UNAVAILABLE=0, SKIP=0**; nonempty workflow and scenario invariants passed |
+
+This establishes an operator-reported nonempty native Sherlock workflow PASS
+for this window, including the native join/AGN evidence, requested latest bound
+and returned lightcurve material checked by the runner. The window was chosen
+from a returned object's timestamp; this is neither a random-sampling benchmark
+nor a 24-hour acceptance claim. The exact run revision and execution metadata
+remain in the operator-local `run.json` and scenario evidence, which were not
+independently opened here. The earlier 504 and policy-limit attempt retain
+their original outcomes.
+
 The earlier full-suite and cleanup CI results cover their original revisions,
-not this runtime follow-up. Require focused regressions, CI on the updated
-integration head and a fresh native live acceptance attempt before completing
-the main-target review. Keep #329 draft meanwhile. A complete empty live result
-remains SKIP; obtain a nonempty result before claiming end-to-end PASS.
+not this runtime follow-up. Focused regressions and the fresh nonempty live
+attempt have now passed. Require CI on the updated integration head before
+completing main-target review; keep #329 draft meanwhile. A complete empty live
+result still remains SKIP.
