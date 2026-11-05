@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from scripts.build_ui_fixtures import SPECS, build_corpus, portfolio_families
+import scripts.build_ui_fixtures as fixture_builder
+import alertissimo.ui_portfolios as ui_portfolios
 
 EXPECTED = set(SPECS) | {
     "multibroker_lsst_170587117485817955.json",
@@ -139,3 +141,47 @@ def test_internal_identifier_and_provenance_integrity(generated):
         for edge in data["edges"]:
             assert edge["subject_record_id"] in record_ids
             assert edge["target_record_id"] in record_ids
+
+
+def test_old_generated_ui_files_are_rebuilt_and_current_files_are_reused(tmp_path, monkeypatch):
+    output = tmp_path / "old-ui"
+    output.mkdir()
+    # All formerly checked filenames exist, but their schema predates the
+    # measurement rename and current classification mappings.
+    for name in ui_portfolios.SEARCH_PORTFOLIOS:
+        (output / name).write_text(json.dumps({"records": [{"semantic_type": "detection@ztf:fink", "fields": {}}]}))
+    unrelated = output / "keep.txt"
+    unrelated.write_text("unrelated content")
+    monkeypatch.setattr(ui_portfolios, "UI_PORTFOLIOS", output)
+    fresh = ui_portfolios.load_ui_portfolio(ui_portfolios.DEFAULT_PORTFOLIO)
+    families = {r["semantic_type"].split("@", 1)[0] for r in fresh["records"]}
+    assert "measurement" in families and "detection" not in families
+    assert any(r["source_id"] is not None for r in ui_portfolios.classification_rows(fresh))
+    assert (output / fixture_builder.CORPUS_STAMP).read_text().strip() == fixture_builder.corpus_fingerprint()
+    assert unrelated.read_text() == "unrelated content"
+    monkeypatch.setattr(fixture_builder, "build_corpus", lambda *_: pytest.fail("Fresh corpus must be reused"))
+    assert ui_portfolios.load_ui_portfolio(ui_portfolios.DEFAULT_PORTFOLIO) == fresh
+
+
+@pytest.mark.parametrize("changed", ["generator", "normalizer", "mapping", "ontology", "capture", "alerts", "catalogue"])
+def test_freshness_changes_with_each_generation_input(tmp_path, monkeypatch, changed):
+    paths = {
+        "generator": tmp_path / "scripts/build_ui_fixtures.py",
+        "normalizer": tmp_path / "alertissimo/data_layer/runtime/record_builder.py",
+        "mapping": tmp_path / "alertissimo/data_layer/providers/antares/ztf/mappings.yaml",
+        "ontology": tmp_path / "alertissimo/data_layer/semantic_model/ontology.yaml",
+        "capture": tmp_path / "tests/fixtures/antares/ztf/locus.json",
+        "alerts": tmp_path / "tests/fixtures/antares/ztf/alerts.json",
+        "catalogue": tmp_path / "tests/fixtures/antares/ztf/catalog_objects.json",
+    }
+    for path in paths.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("original")
+    monkeypatch.setattr(fixture_builder, "ROOT", tmp_path)
+    monkeypatch.setattr(fixture_builder, "__file__", str(paths["generator"]))
+    monkeypatch.setattr(fixture_builder, "SPECS", {"one.json": (
+        "antares", "ztf", [("get_by_ztf_object_id", paths["capture"])],
+    )})
+    before = fixture_builder.corpus_fingerprint()
+    paths[changed].write_text("updated input")
+    assert fixture_builder.corpus_fingerprint() != before
