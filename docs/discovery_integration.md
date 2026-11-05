@@ -1,5 +1,10 @@
 # Discovery integration and reference-workflow acceptance
 
+Current verification: the [5 November closeout checkpoint](discovery_integration_closeout.md)
+records 2,613 passing local tests, all eight mapping validations and installed-wheel
+verification on `3b4288e`. The native Sherlock live attempt remains UNAVAILABLE
+(HTTP 504); final cleanup-head CI and main review remain pending.
+
 This guide consolidates the current integration contracts. It accompanies step
 09a, `feat/integration-09a-recorded-acceptance`, based on `6daa6b4` / PR #326 on
 `integration/discovery-completion`. The [09b live runner and verification guide](discovery_live_acceptance.md)

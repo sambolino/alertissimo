@@ -1,11 +1,14 @@
 # Classification evidence and declarative selection: design and PR plan
 
-Agreed direction: 30 October 2026. Status: design, not implemented behavior.
+Agreed direction: 30 October 2026. The original design and milestone history are
+retained below. Current scoped implementation, verification and remaining limits
+are reconciled in the [5 November closeout checkpoint](discovery_integration_closeout.md).
 
 This continues the [discovery integration plan](discovery_integration_plan.md)
 after its end-topic consultation. Preserve that plan and the original saved
-revision. The [integration audit](discovery_semantic_audit.md) identifies current
-inconsistencies and the conditions blocking the main merge.
+revision. The historical [integration audit](discovery_semantic_audit.md) identifies
+the counterexamples motivating these repairs; the closeout records their current
+disposition and remaining main-merge gates.
 
 ## Goal and implementation order
 
@@ -357,6 +360,14 @@ acceptance runner: native AGN join, last-detection window, latest, source
 assertions and full survivor histories. Its offline replay is synthetic and
 does not constitute live acceptance. It changes no provider/runtime contract.
 Final integration acceptance and the remaining explicit deferrals still apply.
+
+C7's native Sherlock acceptance runner is merged as `3b4288e` (#348). On that
+exact revision the user reports **2,613 passing tests**, all eight mapping
+validations and a passing installed-wheel check. The new native Sherlock live
+attempt remains **UNAVAILABLE** (discovery HTTP 504), not a deployed PASS.
+See the [closeout checkpoint](discovery_integration_closeout.md) for the audit
+reconciliation, operator-local evidence paths, remaining limits and final CI
+restoration. This does not claim final cleanup-head CI or a main merge.
 
 - A condition survives parsing, lowering, planning, execution and serialization;
   a real non-match is rejected in both fresh and continuation cases.

@@ -1,5 +1,12 @@
 # Discovery integration: semantic audit before main
 
+Historical checkpoint: the findings below describe 30 October. Their subsequent
+repairs, the complete passing local sweep on `3b4288e`, explicit remaining limits
+and pending final checks are reconciled in the
+[5 November closeout checkpoint](discovery_integration_closeout.md). Preserve the
+original evidence and then-current decisions below; they are not a claim about
+the current implementation.
+
 Date: 30 October 2026.
 
 Remote integration inspected: `6aa9b161c65fb1efb906d74f9a5ae7403a89e87e`

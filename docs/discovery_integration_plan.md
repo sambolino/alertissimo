@@ -1,5 +1,11 @@
 # Discovery and application integration
 
+Current checkpoint: implementation through #348 has a complete operator-reported
+offline sweep on `3b4288e`. The [5 November closeout record](discovery_integration_closeout.md)
+reconciles the later semantic audit and classification plan, preserves the live
+Sherlock 504 as UNAVAILABLE, and describes restoration of the normal CI triggers.
+The historical plan and milestone outcomes below remain intact.
+
 Prepared: 28 October 2026.
 
 Baseline: `sambolino/alertissimo` `main` at
