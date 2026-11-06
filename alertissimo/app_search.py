@@ -39,6 +39,7 @@ from alertissimo.orchestration.runtime import WorkflowExecutionError
 from alertissimo.ui_portfolios import (
     SEARCH_PORTFOLIOS,
     classification_card_summary,
+    latest_magnitude,
     load_antares_ztf_cone_portfolios,
     load_ui_portfolio,
     loaded_photometry_counts,
@@ -74,7 +75,7 @@ def _load_demo_search_data(corpus_revision: str) -> tuple[list[dict[str, Any]], 
             "object_id": object_id, "survey": portfolio["survey"],
             "ra_deg": portfolio["coordinates"]["ra"], "dec_deg": portfolio["coordinates"]["dec"],
             "first_detection": points[0]["date"], "last_detection": points[-1]["date"],
-            "detections": len(points), "latest_mag": points[-1]["magnitude"],
+            "detections": len(points), "latest_mag": latest_magnitude(portfolio),
             "classification": label,
             "probability": probability, "brokers": brokers,
             "status": "Frozen broker evidence",
@@ -261,7 +262,7 @@ def render_live_portfolio_cards(
             st.divider()
         summary, action = st.columns((5, 1), vertical_alignment="center")
         lightcurve = display.get("lightCurve", [])
-        latest = lightcurve[-1].get("magnitude") if lightcurve else None
+        latest = latest_magnitude(display)
         label, probability = classification_card_summary(display)
         brokers = [
             str(item.get("broker"))

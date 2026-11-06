@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import json
 import math
-import re
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from alertissimo.data_layer.presentation.portfolio_lightcurve import serialized_portfolio_lightcurve_dataframe
 
 from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
@@ -137,7 +138,7 @@ def reported_detection_counts(data: dict[str, Any]) -> tuple[tuple[str, Any], ..
 
 
 def loaded_photometry_counts(data: dict[str, Any]) -> tuple[tuple[str, int], ...]:
-    """Count plotted provider records, without treating them as unique observations."""
+    """Count plotted values, not unique records or independent observations."""
     counts = Counter(str(point.get("broker") or "unknown provider") for point in data.get("lightCurve", []))
     return tuple(sorted(counts.items()))
 
@@ -165,14 +166,10 @@ def _summary_identity(records: list[dict[str, Any]]) -> tuple[str, str] | None:
     return next(iter(identities)) if identities else None
 
 
-def _magnitude(fields: dict[str, Any]) -> tuple[str, float, float] | None:
-    for key, value in fields.items():
-        match = re.fullmatch(r"photometry\.([a-zA-Z0-9]+)\.psf\.mag", key)
-        if not match or not isinstance(value, (int, float)) or not math.isfinite(value):
-            continue
-        error = fields.get(f"{key}.error", 0.0)
-        return match.group(1), float(value), float(error) if isinstance(error, (int, float)) and math.isfinite(error) else 0.0
-    return None
+def latest_magnitude(display: dict[str, Any]) -> float | None:
+    """Read the latest measured magnitude, excluding limits and flux values."""
+    return next((point["magnitude"] for point in reversed(display.get("lightCurve", []))
+                 if point.get("magnitude") is not None and not point.get("is_upper_limit", False)), None)
 
 
 def classification_rows(portfolio: dict[str, Any]) -> list[dict[str, Any]]:
@@ -284,13 +281,12 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
     summary = _first(records, "summary")
     detections = [record for record in records if _family(record) == "measurement"]
     points = []
-    for record in detections:
+    by_id = {record["internal_record_id"]: record for record in detections}
+    for row in serialized_portfolio_lightcurve_dataframe(portfolio).to_dict("records"):
+        record = by_id[row["record_id"]]
         fields = _fields(record)
-        magnitude = _magnitude(fields)
-        mjd = fields.get("time.mjd")
-        if magnitude is None or not isinstance(mjd, (int, float)) or not math.isfinite(mjd):
-            continue
-        band, value, error = magnitude
+        mjd, band, value = row["mjd"], row["band"], row["value"]
+        error = row["error"] if pd.notna(row["error"]) else None
         source = record.get("internal_source")
         execution_id = source.get("internal_execution_id") if isinstance(source, dict) else None
         execution = execution_index.get(execution_id, {}) if execution_id is not None else {}
@@ -298,7 +294,11 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
         origin, _, broker = semantic_type.partition("@")[2].partition(":")
         points.append({
             "date": pd.to_datetime(float(mjd), unit="D", origin="1858-11-17", utc=True).isoformat(),
-            "mjd": float(mjd), "band": band, "magnitude": value, "magnitudeError": error,
+            "mjd": float(mjd), "band": band, "value": value, "error": error,
+            "quantity": row["quantity"], "measurement_kind": row["measurement_kind"],
+            "is_upper_limit": row["is_upper_limit"],
+            "magnitude": value if row["quantity"] == "mag" else None,
+            "magnitudeError": error if row["quantity"] == "mag" else None,
             "details": fields, "record_id": record.get("internal_record_id"),
             "semantic_type": semantic_type,
             "broker": execution.get("broker") or broker or None,
@@ -313,8 +313,9 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
         "Object",
     )
     coordinates = {
-        "ra": summary.get("position.ra") or next((_fields(record).get("position.ra") for record in detections if _fields(record).get("position.ra") is not None), None),
-        "dec": summary.get("position.dec") or next((_fields(record).get("position.dec") for record in detections if _fields(record).get("position.dec") is not None), None),
+        axis: summary.get(path) if summary.get(path) is not None else next(
+            (_fields(record)[path] for record in detections if _fields(record).get(path) is not None), None)
+        for axis, path in (("ra", "position.ra"), ("dec", "position.dec"))
     }
     classifications = classification_rows(portfolio)
     execution_rows = []
@@ -341,7 +342,7 @@ def portfolio_to_display(portfolio: dict[str, Any]) -> dict[str, Any]:
         "dataProducts": [item["fields"] for item in semantic_records if item["family"] == "data_product"],
         "brokerCoverage": broker_coverage, "provenance": execution_rows, "semantic_records": semantic_records,
         "executions": executions,
-        "summary": {"firstDetection": points[0]["date"] if points else "—", "lastDetection": points[-1]["date"] if points else "—", "brightestMagnitude": min((point["magnitude"] for point in points), default="—")},
-        "quality": {"photometryStatus": f"{len(points)} plotted detections from normalized broker records", "alertQuality": "Recorded broker quality fields are available per detection.", "lastUpdated": "Frozen fixture"},
+        "summary": {"firstDetection": points[0]["date"] if points else "—", "lastDetection": points[-1]["date"] if points else "—", "brightestMagnitude": min((p["magnitude"] for p in points if p["magnitude"] is not None and not p["is_upper_limit"]), default="—")},
+        "quality": {"photometryStatus": f"{len(points)} plotted photometric values from normalized records; several values may share one observation.", "alertQuality": "Recorded broker quality fields are available per measurement.", "lastUpdated": "See execution provenance"},
         "record_counts": counts,
     }

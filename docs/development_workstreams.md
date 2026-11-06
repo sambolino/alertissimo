@@ -1,3 +1,12 @@
+# Current ownership
+
+Root [ARCHITECTURE.md](../ARCHITECTURE.md) and [AGENTS.md](../AGENTS.md) are the
+current guides. The original workstream sketch below is preserved as history;
+its statements that orchestration is unimplemented or depends on the old core
+are superseded.
+
+## Historical workstream sketch
+
 # Development workstreams
 
 Alertissimo separates shared infrastructure from independently owned UI, language,

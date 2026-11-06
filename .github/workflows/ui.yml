@@ -9,6 +9,8 @@ on:
       - 'tests/test_api_continuation.py'
       - 'tests/test_application_portfolio_access.py'
       - 'tests/test_portfolio_lightcurve.py'
+      - 'tests/test_shared_photometry_projection.py'
+      - 'tests/test_canonical_execution_boundary.py'
       - 'tests/test_portfolio_serialization.py'
       - 'tests/test_dsl_public_api_serialization.py'
       - 'tests/test_target_bound_partition_identity.py'
@@ -43,6 +45,8 @@ jobs:
             tests/test_ui_fixtures.py \
             tests/test_application_portfolio_access.py \
             tests/test_portfolio_lightcurve.py \
+            tests/test_shared_photometry_projection.py \
+            tests/test_canonical_execution_boundary.py \
             tests/test_portfolio_serialization.py \
             tests/test_dsl_public_api_serialization.py \
             tests/test_target_bound_partition_identity.py \

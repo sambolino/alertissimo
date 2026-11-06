@@ -38,6 +38,9 @@ def lightcurve_chart(frame: pd.DataFrame) -> alt.LayerChart:
         raise ValueError("lightcurve_chart requires exactly one quantity")
     quantity = str(quantities[0])
     plotted = frame.copy()
+    plotted["display_kind"] = plotted["measurement_kind"]
+    if "is_upper_limit" in plotted:
+        plotted.loc[plotted["is_upper_limit"], "display_kind"] = "upper limit"
     plotted["error_low"] = plotted["value"] - plotted["error"]
     plotted["error_high"] = plotted["value"] + plotted["error"]
 
@@ -45,7 +48,7 @@ def lightcurve_chart(frame: pd.DataFrame) -> alt.LayerChart:
     y_scale = alt.Scale(zero=False, reverse=quantity == "mag", padding=20)
     x = alt.X("mjd:Q", title="Observation time (MJD)", scale=alt.Scale(zero=False))
     base = alt.Chart(plotted)
-    error_bars = base.transform_filter("isValid(datum.error)").mark_rule(strokeWidth=1.25).encode(
+    error_bars = base.transform_filter("isValid(datum.error) && datum.display_kind !== 'upper limit'").mark_rule(strokeWidth=1.25).encode(
         x=x,
         y=alt.Y("error_low:Q", title=quantity, scale=y_scale),
         y2="error_high:Q",
@@ -55,7 +58,9 @@ def lightcurve_chart(frame: pd.DataFrame) -> alt.LayerChart:
         x=x,
         y=alt.Y("value:Q", title=quantity, scale=y_scale),
         color=color,
-        shape=alt.Shape("measurement_kind:N", title="Measurement"),
+        shape=alt.Shape("display_kind:N", title="Measurement", scale=alt.Scale(
+            domain=["ordinary", "forced", "upper limit"], range=["circle", "square", "triangle-down"],
+        )),
         tooltip=[
             alt.Tooltip("record_id:N", title="Record"),
             alt.Tooltip("semantic_type:N", title="Semantic type"),
