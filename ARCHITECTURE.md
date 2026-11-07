@@ -10,6 +10,11 @@ object-centric semantic Portfolios. The current deployment target is **deploy
 yourself**, with a UI and deterministic DSL. Future NLP may use the project's LLM
 server and must emit the same validated DSL/IR, rather than directly call brokers.
 
+Maximize scientifically meaningful broker diversity; do not manufacture candidate
+classifiers or interchangeable products to fill a parity table. Shared temporal
+operators/global latest still require identical scientific meanings across brokers.
+Consult before adding any architecture layer.
+
 Do not create a hosted session/database/service project. Explicit continuation
 is already owned by the caller. The implicit single-client compatibility context
 and its lock remain known constraints, outside the present cleanup scope.
@@ -50,6 +55,12 @@ requests finite recipes satisfy, with required material and completeness claims.
 `CapabilityGraph` is their derived index, not another scientific authority.
 Recipe failure must not fall back to unrelated legacy endpoint evidence.
 
+`with` requirements use Portfolio record nouns and admitted abstract families.
+Ontology components and enum values do not become standalone request nouns. The
+`measurement` record, explicit `lightcurve` series product, `data_product` artifact
+and transient display projection remain distinct. Existing `GetLightcurveStep`
+retrieval is not the unimplemented local `LightcurveStep` construction.
+
 The recipe interpreter currently inspects IR field/operator contracts through
 lazy imports in `data_layer/runtime/recipes.py`. This is an explicit, bounded
 schema bridge, not another workflow implementation. The dependency graph is not
@@ -59,8 +70,8 @@ and graph behavior; do not duplicate IR schemas or add a coordinator to hide it.
 ## Scientific invariants
 
 - Preserve semantic IDs, upstream assertions and original evidence. Keep ontology
-  levels distinct: the current model declares L0-L6; the old L0-L3 directory sketch
-  is historical rather than the package map.
+  levels as declared by the ontology, including the survey container's L7. The
+  old L0-L3 directory sketch is historical rather than the package map.
 - Candidate identity is survey plus object ID. Catalogue context does not become
   candidate classification just because it contains a class label.
 - Required evidence precedes whole initial-condition evaluation; admitted global
@@ -104,33 +115,33 @@ imports, not engines. Do not reconstruct the removed broker factory behind them.
 
 ## Functional priorities
 
-**Coarse classification normalization, universal `best`, and selected DSL
-improvements are user-required release priorities.** They are not implemented
-by this cleanup and must not be dismissed as optional beta extras.
+[Next functional work](docs/next_functional_work.md) owns the implementation IDs,
+current/target states and completion criteria. Scientific thresholds, eligibility,
+model precedence and the derived best representation still require explicit rules.
 
-Before implementing their scientific rule contract:
+- Coarse normalization prepares attributable support for shared propositions.
+  Universal `best` is a named/versioned derivation retaining raw alternatives;
+  never maximize heterogeneous scores. Confirm retains broker-local evidence.
+- Catalogue coverage is a major workstream. Extend existing debt/audit machinery,
+  mapping every scientifically established field possible and correcting existing
+  meanings. Preserve catalogue-source scope and producer/channel attribution.
+- Complete semantic discovery and uniform within/first/last/latest behaviour.
+  Native and complete local realizations may differ; population and meaning may
+  not. A missing recipe is an implementation gap, not provider impossibility.
+- [Collection predicates](docs/dsl_collections.md) use ontology path parameters,
+  relative element paths, filtered aggregates and parenthesized quantifier bodies.
+  Extend existing semantic-model/expression/IR owners rather than add an engine.
+- Preserve measurement/product/display boundaries. Non-detections are measurements;
+  missing flux alone does not establish one, and limiting depth alongside a value
+  is not another observation.
+- Cutouts follow the higher-priority scientific work. Optional `as p` bindings and
+  the FP surface/acquisition policy remain deferred for reevaluation. Do not
+  broaden the Portfolio noun rule or change automatic FP supplementation now.
 
-1. Identify eligible producers, outputs and versions. A listed, low-ranked class
-   assessment is not automatically support for that class.
-2. Declare coarse label support and method-specific acceptance rules. A generic
-   SN label supplies no SNII subtype; contextual associations retain their scope.
-3. Define universal `best` as a derived assertion under a named/versioned rule,
-   retaining inputs, alternatives and provenance. Never maximize incomparable raw
-   scores or overwrite upstream preferred outputs.
-4. Keep attribution so confirmation can evaluate normalized evidence in each
-   broker's own material. A global winner must not manufacture several votes.
-5. Add elegant collection-level reasoning using a small reusable expression model:
-   filtered `count(...)`, and quantified per-band conditions. The user's examples
-   ask for at least five high-real/bogus measurements, a total valid-point count,
-   and at least five valid points in every requested Rubin band. Use the current
-   `measurement` noun rather than the retired `detection` name. Aggregation scope,
-   variable binding and missing-data semantics must be explicit; these examples
-   are requirements, not currently implemented syntax. Avoid special-purpose
-   keywords for individual scientific cuts. See `docs/next_functional_work.md`.
-
-Full broker parity means all operations on all broker/survey combinations. It is
-not an assumed requirement. Existing admission and deferrals are recorded in
-`docs/discovery_integration.md`, not in a hand-maintained UI matrix.
+The [field coverage contract](docs/provider_field_coverage.md) owns the audit
+checklist and dated targeted-catalogue snapshot. The existing
+[discovery guide](docs/discovery_integration.md) remains the implementation support
+baseline. Neither a mapping nor an admitted plan is live acceptance.
 
 ## Verification
 
