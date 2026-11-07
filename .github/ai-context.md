@@ -1,17 +1,28 @@
 # Current developer context
 
-Read root [AGENTS.md](../AGENTS.md) and [ARCHITECTURE.md](../ARCHITECTURE.md).
-They own current contributor procedures, architecture and functional priorities.
+Read [AGENTS.md](../AGENTS.md) and [ARCHITECTURE.md](../ARCHITECTURE.md) for operating
+rules and architecture pillars, then the relevant repository procedure.
 
-Alertissimo is deploy-yourself: deterministic DSL and UI over the public facade,
-one canonical WorkflowIR, declarative provider contracts and attributable
-Portfolios. Future NLP may use the project LLM server and emits the same DSL/IR.
-No new hosted session/database/service architecture is in scope.
+[Next functional work](../docs/next_functional_work.md) owns stable implementation
+IDs 1–11 and their current/target states. Coarse classification, universal best,
+catalogue diversity, semantic discovery and uniform temporal/latest selection are
+required priorities. Cutouts are the last required feature expansion.
 
-The disconnected executable-model/broker stack is retired; retained `core`
-imports are aliases only. Both UI photometry paths use shared presentation.
-Coarse classification normalization, universal `best` and user-selected DSL
-improvements are next functional priorities, with scientific rules explicit.
+- [Collection contract](../docs/dsl_collections.md): ontology parameters, relative
+  element paths and parenthesized bodies; examples remain unimplemented.
+- [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
+  audit tooling; preserve catalogue scope, units and ownership.
+- [Discovery baseline](../docs/discovery_integration.md): route-specific admitted
+  behaviour, not a complete beta target or fresh all-provider live report.
 
-Historical checkpoints and the previous version of this context remain in
-`docs/history/developer_context_before_architecture_cleanup.md`.
+Keep Portfolio nouns as the basis of `with`. Optional `as p` and the FP surface/
+acquisition policy are deferred; neither new FP nouns nor automatic-policy changes
+are approved. Scientific normalization thresholds/precedence remain to be reviewed.
+
+Deployment is deploy-yourself with deterministic DSL and UI; future NLP emits the
+same DSL/IR. Consult before a new architecture layer. Do not add hosted session,
+database or service infrastructure. The user controls GitHub mutations.
+
+The obsolete execution stack is retired and both photometry paths share scientific
+extraction. Earlier context is retained in
+[history](../docs/history/developer_context_before_architecture_cleanup.md).

@@ -1,63 +1,185 @@
-# Next functional work: classification and collection predicates
+# Next functional work
 
-User priorities after the discovery integration and architectural cleanup:
+Implementation IDs are stable references, not a fixed PR count or merge order.
+Split later work as 4a/4b without renumbering unrelated items. Architecture belongs
+in [ARCHITECTURE.md](../ARCHITECTURE.md); only implementation items are numbered here.
 
-1. Coarse classification normalization.
-2. Universal `best` under an explicit scientific policy.
-3. Elegant, extensible collection-level DSL reasoning.
+Goal: a deploy-yourself beta with UI and deterministic DSL, without NLP. Maximize
+semantically covered broker diversity. Coarse classification, universal best,
+catalogues and discovery/selection are required work; cutouts come last.
 
-These are desired functionality, not optional extras inferred from a narrower
-beta definition. Deployment remains deploy-yourself, with future NLP potentially
-using the project LLM server. A hosted session/database/service redesign is not
-part of this sequence. Root `ARCHITECTURE.md` owns architectural boundaries.
+Current-state notes were checked on main `b7f9905` (7 November 2026): public offline
+planning, relevant source/fixtures, focused regressions and a clean installed wheel.
+They are not fresh live acceptance. Recheck the current revision before coding.
 
-## Classification contract to settle
+## 1. Coarse classification normalization
 
-Use real same-object assertions to specify eligible outputs, versions, coarse
-label mappings and method-specific acceptance. A low-ranked assessment being
-listed does not itself support that class. Define universal `best` as a derived,
-named/versioned result with its input evidence and alternatives retained. Do not
-pick the largest heterogeneous score or overwrite upstream preferred outputs.
+**Current:** native producer/model assertions are retained and compared; no shared
+coarse-label/acceptance policy is implemented. Candidate-classification retrieval
+plans for ALeRCE, Fink and Lasair on both surveys. ANTARES has catalogue context,
+not an admitted candidate-classification Get.
 
-Scientific acceptance rules and precedence have not yet been chosen. Write a
-concrete input/output table before implementing them; do not manufacture defaults.
-Confirmation must retain the contributing broker's own evidence and vote once
-per broker, even when several outputs or shared methods support a proposition.
+**Target/work:** review real same-object input/output rules: eligible producer/
+version/output, candidate-versus-context scope, coarse label/subtype and method-
+specific acceptance. Generic SN supplies no SNII evidence; a low-ranked assessment
+is not positive support. Representation scaling does not calibrate probability.
 
-## Collection reasoning requested by the user
+**Completion:** reviewed rules and attributable normalized examples, preserving raw
+alternatives, unknowns and counterexamples. Thresholds/eligibility remain scientific
+decisions; do not invent a universal taxonomy or a new normalization engine.
 
-The user supplied these illustrative forms (the first uses an old noun):
+## 2. Universal best and normalized confirm
 
-```text
-where/filter count(
-  detection@ztf:fink where quality.real_bogus > 0.9
-) >= 5
+**Current:** upstream `best.*` fields and distinct-broker existence/proposition quorum
+exist; no reviewed universal winner policy does.
 
-where count(lightcurve.points where measurement.valid = true) >= X
-and every band in ["u", "g", "r", "i", "z", "y"] satisfies
-    count(lightcurve.points where band = $band
-          and measurement.valid = true) >= 5
-```
+**Target/work:** a named/versioned derived assertion retaining inputs, alternatives,
+conflict/abstention and provenance. No maximum across heterogeneous scores or
+overwriting upstream winners. Confirm uses each broker's own eligible evidence,
+one vote per broker; a global winner cannot manufacture several votes.
 
-`where/filter` above means either placement, not a slash operator. Preserve these
-as user examples; the current canonical noun is `measurement`. The examples are
-not a claim that this syntax or `measurement.valid` is currently implemented.
+**Completion:** reviewed precedence/tie/abstention rules, representation and tests
+for misleading score order, scope confusion, duplicate votes and missing evidence.
+Exact rule/representation choices are still open.
 
-Design the smallest reusable expression/collection model that handles these and
-unseen cases. Do not add five scientific-cut-specific keywords or another query
-engine. Settle, with examples:
+## 3. Catalogue crossmatches and field coverage
 
-- Candidate-local scope versus cross-candidate aggregation.
-- Counts of semantic records versus intrinsic lightcurve points; avoid counting
-  the same provider observation twice through two representations.
-- Predicate binding to one collection element and lexical quantified variables.
-- Missing/invalid values, empty collections, missing requested bands and vacuous
-  truth. Do not treat absent provider evidence as zero or success without a rule.
-- Exact provenance and quantity/kind distinctions in the counted population.
-- Dependency/material scheduling, initial `where` before latest, later `filter`
-  without refill, continuation and serialization.
-- Local evaluation as the reference meaning; admit native pushdown only with a
-  proof of equivalent population and semantics.
+**Current:** all eight pairs have mappings/debt ledgers and existing audit tooling.
+Coverage remains partial. Fink and ANTARES have targeted retrievals; ALeRCE has no
+admitted crossmatch Get. Lasair has mappings/recipes but generic public requests
+are ambiguous; ZTF targeted TNS is also ambiguous, while LSST targeted TNS plans.
 
-The normal pipeline remains DSL → canonical predicates/IR → existing planning
-and normalized evidence evaluation. Future NLP targets the same contract.
+**Target/work:** follow [field coverage](provider_field_coverage.md). Map every
+scientifically established field possible, correct existing mappings, resolve
+uncertain units/identity/scope, preserve provenance and discuss genuinely missing
+concepts. Revisit existing intentional debt rather than count bookkeeping as done.
+Resolve real route/target selection; do not drop crossmatch from enrichment to
+hide failure. Preserve ANTARES catalogue classes and Sherlock contextual meaning.
+
+**Completion:** accounted-for audited fields with evidence and dispositions;
+ownership/unit regressions; executable admitted public requests. Neither zero
+unaccounted leaves nor a provider-wide mapping proves exhaustive coverage.
+
+## 4. Semantic discovery
+
+**Current:** unwindowed cones and lookup plan for all eight pairs. Semantic routes
+are uneven: ALeRCE supports object/class/selected-summary search; Fink/ZTF has eight
+audited ordinary class-index labels; Lasair/ZTF has selected numeric conjunctions
+and Sherlock equality; ANTARES/ZTF requires scoped coordinate predicates. Generic
+Fink/Lasair/ANTARES LSST lowering is absent.
+
+**Target/work:** expand verified semantic translations and equivalent complete
+local evaluation. Use actual native required inputs, fields, identity and population
+contracts. Preserve whole initial predicates and local residual checks. Do not add
+raw SQL/Elasticsearch escape hatches or broker switches in planner/UI code.
+
+**Completion:** per-pair/route supported populations and conditions, native/local
+equivalence and actual public execution evidence. A working cone is not a class
+scan. See the [discovery baseline](discovery_integration.md).
+
+## 5. Uniform temporal selection and global latest
+
+**Current:** all modes/latest plan on admitted ALeRCE/ZTF and Lasair/ZTF routes;
+ANTARES/ZTF supports its scoped coordinate route but not native temporal cone/
+latest. Fink/ZTF admits default within on its eligible class route, not first/last/
+latest or temporal cone. All four LSST pairs lack admitted temporal/latest proof.
+
+**Target/work:** identical within/first/last/latest meanings everywhere, with native
+or sufficient complete local evidence. Default within needs an ordinary detection
+in the closed interval; first/last test actual extrema. Latest ranks the complete
+qualifying object population after the whole initial condition. Verify UTC/TAI,
+history, object recency, identity, pagination and saturation. Keep survivors' full
+returned histories; later filter does not refill.
+
+**Completion:** per-pair/route composition and completeness evidence, or a reviewed
+concrete upstream limitation after investigating alternatives. Missing mappings/
+recipes remain our implementation gaps; a new deferral alone is not completion.
+No first-page sorting, silent window shrinking, dropped conditions or alert-order
+substitution. Script `--window-hours 24` is not a DSL cap.
+
+For a closed [59010,59011] window: A=[59009,59012] does not satisfy within;
+B=[59010.5,59020] and C=[59010.7,59011] do. Latest 1 among B/C is B using overall
+object recency. If another initial predicate excludes B, C must be considered
+before ranking. An upper limit inside the window is not a detection witness.
+
+## 6. Collection DSL
+
+**Current:** scalar comparisons/Boolean/existence work; aggregate calls and
+quantifiers do not. Dynamic ontology paths exist, but full array/domain metadata
+and expression binding/evaluation are not implemented.
+
+**Target/work:** implement the [agreed contract](dsl_collections.md) in existing
+semantic-model, expression/IR, evaluator and planner owners. Use `{filter}`/
+`{output}`, relative element paths and `where for …: (...)`. No second variable
+notation or aliases for ordinary single-collection cases.
+
+**Completion:** accepted count/min/any/every examples; explicit scope/counting/
+unknown/empty decisions; dependency scheduling before initial latest; continuation,
+serialization and compatibility regressions. Resolve item 7's field dependencies.
+Optional pairwise aliases are item 10, not initial scope.
+
+## 7. Measurements, non-detections and lightcurve boundaries
+
+**Current:** `with measurement` is ontology-valid but lacks retrieval lowering.
+Provider lightcurve retrieval plans on all pairs; local `LightcurveStep` construction
+explicitly remains unimplemented. Ordinary upper-limit flag mappings exist for
+Fink/ZTF and ANTARES/ZTF; ALeRCE/Lasair ZTF have limit values without that flag, and
+the checked LSST definitions have no corresponding flag mapping.
+
+**Target/work:** define measurement acquisition using concrete source/scope examples
+and a reviewed canonical mapping. Map true/false limit flags where native evidence
+establishes them; retain unknown otherwise. Missing flux alone is not non-detection,
+nor is a detection's limiting depth another observation.
+
+**Completion:** executable supported measurement intent and reliable field semantics,
+preserving incidental evidence, distinct products and shared presentation. Do not
+silently add a new IR operation/local builder or settle deferred FP policy here.
+Default visibility/composition choices remain open.
+
+## 8. Deployable UI
+
+**Current:** investigation ID/basic cone forms use saved normalized evidence; DSL
+mode executes live. Validation-only and upload/replay viewers also exist. A clean
+installed wheel fails investigation startup through `scripts.build_ui_fixtures`;
+the DSL editor HTML asset is absent. Shared scientific extraction is already fixed.
+
+**Target/work:** intended live ID/cone controls use the existing deterministic
+pipeline; keep demos/replays/uploads explicit. Remove development-only startup
+dependencies, package actual assets, provide a reproducible installed launch path
+and preserve visible-result continuation. Keep reported detections, loaded points,
+products, quantity/kind/limits and evidence outcomes distinct.
+
+**Completion:** clean installed startup, actual component/browser interactions,
+critical live/replay/continuation flows and scientific boundary checks. No replacement
+framework or hosted session/database/service architecture.
+
+## 9. Cutouts — last required feature expansion
+
+**Current:** Fink/ZTF object-centric `data_product` plans. ALeRCE products lack mapped
+material; Fink/LSST is alert-targeted; Lasair/ANTARES have no admitted product Get
+in the checked contract.
+
+**Target/work:** investigate verified native stamps/image links/thumbnails and
+ownership after higher-priority work. Reuse existing data-product structures/enums.
+
+**Completion:** truthful admitted routes, normalized products, shape/ownership and
+failure evidence. Do not add `with cutout` or new record containers for enum values.
+This plan does not add a spectrum programme.
+
+## 10. Optional element bindings — deferred
+
+**Current:** no named collection binders, self-joins or correlated collections.
+
+**Later decision:** reevaluate `as p` only for multiple element scopes, such as paired
+points or an FP measurement near each outer point. Review scope, distinctness,
+temporal ordering and units then. Do not complicate item 6's ordinary cases.
+
+## 11. FP surface and acquisition policy — deferred
+
+**Current:** programmatic `GetForcedPhotometryStep` exists; public
+`with forced_photometry` fails the Portfolio noun gate. Lightcurve recipes can
+include optional FP calls; ALeRCE/LSST can also return bundled FP.
+
+**Later decision:** explicit FP intent, required versus incidental evidence,
+lightcurve composition and the existing Step together. No new FP noun/record,
+broader component admission, or automatic-supplementation change is approved.
