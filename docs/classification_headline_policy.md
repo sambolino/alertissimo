@@ -151,6 +151,7 @@ From an existing development environment:
 ```bash
 PYTHONPATH=. python -m pytest -q \
   tests/test_classification_headline_policy.py \
+  tests/test_antares_registry_architecture.py \
   tests/test_alerce_classification_mappings.py \
   tests/test_portfolio_serialization.py
 PYTHONPATH=. python scripts/check_release_package.py
