@@ -122,6 +122,7 @@ import alertissimo
 from alertissimo.api import validate_dsl
 from alertissimo.data_layer.execution import EndpointRegistry, load_execution_policy
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+from alertissimo.data_layer.runtime.classification_headline import load_policy as load_headline_policy
 from alertissimo.data_layer.semantic_model import load_semantic_model_index
 from alertissimo.orchestration.planner import plan_workflow
 
@@ -158,6 +159,7 @@ if recipe_sources != expected_sources:
     raise RuntimeError(f"unexpected packaged recipe providers: {sorted(recipe_sources)!r}")
 
 for broker, origin in sorted(expected_sources):
+    load_headline_policy(broker, origin)
     for op in ("cone_search", "lookup", "get_lightcurve", "confirm"):
         if not graph.query_recipes(broker=broker, origin=origin, op=op):
             raise RuntimeError(f"missing packaged recipe: {broker}/{origin}/{op}")

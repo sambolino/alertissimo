@@ -1,0 +1,66 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "alerce-ztf-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "alerce",
+  "origin": "ztf",
+  "enabled": true,
+  "sources": [
+    "https://science.alerce.online/alerce-pipeline/",
+    "https://doi.org/10.1051/0004-6361/202451951",
+    "tests/fixtures/alerce/ztf/query_probabilities.json",
+    "https://github.com/alercebroker/alerce_client/blob/12f613a95340499dab89af5c5bf5416e3e1deb29/alerce/ztf_search.py"
+  ],
+  "methods": [
+    {
+      "producer": "lc_classifier",
+      "version_rule": "label_contract",
+      "basis": "model",
+      "allow_rank_one": true
+    },
+    {
+      "producer": "stamp_classifier",
+      "version_rule": "label_contract",
+      "basis": "model",
+      "allow_rank_one": true
+    }
+  ],
+  "vocabulary": [
+    {"label": "AGN", "coarse": "agn", "scope": "candidate", "status": "candidate"},
+    {"label": "Blazar", "coarse": "agn", "scope": "candidate", "status": "candidate"},
+    {"label": "CEP", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "CV/Nova", "coarse": "cataclysmic_variable", "scope": "candidate", "status": "candidate"},
+    {"label": "DSCT", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "E", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "EA", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "EB/EW", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "LPV", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "Microlensing", "coarse": "microlensing", "scope": "candidate", "status": "candidate"},
+    {"label": "Periodic", "coarse": "periodic", "scope": "candidate", "status": "candidate"},
+    {"label": "Periodic-Other", "coarse": "periodic", "scope": "candidate", "status": "candidate"},
+    {"label": "QSO", "coarse": "agn", "scope": "candidate", "status": "candidate"},
+    {"label": "RRL", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "RRLab", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "RRLc", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "RSCVn", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "SESN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": "SLSN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": "SN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": "SNII", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "II"},
+    {"label": "SNIIb", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "IIb"},
+    {"label": "SNIIn", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "IIn"},
+    {"label": "SNIa", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ia"},
+    {"label": "SNIbc", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ibc"},
+    {"label": "Stochastic", "coarse": "stochastic", "scope": "candidate", "status": "candidate"},
+    {"label": "TDE", "coarse": "tidal_disruption", "scope": "candidate", "status": "candidate"},
+    {"label": "Transient", "coarse": "transient", "scope": "candidate", "status": "candidate"},
+    {"label": "VS", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "YSO", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "asteroid", "coarse": "solar_system", "scope": "candidate", "status": "candidate"},
+    {"label": "bogus", "coarse": "artifact", "scope": "candidate", "status": "candidate"},
+    {"label": "satellite", "coarse": "satellite", "scope": "candidate", "status": "candidate"}
+  ],
+  "sentinels": [],
+  "note": "LC first, stamp only when no LC selected/rank-1 label exists. A present conflict, unknown label or incompatible output never triggers fallback. A broker-selected best row takes precedence over the probability table. Without that row, multiple rank-1 versions abstain; no version ordering. Label-contract compatibility covers versions (including missing version) only for this exact producer and finite label meaning; it does not claim calibration equivalence."
+}

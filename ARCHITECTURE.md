@@ -116,12 +116,17 @@ imports, not engines. Do not reconstruct the removed broker factory behind them.
 ## Functional priorities
 
 [Next functional work](docs/next_functional_work.md) owns the implementation IDs,
-current/target states and completion criteria. Scientific thresholds, eligibility,
-model precedence and the derived best representation still require explicit rules.
+current/target states and completion criteria. The reviewed headline selection and
+finite vocabulary policy is recorded in [classification headline policy](docs/classification_headline_policy.md).
+It is opt-in in the first policy PR; execution, normalized confirmation and UI
+integration remain subsequent work.
 
-- Coarse normalization prepares attributable support for shared propositions.
-  Universal `best` is a named/versioned derivation retaining raw alternatives;
-  never maximize heterogeneous scores. Confirm retains broker-local evidence.
+- Coarse normalization translates the selected native headline through an explicit
+  vocabulary. `best` does not choose a scientifically strongest cross-broker result.
+  Prefer the broker-designated headline; use the reviewed Alertissimo method
+  default where designated. Keep native outputs, scope, conflicts and alternatives.
+  No cross-method score comparison or additional probability threshold is used.
+  Confirm retains broker-local evidence and counts each broker at most once.
 - Catalogue coverage is a major workstream. Extend existing debt/audit machinery,
   mapping every scientifically established field possible and correcting existing
   meanings. Preserve catalogue-source scope and producer/channel attribution.

@@ -5,7 +5,7 @@ Split later work as 4a/4b without renumbering unrelated items. Architecture belo
 in [ARCHITECTURE.md](../ARCHITECTURE.md); only implementation items are numbered here.
 
 Goal: a deploy-yourself beta with UI and deterministic DSL, without NLP. Maximize
-semantically covered broker diversity. Coarse classification, universal best,
+semantically covered broker diversity. Coarse classification, native headline selection,
 catalogues and discovery/selection are required work; cutouts come last.
 
 Current-state notes were checked on main `b7f9905` (7 November 2026): public offline
@@ -14,33 +14,42 @@ They are not fresh live acceptance. Recheck the current revision before coding.
 
 ## 1. Coarse classification normalization
 
-**Current:** native producer/model assertions are retained and compared; no shared
-coarse-label/acceptance policy is implemented. Candidate-classification retrieval
+**Current:** native producer/model assertions are retained and compared. The opt-in
+[headline policy](classification_headline_policy.md) provides versioned finite
+lookup tables and a pure selector, with tests prepared for local execution; it is
+not yet connected to execution, confirmation or the UI. Candidate-classification retrieval
 plans for ALeRCE, Fink and Lasair on both surveys. ANTARES has catalogue context,
 not an admitted candidate-classification Get.
 
-**Target/work:** review real same-object input/output rules: eligible producer/
-version/output, candidate-versus-context scope, coarse label/subtype and method-
-specific acceptance. Generic SN supplies no SNII evidence; a low-ranked assessment
-is not positive support. Representation scaling does not calibrate probability.
+**Target/work:** connect the reviewed per-pair native headline rules to immutable
+material views, preserving input/alternative attribution, candidate/context scope,
+subtype implications, explicit errors and abstention. Generic SN supplies no SNII
+evidence; a low-ranked assessment is not positive support. No additional probability
+threshold is required to translate a selected native headline. Representation scaling
+does not calibrate probability.
 
-**Completion:** reviewed rules and attributable normalized examples, preserving raw
-alternatives, unknowns and counterexamples. Thresholds/eligibility remain scientific
-decisions; do not invent a universal taxonomy or a new normalization engine.
+**Completion:** integrated, attributable normalized examples and passing local
+counterexamples. Policy availability alone does not complete the public feature.
+Do not invent a universal taxonomy or a new normalization engine.
 
-## 2. Universal best and normalized confirm
+## 2. Native headline selection and normalized confirm
 
 **Current:** upstream `best.*` fields and distinct-broker existence/proposition quorum
-exist; no reviewed universal winner policy does.
+exist. The 11 November decision replaces the former universal-winner proposal with
+native headline selection; see the policy contract above. Existing public behavior
+is unchanged by the opt-in policy module.
 
-**Target/work:** a named/versioned derived assertion retaining inputs, alternatives,
-conflict/abstention and provenance. No maximum across heterogeneous scores or
-overwriting upstream winners. Confirm uses each broker's own eligible evidence,
-one vote per broker; a global winner cannot manufacture several votes.
+**Target/work:** attach a named/versioned headline derivation retaining native
+inputs, alternatives, conflict/abstention and provenance. Never overwrite upstream
+`best` fields. Confirm uses each broker's own eligible coarse proposition, one vote
+per broker. Recompute only in a new material view when eligible inputs change;
+preserve previous views' evidence and policy versions. Report vocabulary drift on
+ingestion; do not poll for new classifiers or automatically adopt them.
 
 **Completion:** reviewed precedence/tie/abstention rules, representation and tests
 for misleading score order, scope confusion, duplicate votes and missing evidence.
-Exact rule/representation choices are still open.
+Execution/continuation integration and public access remain to be delivered. The
+first policy PR is not a claim that normalized confirm or discovery already works.
 
 ## 3. Catalogue crossmatches and field coverage
 

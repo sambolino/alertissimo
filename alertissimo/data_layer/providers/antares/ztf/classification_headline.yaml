@@ -1,0 +1,30 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "antares-ztf-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "antares",
+  "origin": "ztf",
+  "enabled": true,
+  "sources": [
+    "https://antares.noirlab.edu/",
+    "https://github.com/VTDA-Group/superphot-plus"
+  ],
+  "methods": [
+    {
+      "producer": "superphot_plus",
+      "version_rule": "label_contract",
+      "basis": "model",
+      "input_survey_field": "provenance.input_survey"
+    }
+  ],
+  "vocabulary": [
+    {"label": "SN Ia", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ia"},
+    {"label": "SN II", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "II"},
+    {"label": "SN IIn", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "IIn"},
+    {"label": "SN Ibc", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ibc"},
+    {"label": "SLSN-I", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "SLSN-I"}
+  ],
+  "sentinels": [],
+  "note": "Default Superphot+ only when explicit per-assessment input-survey provenance establishes ZTF. A ZTF-associated or mixed-survey locus is insufficient. The live capture did not establish that provenance: do not manufacture provenance.input_survey from locus membership. DeSoto/LAISS remain alternatives. Label-contract compatibility does not invent a missing model version."
+}

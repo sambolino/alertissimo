@@ -6,6 +6,7 @@ on:
       - 'alertissimo/data_layer/**'
       - 'alertissimo/orchestration/confirmation/**'
       - 'tests/test_mapping_schema.py'
+      - 'tests/test_classification_headline_policy.py'
       - 'tests/test_semantic_paths.py'
       - 'tests/test_semantic_families.py'
       - 'tests/test_semantic_model_validation.py'
@@ -97,6 +98,7 @@ jobs:
         run: |
           PYTHONPATH=. pytest -q \
             tests/test_mapping_schema.py \
+            tests/test_classification_headline_policy.py \
             tests/test_semantic_paths.py \
             tests/test_semantic_families.py \
             tests/test_semantic_model_validation.py \

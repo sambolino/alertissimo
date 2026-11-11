@@ -1,0 +1,35 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "lasair-ztf-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "lasair",
+  "origin": "ztf",
+  "enabled": true,
+  "sources": [
+    "https://lasair.readthedocs.io/en/main/core_functions/sherlock.html",
+    "https://github.com/thespacedoctor/sherlock/blob/v2.2.0/sherlock/transient_catalogue_crossmatch.py#L481",
+    "https://github.com/thespacedoctor/sherlock/blob/vv3.1.0/sherlock/transient_catalogue_crossmatch.py#L474"
+  ],
+  "methods": [
+    {
+      "producer": "sherlock",
+      "version_rule": "label_contract",
+      "basis": "contextual"
+    }
+  ],
+  "vocabulary": [
+    {"label": "SN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": "AGN", "coarse": "agn", "scope": "candidate", "status": "candidate"},
+    {"label": "VS", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "CV", "coarse": "cataclysmic_variable", "scope": "candidate", "status": "candidate"},
+    {"label": "BS", "coarse": "star", "scope": "candidate", "status": "candidate"},
+    {"label": "NT", "coarse": "nuclear_transient", "scope": "candidate", "status": "candidate"}
+  ],
+  "sentinels": [
+    "NULL",
+    "ORPHAN",
+    "UNCLEAR"
+  ],
+  "note": "Candidate contextual assessment only. Native reliability 1=synonym, 2=association, 3=annotation stays a score; it is never a probability or acceptance threshold. No crossmatch catalogue classification is eligible. Published native-label meaning is the reviewed version-independent contract; source version, when absent, remains absent."
+}

@@ -1,0 +1,31 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "fink-lsst-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "fink",
+  "origin": "lsst",
+  "enabled": true,
+  "sources": [
+    "https://lsst.fink-portal.org/schemas",
+    "tests/fixtures/fink/lsst/objects.json"
+  ],
+  "methods": [
+    {
+      "producer": "fink",
+      "version_rule": "label_contract",
+      "basis": "broker_composite"
+    }
+  ],
+  "vocabulary": [
+    {"label": 11, "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": 12, "coarse": "fast_transient", "scope": "candidate", "status": "candidate"},
+    {"label": 13, "coarse": "long_transient", "scope": "candidate", "status": "candidate"},
+    {"label": 21, "coarse": "periodic", "scope": "candidate", "status": "candidate"},
+    {"label": 22, "coarse": "nonperiodic", "scope": "candidate", "status": "candidate"}
+  ],
+  "sentinels": [
+    -1
+  ],
+  "note": "Only main_label_classifier mapped to best.class, not main_label_crossmatch or per-source CATS assessments. Numeric published codes are exact; string codes are not silently coerced. Code 11 means SN-like candidate assessment, not confirmed SN. Version-independent published code contract."
+}
