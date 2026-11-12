@@ -25,7 +25,7 @@ from alertissimo.orchestration.binding import ParameterBindingError, Unsupported
 from alertissimo.orchestration.ir import ComparisonPredicate, PredicateLiteral, SemanticReference, SemanticSearchStep, Source, TimeContext
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.planner import PlanningDeferredError, plan_step
-from alertissimo.orchestration.runtime import EndpointPlan, PredicateRealization, WorkflowExecutionError
+from alertissimo.orchestration.runtime import EndpointPlan, EndpointPlanRef, PredicateRealization, WorkflowExecutionError
 
 
 FIXTURES = Path(__file__).parent / "fixtures/alerce"
@@ -175,6 +175,9 @@ def test_ztf_class_and_model_are_pushed_while_probability_is_rechecked_locally(g
               'with lightcurve via alerce\n')
     result = execute_dsl(source, graph=graph, executor=install_client(monkeypatch, client), continue_from=None)
     assert {summary_object_identity(p) for p in result.portfolios} == {("ztf", "ZTF18abbuksn")}
+    reused, = result.run.steps[1].endpoint_plans
+    assert reused.endpoint == "query_objects"
+    assert reused.execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
     calls = [params for endpoint, params in client.calls if endpoint == "query_objects"]
     assert calls and all(params["classifier"] == "lc_classifier" and params["class_name"] == "SN" for params in calls)
     assert all("probability" not in params for params in calls)

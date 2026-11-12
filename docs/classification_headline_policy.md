@@ -31,6 +31,8 @@ This adds two calls per object to a fresh ALeRCE/ZTF classification retrieval,
 including explicitly named classifiers. Named selection still runs locally and
 preserves the full physical audit. Existing proven discovery-material reuse is
 unchanged; that route does not promise to acquire all probability alternatives.
+Its reuse proof accepts composed targeted retrievals with declared producer
+selectors, while retaining the guards on class filters, limits and other inputs.
 ALeRCE/LSST and other brokers keep their existing retrieval recipes.
 
 ## Selection rules
@@ -161,8 +163,9 @@ The classification series uses `integration/classification-headlines` as its PR
 base. The three validation jobs skip automatic runs only for PRs targeting that
 branch. Other bases, including the final PR to `main`, and manual dispatch retain
 their existing validation. Remove the temporary branch exception at closeout.
-Local project tests and package checks are deferred until the chunk is ready,
-unless an observed failure needs a focused check earlier.
+Run focused local project tests for each PR. Reserve broader CI runs for chunk
+closeout or an observed failure that specifically needs CI; the branch exception
+does not defer local tests.
 
 ## Evidence and local validation
 
@@ -194,7 +197,7 @@ dispatched workflow or live broker smoke test is needed for this opt-in PR.
 
 For the PR 2a acquisition change, preparation performs static Python syntax and
 YAML/JSON parsing plus Git whitespace/bundle verification only. Runtime tests are
-prepared, not reported as passed. The targeted local validation at chunk closeout
+prepared, not reported as passed. Focused local validation for acquisition changes
 includes:
 
 ```bash

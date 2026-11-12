@@ -1389,16 +1389,32 @@ def classification_material_capabilities(
             or len(retrieval.source_results[0].recipes) != 1
         ):
             return ()
-        if not any(
-            len(recipe.calls) == 1
-            and all(
+        recipe, = retrieval.source_results[0].recipes
+        # A fresh retrieval can compose several targeted classifier calls.
+        # Their producer selectors do not invalidate already-proven, qualified
+        # discovery material. Other constants (class, score, page limits, etc.)
+        # still require fresh execution; they are not merely producer selection.
+        for call in recipe.calls:
+            selectors = tuple(
+                binding for binding in graph.request_constraints_for(
+                    recipe.broker, recipe.origin, call.endpoint,
+                )
+                if binding.semantic_path == "classification.provenance.producer.name"
+                and binding.operator == "="
+            )
+            if not all(
                 isinstance(parameter.source, StepValueSource)
                 and parameter.source.path in {("target", "ids"), ("classifier",)}
-                for parameter in recipe.calls[0].params
-            )
-            for result in retrieval.source_results for recipe in result.recipes
-        ):
-            return ()
+                or isinstance(parameter.source, ConstantValueSource)
+                and isinstance(parameter.source.value, str)
+                and any(
+                    binding.parameter == parameter.parameter
+                    and (binding.values is None or parameter.source.value in binding.values)
+                    for binding in selectors
+                )
+                for parameter in call.params
+            ):
+                return ()
         matches = []
         for result in discovery.source_results:
             # Multiple alternatives supply no uniquely established execution.
