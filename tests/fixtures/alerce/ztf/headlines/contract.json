@@ -1,0 +1,26 @@
+{
+  "inspected_at": "2026-11-12",
+  "package": "alerce",
+  "version": "2.3.1",
+  "artifact": "alerce-2.3.1-py3-none-any.whl",
+  "sha256": "30efbcd42e1a92459816ec068af0d6252ddeaf49697f6d1b62e54455d3fccd3a",
+  "source": "https://pypi.org/pypi/alerce/2.3.1/json",
+  "public_method": "alerce.core.Alerce.query_objects",
+  "implementation": [
+    "alerce/common_search.py",
+    "alerce/ztf_search.py"
+  ],
+  "parameters": [
+    "format",
+    "index",
+    "sort",
+    "survey"
+  ],
+  "accepts_extra_keywords": true,
+  "ztf_route": "Forwards kwargs to GET objects. Only class_name is renamed to class; oid and classifier are forwarded unchanged.",
+  "payload_evidence": [
+    "lc.json",
+    "stamp.json"
+  ],
+  "payload_evidence_kind": "Frozen REST responses from the preceding headline review; not Python-client captures or new live acceptance."
+}

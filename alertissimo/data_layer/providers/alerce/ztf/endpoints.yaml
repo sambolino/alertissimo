@@ -56,6 +56,11 @@ endpoints:
       fixed_params:
         survey: ztf
     params:
+      oid:
+        type: string
+        required: false
+        bind: target_id
+        description: Exact ZTF object identifier; forwarded by the Python client to the objects API.
       format:
         type: string
         default: json
@@ -188,6 +193,7 @@ endpoints:
     operation_types:
     - object_summary
     server_filters:
+    - oid
     - classifier
     - class_name
     - ranking

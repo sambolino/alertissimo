@@ -1,4 +1,4 @@
-# Native classification headline policy — PR 1
+# Native classification headline policy and integration
 
 Decision date: 11 November 2026. Base: `f44ec81158436784d4c0108f0524b11aeb8acd55`.
 Stable work items: **1 and 2**. The former cross-method/universal-winner proposal
@@ -7,17 +7,31 @@ Historical review documents retain their original context.
 
 ## Delivered boundary
 
-This PR adds eight provider-local `classification_headline.yaml` files, the pure
+The merged policy PR adds eight provider-local `classification_headline.yaml` files, the pure
 `data_layer.runtime.classification_headline.derive_headline_fields` function,
-counterexample tests and installed-wheel resource checks. There are no network
-calls, new dependencies, engines, workflow steps, remote registries or services.
+counterexample tests and installed-wheel resource checks. That PR introduced no
+network calls, dependencies, engines, workflow steps, remote registries or services.
 Policy data use the existing packaged provider resource directory.
 
 The function takes a canonical Portfolio and one broker/survey identity and
 returns attributable proposed fields. It **does not mutate or attach records**.
-Nothing imports it into the execution pipeline yet. Existing native predicates,
-retrieval call counts, confirmation and UI behavior are unchanged. The fields
+Nothing imports it into the execution pipeline yet. Existing native predicate
+meaning, confirmation and UI behavior are unchanged. The fields
 below are not advertised as runnable DSL paths by this PR.
+
+The next integration slice (**PR 2a**) extends fresh ALeRCE/ZTF classification
+retrieval: obtain all probability rows, then selected LC and stamp summaries from
+`query_objects(oid=..., classifier=...)`. Each call binds the same candidate's
+exact ID. Both summary calls are required; a transport failure must not masquerade
+as missing LC evidence and trigger fallback. Empty results remain missing evidence.
+All native rows, execution provenance and absent version metadata are retained.
+No class, probability threshold, ranking or version filter is sent.
+
+This adds two calls per object to a fresh ALeRCE/ZTF classification retrieval,
+including explicitly named classifiers. Named selection still runs locally and
+preserves the full physical audit. Existing proven discovery-material reuse is
+unchanged; that route does not promise to acquire all probability alternatives.
+ALeRCE/LSST and other brokers keep their existing retrieval recipes.
 
 ## Selection rules
 
@@ -32,9 +46,9 @@ below are not advertised as runnable DSL paths by this PR.
 | ANTARES/LSST | Unset | `headline_unresolved` |
 
 ALeRCE and ANTARES ordering is an **Alertissimo default**, not an upstream claim.
-The first ALeRCE/ZTF retrieval integration must obtain the broker-selected summary
-to resolve multiple LC versions faithfully. If that evidence is not acquired,
-the selector abstains; this PR does not hide that limitation. The current live
+The ALeRCE/ZTF retrieval integration obtains the broker-selected summary
+to resolve multiple LC versions faithfully. Without that summary, the selector
+can use one unambiguous rank-1 version; conflicting versions still abstain. The current live
 ANTARES capture does not establish the required assessment input-survey provenance.
 No adapter may manufacture it from a ZTF or LSST identifier on a locus.
 
@@ -118,11 +132,16 @@ are separate derived content; integration must not merge them over upstream valu
 
 ## Continuation and remaining PRs
 
-1. **This policy PR:** independently review the rule data, source references and
+1. **Merged policy PR:** independently review the rule data, source references and
    pure selector. Acceptance: counterexamples pass locally, all eight policies
    load from the installed wheel, and existing native normalization remains unchanged.
-2. **Execution and confirmation integration:** acquire the ALeRCE selected LC
-   summary with declared targeted calls; expose the derived fields through existing
+2. **Execution and confirmation integration**, split into reviewable slices:
+   **2a, targeted ALeRCE evidence acquisition** (this change), depends on merged
+   PR 1. Acceptance: ID-bound LC and stamp calls, retained probability versions,
+   distinct absent/error/conflict behavior, required-call failure and unchanged
+   prior continuation views. Frozen REST captures and an inspected client contract
+   support the request wiring; they are not new live end-to-end acceptance.
+   **2b, material/confirmation integration** (next), depends on 2a: expose the derived fields through existing
    ontology/material/planning owners; preserve native alternatives and assertion-local
    comparisons. ANTARES remains scoped honestly. Wire normalized confirm and admitted
    local discovery without broadening the discovery population. Validate broker-local
@@ -137,6 +156,13 @@ For PR 2, a new material view may derive from new eligible evidence under its
 pinned policy. Earlier views retain their evidence and stored derivation fields;
 loading an old serialized view must not rerun the current mapping. Adding a
 classifier or changing a policy alone must not silently rewrite old results.
+
+The classification series uses `integration/classification-headlines` as its PR
+base. The three validation jobs skip automatic runs only for PRs targeting that
+branch. Other bases, including the final PR to `main`, and manual dispatch retain
+their existing validation. Remove the temporary branch exception at closeout.
+Local project tests and package checks are deferred until the chunk is ready,
+unless an observed failure needs a focused check earlier.
 
 ## Evidence and local validation
 
@@ -165,3 +191,25 @@ the installed wheel. Existing packaging globs already include these files.
 
 The semantic-registry workflow includes the new tests. No additional manually
 dispatched workflow or live broker smoke test is needed for this opt-in PR.
+
+For the PR 2a acquisition change, preparation performs static Python syntax and
+YAML/JSON parsing plus Git whitespace/bundle verification only. Runtime tests are
+prepared, not reported as passed. The targeted local validation at chunk closeout
+includes:
+
+```bash
+PYTHONPATH=. python -m pytest -q \
+  tests/test_dsl_alerce_classification.py \
+  tests/test_dsl_multi_broker_classification.py \
+  tests/test_discovery_integration_acceptance.py \
+  tests/test_orchestration_classification_recipes.py \
+  tests/test_orchestration_classification_material.py \
+  tests/test_classification_headline_policy.py \
+  tests/test_alerce_ztf_endpoint_contracts.py \
+  tests/test_alerce_registry_architecture.py \
+  tests/test_alerce_classification_mappings.py \
+  tests/test_alerce_semantic_search.py \
+  tests/test_api_continuation.py
+PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
+PYTHONPATH=. python scripts/check_release_package.py
+```
