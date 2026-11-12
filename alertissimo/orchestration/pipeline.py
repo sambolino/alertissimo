@@ -19,6 +19,7 @@ from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.normalization.selection import (
     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
 )
+from alertissimo.orchestration.normalization.normalize import filter_execution_groups
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
@@ -250,14 +251,8 @@ def _filter_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        executions = tuple(
-            ExecutionPortfolioResult(
-                execution_id=execution.execution_id,
-                portfolios=prune_portfolios(execution.portfolios, step.predicate),
-            )
-            for execution in source.executions
-        )
         materialized = prune_portfolios(source.portfolios, step.predicate)
+        executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_index,
         executions=executions,

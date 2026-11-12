@@ -13,12 +13,12 @@ from alertissimo.data_layer.runtime.record_builder import (
     _semantic_identifier, build_portfolios_from_execution,
 )
 from alertissimo.data_layer.runtime.classification_headline import (
-    is_headline_record, materialize_headlines,
+    headline_reference, is_headline_record, materialize_headlines,
 )
 from alertissimo.orchestration.ir import (
     DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
 )
-from alertissimo.orchestration.ir.predicates import Predicate
+from alertissimo.orchestration.ir.predicates import Predicate, iter_semantic_references
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
     EndpointPlanRef,
@@ -338,6 +338,25 @@ def _materialize_enrichment_view(
     )
 
 
+def filter_execution_groups(source, predicate, materialized):
+    """Retain audit evidence for selected headline candidates without rederiving it.
+
+    A composed headline belongs to the material view, not an individual physical
+    call. Native predicates retain their historical execution-local projection.
+    """
+    normalized = any(headline_reference(ref) for ref in iter_semantic_references(predicate))
+    survivors = {summary_object_identity(p) for p in materialized} - {None}
+    return tuple(
+        ExecutionPortfolioResult(
+            execution_id=execution.execution_id,
+            portfolios=(tuple(p for p in execution.portfolios
+                              if summary_object_identity(p) in survivors)
+                        if normalized else prune_portfolios(execution.portfolios, predicate)),
+        )
+        for execution in source.executions
+    )
+
+
 def _filter_candidate_view(
     step: FilterStep,
     step_run: StepRun,
@@ -372,14 +391,8 @@ def _filter_candidate_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        executions = tuple(
-            ExecutionPortfolioResult(
-                execution_id=execution.execution_id,
-                portfolios=prune_portfolios(execution.portfolios, step.predicate),
-            )
-            for execution in source.executions
-        )
         materialized = prune_portfolios(source.portfolios, step.predicate)
+        executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_run.step_index,
         executions=executions,

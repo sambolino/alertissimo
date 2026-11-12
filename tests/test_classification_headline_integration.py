@@ -173,6 +173,16 @@ def test_public_confirm_uses_composed_alerce_recipe_and_broker_local_headlines(g
                             graph=graph, executor=executor, continue_from=result)
     assert len(continued.portfolios) == 1
     assert result.to_dict() == before and len(executor.calls) == call_count
+    # Every native call for this survivor remains intact, including alternative
+    # labels that would fail if evaluated as independent headline candidates.
+    assert continued.result.steps[-1].executions == result.result.steps[-1].executions
+    assert continued.portfolios == result.portfolios
+    # The final normalizer and staged executor must use the same material rule.
+    from alertissimo.orchestration.normalization.normalize import _filter_candidate_view
+    normalized = _filter_candidate_view(continued.workflow.steps[-1], continued.run.steps[-1],
+                                        list(result.result.steps))
+    assert normalized.executions == result.result.steps[-1].executions
+    assert normalized.portfolios == result.portfolios
 
 
 def test_unbounded_normalized_discovery_is_not_silently_broadened(graph):
