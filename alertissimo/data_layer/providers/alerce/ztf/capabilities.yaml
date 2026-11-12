@@ -159,6 +159,17 @@ recipes:
         - endpoint: query_probabilities
           params:
             oid: {from: step.target.ids}
+        # Keep all probability versions as alternatives. The objects endpoint
+        # supplies the broker-selected output for each reviewed default method.
+        # A missing LC label is evidence for fallback; a failed call is not.
+        - endpoint: query_objects
+          params:
+            oid: {from: step.target.ids}
+            classifier: {value: lc_classifier}
+        - endpoint: query_objects
+          params:
+            oid: {from: step.target.ids}
+            classifier: {value: stamp_classifier}
   get_cutout:
     - target_kind: object
       calls:

@@ -20,6 +20,10 @@ lookup tables and a pure selector, with tests prepared for local execution; it i
 not yet connected to execution, confirmation or the UI. Candidate-classification retrieval
 plans for ALeRCE, Fink and Lasair on both surveys. ANTARES has catalogue context,
 not an admitted candidate-classification Get.
+Fresh ALeRCE/ZTF classification retrieval now acquires selected LC and stamp
+summaries alongside all probability versions. Derived material and normalized
+predicates remain the next integration slice; this acquisition change does not
+complete items 1 or 2.
 
 **Target/work:** connect the reviewed per-pair native headline rules to immutable
 material views, preserving input/alternative attribution, candidate/context scope,
@@ -36,8 +40,8 @@ Do not invent a universal taxonomy or a new normalization engine.
 
 **Current:** upstream `best.*` fields and distinct-broker existence/proposition quorum
 exist. The 11 November decision replaces the former universal-winner proposal with
-native headline selection; see the policy contract above. Existing public behavior
-is unchanged by the opt-in policy module.
+native headline selection; see the policy contract above. The selector remains
+opt-in; fresh ALeRCE/ZTF retrieval now supplies its native selected-summary inputs.
 
 **Target/work:** attach a named/versioned headline derivation retaining native
 inputs, alternatives, conflict/abstention and provenance. Never overwrite upstream

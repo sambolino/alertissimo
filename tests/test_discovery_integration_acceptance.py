@@ -89,6 +89,14 @@ def test_alerce_classification_original_reports_keep_all_selected_versions(graph
             calls.append("query_probabilities")
             return deepcopy(probabilities)
 
+        def query_objects(self, format="pandas", index=None, sort=None, survey=None, **kwargs):
+            assert kwargs["oid"] == "ZTF21abfmbix" and survey == "ztf" and format == "json"
+            method = {"lc_classifier": "lc", "stamp_classifier": "stamp"}[kwargs["classifier"]]
+            calls.append("query_objects")
+            payload = captured(f"alerce/ztf/headlines/{method}.json")["payload"]
+            payload["items"] = [{**row, "oid": kwargs["oid"]} for row in payload["items"]]
+            return payload
+
     monkeypatch.setitem(sys.modules, "alerce.core", SimpleNamespace(Alerce=StrictRecordedClient))
     selector = "" if classifier is None else f" from {classifier}"
     source = f"objects ZTF21abfmbix from ztf via alerce\nwith classification{selector} via alerce\n"
@@ -96,7 +104,7 @@ def test_alerce_classification_original_reports_keep_all_selected_versions(graph
     assert validation.is_runnable, validation.lowering_error
     assert calls == []
     result = execute_dsl(source, graph=graph, executor=RegistryEndpointExecutor(), continue_from=None)
-    assert calls == ["query_object", "query_probabilities"]
+    assert calls == ["query_object", "query_probabilities", "query_objects", "query_objects"]
     assert identities(result.portfolios) == {("ztf", "ZTF21abfmbix")}
     selected = [row for row in probabilities if classifier is None or row["classifier_name"] == classifier]
     expected = Counter((r["classifier_name"], r["classifier_version"], r["class_name"], r["probability"], r["ranking"])
@@ -112,8 +120,10 @@ def test_alerce_classification_original_reports_keep_all_selected_versions(graph
                     actual[(record.get("provenance.producer.name"), record.get("provenance.producer.version"),
                             record.get(path), record.get(f"{prefix}.probability"), record.get(f"{prefix}.rank"))] += 1
     assert actual == expected and actual
-    probability_plan, = result.run.steps[1].endpoint_plans
+    probability_plan, lc_plan, stamp_plan = result.run.steps[1].endpoint_plans
     assert probability_plan.endpoint == "query_probabilities"
+    assert lc_plan.request_params["classifier"] == "lc_classifier"
+    assert stamp_plan.request_params["classifier"] == "stamp_classifier"
     assert "classifier" not in probability_plan.request_params
     assert "classifier" not in probability_plan.parameter_sources
     assert result.staged.execution.steps[1].executions[0].payload == probabilities

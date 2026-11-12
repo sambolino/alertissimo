@@ -1,0 +1,38 @@
+{
+  "url": "https://api.alerce.online/ztf/v1/objects?oid=ZTF20aaelulu&classifier=stamp_classifier&page_size=10",
+  "payload": {
+    "total": null,
+    "page": null,
+    "next": null,
+    "has_next": false,
+    "prev": null,
+    "has_prev": false,
+    "items": [
+      {
+        "oid": "ZTF20aaelulu",
+        "ndethist": "259",
+        "ncovhist": 792,
+        "mjdstarthist": 58855.45880790008,
+        "mjdendhist": 58967.22704860009,
+        "corrected": false,
+        "stellar": false,
+        "ndet": 58,
+        "g_r_max": 0.44063377,
+        "g_r_max_corr": null,
+        "g_r_mean": 0.69992447,
+        "g_r_mean_corr": null,
+        "firstmjd": 58855.54229169991,
+        "lastmjd": 58967.22704860009,
+        "deltajd": 111.68475690018386,
+        "meanra": 185.72886239827588,
+        "meandec": 15.823611163793103,
+        "sigmara": 2.0912251856557e-05,
+        "sigmadec": 1.5130516372812443e-05,
+        "class": "SN",
+        "classifier": "stamp_classifier",
+        "probability": 0.81320095,
+        "step_id_corr": "corr_bulk_0.0.1"
+      }
+    ]
+  }
+}

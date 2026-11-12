@@ -128,6 +128,14 @@ class Executor:
         elif (broker, endpoint) == ("alerce", "query_probabilities"):
             payload = [{"class_name": "SNIa", "classifier_name": "lc_classifier", "classifier_version": "v1",
                         "probability": 0.9 if params["oid"] == A else 0.2, "ranking": 1}]
+        elif (broker, endpoint) == ("alerce", "query_objects"):
+            assert params["oid"] in {A, B}
+            method = params["classifier"]
+            assert method in {"lc_classifier", "stamp_classifier"}
+            payload = {"items": [{"oid": params["oid"], "classifier": method,
+                                  "class": "SNIa" if method == "lc_classifier" else "SN",
+                                  "probability": 0.9 if params["oid"] == A else 0.2}],
+                       "has_next": False}
         else:
             assert (broker, endpoint) == ("fink", "objects")
             payload = [] if self.empty_fink else [
@@ -158,6 +166,7 @@ def test_public_retrieval_retains_candidates_and_attributable_assertions(graph, 
     result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
     assert identities(result) == {("ztf", A), ("ztf", B)}
     assert [name for _, name, _ in executor.calls].count("query_probabilities") == 2
+    assert [name for _, name, _ in executor.calls].count("query_objects") == 4
     assert [name for _, name, _ in executor.calls].count("objects") == 1
     for portfolio in result.portfolios:
         classes = [r for r in portfolio.records if r.semantic_type.startswith("classification@")]

@@ -119,7 +119,9 @@ imports, not engines. Do not reconstruct the removed broker factory behind them.
 current/target states and completion criteria. The reviewed headline selection and
 finite vocabulary policy is recorded in [classification headline policy](docs/classification_headline_policy.md).
 It is opt-in in the first policy PR; execution, normalized confirmation and UI
-integration remain subsequent work.
+integration remain subsequent work. Fresh ALeRCE/ZTF classification retrieval
+now supplies broker-selected LC and stamp summaries alongside all probability
+versions through its existing declarative recipe.
 
 - Coarse normalization translates the selected native headline through an explicit
   vocabulary. `best` does not choose a scientifically strongest cross-broker result.
