@@ -59,6 +59,16 @@ payloads:
       mode: field
       field: locus_id
 mappings:
+  classification@superphot_plus:antares.best.class:
+  - locus#properties.superphot_plus_class
+  classification@superphot_plus:antares.best.probability:
+  - locus#properties.superphot_plus_class_prob
+  classification@superphot_plus:antares.best.method:
+  - locus#properties.superphot_plus_classifier
+  classification@desoto:antares.best.class:
+  - locus#properties.desoto_transient_type
+  classification@desoto:antares.best.probability:
+  - locus#properties.desoto_transient_prob
   summary@ztf:antares.identity.object_id:
   - locus#properties.ztf_object_id
   - locus_by_id#properties.ztf_object_id

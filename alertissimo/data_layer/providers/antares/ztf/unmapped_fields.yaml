@@ -1,6 +1,9 @@
 broker: antares
 origin: ztf
 notes: Exhaustive payload-first semantic debt for frozen antares-client 1.14.0 evidence.
+# Headline integration maps literal Superphot+/DeSoto labels and probabilities.
+# Input survey and deployed model version remain unestablished; do not infer them
+# from locus identifiers, tags, classifier spelling or retrieval survey.
 unmapped:
 - locus#catalogs.0:
     reason: unsupported_or_ambiguous_semantics

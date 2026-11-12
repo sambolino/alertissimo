@@ -1,6 +1,9 @@
 broker: antares
 origin: lsst
 notes: Authoritative explicit semantic debt for all observed frozen scalar leaves.
+# Headline integration maps literal Superphot+/DeSoto labels and probabilities.
+# Input survey and deployed model version remain unestablished; do not infer them
+# from locus identifiers, tags, classifier spelling or retrieval survey.
 unmapped:
 - locus#properties.brightest_alert_id:
     reason: processing_metadata

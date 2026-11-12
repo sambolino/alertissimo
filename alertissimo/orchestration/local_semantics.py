@@ -140,6 +140,7 @@ def _apply_confirmation(
 
 def finalize_local_semantics(
     result: WorkflowPortfolioResult,
+    *, preserved_step_count: int = 0,
 ) -> WorkflowPortfolioResult:
     """Finalize local operations and semantic material lineage in workflow order.
 
@@ -157,6 +158,10 @@ def finalize_local_semantics(
 
     for step_index, step in enumerate(run.workflow.steps):
         step_run = run.steps[step_index]
+        if step_index < preserved_step_count:
+            if isinstance(step, (DeriveStep, MatchStep)):
+                run = _mark_succeeded(run, step_index)
+            continue
 
         if isinstance(step, ConfirmStep):
             if step_run.state is not StepRunState.SUCCEEDED:

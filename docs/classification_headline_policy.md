@@ -13,13 +13,14 @@ counterexample tests and installed-wheel resource checks. That PR introduced no
 network calls, dependencies, engines, workflow steps, remote registries or services.
 Policy data use the existing packaged provider resource directory.
 
-The function takes a canonical Portfolio and one broker/survey identity and
-returns attributable proposed fields. It **does not mutate or attach records**.
-Nothing imports it into the execution pipeline yet. Existing native predicate
-meaning, confirmation and UI behavior are unchanged. The fields
-below are not advertised as runnable DSL paths by this PR.
+The pure selector still returns fields without mutating inputs. The completion
+change attaches them to a separate `classification@headline:<broker>` record in
+each new material view. Native `best.class` and `best.probability` retain their
+meaning. `classification.best.coarse_class` and the other explicit headline paths
+are now admitted local predicates. The UI reads these stored records through the
+shared presentation adapter, without loading or rerunning policy data.
 
-The next integration slice (**PR 2a**) extends fresh ALeRCE/ZTF classification
+The merged acquisition slice (**PR 2a**) extends fresh ALeRCE/ZTF classification
 retrieval: obtain all probability rows, then selected LC and stamp summaries from
 `query_objects(oid=..., classifier=...)`. Each call binds the same candidate's
 exact ID. Both summary calls are required; a transport failure must not masquerade
@@ -31,6 +32,8 @@ This adds two calls per object to a fresh ALeRCE/ZTF classification retrieval,
 including explicitly named classifiers. Named selection still runs locally and
 preserves the full physical audit. Existing proven discovery-material reuse is
 unchanged; that route does not promise to acquire all probability alternatives.
+Its reuse proof accepts composed targeted retrievals with declared producer
+selectors, while retaining the guards on class filters, limits and other inputs.
 ALeRCE/LSST and other brokers keep their existing retrieval recipes.
 
 ## Selection rules
@@ -130,39 +133,105 @@ notifications by policy/error/native label; no recurring classifier audit is nee
 Raw native `best` fields and source records remain untouched. The proposed fields
 are separate derived content; integration must not merge them over upstream values.
 
-## Continuation and remaining PRs
+## Completion integration (12 November 2026)
 
-1. **Merged policy PR:** independently review the rule data, source references and
-   pure selector. Acceptance: counterexamples pass locally, all eight policies
-   load from the installed wheel, and existing native normalization remains unchanged.
-2. **Execution and confirmation integration**, split into reviewable slices:
-   **2a, targeted ALeRCE evidence acquisition** (this change), depends on merged
-   PR 1. Acceptance: ID-bound LC and stamp calls, retained probability versions,
-   distinct absent/error/conflict behavior, required-call failure and unchanged
-   prior continuation views. Frozen REST captures and an inspected client contract
-   support the request wiring; they are not new live end-to-end acceptance.
-   **2b, material/confirmation integration** (next), depends on 2a: expose the derived fields through existing
-   ontology/material/planning owners; preserve native alternatives and assertion-local
-   comparisons. ANTARES remains scoped honestly. Wire normalized confirm and admitted
-   local discovery without broadening the discovery population. Validate broker-local
-   votes, missing evidence under NOT, initial filtering before latest, retrieval reuse,
-   serialization and continuation. No new engine or broker switches in the planner.
-3. **Comparison view and closeout:** show native/coarse label, scope, method/version,
-   policy and errors through shared presentation. Validate serialized/live result
-   presentation and retain the native assertion inspector. Finish this topic before
-   reopening other MD work items.
+The completion branch includes the discovery reuse fix plus materialization,
+normalized predicates/confirmation, bounded initial selection and comparison UI.
+Local validation is pending: the assistant has not executed tests or builds for
+this change. The user runs the commands below; CI remains deferred to the final
+integration-to-main PR unless a specific failure requires it.
 
-For PR 2, a new material view may derive from new eligible evidence under its
-pinned policy. Earlier views retain their evidence and stored derivation fields;
-loading an old serialized view must not rerun the current mapping. Adding a
-classifier or changing a policy alone must not silently rewrite old results.
+Each broker/survey gets a separate derived record. Its input fingerprint covers
+native classification records, exactly linked observations and candidate identity.
+An unchanged fingerprint reuses the stored policy/result even if policy files
+change. A changed input yields a new interpretation in a new view. Physical audit
+records and earlier Step views remain intact. A method-specific Get keeps its
+existing native selection semantics and suppresses the default headline for that
+selected source; a generic Get is required for a default across methods.
 
-The classification series uses `integration/classification-headlines` as its PR
-base. The three validation jobs skip automatic runs only for PRs targeting that
-branch. Other bases, including the final PR to `main`, and manual dispatch retain
-their existing validation. Remove the temporary branch exception at closeout.
-Local project tests and package checks are deferred until the chunk is ready,
-unless an observed failure needs a focused check earlier.
+Continuation preserves the finalized semantic prefix and its record IDs while
+retaining the existing checked physical-call replay. Loading or displaying an old
+serialized Portfolio never backfills headlines or loads today's policies.
+
+Normalized Confirm uses the existing complete targeted classification recipe for
+each requested broker. It consolidates only that occurrence's own evidence within
+one broker before headline selection, then counts at most one vote per broker.
+Incoming material cannot fill another broker's missing assessment. Native Confirm
+retains its existing assertion-local semantics. Missing/sentinel/conflict/unsupported
+outputs abstain under comparisons and NOT. An unknown label is stored as an error;
+a coarse predicate encountering it raises an explicit normalization error rather
+than silently discarding the candidate. The comparison table surfaces the error
+and preserves the native evidence and policy digest.
+
+ANTARES now retrieves and maps Superphot+ class/probability/classifier identifier
+and DeSoto class/probability as native locus assessments on both survey routes.
+No version or input survey is manufactured. Superphot+ on ZTF-associated loci
+therefore remains `input_scope_unresolved`; ANTARES/LSST remains
+`headline_unresolved`. Both are useful visible evidence, not normalized votes.
+Other anomaly/filter outputs remain in the existing debt ledger and captured data.
+
+For cone or admitted temporal discovery, normalized initial conditions run after
+targeted classification acquisition and before global `latest`. The whole original
+predicate is retained. A normalized condition alone never opens an unbounded
+archive scan. Provider completeness/time guards remain in force.
+
+Examples:
+
+```text
+objects ZTF20aaaaaaa from ztf via alerce
+with classification via alerce, fink, lasair
+filter classification.best.coarse_class = "supernova"
+```
+
+```text
+objects ZTF20aaaaaaa from ztf via alerce
+where classification.best.coarse_class = "supernova"
+confirm by 2 via alerce, fink, lasair
+```
+
+```text
+objects from ztf via alerce
+inside (10, 20, 5arcsec)
+where classification.best.coarse_class = "supernova"
+latest 1
+```
+
+A native label/metric predicate still uses `best.class` / `best.probability`.
+A headline label/metric predicate uses `best.coarse_class` /
+`best.native_probability` on the same derived record; heterogeneous probabilities
+are never averaged or compared to select the headline. These examples describe
+candidate assessment support, not physically confirmed classifications.
+
+The integration branch exception remains limited to
+`integration/classification-headlines`. The final PR to `main` runs the ordinary
+validation jobs. No manual workflow dispatch is required for intermediate PRs.
+The remaining MD work is outside this topic.
+
+## Completion validation (user-run only)
+
+```bash
+PYTHONPATH=. python -m pytest -q \
+  tests/test_classification_headline_policy.py \
+  tests/test_classification_headline_integration.py \
+  tests/test_dsl_alerce_classification.py \
+  tests/test_dsl_multi_broker_classification.py \
+  tests/test_alerce_semantic_search.py \
+  tests/test_orchestration_classification_material.py \
+  tests/test_dsl_confirm_scope.py \
+  tests/test_orchestration_confirmation.py \
+  tests/test_api_continuation.py \
+  tests/test_app_classification_comparison.py \
+  tests/test_app_search_portfolios.py \
+  tests/test_app_plot_semantic_records.py \
+  tests/test_antares_registry_architecture.py \
+  tests/test_portfolio_serialization.py
+PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
+PYTHONPATH=. python scripts/check_release_package.py
+```
+
+The package check covers the new shared presentation module and runtime resources.
+None of these commands was run during preparation. Historical evidence below
+belongs to its stated earlier slice, not this completion change.
 
 ## Evidence and local validation
 
@@ -194,7 +263,7 @@ dispatched workflow or live broker smoke test is needed for this opt-in PR.
 
 For the PR 2a acquisition change, preparation performs static Python syntax and
 YAML/JSON parsing plus Git whitespace/bundle verification only. Runtime tests are
-prepared, not reported as passed. The targeted local validation at chunk closeout
+prepared, not reported as passed. Focused local validation for acquisition changes
 includes:
 
 ```bash

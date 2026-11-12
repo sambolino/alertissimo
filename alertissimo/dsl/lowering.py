@@ -15,6 +15,7 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from alertissimo.data_layer.runtime.capability_graph import CapabilityGraph
+from alertissimo.data_layer.runtime.classification_headline import headline_reference
 from alertissimo.orchestration.ir import (
     BooleanPredicate,
     ClassifyStep,
@@ -309,10 +310,12 @@ def _initial_material_predicate(surface: SurfaceScript, step) -> Predicate | Non
     if any(ref.semantic_type not in {"summary", "classification"} for ref in references):
         return None
     classifications = tuple(ref for ref in references if ref.semantic_type == "classification")
-    channels = {ref.channel for ref in classifications}
+    normalized = any(headline_reference(ref) for ref in classifications)
+    channels = {ref.channel or (surface.candidates.broker if normalized else None)
+                for ref in classifications}
     if not channels or None in channels:
         return None
-    if channels <= {source.broker for source in step.sources}:
+    if not normalized and channels <= {source.broker for source in step.sources}:
         return None  # Preserve existing native-only discovery realization.
     if len(channels) > 1 and len(step.sources) != 1:
         return None
@@ -335,6 +338,9 @@ def _initial_material_predicate(surface: SurfaceScript, step) -> Predicate | Non
             if requirement.source is None:
                 generic_material.add(channel)
                 continue
+            if normalized:
+                # A narrowed classifier view cannot establish default precedence.
+                return None
             if any(ref.producer is None or ref.producer.lower() != requirement.source.lower()
                    for ref in classifications if ref.channel == channel):
                 # Local model selection must not remove another model needed by
@@ -829,7 +835,9 @@ def _implicit_requirements_from_where(
     requirements: list[RequirementClause] = []
     for ref in extract_semantic_record_references(clause.condition, record_types):
         requirement = RequirementClause(
-            product=ref.noun, source=ref.producer, via=ref.channel,
+            product=ref.noun,
+            source=None if ref.noun == "classification" and ref.producer == "headline" else ref.producer,
+            via=ref.channel,
         )
         try:
             step = _lower_requirement(

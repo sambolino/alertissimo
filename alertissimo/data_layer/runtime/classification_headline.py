@@ -1,13 +1,13 @@
-"""Pure, opt-in broker headline derivation over canonical classification records.
+"""Broker headline derivation and immutable materialization over native evidence.
 
-Provider policy and vocabulary live beside provider mappings. This module neither
-fetches evidence nor changes a Portfolio. The execution/view integration is a
-separate change; importing it does not alter native ``best`` query semantics.
+Provider policy and vocabulary live beside provider mappings. No network calls or
+cross-method scoring; native best fields and earlier views remain unchanged.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from functools import lru_cache
 import hashlib
 import json
@@ -17,7 +17,9 @@ from pathlib import Path
 import yaml
 
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
-from alertissimo.data_layer.representations import Portfolio, SemanticRecord
+from alertissimo.data_layer.representations import (
+    InternalPortfolioId, InternalRecordId, Portfolio, SemanticRecord,
+)
 
 
 class HeadlinePolicyError(ValueError):
@@ -32,6 +34,106 @@ COARSE_CLASSES = frozenset({
     "satellite", "transient", "periodic", "stochastic", "nonperiodic",
     "fast_transient", "long_transient", "star", "galaxy", "nuclear_transient",
 })
+
+# These paths belong to the separate derived headline record, never a native
+# producer's best.class/probability fields. Shared by material capability checks.
+HEADLINE_FIELDS = frozenset("best." + name for name in (
+    "native_class", "coarse_class", "context_class", "scope", "basis",
+    "candidate_status", "subtype", "source_method", "source_version",
+    "source_output", "native_probability", "native_score", "policy",
+    "mapping_version", "policy_digest", "status", "error_code", "broker",
+    "survey", "object_id", "input_record_ids", "considered_record_ids",
+    "eligible_record_ids", "selected_record_ids", "observation_mjd", "evidence_digest",
+))
+
+
+def is_headline_record(record: SemanticRecord) -> bool:
+    return record.semantic_type.startswith("classification@headline:")
+
+
+def headline_reference(reference) -> bool:
+    return (reference.semantic_type == "classification"
+            and reference.producer in (None, "headline")
+            and reference.field_path in HEADLINE_FIELDS)
+
+
+def headline_material_available(reference, outputs) -> bool:
+    """Prove derivability from mapped candidate classification, not field presence.
+
+    An eligible route may return no label; its stored status then reports missing.
+    Physical mappings remain physical: no synthetic mapping/pushdown is registered.
+    """
+    if not headline_reference(reference):
+        return False
+    pairs = {(field.broker, field.origin) for field in outputs
+             if field.semantic_record_type.partition("@")[0] == "classification"
+             and reference.channel in (None, field.broker)}
+    return any((PROVIDERS_ROOT / broker / origin / "classification_headline.yaml").is_file()
+               for broker, origin in pairs)
+
+
+def materialize_headlines(portfolio: Portfolio, *, include_missing: bool = False) -> Portfolio:
+    """Store one immutable interpretation per delivered broker/survey.
+
+    Reuse a stored result when its native evidence is unchanged, even if current
+    policy data changed. Deserialization/presentation never call this function.
+    New material replaces derived records only in the new view; native records
+    and the old view remain intact. No synthetic physical execution is invented.
+    """
+    native = tuple(r for r in portfolio.records if not is_headline_record(r))
+    stored = tuple(r for r in portfolio.records if is_headline_record(r))
+    headlines = []
+    for broker, origin in sorted({(e.broker, e.origin) for e in portfolio.executions}):
+        if not (PROVIDERS_ROOT / broker / origin / "classification_headline.yaml").is_file():
+            continue
+        # Only identities belonging to this survey may acquire this headline.
+        if not any(r.semantic_type.partition(":")[0] == f"summary@{origin}"
+                   and r.get("identity.object_id") is not None for r in native):
+            continue
+        execution_ids = {e.internal_execution_id for e in portfolio.executions
+                         if (e.broker, e.origin) == (broker, origin)}
+        if not include_missing and not any(
+            r.semantic_type.partition("@")[0] == "classification"
+            and r.internal_source is not None and r.internal_source.internal_execution_id in execution_ids
+            for r in native
+        ) and not any(r.get("best.broker") == broker and r.get("best.survey") == origin for r in stored):
+            continue
+        inputs = tuple(r for r in native if r.semantic_type.partition("@")[0] == "classification"
+                       and r.internal_source is not None
+                       and r.internal_source.internal_execution_id in execution_ids)
+        linked = tuple(r for r in native if r.semantic_type.partition("@")[0] == "measurement"
+                       and r.internal_source is not None
+                       and any(r.internal_source == c.internal_source for c in inputs))
+        identities = sorted({str(r.get("identity.object_id")) for r in native
+                             if r.semantic_type.partition(":")[0] == f"summary@{origin}"
+                             and r.get("identity.object_id") is not None})
+        evidence = (identities, sorted((r.internal_record_id.value, r.semantic_type, dict(r.fields))
+                                      for r in inputs + linked))
+        fingerprint = hashlib.sha256(json.dumps(evidence, sort_keys=True, default=str).encode()).hexdigest()
+        previous = [r for r in stored if r.get("best.broker") == broker
+                    and r.get("best.survey") == origin
+                    and r.get("best.evidence_digest") == fingerprint]
+        if len(previous) == 1:
+            headlines.append(previous[0])
+            continue
+        fields = derive_headline_fields(portfolio, broker=broker, origin=origin)
+        fields["best.evidence_digest"] = fingerprint
+        digest = hashlib.sha256(json.dumps(fields, sort_keys=True, default=str).encode()).hexdigest()
+        headlines.append(SemanticRecord(InternalRecordId(f"headline:{digest}"),
+                                        f"classification@headline:{broker}", fields))
+    records = native + tuple(headlines)
+    if records == portfolio.records:
+        return portfolio
+    # New immutable content needs a new Portfolio ID; retain incident edges.
+    digest = hashlib.sha256((portfolio.internal_portfolio_id.value + ":" + ":".join(
+        r.internal_record_id.value for r in headlines)).encode()).hexdigest()
+    identifier = InternalPortfolioId(f"portfolio:headline:{digest}")
+    removed = {r.internal_record_id for r in stored} - {r.internal_record_id for r in headlines}
+    edges = tuple(replace(edge,
+                         subject=identifier if edge.subject == portfolio.internal_portfolio_id else edge.subject,
+                         target=identifier if edge.target == portfolio.internal_portfolio_id else edge.target)
+                  for edge in portfolio.edges if edge.subject not in removed and edge.target not in removed)
+    return replace(portfolio, internal_portfolio_id=identifier, records=records, edges=edges)
 
 
 def _key(value):
