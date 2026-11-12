@@ -35,8 +35,15 @@ def test_python_client_endpoints(origin):
 
 
 def test_no_extra_antares_registry_yaml_files():
-    allowed = {"endpoints.yaml", "mappings.yaml", "unmapped_fields.yaml", "capabilities.yaml"}
-    assert {path.name for path in ROOT.rglob("*.yaml")} <= allowed
+    # Headline policy is reviewed provider-local data, alongside the existing
+    # endpoint/mapping/recipe declarations. Keep the inventory closed: require
+    # all five files for both surveys and reject extra or misplaced YAML files.
+    required = {
+        "endpoints.yaml", "mappings.yaml", "unmapped_fields.yaml",
+        "capabilities.yaml", "classification_headline.yaml",
+    }
+    expected = {f"{origin}/{name}" for origin in EXPECTED_ENDPOINTS for name in required}
+    assert {path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*.yaml")} == expected
 
 
 @pytest.mark.parametrize("origin", EXPECTED_ENDPOINTS)

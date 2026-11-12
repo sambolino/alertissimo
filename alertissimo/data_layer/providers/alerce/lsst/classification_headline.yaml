@@ -1,0 +1,35 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "alerce-lsst-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "alerce",
+  "origin": "lsst",
+  "enabled": true,
+  "sources": [
+    "https://science.alerce.online/alerce-pipeline/",
+    "tests/fixtures/alerce/lsst/query_probabilities.json",
+    "https://api-lsst.alerce.online/object_api/list_objects?oid=170587117485817955&survey=lsst&page_size=2"
+  ],
+  "methods": [
+    {
+      "producer": "stamp_classifier_rubin_beta_20260421",
+      "version_rule": "exact",
+      "basis": "model",
+      "allow_rank_one": true,
+      "versions": [
+        "2.0.2",
+        202
+      ]
+    }
+  ],
+  "vocabulary": [
+    {"label": "AGN", "coarse": "agn", "scope": "candidate", "status": "candidate"},
+    {"label": "SN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
+    {"label": "VS", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
+    {"label": "asteroid", "coarse": "solar_system", "scope": "candidate", "status": "candidate"},
+    {"label": "bogus", "coarse": "artifact", "scope": "candidate", "status": "candidate"}
+  ],
+  "sentinels": [],
+  "note": "Pinned method. Version 202 is an explicitly reviewed endpoint-local identifier from query_probabilities; 2.0.2 is the list endpoint string. No numeric/string version conversion is inferred for other models. Both native versions remain distinguishable and conflicting/multiple selected versions abstain."
+}

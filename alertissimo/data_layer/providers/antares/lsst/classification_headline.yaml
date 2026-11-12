@@ -1,0 +1,18 @@
+# Reviewed headline policy; JSON is a YAML subset. No remote updates.
+{
+  "schema_version": 1,
+  "policy_id": "antares-lsst-headline-v1",
+  "mapping_version": "coarse-v1",
+  "broker": "antares",
+  "origin": "lsst",
+  "enabled": false,
+  "sources": [
+    "https://antares.noirlab.edu/"
+  ],
+  "methods": [],
+  "vocabulary": [
+
+  ],
+  "sentinels": [],
+  "note": "No default: classification input-survey provenance is unresolved. LSST locus membership does not establish an LSST classification."
+}
