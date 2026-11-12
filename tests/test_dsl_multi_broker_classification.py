@@ -169,7 +169,7 @@ def test_public_retrieval_retains_candidates_and_attributable_assertions(graph, 
     assert [name for _, name, _ in executor.calls].count("query_objects") == 4
     assert [name for _, name, _ in executor.calls].count("objects") == 1
     for portfolio in result.portfolios:
-        classes = [r for r in portfolio.records if r.semantic_type.startswith("classification@")]
+        classes = [r for r in portfolio.records if r.semantic_type.startswith("classification@") and not r.semantic_type.startswith("classification@headline:")]
         expected = {"alerce"} if empty_fink else {"alerce", "fink"}
         assert {portfolio.execution(r.internal_source.internal_execution_id).broker for r in classes} == expected
 

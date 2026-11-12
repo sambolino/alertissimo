@@ -68,7 +68,8 @@ def recorded_client(monkeypatch, origin, *, selected_overrides=None, probability
 
 def classification_records(portfolios):
     return [record for portfolio in portfolios for record in portfolio.records
-            if record.semantic_type.startswith("classification@")]
+            if record.semantic_type.startswith("classification@")
+            and not record.semantic_type.startswith("classification@headline:")]
 
 
 @pytest.mark.parametrize("origin,oid,classifier", [

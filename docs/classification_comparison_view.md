@@ -4,6 +4,17 @@ Branch: `feat/classification-comparison-view`.
 Base: `b666c34` on `integration/discovery-completion`, after C5 (#343).
 Keep main-target #329 draft.
 
+## Current extension: stored headline comparison
+
+The November 12 completion change adds stored per-broker headline rows with native
+and coarse class, scope, basis, candidate status, method/version, policy digest and
+normalization errors. Shared `data_layer/presentation/portfolio_classification.py`
+owns extraction for typed and serialized Portfolios. Native alternatives and the
+record inspector remain available. Old saved records are displayed as stored,
+without rerunning the current vocabulary. The C6 history below describes the
+original native-only comparison; its normalization deferral is superseded by
+[classification headline policy](classification_headline_policy.md).
+
 ## Scientific presentation
 
 The object Portfolio's Classifications tab now shows every reported `best` and

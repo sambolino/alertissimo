@@ -248,8 +248,8 @@ def execute_incremental_workflow_run(
 ) -> StagedWorkflowResult:
     """Execute an extended planned workflow while replaying its prior call prefix.
 
-    Planning and normalization intentionally run again over the cumulative workflow
-    so the returned result is a complete immutable semantic snapshot. Physical
+    Planning runs over the cumulative workflow; the prior semantic prefix is
+    retained so stored headline policies and evidence IDs are not reinterpreted. Physical
     provider calls from ``previous`` are not repeated; after the exact old prefix
     has been replayed, only newly appended work is delegated to ``executor``.
     """
@@ -266,6 +266,7 @@ def execute_incremental_workflow_run(
             binding.step_index: binding.reference_time
             for binding in previous.bindings if binding.reference_time is not None
         },
+        _prior_steps=previous.normalized.steps,
     )
     replay.require_complete_replay()
     return staged

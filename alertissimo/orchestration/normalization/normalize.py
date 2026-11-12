@@ -12,6 +12,9 @@ from alertissimo.data_layer.representations import (
 from alertissimo.data_layer.runtime.record_builder import (
     _semantic_identifier, build_portfolios_from_execution,
 )
+from alertissimo.data_layer.runtime.classification_headline import (
+    is_headline_record, materialize_headlines,
+)
 from alertissimo.orchestration.ir import (
     DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
 )
@@ -51,8 +54,15 @@ def apply_classification_selection(step: Step, view: StepPortfolioResult) -> Ste
     Raw normalization and prior Step snapshots remain immutable; a missing model
     yields no classification records for that source, rather than another model.
     """
+    if isinstance(step, FilterStep):
+        return view  # Filtering retains the stored interpretation of its input.
     if not isinstance(step, GetClassificationStep) or step.classifier is None:
-        return view
+        return StepPortfolioResult(
+            step_index=view.step_index, executions=view.executions,
+            materialized_portfolios=tuple(materialize_headlines(
+                p, include_missing=isinstance(step, GetClassificationStep),
+            ) for p in view.portfolios),
+        )
     requested = _semantic_identifier(step.classifier)
     selected = []
     changed = False
@@ -60,6 +70,15 @@ def apply_classification_selection(step: Step, view: StepPortfolioResult) -> Ste
         executions = {item.internal_execution_id: item for item in portfolio.executions}
         removed = set()
         for record in portfolio.records:
+            # A method-specific view does not claim to contain the material
+            # needed to choose the default across methods.
+            if is_headline_record(record):
+                if not step.sources or any(
+                    source.broker in (None, record.get("best.broker"))
+                    and source.origin in (None, record.get("best.survey")) for source in step.sources
+                ):
+                    removed.add(record.internal_record_id)
+                continue
             noun, _, qualifiers = record.semantic_type.partition("@")
             if noun != "classification" or record.internal_source is None:
                 continue
@@ -644,6 +663,7 @@ def normalize_workflow_execution(
     *,
     validate_semantic_model: bool = True,
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]] | None = None,
+    preserved_steps: tuple[StepPortfolioResult, ...] = (),
 ) -> WorkflowPortfolioResult:
     """Normalize physical executions once, then expose Step-specific semantic views.
 
@@ -674,6 +694,9 @@ def normalize_workflow_execution(
     )
     normalized_steps: list[StepPortfolioResult] = []
     for step_run, step_result in zip(result.run.steps, result.steps):
+        if step_run.step_index < len(preserved_steps):
+            normalized_steps.append(preserved_steps[step_run.step_index])
+            continue
         step = result.run.step_at(step_run.step_index)
         if isinstance(step, (DeriveStep, MatchStep)):
             normalized_steps.append(

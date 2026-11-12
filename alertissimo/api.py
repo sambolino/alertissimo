@@ -7,7 +7,7 @@ and post-normalization semantic finalization themselves.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import Enum
 import json
@@ -369,7 +369,13 @@ def execute_dsl(
                 validate_semantic_model=validate_semantic_model,
                 **({"reference_time": reference_time} if reference_time is not None else {}),
             )
-        result = finalize_local_semantics(staged.normalized)
+        result = finalize_local_semantics(
+            staged.normalized,
+            preserved_step_count=len(previous.run.steps) if previous is not None else 0,
+        )
+        # Continuation consumes the frozen semantic prefix, including its stored
+        # headline interpretations, while retaining physical execution replay.
+        staged = replace(staged, normalized=result)
 
         execution = DSLExecutionResult(
             source=source,

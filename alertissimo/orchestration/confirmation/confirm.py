@@ -11,6 +11,8 @@ from __future__ import annotations
 from collections import defaultdict
 
 from alertissimo.data_layer.representations import Portfolio
+from alertissimo.data_layer.runtime.classification_headline import headline_reference, materialize_headlines
+from alertissimo.orchestration.ir.predicates import iter_semantic_references
 from alertissimo.orchestration.ir import ConfirmStep
 from alertissimo.orchestration.normalization.models import (
     StepPortfolioResult,
@@ -81,6 +83,10 @@ def confirm_step_portfolios(
     }
     declared_brokers = _declared_brokers(step)
     votes: dict[tuple[str, str], set[str]] = defaultdict(set)
+    normalized = step.predicate is not None and any(
+        headline_reference(ref) for ref in iter_semantic_references(step.predicate)
+    )
+    broker_material = defaultdict(list)
 
     for execution in own.executions:
         if not execution.portfolios:
@@ -90,6 +96,9 @@ def confirm_step_portfolios(
             raise ConfirmExecutionError(
                 f"confirm execution broker {broker!r} is not one of the declared sources"
             )
+        if normalized:
+            broker_material[broker].extend(execution.portfolios)
+            continue
         for portfolio in execution.portfolios:
             identity = summary_object_identity(portfolio)
             if (
@@ -97,6 +106,15 @@ def confirm_step_portfolios(
                 and identity in candidate_identities
                 and _portfolio_attests(step, portfolio)
             ):
+                votes[identity].add(broker)
+
+    # Compose only this occurrence's evidence within one broker. Inherited
+    # candidate assertions and another broker's methods cannot supply its vote.
+    for broker, portfolios in broker_material.items():
+        for portfolio in consolidate_portfolios(tuple(portfolios)):
+            portfolio = materialize_headlines(portfolio)
+            identity = summary_object_identity(portfolio)
+            if identity in candidate_identities and _portfolio_attests(step, portfolio):
                 votes[identity].add(broker)
 
     survivors = {
@@ -107,7 +125,7 @@ def confirm_step_portfolios(
 
     accumulated = consolidate_portfolios(source.portfolios + own.portfolios)
     materialized = tuple(
-        portfolio
+        materialize_headlines(portfolio)
         for portfolio in accumulated
         if summary_object_identity(portfolio) in survivors
     )

@@ -32,6 +32,9 @@ from alertissimo.data_layer.runtime.recipes import (
     CallValueSource, ConstantValueSource, EncoderValueSource, RecipeCapability, StepValueSource,
 )
 from alertissimo.orchestration.confirmation.capability import confirmation_endpoints
+from alertissimo.data_layer.runtime.classification_headline import (
+    headline_material_available, headline_reference,
+)
 from alertissimo.orchestration.ir.predicates import (
     Predicate, SemanticReference, iter_semantic_references, predicate_requires_reference,
 )
@@ -157,6 +160,11 @@ def _search_recipe_evidence(
     )
     if not declared:
         return None
+    if getattr(step, "predicate", None) is not None and any(
+        headline_reference(ref) for ref in iter_semantic_references(step.predicate)
+    ):
+        return _CandidateEvidence(raw=(), compatible=(), recipes=(), empty_status="deferred",
+                                  empty_reason="headline discovery requires a bounded population followed by classification retrieval")
     migrated = {(recipe.broker, recipe.origin) for recipe in declared}
     unmigrated = (
         _legacy_candidate_evidence_for_source(step, graph, source).compatible
@@ -478,6 +486,8 @@ def predicate_material_gaps(
 ) -> tuple[str, ...]:
     """Inspect call-scoped mapped material without selecting or executing a route."""
     def mapped(reference: SemanticReference) -> bool:
+        if headline_material_available(reference, outputs):
+            return True
         for field in outputs:
             record = field.semantic_record_type
             if not semantic_record_noun_matches(record, reference.semantic_type):
@@ -840,6 +850,27 @@ def _crossmatch_endpoint_honors_radius(endpoint: EndpointCapability) -> bool:
 def _confirmation_recipe_evidence(
     step: ConfirmStep, graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
+    # A normalized proposition needs the complete declared classification recipe,
+    # including selected summaries. One probability endpoint is not equivalent.
+    if step.predicate is not None and any(
+        headline_reference(ref) for ref in iter_semantic_references(step.predicate)
+    ):
+        retrieval = GetClassificationStep(target=step.target, sources=step.sources)
+        evidence = _classification_recipe_evidence(retrieval, graph, source)
+        if evidence is None:
+            return _CandidateEvidence(raw=(), compatible=(), recipes=(),
+                                      empty_status="unsupported",
+                                      empty_reason="no targeted headline evidence recipe")
+        recipes = tuple(recipe for recipe in evidence.recipes if not predicate_material_gaps(
+            step.predicate, tuple(field for call in recipe.calls for field in call.outputs),
+            broker=recipe.broker,
+        ))
+        keys = {(r.broker, r.origin, r.calls[0].endpoint) for r in recipes}
+        return replace(evidence,
+                       compatible=tuple(e for e in evidence.compatible
+                                        if (e.broker, e.origin, e.endpoint) in keys),
+                       recipes=tuple(replace(r, op=step.op) for r in recipes),
+                       empty_reason="classification recipe lacks required proposition material")
     declared = graph.query_recipes(
         broker=source.broker if source else None,
         origin=source.origin if source else None, op=step.op,

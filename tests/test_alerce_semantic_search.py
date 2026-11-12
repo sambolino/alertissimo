@@ -158,7 +158,7 @@ def test_rubin_reported_mjd_residuals_preserve_two_classifier_rows_for_one_objec
     result = execute_dsl(source, graph=graph, executor=endpoint_executor, continue_from=None)
     assert len(client.calls) == 3  # bare-list pagination probes the empty final page
     assert {summary_object_identity(p) for p in result.portfolios} == {("lsst", "170587117485817955")}
-    classifications = [record for p in result.portfolios for record in p.records if record.semantic_type.startswith("classification@")]
+    classifications = [record for p in result.portfolios for record in p.records if record.semantic_type.startswith("classification@") and not record.semantic_type.startswith("classification@headline:")]
     assert {record.fields["best.class"] for record in classifications} == {"SN", "AGN"}
     assert all(record.fields["time.last_mjd"] == 61235.41918367943
                for p in result.portfolios for record in p.records if record.semantic_type == "summary@lsst:alerce")

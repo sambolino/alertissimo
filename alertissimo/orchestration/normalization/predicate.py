@@ -12,6 +12,9 @@ import operator
 from typing import Any
 
 from alertissimo.data_layer.representations import Portfolio, SemanticRecord
+from alertissimo.data_layer.runtime.classification_headline import (
+    HeadlinePolicyError, headline_reference, is_headline_record, materialize_headlines,
+)
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
@@ -126,6 +129,19 @@ def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> 
     """
     selectors = tuple(dict.fromkeys(_selector(ref) for ref in iter_semantic_references(predicate)))
     records = {key: _matching_records(portfolio, key) for key in selectors}
+    references = tuple(iter_semantic_references(predicate))
+    for key in selectors:
+        derived = key[1] == "headline" or any(headline_reference(ref) for ref in references if _selector(ref) == key)
+        # Preserve native best and bare existence semantics. In a normalized
+        # expression, bind all fields to the same stored headline assertion.
+        records[key] = tuple(r for r in records[key] if is_headline_record(r) == derived)
+        if derived and any(ref.field_path == "best.coarse_class" for ref in references if _selector(ref) == key):
+            for record in records[key]:
+                if record.get("best.status") == "error":
+                    raise HeadlinePolicyError(
+                        f"{record.get('best.broker')}/{record.get('best.survey')}: "
+                        f"{record.get('best.error_code')}: {record.get('best.native_class')!r}"
+                    )
     bound: dict[tuple[str, str | None, str | None], SemanticRecord | None] = {}
 
     def operand_value(operand):
@@ -192,6 +208,8 @@ def prune_portfolios(
 ) -> tuple[Portfolio, ...]:
     """Keep only normalized candidate Portfolios satisfying a residual predicate."""
 
+    if any(headline_reference(ref) for ref in iter_semantic_references(predicate)):
+        portfolios = tuple(materialize_headlines(p) for p in portfolios)
     return tuple(
         portfolio
         for portfolio in portfolios
