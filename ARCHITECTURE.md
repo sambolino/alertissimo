@@ -1,7 +1,7 @@
 # Alertissimo architecture and development contract
 
-This is the current ownership guide, read with `AGENTS.md`. Historical plans
-describe their own checkpoints; current user instructions take precedence.
+This is the current ownership guide, read with `AGENTS.md`. Superseded milestone
+notes are available in Git history; current user instructions take precedence.
 
 ## Product and deployment
 
@@ -61,6 +61,14 @@ Ontology components and enum values do not become standalone request nouns. The
 and transient display projection remain distinct. Existing `GetLightcurveStep`
 retrieval is not the unimplemented local `LightcurveStep` construction.
 
+An abstract-family request expands deterministically into supported concrete Gets
+using the supplied capability graph and candidate origins. Identical explicit or
+continued requests are deduplicated. Deferred members are not activated, an empty
+expansion fails, and admitted required-call failures are not silently skipped.
+Family-level producer/method restrictions and predicates are rejected rather than
+distributed across heterogeneous children. `$is` expresses transitive family
+membership without copying fields; abstract containers cannot be instantiated.
+
 The recipe interpreter currently inspects IR field/operator contracts through
 lazy imports in `data_layer/runtime/recipes.py`. This is an explicit, bounded
 schema bridge, not another workflow implementation. The dependency graph is not
@@ -83,10 +91,36 @@ and graph behavior; do not duplicate IR schemas or add a coordinator to hide it.
   independent methods.
 - Stage selected IDs for downstream requests and finalize immutable material views
   afterward. Execution reuse does not erase scientific Step occurrences.
+- Fresh and reused targetless enrichment extend only the source candidate
+  population; complete physical responses remain available as execution evidence.
 - Keep exact time bounds and resolved clocks. Pagination caps fail explicitly;
   there is no DSL 24-hour cap or permission to silently truncate.
 - Probability, raw score, rank and observation/production/retrieval times are
   distinct. Scaling a score does not calibrate its scientific meaning.
+
+### Predicate and confirmation scope
+
+Each exact `(record noun, producer, channel)` selector has one assertion witness
+across the whole Boolean expression, including mixed summary/classification
+conditions. Different explicit selectors can have different witnesses. If native
+pushdown consumes one condition but leaves another on the same selector local,
+retain the original predicate as residual: server object selection does not
+identify its assertion witness. Required projected material must prove that
+residual can be evaluated before execution.
+
+For ordinary scalar comparisons, missing/null/nonfinite values, incompatible types
+and nonscalar operands are unknown. Numeric strings are not coerced and booleans
+are not scores. Only established True selects or votes. NOT preserves unknown.
+Explicit NOT EXISTS checks all matching records in the current material view; a partial record cannot
+prove absence if another supplies the field. This is not evidence of absence at
+an unqueried provider or proof of retrieval completeness.
+
+One authored confirmation condition survives intervening material requests,
+initial selectors and view ordering. Filter, Match or an earlier Confirm ends
+attachment; a new API fragment does not inherit a prior call's proposition.
+Different canonical conditions in one confirmation stage are ambiguous and rejected;
+repeated identical conditions are not. A bare Confirm asks about existence.
+Each voter must prove the whole proposition from its own occurrence-local evidence.
 
 ## Shared photometry
 

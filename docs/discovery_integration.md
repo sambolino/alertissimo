@@ -1,36 +1,22 @@
-# Discovery integration and reference-workflow acceptance
-
-Current verification: the [5 November closeout checkpoint](discovery_integration_closeout.md)
-records 2,613 passing local tests, all eight mapping validations and installed-wheel
-verification on `3b4288e`. Cleanup-head CI subsequently passed. After the
-indexed-window fix, the operator reported 235 focused tests passing and a
-nonempty native Sherlock end-to-end PASS in a fixed one-minute window. The
-24-hour attempt hit the existing three-page execution-policy cap. Updated-head
-CI and main review remain pending; see the checkpoint's follow-up for the
-separate evidence paths and exact live window.
-
-This guide consolidates the current integration contracts. It accompanies step
-09a, `feat/integration-09a-recorded-acceptance`, based on `6daa6b4` / PR #326 on
-`integration/discovery-completion`. The [09b live runner and verification guide](discovery_live_acceptance.md)
-adds explicit local scenarios; final live acceptance and the main merge remain pending.
+# Discovery support and scientific baseline
 
 The starting reports came from Bibin Thomas's
 [nucleuswatch integration notes](https://github.com/bibinthomas123/nucleuswatch/blob/f0b4ee7fff4db6faf508d01e5b8b0311f0e3d52d/docs/alertissimo.md).
 Nucleuswatch is an external reference application with its own nuclear-transient
 cuts, consensus and publishing policies. It is not an Alertissimo dependency or
-an endorsed classifier. This series fixes acquisition/orchestration boundaries;
-it does not certify the reference application's scientific selections.
+an endorsed classifier. Its scientific selections are not certified by the
+acquisition contracts below.
 
-Use this guide alongside the [implementation plan](discovery_integration_plan.md),
-[required-material inventory](reference_workflow_material.md), and
-[per-candidate application guide](application_portfolio_access.md). Older milestone
-documents describe their then-current scope; the matrix below includes subsequent
-time and selection work rather than copying their earlier deferrals.
+Use the [application guide](application_portfolio_access.md) for per-candidate
+access and [live acceptance guide](discovery_live_acceptance.md) for evidence
+collection. Admission below is a baseline, not completion of the
+[next functional work](next_functional_work.md).
 
-## The three reported failures
+## Retrieval and discovery baseline
 
-**ALeRCE classification endpoint ambiguity:** fresh retrieval now plans one
-`query_probabilities` call. Validation includes offline planning, so deterministic
+**ALeRCE classification endpoint ambiguity:** fresh ZTF retrieval plans required
+`query_probabilities` plus LC and stamp `query_objects` summary calls for each ID.
+Validation includes offline planning, so deterministic
 ambiguity cannot be advertised as runnable. Classifications retain their producer,
 version, class, probability and rank instead of selecting an implicit winner.
 
@@ -65,9 +51,8 @@ The public entry points are `validate_dsl(source, continue_from=None)` and
 Execution can still fail on credentials, availability, malformed responses or
 incomplete evidence. Use the final `result.portfolios` for consumers and
 `result.to_json()` to preserve the final candidates plus workflow/run metadata.
-The [ALeRCE fix notes](integration_01_alerce_classification.md) and
-[Fink discovery regressions](../tests/test_fink_semantic_search.py) retain the
-detailed contract evidence.
+The [headline policy](classification_headline_policy.md) owns selected native
+outputs, taxonomy and provenance; all upstream alternatives remain available.
 
 ## Eight-provider/survey support matrix
 
@@ -80,9 +65,9 @@ request can fail explicitly when execution cannot establish the required evidenc
 | --- | --- | --- | --- | --- |
 | ALeRCE / ZTF | Admitted object discovery; mapped first/last MJD minima and existing classification conditions; residual rechecking | Admitted | All three admitted on semantic and cone routes; default requires full ordinary-detection history | Admitted with complete pagination and declared object recency, after residual/time selection |
 | ALeRCE / LSST | Existing class/model/probability discovery and mapped explicit first/last MJD minima | Admitted | Deferred: UTC membership and complete-history evidence are not declared for this survey | Deferred: no admitted complete recency-selection contract |
-| Fink / ZTF | Admitted discovery for the eight [audited ordinary class-index labels](classification_fink_ztf_native_labels.md); eligible literal class equality required | Admitted as its separate native cone population | Default admitted for the eligible class/time route only; first/last and temporal cone remain deferred | Deferred: historical class-alert order is not current object recency; object-history caps/per-pixel cone limits lack the needed proof |
+| Fink / ZTF | Admitted discovery for the eight ordinary class-index labels; eligible literal class equality required | Admitted as its separate native cone population | Default admitted for the eligible class/time route only; first/last and temporal cone remain deferred | Deferred: historical class-alert order is not current object recency; object-history caps/per-pixel cone limits lack the needed proof |
 | Fink / LSST | Deferred: mandatory physical search inputs have no generic semantic recipe translation | Admitted | Deferred: ZTF class/index/time contracts are not inherited | Deferred |
-| Lasair / ZTF | Admitted finite numeric summary conjunctions and [native Sherlock label equality](classification_lasair_ztf_native_join.md); no bare unconstrained scan | Admitted; compact summary supplement retained | All three admitted through declared SQL/summary/history evidence | Admitted for SQL discovery and unpredicated cones; cone summary coverage is required |
+| Lasair / ZTF | Admitted finite numeric summary conjunctions and native Sherlock label equality; no bare unconstrained scan | Admitted; compact summary supplement retained | All three admitted through declared SQL/summary/history evidence | Admitted for SQL discovery and unpredicated cones; cone summary coverage is required |
 | Lasair / LSST | Unsupported by current semantic-discovery contract; raw query availability does not establish a semantic projection | Admitted | Deferred: Rubin schema/projection/time proof needs its own audit | Deferred |
 | ANTARES / ZTF | Admitted numeric RA/Dec conditions scoped to mapped ZTF identities; coordinate condition required | Admitted as its existing shared-sky population | All three admitted on the scoped coordinate-search route; native temporal cone remains deferred | Admitted on scoped coordinate search with complete ordinary-detection histories; native cone latest remains deferred |
 | ANTARES / LSST | Deferred: mandatory native query has no generic semantic recipe translation | Admitted | Deferred: no surveyed identity/history membership recipe | Deferred |
@@ -102,27 +87,36 @@ Important provider limits:
   matching classification. Do not infer new join tables from a client parameter.
 - Lasair ZTF SQL discovery supports numeric `=`, `<`, `<=`, `>`, `>=` conjunctions
   on `summary.detection_count`, `summary.time.first_mjd`, `summary.time.last_mjd`.
-  The [audited Sherlock join](classification_lasair_ztf_native_join.md) also admits
-  eight native label equalities. `!=`, OR/NOT, other joins, untranslated fields
+  The audited Sherlock join also admits
+  eight native label equalities: `AGN`, `BS`, `CV`, `NT`, `ORPHAN`, `SN`,
+  `UNCLEAR`, `VS`. `!=`, OR/NOT, other joins, untranslated fields
   and arbitrary raw SQL lowering remain deferred. Initial predicates on thin-ID
   cone/latest discovery remain deferred; use the admitted SQL route for those summary conditions.
-- Fink admits the eight [audited ordinary class streams](classification_fink_ztf_native_labels.md).
+- Fink admits eight ordinary class streams: `SN candidate`, `Early SN Ia candidate`,
+  `Kilonova candidate`, `Microlensing candidate`, `Tracklet`, `Solar System MPC`,
+  `Solar System candidate`, `Ambiguous`.
   Its finite default `n=100` counts alert rows, not unique objects. A response reaching that limit
   fails as incomplete even if its unique-object count is small. The physical
   request pads the seven-day window outward by three hours at each edge for the
   native index encoding; local selection uses the original closed interval.
+  Class-alert recency is not authoritative overall object recency. The audited
+  `objects` scan has a deployment-configured cap without an exhaustible paging
+  contract; cone scans cap per pixel before grouping/geometric pruning.
 - ANTARES semantic coordinates are numeric summary RA/Dec conditions, not arbitrary
   Elasticsearch input. Complete iteration and required histories underpin temporal
   and latest selection. Conflicting loci sharing one ZTF ID cannot silently be
   ranked from the native lookup's first matching locus.
 
-Detailed evidence and remaining limitations are in
-[ALeRCE time](time_02_alerce_ztf.md),
-[Lasair SQL](discovery_05b_lasair.md),
-[Lasair Sherlock discovery](classification_lasair_ztf_native_join.md),
-[Lasair cone latest](selection_02b_lasair_cone.md),
-[Fink latest deferral](selection_03_fink_ztf.md), and
-[ANTARES latest/identity review](discovery_06e_antares_latest.md).
+## Initial material and selection
+
+For admitted bounded cone or single-source temporal discovery, required
+classification Gets precede evaluation of the whole initial condition and global
+latest. Mixed OR/NOT conditions are not partially pruned against discovery-only
+material. Required projected call outputs must cover each reference across all
+eligible routes; later refinements and optional supplements cannot supply proof.
+Latest uses the original discovery recency, not newer enrichment dates. A general
+`where` may follow initial `with` clauses; explicit `filter` ends that initial
+stage. Unsupported/unbounded dependencies fail before calls.
 
 ## Temporal meaning and completeness
 
@@ -139,6 +133,10 @@ that recency from complete ordinary-detection history; ALeRCE/Lasair use their
 verified mapped object-summary evidence. Ties use survey/object identity. All
 returned measurements of each survivor remain available, including dates outside
 the selection interval. Candidate selection is not measurement restriction.
+
+An observed valid detection can establish positive membership; absence needs
+complete relevant coverage. First/last and recency require authoritative extrema,
+so malformed history cannot be ignored merely because another point is valid.
 
 Observable saturation, required-call failure, invalid coverage or exhausted
 pagination policy cannot become successful completeness or a successful empty
@@ -187,40 +185,4 @@ witnesses. Correlate source rows explicitly for an exact application comparison;
 do not weaken Alertissimo's candidate semantics to force equal populations.
 Per-alert real/bogus, positive subtraction, pixel versus angular distances,
 missing context and producer/version rules remain described in the
-[material inventory](reference_workflow_material.md).
-
-## Local handoff and remaining work
-
-No tests, builds, project imports, applications or provider calls ran during
-preparation. Static AST/YAML, relative documentation links, whitespace and bundle
-checks accompany this step. Run:
-
-```bash
-set -o pipefail
-PYTHONPATH=. python -m pytest -q \
-  tests/test_discovery_integration_acceptance.py \
-  tests/test_dsl_alerce_classification.py \
-  tests/test_fink_semantic_search.py \
-  tests/test_orchestration_discovery_eligibility.py \
-  tests/test_application_portfolio_access.py \
-  2>&1 | tee /tmp/alertissimo-integration-09a-tests.log
-```
-
-Squash into integration after focused local success; the branch's automatic-CI
-exclusion remains. The DSL workflow includes this recorded suite for the final
-shared check. The last paired shared checkpoints passed on `4d93b51` before the
-consumer-only 08 step. The [09b guide](discovery_live_acceptance.md) supplies the
-live script with explicit scenario selection, paired historical bounds,
-credentials, serialized evidence and outcome classification. A passing offline
-matrix is not a live acceptance result.
-
-Keep the final offline sweep, package checks, live provider acceptance and the
-integration-to-main CI gate. Do not silently mark unavailable providers as passed
-or merge main from this intermediate handoff.
-
-Classification joins and additional Rubin discovery remain for consultation
-before implementation. Joins need actual classification tables, object keys,
-projected producer/version/class evidence and explicit correlation. Rubin needs
-its own columns, response projection and time/identity contracts; ZTF's object SQL
-and JD conversion cannot simply be copied. These are separate extensions, not
-hidden prerequisites for the existing supported examples above.
+[application guide](application_portfolio_access.md).

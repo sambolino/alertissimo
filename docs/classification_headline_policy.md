@@ -1,7 +1,6 @@
 # Classification headline policy: ELAsTiCC code sets
 
-Decision: 13 November 2026, replacing the flat coarse vocabulary. Base:
-`15613e7` on `integration/classification-headlines`. Stable work items **1 and 2**.
+Reviewed decision: 13 November 2026. Stable work items **1 and 2**.
 The dictionary is `alertissimo/data_layer/semantic_model/classification_taxonomy.yaml`;
 all eight provider policies use `mapping_version: elasticc-v1` and policy IDs ending
 in `-v2`. No recipes, endpoints, capabilities, grammar or acquisition rules change.
@@ -208,55 +207,50 @@ assertion. Heterogeneous metrics are never compared to select a headline.
 4. Review of `variable_star` union membership.
 5. Whether Confirm should later restrict support by `best.basis`.
 
-## Validation and handoff
+## Sources and captured evidence
 
-Exactly one new repository file is introduced: the taxonomy dictionary. Code,
-policy, ontology, documentation and regressions otherwise use existing files.
-Static inspection found no unmapped captured labels for Fink/ZTF (9 distinct),
-Fink/LSST (2), Lasair/ZTF (1) or Lasair/LSST (1). Existing ANTARES/ZTF fixture
-files contain no Superphot+ labels: its mapping is covered by synthetic cases,
-not a claimed captured classifier example.
+These pinned audits establish provider meanings; they do not prove the current
+service's availability or completeness for every response.
 
-The ALeRCE reachability and Fink collision findings above are static fixture/data
-inspection, not executed regression results. Tests, builds, CI and live provider
-calls were not run during preparation. The existing integration-to-main CI
-failures require separate review; this change does not claim to clear them.
-The user performs local validation and creates the PR into
-`integration/classification-headlines`; no push, PR mutation or merge is performed
-by the assistant.
-
-## Files in this change
-
-New: `alertissimo/data_layer/semantic_model/classification_taxonomy.yaml`.
-
-Modified existing files:
-
-- `.agents/skills/semantic-orchestration-change/SKILL.md`
-- `ARCHITECTURE.md`
-- `README.md`
-- `alertissimo/app_plot.py`
-- `alertissimo/data_layer/presentation/portfolio_classification.py`
-- `alertissimo/data_layer/providers/alerce/lsst/classification_headline.yaml`
-- `alertissimo/data_layer/providers/alerce/ztf/classification_headline.yaml`
-- `alertissimo/data_layer/providers/antares/lsst/classification_headline.yaml`
-- `alertissimo/data_layer/providers/antares/ztf/classification_headline.yaml`
-- `alertissimo/data_layer/providers/fink/lsst/classification_headline.yaml`
-- `alertissimo/data_layer/providers/fink/ztf/classification_headline.yaml`
-- `alertissimo/data_layer/providers/lasair/lsst/classification_headline.yaml`
-- `alertissimo/data_layer/providers/lasair/ztf/classification_headline.yaml`
-- `alertissimo/data_layer/runtime/classification_headline.py`
-- `alertissimo/data_layer/semantic_model/ontology.yaml`
-- `alertissimo/dsl/predicate_lowering.py`
-- `alertissimo/orchestration/ir/predicates.py`
-- `alertissimo/orchestration/normalization/predicate.py`
-- `alertissimo/orchestration/planner/predicate_realization.py`
-- `docs/classification_comparison_view.md`
-- `docs/classification_evidence_design_plan.md`
-- `docs/classification_fink_ztf_native_labels.md`
-- `docs/classification_headline_policy.md`
-- `docs/next_functional_work.md`
-- `tests/test_app_classification_comparison.py`
-- `tests/test_classification_headline_integration.py`
-- `tests/test_classification_headline_policy.py`
-- `tests/test_dsl_alerce_classification.py`
-- `tests/test_dsl_predicate_realization.py`
+- **ALeRCE:** inspected client 2.3.1 signature and wheel digest are retained in
+  [`probabilities_contract.json`](../tests/fixtures/alerce/probabilities_contract.json).
+  `query_probabilities` accepts `oid`, `format`, `survey`, `index`, `sort`, without
+  a classifier keyword. Native labels, version types, probabilities and ranks are
+  preserved. The [ZTF headline captures](../tests/fixtures/alerce/ztf/headlines/contract.json)
+  record selected LC/stamp summaries; rank-one probability rows are alternatives,
+  not proof of the broker's selected current version.
+- **Fink/ZTF:** official object API
+  [`a10923b0626aa7b73ef41e684e198c96713f2dd3`](https://github.com/astrolabsoftware/fink-object-api/tree/a10923b0626aa7b73ef41e684e198c96713f2dd3):
+  `assets/fink_types.csv` and `apps/routes/v1/ztf/classes/api.py` supply native labels;
+  `apps/routes/v1/ztf/latests/utils.py` distinguishes ordinary class-index routes
+  from rewritten SIMBAD/TNS aliases and grouped SLSN/CTA tables;
+  `apps/utils/decoding.py` computes returned `v:classification`. The
+  [classification guide](https://doc.ztf.fink-broker.org/broker/classification/)
+  distinguishes provider tags from catalogue-derived classes. Physical acceptance
+  of a label does not establish semantic discovery support. The
+  [broker index source](https://github.com/astrolabsoftware/fink-broker/blob/d368cb1526c89fcd3c62bf7c4a9627e3f117f845/bin/ztf/archive_index.py)
+  indexes observation JD, class and object identity; this is alert-dependent evidence.
+- **Fink/LSST:** the [CATS definitions](https://github.com/astrolabsoftware/fink-science/blob/cfb7ced/fink_science/rubin/cats/utilities.py)
+  establish the numeric label meanings above. Required `objects` and `sources`
+  calls are complementary: object main labels, source CATS outputs and crossmatch
+  assessments remain separate, attributable outputs. The existing capture has one
+  object row and 16 source rows; it does not establish historical completeness.
+- **Lasair:** official
+  [`29379e154e6d46fc5099c0056e21f388e96623e3`](https://github.com/lsst-uk/lasair4/tree/29379e154e6d46fc5099c0056e21f388e96623e3)
+  `common/schema/sherlock_classifications.{sql,py}` defines object-key uniqueness,
+  context labels and integer reliability. `webserver/lasair/query_builder.py`
+  joins Sherlock to `objects` on object ID; a joined search is eligible only when
+  the whole predicate translates and positively uses joined material. Summary-only
+  searches must not acquire that inner join. The [Sherlock guide](https://lasair.readthedocs.io/en/main/core_functions/sherlock.html)
+  explains host/context associations, including SN. ZTF `objects` and LSST `object`
+  captures retain reliability where the dedicated Sherlock response does not.
+  A TNS registration without a type supplies no TNS classification.
+- **ANTARES:** [Gaia DR3 source definitions](https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_main_source_catalogue/ssec_dm_gaia_source.html),
+  [DSC outputs](https://gea.esac.esa.int/archive/documentation/GDR3/Data_analysis/chap_cu8par/sec_cu8par_apsis/ssec_cu8par_apsis_dsc.html)
+  and [variability definitions](https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_variability_tables/ssec_dm_vari_classifier_result.html)
+  establish matched-source scope. Captured Combmod galaxy/quasar/star probabilities
+  are three exposed fields of a five-class model, not a distribution to renormalize.
+  Captured variability class `RS` and method `nTransits:5+` remain verbatim on the
+  crossmatch. The [ANTARES FAQ](https://antares.noirlab.edu/faq) describes tags as
+  filter membership, not physical classes or probabilities. Existing ZTF captures
+  contain no Superphot+ labels; those mappings have synthetic coverage only.

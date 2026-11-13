@@ -1,7 +1,6 @@
 # Recipe runtime
 
-This guide describes the active recipe system after the migration. Historical
-branch runbooks remain in `recipe_system_overhaul.md` and its companion files.
+This guide describes the active provider recipe system.
 
 ## Declaration ownership
 
@@ -15,9 +14,8 @@ branch runbooks remain in `recipe_system_overhaul.md` and its companion files.
 | CapabilityGraph | Immutable compiled evidence from those declarations |
 
 Provider files live under
-`alertissimo/data_layer/providers/<broker>/<origin>/`. The older central
-`data_layer/runtime/capabilities.yaml` is exposed by a legacy compatibility import;
-it is separate from provider recipes and does not drive CapabilityGraph.
+`alertissimo/data_layer/providers/<broker>/<origin>/`. Retired central capability
+loading does not drive CapabilityGraph.
 
 `build_capability_graph()` loads endpoint-local mapping evidence before compiling
 recipes. `graph.query_recipes(broker=..., origin=..., op=...)` inspects declarations;
@@ -80,10 +78,11 @@ Bindings belong to the candidate discovery call. A later enrichment call cannot
 prune the discovery population. Conjunction pushdown preserves a candidate
 superset; existing OR, NOT, conflicting-value, and qualifier restrictions remain.
 
-selection_bindings currently declares the verified ALeRCE ZTF recency ordering.
-Latest selection remains global after complete discovery pagination, residual
-pruning, and object consolidation. A page or dependency batch limit is not a
-global latest-N result. Unproven ordering or untranslated criteria defer.
+selection_bindings declares verified object recency on ALeRCE/ZTF and Lasair/ZTF;
+latest_selection also supports required summary/history evidence, including the
+ANTARES/ZTF scoped coordinate route. Latest remains global after complete discovery,
+residual/time selection and object consolidation. A page or batch limit is not a
+global latest-N result. See the [route matrix](discovery_integration.md).
 
 ## Validation, planning, and execution
 
@@ -119,7 +118,8 @@ mapped material. For dynamic classifier-qualified material, the shared proof
 requires unchanged discovery context, an explicit positive producer predicate,
 and a unique required discovery owner for every constrained source. Filters,
 selection, conflicting constants, and ambiguous ownership invalidate that proof.
-Fresh ALeRCE LSST classifier-qualified retrieval remains deferred without it.
+Fresh ALeRCE classifier selection can instead use locally selected normalized
+producer records; no unsupported classifier keyword reaches query_probabilities.
 
 ## Current provider scope
 
@@ -129,9 +129,9 @@ confirm recipes. Additional declarations are:
 | Provider | Additional owned operations |
 | --- | --- |
 | ALeRCE ZTF and LSST | semantic_search, get_forced_photometry, get_classification, get_cutout, get_data_product |
-| ANTARES ZTF and LSST | get_crossmatch |
-| Fink ZTF and LSST | get_classification, get_crossmatch, get_cutout, get_data_product; LSST also get_forced_photometry |
-| Lasair ZTF and LSST | get_classification, get_crossmatch |
+| ANTARES ZTF and LSST | get_classification, get_crossmatch; ZTF also semantic_search |
+| Fink ZTF and LSST | get_classification, get_crossmatch, get_cutout, get_data_product; ZTF also semantic_search; LSST also get_forced_photometry |
+| Lasair ZTF and LSST | get_classification, get_crossmatch; ZTF also semantic_search |
 
 Ownership does not guarantee support for every selector, band, time constraint,
 response mode, or product kind. Product normalization deferrals, disabled LSST
@@ -143,9 +143,9 @@ existing boundaries. Scientific vocabulary and feature IDs are unchanged.
 `PYTHONPATH=. python scripts/check_release_package.py` builds a wheel with no
 dependency installation, compares packaged runtime resources with the checkout,
 and installs the wheel into a temporary target. From that installed copy it loads
-all eight recipe providers, validates and plans cone discovery for each pair, and
-checks the existing ALeRCE ZTF latest example. It performs no provider requests
-and does not execute physical encoders or normalized-result assertions.
+all eight recipe providers and headline policies, validates/plans their cone
+recipes, enrichment expansion and the ALeRCE ZTF latest example. It makes no
+provider requests and does not execute encoders or normalized-result assertions.
 
 The DSL CI workflow runs this package check after its offline regression suites.
 Live behavior still belongs to the acceptance scenarios on the user's machine;
