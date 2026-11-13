@@ -647,6 +647,9 @@ levels:
   <{filter}>:
     level: L1, L6
     description: "Bandpass filter"
+    domains:
+      ztf: [g, r, i]
+      lsst: [u, g, r, i, z, y]
     [upper_limit]:
       description: "True if the photometric value represents an upper limit or non-detection"
       type: boolean

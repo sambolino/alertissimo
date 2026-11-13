@@ -11,13 +11,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from .predicates import Predicate
 
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
 PositiveFloat = Annotated[float, Field(gt=0)]
+CURRENT_DSL_VERSION = 2
 
 
 class IRModel(BaseModel):
@@ -525,6 +526,35 @@ class WorkflowIR(IRModel):
     steps: list[StepUnion]
     name: NonEmptyStr | None = None
     description: NonEmptyStr | None = None
+    dsl_version: Annotated[StrictInt, Field(ge=1)] = CURRENT_DSL_VERSION
+
+    def __init__(self, **data: Any) -> None:
+        # New programmatic workflows use today's language contract. Loading an
+        # unversioned serialized dictionary is handled separately below.
+        data.setdefault("dsl_version", CURRENT_DSL_VERSION)
+        super().__init__(**data)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler):
+        schema = handler(source)
+        # Deserialization must bypass the construction default, including when
+        # WorkflowIR is nested inside another model or a TypeAdapter.
+        schema["custom_init"] = False
+        return schema
+
+    @field_validator("dsl_version")
+    @classmethod
+    def supported_dsl_version(cls, value: int) -> int:
+        if value > CURRENT_DSL_VERSION:
+            raise ValueError(f"DSL version {value} is newer than supported version {CURRENT_DSL_VERSION}")
+        return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def legacy_version(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "dsl_version" not in value:
+            return {**value, "dsl_version": 1}
+        return value
 
 
 __all__ = [

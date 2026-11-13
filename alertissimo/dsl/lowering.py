@@ -1187,7 +1187,10 @@ def _lower_fragment_intent(
                             "existing retrieval has no earlier discovery context",
                             code="missing_requirement_occurrence",
                         )
-                    return SurfaceCompilation(workflow=WorkflowIR(steps=prefix), view=view)
+                    return SurfaceCompilation(
+                        workflow=WorkflowIR(steps=prefix, dsl_version=base_workflow.dsl_version),
+                        view=view,
+                    )
                 for step in requested:
                     if step not in steps:
                         steps.append(step)
@@ -1243,6 +1246,7 @@ def _lower_fragment_intent(
             steps=steps,
             name=name if name is not None else base_workflow.name,
             description=base_workflow.description,
+            dsl_version=base_workflow.dsl_version,
         ),
         view=view,
     )

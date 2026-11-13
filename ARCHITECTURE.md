@@ -175,6 +175,11 @@ versions through its existing declarative recipe.
 - [Collection predicates](docs/dsl_collections.md) use ontology path parameters,
   relative element paths, filtered aggregates and parenthesized quantifier bodies.
   Extend existing semantic-model/expression/IR owners rather than add an engine.
+  The ordered ontology reader retains array items and scoped parameter domains;
+  this structural foundation does not enable collection syntax. WorkflowIR carries
+  `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
+  and newer versions are refused. Route delivery and collection completeness are
+  separate evidence; observed bands establish neither the full domain nor completeness.
 - Preserve measurement/product/display boundaries. Non-detections are measurements;
   missing flux alone does not establish one, and limiting depth alongside a value
   is not another observation.

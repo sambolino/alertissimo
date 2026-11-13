@@ -109,17 +109,22 @@ before ranking. An upper limit inside the window is not a detection witness.
 ## 6. Collection DSL
 
 **Current:** scalar comparisons/Boolean/existence work; aggregate calls and
-quantifiers do not. Dynamic ontology paths exist, but full array/domain metadata
-and expression binding/evaluation are not implemented.
+quantifiers do not. The ontology reader retains arrays, element roots and scoped
+parameters, including origin-declared filters. WorkflowIR versioning distinguishes
+new version 2 from unversioned serialized version 1. Delivered-band declarations,
+expression binding/evaluation and admission remain unfinished; the existing strict
+capability loader needs a scoped extension before accepting route delivery metadata.
 
 **Target/work:** implement the [agreed contract](dsl_collections.md) in existing
 semantic-model, expression/IR, evaluator and planner owners. Use `{filter}`/
 `{output}`, relative element paths and `where for …: (...)`. No second variable
 notation or aliases for ordinary single-collection cases.
 
-**Completion:** accepted count/min/any/every examples; explicit scope/counting/
-unknown/empty decisions; dependency scheduling before initial latest; continuation,
-serialization and compatibility regressions. Resolve item 7's field dependencies.
+**Completion:** accepted count/min/max/any/every examples implementing the fixed D3
+decisions; continuation, serialization and compatibility regressions. Initial
+collection predicates with latest or without guaranteed evidence remain explicitly
+deferred to item 4a, and collection confirm predicates are out of scope. Resolve
+item 7's field dependencies.
 Optional pairwise aliases are item 10, not initial scope.
 
 ## 7. Measurements, non-detections and lightcurve boundaries
