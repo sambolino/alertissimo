@@ -3,6 +3,9 @@ name: Streamlit UI
 on:
   pull_request:
     paths:
+      - '**/*.md'
+      - 'scripts/ci_change_scope.py'
+      - 'tests/test_ci_change_scope.py'
       - 'alertissimo/**'
       - 'tests/test_app_*.py'
       - 'tests/test_ui_fixtures.py'
@@ -22,6 +25,10 @@ on:
       - '.github/workflows/ui.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     # Run the full suites on the final integration-to-main PR, or on demand.
@@ -29,16 +36,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install CI scope dependencies
+        run: python -m pip install --disable-pip-version-check pytest PyYAML
+      - name: Verify CI scope contracts
+        run: PYTHONPATH=. python -m pytest -q tests/test_ci_change_scope.py
+      - name: Classify pull request changes
+        id: scope
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python scripts/ci_change_scope.py --event "$CI_EVENT" --base "$CI_BASE_SHA"
       - name: Install focused UI dependencies
+        if: steps.scope.outputs.run_backend == 'true'
         run: >-
           python -m pip install --disable-pip-version-check
           pytest PyYAML 'pydantic==2.11.7' 'python-dotenv==1.1.1' 'lark==1.2.2'
           'streamlit==1.47.0' 'streamlit-aggrid==1.2.1.post2'
           'pandas==2.2.3' 'altair==5.5.0' 'numpy>=2.0.0,<2.1.0' 'pyarrow>=7.0,<25'
       - name: Run offline UI and continuation contracts
+        if: steps.scope.outputs.run_backend == 'true'
         run: |
           PYTHONPATH=. python -m pytest -q \
             tests/test_app_search_portfolios.py \

@@ -30,3 +30,9 @@ extraction. Superseded development notes remain in Git history. Fresh and reused
 enrichment must preserve selected candidate membership during staging,
 normalization and finalization, while retaining complete execution evidence.
 Continuation keeps the finalized prefix and its stored policy interpretation.
+
+CI checks the whole PR diff with `scripts/ci_change_scope.py`. Markdown and
+verified YAML comment/formatting changes skip backend suites. The scope helper,
+its tests and the three existing workflows use focused CI regressions; other
+changes keep full applicable suites. Manual workflow dispatch forces full runs.
+Keep required `validate` check names and do not replace uncertainty with a skip.
