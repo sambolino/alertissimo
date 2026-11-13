@@ -736,6 +736,11 @@ def classification_table_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
     columns = {
         "broker": "Broker", "producer": "Producer", "version": "Version",
         "output": "Output", "class": "Class", "probability": "Probability",
+        "taxon": "Taxon", "scope": "Scope", "basis": "Basis",
+        "candidate_status": "Candidate status", "status": "Headline status",
+        "policy": "Policy", "mapping_version": "Mapping version",
+        "policy_digest": "Policy digest", "error": "Normalization error",
+        "selected_record_ids": "Selected native records",
         "score": "Score", "rank": "Rank", "model": "Model name", "method": "Method",
         "target": "Target", "value": "Value", "description": "Description",
         "other_values": "Other outputs", "observation_mjd": "Observation MJD",
@@ -759,6 +764,9 @@ def render_classification(data: dict[str, Any], *, widget_key: str = "classifica
     if not rows:
         st.info("No classification evidence is available.")
         return
+    errors = {str(row.get("Normalization error")) for row in rows if row.get("Normalization error")}
+    if errors:
+        st.error("Classification normalization: " + ", ".join(sorted(errors)))
     st.dataframe(
         arrow_safe_dataframe(rows),
         use_container_width=True,
@@ -769,8 +777,8 @@ def render_classification(data: dict[str, Any], *, widget_key: str = "classifica
         },
     )
     st.caption(
-        "Each row is one reported best or named assessment from one source record. "
-        "Versions and repeated assertions are retained; no overall class is selected. "
+        "Headline rows show each broker’s selected native label and reviewed candidate taxonomy codes. "
+        "Native alternatives, versions and repeated assertions remain visible; no cross-broker winner is selected. "
         "Probabilities and scores keep their original meanings. Empty cells are unreported values."
     )
     st.caption(

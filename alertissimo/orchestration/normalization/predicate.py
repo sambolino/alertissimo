@@ -12,6 +12,9 @@ import operator
 from typing import Any
 
 from alertissimo.data_layer.representations import Portfolio, SemanticRecord
+from alertissimo.data_layer.runtime.classification_headline import (
+    compare_taxa, headline_reference, is_headline_record, materialize_headlines,
+)
 from alertissimo.orchestration.ir.predicates import (
     BooleanPredicate,
     ComparisonPredicate,
@@ -69,6 +72,10 @@ def _record_value(record: SemanticRecord, reference: SemanticReference, portfoli
         return _MISSING
     if not reference.field_path:
         return True
+    if reference.field_path == "best.taxon" and reference.semantic_type == "classification" and (
+        record.get("best.status") != "available" or record.get("best.scope") != "candidate"
+    ):
+        return _MISSING
     return record.get(reference.field_path, _MISSING)
 
 
@@ -126,6 +133,12 @@ def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> 
     """
     selectors = tuple(dict.fromkeys(_selector(ref) for ref in iter_semantic_references(predicate)))
     records = {key: _matching_records(portfolio, key) for key in selectors}
+    references = tuple(iter_semantic_references(predicate))
+    for key in selectors:
+        derived = key[1] == "headline" or any(headline_reference(ref) for ref in references if _selector(ref) == key)
+        # Preserve native best and bare existence semantics. In a normalized
+        # expression, bind all fields to the same stored headline assertion.
+        records[key] = tuple(r for r in records[key] if is_headline_record(r) == derived)
     bound: dict[tuple[str, str | None, str | None], SemanticRecord | None] = {}
 
     def operand_value(operand):
@@ -145,7 +158,12 @@ def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> 
                 for record in records[_selector(node.reference)]
             )
         if isinstance(node, ComparisonPredicate):
-            value = _compare(operand_value(node.left), node.operator, operand_value(node.right))
+            if isinstance(node.right, PredicateLiteral) and isinstance(node.right.value, tuple):
+                value = compare_taxa(operand_value(node.left), node.right.value, node.operator)
+            elif isinstance(node.left, PredicateLiteral) and isinstance(node.left.value, tuple):
+                value = compare_taxa(operand_value(node.right), node.left.value, node.operator)
+            else:
+                value = _compare(operand_value(node.left), node.operator, operand_value(node.right))
         elif isinstance(node, ExistsPredicate):
             if _selector(node.reference) not in bound:
                 return None
@@ -192,6 +210,8 @@ def prune_portfolios(
 ) -> tuple[Portfolio, ...]:
     """Keep only normalized candidate Portfolios satisfying a residual predicate."""
 
+    if any(headline_reference(ref) for ref in iter_semantic_references(predicate)):
+        portfolios = tuple(materialize_headlines(p) for p in portfolios)
     return tuple(
         portfolio
         for portfolio in portfolios

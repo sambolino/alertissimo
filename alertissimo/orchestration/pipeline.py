@@ -19,6 +19,7 @@ from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.normalization.selection import (
     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
 )
+from alertissimo.orchestration.normalization.normalize import filter_execution_groups
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
@@ -169,10 +170,11 @@ def _candidate_view_from_step(
     )
     if material_source is None:
         return own
-    incoming = own.portfolios
-    if any(plan.execution_reuse_from is not None for plan in step_run.endpoint_plans):
-        survivors = {summary_object_identity(portfolio) for portfolio in material_source.portfolios}
-        incoming = tuple(portfolio for portfolio in incoming if summary_object_identity(portfolio) in survivors)
+    # A targeted enrichment cannot expand the source population during staging,
+    # even when a fresh physical response contains additional objects.
+    survivors = {summary_object_identity(portfolio) for portfolio in material_source.portfolios} - {None}
+    incoming = tuple(portfolio for portfolio in own.portfolios
+                     if summary_object_identity(portfolio) in survivors)
     return StepPortfolioResult(
         step_index=step_run.step_index,
         executions=own.executions,
@@ -250,14 +252,8 @@ def _filter_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        executions = tuple(
-            ExecutionPortfolioResult(
-                execution_id=execution.execution_id,
-                portfolios=prune_portfolios(execution.portfolios, step.predicate),
-            )
-            for execution in source.executions
-        )
         materialized = prune_portfolios(source.portfolios, step.predicate)
+        executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_index,
         executions=executions,
@@ -294,6 +290,7 @@ def execute_staged_workflow_run(
     validate_semantic_model: bool = True,
     reference_time: datetime | None = None,
     _reference_times: dict[int, datetime] | None = None,
+    _prior_steps: tuple[StepPortfolioResult, ...] = (),
 ) -> StagedWorkflowResult:
     """Bind and execute a planned workflow as runtime values become available.
 
@@ -314,6 +311,9 @@ def execute_staged_workflow_run(
     step_results: list[StepExecutionResult] = []
     execution_cache: dict[tuple[int, int], list[ExecutionResult]] = {}
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]] = {}
+    for prior in _prior_steps:
+        for execution in prior.executions:
+            normalized_execution_cache.setdefault(execution.execution_id, execution.portfolios)
     candidate_views_by_step: dict[int, StepPortfolioResult] = {}
     candidate_ids_by_origin_by_step: dict[int, dict[str, tuple[str, ...]]] = {}
     candidate_sources = _candidate_source_indices(run)
@@ -350,7 +350,7 @@ def execute_staged_workflow_run(
                         "match candidate input is not available from referenced Step "
                         f"{reference.step_index} for step_index {step_index}"
                     ) from error
-                view = match_step_portfolios(
+                view = _prior_steps[step_index] if step_index < len(_prior_steps) else match_step_portfolios(
                     step,
                     source_view,
                     step_index=step_index,
@@ -393,10 +393,13 @@ def execute_staged_workflow_run(
                         "filter candidate input is not available from referenced Step "
                         f"{reference.step_index} for step_index {step_index}"
                     ) from error
-                view = _filter_view(step, step_index, source_view)
-                view = apply_deferred_search_selection(
-                    run.workflow, view, candidate_views_by_step, updated_run.steps,
-                )
+                if step_index < len(_prior_steps):
+                    view = _prior_steps[step_index]
+                else:
+                    view = _filter_view(step, step_index, source_view)
+                    view = apply_deferred_search_selection(
+                        run.workflow, view, candidate_views_by_step, updated_run.steps,
+                    )
                 candidate_views_by_step[step_index] = view
                 candidate_ids_by_origin_by_step[step_index] = (
                     _candidate_ids_by_origin_from_view(view)
@@ -677,6 +680,12 @@ def execute_staged_workflow_run(
         )
         updated_run = _updated_run(updated_run, succeeded)
 
+        if step_index < len(_prior_steps):
+            view = _prior_steps[step_index]
+            candidate_views_by_step[step_index] = view
+            candidate_ids_by_origin_by_step[step_index] = _candidate_ids_by_origin_from_view(view)
+            continue
+
         if step_index in candidate_sources:
             material_source = None
             reference = succeeded.material_input_from
@@ -733,6 +742,7 @@ def execute_staged_workflow_run(
         execution_result,
         validate_semantic_model=validate_semantic_model,
         normalized_execution_cache=normalized_execution_cache,
+        preserved_steps=_prior_steps,
     )
     return StagedWorkflowResult(
         execution=execution_result,

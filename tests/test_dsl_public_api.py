@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import alertissimo.api as api
+from alertissimo.orchestration.pipeline import StagedWorkflowResult
 from scripts import live_dsl_api
 
 
@@ -69,7 +70,7 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
     compilation = SimpleNamespace(workflow=workflow, view=view)
     planned_run = object()
     normalized = object()
-    staged = SimpleNamespace(normalized=normalized)
+    staged = StagedWorkflowResult(execution=object(), bindings=(), normalized=normalized)
     final_run = object()
     finalized = SimpleNamespace(run=final_run)
     calls = []
@@ -90,7 +91,8 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
         calls.append(("execute", run, value_registry, value_executor, kwargs))
         return staged
 
-    def fake_finalize(value):
+    def fake_finalize(value, *, preserved_step_count):
+        assert preserved_step_count == 0
         calls.append(("finalize", value))
         return finalized
 
@@ -134,7 +136,11 @@ def test_execute_dsl_composes_existing_pipeline_once(monkeypatch):
     assert result.compilation is compilation
     assert result.workflow is workflow
     assert result.view is view
-    assert result.staged is staged
+    assert result.staged is not staged
+    assert result.staged.execution is staged.execution
+    assert result.staged.bindings == staged.bindings
+    assert result.staged.normalized is finalized
+    assert staged.normalized is normalized
     assert result.result is finalized
     assert result.run is final_run
 

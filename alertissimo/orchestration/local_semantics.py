@@ -84,20 +84,13 @@ def _rematerialize_provider_step(
         step_index=step_index,
         executions=current.executions,
     )
-    incoming = own.portfolios
-    if any(
-        plan.execution_reuse_from is not None
-        for plan in step_run.endpoint_plans
-    ):
-        surviving = {
-            summary_object_identity(portfolio)
-            for portfolio in source.portfolios
-        }
-        surviving.discard(None)
-        incoming = tuple(
-            portfolio for portfolio in incoming
-            if summary_object_identity(portfolio) in surviving
-        )
+    # The finalized source owns candidate membership for fresh calls as well as
+    # reused calls. Execution evidence remains complete and occurrence-local.
+    surviving = {summary_object_identity(portfolio) for portfolio in source.portfolios} - {None}
+    incoming = tuple(
+        portfolio for portfolio in own.portfolios
+        if summary_object_identity(portfolio) in surviving
+    )
     steps[step_index] = StepPortfolioResult(
         step_index=step_index,
         executions=current.executions,
@@ -140,6 +133,7 @@ def _apply_confirmation(
 
 def finalize_local_semantics(
     result: WorkflowPortfolioResult,
+    *, preserved_step_count: int = 0,
 ) -> WorkflowPortfolioResult:
     """Finalize local operations and semantic material lineage in workflow order.
 
@@ -157,6 +151,10 @@ def finalize_local_semantics(
 
     for step_index, step in enumerate(run.workflow.steps):
         step_run = run.steps[step_index]
+        if step_index < preserved_step_count:
+            if isinstance(step, (DeriveStep, MatchStep)):
+                run = _mark_succeeded(run, step_index)
+            continue
 
         if isinstance(step, ConfirmStep):
             if step_run.state is not StepRunState.SUCCEEDED:

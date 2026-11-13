@@ -53,6 +53,8 @@ class NativeClient:
         assert params["survey"] == "ztf" and params["format"] == "json"
         self.calls.append(("query_objects", dict(params)))
         selected = deepcopy(self.rows)
+        if "oid" in params:
+            selected = [row for row in selected if row["oid"] == params["oid"]]
         if not self.ignore_ranges:
             for name in ("firstmjd", "lastmjd"):
                 bounds = params.get(name)
@@ -158,7 +160,7 @@ def test_history_is_reused_without_resurrection_and_continuation_retains_the_clo
     old_calls = len(client.calls)
     second = execute_dsl("with classification via alerce\n", graph=graph, executor=endpoint_executor,
                          continue_from=first, reference_time=NOW + timedelta(days=1))
-    assert len(client.calls) == old_calls + 3
+    assert len(client.calls) == old_calls + 9  # Three IDs, probabilities plus LC/stamp summaries.
     assert identities(second.portfolios) == expected
     assert second.run.steps[0].time_reference == NOW
     assert {params["oid"] for name, params in client.calls[old_calls:]} == expected
@@ -294,13 +296,17 @@ def test_default_latest_follows_complete_discovery_and_temporal_membership(graph
     selected = result.result.steps[0].portfolios
     assert [summary_object_identity(p)[1] for p in selected] == expected
     assert identities(result.portfolios) == set(expected)
-    queries = [params for name, params in client.calls if name == "query_objects"]
+    queries = [params for name, params in client.calls if name == "query_objects" and "oid" not in params]
     assert len(queries) == 2  # Even latest 1 must exhaust both discovery pages.
     assert all(p["order_by"] == "lastmjd" and p["order_mode"] == "DESC" and p["page_size"] == 2 for p in queries)
     assert [name for name, _ in client.calls[:2]] == ["query_objects", "query_objects"]
     histories = [p["oid"] for name, p in client.calls if name == "query_lightcurve"]
     assert len(histories) == 4 and set(histories) == set(IDS[:4])
     assert {p["oid"] for name, p in client.calls if name == "query_probabilities"} == set(expected)
+    assert {(p["oid"], p["classifier"]) for name, p in client.calls
+            if name == "query_objects" and "oid" in p} == {
+        (oid, method) for oid in expected for method in ("lc_classifier", "stamp_classifier")
+    }
     # B has the greatest summary last date but no detection inside the window.
     # C wins over A by its overall last date, despite A's later in-window witness.
     for portfolio in selected:

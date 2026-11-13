@@ -1,13 +1,13 @@
-"""Pure, opt-in broker headline derivation over canonical classification records.
+"""Broker headline derivation and immutable materialization over native evidence.
 
-Provider policy and vocabulary live beside provider mappings. This module neither
-fetches evidence nor changes a Portfolio. The execution/view integration is a
-separate change; importing it does not alter native ``best`` query semantics.
+Provider policy and vocabulary live beside provider mappings. No network calls or
+cross-method scoring; native best fields and earlier views remain unchanged.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from functools import lru_cache
 import hashlib
 import json
@@ -17,7 +17,9 @@ from pathlib import Path
 import yaml
 
 from alertissimo.data_layer.paths import PROVIDERS_ROOT
-from alertissimo.data_layer.representations import Portfolio, SemanticRecord
+from alertissimo.data_layer.representations import (
+    InternalPortfolioId, InternalRecordId, Portfolio, SemanticRecord,
+)
 
 
 class HeadlinePolicyError(ValueError):
@@ -26,12 +28,105 @@ class HeadlinePolicyError(ValueError):
 
 SCOPES = frozenset({"candidate", "catalogue_association"})
 STATUSES = frozenset({"candidate", "reported", "unknown"})
-COARSE_CLASSES = frozenset({
-    "supernova", "agn", "variable_star", "solar_system", "microlensing",
-    "kilonova", "tidal_disruption", "cataclysmic_variable", "artifact",
-    "satellite", "transient", "periodic", "stochastic", "nonperiodic",
-    "fast_transient", "long_transient", "star", "galaxy", "nuclear_transient",
-})
+# These paths belong to the separate derived headline record, never a native
+# producer's best.class/probability fields. Shared by material capability checks.
+HEADLINE_FIELDS = frozenset("best." + name for name in (
+    "native_class", "taxon", "scope", "basis",
+    "candidate_status", "subtype", "source_method", "source_version",
+    "source_output", "native_probability", "native_score", "policy",
+    "mapping_version", "policy_digest", "status", "error_code", "broker",
+    "survey", "object_id", "input_record_ids", "considered_record_ids",
+    "eligible_record_ids", "selected_record_ids", "observation_mjd", "evidence_digest",
+))
+
+
+def is_headline_record(record: SemanticRecord) -> bool:
+    return record.semantic_type.startswith("classification@headline:")
+
+
+def headline_reference(reference) -> bool:
+    return (reference.semantic_type == "classification"
+            and reference.producer in (None, "headline")
+            and reference.field_path in HEADLINE_FIELDS)
+
+
+def headline_material_available(reference, outputs) -> bool:
+    """Prove derivability from mapped candidate classification, not field presence.
+
+    An eligible route may return no label; its stored status then reports missing.
+    Physical mappings remain physical: no synthetic mapping/pushdown is registered.
+    """
+    if not headline_reference(reference):
+        return False
+    pairs = {(field.broker, field.origin) for field in outputs
+             if field.semantic_record_type.partition("@")[0] == "classification"
+             and reference.channel in (None, field.broker)}
+    return any((PROVIDERS_ROOT / broker / origin / "classification_headline.yaml").is_file()
+               for broker, origin in pairs)
+
+
+def materialize_headlines(portfolio: Portfolio, *, include_missing: bool = False) -> Portfolio:
+    """Store one immutable interpretation per delivered broker/survey.
+
+    Reuse a stored result when its native evidence is unchanged, even if current
+    policy data changed. Deserialization/presentation never call this function.
+    New material replaces derived records only in the new view; native records
+    and the old view remain intact. No synthetic physical execution is invented.
+    """
+    native = tuple(r for r in portfolio.records if not is_headline_record(r))
+    stored = tuple(r for r in portfolio.records if is_headline_record(r))
+    headlines = []
+    for broker, origin in sorted({(e.broker, e.origin) for e in portfolio.executions}):
+        if not (PROVIDERS_ROOT / broker / origin / "classification_headline.yaml").is_file():
+            continue
+        # Only identities belonging to this survey may acquire this headline.
+        if not any(r.semantic_type.partition(":")[0] == f"summary@{origin}"
+                   and r.get("identity.object_id") is not None for r in native):
+            continue
+        execution_ids = {e.internal_execution_id for e in portfolio.executions
+                         if (e.broker, e.origin) == (broker, origin)}
+        if not include_missing and not any(
+            r.semantic_type.partition("@")[0] == "classification"
+            and r.internal_source is not None and r.internal_source.internal_execution_id in execution_ids
+            for r in native
+        ) and not any(r.get("best.broker") == broker and r.get("best.survey") == origin for r in stored):
+            continue
+        inputs = tuple(r for r in native if r.semantic_type.partition("@")[0] == "classification"
+                       and r.internal_source is not None
+                       and r.internal_source.internal_execution_id in execution_ids)
+        linked = tuple(r for r in native if r.semantic_type.partition("@")[0] == "measurement"
+                       and r.internal_source is not None
+                       and any(r.internal_source == c.internal_source for c in inputs))
+        identities = sorted({str(r.get("identity.object_id")) for r in native
+                             if r.semantic_type.partition(":")[0] == f"summary@{origin}"
+                             and r.get("identity.object_id") is not None})
+        evidence = (identities, sorted((r.internal_record_id.value, r.semantic_type, dict(r.fields))
+                                      for r in inputs + linked))
+        fingerprint = hashlib.sha256(json.dumps(evidence, sort_keys=True, default=str).encode()).hexdigest()
+        previous = [r for r in stored if r.get("best.broker") == broker
+                    and r.get("best.survey") == origin
+                    and r.get("best.evidence_digest") == fingerprint]
+        if len(previous) == 1:
+            headlines.append(previous[0])
+            continue
+        fields = derive_headline_fields(portfolio, broker=broker, origin=origin)
+        fields["best.evidence_digest"] = fingerprint
+        digest = hashlib.sha256(json.dumps(fields, sort_keys=True, default=str).encode()).hexdigest()
+        headlines.append(SemanticRecord(InternalRecordId(f"headline:{digest}"),
+                                        f"classification@headline:{broker}", fields))
+    records = native + tuple(headlines)
+    if records == portfolio.records:
+        return portfolio
+    # New immutable content needs a new Portfolio ID; retain incident edges.
+    digest = hashlib.sha256((portfolio.internal_portfolio_id.value + ":" + ":".join(
+        r.internal_record_id.value for r in headlines)).encode()).hexdigest()
+    identifier = InternalPortfolioId(f"portfolio:headline:{digest}")
+    removed = {r.internal_record_id for r in stored} - {r.internal_record_id for r in headlines}
+    edges = tuple(replace(edge,
+                         subject=identifier if edge.subject == portfolio.internal_portfolio_id else edge.subject,
+                         target=identifier if edge.target == portfolio.internal_portfolio_id else edge.target)
+                  for edge in portfolio.edges if edge.subject not in removed and edge.target not in removed)
+    return replace(portfolio, internal_portfolio_id=identifier, records=records, edges=edges)
 
 
 def _key(value):
@@ -41,6 +136,129 @@ def _key(value):
     if isinstance(value, float) and not math.isfinite(value):
         return None
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
+
+
+def validate_taxonomy(taxonomy: Mapping) -> None:
+    """Reject ambiguous identifiers and malformed explicit ancestry on load."""
+    if not isinstance(taxonomy, Mapping) or set(taxonomy) != {
+        "schema_version", "taxonomy_id", "nodes", "aliases",
+    } or type(taxonomy["schema_version"]) is not int or taxonomy["schema_version"] != 1:
+        raise HeadlinePolicyError("invalid taxonomy schema")
+    if not isinstance(taxonomy["taxonomy_id"], str) or not taxonomy["taxonomy_id"]:
+        raise HeadlinePolicyError("taxonomy requires an identifier")
+    if not isinstance(taxonomy["nodes"], list) or not taxonomy["nodes"]:
+        raise HeadlinePolicyError("taxonomy requires nodes")
+    nodes = {}
+    for node in taxonomy["nodes"]:
+        if not isinstance(node, dict) or not {"code", "name", "parent", "origin"} <= node.keys() or set(node) - {
+            "code", "name", "parent", "origin", "used_for",
+        }:
+            raise HeadlinePolicyError("invalid taxonomy node")
+        code = node["code"]
+        if type(code) is not int or code in nodes:
+            raise HeadlinePolicyError("duplicate or invalid taxonomy code")
+        if not isinstance(node["name"], str) or not node["name"]:
+            raise HeadlinePolicyError("taxonomy node requires a name")
+        if node["parent"] is not None and type(node["parent"]) is not int:
+            raise HeadlinePolicyError("invalid taxonomy parent")
+        if node["origin"] not in {"elasticc", "alertissimo"} or (
+            node["origin"] == "alertissimo" and not 9000 <= code <= 9399
+        ):
+            raise HeadlinePolicyError("invalid taxonomy origin or extension range")
+        if node["name"].endswith("/Other") and (
+            not isinstance(node.get("used_for"), str) or not node["used_for"].strip()
+        ):
+            raise HeadlinePolicyError("/Other requires used_for")
+        nodes[code] = node
+    for code in nodes:
+        seen = set()
+        while code is not None:
+            if code not in nodes:
+                raise HeadlinePolicyError("taxonomy parent does not exist")
+            if code in seen:
+                raise HeadlinePolicyError("taxonomy ancestry contains a cycle")
+            seen.add(code)
+            code = nodes[code]["parent"]
+    if not isinstance(taxonomy["aliases"], list):
+        raise HeadlinePolicyError("taxonomy aliases must be a list")
+    aliases = set()
+    for row in taxonomy["aliases"]:
+        if not isinstance(row, dict) or not {"alias", "codes"} <= row.keys() or set(row) - {"alias", "codes", "note"}:
+            raise HeadlinePolicyError("invalid taxonomy alias")
+        alias = row["alias"].strip().casefold() if isinstance(row["alias"], str) else ""
+        if not alias or alias in aliases:
+            raise HeadlinePolicyError("duplicate or invalid taxonomy alias")
+        aliases.add(alias)
+        codes = row["codes"]
+        if not isinstance(codes, list) or not codes or any(type(c) is not int or c not in nodes for c in codes):
+            raise HeadlinePolicyError("alias refers to invalid taxonomy codes")
+        if len(set(codes)) != len(codes):
+            raise HeadlinePolicyError("duplicate alias codes")
+
+
+@lru_cache(maxsize=1)
+def load_taxonomy() -> dict:
+    path = PROVIDERS_ROOT.parent / "semantic_model" / "classification_taxonomy.yaml"
+    try:
+        taxonomy = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise HeadlinePolicyError("cannot read classification taxonomy") from exc
+    validate_taxonomy(taxonomy)
+    return taxonomy
+
+
+def resolve_taxon(value) -> tuple[int, ...]:
+    """Resolve a surface literal once; the frozen IR never retains aliases."""
+    from difflib import get_close_matches
+
+    aliases = {row["alias"].strip().casefold(): tuple(sorted(row["codes"]))
+               for row in load_taxonomy()["aliases"]}
+    key = str(value).strip().casefold() if type(value) in (str, int) else ""
+    if key not in aliases:
+        suggestions = get_close_matches(key, aliases, n=5)
+        raise ValueError(f"Unknown classification taxon {value!r}. Closest aliases: {', '.join(suggestions) or 'none'}")
+    return aliases[key]
+
+
+def compare_taxa(record_codes, query_codes: tuple[int, ...], operator: str = "=") -> bool | None:
+    """Compare code sets using explicit parent links and three-valued logic."""
+    parents = {node["code"]: node["parent"] for node in load_taxonomy()["nodes"]}
+    if not isinstance(record_codes, (tuple, list)) or not record_codes or any(
+        type(code) is not int or code not in parents for code in record_codes
+    ):
+        return None
+    if not isinstance(query_codes, tuple) or not query_codes or any(
+        type(code) is not int or code not in parents for code in query_codes
+    ):
+        raise HeadlinePolicyError("taxon comparison requires resolved dictionary codes")
+    if operator not in {"=", "!="}:
+        raise HeadlinePolicyError("taxon comparison only supports = and !=")
+
+    def under(code, ancestor):
+        while code is not None:
+            if code == ancestor:
+                return True
+            code = parents[code]
+        return False
+
+    if all(any(under(r, q) for q in query_codes) for r in record_codes):
+        result = True
+    elif not any(under(r, q) or under(q, r) for r in record_codes for q in query_codes):
+        result = False
+    else:
+        return None
+    return result if operator == "=" else not result
+
+
+def format_taxa(codes) -> str | None:
+    """Format stored codes without deriving or selecting any scientific result."""
+    if not codes:
+        return None
+    nodes = {node["code"]: node for node in load_taxonomy()["nodes"]}
+    return "; ".join(
+        f"{code} {nodes[code]['name']}" + (" (Alertissimo ext.)" if nodes[code]["origin"] == "alertissimo" else "")
+        if code in nodes else str(code) for code in codes
+    )
 
 
 def validate_policy(policy: Mapping) -> None:
@@ -95,7 +313,7 @@ def validate_policy(policy: Mapping) -> None:
         raise HeadlinePolicyError("vocabulary and sentinels must be lists")
     labels = set()
     for row in policy["vocabulary"]:
-        if not isinstance(row, dict) or set(row) - {"label", "coarse", "scope", "status", "subtype"}:
+        if not isinstance(row, dict) or set(row) - {"label", "codes", "scope", "status", "subtype"}:
             raise HeadlinePolicyError("invalid vocabulary row")
         key = _key(row.get("label"))
         if key is None or key in labels:
@@ -103,8 +321,22 @@ def validate_policy(policy: Mapping) -> None:
         labels.add(key)
         if row.get("scope") not in SCOPES or row.get("status") not in STATUSES:
             raise HeadlinePolicyError("vocabulary must specify scope and candidate status")
-        if row.get("coarse") is not None and row["coarse"] not in COARSE_CLASSES:
-            raise HeadlinePolicyError("coarse class is not in the finite proposition set")
+        codes = row.get("codes")
+        if "codes" not in row:
+            raise HeadlinePolicyError("vocabulary requires codes")
+        if row["scope"] == "catalogue_association":
+            if codes is not None:
+                raise HeadlinePolicyError("catalogue association codes must be null")
+        else:
+            nodes = {node["code"]: node for node in load_taxonomy()["nodes"]}
+            if not isinstance(codes, list) or not codes or any(
+                type(code) is not int or code not in nodes for code in codes
+            ) or len(set(codes)) != len(codes):
+                raise HeadlinePolicyError("candidate codes must be a nonempty set of dictionary integers")
+            for code in codes:
+                node = nodes[code]
+                if node["name"].endswith("/Other") and node["used_for"] == "unused":
+                    raise HeadlinePolicyError("referenced /Other code needs a documented used_for meaning")
     for sentinel in policy["sentinels"]:
         key = _key(sentinel)
         if key is None or key in labels:
@@ -161,11 +393,11 @@ def derive_headline_fields(portfolio: Portfolio, *, broker: str, origin: str,
     """Return attributable fields for one broker/survey, leaving all inputs intact.
 
     ``best.native_class`` preserves the selected native label. Only candidate-scoped
-    lookup entries produce ``best.coarse_class``; catalogue labels can produce
-    ``best.context_class``. Every unavailable/error outcome has an explicit status.
+    lookup entries produce ``best.taxon``; catalogue labels carry no proposition.
+    Every unavailable/error outcome has an explicit status.
     No probability threshold, cross-method maximum, version ordering or retrieval
-    timestamp is used. Identical labels across different model versions still do
-    not establish a uniquely selected version.
+    timestamp is used. Label-contract versions with the same label agree and
+    retain every reported version.
     """
     policy = load_policy(broker, origin) if policy is None else policy
     validate_policy(policy)
@@ -226,13 +458,20 @@ def derive_headline_fields(portfolio: Portfolio, *, broker: str, origin: str,
             latest = max(time for time, _ in dated)
             candidates = [item for time, item in dated if time == latest]
             result["best.observation_mjd"] = latest
-        signatures = {(_key(label), _key(r.get("provenance.producer.version"))) for r, _, label in candidates}
+        signatures = {(_key(label), _key(r.get("provenance.producer.version"))
+                       if method["version_rule"] == "exact" else None)
+                      for r, _, label in candidates}
         if len(signatures) != 1:
             return dict(result, **{"best.status": "conflict"})
         record, output, label = candidates[0]
         result.update({"best.native_class": label, "best.source_version": record.get("provenance.producer.version"),
                        "best.selected_record_ids": tuple(sorted({r.internal_record_id.value for r, _, _ in candidates})),
                        "best.source_output": output})
+        versions = {_key(r.get("provenance.producer.version")) for r, _, _ in candidates}
+        if method["version_rule"] == "label_contract" and len(versions) > 1:
+            # Missing versions remain explicit rather than inventing a model version.
+            result["best.source_version"] = tuple(sorted(
+                "null" if version is None else version for version in versions))
         # Do not select one metric among duplicate label witnesses.
         for metric in ("probability", "score"):
             values = {_key(r.get(path + "." + metric)) for r, path, _ in candidates}
@@ -248,10 +487,9 @@ def derive_headline_fields(portfolio: Portfolio, *, broker: str, origin: str,
         result.update({"best.scope": row["scope"], "best.candidate_status": row["status"]})
         if row.get("subtype") is not None:
             result["best.subtype"] = row["subtype"]
-        if row.get("coarse") is None:
+        if row["scope"] != "candidate" or row["codes"] is None:
             return dict(result, **{"best.status": "recognized_no_proposition"})
-        field = "best.coarse_class" if row["scope"] == "candidate" else "best.context_class"
-        result[field] = row["coarse"]
-        result["best.status"] = "available" if row["scope"] == "candidate" else "context_only"
+        result["best.taxon"] = tuple(sorted(row["codes"]))
+        result["best.status"] = "available"
         return result
     return result

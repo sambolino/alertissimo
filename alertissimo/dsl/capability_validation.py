@@ -457,7 +457,7 @@ def _retrieval_requirement_checks(
         from alertissimo.orchestration.ir import iter_semantic_references
         channels = {ref.channel for ref in iter_semantic_references(scheduled_predicate)
                     if ref.semantic_type == "classification"}
-        if item.source is None or item.source.broker not in channels:
+        if item.source is None or (None not in channels and item.source.broker not in channels):
             return ()
         try:
             return _initial_material_gaps(

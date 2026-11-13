@@ -51,7 +51,6 @@ def edit_yaml(path, update):
 
 @pytest.mark.parametrize("broker,origin,classifier,endpoint,physical,values", [
     ("alerce", "lsst", None, "query_probabilities", "oid", [1, 2]),
-    ("alerce", "ztf", "lc_classifier", "query_probabilities", "oid", ["1", "2"]),
     ("fink", "ztf", "FINK", "objects", "objectId", ["1,2"]),
     ("lasair", "ztf", "tns", "objects", "objectIds", ["1,2"]),
     ("lasair", "lsst", "sherlock", "object", "objectId", ["1", "2"]),
@@ -66,6 +65,21 @@ def test_classification_recipes_preserve_target_encoding(
     calls = bind_endpoint_calls(step, plan, EndpointRegistry())
     assert [call.params[physical] for call in calls] == values
     assert all("classifier" not in call.params for call in calls)
+
+
+@pytest.mark.parametrize("classifier", [None, "lc_classifier", "stamp_classifier", "other_model"])
+def test_alerce_ztf_keeps_probabilities_and_targets_both_selected_summaries(graph, classifier):
+    step = classification("alerce", "ztf", classifier)
+    plans = plan_step(step, graph)
+    assert [plan.endpoint for plan in plans] == [
+        "query_probabilities", "query_objects", "query_objects",
+    ]
+    assert all(plan.required for plan in plans)
+    for plan, selected_method in zip(plans, (None, "lc_classifier", "stamp_classifier")):
+        assert plan.parameter_sources["oid"] == ("target", "ids")
+        calls = bind_endpoint_calls(step, plan, EndpointRegistry())
+        assert [call.params["oid"] for call in calls] == ["1", "2"]
+        assert all(call.params.get("classifier") == selected_method for call in calls)
 
 
 def test_qualified_dynamic_retrieval_uses_mapped_producer_identity(graph):

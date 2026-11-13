@@ -46,6 +46,8 @@ on:
 
 jobs:
   validate:
+    # Run the full suites on the final integration-to-main PR, or on demand.
+    if: github.event_name != 'pull_request' || github.base_ref != 'integration/classification-headlines'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +61,7 @@ jobs:
           'setuptools>=69.5.1' wheel
       - name: Run DSL and touched orchestration contracts
         run: |
-          PYTHONPATH=. pytest -q \
+          PYTHONPATH=. pytest -q --durations=25 \
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
             tests/test_discovery_integration_acceptance.py \

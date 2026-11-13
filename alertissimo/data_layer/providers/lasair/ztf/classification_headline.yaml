@@ -1,15 +1,16 @@
 # Reviewed headline policy; JSON is a YAML subset. No remote updates.
 {
   "schema_version": 1,
-  "policy_id": "lasair-ztf-headline-v1",
-  "mapping_version": "coarse-v1",
+  "policy_id": "lasair-ztf-headline-v2",
+  "mapping_version": "elasticc-v1",
   "broker": "lasair",
   "origin": "ztf",
   "enabled": true,
   "sources": [
     "https://lasair.readthedocs.io/en/main/core_functions/sherlock.html",
     "https://github.com/thespacedoctor/sherlock/blob/v2.2.0/sherlock/transient_catalogue_crossmatch.py#L481",
-    "https://github.com/thespacedoctor/sherlock/blob/vv3.1.0/sherlock/transient_catalogue_crossmatch.py#L474"
+    "https://github.com/thespacedoctor/sherlock/blob/vv3.1.0/sherlock/transient_catalogue_crossmatch.py#L474",
+    "https://github.com/LSSTDESC/elasticc/blob/818ae71e78d20b6f41810d7d6d9108ba4c17bcb1/taxonomy/taxonomy.ipynb"
   ],
   "methods": [
     {
@@ -19,17 +20,17 @@
     }
   ],
   "vocabulary": [
-    {"label": "SN", "coarse": "supernova", "scope": "candidate", "status": "candidate"},
-    {"label": "AGN", "coarse": "agn", "scope": "candidate", "status": "candidate"},
-    {"label": "VS", "coarse": "variable_star", "scope": "candidate", "status": "candidate"},
-    {"label": "CV", "coarse": "cataclysmic_variable", "scope": "candidate", "status": "candidate"},
-    {"label": "BS", "coarse": "star", "scope": "candidate", "status": "candidate"},
-    {"label": "NT", "coarse": "nuclear_transient", "scope": "candidate", "status": "candidate"}
+    {"label": "SN", "codes": [2220, 2242, 2246], "scope": "candidate", "status": "candidate"},
+    {"label": "AGN", "codes": [2332], "scope": "candidate", "status": "candidate"},
+    {"label": "VS", "codes": [2320, 2233, 2234, 2331], "scope": "candidate", "status": "candidate"},
+    {"label": "CV", "codes": [2234, 2231], "scope": "candidate", "status": "candidate"},
+    {"label": "BS", "codes": [1000, 2320, 2233], "scope": "candidate", "status": "candidate"},
+    {"label": "NT", "codes": [2332, 2243, 2220], "scope": "candidate", "status": "candidate"}
   ],
   "sentinels": [
     "NULL",
     "ORPHAN",
     "UNCLEAR"
   ],
-  "note": "Candidate contextual assessment only. Native reliability 1=synonym, 2=association, 3=annotation stays a score; it is never a probability or acceptance threshold. No crossmatch catalogue classification is eligible. Published native-label meaning is the reviewed version-independent contract; source version, when absent, remains absent."
+  "note": "Candidate contextual assessment only. Native reliability 1=synonym, 2=association, 3=annotation stays a score; it is never a probability or acceptance threshold. No crossmatch catalogue classification is eligible. Published native-label meaning is the reviewed version-independent contract; source version, when absent, remains absent. BS (near a bright star: likely artefact or stellar) and NT (nuclear position) are contextual unions, not classes."
 }

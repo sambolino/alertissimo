@@ -7,6 +7,7 @@ on:
       - 'alertissimo/orchestration/confirmation/**'
       - 'tests/test_mapping_schema.py'
       - 'tests/test_classification_headline_policy.py'
+      - 'tests/test_classification_headline_integration.py'
       - 'tests/test_semantic_paths.py'
       - 'tests/test_semantic_families.py'
       - 'tests/test_semantic_model_validation.py'
@@ -82,6 +83,8 @@ on:
 
 jobs:
   validate:
+    # Run the full suites on the final integration-to-main PR, or on demand.
+    if: github.event_name != 'pull_request' || github.base_ref != 'integration/classification-headlines'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,9 +99,10 @@ jobs:
           'pandas==2.2.3' 'numpy>=2.0.0,<2.1.0'
       - name: Run semantic core and Lasair live-capture tests
         run: |
-          PYTHONPATH=. pytest -q \
+          PYTHONPATH=. pytest -q --durations=25 \
             tests/test_mapping_schema.py \
             tests/test_classification_headline_policy.py \
+            tests/test_classification_headline_integration.py \
             tests/test_semantic_paths.py \
             tests/test_semantic_families.py \
             tests/test_semantic_model_validation.py \

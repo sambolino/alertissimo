@@ -1,0 +1,179 @@
+# Classification taxonomy dictionary for Alertissimo headline comparison.
+# Codes 0–2332 reproduce the ELAsTiCC hierarchical taxonomy unchanged:
+#   LSSTDESC/elasticc, taxonomy/taxonomy.ipynb, commit 818ae71e78d20b6f41810d7d6d9108ba4c17bcb1
+#   https://github.com/LSSTDESC/elasticc/blob/818ae71e78d20b6f41810d7d6d9108ba4c17bcb1/taxonomy/taxonomy.ipynb
+#   Authors: Alex Malz, Rob Knop.
+# Codes 9000–9399 are an Alertissimo-local extension for real-sky classes that ELAsTiCC
+# did not simulate. They are not part of ELAsTiCC and must never be presented as such.
+# Do not add, renumber or reinterpret ELAsTiCC codes here. Extension changes need review.
+schema_version: 1
+taxonomy_id: elasticc-818ae71+alertissimo-ext-v1
+nodes:
+  - {"code": 0, "name": "Meta", "parent": null, "origin": "elasticc"}
+  - {"code": 100, "name": "Meta/Other", "parent": 0, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 200, "name": "Residual", "parent": 0, "origin": "elasticc"}
+  - {"code": 300, "name": "NotClassified", "parent": 0, "origin": "elasticc"}
+  - {"code": 1000, "name": "Static", "parent": null, "origin": "elasticc"}
+  - {"code": 1100, "name": "Static/Other", "parent": 1000, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2000, "name": "Variable", "parent": null, "origin": "elasticc"}
+  - {"code": 2100, "name": "Variable/Other", "parent": 2000, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2200, "name": "Non-Recurring", "parent": 2000, "origin": "elasticc"}
+  - {"code": 2210, "name": "Non-Recurring/Other", "parent": 2200, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2220, "name": "SN-like", "parent": 2200, "origin": "elasticc"}
+  - {"code": 2221, "name": "SN-like/Other", "parent": 2220, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2222, "name": "Ia", "parent": 2220, "origin": "elasticc"}
+  - {"code": 2223, "name": "Ib/c", "parent": 2220, "origin": "elasticc"}
+  - {"code": 2224, "name": "II", "parent": 2220, "origin": "elasticc"}
+  - {"code": 2225, "name": "Iax", "parent": 2220, "origin": "elasticc"}
+  - {"code": 2226, "name": "91bg", "parent": 2220, "origin": "elasticc"}
+  - {"code": 2230, "name": "Fast", "parent": 2200, "origin": "elasticc"}
+  - {"code": 2231, "name": "Fast/Other", "parent": 2230, "origin": "elasticc", "used_for": "classical novae"}
+  - {"code": 2232, "name": "KN", "parent": 2230, "origin": "elasticc"}
+  - {"code": 2233, "name": "M-dwarf Flare", "parent": 2230, "origin": "elasticc"}
+  - {"code": 2234, "name": "Dwarf Novae", "parent": 2230, "origin": "elasticc"}
+  - {"code": 2235, "name": "uLens", "parent": 2230, "origin": "elasticc"}
+  - {"code": 2240, "name": "Long", "parent": 2200, "origin": "elasticc"}
+  - {"code": 2241, "name": "Long/Other", "parent": 2240, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2242, "name": "SLSN", "parent": 2240, "origin": "elasticc"}
+  - {"code": 2243, "name": "TDE", "parent": 2240, "origin": "elasticc"}
+  - {"code": 2244, "name": "ILOT", "parent": 2240, "origin": "elasticc"}
+  - {"code": 2245, "name": "CART", "parent": 2240, "origin": "elasticc"}
+  - {"code": 2246, "name": "PISN", "parent": 2240, "origin": "elasticc"}
+  - {"code": 2300, "name": "Recurring", "parent": 2000, "origin": "elasticc"}
+  - {"code": 2310, "name": "Recurring/Other", "parent": 2300, "origin": "elasticc", "used_for": "unused"}
+  - {"code": 2320, "name": "Periodic", "parent": 2300, "origin": "elasticc"}
+  - {"code": 2321, "name": "Periodic/Other", "parent": 2320, "origin": "elasticc", "used_for": "other periodic variable stars"}
+  - {"code": 2322, "name": "Cepheid", "parent": 2320, "origin": "elasticc"}
+  - {"code": 2323, "name": "RR Lyrae", "parent": 2320, "origin": "elasticc"}
+  - {"code": 2324, "name": "Delta Scuti", "parent": 2320, "origin": "elasticc"}
+  - {"code": 2325, "name": "EB", "parent": 2320, "origin": "elasticc"}
+  - {"code": 2326, "name": "LPV/Mira", "parent": 2320, "origin": "elasticc"}
+  - {"code": 2330, "name": "Non-Periodic", "parent": 2300, "origin": "elasticc"}
+  - {"code": 2331, "name": "Non-Periodic/Other", "parent": 2330, "origin": "elasticc", "used_for": "young stellar objects"}
+  - {"code": 2332, "name": "AGN", "parent": 2330, "origin": "elasticc"}
+  - {"code": 9000, "name": "Moving (non-sidereal)", "parent": null, "origin": "alertissimo"}
+  - {"code": 9100, "name": "Moving/Other", "parent": 9000, "origin": "alertissimo", "used_for": "unused"}
+  - {"code": 9200, "name": "Solar System", "parent": 9000, "origin": "alertissimo"}
+  - {"code": 9210, "name": "Solar System/Other", "parent": 9200, "origin": "alertissimo", "used_for": "unused"}
+  - {"code": 9220, "name": "Asteroid", "parent": 9200, "origin": "alertissimo"}
+  - {"code": 9300, "name": "Artificial (satellite glint, debris)", "parent": 9000, "origin": "alertissimo"}
+aliases:
+  - {"alias": "0", "codes": [0]}
+  - {"alias": "meta", "codes": [0]}
+  - {"alias": "100", "codes": [100]}
+  - {"alias": "meta_other", "codes": [100]}
+  - {"alias": "200", "codes": [200]}
+  - {"alias": "residual", "codes": [200]}
+  - {"alias": "300", "codes": [300]}
+  - {"alias": "not_classified", "codes": [300]}
+  - {"alias": "1000", "codes": [1000]}
+  - {"alias": "static", "codes": [1000]}
+  - {"alias": "1100", "codes": [1100]}
+  - {"alias": "static_other", "codes": [1100]}
+  - {"alias": "2000", "codes": [2000]}
+  - {"alias": "variable", "codes": [2000]}
+  - {"alias": "2100", "codes": [2100]}
+  - {"alias": "variable_other", "codes": [2100]}
+  - {"alias": "2200", "codes": [2200]}
+  - {"alias": "non_recurring", "codes": [2200]}
+  - {"alias": "2210", "codes": [2210]}
+  - {"alias": "non_recurring_other", "codes": [2210]}
+  - {"alias": "2220", "codes": [2220]}
+  - {"alias": "sn_like", "codes": [2220]}
+  - {"alias": "2221", "codes": [2221]}
+  - {"alias": "sn_like_other", "codes": [2221]}
+  - {"alias": "2222", "codes": [2222]}
+  - {"alias": "ia", "codes": [2222]}
+  - {"alias": "2223", "codes": [2223]}
+  - {"alias": "ib_c", "codes": [2223]}
+  - {"alias": "2224", "codes": [2224]}
+  - {"alias": "ii", "codes": [2224]}
+  - {"alias": "2225", "codes": [2225]}
+  - {"alias": "iax", "codes": [2225]}
+  - {"alias": "2226", "codes": [2226]}
+  - {"alias": "91bg", "codes": [2226]}
+  - {"alias": "2230", "codes": [2230]}
+  - {"alias": "fast", "codes": [2230]}
+  - {"alias": "2231", "codes": [2231]}
+  - {"alias": "fast_other", "codes": [2231]}
+  - {"alias": "2232", "codes": [2232]}
+  - {"alias": "kn", "codes": [2232]}
+  - {"alias": "2233", "codes": [2233]}
+  - {"alias": "m_dwarf_flare", "codes": [2233]}
+  - {"alias": "2234", "codes": [2234]}
+  - {"alias": "dwarf_novae", "codes": [2234]}
+  - {"alias": "2235", "codes": [2235]}
+  - {"alias": "u_lens", "codes": [2235]}
+  - {"alias": "2240", "codes": [2240]}
+  - {"alias": "long", "codes": [2240]}
+  - {"alias": "2241", "codes": [2241]}
+  - {"alias": "long_other", "codes": [2241]}
+  - {"alias": "2242", "codes": [2242]}
+  - {"alias": "slsn", "codes": [2242]}
+  - {"alias": "2243", "codes": [2243]}
+  - {"alias": "tde", "codes": [2243]}
+  - {"alias": "2244", "codes": [2244]}
+  - {"alias": "ilot", "codes": [2244]}
+  - {"alias": "2245", "codes": [2245]}
+  - {"alias": "cart", "codes": [2245]}
+  - {"alias": "2246", "codes": [2246]}
+  - {"alias": "pisn", "codes": [2246]}
+  - {"alias": "2300", "codes": [2300]}
+  - {"alias": "recurring", "codes": [2300]}
+  - {"alias": "2310", "codes": [2310]}
+  - {"alias": "recurring_other", "codes": [2310]}
+  - {"alias": "2320", "codes": [2320]}
+  - {"alias": "periodic", "codes": [2320]}
+  - {"alias": "2321", "codes": [2321]}
+  - {"alias": "periodic_other", "codes": [2321]}
+  - {"alias": "2322", "codes": [2322]}
+  - {"alias": "cepheid", "codes": [2322]}
+  - {"alias": "2323", "codes": [2323]}
+  - {"alias": "rr_lyrae", "codes": [2323]}
+  - {"alias": "2324", "codes": [2324]}
+  - {"alias": "delta_scuti", "codes": [2324]}
+  - {"alias": "2325", "codes": [2325]}
+  - {"alias": "eb", "codes": [2325]}
+  - {"alias": "2326", "codes": [2326]}
+  - {"alias": "lpv_mira", "codes": [2326]}
+  - {"alias": "2330", "codes": [2330]}
+  - {"alias": "non_periodic", "codes": [2330]}
+  - {"alias": "2331", "codes": [2331]}
+  - {"alias": "non_periodic_other", "codes": [2331]}
+  - {"alias": "2332", "codes": [2332]}
+  - {"alias": "agn", "codes": [2332]}
+  - {"alias": "9000", "codes": [9000]}
+  - {"alias": "moving_non_sidereal", "codes": [9000]}
+  - {"alias": "9100", "codes": [9100]}
+  - {"alias": "moving_other", "codes": [9100]}
+  - {"alias": "9200", "codes": [9200]}
+  - {"alias": "solar_system", "codes": [9200]}
+  - {"alias": "9210", "codes": [9210]}
+  - {"alias": "solar_system_other", "codes": [9210]}
+  - {"alias": "9220", "codes": [9220]}
+  - {"alias": "asteroid", "codes": [9220]}
+  - {"alias": "9300", "codes": [9300]}
+  - {"alias": "artificial_satellite_glint_debris", "codes": [9300]}
+  - {"alias": "snia", "codes": [2222]}
+  - {"alias": "snibc", "codes": [2223]}
+  - {"alias": "snii", "codes": [2224]}
+  - {"alias": "sniax", "codes": [2225]}
+  - {"alias": "sn91bg", "codes": [2226]}
+  - {"alias": "kilonova", "codes": [2232]}
+  - {"alias": "mdwarf_flare", "codes": [2233]}
+  - {"alias": "dwarf_nova", "codes": [2234]}
+  - {"alias": "microlensing", "codes": [2235]}
+  - {"alias": "fast_transient", "codes": [2230]}
+  - {"alias": "long_transient", "codes": [2240]}
+  - {"alias": "eclipsing_binary", "codes": [2325]}
+  - {"alias": "lpv", "codes": [2326]}
+  - {"alias": "nonperiodic", "codes": [2330]}
+  - {"alias": "yso", "codes": [2331]}
+  - {"alias": "classical_nova", "codes": [2231]}
+  - {"alias": "transient", "codes": [2200]}
+  - {"alias": "artifact", "codes": [1000]}
+  - {"alias": "satellite", "codes": [9300]}
+  - {"alias": "moving", "codes": [9000]}
+  - {"alias": "supernova", "codes": [2220, 2242, 2246], "note": "ELAsTiCC places SLSN and PISN under Long"}
+  - {"alias": "cataclysmic_variable", "codes": [2234, 2231], "note": "Dwarf novae plus classical novae"}
+  - {"alias": "variable_star", "codes": [2320, 2233, 2234, 2331], "note": "Reviewed choice; membership remains an open review item"}

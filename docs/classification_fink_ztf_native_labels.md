@@ -1,3 +1,5 @@
+> Historical context: the current contract is [classification headline policy](classification_headline_policy.md).
+
 # C7a — Audited ordinary Fink/ZTF class-index labels
 
 Branch: `feat/classification-fink-ztf-native-labels`.

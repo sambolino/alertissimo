@@ -32,8 +32,8 @@ def graph():
     return build_capability_graph()
 
 
-def intent():
-    sources = [Source(broker="alerce", origin="lsst")]
+def intent(origin="lsst"):
+    sources = [Source(broker="alerce", origin=origin)]
     predicate = ComparisonPredicate(
         left=SemanticReference(semantic_type="classification", producer="lc_classifier", field_path="best.class"),
         operator="=", right=PredicateLiteral(value="SN"),
@@ -43,8 +43,9 @@ def intent():
     return owner, consumer
 
 
-def test_discovery_material_is_reused_even_when_fresh_local_selection_is_supported(graph):
-    owner, consumer = intent()
+@pytest.mark.parametrize("origin", ["lsst", "ztf"])
+def test_discovery_material_is_reused_even_when_fresh_local_selection_is_supported(graph, origin):
+    owner, consumer = intent(origin)
     assert validate_step_capabilities(consumer, graph).status == "supported"
     material, = classification_material_capabilities(consumer, (owner,), graph)
     assert material.owner_index == 0
@@ -52,11 +53,14 @@ def test_discovery_material_is_reused_even_when_fresh_local_selection_is_support
     assert material.endpoint.endpoint == "query_objects"
     assert material.record_types == ("classification@{producer}:alerce",)
     run = plan_workflow(WorkflowIR(steps=[owner, consumer]), graph)
-    assert run.steps[1].endpoint_plans[0].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
+    reused, = run.steps[1].endpoint_plans
+    assert reused.endpoint == "query_objects"
+    assert reused.execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
 
 
-def test_intervening_retrieval_preserves_the_discovery_owner_index(graph):
-    owner, consumer = intent()
+@pytest.mark.parametrize("origin", ["lsst", "ztf"])
+def test_intervening_retrieval_preserves_the_discovery_owner_index(graph, origin):
+    owner, consumer = intent(origin)
     retrieval = GetLightcurveStep(sources=consumer.sources)
     material, = classification_material_capabilities(consumer, (owner, retrieval), graph)
     assert material.owner_index == 0
@@ -65,8 +69,9 @@ def test_intervening_retrieval_preserves_the_discovery_owner_index(graph):
 
 
 @pytest.mark.parametrize("barrier", ["filter", "selection", "lookup", "target", "source", "or", "not"])
-def test_unproven_context_does_not_supply_material(graph, barrier):
-    owner, consumer = intent()
+@pytest.mark.parametrize("origin", ["lsst", "ztf"])
+def test_unproven_context_does_not_supply_material(graph, barrier, origin):
+    owner, consumer = intent(origin)
     earlier = (owner,)
     if barrier == "filter":
         earlier += (FilterStep(predicate=owner.predicate),)
@@ -85,6 +90,38 @@ def test_unproven_context_does_not_supply_material(graph, barrier):
     else:
         earlier = (owner.model_copy(update={"predicate": NotPredicate(operand=owner.predicate)}),)
     assert classification_material_capabilities(consumer, earlier, graph) == ()
+
+
+@pytest.mark.parametrize("change", ["page_limit", "class_filter", "missing_meaning", "excluded_value"])
+def test_composed_retrieval_reuse_requires_declared_producer_selectors(graph, change):
+    owner, consumer = intent("ztf")
+    recipe = next(r for r in graph.recipe_capabilities
+                  if (r.broker, r.origin, r.op) == ("alerce", "ztf", "get_classification"))
+    if change in {"page_limit", "class_filter"}:
+        parameter, value = ("page_size", 1) if change == "page_limit" else ("class_name", "SN")
+        call = recipe.calls[1]
+        changed = replace(recipe, calls=(recipe.calls[0], replace(
+            call, params=call.params + (RecipeParameter(parameter, ConstantValueSource(value)),),
+        ), *recipe.calls[2:]))
+        graph = replace(graph, recipe_capabilities=tuple(
+            changed if r == recipe else r for r in graph.recipe_capabilities
+        ))
+    else:
+        bindings = []
+        for binding in graph.request_constraint_capabilities:
+            if (binding.broker, binding.origin, binding.endpoint, binding.parameter) == (
+                "alerce", "ztf", "query_objects", "classifier",
+            ):
+                if change == "missing_meaning":
+                    continue
+                binding = replace(binding, values=("other_model",))
+            bindings.append(binding)
+        graph = replace(graph, request_constraint_capabilities=tuple(bindings))
+    assert validate_step_capabilities(consumer, graph).status == "supported"
+    assert classification_material_capabilities(consumer, (owner,), graph) == ()
+    plans = plan_workflow(WorkflowIR(steps=[owner, consumer]), graph).steps[1].endpoint_plans
+    assert len(plans) == 3
+    assert all(plan.execution_reuse_from is None for plan in plans)
 
 
 @pytest.mark.parametrize("change", ["outputs", "constants", "ambiguous"])

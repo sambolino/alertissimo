@@ -14,42 +14,35 @@ They are not fresh live acceptance. Recheck the current revision before coding.
 
 ## 1. Coarse classification normalization
 
-**Current:** native producer/model assertions are retained and compared. The opt-in
-[headline policy](classification_headline_policy.md) provides versioned finite
-lookup tables and a pure selector, with tests prepared for local execution; it is
-not yet connected to execution, confirmation or the UI. Candidate-classification retrieval
-plans for ALeRCE, Fink and Lasair on both surveys. ANTARES has catalogue context,
-not an admitted candidate-classification Get.
+**Decision taken (13 November 2026):** use the ELAsTiCC hierarchy plus the reviewed
+local moving-source extension, code-set aliases and three-valued ancestry comparison.
+See the approved strict tuple IR amendment in the headline policy.
 
-**Target/work:** connect the reviewed per-pair native headline rules to immutable
-material views, preserving input/alternative attribution, candidate/context scope,
-subtype implications, explicit errors and abstention. Generic SN supplies no SNII
-evidence; a low-ranked assessment is not positive support. No additional probability
-threshold is required to translate a selected native headline. Representation scaling
-does not calibrate probability.
+**Current:** the reviewed finite headline policies are connected to immutable
+material views, normalized predicates and the comparison UI. Native outputs and
+alternatives remain distinct. ANTARES native Superphot+/DeSoto retrieval is admitted,
+with unresolved input scope/defaults explicitly abstaining. See the authoritative
+[headline policy](classification_headline_policy.md) for defaults and limits.
 
-**Completion:** integrated, attributable normalized examples and passing local
-counterexamples. Policy availability alone does not complete the public feature.
-Do not invent a universal taxonomy or a new normalization engine.
+**Completion gate:** the implementation and regression cases are prepared; user-run
+local tests, package validation and final integration CI must pass before acceptance.
+No cross-method probability ordering or new probability threshold is introduced. Catalogue labels without a reviewed candidate proposition
+remain recognized context.
 
 ## 2. Native headline selection and normalized confirm
 
-**Current:** upstream `best.*` fields and distinct-broker existence/proposition quorum
-exist. The 11 November decision replaces the former universal-winner proposal with
-native headline selection; see the policy contract above. Existing public behavior
-is unchanged by the opt-in policy module.
+**Current:** separate `classification@headline:<broker>` records retain the selected
+native labels/taxon code sets, policy digest, source method/version and input record IDs.
+Confirm obtains each broker's full classification recipe and evaluates only its own
+occurrence-local evidence. It counts each broker once; missing and incompatible
+outputs do not become positive NOT votes. Native best queries remain compatible.
+Continuation retains finalized prior views and pinned interpretations. Only new
+eligible material permits a new interpretation; deserialization/UI do not remap.
 
-**Target/work:** attach a named/versioned headline derivation retaining native
-inputs, alternatives, conflict/abstention and provenance. Never overwrite upstream
-`best` fields. Confirm uses each broker's own eligible coarse proposition, one vote
-per broker. Recompute only in a new material view when eligible inputs change;
-preserve previous views' evidence and policy versions. Report vocabulary drift on
-ingestion; do not poll for new classifiers or automatically adopt them.
-
-**Completion:** reviewed precedence/tie/abstention rules, representation and tests
-for misleading score order, scope confusion, duplicate votes and missing evidence.
-Execution/continuation integration and public access remain to be delivered. The
-first policy PR is not a claim that normalized confirm or discovery already works.
+**Completion gate:** local counterexamples and final CI remain user-run. The new
+suite covers method precedence, composed confirmation, immutable continuation,
+visible unknown-label abstentions, input scope, and initial filtering before latest. After
+validation, stop this topic before revisiting items 3 onward.
 
 ## 3. Catalogue crossmatches and field coverage
 

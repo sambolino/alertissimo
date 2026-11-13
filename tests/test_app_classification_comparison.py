@@ -231,3 +231,50 @@ def test_frozen_multibroker_table_renders_and_its_source_record_can_be_selected(
     app.selectbox[0].set_value(selected).run(timeout=30)
     assert not app.exception
     assert app.selectbox[0].value == selected
+
+
+def test_stored_headline_projection_exposes_scope_policy_and_visible_errors():
+    raw = portfolio(record("native", {"best.class": "Future label"}), record("headline", {
+        "best.native_class": "Future label", "best.status": "error",
+        "best.error_code": "unmapped_label", "best.broker": "fink", "best.survey": "ztf",
+        "best.policy": "fink-ztf-headline-v1", "best.mapping_version": "coarse-v1",
+        "best.policy_digest": "pinned-hash", "best.source_method": "fink",
+        "best.selected_record_ids": ["native"],
+    }, "classification@headline:fink", internal_source={}))
+    snapshot = deepcopy(raw)
+    display = portfolio_to_display(raw)
+    rows = classification_table_rows(display)
+    assert len(rows) == 2
+    assert rows[1]["Normalization error"] == "unmapped_label"
+    assert rows[1]["Policy digest"] == "pinned-hash"
+    assert rows[1]["Selected native records"] == ["native"]
+    assert raw == snapshot
+    def app():
+        import streamlit as st
+        from alertissimo.app_plot import render_classification
+        render_classification(st.session_state["data"])
+    at = AppTest.from_function(app)
+    at.session_state["data"] = display
+    at.run()
+    assert not at.exception
+    assert "unmapped_label" in at.error[0].value
+
+
+def test_headline_cards_do_not_use_an_alternative_probability():
+    display = {"classifications": [
+        {"class": "AGN", "probability": 0.99},
+        {"headline": True, "class": "SNIa", "probability": 0.1},
+    ]}
+    assert classification_card_summary(display) == ("SNIa", 0.1)
+    display["classifications"].append({"headline": True, "class": "SN", "probability": 0.9})
+    assert classification_card_summary(display) == ("2 labels", None)
+
+
+def test_headline_taxa_show_names_and_mark_local_extensions():
+    raw = portfolio(record("headline", {"best.taxon": [2222, 9220], "best.native_class": "captured",
+                                       "best.status": "available"}, "classification@headline:fink"))
+    before = deepcopy(raw)
+    row, = classification_rows(raw)
+    assert row["taxon"] == "2222 Ia; 9220 Asteroid (Alertissimo ext.)"
+    assert classification_table_rows(portfolio_to_display(raw))[0]["Taxon"] == row["taxon"]
+    assert raw == before

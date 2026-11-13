@@ -57,6 +57,11 @@ def _constraint_lookup(
 def _comparison_parts(
     predicate: ComparisonPredicate,
 ) -> tuple[SemanticReference, str, Any] | None:
+    # Resolved taxonomy sets are local semantics, even if a provider happens
+    # to declare a binding for the same path in future.
+    if any(isinstance(value, PredicateLiteral) and isinstance(value.value, tuple)
+           for value in (predicate.left, predicate.right)):
+        return None
     if isinstance(predicate.left, SemanticReference) and isinstance(
         predicate.right, PredicateLiteral
     ):

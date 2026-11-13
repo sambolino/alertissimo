@@ -118,11 +118,16 @@ imports, not engines. Do not reconstruct the removed broker factory behind them.
 [Next functional work](docs/next_functional_work.md) owns the implementation IDs,
 current/target states and completion criteria. The reviewed headline selection and
 finite vocabulary policy is recorded in [classification headline policy](docs/classification_headline_policy.md).
-It is opt-in in the first policy PR; execution, normalized confirmation and UI
-integration remain subsequent work.
+It is integrated as stored `classification@headline:<broker>` records. Shared
+presentation reads the stored result; it never derives scientific fields. Normalized
+Confirm composes its own classification recipe evidence per broker before voting.
+Continuation preserves finalized prior material and its pinned policy interpretation. Fresh ALeRCE/ZTF classification retrieval
+now supplies broker-selected LC and stamp summaries alongside all probability
+versions through its existing declarative recipe.
 
-- Coarse normalization translates the selected native headline through an explicit
-  vocabulary. `best` does not choose a scientifically strongest cross-broker result.
+- Headline normalization maps selected native labels to ELAsTiCC code sets plus a
+  reviewed local extension. Explicit ancestry gives support/opposition/unknown;
+  aliases resolve once into strict frozen IR tuples that never reach pushdown. `best` does not choose a scientifically strongest cross-broker result.
   Prefer the broker-designated headline; use the reviewed Alertissimo method
   default where designated. Keep native outputs, scope, conflicts and alternatives.
   No cross-method score comparison or additional probability threshold is used.

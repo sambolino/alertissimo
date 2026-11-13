@@ -111,13 +111,33 @@ def test_missing_class_stays_unknown_under_negation_in_attached_proposition(grap
 
 
 def scientific_records(portfolios):
-    return Counter((summary_object_identity(portfolio), record.semantic_type,
-                    json.dumps(dict(record.fields), sort_keys=True),
-                    portfolio.execution(record.internal_source.internal_execution_id).broker,
-                    portfolio.execution(record.internal_source.internal_execution_id).endpoint,
-                    record.internal_source.payload_key, record.internal_source.payload_path,
-                    record.internal_source.payload_index)
-                   for portfolio in portfolios for record in portfolio.records)
+    def native_signature(portfolio, record):
+        source = record.internal_source
+        assert source is not None
+        execution = portfolio.execution(source.internal_execution_id)
+        return (summary_object_identity(portfolio), record.semantic_type,
+                json.dumps(dict(record.fields), sort_keys=True), execution.broker,
+                execution.endpoint, source.payload_key, source.payload_path, source.payload_index)
+
+    signatures = []
+    for portfolio in portfolios:
+        native = {r.internal_record_id.value: native_signature(portfolio, r)
+                  for r in portfolio.records if r.internal_source is not None}
+        for record in portfolio.records:
+            if record.internal_source is not None:
+                signatures.append(native[record.internal_record_id.value])
+                continue
+            assert record.semantic_type.startswith("classification@headline:")
+            fields = dict(record.fields)
+            # IDs/fingerprints differ between independent runs. Compare the
+            # actual native witnesses, including their metrics and provenance.
+            fields.pop("best.evidence_digest")
+            for key, value in tuple(fields.items()):
+                if key.endswith("_record_ids"):
+                    fields[key] = sorted(native[identifier] for identifier in value)
+            signatures.append((summary_object_identity(portfolio), record.semantic_type,
+                               json.dumps(fields, sort_keys=True)))
+    return Counter(signatures)
 
 
 def test_scoped_proposition_has_same_qualifiers_in_fresh_and_continuation_execution(graph):

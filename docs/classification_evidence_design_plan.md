@@ -1,3 +1,5 @@
+> Historical context: the current contract is [classification headline policy](classification_headline_policy.md).
+
 # Classification evidence and declarative selection: design and PR plan
 
 Agreed direction: 30 October 2026. The original design and milestone history are
