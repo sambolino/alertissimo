@@ -4,6 +4,8 @@ Implementation IDs are stable references, not a fixed PR count or merge order.
 Split later work as 4a/4b without renumbering unrelated items. Architecture belongs
 in [ARCHITECTURE.md](../ARCHITECTURE.md); only implementation items are numbered here.
 
+Milestone notes were removed in this PR and remain available in Git history before its commit.
+
 Goal: a deploy-yourself beta with UI and deterministic DSL, without NLP. Maximize
 semantically covered broker diversity. Coarse classification, native headline selection,
 catalogues and discovery/selection are required work; cutouts come last.
@@ -24,8 +26,8 @@ alternatives remain distinct. ANTARES native Superphot+/DeSoto retrieval is admi
 with unresolved input scope/defaults explicitly abstaining. See the authoritative
 [headline policy](classification_headline_policy.md) for defaults and limits.
 
-**Completion gate:** the implementation and regression cases are prepared; user-run
-local tests, package validation and final integration CI must pass before acceptance.
+**Accepted baseline:** merged in #355 after local/package validation and green CI.
+Open scientific choices remain listed in the headline policy.
 No cross-method probability ordering or new probability threshold is introduced. Catalogue labels without a reviewed candidate proposition
 remain recognized context.
 
@@ -39,10 +41,10 @@ outputs do not become positive NOT votes. Native best queries remain compatible.
 Continuation retains finalized prior views and pinned interpretations. Only new
 eligible material permits a new interpretation; deserialization/UI do not remap.
 
-**Completion gate:** local counterexamples and final CI remain user-run. The new
-suite covers method precedence, composed confirmation, immutable continuation,
-visible unknown-label abstentions, input scope, and initial filtering before latest. After
-validation, stop this topic before revisiting items 3 onward.
+**Accepted baseline:** merged in #355 after counterexample and CI validation:
+method precedence, composed confirmation, immutable continuation, visible unknown-label
+abstentions, input scope and initial filtering before latest. Further changes to
+selection policy require a new decision; continue with the remaining work items.
 
 ## 3. Catalogue crossmatches and field coverage
 

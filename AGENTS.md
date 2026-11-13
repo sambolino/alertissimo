@@ -38,7 +38,7 @@ invariants, retired interfaces and functional priorities before changing code.
   Resolve field ownership, units and conventions before mapping.
 - Temporal operators/global latest must keep the same scientific meaning across
   brokers. Missing implementation remains work; a new deferral is not completion.
-- Preserve original documents as history when replacing stale instructions.
+- Keep current contracts in documentation; retain superseded notes in Git history.
 
 ## Repository procedures
 
@@ -61,5 +61,5 @@ Run focused owner checks, then appropriate integration/release checks. Do not
 repeat overlapping suites without a change or unresolved concern that needs it.
 State actual test/live evidence, tested revision and limits. Parsing, planning,
 empty results and diagnostic pages do not establish nonempty live acceptance.
-Update authoritative ownership guidance when it changes; retain historical plans
-with clear pointers instead of creating competing architecture documents.
+Update authoritative ownership guidance when it changes; use Git history for
+superseded plans instead of maintaining competing architecture documents.

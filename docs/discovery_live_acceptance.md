@@ -1,15 +1,9 @@
-# Live discovery acceptance and final verification
-
-Step 09b, branch `feat/integration-09b-live-acceptance`, based on integration
-`b4ada2a` / PR #327. Target `integration/discovery-completion`. This branch adds
-an explicit acceptance script and its offline tests. It changes no backend,
-ontology, provider recipes, mappings, transport policy or scientific DSL rules.
+# Live discovery acceptance and verification
 
 `scripts/live_dsl_discovery.py` calls the public `validate_dsl` and `execute_dsl`
 facade. It does not construct an IR, plan or bound provider request itself.
 Existing finalized Portfolio identities and retained execution provenance are
-read for acceptance checks and reporting. Tests substitute fixture transports;
-preparing this branch contacted no providers and ran no project code.
+read for acceptance checks and reporting. Offline tests substitute fixture transports.
 
 ## Interface and scenarios
 
@@ -20,7 +14,7 @@ PYTHONPATH=. python scripts/live_dsl_discovery.py --validate-only
 
 Both commands are offline. `--validate-only` writes input DSL and planning outcomes
 and identifies its phase as validation; a PASS here is not live evidence.
-Running without either option executes the selected scenarios, or all eight if
+Running without either option executes the selected scenarios, or all nine if
 no `--scenario` is given. Repeat `--scenario NAME` to select several.
 
 | Scenario | Live workflow and limits |
@@ -32,6 +26,7 @@ no `--scenario` is given. Repeat `--scenario NAME` to select several.
 | `alerce-ztf-time` | Five-arcsecond default cone, one-hour temporal selection, `latest 3`, then available survivor history |
 | `lasair-ztf-time` | Same spatial/temporal intent through required Lasair summary/history contracts; requires `LASAIR_ZTF_TOKEN` |
 | `antares-ztf-time` | Small numeric RA/Dec box with ZTF identity scope, temporal history proof, `latest 3`, then survivor lightcurves |
+| `lasair-ztf-sherlock` | Native Sherlock AGN join with a last-detection window, global latest and retained histories |
 | `fink-cutouts` | Explicit object lookup, fixed JSON `data_product` retrieval, three named science/template/difference stamp arrays |
 
 The default sky field is RA `124.87996115142856`, Dec `-6.0205001`, half-width/radius
@@ -44,7 +39,8 @@ exact spherical cone. This runner rejects fields crossing coordinate boundaries.
 
 `--window-hours N` changes the short windows, not the original seven-day Fink
 regression. `--latest N` changes candidate selection on the three `*-ztf-time`
-scenarios; it does not truncate discovery early or override physical row limits.
+scenarios and native Sherlock; it does not truncate discovery early or override
+physical row limits.
 `--time-mode first` or `--time-mode last` applies only to those three scenarios.
 Fink remains on its admitted default detection-window semantics. Histories retain
 all measurements of survivors, including times outside the membership interval.
@@ -118,28 +114,10 @@ zero exit code. A valid empty discovery is correct backend behavior but cannot
 exercise a downstream nonempty acceptance case. The recorded suite tests the
 empty and incomplete branches deterministically.
 
-## Local handoff
+## Running acceptance
 
-The first user-run live sweep on 09b reported PASS for ALeRCE classification,
-the original seven-day Fink query, multi-object access and cutouts. The filter,
-ALeRCE time and Lasair time cases returned valid empty populations (SKIP).
-ANTARES returned a native server-side status 500, initially mislabeled FAIL by
-the runner; the follow-up fixes that classification only. This is not a successful
-ANTARES acceptance, nor evidence for the three unexercised nonempty paths.
-
-Run focused offline checks before pushing the small PR:
-
-```bash
-set -o pipefail
-PYTHONPATH=. python -m pytest -q \
-  tests/test_dsl_live_discovery.py \
-  tests/test_discovery_integration_acceptance.py \
-  tests/test_dsl_live_acceptance.py \
-  2>&1 | tee /tmp/alertissimo-integration-09b-tests.log
-```
-
-After squash, use a fresh evidence root. Keep logs outside each script-owned
-subdirectory so `tee` does not make that output directory nonempty in advance.
+Use a fresh evidence root. Keep logs outside each script-owned subdirectory so
+`tee` does not make that output directory nonempty in advance.
 
 ```bash
 acceptance_dir=$(mktemp -d /tmp/alertissimo-discovery-final.XXXXXX)
@@ -220,10 +198,6 @@ Report exact revision, offline/package outcomes, and live FAIL/UNAVAILABLE/SKIP
 separately. Do not install additional clients merely to turn a recorded replay
 into a live test.
 
-After reviewing this evidence, consult on classification joins and additional
-Rubin discovery before implementing either. If the agreed scope is complete,
-remove the three temporary integration-base CI exclusions in a final cleanup
-commit, update against main, open the integration-to-main PR, and run all three
-applicable checks there. Do not rerun obsolete workflow SHAs or bypass required
-checks. This 09b feature PR still targets integration with automatic CI excluded;
-no main merge or remote operation is performed by this script.
+Require applicable CI on the actual proposed implementation revision. Record
+unavailable/skipped providers separately; offline planning, diagnostic pages and
+valid empty responses do not establish nonempty downstream live acceptance.

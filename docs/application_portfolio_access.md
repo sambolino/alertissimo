@@ -1,8 +1,5 @@
 # Application access to scientific results
 
-Step 08, branch `feat/integration-08-portfolio-access`, based on integration
-`4d93b51` / PR #325. Target `integration/discovery-completion`.
-
 Applications enter through `alertissimo.api.execute_dsl` and read
 `DSLExecutionResult.portfolios`. This is the final material view of the current
 workflow, including its candidate filters. Historical Step snapshots are execution
@@ -10,9 +7,9 @@ evidence; concatenating them can reintroduce rejected candidates and duplicates.
 `validate_dsl` checks syntax, semantics and planning; it does not retrieve results.
 
 The existing Portfolio, SemanticRecord, serialization and photometry helpers
-already expose the required information. This change adds a checkout consumer
-example and regressions. It changes no ontology, DSL, planning, provider mappings
-or domain models. Helpers in `examples/application_portfolio_access.py` illustrate
+already expose the required information. The checkout consumer example uses those
+owners without another domain model. Helpers in
+`examples/application_portfolio_access.py` illustrate
 consumer choices; they are not a new installed Alertissimo API.
 
 ## One candidate and several candidates
@@ -104,8 +101,8 @@ including older assertions, remain available on the Portfolio.
 The same source-row comparison can correlate a Fink measurement and its Pan-STARRS
 record before applying a consumer's combined cuts. Preserve separation units,
 star/galaxy missingness, and negative sentinels; a sentinel is not a close match.
-The [reference inventory](reference_workflow_material.md) explains why a candidate
-filter spanning several record families is not automatically a same-alert cut.
+A candidate filter spanning several record families is not automatically a
+same-alert cut: correlate the complete physical source reference explicitly.
 
 ## Photometry, limits and counts
 
@@ -126,7 +123,7 @@ This reuses the existing semantic-path projection, without parsing broker payloa
 keys. It keeps ordinary and forced values distinct, including negative forced
 flux. Non-detections remain `measurement` records with limit fields such as
 `photometry.g.limit.mag`; the current plotting helper does not turn limits into
-ordinary magnitudes or plot them as detections. All their fields and source
+ordinary magnitudes or classify them as detections. All their fields and source
 metadata are available in `measurements`. Native `lightcurve` records and nested
 points also remain in the Portfolio/JSON; do not concatenate native points and
 atomic measurements as if they were independent observations.
@@ -143,8 +140,19 @@ count. Candidate selection retains every measurement of each survivor.
 Gets. It is not a guarantee that every conceivable supplement runs. In particular,
 the inherited-target ALeRCE lightcurve Get omits optional singular forced photometry
 under the existing cardinality policy; an explicitly targeted singleton IR Get can
-admit it. See the [07c unit regression](integration_07c_alerce_distance_units.md).
+admit it. See the [unit regression](../tests/test_alerce_reference_distance_units.py).
 No new forced-photometry surface noun or measurement subtype is added here.
+
+Reference-source distances are endpoint-specific. Fink/ZTF candidate `distnr` and
+ALeRCE/ZTF detection/lightcurve `distnr` use
+`reference_image.nearest_source.pixel_distance` (pixels); ALeRCE forced-photometry
+`distnr` uses `reference_image.nearest_source.separation.total` (arcseconds).
+Preserve zero/negative values and missingness without rescaling; a negative
+sentinel is not a close association. The
+[ALeRCE 2.3.1 response definitions](https://github.com/alercebroker/alerce_client/tree/44294b14e7c14e17a4fa4692b0d4dbe4b1838813/docs/source/models)
+and [ZTF schemas](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html)
+establish these units. ALeRCE TAP's different metadata does not establish
+TAP-to-client numeric equivalence or authorize a pixel-to-angle conversion.
 
 ## Serialization and runnable checkout example
 
@@ -176,35 +184,13 @@ selection from an empty result is an error. Running the example executes the
 workflow's provider calls. Importing its helpers does not execute anything.
 
 Nucleuswatch's external bridge should adopt per-candidate selection and explicit
-classification policy before translating into its own models. This branch does
+classification policy before translating into its own models. The example does
 not modify Bibin's repository or introduce `BrokerResult` into Alertissimo.
 
-## Local verification
+## Regression evidence
 
-The new tests cover a synthetic two-candidate/multi-survey ownership example,
-classification order/version/source rules, ordinary/forced/limit views, exact
-integer source IDs, reported counts, source joins and canonical serialization.
-Public `execute_dsl` cases use recorded Fink row structure with deliberately
-modified IDs, magnitudes and labels through a fake transport, for one and two
-candidates. These are isolation fixtures, not new captures or completeness claims.
-
-No tests, project imports, builds, applications or provider calls ran during
-preparation. Only source inspection, AST/YAML parsing, whitespace and Git bundle
-verification were performed. Run locally:
-
-```bash
-set -o pipefail
-PYTHONPATH=. python -m pytest -q \
-  tests/test_application_portfolio_access.py \
-  tests/test_portfolio_lightcurve.py \
-  tests/test_portfolio_serialization.py \
-  tests/test_dsl_public_api_serialization.py \
-  tests/test_target_bound_partition_identity.py \
-  tests/test_api_continuation.py \
-  2>&1 | tee /tmp/alertissimo-integration-08-tests.log
-```
-
-The existing UI workflow has Pandas and now includes the new example regression
-and existing photometry projection tests. Keep focused local testing and squash
-into integration; another shared CI run is not needed for this example-only step.
-Final CI and live acceptance remain separate requirements before main.
+[`test_application_portfolio_access.py`](../tests/test_application_portfolio_access.py)
+covers per-candidate/multi-survey ownership, assertion/source selection, exact
+integer IDs, counts and serialization. Public execution cases use recorded row
+structures with deliberately modified identities/values through fake transports;
+they prove consumer isolation, not fresh captures or live completeness.
