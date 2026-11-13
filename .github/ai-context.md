@@ -9,7 +9,13 @@ catalogue diversity, semantic discovery and uniform temporal/latest selection ar
 required priorities. Cutouts are the last required feature expansion.
 
 - [Collection contract](../docs/dsl_collections.md): ontology parameters, relative
-  element paths and parenthesized bodies; examples remain unimplemented.
+  element paths and parenthesized bodies; D3 decisions are fixed. The reader now
+  retains array/items boundaries and scoped domains; WorkflowIR carries version 2
+  with legacy version-1 deserialization and refusal of newer versions. Expression
+  examples remain unimplemented. No delivered-band declarations or evaluator are
+  enabled by this foundation; extend the existing strict capability loader before
+  adding route delivery metadata. Initial collections plus latest await item 4a;
+  collection confirm, measurement acquisition, binders and FP syntax remain deferred.
 - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
   audit tooling; preserve catalogue scope, units and ownership.
 - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted
