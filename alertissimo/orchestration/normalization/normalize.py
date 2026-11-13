@@ -327,10 +327,11 @@ def _materialize_enrichment_view(
             f"provider step_index {step_run.step_index} material input must reference "
             "an earlier Step"
         )
-    incoming = own.portfolios
-    if any(plan.execution_reuse_from is not None for plan in step_run.endpoint_plans):
-        survivors = {summary_object_identity(portfolio) for portfolio in source.portfolios}
-        incoming = tuple(portfolio for portfolio in incoming if summary_object_identity(portfolio) in survivors)
+    # Enrichment extends the selected population, whether calls are fresh or reused.
+    # Keep the unscoped physical response in executions for audit purposes.
+    survivors = {summary_object_identity(portfolio) for portfolio in source.portfolios} - {None}
+    incoming = tuple(portfolio for portfolio in own.portfolios
+                     if summary_object_identity(portfolio) in survivors)
     return StepPortfolioResult(
         step_index=own.step_index,
         executions=own.executions,

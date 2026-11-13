@@ -26,7 +26,7 @@ def source(broker="fink", origin="ztf", tail="with enrichment"):
     ("fink", {"get_classification", "get_crossmatch", "get_data_product", "get_lightcurve"}),
     ("alerce", {"get_classification", "get_lightcurve"}),
     ("lasair", {"get_classification", "get_crossmatch", "get_lightcurve"}),
-    ("antares", {"get_crossmatch", "get_lightcurve"}),
+    ("antares", {"get_classification", "get_crossmatch", "get_lightcurve"}),
 ])
 def test_family_expands_to_supported_concrete_gets(graph, broker, expected):
     surface = source(broker)

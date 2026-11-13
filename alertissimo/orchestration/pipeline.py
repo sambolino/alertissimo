@@ -170,10 +170,11 @@ def _candidate_view_from_step(
     )
     if material_source is None:
         return own
-    incoming = own.portfolios
-    if any(plan.execution_reuse_from is not None for plan in step_run.endpoint_plans):
-        survivors = {summary_object_identity(portfolio) for portfolio in material_source.portfolios}
-        incoming = tuple(portfolio for portfolio in incoming if summary_object_identity(portfolio) in survivors)
+    # A targeted enrichment cannot expand the source population during staging,
+    # even when a fresh physical response contains additional objects.
+    survivors = {summary_object_identity(portfolio) for portfolio in material_source.portfolios} - {None}
+    incoming = tuple(portfolio for portfolio in own.portfolios
+                     if summary_object_identity(portfolio) in survivors)
     return StepPortfolioResult(
         step_index=step_run.step_index,
         executions=own.executions,

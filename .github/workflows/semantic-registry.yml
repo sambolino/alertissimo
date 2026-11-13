@@ -99,7 +99,7 @@ jobs:
           'pandas==2.2.3' 'numpy>=2.0.0,<2.1.0'
       - name: Run semantic core and Lasair live-capture tests
         run: |
-          PYTHONPATH=. pytest -q \
+          PYTHONPATH=. pytest -q --durations=25 \
             tests/test_mapping_schema.py \
             tests/test_classification_headline_policy.py \
             tests/test_classification_headline_integration.py \

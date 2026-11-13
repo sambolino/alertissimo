@@ -61,7 +61,7 @@ jobs:
           'setuptools>=69.5.1' wheel
       - name: Run DSL and touched orchestration contracts
         run: |
-          PYTHONPATH=. pytest -q \
+          PYTHONPATH=. pytest -q --durations=25 \
             tests/test_dsl_*.py \
             tests/test_api_continuation.py \
             tests/test_discovery_integration_acceptance.py \

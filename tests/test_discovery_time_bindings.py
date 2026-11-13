@@ -53,6 +53,12 @@ def contract(tmp_path, *, origins=("lsst",), encoding="utc_iso", ranged=False, f
         def recipes(doc):
             # This synthetic contract tests whole-window encoding independently
             # of production temporal alternatives and their evidence calls.
+            # Its artificial required query_objects bounds do not apply to the
+            # unrelated targeted classification summary recipe.
+            doc["recipes"]["get_classification"][0]["calls"] = [
+                call for call in doc["recipes"]["get_classification"][0]["calls"]
+                if call["endpoint"] != "query_objects"
+            ]
             for op in ("semantic_search", "cone_search"):
                 doc["recipes"][op] = [item for item in doc["recipes"][op] if "time_selection" not in item]
             operations = ("semantic_search", "cone_search", "get_lightcurve") if fanout else ("semantic_search", "cone_search")

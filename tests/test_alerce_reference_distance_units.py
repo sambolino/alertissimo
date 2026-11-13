@@ -92,6 +92,7 @@ def test_retrieval_retains_distance_units_under_existing_supplement_policy(expli
             # claim of a complete lightcurve or classifier population.
             self.responses = {
                 "query_object": fixture("query_object"),
+                "query_objects": {"items": [fixture("query_object")]},
                 "query_probabilities": fixture("query_probabilities")[:1],
                 "query_lightcurve": payload("query_lightcurve", first_row("query_lightcurve")),
                 "query_forced_photometry": [first_row("query_forced_photometry")],
@@ -123,9 +124,9 @@ def test_retrieval_retains_distance_units_under_existing_supplement_policy(expli
         # Unknown target cardinality omits this optional singular supplement.
         lightcurve, = [step for step in result.workflow.steps if step.op == "get_lightcurve"]
         assert lightcurve.target is None
-        expected_calls = {"query_object", "query_probabilities", "query_lightcurve"}
+        expected_calls = {"query_object", "query_objects", "query_probabilities", "query_lightcurve"}
     assert set(transport.calls) == expected_calls
-    assert len(transport.calls) == len(expected_calls)
+    assert len(transport.calls) == len(expected_calls) + (0 if explicit_target else 1)
     assert all(not step.warnings for step in staged.run.steps)
     for portfolios in (portfolios, normalize_workflow_execution(staged.execution).steps[-1].portfolios):
         measurements = [r for p in portfolios for r in p.records if r.semantic_type == "measurement@ztf:alerce"]

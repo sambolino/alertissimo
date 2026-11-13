@@ -14,7 +14,6 @@ from alertissimo.data_layer.paths import PROVIDERS_ROOT
 from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
 from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
 from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
-from alertissimo.dsl import SurfaceLoweringError
 from alertissimo.orchestration.ir import GetClassificationStep, Source
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.validation import validate_step_capabilities
@@ -132,12 +131,17 @@ def test_missing_catalogue_relationship_supplies_no_invented_evidence(graph):
                    for p in result.portfolios for r in p.records)
 
 
-def test_catalogue_classification_does_not_admit_candidate_classification_get(graph):
+def test_candidate_get_does_not_promote_catalogue_classification_to_candidate_evidence(graph):
     step = GetClassificationStep(sources=[Source(broker="antares", origin="ztf")])
-    assert validate_step_capabilities(step, graph).status == "unsupported"
+    assert validate_step_capabilities(step, graph).status == "supported"
     source = f"object {OID} from ztf via antares\nwith classification via antares\n"
-    assert not validate_dsl(source, graph=graph, continue_from=None).is_runnable
+    assert validate_dsl(source, graph=graph, continue_from=None).is_runnable
     executor = Executor()
-    with pytest.raises(SurfaceLoweringError):
-        execute_dsl(source, graph=graph, executor=executor, continue_from=None)
-    assert executor.calls == []
+    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
+    assert executor.calls == [("get_by_ztf_object_id", {"ztf_object_id": OID})]
+    assert not any(r.semantic_type.startswith("classification@")
+                   and r.semantic_type != "classification@headline:antares"
+                   for p in result.portfolios for r in p.records)
+    headline, = [r for p in result.portfolios for r in p.records
+                 if r.semantic_type == "classification@headline:antares"]
+    assert headline.get("best.taxon") is None

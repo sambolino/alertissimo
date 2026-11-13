@@ -82,6 +82,8 @@ class FixtureExecutor:
     def execute(self, broker, origin, endpoint, params=None, headers=None):
         self.calls.append((endpoint, dict(params or {})))
         if endpoint == "query_objects":
+            # Deliberately overbroad even for targeted classification summaries:
+            # fresh enrichment must not resurrect the temporally excluded B.
             payload = {"items": deepcopy(self.rows)}
         elif endpoint == "query_lightcurve":
             oid = params["oid"]
@@ -121,6 +123,8 @@ def test_history_overlap_is_not_a_match_and_nondetections_do_not_supply_a_witnes
     result, executor, _, _, _ = run(tmp_path, tail="with classification via alerce\n")
     assert identities(result.result.steps[0].portfolios) == {IDS[0], IDS[2], IDS[3]}
     assert identities(result.portfolios) == {IDS[0], IDS[2], IDS[3]}
+    assert any(IDS[1] in identities(execution.portfolios)
+               for execution in result.result.steps[-1].executions)
     assert [params["oid"] for endpoint, params in executor.calls if endpoint == "query_probabilities"] == [IDS[0], IDS[2], IDS[3]]
     for portfolio in result.portfolios:
         oid = summary_object_identity(portfolio)[1]
@@ -171,13 +175,15 @@ def test_reused_history_cannot_resurrect_rejected_candidates_or_fetch_again(tmp_
 
 def test_continuation_pins_clock_replays_history_and_keeps_the_selected_ids(tmp_path):
     first, executor, graph, registry, _ = run(tmp_path)
+    snapshot = first.to_dict()
     old_calls = len(executor.calls)
     second = execute_dsl("with classification via alerce\n", graph=graph, registry=registry,
                          executor=executor, continue_from=first,
                          reference_time=datetime(2026, 1, 1, tzinfo=timezone.utc))
     assert second.run.steps[0].time_reference == NOW
-    assert len(executor.calls) == old_calls + 3
+    assert len(executor.calls) == old_calls + 9  # Three targeted calls per surviving ID.
     assert identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
+    assert first.to_dict() == snapshot
     # Proof changes invalidate the physical prefix even with identical source text.
     old_plan = first.run.steps[0].endpoint_plans[0]
     changed_plan = old_plan.model_copy(update={"time_selection": old_plan.time_selection.model_copy(update={"complete": False})})
@@ -282,7 +288,7 @@ def test_continuation_skips_reused_fanout_but_replays_every_original_history_cal
     assert len(executor.calls) == 5
     second = execute_dsl("with classification via alerce\n", graph=graph, registry=registry,
                          executor=executor, continue_from=first, reference_time=NOW + timedelta(days=1))
-    assert len(executor.calls) == 8
+    assert len(executor.calls) == 14
     assert identities(second.portfolios) == {IDS[0], IDS[2], IDS[3]}
     assert second.run.steps[0].execution_ids == first.run.steps[0].execution_ids
     assert second.run.steps[1].execution_ids == first.run.steps[1].execution_ids

@@ -1,5 +1,8 @@
 """Contracts for immutable semantic material lineage across workflow Steps."""
 
+import pytest
+
+from alertissimo.data_layer.execution import ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalExecutionId,
     InternalExecutionProvenance,
@@ -15,6 +18,10 @@ from alertissimo.orchestration.normalization import (
     StepPortfolioResult,
     consolidate_portfolios,
 )
+from alertissimo.orchestration.normalization.normalize import _materialize_enrichment_view
+from alertissimo.orchestration.local_semantics import _rematerialize_provider_step
+from alertissimo.orchestration.pipeline import _candidate_view_from_step
+from alertissimo.orchestration.runtime import EndpointPlan, MaterialInputRef, StepExecutionResult, StepRun
 
 
 def _portfolio(
@@ -53,6 +60,49 @@ def _execution(portfolio: Portfolio) -> ExecutionPortfolioResult:
         execution_id=portfolio.executions[0].internal_execution_id.value,
         portfolios=(portfolio,),
     )
+
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_fresh_overbroad_enrichment_cannot_refill_selected_population(empty):
+    source_portfolio = _portfolio(name="selected", origin="ztf", object_id="same-id",
+                                  broker="lasair", endpoint="cone")
+    selected = _portfolio(name="fresh", origin="ztf", object_id="same-id",
+                          broker="fink", endpoint="objects")
+    removed = _portfolio(name="removed", origin="ztf", object_id="removed-id",
+                         broker="fink", endpoint="objects")
+    other_survey = _portfolio(name="other-survey", origin="lsst", object_id="same-id",
+                              broker="fink", endpoint="sources")
+    unknown = _portfolio(name="unknown", origin="unknown", object_id="same-id",
+                         broker="fink", endpoint="objects")
+    source = StepPortfolioResult(step_index=0, executions=(),
+                                 materialized_portfolios=() if empty else (source_portfolio,))
+    returned = (selected, removed, other_survey, unknown)
+    own = StepPortfolioResult(step_index=1, executions=tuple(_execution(p) for p in returned))
+    step_run = StepRun(step_index=1, material_input_from=MaterialInputRef(step_index=0),
+                       endpoint_plans=tuple(EndpointPlan(broker="fink", origin=p.executions[0].origin,
+                                                        endpoint=p.executions[0].endpoint) for p in returned))
+    staged = _candidate_view_from_step(
+        step_run,
+        StepExecutionResult(step_index=1, executions=tuple(
+            ExecutionResult(payload={}, execution_provenance=p.executions[0]) for p in returned
+        )),
+        material_source=source,
+        normalized_execution_cache={p.executions[0].internal_execution_id.value: (p,) for p in returned},
+        validate_semantic_model=True,
+    )
+    initial = _materialize_enrichment_view(step_run, own, [source])
+    # Staging, normalization and post-local-operation rematerialization must
+    # enforce membership, even if a fresh provider returns unrelated objects.
+    steps = [source, initial]
+    _rematerialize_provider_step(step_index=1, step_run=step_run, steps=steps)
+    for view in (staged, initial, steps[1]):
+        assert view.executions == own.executions  # Complete physical audit retained.
+        assert len(view.portfolios) == (0 if empty else 1)
+        if not empty:
+            assert {e.internal_execution_id.value for e in view.portfolios[0].executions} == {
+                "execution:selected", "execution:fresh",
+            }
+    assert source.portfolios == (() if empty else (source_portfolio,))
 
 
 def test_materialized_snapshot_accumulates_semantics_but_not_step_physical_ownership():

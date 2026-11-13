@@ -57,7 +57,14 @@ class Executor:
         self.calls.append((broker, endpoint, params))
         assert origin == "ztf"
         if (broker, endpoint) == ("alerce", "query_objects"):
-            assert not {"classifier", "class_name", "probability"} & params.keys()
+            assert not {"class_name", "probability"} & params.keys()
+            # Targeted selected-summary calls are enrichment, not discovery
+            # pushdown of the cross-broker initial condition.
+            if "oid" in params:
+                assert params["oid"] in IDS
+                assert params["classifier"] in {"lc_classifier", "stamp_classifier"}
+            else:
+                assert "classifier" not in params
             payload = {"items": [{"oid": oid, "meanra": 124.88, "meandec": -6.02,
                                   "firstmjd": 58000, "lastmjd": 61004 - i,
                                   "ndet": (10, 1, 10, None)[i]} for i, oid in enumerate(IDS)]}
@@ -66,6 +73,10 @@ class Executor:
                 for row in payload["items"][:3]:
                     row.update(classifier="lc_classifier", probability=0.95,
                                **{"class": "AGN" if row["oid"] == IDS[1] else "SNIa"})
+            if "oid" in params:
+                payload["items"] = [row for row in payload["items"] if row["oid"] == params["oid"]]
+                if self.empty == broker:
+                    payload["items"] = []
         elif (broker, endpoint) == ("alerce", "query_probabilities"):
             if self.fail == broker:
                 raise RuntimeError("alerce classification unavailable")
@@ -115,7 +126,12 @@ def test_all_initial_broker_evidence_arrives_before_whole_predicate_evaluation(g
     assert result.workflow.steps[-1].predicate == lower_expression_predicate(CONDITION, frozenset({"classification"}))
     assert identities(result.portfolios) == list(IDS[:2])
     assert all(identities(view.portfolios) == list(IDS) for view in result.result.steps[:3])
-    assert len(executor.calls) == 6  # Discovery, four singular probabilities, one Fink batch.
+    # Discovery, four probability calls, eight selected summaries, one Fink batch.
+    assert len(executor.calls) == 14
+    summaries = [params for _, name, params in executor.calls if name == "query_objects" and "oid" in params]
+    assert {(p["oid"], p["classifier"]) for p in summaries} == {
+        (oid, method) for oid in IDS for method in ("lc_classifier", "stamp_classifier")
+    }
     assert {params["oid"] for _, name, params in executor.calls if name == "query_probabilities"} == set(IDS)
     assert next(params for broker, _, params in executor.calls if broker == "fink")["objectId"] == ",".join(IDS)
     assert all(plan.execution_reuse_from is None for step in result.run.steps[1:3] for plan in step.endpoint_plans)
