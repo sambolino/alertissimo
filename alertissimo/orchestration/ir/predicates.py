@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
@@ -61,7 +61,14 @@ class SemanticReference(PredicateModel):
 
 class PredicateLiteral(PredicateModel):
     kind: Literal["literal"] = "literal"
-    value: str | int | float | bool
+    value: str | int | float | bool | tuple[StrictInt, ...]
+
+    @field_validator("value")
+    @classmethod
+    def canonical_code_set(cls, value):
+        if isinstance(value, tuple) and (not value or value != tuple(sorted(set(value)))):
+            raise ValueError("code tuples must be non-empty, sorted and duplicate-free")
+        return value
 
 
 PredicateOperand: TypeAlias = Annotated[
@@ -75,6 +82,21 @@ class ComparisonPredicate(PredicateModel):
     operator: Literal["=", "!=", "<", "<=", ">", ">="]
     left: PredicateOperand
     right: PredicateOperand
+
+    @model_validator(mode="after")
+    def restrict_code_sets(self):
+        for literal, reference in ((self.left, self.right), (self.right, self.left)):
+            is_taxon = (isinstance(reference, SemanticReference)
+                        and reference.semantic_type == "classification"
+                        and reference.field_path == "best.taxon")
+            if isinstance(literal, PredicateLiteral):
+                if isinstance(literal.value, tuple) and not (is_taxon and self.operator in {"=", "!="}):
+                    raise ValueError("code tuples are only legal for classification.best.taxon = or !=")
+                if is_taxon and (self.operator not in {"=", "!="} or not isinstance(literal.value, tuple)):
+                    raise ValueError("classification.best.taxon requires = or != and resolved code tuples")
+            elif is_taxon:
+                raise ValueError("classification.best.taxon requires a resolved literal")
+        return self
 
 
 class ExistsPredicate(PredicateModel):

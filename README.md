@@ -10,7 +10,7 @@ and [AGENTS.md](AGENTS.md). Deployment is currently deploy-yourself. The retired
 executable-model/broker prototype is replaced by the public facade; retained old
 data-layer import paths are aliases, not another execution engine. The
 [next functional work](docs/next_functional_work.md) records the numbered beta work,
-including unimplemented coarse normalization, universal `best` and collection DSL.
+including ELAsTiCC headline comparison, native `best` selection and the planned collection DSL.
 The [collection contract](docs/dsl_collections.md) and
 [field-coverage contract](docs/provider_field_coverage.md) retain the agreed scientific
 requirements and explicit remaining decisions.

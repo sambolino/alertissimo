@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from alertissimo.data_layer.representations import Portfolio
+from alertissimo.data_layer.runtime.classification_headline import format_taxa
 from alertissimo.data_layer.runtime.serialization import portfolio_to_dict
 
 
@@ -70,7 +71,7 @@ def classification_rows(portfolio: Portfolio | dict[str, Any]) -> list[dict[str,
                 "output": output or None,
                 "class": attributes.get("native_class") if headline else attributes.get("class"),
                 "headline": headline,
-                "coarse_class": attributes.get("coarse_class") if headline else None,
+                "taxon": format_taxa(attributes.get("taxon")) if headline else None,
                 "scope": attributes.get("scope") if headline else None,
                 "basis": attributes.get("basis") if headline else None,
                 "candidate_status": attributes.get("candidate_status") if headline else None,

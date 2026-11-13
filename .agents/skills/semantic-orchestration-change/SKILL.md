@@ -16,8 +16,10 @@ binding, staged execution and normalized material view.
    unknown evidence under Boolean logic and broker-local quorum evaluation.
 4. Preserve immutable candidate/material lineage, source qualifiers, physical
    execution reuse, exact clocks and serialized continuation behavior.
-5. For coarse classification or universal best, first establish the explicit
-   eligible-output/mapping/acceptance/selection rule and its version/provenance.
+5. For classification headlines, follow the reviewed ELAsTiCC code-set policy,
+   explicit ancestry and three-valued comparison. Resolve aliases into strict
+   frozen IR tuples at lowering, retain surface wording and forbid tuple pushdown.
+   Preserve the eligible-output/selection rule and its version/provenance.
    Retain raw assertions. Do not invent thresholds or compare heterogeneous scores.
 6. Add counterexamples, not tests that repeat implementation. Check equivalent
    surface forms and fresh/continuation behavior. Keep explicit deferrals where

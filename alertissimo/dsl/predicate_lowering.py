@@ -12,6 +12,8 @@ from alertissimo.orchestration.ir import (
     SemanticReference,
 )
 
+from alertissimo.data_layer.runtime.classification_headline import resolve_taxon
+
 from .expression import (
     BooleanExpression,
     ComparisonExpression,
@@ -67,11 +69,26 @@ def lower_expression_predicate(
 
     def lower(node) -> Predicate:
         if isinstance(node, ComparisonExpression):
-            return ComparisonPredicate(
-                operator=node.operator,
-                left=_operand(node.left),
-                right=_operand(node.right),
-            )
+            left, right = _operand(node.left), _operand(node.right)
+            for reference, literal in ((left, right), (right, left)):
+                if (isinstance(reference, SemanticReference)
+                        and reference.semantic_type == "classification"
+                        and reference.field_path == "best.taxon"):
+                    if node.operator not in {"=", "!="} or not isinstance(literal, PredicateLiteral):
+                        raise PredicateLoweringError(
+                            "classification.best.taxon requires = or != with an alias or code; "
+                            f"got {node.operator} {getattr(literal, 'value', literal)!r}"
+                        )
+                    try:
+                        resolved_literal = PredicateLiteral(value=resolve_taxon(literal.value))
+                    except ValueError as exc:
+                        raise PredicateLoweringError(str(exc)) from exc
+                    if reference is left:
+                        right = resolved_literal
+                    else:
+                        left = resolved_literal
+                    break
+            return ComparisonPredicate(operator=node.operator, left=left, right=right)
         if isinstance(node, BooleanExpression):
             return BooleanPredicate(
                 operator=node.operator,

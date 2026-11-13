@@ -1,284 +1,262 @@
-# Native classification headline policy and integration
+# Classification headline policy: ELAsTiCC code sets
 
-Decision date: 11 November 2026. Base: `f44ec81158436784d4c0108f0524b11aeb8acd55`.
-Stable work items: **1 and 2**. The former cross-method/universal-winner proposal
-is superseded by the user's decision to use broker headlines and explicit defaults.
-Historical review documents retain their original context.
+Decision: 13 November 2026, replacing the flat coarse vocabulary. Base:
+`15613e7` on `integration/classification-headlines`. Stable work items **1 and 2**.
+The dictionary is `alertissimo/data_layer/semantic_model/classification_taxonomy.yaml`;
+all eight provider policies use `mapping_version: elasticc-v1` and policy IDs ending
+in `-v2`. No recipes, endpoints, capabilities, grammar or acquisition rules change.
 
-## Delivered boundary
+## Dictionary and scope
 
-The merged policy PR adds eight provider-local `classification_headline.yaml` files, the pure
-`data_layer.runtime.classification_headline.derive_headline_fields` function,
-counterexample tests and installed-wheel resource checks. That PR introduced no
-network calls, dependencies, engines, workflow steps, remote registries or services.
-Policy data use the existing packaged provider resource directory.
+Codes 0–2332 reproduce the ELAsTiCC hierarchy from Alex Malz and Rob Knop,
+[LSSTDESC/elasticc commit 818ae71](https://github.com/LSSTDESC/elasticc/blob/818ae71e78d20b6f41810d7d6d9108ba4c17bcb1/taxonomy/taxonomy.ipynb).
+Ancestry follows explicit `parent` links, including Meta codes 0, 100, 200 and 300.
+It never follows digit arithmetic. The six nodes 9000, 9100, 9200, 9210, 9220 and
+9300 are reviewed Alertissimo-local extensions for moving, Solar System and
+artificial sources; they are not ELAsTiCC classes. No comet node is introduced.
 
-The pure selector still returns fields without mutating inputs. The completion
-change attaches them to a separate `classification@headline:<broker>` record in
-each new material view. Native `best.class` and `best.probability` retain their
-meaning. `classification.best.coarse_class` and the other explicit headline paths
-are now admitted local predicates. The UI reads these stored records through the
-shared presentation adapter, without loading or rerunning policy data.
+The cached dictionary validates unique integer codes, existing parents, acyclicity,
+unique trimmed/case-folded aliases and valid referenced codes. Every `/Other`
+node has a meaning or `used_for: unused`. Only these meanings may be used by
+provider mappings: 2321 other periodic variable stars, 2331 young stellar objects,
+2231 classical novae. `/Other` codes behave as ordinary leaves in comparison.
+A policy referencing an unused `/Other` node is a maintainer error.
 
-The merged acquisition slice (**PR 2a**) extends fresh ALeRCE/ZTF classification
-retrieval: obtain all probability rows, then selected LC and stamp summaries from
-`query_objects(oid=..., classifier=...)`. Each call binds the same candidate's
-exact ID. Both summary calls are required; a transport failure must not masquerade
-as missing LC evidence and trigger fallback. Empty results remain missing evidence.
-All native rows, execution provenance and absent version metadata are retained.
-No class, probability threshold, ranking or version filter is sent.
+Every node has decimal-code and lower-snake-case name aliases. Matching uses exact
+case-folded, trimmed text; no fuzzy or regex resolution. Unknown aliases report
+up to five `difflib` suggestions without accepting a guessed meaning. The dictionary
+also contains readable aliases such as `snia`, `kilonova`, `microlensing`, `lpv`,
+`yso`, `classical_nova`, `solar_system`, `satellite` and `moving`.
 
-This adds two calls per object to a fresh ALeRCE/ZTF classification retrieval,
-including explicitly named classifiers. Named selection still runs locally and
-preserves the full physical audit. Existing proven discovery-material reuse is
-unchanged; that route does not promise to acquire all probability alternatives.
-Its reuse proof accepts composed targeted retrievals with declared producer
-selectors, while retaining the guards on class filters, limits and other inputs.
-ALeRCE/LSST and other brokers keep their existing retrieval recipes.
-
-## Selection rules
-
-| Pair | Headline source | Version compatibility / fallback |
+| Union alias | Codes | Reason |
 |---|---|---|
-| Fink/ZTF | Native `v:classification`, mapped as Fink `best.class` | Published label contract; latest exactly row-linked observation among supplied records; missing ordering or contradictory latest ties abstain |
-| Fink/LSST | `f:main_label_classifier`, mapped as Fink `best.class` | Published numeric code contract; source CATS assessments and main crossmatch label are alternatives |
-| Lasair/ZTF and LSST | Sherlock `best.class` | Published contextual label contract; no threshold on reliability |
-| ALeRCE/ZTF | `lc_classifier`, then `stamp_classifier` only when no LC selected/rank-1 label exists | Native selected summary first; otherwise one unambiguous rank-1 version. Multiple versions abstain. Never choose the greatest version string or score |
-| ALeRCE/LSST | `stamp_classifier_rubin_beta_20260421` | Exact observed version string `2.0.2` or endpoint-local integer `202`; no general conversion between version spellings |
-| ANTARES/ZTF | Superphot+ | Requires explicit assessment input survey `ztf`; locus membership does not establish it |
-| ANTARES/LSST | Unset | `headline_unresolved` |
+| `supernova` | 2220, 2242, 2246 | ELAsTiCC places SLSN and PISN under Long |
+| `cataclysmic_variable` | 2231, 2234 | Classical novae plus dwarf novae |
+| `variable_star` | 2233, 2234, 2320, 2331 | Reviewed provisional grouping; membership remains an open decision |
 
-ALeRCE and ANTARES ordering is an **Alertissimo default**, not an upstream claim.
-The ALeRCE/ZTF retrieval integration obtains the broker-selected summary
-to resolve multiple LC versions faithfully. Without that summary, the selector
-can use one unambiguous rank-1 version; conflicting versions still abstain. The current live
-ANTARES capture does not establish the required assessment input-survey provenance.
-No adapter may manufacture it from a ZTF or LSST identifier on a locus.
+There is no `nova` alias. Aliases are unique; a union is one unambiguous alias
+whose meaning is a code set, not several competing alias definitions.
 
-An explicitly reviewed `label_contract` rule covers versions, including absent
-version metadata, **only for the named producer's finite published label meanings**.
-It does not certify model accuracy or calibrate scores. Exact-version policies
-abstain outside their explicit list. Missing version metadata stays null. A
-new method name never replaces the chosen method automatically.
+## Selection and attribution
 
-Within a selected method, native selected summaries take precedence over a
-probability table. Otherwise the broker's rank 1 selects the class; a bool is not
-a numeric rank. Multiple versions or conflicting labels at the selected position
-produce `conflict`, even if one probability is larger. Identical duplicate
-witnesses retain all input IDs; differing metrics are not collapsed to one value.
-Observation time can order Fink/ZTF alert labels but is not classifier issue time,
-retrieval time or proof that the supplied history is the current complete archive.
+| Pair | Selected source | Compatibility / fallback |
+|---|---|---|
+| ALeRCE/ZTF | `lc_classifier`, then `stamp_classifier` | `label_contract`; fallback only when LC has no selected/rank-1 output |
+| ALeRCE/LSST | `stamp_classifier_rubin_beta_20260421` | Exact version `2.0.2` or integer `202`; no conversion between spellings |
+| Fink/ZTF | Native `v:classification` | Label contract; latest exactly row-linked observation; missing order or contradictory latest ties abstain |
+| Fink/LSST | Native `f:main_label_classifier` | Numeric label contract; source CATS and crossmatch assessments remain alternatives |
+| Lasair/ZTF and LSST | Sherlock | Contextual label contract; no reliability threshold |
+| ANTARES/ZTF | Superphot+ | Requires explicit classifier input survey; captured locus membership cannot supply it |
+| ANTARES/LSST | No default | `headline_unresolved` |
 
-## Finite coarse propositions and scientific scope
+ALeRCE and ANTARES defaults are Alertissimo choices, not upstream endorsements.
+Within a selected method, native selected summaries precede rank-1 probability
+outputs. A boolean is not a numeric rank. Scores, probability magnitudes, version
+ordering and retrieval times never choose a winner. Exact-version signatures
+still include label and version; unsupported versions abstain.
 
-The table entries explicitly map into this finite set:
+For `label_contract`, the conflict signature is now the label alone. Identical
+labels from different versions agree; different labels remain `conflict`.
+One reported version remains scalar, including null. Several distinct versions
+are retained as a sorted tuple of `_key` string forms (a missing version in a
+mixed set is represented as `"null"`). Selected record IDs retain every witness;
+differing metrics do not collapse into one metric. This fixes agreeing ALeRCE
+LC versions without choosing the newest model.
 
-`supernova`, `agn`, `variable_star`, `solar_system`, `microlensing`, `kilonova`,
-`tidal_disruption`, `cataclysmic_variable`, `artifact`, `satellite`, `transient`,
-`periodic`, `stochastic`, `nonperiodic`, `fast_transient`, `long_transient`, `star`,
-`galaxy`, `nuclear_transient`.
+Fresh ALeRCE/ZTF retrieval still obtains probability rows plus selected LC and
+stamp summaries for the exact candidate ID. Both summary calls are required;
+transport failure is not missing evidence. Explicit classifier selection, proven
+discovery reuse, all other retrieval recipes and provider completeness guards
+are unchanged. No extra calls are introduced by taxonomy comparison.
 
-Membership is categorical support for a broker's selected assessment. It is not
-physical confirmation. Explicit SN subtypes imply `supernova`; generic SN does
-not imply a subtype. Broad periodic/stochastic/fast/long predictions do not imply
-AGN, variable star or a specific transient mechanism. No probability threshold
-or comparison across methods is introduced.
+## Provider mappings and reviewed notes
 
-All candidate predictions retain `candidate_status=candidate`. Sherlock supplies
-a candidate assessment with `basis=contextual`; it is eligible without pretending
-to be a light-curve classifier. Sherlock's native reliability is a score with
-categories **1 synonym, 2 association, 3 annotation**, not calibrated probability.
+The eight policy files are the authoritative full native-label tables. Candidate
+rows require nonempty dictionary code lists; catalogue-association rows require
+null codes. Existing scope, status and subtype metadata remain intact.
 
-Catalogue records are ineligible input records. Fink's catalogue-prefixed native
-headlines retain the complete published namespace and `scope=catalogue_association`.
-They do not generate a candidate `coarse_class`. All 369 supplied Fink vocabulary
-entries are accounted for: 368 ordinary entries plus `Ambiguous` as a sentinel.
-The separately observed `Unknown` is also a sentinel. The 358 catalogue labels
-are recognized context without guessing a complete SIMBAD/TNS hierarchy; their
-state is `recognized_no_proposition`. This is explicit limited coarse coverage,
-not an unknown label and not a positive candidate vote.
+- **ALeRCE/ZTF:** SNIa 2222; SNIbc 2223; SNII 2224; SLSN 2242; SN uses the
+  supernova union. QSO/AGN/Blazar map to 2332; CV/Nova to 2234+2231; YSO 2331;
+  LPV 2326; E 2325; DSCT 2324; RRL 2323; CEP 2322; Periodic-Other 2321;
+  VS uses variable_star; asteroid 9220; bogus 1000. Removed unreachable labels:
+  EA, EB/EW, Microlensing, Periodic, RRLab, RRLc, RSCVn, SESN, SNIIb, SNIIn,
+  Stochastic, TDE, Transient, satellite. Static inspection of the probability and
+  headline fixtures found no discrepancy: all 19 retained labels are reachable.
+- **ALeRCE/LSST:** AGN 2332, SN supernova union, VS variable_star union,
+  asteroid 9220, bogus 1000. All five labels occur in declared-method fixtures.
+- **Fink/LSST:** 11→2220, 12→2230, 13→2240, 21→2320, 22→2332; −1 stays a
+  sentinel. The last mapping follows Fink's `CATS_CLASS_DICT` label
+  `non-Periodic (AGN)` at [fink-science cfb7ced](https://github.com/astrolabsoftware/fink-science/blob/cfb7ced/fink_science/rubin/cats/utilities.py).
+- **Fink/ZTF:** SN candidate uses the supernova union; Early SN Ia candidate
+  2222, SLSN candidate 2242, Kilonova candidate 2232, Microlensing candidate
+  2235, Solar System candidate/MPC 9200, CTA Blazar high/low state 2332.
+  Tracklet maps only to Moving 9000: satellite-glint versus fast-moving-object
+  semantics are unverified, so narrower queries remain unresolved. Every SIMBAD
+  and TNS prefixed row is retained and gains a bare catalogue row. The five shared
+  labels **AGN, Galaxy, Nova, QSO, SN** each have one merged bare row. There are
+  no collisions with Fink-own labels or sentinels. The 368 original rows plus
+  353 unique bare rows give 721 vocabulary rows; Unknown/Ambiguous remain sentinels.
+  Catalogue labels carry `recognized_no_proposition` and never vote.
+- **Lasair/ZTF and LSST:** SN uses the supernova union; AGN 2332; VS the
+  variable_star union; CV 2234+2231; BS 1000+2320+2233; NT 2332+2243+2220.
+  BS (near a bright star: likely artefact or stellar) and NT (nuclear position)
+  are contextual unions, not classes. Sherlock reliability remains a native
+  score (1 synonym, 2 association, 3 annotation), not a probability. LVRA is not
+  selected as a categorical label.
+- **ANTARES/ZTF:** SN Ia 2222; SN II/SN IIn 2224; SN Ibc 2223; SLSN-I 2242.
+  Existing subtypes remain. Superphot+ assumes the object is a supernova and
+  must not be enabled as a voter until a conditional-classifier rule is agreed
+  with the maintainer. No input survey is fabricated: actual material continues
+  to abstain with `input_scope_unresolved`. DeSoto and other methods remain alternatives.
+- **ANTARES/LSST:** disabled default unchanged apart from policy schema/version.
 
-LVRA is not selected over Sherlock. Its `classification` is the champion model's
-extragalactic score, not a categorical winning label. DeSoto, LAISS and other
-ANTARES outputs similarly remain alternatives; their scores do not compete here.
+## Stored fields and comparison
 
-## Result and failure contract
+Each broker retains its separate `classification@headline:<broker>` record.
+Native `best.class` and other native fields are unchanged. `best.native_class`
+retains the selected native label. `best.taxon` replaces the old coarse/context
+fields: it is a sorted tuple of integer codes, set only for candidate scope with
+status `available`. Catalogue context never gets a candidate code set.
 
-| Field / outcome | Meaning |
-|---|---|
-| `best.native_class` | Selected native label, unchanged |
-| `best.coarse_class` | Reviewed candidate-scoped coarse proposition, only when available |
-| `best.context_class` | Reserved for an explicitly reviewed catalogue-context coarse mapping; never candidate support |
-| `best.scope`, `best.basis`, `best.candidate_status`, `best.subtype` | Independent qualifiers; candidate status is never promoted to confirmed type |
-| `best.source_method`, `best.source_version`, `best.source_output` | Selected native method/output metadata; missing version stays missing |
-| `best.native_probability`, `best.native_score` | Separate quantities copied only when all selected witnesses agree |
-| `best.policy`, `best.mapping_version`, `best.policy_digest` | Named rule, mapping revision and exact content hash |
-| `best.input_record_ids` | All attributable native classification inputs, retaining alternatives |
-| `best.considered_record_ids`, `best.eligible_record_ids`, `best.selected_record_ids` | Progressively scoped evidence IDs where those stages were reached |
-| `missing` | No selected output from a configured method; not a negative classification |
-| `sentinel` | Explicit upstream unknown/ambiguous/not-processed value |
-| `conflict` | No unambiguous label/version within the eligible output |
-| `unsupported_version` | Exact version rule does not cover the supplied output |
-| `input_scope_unresolved`, `identity_unresolved`, `observation_order_unresolved` | Missing scope/identity/ordering evidence |
-| `headline_unresolved` | No default designated for the pair |
-| `recognized_no_proposition` | Known vocabulary entry without an approved coarse proposition |
-| `error` + `error_code=unmapped_label` | Vocabulary drift or invalid label type; native value retained, no normalized support |
+Scope, basis, candidate status, subtype, method/version/output, metrics, policy
+ID/version/digest and input/considered/eligible/selected record IDs are retained.
+Unavailable outcomes remain explicit: missing, sentinel, conflict,
+unsupported_version, input_scope_unresolved, identity_unresolved,
+observation_order_unresolved, headline_unresolved, recognized_no_proposition and
+error/unmapped_label. Candidate assessments never become physical confirmation.
 
-Malformed policy files raise `HeadlinePolicyError`; they are never treated as
-absent evidence. Unknown labels return an explicit error result, not silent
-`Unknown`. Integration must surface that result in the public output/UI and must
-not turn a missing coarse value into a negative/NOT vote. It may deduplicate
-notifications by policy/error/native label; no recurring classifier audit is needed.
+For record set R and query set Q, `classification.best.taxon = <literal>` gives:
 
-Raw native `best` fields and source records remain untouched. The proposed fields
-are separate derived content; integration must not merge them over upstream values.
+1. **True:** every r is a descendant-or-self of some q.
+2. **False:** no r/q pair overlaps by ancestry in either direction.
+3. **Unknown:** all remaining cases, including a broader record against a narrower query.
 
-## Completion integration (12 November 2026)
+`!=` inverts True/False and preserves unknown. NOT preserves unknown. Only True
+selects or votes; Confirm retains broker-local evidence and counts each broker
+at most once. Any other taxon comparison operator is a validation error.
+SNIa supports snia and supernova but opposes snii. CATS 11 supports supernova but
+is unknown against snia. Sherlock SN supports supernova; NT is unknown against
+tde and opposes solar_system.
 
-The completion branch includes the discovery reuse fix plus materialization,
-normalized predicates/confirmation, bounded initial selection and comparison UI.
-Local validation is pending: the assistant has not executed tests or builds for
-this change. The user runs the commands below; CI remains deferred to the final
-integration-to-main PR unless a specific failure requires it.
+Unmapped native labels remain visible errors in the stored record/UI, contribute
+unknown in predicates and no vote in Confirm, and no longer raise at evaluation.
+Malformed policy/dictionary data still raise `HeadlinePolicyError` as maintainer
+errors. Fixture drift regressions check declared-method labels instead of making
+data drift crash a runtime filter.
 
-Each broker/survey gets a separate derived record. Its input fingerprint covers
-native classification records, exactly linked observations and candidate identity.
-An unchanged fingerprint reuses the stored policy/result even if policy files
-change. A changed input yields a new interpretation in a new view. Physical audit
-records and earlier Step views remain intact. A method-specific Get keeps its
-existing native selection semantics and suppresses the default headline for that
-selected source; a generic Get is required for a default across methods.
+## Approved amendment to Part E, step 3
 
-Continuation preserves the finalized semantic prefix and its record IDs while
-retaining the existing checked physical-call replay. Loading or displaying an old
-serialized Portfolio never backfills headlines or loads today's policies.
+The maintainer approved extending the existing `PredicateLiteral.value` with
+`tuple[StrictInt, ...]`. The tuple must be nonempty, sorted and duplicate-free;
+booleans and numeric strings are rejected as tuple elements. Equal code sets
+therefore have equal immutable representations and hashes. The existing
+`ComparisonPredicate` validator permits tuples only opposite a `classification`
+reference at `best.taxon`, under `=` or `!=`; all other placements are rejected.
 
-Normalized Confirm uses the existing complete targeted classification recipe for
-each requested broker. It consolidates only that occurrence's own evidence within
-one broker before headline selection, then counts at most one vote per broker.
-Incoming material cannot fill another broker's missing assessment. Native Confirm
-retains its existing assertion-local semantics. Missing/sentinel/conflict/unsupported
-outputs abstain under comparisons and NOT. An unknown label is stored as an error;
-a coarse predicate encountering it raises an explicit normalization error rather
-than silently discarding the candidate. The comparison table surfaces the error
-and preserves the native evidence and policy digest.
+The existing DSL predicate-lowering function resolves aliases and integer/string
+codes before constructing the comparison. The surface script retains the alias
+exactly as typed, including case and spaces within the quoted literal. Existing
+surface-based UI and diagnostics keep the user's words; no reverse alias is
+invented from the code tuple. Unknown-alias errors quote the original literal.
+The lowered IR holds only codes. Serialized JSON lists validate back into equal,
+frozen tuples, so continuation does not reinterpret saved aliases if alias
+membership later changes. ELAsTiCC ancestry remains immutable by contract.
 
-ANTARES now retrieves and maps Superphot+ class/probability/classifier identifier
-and DeSoto class/probability as native locus assessments on both survey routes.
-No version or input survey is manufactured. Superphot+ on ZTF-associated loci
-therefore remains `input_scope_unresolved`; ANTARES/LSST remains
-`headline_unresolved`. Both are useful visible evidence, not normalized votes.
-Other anomaly/filter outputs remain in the existing debt ledger and captured data.
+Provider predicate realization explicitly refuses tuple literals in either
+operand position, regardless of future provider bindings. No tuple reaches a
+physical provider parameter. Regression cases cover this guard, strictness,
+placement, JSON round trips, saved workflows and unchanged surface text.
+No further schema, grammar, endpoint, capability or recipe extension is needed.
 
-For cone or admitted temporal discovery, normalized initial conditions run after
-targeted classification acquisition and before global `latest`. The whole original
-predicate is retained. A normalized condition alone never opens an unbounded
-archive scan. Provider completeness/time guards remain in force.
+## Materialization, presentation and examples
 
-Examples:
+The native-evidence fingerprint and immutable materialization rules are unchanged.
+Unchanged evidence reuses stored interpretations; new evidence creates a new view.
+Earlier results and native alternatives remain intact. Loading or displaying a
+serialized Portfolio never derives new scientific fields or reruns provider policy.
+The presentation reads stored codes and looks up dictionary names solely for
+formatting, e.g. `2222 Ia` and `9220 Asteroid (Alertissimo ext.)`.
 
 ```text
 objects ZTF20aaaaaaa from ztf via alerce
-with classification via alerce, fink, lasair
-filter classification.best.coarse_class = "supernova"
-```
-
-```text
-objects ZTF20aaaaaaa from ztf via alerce
-where classification.best.coarse_class = "supernova"
+where classification.best.taxon = "supernova"
 confirm by 2 via alerce, fink, lasair
 ```
 
 ```text
 objects from ztf via alerce
 inside (10, 20, 5arcsec)
-where classification.best.coarse_class = "supernova"
+where classification.best.taxon = "snia"
 latest 1
 ```
 
-A native label/metric predicate still uses `best.class` / `best.probability`.
-A headline label/metric predicate uses `best.coarse_class` /
-`best.native_probability` on the same derived record; heterogeneous probabilities
-are never averaged or compared to select the headline. These examples describe
-candidate assessment support, not physically confirmed classifications.
-
-The integration branch exception remains limited to
-`integration/classification-headlines`. The final PR to `main` runs the ordinary
-validation jobs. No manual workflow dispatch is required for intermediate PRs.
-The remaining MD work is outside this topic.
-
-## Completion validation (user-run only)
-
-```bash
-PYTHONPATH=. python -m pytest -q \
-  tests/test_classification_headline_policy.py \
-  tests/test_classification_headline_integration.py \
-  tests/test_dsl_alerce_classification.py \
-  tests/test_dsl_multi_broker_classification.py \
-  tests/test_alerce_semantic_search.py \
-  tests/test_orchestration_classification_material.py \
-  tests/test_dsl_confirm_scope.py \
-  tests/test_orchestration_confirmation.py \
-  tests/test_api_continuation.py \
-  tests/test_app_classification_comparison.py \
-  tests/test_app_search_portfolios.py \
-  tests/test_app_plot_semantic_records.py \
-  tests/test_antares_registry_architecture.py \
-  tests/test_portfolio_serialization.py
-PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
-PYTHONPATH=. python scripts/check_release_package.py
+```text
+filter classification.best.taxon != 2222
 ```
 
-The package check covers the new shared presentation module and runtime resources.
-None of these commands was run during preparation. Historical evidence below
-belongs to its stated earlier slice, not this completion change.
+A broader SN result remains unknown in the final example. Normalized discovery
+still acquires the required material before filtering and before global latest;
+a normalized condition alone never authorizes an unbounded archive scan.
+Headline metrics use `best.native_probability`/`best.native_score` on the same
+assertion. Heterogeneous metrics are never compared to select a headline.
 
-## Evidence and local validation
+## Open decisions (not implemented)
 
-Policies cite the published vocabulary/docs and existing frozen captures. The
-11 November changes add no new live-provider claim. Preparation ran only static
-Python syntax parsing, JSON/YAML-subset parsing and Git whitespace/patch checks.
-Project imports, pytest, builds, applications and live provider calls were **not
-run here**; the user runs tests locally.
+1. Whether ALeRCE/ZTF should prefer `lc_classifier_BHRF_forced_phot`, which has TDE.
+2. Verification of Fink Tracklet semantics.
+3. An eligibility rule for conditional classifiers such as Superphot+.
+4. Review of `variable_star` union membership.
+5. Whether Confirm should later restrict support by `best.basis`.
 
-From an existing development environment:
+## Validation and handoff
 
-```bash
-PYTHONPATH=. python -m pytest -q \
-  tests/test_classification_headline_policy.py \
-  tests/test_antares_registry_architecture.py \
-  tests/test_alerce_classification_mappings.py \
-  tests/test_portfolio_serialization.py
-PYTHONPATH=. python scripts/check_release_package.py
-```
+Exactly one new repository file is introduced: the taxonomy dictionary. Code,
+policy, ontology, documentation and regressions otherwise use existing files.
+Static inspection found no unmapped captured labels for Fink/ZTF (9 distinct),
+Fink/LSST (2), Lasair/ZTF (1) or Lasair/LSST (1). Existing ANTARES/ZTF fixture
+files contain no Superphot+ labels: its mapping is covered by synthetic cases,
+not a claimed captured classifier example.
 
-The focused suite checks selection, ambiguity, sentinel/error separation,
-unknown versions, exact attribution, subtype implications, unchanged native
-records and the real frozen ALeRCE/LSST probability shape. The package check is
-needed because eight runtime policy resources are added; it now loads each from
-the installed wheel. Existing packaging globs already include these files.
+The ALeRCE reachability and Fink collision findings above are static fixture/data
+inspection, not executed regression results. Tests, builds, CI and live provider
+calls were not run during preparation. The existing integration-to-main CI
+failures require separate review; this change does not claim to clear them.
+The user performs local validation and creates the PR into
+`integration/classification-headlines`; no push, PR mutation or merge is performed
+by the assistant.
 
-The semantic-registry workflow includes the new tests. No additional manually
-dispatched workflow or live broker smoke test is needed for this opt-in PR.
+## Files in this change
 
-For the PR 2a acquisition change, preparation performs static Python syntax and
-YAML/JSON parsing plus Git whitespace/bundle verification only. Runtime tests are
-prepared, not reported as passed. Focused local validation for acquisition changes
-includes:
+New: `alertissimo/data_layer/semantic_model/classification_taxonomy.yaml`.
 
-```bash
-PYTHONPATH=. python -m pytest -q \
-  tests/test_dsl_alerce_classification.py \
-  tests/test_dsl_multi_broker_classification.py \
-  tests/test_discovery_integration_acceptance.py \
-  tests/test_orchestration_classification_recipes.py \
-  tests/test_orchestration_classification_material.py \
-  tests/test_classification_headline_policy.py \
-  tests/test_alerce_ztf_endpoint_contracts.py \
-  tests/test_alerce_registry_architecture.py \
-  tests/test_alerce_classification_mappings.py \
-  tests/test_alerce_semantic_search.py \
-  tests/test_api_continuation.py
-PYTHONPATH=. python -m alertissimo.data_layer.runtime.mapping_schema --all
-PYTHONPATH=. python scripts/check_release_package.py
-```
+Modified existing files:
+
+- `.agents/skills/semantic-orchestration-change/SKILL.md`
+- `ARCHITECTURE.md`
+- `README.md`
+- `alertissimo/app_plot.py`
+- `alertissimo/data_layer/presentation/portfolio_classification.py`
+- `alertissimo/data_layer/providers/alerce/lsst/classification_headline.yaml`
+- `alertissimo/data_layer/providers/alerce/ztf/classification_headline.yaml`
+- `alertissimo/data_layer/providers/antares/lsst/classification_headline.yaml`
+- `alertissimo/data_layer/providers/antares/ztf/classification_headline.yaml`
+- `alertissimo/data_layer/providers/fink/lsst/classification_headline.yaml`
+- `alertissimo/data_layer/providers/fink/ztf/classification_headline.yaml`
+- `alertissimo/data_layer/providers/lasair/lsst/classification_headline.yaml`
+- `alertissimo/data_layer/providers/lasair/ztf/classification_headline.yaml`
+- `alertissimo/data_layer/runtime/classification_headline.py`
+- `alertissimo/data_layer/semantic_model/ontology.yaml`
+- `alertissimo/dsl/predicate_lowering.py`
+- `alertissimo/orchestration/ir/predicates.py`
+- `alertissimo/orchestration/normalization/predicate.py`
+- `alertissimo/orchestration/planner/predicate_realization.py`
+- `docs/classification_comparison_view.md`
+- `docs/classification_evidence_design_plan.md`
+- `docs/classification_fink_ztf_native_labels.md`
+- `docs/classification_headline_policy.md`
+- `docs/next_functional_work.md`
+- `tests/test_app_classification_comparison.py`
+- `tests/test_classification_headline_integration.py`
+- `tests/test_classification_headline_policy.py`
+- `tests/test_dsl_alerce_classification.py`
+- `tests/test_dsl_predicate_realization.py`

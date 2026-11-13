@@ -204,7 +204,7 @@ def test_selected_lc_summary_beats_conflicting_versions_without_deleting_alterna
     fields = derive_headline_fields(portfolio, broker="alerce", origin="ztf")
     assert fields["best.status"] == "available"
     assert fields["best.native_class"] == "SNIbc"
-    assert fields["best.coarse_class"] == "supernova"
+    assert fields["best.taxon"] == (2223,)
     assert fields["best.native_probability"] == 0.525456
     assert fields["best.source_method"] == "lc_classifier"
     assert fields["best.source_version"] is None
@@ -239,7 +239,7 @@ def test_empty_unknown_and_conflicting_lc_outputs_do_not_become_the_same_fallbac
     assert fields.get("best.native_class") == label
     assert fields["best.source_method"] == ("stamp_classifier" if not lc_rows else "lc_classifier")
     if status != "available":
-        assert "best.coarse_class" not in fields
+        assert "best.taxon" not in fields
 
 
 @pytest.mark.parametrize("method", ["lc_classifier", "stamp_classifier"])
