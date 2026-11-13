@@ -736,7 +736,7 @@ def classification_table_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
     columns = {
         "broker": "Broker", "producer": "Producer", "version": "Version",
         "output": "Output", "class": "Class", "probability": "Probability",
-        "coarse_class": "Coarse class", "scope": "Scope", "basis": "Basis",
+        "taxon": "Taxon", "scope": "Scope", "basis": "Basis",
         "candidate_status": "Candidate status", "status": "Headline status",
         "policy": "Policy", "mapping_version": "Mapping version",
         "policy_digest": "Policy digest", "error": "Normalization error",
@@ -777,7 +777,7 @@ def render_classification(data: dict[str, Any], *, widget_key: str = "classifica
         },
     )
     st.caption(
-        "Headline rows show each broker’s selected native label and reviewed coarse candidate assessment. "
+        "Headline rows show each broker’s selected native label and reviewed candidate taxonomy codes. "
         "Native alternatives, versions and repeated assertions remain visible; no cross-broker winner is selected. "
         "Probabilities and scores keep their original meanings. Empty cells are unreported values."
     )

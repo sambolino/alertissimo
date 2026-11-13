@@ -1,14 +1,16 @@
 # Reviewed headline policy; JSON is a YAML subset. No remote updates.
 {
   "schema_version": 1,
-  "policy_id": "fink-lsst-headline-v1",
-  "mapping_version": "coarse-v1",
+  "policy_id": "fink-lsst-headline-v2",
+  "mapping_version": "elasticc-v1",
   "broker": "fink",
   "origin": "lsst",
   "enabled": true,
   "sources": [
     "https://lsst.fink-portal.org/schemas",
-    "tests/fixtures/fink/lsst/objects.json"
+    "tests/fixtures/fink/lsst/objects.json",
+    "https://github.com/astrolabsoftware/fink-science/blob/cfb7ced/fink_science/rubin/cats/utilities.py",
+    "https://github.com/LSSTDESC/elasticc/blob/818ae71e78d20b6f41810d7d6d9108ba4c17bcb1/taxonomy/taxonomy.ipynb"
   ],
   "methods": [
     {
@@ -18,14 +20,14 @@
     }
   ],
   "vocabulary": [
-    {"label": 11, "coarse": "supernova", "scope": "candidate", "status": "candidate"},
-    {"label": 12, "coarse": "fast_transient", "scope": "candidate", "status": "candidate"},
-    {"label": 13, "coarse": "long_transient", "scope": "candidate", "status": "candidate"},
-    {"label": 21, "coarse": "periodic", "scope": "candidate", "status": "candidate"},
-    {"label": 22, "coarse": "nonperiodic", "scope": "candidate", "status": "candidate"}
+    {"label": 11, "codes": [2220], "scope": "candidate", "status": "candidate"},
+    {"label": 12, "codes": [2230], "scope": "candidate", "status": "candidate"},
+    {"label": 13, "codes": [2240], "scope": "candidate", "status": "candidate"},
+    {"label": 21, "codes": [2320], "scope": "candidate", "status": "candidate"},
+    {"label": 22, "codes": [2332], "scope": "candidate", "status": "candidate"}
   ],
   "sentinels": [
     -1
   ],
-  "note": "Only main_label_classifier mapped to best.class, not main_label_crossmatch or per-source CATS assessments. Numeric published codes are exact; string codes are not silently coerced. Code 11 means SN-like candidate assessment, not confirmed SN. Version-independent published code contract."
+  "note": "Only main_label_classifier mapped to best.class, not main_label_crossmatch or per-source CATS assessments. Numeric published codes are exact; string codes are not silently coerced. Code 11 means SN-like candidate assessment, not confirmed SN. Version-independent published code contract. CATS_CLASS_DICT labels 22 as non-Periodic (AGN), supporting the 2332 mapping."
 }

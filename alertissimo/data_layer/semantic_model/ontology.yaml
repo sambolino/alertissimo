@@ -1172,10 +1172,8 @@ levels:
     $ref: <_classification_core>
     [native_class]:
       description: "Unchanged native label selected by the reviewed headline policy"
-    [coarse_class]:
-      description: "Candidate-scoped coarse proposition from the reviewed finite vocabulary; not physical confirmation"
-    [context_class]:
-      description: "Reviewed catalogue-context proposition; never candidate support"
+    [taxon]:
+      description: "Candidate-scoped ELAsTiCC (plus local extension) code set from the reviewed vocabulary; not physical confirmation"
     [status]:
       description: "Explicit headline outcome, including missing, conflict, unsupported_version and error"
     [error_code]:
@@ -1191,7 +1189,7 @@ levels:
     [source_method]:
       description: "Selected native producer"
     [source_version]:
-      description: "Reported native version; missing stays null"
+      description: "Reported native version; missing stays null; agreeing label_contract versions use a sorted tuple of _key string forms"
     [source_output]:
       description: "Selected native output path"
     [native_probability]:

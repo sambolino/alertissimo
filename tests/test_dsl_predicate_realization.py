@@ -283,3 +283,79 @@ def test_residual_classification_conjunction_must_match_one_record():
     assert evaluate_portfolio_predicate(good, predicate) is True
     assert evaluate_portfolio_predicate(split_across_records, predicate) is False
     assert prune_portfolios((good, split_across_records), predicate) == (good,)
+
+
+def test_taxon_tuple_is_residual_even_with_a_matching_provider_binding():
+    endpoint = _endpoint()
+    graph = CapabilityGraph(
+        endpoint_capabilities=(endpoint,), payload_capabilities=(),
+        field_mapping_capabilities=(), transform_capabilities=(), semantic_record_capabilities=(),
+        request_constraint_capabilities=(RequestConstraintCapability(
+            broker=endpoint.broker, origin=endpoint.origin, endpoint=endpoint.endpoint,
+            parameter="kind", semantic_path="classification.best.taxon", operator="=",
+        ),),
+    )
+    ref = SemanticReference(semantic_type="classification", field_path="best.taxon")
+    literal = PredicateLiteral(value=(2220, 2242, 2246))
+    for left, right in ((ref, literal), (literal, ref)):
+        predicate = ComparisonPredicate(operator="=", left=left, right=right)
+        realization = realize_predicate(predicate, endpoint=endpoint, graph=graph)
+        assert realization.pushdown is None
+        assert realization.residual == predicate
+        assert realization.params == {}
+
+
+def test_taxon_literal_is_strict_canonical_frozen_and_round_trips_json():
+    import pytest
+    from pydantic import ValidationError
+    literal = PredicateLiteral(value=(2220, 2242, 2246))
+    assert literal.model_dump(mode="json")["value"] == [2220, 2242, 2246]
+    restored = PredicateLiteral.model_validate(literal.model_dump(mode="json"))
+    assert restored == literal and hash(restored) == hash(literal)
+    assert isinstance(restored.value, tuple)
+    with pytest.raises(ValidationError):
+        restored.value = (2222,)
+    for invalid in ((), (2222, 2222), (2242, 2220), (True,), ("2222",), ["2222"], [True]):
+        with pytest.raises(ValidationError):
+            PredicateLiteral(value=invalid)
+    predicate = ComparisonPredicate(operator="=", left=SemanticReference(
+        semantic_type="classification", field_path="best.taxon"), right=literal)
+    assert ComparisonPredicate.model_validate(predicate.model_dump(mode="json")) == predicate
+
+
+def test_tuple_literals_are_rejected_outside_taxon_equality():
+    import pytest
+    from pydantic import ValidationError
+    literal = PredicateLiteral(value=(2222,))
+    for noun, field, operator in (
+        ("summary", "best.taxon", "="), ("classification", "best.class", "="),
+        ("classification", "best.taxon", "<"), ("classification", "best.taxon", ">="),
+    ):
+        reference = SemanticReference(semantic_type=noun, field_path=field)
+        for left, right in ((reference, literal), (literal, reference)):
+            with pytest.raises(ValidationError):
+                ComparisonPredicate(operator=operator, left=left, right=right)
+    with pytest.raises(ValidationError):
+        ComparisonPredicate(operator="=", left=literal, right=literal)
+
+
+def test_lowering_resolves_codes_without_changing_surface_words():
+    from alertissimo.dsl.predicate_lowering import lower_expression_predicate, PredicateLoweringError
+    import pytest
+    text = 'classification.best.taxon = "  SuPeRnOvA  "'
+    surface = parse_surface_script('objects ZTF20aaaaaaa from ztf via alerce\nwhere ' + text)
+    before = surface.model_dump(mode="json")
+    compiled = lower_surface(surface)
+    assert surface.model_dump(mode="json") == before
+    assert text in str(before)
+    literals = [s.predicate.right.value for s in compiled.workflow.steps
+                if isinstance(getattr(s, "predicate", None), ComparisonPredicate)]
+    assert literals and all(v == (2220, 2242, 2246) for v in literals)
+    for literal in ('2222', '"2222"', '"snia"'):
+        assert lower_expression_predicate('classification.best.taxon = ' + literal,
+                                          frozenset({"classification"})).right.value == (2222,)
+    with pytest.raises(PredicateLoweringError, match="snia") as error:
+        lower_expression_predicate('classification.best.taxon = "sniaa"', frozenset({"classification"}))
+    assert "sniaa" in str(error.value)
+    with pytest.raises(PredicateLoweringError, match="requires = or !="):
+        lower_expression_predicate('classification.best.taxon < 3', frozenset({"classification"}))

@@ -14,6 +14,10 @@ They are not fresh live acceptance. Recheck the current revision before coding.
 
 ## 1. Coarse classification normalization
 
+**Decision taken (13 November 2026):** use the ELAsTiCC hierarchy plus the reviewed
+local moving-source extension, code-set aliases and three-valued ancestry comparison.
+See the approved strict tuple IR amendment in the headline policy.
+
 **Current:** the reviewed finite headline policies are connected to immutable
 material views, normalized predicates and the comparison UI. Native outputs and
 alternatives remain distinct. ANTARES native Superphot+/DeSoto retrieval is admitted,
@@ -22,14 +26,13 @@ with unresolved input scope/defaults explicitly abstaining. See the authoritativ
 
 **Completion gate:** the implementation and regression cases are prepared; user-run
 local tests, package validation and final integration CI must pass before acceptance.
-No universal taxonomy, cross-method probability ordering or new probability
-threshold is introduced. Catalogue labels without a reviewed candidate proposition
+No cross-method probability ordering or new probability threshold is introduced. Catalogue labels without a reviewed candidate proposition
 remain recognized context.
 
 ## 2. Native headline selection and normalized confirm
 
 **Current:** separate `classification@headline:<broker>` records retain the selected
-native/coarse values, policy digest, source method/version and input record IDs.
+native labels/taxon code sets, policy digest, source method/version and input record IDs.
 Confirm obtains each broker's full classification recipe and evaluates only its own
 occurrence-local evidence. It counts each broker once; missing and incompatible
 outputs do not become positive NOT votes. Native best queries remain compatible.
@@ -38,7 +41,7 @@ eligible material permits a new interpretation; deserialization/UI do not remap.
 
 **Completion gate:** local counterexamples and final CI remain user-run. The new
 suite covers method precedence, composed confirmation, immutable continuation,
-unknown-label errors, input scope, and initial filtering before latest. After
+visible unknown-label abstentions, input scope, and initial filtering before latest. After
 validation, stop this topic before revisiting items 3 onward.
 
 ## 3. Catalogue crossmatches and field coverage

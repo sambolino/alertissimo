@@ -1,14 +1,15 @@
 # Reviewed headline policy; JSON is a YAML subset. No remote updates.
 {
   "schema_version": 1,
-  "policy_id": "antares-ztf-headline-v1",
-  "mapping_version": "coarse-v1",
+  "policy_id": "antares-ztf-headline-v2",
+  "mapping_version": "elasticc-v1",
   "broker": "antares",
   "origin": "ztf",
   "enabled": true,
   "sources": [
     "https://antares.noirlab.edu/",
-    "https://github.com/VTDA-Group/superphot-plus"
+    "https://github.com/VTDA-Group/superphot-plus",
+    "https://github.com/LSSTDESC/elasticc/blob/818ae71e78d20b6f41810d7d6d9108ba4c17bcb1/taxonomy/taxonomy.ipynb"
   ],
   "methods": [
     {
@@ -19,12 +20,12 @@
     }
   ],
   "vocabulary": [
-    {"label": "SN Ia", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ia"},
-    {"label": "SN II", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "II"},
-    {"label": "SN IIn", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "IIn"},
-    {"label": "SN Ibc", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "Ibc"},
-    {"label": "SLSN-I", "coarse": "supernova", "scope": "candidate", "status": "candidate", "subtype": "SLSN-I"}
+    {"label": "SN Ia", "codes": [2222], "scope": "candidate", "status": "candidate", "subtype": "Ia"},
+    {"label": "SN II", "codes": [2224], "scope": "candidate", "status": "candidate", "subtype": "II"},
+    {"label": "SN IIn", "codes": [2224], "scope": "candidate", "status": "candidate", "subtype": "IIn"},
+    {"label": "SN Ibc", "codes": [2223], "scope": "candidate", "status": "candidate", "subtype": "Ibc"},
+    {"label": "SLSN-I", "codes": [2242], "scope": "candidate", "status": "candidate", "subtype": "SLSN-I"}
   ],
   "sentinels": [],
-  "note": "Default Superphot+ only when explicit per-assessment input-survey provenance establishes ZTF. A ZTF-associated or mixed-survey locus is insufficient. The live capture did not establish that provenance: do not manufacture provenance.input_survey from locus membership. DeSoto/LAISS remain alternatives. Label-contract compatibility does not invent a missing model version."
+  "note": "Default Superphot+ only when explicit per-assessment input-survey provenance establishes ZTF. A ZTF-associated or mixed-survey locus is insufficient. The live capture did not establish that provenance: do not manufacture provenance.input_survey from locus membership. DeSoto/LAISS remain alternatives. Label-contract compatibility does not invent a missing model version. Superphot+ classifies only on the assumption that the object is a supernova. It must not be enabled as a voter until a rule for conditional classifiers is agreed with the maintainer."
 }

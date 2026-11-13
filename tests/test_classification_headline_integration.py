@@ -38,7 +38,7 @@ def headline(p, broker="alerce"):
     return next(r for r in p.records if r.semantic_type == f"classification@headline:{broker}")
 
 
-def predicate(text='classification.best.coarse_class = "supernova"'):
+def predicate(text='classification.best.taxon = "supernova"'):
     return lower_expression_predicate(text, frozenset({"classification"}))
 
 
@@ -47,7 +47,7 @@ def test_stored_interpretation_is_pinned_and_presentation_never_loads_policy(mon
     saved = policy.materialize_headlines(raw)
     native_ids = {r.internal_record_id for r in raw.records}
     assert [r for r in saved.records if r.internal_record_id in native_ids] == list(raw.records)
-    assert headline(saved).get("best.coarse_class") == "supernova"
+    assert headline(saved).get("best.taxon") == (2222,)
     before = portfolio_to_dict(saved)
     def forbidden(*args, **kwargs):
         raise AssertionError("stored results must not load the current policy")
@@ -65,8 +65,8 @@ def test_new_material_replaces_only_new_views_headline_and_retains_alternatives(
     lc = evidence("alerce", "lc_classifier", {"best.class": "SNIa"}, execution="lc")
     merged, = consolidate_portfolios((first, lc))
     second = policy.materialize_headlines(merged)
-    assert headline(first).get("best.coarse_class") == "agn"
-    assert headline(second).get("best.coarse_class") == "supernova"
+    assert headline(first).get("best.taxon") == (2332,)
+    assert headline(second).get("best.taxon") == (2222,)
     assert len([r for r in second.records if policy.is_headline_record(r)]) == 1
     assert {r.get("best.class") for r in second.records if not policy.is_headline_record(r)} >= {"AGN", "SNIa"}
     assert portfolio_to_dict(first) == before
@@ -77,23 +77,23 @@ def test_abstention_cannot_become_positive_under_not(label, status):
     p = policy.materialize_headlines(evidence("fink", "fink", {"best.class": label}))
     assert headline(p, "fink").get("best.status") == status
     assert not evaluate_portfolio_predicate(p, predicate())
-    assert not evaluate_portfolio_predicate(p, predicate('not (classification.best.coarse_class = "supernova")'))
+    assert not evaluate_portfolio_predicate(p, predicate('not (classification.best.taxon = "supernova")'))
 
 
 def test_unknown_vocabulary_is_visible_and_cannot_silently_filter_away():
     p = policy.materialize_headlines(evidence("alerce", "lc_classifier", {"best.class": "new-label"}))
     assert headline(p).get("best.error_code") == "unmapped_label"
     assert any(r["error"] == "unmapped_label" for r in classification_rows(p))
-    with pytest.raises(policy.HeadlinePolicyError, match="unmapped_label"):
-        evaluate_portfolio_predicate(p, predicate())
+    assert not evaluate_portfolio_predicate(p, predicate())
+    assert not evaluate_portfolio_predicate(p, predicate('not (classification.best.taxon = "supernova")'))
     assert evaluate_portfolio_predicate(p, predicate('classification.best.status = "error"'))
 
 
 def test_native_predicates_do_not_match_derived_metadata_or_mix_assertions():
     p = policy.materialize_headlines(evidence("alerce", "lc_classifier", {"best.class": "SNIa", "best.probability": 0.7}))
     assert evaluate_portfolio_predicate(p, predicate('classification.best.class = "SNIa"'))
-    assert not evaluate_portfolio_predicate(p, predicate('classification.best.coarse_class = "supernova" and classification.best.probability > 0.5'))
-    assert evaluate_portfolio_predicate(p, predicate('classification.best.coarse_class = "supernova" and classification.best.native_probability > 0.5'))
+    assert not evaluate_portfolio_predicate(p, predicate('classification.best.taxon = "supernova" and classification.best.probability > 0.5'))
+    assert evaluate_portfolio_predicate(p, predicate('classification.best.taxon = "supernova" and classification.best.native_probability > 0.5'))
 
 
 def test_confirm_combines_own_broker_calls_before_selecting_and_deduplicates_votes():
@@ -153,8 +153,8 @@ class Executor:
 
 def test_public_confirm_uses_composed_alerce_recipe_and_broker_local_headlines(graph, monkeypatch):
     source = ('objects ZTF20aaaaaaa from ztf via alerce\n'
-              'where classification.best.coarse_class = "supernova"\n'
-              'confirm by 3 via alerce, fink, lasair\n')
+              'where classification.best.taxon = "supernova"\n'
+              'confirm by 2 via alerce, fink, lasair\n')
     validation = validate_dsl(source, graph=graph, continue_from=None)
     assert validation.is_runnable, validation.lowering_error
     executor = Executor()
@@ -163,13 +163,16 @@ def test_public_confirm_uses_composed_alerce_recipe_and_broker_local_headlines(g
     assert len([c for c in executor.calls if c[:2] == ("alerce", "query_objects")]) == 2
     p, = result.portfolios
     assert {r.get("best.broker") for r in p.records if policy.is_headline_record(r)} == {"alerce", "fink", "lasair"}
+    supporters = {r.get("best.broker") for r in p.records if policy.is_headline_record(r)
+                  and policy.compare_taxa(r.get("best.taxon"), policy.resolve_taxon("supernova")) is True}
+    assert supporters == {"alerce", "fink", "lasair"}
     assert headline(p, "lasair").get("best.native_score") == 3
     assert headline(p, "lasair").get("best.native_probability") is None
     before, call_count = result.to_dict(), len(executor.calls)
     def changed_policy(*args, **kwargs):
         raise AssertionError("continuation must keep the prior interpretation")
     monkeypatch.setattr(policy, "load_policy", changed_policy)
-    continued = execute_dsl('filter classification.best.coarse_class = "supernova"',
+    continued = execute_dsl('filter classification.best.taxon = "supernova"',
                             graph=graph, executor=executor, continue_from=result)
     assert len(continued.portfolios) == 1
     assert result.to_dict() == before and len(executor.calls) == call_count
@@ -186,26 +189,26 @@ def test_public_confirm_uses_composed_alerce_recipe_and_broker_local_headlines(g
 
 
 def test_unbounded_normalized_discovery_is_not_silently_broadened(graph):
-    result = validate_dsl('objects from ztf via alerce\nwhere classification.best.coarse_class = "supernova"',
+    result = validate_dsl('objects from ztf via alerce\nwhere classification.best.taxon = "supernova"',
                           graph=graph, continue_from=None)
     assert not result.is_runnable
 
 
 def test_cone_normalized_selection_precedes_latest(graph):
     result = validate_dsl('objects from ztf via alerce\ninside (10, 20, 5arcsec)\n'
-                          'where classification.best.coarse_class = "supernova"\nlatest 1',
+                          'where classification.best.taxon = "supernova"\nlatest 1',
                           graph=graph, continue_from=None)
     assert result.is_runnable, result.lowering_error
     # Validate the actual lowered operations without fetching any provider data.
     from alertissimo.dsl import lower_surface, parse_surface_script
     workflow = lower_surface(parse_surface_script(
         'objects from ztf via alerce\ninside (10, 20, 5arcsec)\n'
-        'where classification.best.coarse_class = "supernova"\nlatest 1'), graph=graph).workflow
+        'where classification.best.taxon = "supernova"\nlatest 1'), graph=graph).workflow
     assert [step.op for step in workflow.steps] == ["cone_search", "get_classification", "filter"]
     assert workflow.steps[0].selection.after_step == 2
 
 
-def test_bounded_discovery_filters_coarse_class_before_global_latest(graph):
+def test_bounded_discovery_filters_taxon_before_global_latest(graph):
     class ConeExecutor(Executor):
         def execute(self, broker, origin, endpoint, params=None, headers=None):
             params = dict(params or {})
@@ -224,9 +227,49 @@ def test_bounded_discovery_filters_coarse_class_before_global_latest(graph):
             return result
     executor = ConeExecutor()
     result = execute_dsl('objects from ztf via alerce\ninside (10, 20, 5arcsec)\n'
-                         'where classification.best.coarse_class = "supernova"\nlatest 1',
+                         'where classification.best.taxon = "supernova"\nlatest 1',
                          graph=graph, executor=executor, continue_from=None)
     assert [summary_object_identity(p) for p in result.portfolios] == [("ztf", "ZTF20aaaaaaa")]
     assert {params["oid"] for _, endpoint, params in executor.calls if endpoint == "query_probabilities"} == {
         "ZTF20aaaaaaa", "ZTF20bbbbbbb",
     }
+
+
+@pytest.mark.parametrize("text", [
+    'classification.best.taxon = "snia"',
+    'classification.best.taxon != "snia"',
+    'not (classification.best.taxon = "snia")',
+    'not (classification.best.taxon != "snia")',
+])
+def test_broad_cats_prediction_remains_unknown_under_not_and_inequality(text):
+    p = policy.materialize_headlines(evidence("fink", "fink", {"best.class": 11}, survey="lsst"))
+    assert not evaluate_portfolio_predicate(p, predicate(text))
+    assert evaluate_portfolio_predicate(p, predicate('classification.best.taxon = "supernova"'))
+
+
+def test_unmapped_label_abstains_in_confirmation():
+    seed = evidence("fink", "fink", {"best.class": "SN candidate"})
+    drift = evidence("alerce", "lc_classifier", {"best.class": "new-label"})
+    source = StepPortfolioResult(0, (), (seed,))
+    own = StepPortfolioResult(1, (ExecutionPortfolioResult(drift.executions[0].internal_execution_id.value, (drift,)),))
+    step = ConfirmStep(sources=[Source(broker="alerce", origin="ztf")], predicate=predicate())
+    assert confirm_step_portfolios(step, source, own, step_index=1).portfolios == ()
+
+
+def test_saved_workflow_codes_survive_alias_dictionary_changes(monkeypatch):
+    from alertissimo.orchestration.ir import WorkflowIR
+    from alertissimo.dsl import lower_surface, parse_surface_script
+    workflow = lower_surface(parse_surface_script(
+        'objects ZTF20aaaaaaa from ztf via alerce\nwhere classification.best.taxon = "supernova"'
+    )).workflow
+    saved = workflow.model_dump(mode="json")
+    from copy import deepcopy
+    changed = deepcopy(policy.load_taxonomy())
+    next(a for a in changed["aliases"] if a["alias"] == "supernova")["codes"] = [2332]
+    monkeypatch.setattr(policy, "load_taxonomy", lambda: changed)
+    restored = WorkflowIR.model_validate(saved)
+    assert restored == workflow
+    p = policy.materialize_headlines(evidence("alerce", "lc_classifier", {"best.class": "SNIa"}))
+    from alertissimo.orchestration.ir import ComparisonPredicate
+    predicates = [s.predicate for s in restored.steps if isinstance(getattr(s, "predicate", None), ComparisonPredicate)]
+    assert predicates and all(evaluate_portfolio_predicate(p, pred) for pred in predicates)

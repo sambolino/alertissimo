@@ -268,3 +268,13 @@ def test_headline_cards_do_not_use_an_alternative_probability():
     assert classification_card_summary(display) == ("SNIa", 0.1)
     display["classifications"].append({"headline": True, "class": "SN", "probability": 0.9})
     assert classification_card_summary(display) == ("2 labels", None)
+
+
+def test_headline_taxa_show_names_and_mark_local_extensions():
+    raw = portfolio(record("headline", {"best.taxon": [2222, 9220], "best.native_class": "captured",
+                                       "best.status": "available"}, "classification@headline:fink"))
+    before = deepcopy(raw)
+    row, = classification_rows(raw)
+    assert row["taxon"] == "2222 Ia; 9220 Asteroid (Alertissimo ext.)"
+    assert classification_table_rows(portfolio_to_display(raw))[0]["Taxon"] == row["taxon"]
+    assert raw == before

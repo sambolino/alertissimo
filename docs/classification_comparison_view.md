@@ -4,16 +4,19 @@ Branch: `feat/classification-comparison-view`.
 Base: `b666c34` on `integration/discovery-completion`, after C5 (#343).
 Keep main-target #329 draft.
 
-## Current extension: stored headline comparison
+## Current extension: stored taxonomy headline comparison
 
-The November 12 completion change adds stored per-broker headline rows with native
-and coarse class, scope, basis, candidate status, method/version, policy digest and
-normalization errors. Shared `data_layer/presentation/portfolio_classification.py`
-owns extraction for typed and serialized Portfolios. Native alternatives and the
-record inspector remain available. Old saved records are displayed as stored,
-without rerunning the current vocabulary. The C6 history below describes the
-original native-only comparison; its normalization deferral is superseded by
-[classification headline policy](classification_headline_policy.md).
+Headline rows show stored `best.taxon` codes with dictionary names and a local
+extension marker, such as `9220 Asteroid (Alertissimo ext.)`. Native labels,
+versions (including agreeing-version tuples), alternatives, scope, basis, status,
+policy digests and unmapped-label errors remain visible. The shared presentation
+extractor owns formatting for typed and serialized Portfolios; it never selects
+or remaps evidence. The surface script retains the user's query alias, while the
+IR stores resolved integer code sets. Comparisons and Confirm use three-valued
+ancestry semantics described in [headline policy](classification_headline_policy.md).
+
+The native-only C6 history below predates this extension; its normalization
+deferral is superseded by that policy.
 
 ## Scientific presentation
 
