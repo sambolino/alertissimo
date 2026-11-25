@@ -5,10 +5,12 @@ from __future__ import annotations
 from ast import literal_eval
 from functools import lru_cache
 from importlib.resources import files
-from typing import Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias
+import math
 
 from lark import Lark, Token, Transformer, UnexpectedInput
-from pydantic import BaseModel, ConfigDict, SerializeAsAny, model_validator
+from lark.exceptions import VisitError
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ExpressionModel(BaseModel):
@@ -71,7 +73,23 @@ class LiteralExpression(ExpressionModel):
     value: str | int | float | bool
 
 
-OperandExpression: TypeAlias = ReferenceExpression | LiteralExpression
+class AggregateExpression(ExpressionModel):
+    kind: Literal["aggregate"] = "aggregate"
+    function: Literal["count", "min", "max"]
+    reference: ReferenceExpression
+    condition: "Expression | None" = None
+
+    @model_validator(mode="after")
+    def count_condition_only(self):
+        if self.condition is not None and self.function != "count":
+            raise ValueError("only count accepts an element condition")
+        return self
+
+
+OperandExpression: TypeAlias = Annotated[
+    ReferenceExpression | LiteralExpression | AggregateExpression,
+    Field(discriminator="kind"),
+]
 
 
 class ComparisonExpression(ExpressionModel):
@@ -80,11 +98,21 @@ class ComparisonExpression(ExpressionModel):
     left: OperandExpression
     right: OperandExpression
 
+    @model_validator(mode="after")
+    def numeric_aggregate_comparison(self):
+        for aggregate, other in ((self.left, self.right), (self.right, self.left)):
+            if isinstance(aggregate, AggregateExpression) and not (
+                isinstance(other, LiteralExpression)
+                and (type(other.value) is int or type(other.value) is float and math.isfinite(other.value))
+            ):
+                raise ValueError("an aggregate must be compared with a finite numeric literal")
+        return self
+
 
 class BooleanExpression(ExpressionModel):
     kind: Literal["boolean"] = "boolean"
     operator: Literal["and", "or"]
-    operands: tuple[SerializeAsAny[ExpressionModel], ...]
+    operands: tuple["Expression", ...]
 
     @model_validator(mode="after")
     def require_multiple_operands(self) -> "BooleanExpression":
@@ -95,7 +123,7 @@ class BooleanExpression(ExpressionModel):
 
 class NotExpression(ExpressionModel):
     kind: Literal["not"] = "not"
-    operand: SerializeAsAny[ExpressionModel]
+    operand: "Expression"
 
 
 class ExistsExpression(ExpressionModel):
@@ -103,9 +131,30 @@ class ExistsExpression(ExpressionModel):
     operand: ReferenceExpression
 
 
-Expression: TypeAlias = (
-    ComparisonExpression | BooleanExpression | NotExpression | ExistsExpression
-)
+class QuantifierExpression(ExpressionModel):
+    kind: Literal["quantifier"] = "quantifier"
+    quantifier: Literal["any", "every"]
+    parameter: Literal["filter", "output"]
+    values: tuple[str, ...] | None = None
+    operand: "Expression"
+
+    @model_validator(mode="after")
+    def explicit_domain(self):
+        if self.values is not None and (not self.values or len(set(self.values)) != len(self.values)):
+            raise ValueError("quantifier values must be nonempty and duplicate-free")
+        return self
+
+
+Expression: TypeAlias = Annotated[
+    ComparisonExpression | BooleanExpression | NotExpression | ExistsExpression | QuantifierExpression,
+    Field(discriminator="kind"),
+]
+
+AggregateExpression.model_rebuild()
+ComparisonExpression.model_rebuild()
+BooleanExpression.model_rebuild()
+NotExpression.model_rebuild()
+QuantifierExpression.model_rebuild()
 
 
 def expression_grammar_text() -> str:
@@ -175,6 +224,37 @@ class _ExpressionTransformer(Transformer):
             right=items[2],
         )
 
+    def count_aggregate(self, items):
+        reference = next(item for item in items if isinstance(item, ReferenceExpression))
+        condition = next((item for item in items if isinstance(item, ExpressionModel)
+                          and not isinstance(item, ReferenceExpression)), None)
+        return AggregateExpression(function="count", reference=reference, condition=condition)
+
+    def min_aggregate(self, items):
+        return AggregateExpression(function="min", reference=next(
+            item for item in items if isinstance(item, ReferenceExpression)))
+
+    def max_aggregate(self, items):
+        return AggregateExpression(function="max", reference=next(
+            item for item in items if isinstance(item, ReferenceExpression)))
+
+    def any_kind(self, _items):
+        return "any"
+
+    def every_kind(self, _items):
+        return "every"
+
+    def domain_restriction(self, items):
+        return tuple(str(item) for item in items if item is not None)
+
+    def quantifier(self, items):
+        parameter = next(item for item in items if isinstance(item, Token) and item.type == "PARAMETER")
+        quantifier = next(item for item in items if type(item) is str)
+        values = next((item for item in items if isinstance(item, tuple)), None)
+        operand = next(item for item in items if isinstance(item, ExpressionModel))
+        return QuantifierExpression(quantifier=quantifier, parameter=str(parameter)[1:-1],
+                                    values=values, operand=operand)
+
     def grouped(self, items):
         return items[0]
 
@@ -224,67 +304,83 @@ def parse_expression(text: str) -> Expression:
             line=getattr(exc, "line", None),
             column=getattr(exc, "column", None),
         ) from exc
+    except VisitError as exc:
+        raise ExpressionParseError(str(exc.orig_exc)) from exc
     except (ValueError, SyntaxError) as exc:
         raise ExpressionParseError(str(exc)) from exc
 
     if not isinstance(
         result,
-        (ComparisonExpression, BooleanExpression, NotExpression, ExistsExpression),
+        (ComparisonExpression, BooleanExpression, NotExpression, ExistsExpression, QuantifierExpression),
     ):
         raise ExpressionParseError("parser did not produce a predicate expression")
     return result
 
 
-def iter_references(expression: ExpressionModel):
-    """Yield reference nodes in stable source order."""
-
-    if isinstance(expression, ComparisonExpression):
-        if isinstance(expression.left, ReferenceExpression):
-            yield expression.left
-        if isinstance(expression.right, ReferenceExpression):
-            yield expression.right
+def iter_references(expression: ExpressionModel, _collection: ReferenceExpression | None = None):
+    """Yield material references; element leaves inherit their aggregate's root."""
+    if isinstance(expression, ReferenceExpression):
+        if _collection is None:
+            yield expression
+        else:
+            yield _collection.model_copy(update={
+                "path": (*_collection.path, expression.root, *expression.path),
+            })
+    elif isinstance(expression, AggregateExpression):
+        yield expression.reference
+        if expression.condition is not None:
+            yield from iter_references(expression.condition, expression.reference)
+    elif isinstance(expression, ComparisonExpression):
+        yield from iter_references(expression.left, _collection)
+        yield from iter_references(expression.right, _collection)
     elif isinstance(expression, BooleanExpression):
         for operand in expression.operands:
-            yield from iter_references(operand)
-    elif isinstance(expression, NotExpression):
-        yield from iter_references(expression.operand)
+            yield from iter_references(operand, _collection)
+    elif isinstance(expression, (NotExpression, QuantifierExpression)):
+        yield from iter_references(expression.operand, _collection)
     elif isinstance(expression, ExistsExpression):
-        yield expression.operand
+        yield from iter_references(expression.operand, _collection)
+
+
+def contains_collection_expression(expression: ExpressionModel) -> bool:
+    if isinstance(expression, (AggregateExpression, QuantifierExpression)):
+        return True
+    if isinstance(expression, ComparisonExpression):
+        return any(contains_collection_expression(item) for item in (expression.left, expression.right))
+    if isinstance(expression, BooleanExpression):
+        return any(contains_collection_expression(item) for item in expression.operands)
+    if isinstance(expression, NotExpression):
+        return contains_collection_expression(expression.operand)
+    return False
 
 
 def map_references(expression: ExpressionModel, mapper):
-    """Return an expression copy with ``mapper`` applied to every reference node."""
-
+    """Map every syntactic reference, preserving aggregate and quantifier scope."""
+    if isinstance(expression, ReferenceExpression):
+        return mapper(expression)
+    if isinstance(expression, LiteralExpression):
+        return expression
+    if isinstance(expression, AggregateExpression):
+        return expression.model_copy(update={
+            "reference": mapper(expression.reference),
+            "condition": (map_references(expression.condition, mapper)
+                          if expression.condition is not None else None),
+        })
     if isinstance(expression, ComparisonExpression):
-        left = (
-            mapper(expression.left)
-            if isinstance(expression.left, ReferenceExpression)
-            else expression.left
-        )
-        right = (
-            mapper(expression.right)
-            if isinstance(expression.right, ReferenceExpression)
-            else expression.right
-        )
-        return expression.model_copy(update={"left": left, "right": right})
+        return expression.model_copy(update={"left": map_references(expression.left, mapper),
+                                             "right": map_references(expression.right, mapper)})
     if isinstance(expression, BooleanExpression):
-        return expression.model_copy(
-            update={
-                "operands": tuple(
-                    map_references(item, mapper) for item in expression.operands
-                )
-            }
-        )
-    if isinstance(expression, NotExpression):
-        return expression.model_copy(
-            update={"operand": map_references(expression.operand, mapper)}
-        )
+        return expression.model_copy(update={"operands": tuple(map_references(item, mapper)
+                                                               for item in expression.operands)})
+    if isinstance(expression, (NotExpression, QuantifierExpression)):
+        return expression.model_copy(update={"operand": map_references(expression.operand, mapper)})
     if isinstance(expression, ExistsExpression):
         return expression.model_copy(update={"operand": mapper(expression.operand)})
     raise TypeError(f"unsupported expression node: {type(expression).__name__}")
 
 
 __all__ = [
+    "AggregateExpression", "QuantifierExpression", "contains_collection_expression",
     "BooleanExpression",
     "ComparisonExpression",
     "ExistsExpression",

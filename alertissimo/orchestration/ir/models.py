@@ -73,6 +73,15 @@ class Step(IRModel):
 
     sources: list[Source] = Field(default_factory=list)
 
+    @model_validator(mode="after")
+    def collection_predicate_scope(self):
+        from .predicates import validate_collection_predicate
+        predicate = getattr(self, "predicate", None)
+        if predicate is not None:
+            validate_collection_predicate(predicate, origins=tuple(
+                dict.fromkeys(source.origin for source in self.sources if source.origin)))
+        return self
+
 
 TargetKind = Literal["object", "alert", "source", "detection"]
 
@@ -539,8 +548,34 @@ class WorkflowIR(IRModel):
         schema = handler(source)
         # Deserialization must bypass the construction default, including when
         # WorkflowIR is nested inside another model or a TypeAdapter.
-        schema["custom_init"] = False
+        # Model validators can wrap the model schema. Set the flag on the model,
+        # while returning the complete schema so those validators still run.
+        model_schema = schema
+        while model_schema["type"] in {"function-before", "function-after", "function-wrap"}:
+            model_schema = model_schema["schema"]
+        if model_schema["type"] != "model":
+            raise TypeError("WorkflowIR core schema must contain a model")
+        model_schema["custom_init"] = False
         return schema
+
+    @model_validator(mode="after")
+    def collection_contract(self):
+        from .predicates import (contains_collection_predicate, validate_collection_predicate,
+                                 validate_collection_selectors)
+        origins = tuple(dict.fromkeys(source.origin for step in self.steps[:1]
+                                      for source in step.sources if source.origin))
+        material = tuple(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
+                         for step in self.steps if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep))
+                         for source in step.sources if source.broker is not None
+                         for origin in (origins or (None,)))
+        for step in self.steps:
+            predicate = getattr(step, "predicate", None)
+            if predicate is not None and contains_collection_predicate(predicate):
+                if self.dsl_version < 2:
+                    raise ValueError("collection predicates require dsl_version 2")
+                validate_collection_predicate(predicate, origins=origins)
+                validate_collection_selectors(predicate, material)
+        return self
 
     @field_validator("dsl_version")
     @classmethod

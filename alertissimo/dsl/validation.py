@@ -151,8 +151,14 @@ def resolve_expression_references(
         reference: ReferenceExpression,
         *,
         allow_bare_record: bool,
+        element: bool = False,
     ) -> ReferenceExpression:
         root = _normalize_noun(reference.root)
+        if element:
+            if root in record_types or reference.producer is not None or reference.channel is not None:
+                raise ValueError("count conditions require paths relative to the current element")
+            return reference.model_copy(update={"root": root, "record_type": None,
+                                                "resolution": "unresolved"})
         absolute_evidence = bool(
             reference.path
             or reference.producer is not None
@@ -192,40 +198,50 @@ def resolve_expression_references(
 
         return reference.model_copy(update={"root": root})
 
-    def resolve_node(node: ExpressionModel) -> ExpressionModel:
+    def resolve_node(node: ExpressionModel, *, element: bool = False) -> ExpressionModel:
         from .expression import (
+            AggregateExpression,
+            QuantifierExpression,
             BooleanExpression,
             ComparisonExpression,
             ExistsExpression,
             NotExpression,
         )
 
+        if isinstance(node, AggregateExpression):
+            return node.model_copy(update={
+                "reference": resolve_reference(node.reference, allow_bare_record=True),
+                "condition": (resolve_node(node.condition, element=True)
+                              if node.condition is not None else None),
+            })
+        if isinstance(node, QuantifierExpression):
+            return node.model_copy(update={"operand": resolve_node(node.operand, element=element)})
         if isinstance(node, ComparisonExpression):
             left = (
-                resolve_reference(node.left, allow_bare_record=False)
+                resolve_reference(node.left, allow_bare_record=False, element=element)
                 if isinstance(node.left, ReferenceExpression)
-                else node.left
+                else resolve_node(node.left, element=element) if isinstance(node.left, AggregateExpression) else node.left
             )
             right = (
-                resolve_reference(node.right, allow_bare_record=False)
+                resolve_reference(node.right, allow_bare_record=False, element=element)
                 if isinstance(node.right, ReferenceExpression)
-                else node.right
+                else resolve_node(node.right, element=element) if isinstance(node.right, AggregateExpression) else node.right
             )
             return node.model_copy(update={"left": left, "right": right})
         if isinstance(node, BooleanExpression):
             return node.model_copy(
                 update={
-                    "operands": tuple(resolve_node(item) for item in node.operands)
+                    "operands": tuple(resolve_node(item, element=element) for item in node.operands)
                 }
             )
         if isinstance(node, NotExpression):
-            return node.model_copy(update={"operand": resolve_node(node.operand)})
+            return node.model_copy(update={"operand": resolve_node(node.operand, element=element)})
         if isinstance(node, ExistsExpression):
             return node.model_copy(
                 update={
                     "operand": resolve_reference(
                         node.operand,
-                        allow_bare_record=True,
+                        allow_bare_record=True, element=element,
                     )
                 }
             )
@@ -311,6 +327,7 @@ def _validate_expression_paths(
     scoped_noun: str | None = None,
     scoped_producer: str | None = None,
     scoped_channel: str | None = None,
+    origins: tuple[str, ...] = (),
 ) -> list[SurfaceValidationIssue]:
     try:
         resolved = resolve_expression_references(
@@ -320,11 +337,20 @@ def _validate_expression_paths(
             scoped_producer=scoped_producer,
             scoped_channel=scoped_channel,
         )
-    except ExpressionParseError as exc:
+        from .expression import contains_collection_expression
+        if contains_collection_expression(resolved):
+            from .predicate_lowering import lower_expression_predicate
+            lower_expression_predicate(
+                resolved, model.record_types, semantic_paths=model, origins=origins,
+                scoped_noun=scoped_noun, scoped_producer=scoped_producer,
+                scoped_channel=scoped_channel,
+            )
+    except ValueError as exc:
         return [
             SurfaceValidationIssue(
                 severity=ValidationSeverity.ERROR,
-                code="invalid_expression_syntax",
+                code=("invalid_expression_syntax" if isinstance(exc, ExpressionParseError)
+                      else "invalid_collection_expression"),
                 message=str(exc),
                 clause_index=clause_index,
             )
@@ -417,6 +443,7 @@ def validate_surface_semantics(
                             clause_index=index,
                             code="invalid_requirement_predicate_path",
                             scoped_noun=noun,
+                            origins=surface.candidates.origins,
                             scoped_producer=clause.source,
                             scoped_channel=(
                                 None if clause.brokers else clause.via or surface.candidates.broker
@@ -446,9 +473,40 @@ def validate_surface_semantics(
                     model,
                     clause_index=index,
                     code="invalid_condition_path",
+                    origins=surface.candidates.origins,
                 )
             )
 
+    from .expression import contains_collection_expression
+    from .predicate_lowering import lower_expression_predicate
+    from alertissimo.orchestration.ir.predicates import validate_collection_selectors
+    for index, clause in enumerate(surface.clauses):
+        conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
+                      else clause.predicates if isinstance(clause, RequirementClause) else ())
+        for condition in conditions:
+            try:
+                expression = parse_expression(condition)
+                if not contains_collection_expression(expression):
+                    continue
+                noun = resolve_record_type(clause.product, model.record_types) if isinstance(clause, RequirementClause) else None
+                predicate = lower_expression_predicate(
+                    expression, model.record_types, scoped_noun=noun,
+                    scoped_producer=clause.source if noun else None,
+                    scoped_channel=(clause.via or surface.candidates.broker) if noun else None,
+                    semantic_paths=model, origins=surface.candidates.origins,
+                )
+                scope = surface.clauses if isinstance(clause, WhereClause) else surface.clauses[:index + 1]
+                material = tuple((resolve_record_type(req.product, model.record_types), req.source or origin,
+                                  req.via or surface.candidates.broker, origin)
+                                 for item in scope if isinstance(item, RequirementClause)
+                                 for req in item.broker_requirements()
+                                 for origin in surface.candidates.origins)
+                validate_collection_selectors(predicate, material)
+            except ValueError as error:
+                if not any(issue.clause_index == index for issue in issues):
+                    issues.append(SurfaceValidationIssue(severity=ValidationSeverity.ERROR,
+                                                        code="invalid_collection_expression",
+                                                        message=str(error), clause_index=index))
     return SurfaceValidationReport(issues=tuple(issues))
 
 

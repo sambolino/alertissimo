@@ -30,6 +30,7 @@ from alertissimo.orchestration.validation import (
 from .fragment import fragment_surface_context
 from .surface import (
     ConfirmClause,
+    FilterClause,
     LatestClause,
     MatchClause,
     RankedByClause,
@@ -770,6 +771,19 @@ def _validate_surface_capabilities(
             "capability validation requires ontology-valid surface intent"
             + (f" ({codes})" if codes else "")
         )
+
+    from .expression import contains_collection_expression, parse_expression
+    collection_checks = []
+    for index, clause in enumerate(surface.clauses):
+        conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
+                      else clause.predicates if isinstance(clause, RequirementClause) else ())
+        if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
+            collection_checks.append(SurfaceCapabilityCheck(
+                subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
+                reason="collection syntax and IR are valid; collection evaluation and admission are not implemented yet",
+            ))
+    if collection_checks:
+        return SurfaceCapabilityReport(checks=tuple(collection_checks))
 
     capability_graph = graph or build_capability_graph()
     checks: list[SurfaceCapabilityCheck] = list(

@@ -10,6 +10,8 @@ from .capability_validation import (
     validate_surface_fragment_capabilities,
 )
 from .expression import (
+    AggregateExpression,
+    QuantifierExpression,
     BooleanExpression,
     ComparisonExpression,
     ExistsExpression,

@@ -485,6 +485,8 @@ def predicate_material_gaps(
     predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
 ) -> tuple[str, ...]:
     """Inspect call-scoped mapped material without selecting or executing a route."""
+    from .ir.predicates import iter_aggregate_operands
+    collections = {item.reference for item in iter_aggregate_operands(predicate) if item.function == "count"}
     def mapped(reference: SemanticReference) -> bool:
         if headline_material_available(reference, outputs):
             return True
@@ -505,7 +507,9 @@ def predicate_material_gaps(
             if not reference.field_path:
                 return True
             declared, requested = field.relative_field_path.split("."), reference.field_path.split(".")
-            if len(declared) == len(requested) and all(
+            lengths_match = (len(declared) >= len(requested) if reference in collections
+                             else len(declared) == len(requested))
+            if lengths_match and all(
                 actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
                 for actual, wanted in zip(declared, requested)
             ):
@@ -1270,6 +1274,12 @@ def validate_step_capabilities(
     """Validate one step against provider declarations without any I/O."""
     operation = getattr(step, "op", type(step).__name__)
     semantic_type = getattr(step, "semantic_type", None)
+    from .ir.predicates import contains_collection_predicate
+    if contains_collection_predicate(getattr(step, "predicate", None)):
+        return CapabilityValidationResult(
+            operation, semantic_type, "deferred", (),
+            "collection predicate evaluation and admission are not implemented yet",
+        )
     if isinstance(step, LookupStep):
         semantic_type = "summary" if step.target.kind == "object" else "measurement"
 

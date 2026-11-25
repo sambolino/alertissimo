@@ -176,7 +176,9 @@ versions through its existing declarative recipe.
   relative element paths, filtered aggregates and parenthesized quantifier bodies.
   Extend existing semantic-model/expression/IR owners rather than add an engine.
   The ordered ontology reader retains array items and scoped parameter domains;
-  this structural foundation does not enable collection syntax. WorkflowIR carries
+  the syntax/IR slice adds scoped aggregates and quantifiers without enabling
+  collection execution. The existing evaluator/admission owners explicitly defer
+  these predicates until their implementation slices. WorkflowIR carries
   `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
   and newer versions are refused. Route delivery and collection completeness are
   separate evidence; observed bands establish neither the full domain nor completeness.

@@ -12,9 +12,14 @@ from alertissimo.orchestration.ir import (
     SemanticReference,
 )
 
+from alertissimo.orchestration.ir.predicates import (
+    AggregateOperand, ElementReference, QuantifierPredicate, validate_collection_predicate,
+)
 from alertissimo.data_layer.runtime.classification_headline import resolve_taxon
 
 from .expression import (
+    AggregateExpression,
+    QuantifierExpression,
     BooleanExpression,
     ComparisonExpression,
     ExistsExpression,
@@ -56,6 +61,8 @@ def lower_expression_predicate(
     scoped_noun: str | None = None,
     scoped_producer: str | None = None,
     scoped_channel: str | None = None,
+    semantic_paths=None,
+    origins: tuple[str, ...] = (),
 ) -> Predicate:
     """Resolve semantic scope and lower one DSL expression into canonical IR."""
 
@@ -67,9 +74,21 @@ def lower_expression_predicate(
         scoped_channel=scoped_channel,
     )
 
-    def lower(node) -> Predicate:
+    def operand(value, *, element=False):
+        if isinstance(value, AggregateExpression):
+            return AggregateOperand(function=value.function, reference=_reference(value.reference),
+                                    condition=(lower(value.condition, element=True)
+                                               if value.condition is not None else None))
+        if element and isinstance(value, ReferenceExpression):
+            return ElementReference(field_path=".".join((value.root, *value.path)))
+        return _operand(value)
+
+    def lower(node, *, element=False) -> Predicate:
+        if isinstance(node, QuantifierExpression):
+            return QuantifierPredicate(quantifier=node.quantifier, parameter=node.parameter,
+                                       values=node.values, operand=lower(node.operand, element=element))
         if isinstance(node, ComparisonExpression):
-            left, right = _operand(node.left), _operand(node.right)
+            left, right = operand(node.left, element=element), operand(node.right, element=element)
             for reference, literal in ((left, right), (right, left)):
                 if (isinstance(reference, SemanticReference)
                         and reference.semantic_type == "classification"
@@ -92,17 +111,19 @@ def lower_expression_predicate(
         if isinstance(node, BooleanExpression):
             return BooleanPredicate(
                 operator=node.operator,
-                operands=tuple(lower(item) for item in node.operands),
+                operands=tuple(lower(item, element=element) for item in node.operands),
             )
         if isinstance(node, NotExpression):
-            return NotPredicate(operand=lower(node.operand))
+            return NotPredicate(operand=lower(node.operand, element=element))
         if isinstance(node, ExistsExpression):
-            return ExistsPredicate(reference=_reference(node.operand))
+            return ExistsPredicate(reference=operand(node.operand, element=element))
         raise PredicateLoweringError(
             f"unsupported expression node {type(node).__name__}"
         )
 
-    return lower(resolved)
+    result = lower(resolved)
+    validate_collection_predicate(result, semantic_paths=semantic_paths, origins=origins)
+    return result
 
 
 __all__ = ["PredicateLoweringError", "lower_expression_predicate"]

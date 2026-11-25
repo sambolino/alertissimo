@@ -72,14 +72,20 @@ within_mode: "first"i -> first_within_mode
              | WINDOW_BOUND
 
 latest_clause: "latest"i INT
-where_clause: "where"i TEXT
-filter_clause: "filter"i TEXT
+where_clause: "where"i predicate_text
+filter_clause: "filter"i predicate_text
 confirm_clause: "confirm"i "by"i INT "via"i broker_list
 
 // WITH predicates are inline and explicit. There is no indentation-based scope
 // and no implicit conjunction between physical lines.
 with_clause: "with"i requirement scoped_where?
-scoped_where: "where"i TEXT
+scoped_where: "where"i predicate_text
+
+// Newlines belong to a predicate only inside an open parenthesis.
+// Quoted strings are atomic, so their parentheses and # are ordinary characters.
+predicate_text: (PREDICATE_CHUNK | predicate_group)+
+predicate_group: "(" (PREDICATE_CHUNK | predicate_group | _NL)* ")"
+PREDICATE_CHUNK: /(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^#()'"\r\n])+/
 
 requirement: PRODUCT from_clause? requirement_via? using_clause?
 // The surface model currently admits broker lists for classification only.

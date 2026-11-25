@@ -11,6 +11,7 @@ from .models import (
     TargetKind, TargetSelector, TimeContext, UtilityScoreStep, WorkflowIR,
 )
 from .predicates import (
+    AggregateOperand, ElementReference, QuantifierPredicate,
     BooleanPredicate,
     ComparisonPredicate,
     ExistsPredicate,
@@ -24,6 +25,7 @@ from .predicates import (
 )
 
 __all__ = [
+    "AggregateOperand", "ElementReference", "QuantifierPredicate",
     "ActionStep", "AggregateStep", "AnalyzeStep", "BooleanPredicate",
     "ClassifyStep", "ColorColorStep", "ColorMagnitudeStep", "CompareStep",
     "ComparisonPredicate", "ConeSearchStep", "ConfirmStep", "DeriveStep",

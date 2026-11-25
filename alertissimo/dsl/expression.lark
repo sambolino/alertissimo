@@ -14,6 +14,7 @@ start: expression
 ?atom: "(" expression ")"                      -> grouped
      | exists_expr
      | comparison
+     | quantifier
 
 exists_expr: EXISTS reference                   -> exists_prefix
            | reference EXISTS                   -> exists_suffix
@@ -22,7 +23,23 @@ comparison: operand COMP_OP operand
 
 ?operand: reference
         | literal
+        | aggregate
 
+aggregate: COUNT "(" reference (WHERE expression)? ")" -> count_aggregate
+         | MIN "(" reference ")"                     -> min_aggregate
+         | MAX "(" reference ")"                     -> max_aggregate
+quantifier: FOR quantifier_kind PARAMETER domain_restriction? ":" "(" expression ")"
+quantifier_kind: "any"i -> any_kind
+               | "every"i -> every_kind
+domain_restriction: "in"i "[" [DOMAIN_VALUE ("," DOMAIN_VALUE)*] "]"
+
+COUNT.3: /count(?=(?:\s|#[^\r\n]*(?:\r?\n|$))*\()/i
+MIN.3: /min(?=(?:\s|#[^\r\n]*(?:\r?\n|$))*\()/i
+MAX.3: /max(?=(?:\s|#[^\r\n]*(?:\r?\n|$))*\()/i
+WHERE.3: "where"i
+FOR.3: /for(?=(?:\s|#[^\r\n]*(?:\r?\n|$))+(?:any|every)(?:\s|#[^\r\n]*(?:\r?\n|$))+\{)/i
+PARAMETER: /\{[A-Za-z][A-Za-z0-9_-]*\}/
+DOMAIN_VALUE: /[A-Za-z][A-Za-z0-9_-]*/
 reference: REFERENCE
 
 ?literal: STRING                                -> string
@@ -44,5 +61,6 @@ REFERENCE.1: /[A-Za-z][A-Za-z0-9_-]*(?:@[A-Za-z][A-Za-z0-9_-]*(?::[A-Za-z][A-Za-
 STRING: /"(?:\\.|[^"\\])*"/ | /'(?:\\.|[^'\\])*'/
 
 %import common.SIGNED_NUMBER
-%import common.WS_INLINE
-%ignore WS_INLINE
+%import common.WS
+%ignore WS
+%ignore /#[^\r\n]*/
