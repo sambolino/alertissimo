@@ -8,14 +8,17 @@ IDs 1–11 and their current/target states. Coarse classification, universal bes
 catalogue diversity, semantic discovery and uniform temporal/latest selection are
 required priorities. Cutouts are the last required feature expansion.
 
-- [Collection contract](../docs/dsl_collections.md): ontology parameters, relative
-  element paths and parenthesized bodies; D3 decisions are fixed. The reader now
-  retains array/items boundaries and scoped domains; WorkflowIR carries version 2
-  with legacy version-1 deserialization and refusal of newer versions. Expression
-  examples remain unimplemented. No delivered-band declarations or evaluator are
-  enabled by this foundation; extend the existing strict capability loader before
-  adding route delivery metadata. Initial collections plus latest await item 4a;
-  collection confirm, measurement acquisition, binders and FP syntax remain deferred.
+- [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
+  are prepared; collection evaluation and admission remain explicitly deferred.
+  Frozen aggregate/element/quantifier nodes use the existing kind discriminator;
+  version 1 rejects them. Multiline predicates preserve original coordinates.
+  No delivered-band declarations, recipe or capability changes belong to these
+  slices. Delivery metadata and its approved loader amendment await the first
+  route-completeness slice under item 7; mixed detection/non-detection arrays need
+  evidence covering the whole collection. Initial collections plus latest await
+  item 4a; collection confirm, measurement acquisition, binders and FP syntax remain deferred.
+  The maintainer runs tests and all Git/GitHub commands locally. Prepare patches
+  and include complete apply/test/commit/push/PR/check/squash/update commands.
 - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
   audit tooling; preserve catalogue scope, units and ownership.
 - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted

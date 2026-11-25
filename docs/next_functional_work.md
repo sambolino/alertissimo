@@ -108,12 +108,17 @@ before ranking. An upper limit inside the window is not a detection witness.
 
 ## 6. Collection DSL
 
-**Current:** scalar comparisons/Boolean/existence work; aggregate calls and
-quantifiers do not. The ontology reader retains arrays, element roots and scoped
-parameters, including origin-declared filters. WorkflowIR versioning distinguishes
-new version 2 from unversioned serialized version 1. Delivered-band declarations,
-expression binding/evaluation and admission remain unfinished; the existing strict
-capability loader needs a scoped extension before accepting route delivery metadata.
+**Current:** scalar comparisons/Boolean/existence work. Collection syntax and
+canonical IR are prepared with scope, domain, product-ambiguity and version checks;
+multiline predicates preserve source coordinates. Local tests/CI establish acceptance.
+Evaluation and admission remain explicitly unavailable. Delivered-band declarations
+are deferred to the first per-route collection-completeness slice, alongside the
+approved loader amendment; recipes and capability files remain untouched here.
+
+Once evaluation/admission land, witnessed lower bounds (`count >= N`), `min < x`
+and `for any` can work with open completeness. Exact counts, `count = 0`, `min > x`
+and `for every` failing only on a short band remain unknown until a route establishes
+collection completeness. Known contradictory witnesses can still disprove a claim.
 
 **Target/work:** implement the [agreed contract](dsl_collections.md) in existing
 semantic-model, expression/IR, evaluator and planner owners. Use `{filter}`/
@@ -139,6 +144,13 @@ the checked LSST definitions have no corresponding flag mapping.
 and a reviewed canonical mapping. Map true/false limit flags where native evidence
 establishes them; retain unknown otherwise. Missing flux alone is not non-detection,
 nor is a detection's limiting depth another observation.
+
+**Per-route collection completeness:** establish evidence on the existing path,
+starting with detection-only arrays that exactly match an existing temporal proof.
+A detection-history proof does not cover an array containing non-detections.
+The first proven route also introduces its delivered-band declaration and the
+approved existing-loader support. Keep incidental measurement counts open until
+acquisition/completeness is defined.
 
 **Completion:** executable supported measurement intent and reliable field semantics,
 preserving incidental evidence, distinct products and shared presentation. Do not

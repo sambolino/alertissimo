@@ -8,8 +8,10 @@ import json
 import re
 from typing import Literal
 
-from lark import Lark, Transformer, UnexpectedInput
+from lark import Lark, Transformer, UnexpectedInput, v_args
 from lark.exceptions import VisitError
+
+from .expression import ExpressionParseError, parse_expression
 
 from .surface import (
     AngularRadius,
@@ -124,6 +126,27 @@ def _with_predicates(
 
 class _SurfaceTransformer(Transformer):
     """Transform formal syntax directly into the provider-independent surface AST."""
+
+    def __init__(self, source: str):
+        super().__init__()
+        self.source = source
+
+    @v_args(meta=True)
+    def predicate_text(self, meta, _items):
+        raw = self.source[meta.start_pos:meta.end_pos]
+        value = raw.strip()
+        start = meta.start_pos + len(raw) - len(raw.lstrip())
+        try:
+            parse_expression(value)
+        except ExpressionParseError as error:
+            prefix = self.source[:start]
+            base_line = prefix.count("\n") + 1
+            base_column = len(prefix.rsplit("\n", 1)[-1]) + 1
+            relative_line = error.line or 1
+            column = error.column or 1
+            raise DSLParseError(error.message, line=base_line + relative_line - 1,
+                                column=column + (base_column - 1 if relative_line == 1 else 0)) from error
+        return value
 
     def start(self, items):
         return items[0]
@@ -274,35 +297,38 @@ class _SurfaceTransformer(Transformer):
         return RankedByClause(criterion=criterion, direction=direction)
 
 
-_TRANSFORMER = _SurfaceTransformer()
-
-
 def _canonicalize_layout(script: str) -> str:
-    """Erase indentation as syntax while preserving line-oriented diagnostics.
-
-    Alertissimo DSL does not use indentation to establish scope. Every meaningful
-    line is normalized to the same layout level before parsing. Predicate grouping
-    must therefore be expressed with explicit boolean syntax, and WITH-scoped
-    predicates must be written inline as ``with ... where <expression>``.
-    Blank and comment-only lines preserve line count for diagnostics.
-    """
-
-    out: list[str] = []
-    for raw in script.splitlines():
-        stripped = raw.strip()
-        if not stripped:
-            out.append("")
-        else:
-            out.append(stripped)
-    return "\n".join(out) + ("\n" if script.endswith("\n") else "")
+    """Whitespace is cosmetic in Lark; retain it for original source coordinates."""
+    return script
 
 
 def _meaningful_lines(script: str) -> list[tuple[int, str]]:
-    return [
-        (number, raw.strip())
-        for number, raw in enumerate(script.splitlines(), start=1)
-        if raw.strip() and not raw.lstrip().startswith("#")
-    ]
+    """Preflight logical clauses, skipping only parenthesized continuation lines."""
+    result = []
+    depth = 0
+    quote = None
+    escaped = False
+    for number, raw in enumerate(script.splitlines(), start=1):
+        text = raw.strip()
+        if depth == 0 and text and not text.startswith("#"):
+            result.append((number, text))
+        for character in raw:
+            if quote is not None:
+                if escaped:
+                    escaped = False
+                elif character == "\\":
+                    escaped = True
+                elif character == quote:
+                    quote = None
+            elif character == "#":
+                break
+            elif character in ("'", '"'):
+                quote = character
+            elif character == "(":
+                depth += 1
+            elif character == ")":
+                depth = max(0, depth - 1)
+    return result
 
 
 def _preflight_structure(script: str) -> None:
@@ -403,7 +429,7 @@ def parse_surface_script(script: str) -> SurfaceScript:
     _preflight_structure(normalized)
 
     try:
-        result = _TRANSFORMER.transform(
+        result = _SurfaceTransformer(normalized).transform(
             _lark_parser().parse(normalized, start="start")
         )
     except VisitError as exc:
@@ -433,7 +459,7 @@ def parse_surface_fragment(fragment: str) -> SurfaceFragment:
     _preflight_fragment(normalized)
 
     try:
-        result = _TRANSFORMER.transform(
+        result = _SurfaceTransformer(normalized).transform(
             _lark_parser().parse(normalized, start="fragment")
         )
     except VisitError as exc:

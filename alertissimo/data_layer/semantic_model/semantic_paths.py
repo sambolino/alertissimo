@@ -33,6 +33,10 @@ class _Node:
         return self.name[1:-1] if self.name.startswith("{") and self.name.endswith("}") else None
 
 
+class _FieldNode(_Node):
+    """A bracket declaration denotes a scalar value, even with metadata children."""
+
+
 class SemanticPathModel:
     """Structural path model composed from the ordered ontology notation."""
 
@@ -111,7 +115,8 @@ class SemanticPathModel:
             if declaration:
                 indent = len(declaration.group("indent"))
                 name = declaration.group("name")
-                node = _Node(name, dynamic="{" in name)
+                node_type = _FieldNode if declaration.group("open") == "[" else _Node
+                node = node_type(name, dynamic="{" in name)
                 if stack:
                     stack[-1][1].children.append(node)
                 elif declaration.group("open") == "<":
@@ -207,6 +212,14 @@ class SemanticPathModel:
         if len(domains) > 1:
             raise ValueError(f"ambiguous parameter domain at {parameter_path!r}")
         return next(iter(domains), None)
+
+    def is_scalar_path(self, semantic_path: str) -> bool:
+        return any(isinstance(node, _FieldNode) and not node.is_array
+                   for node in self._path_nodes(semantic_path))
+
+    def parameter_origins(self, parameter_path: str) -> tuple[str, ...]:
+        return tuple(sorted({origin for node in self._path_nodes(parameter_path)
+                             for origin in node.domains}))
 
     def is_valid_element_path(self, collection_path: str, relative_path: str) -> bool:
         """Validate against declared items, never another Portfolio record."""

@@ -815,6 +815,9 @@ def _plan_workflow_step(
 ) -> tuple[EndpointPlan, ...]:
     """Plan one workflow occurrence, admitting orchestrated local steps."""
 
+    from ..ir.predicates import contains_collection_predicate
+    if contains_collection_predicate(getattr(step, "predicate", None)):
+        return plan_step(step, graph)  # Retain the explicit collection deferral for local Steps too.
     if isinstance(step, (FilterStep, MatchStep)):
         return ()
     # Prefer proven, already-required discovery material even when a fresh

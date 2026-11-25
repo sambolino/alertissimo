@@ -131,6 +131,9 @@ def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> 
     absence from an unqueried provider. A partial record cannot establish field
     absence if another matching record supplies that field.
     """
+    from alertissimo.orchestration.ir.predicates import contains_collection_predicate
+    if contains_collection_predicate(predicate):
+        raise ValueError("collection predicate evaluation is not implemented yet")
     selectors = tuple(dict.fromkeys(_selector(ref) for ref in iter_semantic_references(predicate)))
     records = {key: _matching_records(portfolio, key) for key in selectors}
     references = tuple(iter_semantic_references(predicate))
