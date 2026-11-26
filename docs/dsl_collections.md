@@ -1,11 +1,11 @@
 # Collection expression contract
 
-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR and local
-evaluation are accepted in #359 and #360. Admission is prepared for collection
-filters whose required material precedes evaluation.** The existing validator and
-planner prove call-scoped availability; execution uses the existing normalization
-evaluator. Admission acceptance awaits maintainer-run tests and CI. Static source
-checks are not execution evidence. No route establishes collection completeness.
+Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR #359,
+evaluation #360 and admission #361 are accepted after maintainer-run checks and CI.**
+The existing validator/planner prove call-scoped material availability; execution
+uses the existing normalization evaluator. This acceptance covers the stated
+admitted placements and guards, not fresh live-provider acceptance. No route yet
+establishes collection completeness.
 This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
 It does not create another query engine or authorize deferred FP policy.
 
@@ -51,7 +51,7 @@ with `min`. Quantifiers may nest, but an inner parameter may not shadow an outer
 one. Parenthesized bodies/aggregate arguments may span lines with `#` comments;
 indentation is cosmetic and error coordinates must refer to the original text.
 
-The currently admitted placement is a later filter over requested material:
+An admitted example is a later filter over requested material:
 
 ```text
 objects ZTF20aaaaaaa, ZTF20bbbbbbb from ztf via alerce
@@ -274,19 +274,42 @@ Flag mappings are currently uneven; see item 7. Current grammar is
 [`expression.lark`](../alertissimo/dsl/expression.lark); repetition/domain metadata
 must be retained by the existing semantic-model owner.
 
+## First completeness route: entry audit
+
+This audit checks the current mappings and existing proofs; it does not make a
+new upstream completeness claim or enable any production closure.
+
+| Checked route/array | Existing boundary | Consequence |
+|---|---|---|
+| ALeRCE/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/alerce/ztf/mappings.yaml) combine `query_lightcurve.detections` and `query_lightcurve.non_detections`; the [material time proof](../alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml) covers detections. | Do not apply the detection proof to the mixed array. |
+| ANTARES/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/antares/ztf/mappings.yaml) use `locus_alerts`, including `ant_survey = 2` upper limits; [temporal history contracts](../alertissimo/data_layer/providers/antares/ztf/capabilities.yaml) establish detection selection. | Do not infer completeness of every point from detection-history coverage. |
+| Lasair/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/lasair/ztf/mappings.yaml) use `lightcurve_candidates`; [existing regressions](../tests/test_orchestration_lasair_time.py) allow limit-only rows in that branch while excluding them as detection witnesses. | The [detection proof](../alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml) is not a proof covering the whole array. |
+
+These candidate routes do not currently meet the instruction's detection-only-
+array entry condition. This does not prove a provider cannot supply a complete
+array. The next completeness slice needs a reviewed population/projection contract:
+either evidence covering the full existing mixed array or an explicitly reviewed
+detection-only projection matched to the existing proof. Do not split arrays,
+rename semantic paths, add schema fields or broaden a temporal proof implicitly.
+The proposal must account for required-call success, payload/identity coverage and
+raw-row-to-point normalization, including omitted or invalid rows; matching time
+bounds alone is insufficient.
+The already-approved delivered-band amendment remains coupled to the first actual
+complete route; declarations alone cannot close these collections.
+
 ## Deferred extension
 
 Named binders such as `as p` are reserved for later reevaluation of self-joins and
 correlated nested collections (item 10). They must not replace the simple forms
 above. FP request syntax/policy is separately deferred in item 11.
 
-## Instruction accounting at the admission checkpoint
+## Completed instruction accounting
 
 | Requirement | Status / owner of remaining work |
 |---|---|
 | Ordered arrays/items, parameter scopes, declared filters | Done in the foundation and syntax/IR; metadata unchanged by admission. |
 | D3.10 versioning and JSON representation | Done in foundation/syntax. Admission preserves version 2 and explicitly refuses collection additions to version-1 continuations; no schema fields added. |
-| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; proven local filter execution prepared in admission. |
+| Count/min/max/quantifier syntax and canonical nodes | Done in #359; local filter admission accepted in #361. |
 | Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
 | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
 | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
@@ -294,10 +317,10 @@ above. FP request syntax/policy is separately deferred in item 11.
 | D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
 | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
 | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
-| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
-| Later filter, continuation, non-refill, facade acceptance | Prepared in admission with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest; maintainer acceptance pending. |
-| Initial where/latest and missing-material placements | Guards prepared in surface capability validation and canonical planning; completion remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
-| Collection confirm | Explicit rejection prepared, including attached propositions; bare existence confirm after a filter remains independent. |
+| D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
+| Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
+| Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+| Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
 | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
 | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
 

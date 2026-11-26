@@ -12,7 +12,9 @@ catalogues and discovery/selection are required work; cutouts come last.
 
 Current-state notes were checked on main `b7f9905` (7 November 2026): public offline
 planning, relevant source/fixtures, focused regressions and a clean installed wheel.
-They are not fresh live acceptance. Recheck the current revision before coding.
+They are not fresh live acceptance. Items 1–2 and 6 record later accepted merges;
+other provider/UI states retain that audit baseline until explicitly rechecked.
+Recheck the current revision before coding.
 
 ## 1. Coarse classification normalization
 
@@ -108,13 +110,15 @@ before ranking. An upper limit inside the window is not a detection witness.
 
 ## 6. Collection DSL
 
-**Current:** syntax/IR and evaluation are accepted in #359/#360: scoped collection
-nodes, multiline source coordinates, count/extrema ranges, Kleene quantifiers,
-branch membership and existing StepRun ambiguity warnings. Admission is prepared
-for later filters over guaranteed preceding material, including immutable version-2
-continuations and non-refilling selection. Surface and canonical guards reject
-initial collection/latest and missing-material placements naming item 4a, and reject
-collection propositions in confirm. Admission acceptance awaits maintainer-run tests/CI.
+**Accepted baseline:** syntax/IR #359, evaluation #360 and admission #361 are
+merged after maintainer-run checks and CI. Scoped nodes, multiline coordinates,
+count/extrema ranges, Kleene quantifiers, branch membership and ambiguity warnings
+are connected to later filters over guaranteed preceding material. Version-2
+continuations preserve the immutable prefix and scientific diagnostics; acquisition
+warnings still block continuation. Later filtering does not refill latest.
+Surface and canonical guards name item 4a for initial collection/latest and missing
+material, and reject collection propositions in confirm. This is offline regression
+acceptance, not a new live-provider acceptance claim.
 Delivered-band declarations are deferred to the first per-route collection-
 completeness slice under item 7; recipes and capability files remain untouched.
 Closed-bound logic has synthetic test proofs only.
@@ -124,17 +128,17 @@ and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
 and `for every` failing only on a short band remain unknown until a route establishes
 collection completeness. Known contradictory witnesses can still disprove a claim.
 
-**Target/work:** implement the [agreed contract](dsl_collections.md) in existing
-semantic-model, expression/IR, evaluator and planner owners. Use `{filter}`/
-`{output}`, relative element paths and `where for …: (...)`. No second variable
-notation or aliases for ordinary single-collection cases.
+**Completed scope:** the [agreed contract](dsl_collections.md) is implemented in
+existing semantic-model, expression/IR, evaluator and planner owners. Count/min/max,
+any/every, exact NOT duality, serialization, continuation and compatibility have
+accepted regressions. The instruction accounting records each requirement's status.
+Use `{filter}`/`{output}`, relative paths and `where for …: (...)`; no second variable
+notation or ordinary-case aliases were introduced.
 
-**Completion:** accepted count/min/max/any/every examples implementing the fixed D3
-decisions; continuation, serialization and compatibility regressions. Initial
-collection predicates with latest or without guaranteed evidence remain explicitly
-deferred to item 4a, and collection confirm predicates are out of scope. Resolve
-item 7's field dependencies.
-Optional pairwise aliases are item 10, not initial scope.
+**Remaining work:** initial collections with latest or without guaranteed material
+remain item 4a; collection confirm is explicitly out of scope. Actual completeness
+and scientific field coverage remain item 7. Optional pairwise aliases remain item
+10, and FP surface/policy remains item 11. None is silently included in completion.
 
 ## 7. Measurements, non-detections and lightcurve boundaries
 
@@ -155,6 +159,21 @@ A detection-history proof does not cover an array containing non-detections.
 The first proven route also introduces its delivered-band declaration and the
 approved existing-loader support. Keep incidental measurement counts open until
 acquisition/completeness is defined.
+
+**Completeness entry audit after #361:** the checked material-history routes do
+not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both
+`query_lightcurve.detections` and `query_lightcurve.non_detections` into `points`.
+ANTARES/ZTF maps `locus_alerts`, including the explicit upper-limit discriminator,
+into `points`. Lasair/ZTF maps `lightcurve_candidates`, where existing guards/tests
+allow limit-only rows, into `points`. Their detection proofs cannot be applied
+unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
+This is a current implementation boundary, not an upstream impossibility claim.
+
+Before implementing the first closure, review a concrete proposal for either a
+proven complete existing mixed array or a detection-only semantic projection with
+a matching proof. Do not introduce a projection, new schema field or recipe/
+capability structure under the completed collection-syntax approval. Delivered-band
+metadata alone does not resolve the evidence boundary.
 
 **Completion:** executable supported measurement intent and reliable field semantics,
 preserving incidental evidence, distinct products and shared presentation. Do not

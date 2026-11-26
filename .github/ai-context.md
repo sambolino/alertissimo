@@ -9,14 +9,16 @@ catalogue diversity, semantic discovery and uniform temporal/latest selection ar
 required priorities. Cutouts are the last required feature expansion.
 
 - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
-  are implemented; evaluation is accepted in #360. Admission is prepared in the
-  existing capability validator/planner for filters with guaranteed preceding
+  are accepted through #359/#360/#361 after maintainer-run checks and CI. Admission
+  uses the existing capability validator/planner for filters with guaranteed preceding
   material, including version-2 continuation and non-refilling latest. Required
   calls/projections and candidate origins govern proof; optional/future calls do
   not. Static ambiguity uses occurrence-local/inherited material. Initial
   collection/latest and missing evidence report item 4a; confirm propositions are
   rejected. Version-1 continuations refuse collections without an implicit upgrade.
-  Maintainer-run tests/CI establish admission acceptance.
+  The instruction accounting is closed for this agreed scope. Initial scheduling
+  remains item 4a, real completeness/field coverage item 7, binders item 10 and FP
+  policy item 11; collection confirm remains explicitly out of scope.
   Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
   and membership is branch-local. Competing products use existing StepRun warnings;
   material selection controls audit projection. Synthetic transient evidence tests
@@ -26,8 +28,11 @@ required priorities. Cutouts are the last required feature expansion.
   No delivered-band declarations, recipe or capability changes belong to these
   slices. Delivery metadata and its approved loader amendment await the first
   route-completeness slice under item 7; mixed detection/non-detection arrays need
-  evidence covering the whole collection. Initial collections plus latest await
-  item 4a; collection confirm, measurement acquisition, binders and FP syntax remain deferred.
+  evidence covering the whole collection. The current ALeRCE/ZTF, ANTARES/ZTF and
+  Lasair/ZTF candidate `points` arrays are not eligible for unchanged reuse of a
+  detection-only proof; see the entry audit in the collection contract. A new
+  projection/schema or broader recipe proof needs its concrete review before
+  implementation. Measurement acquisition, binders and FP syntax remain deferred.
   The maintainer runs tests and all implementation Git/GitHub commands locally.
   Deliver generated .patch files only through the authorized `artifact-delivery`
   branch; leave implementation branches and PRs untouched. Include fetch/git-show,
