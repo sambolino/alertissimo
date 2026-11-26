@@ -177,9 +177,15 @@ versions through its existing declarative recipe.
   Extend existing semantic-model/expression/IR owners rather than add an engine.
   The ordered ontology reader retains array items and scoped parameter domains;
   syntax/IR adds scoped aggregates and quantifiers. Local evaluation extends the
-  existing normalization predicate owner with ranges and Kleene quantifiers;
-  admission remains gated. Ambiguity uses existing StepRun warnings, surviving
-  rejected candidates and serialization. Physical audit projection follows the
+  existing normalization predicate owner with ranges and Kleene quantifiers.
+  The existing capability validator/planner admit filters from guaranteed preceding
+  required-call outputs and projections, preserving origin and classifier scope.
+  Static product ambiguity uses occurrence-local/inherited material. Initial
+  collections plus latest and unproven material report item 4a; collection confirm
+  is rejected. Scalar continuation retains its version; collections require 2.
+  Ambiguity uses existing StepRun warnings, surviving
+  rejected candidates, serialization and immutable continuation; acquisition
+  warnings still block continuation. Physical audit projection follows the
   material decision rather than re-evaluating collection fragments. Synthetic
   transient evidence exercises completeness; no production route supplies it.
   No Portfolio/result schema or runtime layer is added. WorkflowIR carries

@@ -791,8 +791,10 @@ def _lower_confirm(
     )
 
 
-def _validate_semantics(surface: SurfaceScript, semantic_paths: _SemanticPaths) -> None:
-    report = validate_surface_semantics(surface, semantic_paths=semantic_paths)
+def _validate_semantics(
+    surface: SurfaceScript, semantic_paths: _SemanticPaths, *, base_workflow: WorkflowIR | None = None,
+) -> None:
+    report = validate_surface_semantics(surface, semantic_paths=semantic_paths, base_workflow=base_workflow)
     if report.is_valid:
         return
     first = report.errors[0]
@@ -832,11 +834,20 @@ def _implicit_requirements_from_where(
     *,
     record_types: frozenset[str],
 ) -> tuple[RequirementClause, ...]:
+    from .expression import contains_collection_expression, parse_expression
+    collection = contains_collection_expression(parse_expression(clause.condition))
     requirements: list[RequirementClause] = []
     for ref in extract_semantic_record_references(clause.condition, record_types):
+        producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
+        if (collection and ref.noun == "lightcurve"
+            and len(surface.candidates.origins) == 1
+            and producer == surface.candidates.origins[0]):
+            # lightcurve@<origin>:<broker> is preserved by Get.sources plus the
+            # unchanged predicate. It is not a method request on the Get itself.
+            # Multiple origins or other producers cannot use this equivalence.
+            producer = None
         requirement = RequirementClause(
-            product=ref.noun,
-            source=None if ref.noun == "classification" and ref.producer == "headline" else ref.producer,
+            product=ref.noun, source=producer,
             via=ref.channel,
         )
         try:
@@ -1122,7 +1133,7 @@ def compile_surface_fragment(
             code="invalid_fragment_base_workflow",
         ) from error
 
-    _validate_semantics(context, semantic_model)
+    _validate_semantics(context, semantic_model, base_workflow=base_workflow)
     capability_report = validate_surface_fragment_capabilities(
         fragment,
         base_workflow,
@@ -1161,6 +1172,16 @@ def _lower_fragment_intent(
     semantic_paths=None, graph: CapabilityGraph | None = None,
 ) -> SurfaceCompilation:
     """Lower continuation intent using its actual canonical base."""
+    if base_workflow.dsl_version < 2:
+        from .expression import contains_collection_expression, parse_expression
+        for index, clause in enumerate(context.clauses):
+            conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
+                          else clause.predicates if isinstance(clause, RequirementClause) else ())
+            if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
+                raise SurfaceLoweringError(
+                    "collection predicates require dsl_version 2; a version-1 continuation is not implicitly upgraded",
+                    code="collection_language_version", clause_index=index,
+                )
     confirm_predicates, _ = _confirmation_scope(context, record_types=record_types)
     steps = list(base_workflow.steps)
     view = ResultViewSpec()

@@ -1,4 +1,4 @@
-"""Collection syntax is representable and validated, but not executable yet."""
+"""Collection syntax, scope and admission remain separate contracts."""
 
 import pytest
 from pydantic import TypeAdapter
@@ -34,12 +34,12 @@ def paths():
     "for any {output}: (classification.assessment.{output}.probability >= 0.8)",
     "for every {output}: (classification@lc_classifier:alerce.assessment.{output}.probability >= 0.8)",
 ])
-def test_agreed_forms_validate_but_are_explicitly_not_runnable(source):
-    result = validate_dsl(PREFIX + "filter " + source, continue_from=None)
+def test_agreed_forms_without_required_material_validate_but_are_not_runnable(source):
+    result = validate_dsl("object ZTF20acpwljl from ztf via alerce\nfilter " + source, continue_from=None)
     assert result.is_valid, result
     assert not result.is_runnable
     assert result.capabilities.deferred
-    assert "collection admission is pending" in result.capabilities.deferred[0].reason
+    assert "item 4a" in result.capabilities.deferred[0].reason
 
 
 def test_multiline_quantifier_comments_and_json_round_trip(paths):
@@ -121,14 +121,14 @@ def test_ontology_scope_and_domains_reject_invalid_programs(source):
 
 
 def test_static_product_ambiguity_requires_existing_qualifier():
-    source = PREFIX + "with lightcurve via fink\nwith lightcurve via lasair\nfilter count(lightcurve.points) >= 5"
+    source = "object ZTF20acpwljl from ztf via alerce\nwith lightcurve via fink\nwith lightcurve via lasair\nfilter count(lightcurve.points) >= 5"
     result = validate_dsl(source, continue_from=None)
     assert not result.is_valid
     assert any("qualify" in issue.message for issue in result.semantic.errors)
     qualified = source.replace("count(lightcurve.points)", "count(lightcurve@ztf:fink.points)")
     result = validate_dsl(qualified, continue_from=None)
     assert result.is_valid
-    assert not result.is_runnable
+    assert result.is_runnable, result.lowering_error
 
 
 def test_distinct_nested_parameters_are_allowed_without_shadowing():

@@ -137,6 +137,7 @@ def _candidate_view_from_step(
     material_source: StepPortfolioResult | None = None,
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
     validate_semantic_model: bool,
+    diagnostics: list[str] | None = None,
 ) -> StepPortfolioResult:
     """Build the semantic candidate/material view needed during staged execution."""
 
@@ -157,7 +158,7 @@ def _candidate_view_from_step(
         realization = plan.predicate_realization
         residual = realization.residual if realization is not None else None
         if residual is not None:
-            portfolios = prune_portfolios(portfolios, residual)
+            portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
         executions.append(
             ExecutionPortfolioResult(
                 execution_id=execution_id,
@@ -209,6 +210,7 @@ def _candidate_view_from_plan_executions(
     *,
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
     validate_semantic_model: bool,
+    diagnostics: list[str] | None = None,
 ) -> StepPortfolioResult:
     """Normalize one physical plan early for a same-Step dependent plan."""
 
@@ -226,7 +228,7 @@ def _candidate_view_from_plan_executions(
         realization = plan.predicate_realization
         residual = realization.residual if realization is not None else None
         if residual is not None:
-            portfolios = prune_portfolios(portfolios, residual)
+            portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
         normalized.append(
             ExecutionPortfolioResult(
                 execution_id=execution_id,
@@ -499,7 +501,7 @@ def execute_staged_workflow_run(
         vacuous_plan_indexes: list[int] = []
         executions: list[ExecutionResult] = []
         execution_plan_indexes: list[int] = []
-        warnings: list[str] = []
+        warnings: list[str] = (list(original_step_run.warnings) if step_index < len(_prior_steps) else [])
         candidate_ids_by_origin_by_plan: dict[int, dict[str, tuple[str, ...]]] = {}
 
         for plan_index, plan in enumerate(original_step_run.endpoint_plans):
@@ -651,7 +653,7 @@ def execute_staged_workflow_run(
                     plan_index,
                     tuple(plan_executions),
                     normalized_execution_cache=normalized_execution_cache,
-                    validate_semantic_model=validate_semantic_model,
+                    validate_semantic_model=validate_semantic_model, diagnostics=warnings,
                 )
                 candidate_ids_by_origin_by_plan[plan_index] = (
                     _candidate_ids_by_origin_from_view(view)
@@ -706,8 +708,11 @@ def execute_staged_workflow_run(
                 result,
                 material_source=material_source,
                 normalized_execution_cache=normalized_execution_cache,
-                validate_semantic_model=validate_semantic_model,
+                validate_semantic_model=validate_semantic_model, diagnostics=warnings,
             )
+            if tuple(warnings) != succeeded.warnings:
+                succeeded = succeeded.model_copy(update={"warnings": tuple(warnings)})
+                updated_run = _updated_run(updated_run, succeeded)
             view = apply_classification_selection(step, view)
             view = apply_time_selection(step, succeeded, view)
             view = apply_search_selection(step, view, succeeded)
@@ -748,6 +753,8 @@ def execute_staged_workflow_run(
         normalized_execution_cache=normalized_execution_cache,
         preserved_steps=_prior_steps,
     )
+    if normalized.run is not execution_result.run:
+        execution_result = WorkflowExecutionResult(run=normalized.run, steps=execution_result.steps)
     return StagedWorkflowResult(
         execution=execution_result,
         bindings=tuple(bindings),

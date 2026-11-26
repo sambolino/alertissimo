@@ -108,18 +108,19 @@ before ranking. An upper limit inside the window is not a detection witness.
 
 ## 6. Collection DSL
 
-**Current:** scalar comparisons/Boolean/existence work. Collection syntax and
-canonical IR are implemented with scope, domain, product-ambiguity and version
-checks; multiline predicates preserve source coordinates. Local evaluation is
-prepared in the existing predicate owner: count/extrema ranges, Kleene quantifiers,
-branch membership and existing StepRun ambiguity warnings. Evaluation acceptance
-awaits maintainer-run tests/CI. Workflow admission remains explicitly gated.
+**Current:** syntax/IR and evaluation are accepted in #359/#360: scoped collection
+nodes, multiline source coordinates, count/extrema ranges, Kleene quantifiers,
+branch membership and existing StepRun ambiguity warnings. Admission is prepared
+for later filters over guaranteed preceding material, including immutable version-2
+continuations and non-refilling selection. Surface and canonical guards reject
+initial collection/latest and missing-material placements naming item 4a, and reject
+collection propositions in confirm. Admission acceptance awaits maintainer-run tests/CI.
 Delivered-band declarations are deferred to the first per-route collection-
-completeness slice, alongside the approved loader amendment; recipes and capability
-files remain untouched here. Closed-bound logic has synthetic test proofs only.
+completeness slice under item 7; recipes and capability files remain untouched.
+Closed-bound logic has synthetic test proofs only.
 
-After admission, witnessed lower bounds (`count >= N`), `min < x`
-and `for any` can work with open completeness. Exact counts, `count = 0`, `min > x`
+With admitted material, witnessed lower bounds (`count >= N`), `min < x`
+and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
 and `for every` failing only on a short band remain unknown until a route establishes
 collection completeness. Known contradictory witnesses can still disprove a claim.
 

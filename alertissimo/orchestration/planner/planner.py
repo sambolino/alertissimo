@@ -55,6 +55,7 @@ from alertissimo.orchestration.validation import (
     CapabilityValidationResult,
     SourceCapabilityResult,
     classification_material_capabilities,
+    collection_workflow_issues,
     predicate_material_gaps,
     retrieval_record_requirement as _get_record_requirement,
     validate_step_capabilities,
@@ -815,9 +816,6 @@ def _plan_workflow_step(
 ) -> tuple[EndpointPlan, ...]:
     """Plan one workflow occurrence, admitting orchestrated local steps."""
 
-    from ..ir.predicates import contains_collection_predicate
-    if contains_collection_predicate(getattr(step, "predicate", None)):
-        return plan_step(step, graph)  # Retain the explicit collection deferral for local Steps too.
     if isinstance(step, (FilterStep, MatchStep)):
         return ()
     # Prefer proven, already-required discovery material even when a fresh
@@ -832,6 +830,10 @@ def _plan_workflow_step(
 def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
     """Plan Steps, then mark candidate dependencies and proven execution reuse."""
 
+    issues = collection_workflow_issues(workflow, graph)
+    if issues:
+        index, reason = issues[0]
+        raise PlanningDeferredError(f"step_index {index}: {reason}")
     pending_run = WorkflowRun.from_workflow(workflow)
     earlier: list[StepRun] = []
     for step_run in pending_run.steps:
