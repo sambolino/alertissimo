@@ -1,0 +1,34 @@
+diff --git a/tests/test_orchestration_collection_evaluation.py b/tests/test_orchestration_collection_evaluation.py
+--- a/tests/test_orchestration_collection_evaluation.py
++++ b/tests/test_orchestration_collection_evaluation.py
+@@ -362,13 +362,28 @@
+ 
+ 
+ def test_negated_output_existence_remains_on_the_bound_assertion():
++    # Literal DSL path components normalize to lowercase. Keep the output key
++    # lowercase too; the class label is a separate, case-preserved value.
++    p = candidate((CLASS, {'assessment.sn.class': 'SN'}),
++                  (CLASS, {'assessment.sn.probability': 0.9}))
++    expression = ('for any {output}: '
++                  '(not (classification.assessment.{output}.probability exists))')
++    assert truth(p, expression) is True
++    # Existing scalar NOT EXISTS still asks about the complete current view.
++    assert truth(p, 'not (classification.assessment.sn.probability exists)') is False
++
++
++def test_quantified_output_case_and_canonical_scalar_absence_keep_their_scope():
++    from alertissimo.orchestration.ir.predicates import ExistsPredicate, SemanticReference
+     p = candidate((CLASS, {'assessment.SN.class': 'SN'}),
+                   (CLASS, {'assessment.SN.probability': 0.9}))
+     expression = ('for any {output}: '
+                   '(not (classification.assessment.{output}.probability exists))')
++    # Runtime domains retain delivered case; they are not literal surface paths.
+     assert truth(p, expression) is True
+-    # Existing scalar NOT EXISTS still asks about the complete current view.
+-    assert truth(p, 'not (classification.assessment.SN.probability exists)') is False
++    explicit = NotPredicate(operand=ExistsPredicate(reference=SemanticReference(
++        semantic_type='classification', field_path='assessment.SN.probability')))
++    assert evaluate_portfolio_predicate_truth(p, explicit) is False
+ 
+ 
+ def test_output_fields_never_mix_between_outputs_in_one_record():
