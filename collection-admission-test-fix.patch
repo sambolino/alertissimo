@@ -1,0 +1,64 @@
+diff --git a/tests/test_orchestration_collection_admission.py b/tests/test_orchestration_collection_admission.py
+--- a/tests/test_orchestration_collection_admission.py
++++ b/tests/test_orchestration_collection_admission.py
+@@ -178,7 +178,7 @@
+     result = validate_dsl('objects from ztf via alerce\ninside (10, 20, 30arcsec)\n' + tail,
+                           graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'item 4a' in result.lowering_error.message
++    assert 'item 4a' in str(result.lowering_error)
+     assert result.capabilities.deferred
+ 
+ 
+@@ -186,21 +186,21 @@
+     source = 'objects from ztf via alerce\ninside (10, 20, 30arcsec)\nwhere ' + COUNT + '\n' + GET
+     result = validate_dsl(source, graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'item 4a' in result.lowering_error.message
++    assert 'item 4a' in str(result.lowering_error)
+ 
+ 
+ def test_future_retrieval_does_not_supply_an_earlier_filter(graph):
+     result = validate_dsl(LOOKUP + 'filter ' + COUNT + '\n' + GET, graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'item 4a' in result.lowering_error.message
+-    assert 'before this step' in result.lowering_error.message
++    assert 'item 4a' in str(result.lowering_error)
++    assert 'before this step' in str(result.lowering_error)
+ 
+ 
+ @pytest.mark.parametrize('clause', ['where ' + COUNT, 'with lightcurve via fink where ' + COUNT])
+ def test_collection_propositions_in_confirm_are_rejected(graph, clause):
+     result = validate_dsl(LOOKUP + clause + '\nconfirm by 1 via fink', graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'collection predicates in confirm' in result.lowering_error.message
++    assert 'collection predicates in confirm' in str(result.lowering_error)
+     assert result.capabilities.deferred[0].subject == 'confirm'
+ 
+ 
+@@ -269,7 +269,7 @@
+         replace(item, calls=(thin,)) if item == original else item for item in graph.recipe_capabilities))
+     result = validate_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph_without_flag, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'upper_limit' in result.lowering_error.message
++    assert 'upper_limit' in str(result.lowering_error)
+     projected_endpoint = replace(endpoint, supports_projection=True, projection_param='columns')
+     projected_graph = replace(graph, endpoint_capabilities=tuple(
+         projected_endpoint if item == endpoint else item for item in graph.endpoint_capabilities))
+@@ -290,7 +290,7 @@
+     graph = replace(graph, recipe_capabilities=graph.recipe_capabilities + (alternative,))
+     result = validate_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'upper_limit' in result.lowering_error.message
++    assert 'upper_limit' in str(result.lowering_error)
+ 
+ 
+ def test_future_product_does_not_make_an_earlier_unqualified_filter_ambiguous(graph):
+@@ -447,5 +447,5 @@
+     lasair_condition = COUNT.replace('lightcurve@ztf:fink', 'lightcurve@ztf:lasair')
+     result = validate_dsl(LOOKUP + GET + 'filter ' + lasair_condition, graph=graph, continue_from=None)
+     assert result.is_valid and not result.is_runnable
+-    assert 'item 4a' in result.lowering_error.message
+-    assert 'lightcurve@ztf:lasair' in result.lowering_error.message
++    assert 'item 4a' in str(result.lowering_error)
++    assert 'lightcurve@ztf:lasair' in str(result.lowering_error)
