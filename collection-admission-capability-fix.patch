@@ -1,0 +1,70 @@
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -830,25 +830,30 @@
+                     semantic_paths=semantic_model,
+                 ))
+         elif isinstance(clause, WhereClause):
+-            for ref in extract_semantic_record_references(
+-                clause.condition, semantic_model.record_types
+-            ):
++            if contains_collection_expression(parse_expression(clause.condition)):
++                # Validate the same requests lowering will emit. Collection
++                # material availability was already proved for the whole IR.
++                from .lowering import _implicit_requirements_from_where
++                requirements = _implicit_requirements_from_where(
++                    surface, clause, record_types=semantic_model.record_types,
++                )
++            else:
++                requirements = tuple(RequirementClause(
++                    product=ref.noun, source=ref.producer, via=ref.channel,
++                ) for ref in extract_semantic_record_references(
++                    clause.condition, semantic_model.record_types,
++                ))
++            for requirement in requirements:
+                 signature = (
+-                    ref.noun,
+-                    ref.producer,
+-                    ref.channel or surface.candidates.broker,
++                    requirement.product, requirement.source,
++                    requirement.via or surface.candidates.broker,
+                 )
+                 if signature in checked_requirements:
+                     continue
+                 checked_requirements.add(signature)
+                 checks.extend(
+                     _requirement_checks(
+-                        surface,
+-                        RequirementClause(
+-                            product=ref.noun,
+-                            source=ref.producer,
+-                            via=ref.channel,
+-                        ),
++                        surface, requirement,
+                         clause_index=index,
+                         graph=capability_graph,
+                         record_types=semantic_model.record_types,
+diff --git a/tests/test_orchestration_collection_admission.py b/tests/test_orchestration_collection_admission.py
+--- a/tests/test_orchestration_collection_admission.py
++++ b/tests/test_orchestration_collection_admission.py
+@@ -471,3 +471,20 @@
+     where = next(clause for clause in surface.clauses if isinstance(clause, WhereClause))
+     requests = _implicit_requirements_from_where(surface, where, record_types=paths.record_types)
+     assert requests and all(request.source == 'ztf' and request.via == 'fink' for request in requests)
++
++
++def test_collection_where_capabilities_match_the_requests_in_canonical_lowering(graph):
++    from alertissimo.dsl import validate_surface_capabilities
++    implicit_source = LOOKUP + 'where ' + COUNT
++    surface = parse_surface_script(implicit_source)
++    report = validate_surface_capabilities(surface, graph=graph)
++    assert report.is_supported, report
++    requests = tuple(check for check in report.checks if check.subject == 'requirement')
++    assert requests and all(check.semantic_noun == 'lightcurve' for check in requests)
++    assert all(check.producer is None and check.origin == 'ztf' and check.broker == 'fink'
++               for check in requests)
++    implicit = validate_dsl(implicit_source, graph=graph, continue_from=None)
++    explicit = validate_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph, continue_from=None)
++    assert implicit.is_runnable, implicit.lowering_error
++    assert explicit.is_runnable, explicit.lowering_error
++    assert implicit.compilation.workflow == explicit.compilation.workflow
