@@ -39,7 +39,7 @@ def test_agreed_forms_validate_but_are_explicitly_not_runnable(source):
     assert result.is_valid, result
     assert not result.is_runnable
     assert result.capabilities.deferred
-    assert "evaluation and admission" in result.capabilities.deferred[0].reason
+    assert "collection admission is pending" in result.capabilities.deferred[0].reason
 
 
 def test_multiline_quantifier_comments_and_json_round_trip(paths):

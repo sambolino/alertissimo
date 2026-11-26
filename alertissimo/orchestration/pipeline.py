@@ -243,6 +243,7 @@ def _filter_view(
     step: FilterStep,
     step_index: int,
     source: StepPortfolioResult,
+    *, diagnostics: list[str] | None = None,
 ) -> StepPortfolioResult:
     if step.predicate is None:
         if step.criteria:
@@ -252,7 +253,7 @@ def _filter_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        materialized = prune_portfolios(source.portfolios, step.predicate)
+        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
         executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_index,
@@ -376,6 +377,7 @@ def execute_staged_workflow_run(
             continue
 
         if isinstance(step, FilterStep):
+            diagnostics: list[str] = []
             binding = StepBindingResult(step_index=step_index, bound_calls=())
             bindings.append(binding)
             result = StepExecutionResult(step_index=step_index, executions=())
@@ -396,7 +398,7 @@ def execute_staged_workflow_run(
                 if step_index < len(_prior_steps):
                     view = _prior_steps[step_index]
                 else:
-                    view = _filter_view(step, step_index, source_view)
+                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics)
                     view = apply_deferred_search_selection(
                         run.workflow, view, candidate_views_by_step, updated_run.steps,
                     )
@@ -424,6 +426,8 @@ def execute_staged_workflow_run(
                     "state": StepRunState.SUCCEEDED,
                     "execution_ids": (),
                     "error": None,
+                    "warnings": original_step_run.warnings + tuple(
+                        message for message in diagnostics if message not in original_step_run.warnings),
                 }
             )
             updated_run = _updated_run(updated_run, succeeded)

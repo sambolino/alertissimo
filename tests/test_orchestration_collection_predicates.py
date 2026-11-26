@@ -147,7 +147,7 @@ def test_material_walker_understands_array_roots_and_element_leaves(graph, paths
     assert predicate_material_gaps(predicate, outputs, broker="fink") == ()
     result = validate_step_capabilities(FilterStep(predicate=predicate), graph)
     assert result.status == "deferred"
-    assert "evaluation and admission" in result.reason
+    assert "collection admission is pending" in result.reason
 
 
 @pytest.mark.parametrize("function,field", [
@@ -185,5 +185,5 @@ def test_mixed_scalar_and_collection_pushdown_retains_the_collection(graph):
 def test_workflow_planning_cannot_bypass_the_local_filter_gate(graph):
     from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
     workflow = WorkflowIR(steps=[FilterStep(predicate=comparison())])
-    with pytest.raises(PlanningDeferredError, match="evaluation and admission"):
+    with pytest.raises(PlanningDeferredError, match="collection admission is pending"):
         plan_workflow(workflow, graph)

@@ -1,10 +1,11 @@
 # Collection expression contract
 
 Agreed design with D3 decisions fixed on 13 November 2026. **Syntax and canonical
-IR are prepared; collection expressions are not runnable.** The syntax/IR slice
-adds frozen nodes, scoped validation, multiline parsing and JSON representation.
-Evaluation and admission remain explicitly gated pending their subsequent slices.
-Maintainer-run tests and CI establish acceptance of this slice.
+IR are implemented; local evaluation is prepared, but collection expressions remain
+not runnable through workflows.** The evaluator in the existing normalization
+owner adds ranges, Kleene quantifiers, branch membership and ambiguity warnings.
+Admission remains gated for the next slice. Evaluation acceptance awaits the
+maintainer's local tests and CI; static source checks are not execution evidence.
 This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
 It does not create another query engine or authorize deferred FP policy.
 
@@ -89,8 +90,9 @@ retrieval failures or current execution-policy completeness failures.
 
 ## D3 decisions
 
-These are the agreed evaluator/admission contract. The syntax/IR slice represents
-and validates the constructs; it does not implement their scientific evaluation.
+These are the agreed evaluator/admission contract. Syntax/IR represents and
+validates the constructs. The existing normalization predicate evaluator now
+implements their local evaluation; workflow admission remains a separate slice.
 
 1. **Counts are ranges.** For `count(C where P)`, L is the number of true members;
    U is L plus unknown members only when C is known complete, otherwise infinity.
@@ -173,6 +175,26 @@ workflow validation checks placement/scope even after JSON deserialization. Vers
 Collection references and relative leaves feed the existing material/headline
 walkers. Native predicate realization leaves collection expressions residual.
 
+## Evaluation boundary
+
+The existing predicate owner exposes a three-valued internal result; its existing
+Boolean callers still select only established `True`. Scalar assertion binding,
+explicit absence and taxon comparisons retain their existing meaning. Collection
+comparisons do not create provider parameters or retrievals.
+
+For testing the closed-bound branch, the evaluator accepts transient explicit
+evidence keyed by `(internal_record_id, exact_array_path)`, with completeness and
+delivered-band values. Synthetic test proofs exercise this branch; no production
+route supplies them. The evidence is not stored in Portfolio, WorkflowRun or IR.
+No current response, summary count, temporal proof or observed band implicitly
+closes a collection. Actual route evidence and declarations await item 7.
+
+Competing array products or qualified classification versions yield unknown and
+`ambiguous_product` messages in the existing StepRun `warnings`. Messages retain
+candidate and selector identity even when selection removes that candidate, and
+survive run serialization. Physical audit groups follow the material decision;
+collection predicates are not re-evaluated against partial physical fragments.
+
 ## Scheduling and compatibility
 
 Required initial predicate material precedes evaluation and global latest. A later
@@ -214,30 +236,30 @@ Named binders such as `as p` are reserved for later reevaluation of self-joins a
 correlated nested collections (item 10). They must not replace the simple forms
 above. FP request syntax/policy is separately deferred in item 11.
 
-## Instruction accounting at the syntax/IR checkpoint
+## Instruction accounting at the evaluation checkpoint
 
 | Requirement | Status / owner of remaining work |
 |---|---|
 | Ordered arrays/items, parameter scopes, declared filters | Done in the structural foundation; scalar-field recognition extended here. |
-| D3.10 versioning and JSON representation | Done in foundation and this slice; local verification pending. |
-| Count/min/max/quantifier syntax and canonical nodes | Prepared in this slice; execution explicitly deferred. |
-| Parenthesized multiline, comments, source coordinates | Prepared here; regression verification is maintainer-run. |
-| D3.3 static empty restrictions, domain members and shadowing | Prepared here. Empty data-derived-domain evaluation awaits evaluation slice. |
-| D3.7–8 static product/output qualification | Prepared here. Runtime versions, ambiguity and diagnostics await evaluation slice. |
-| Reference/material/headline walkers; no native pushdown | Extended here; collection native realization remains residual. |
-| D3.1–2 count ranges, quantifiers, exact NOT duality | Deferred to evaluation slice, with synthetic complete-evidence tests. |
-| D3.4–5 extrema ranges and branch-local membership | Deferred to evaluation slice. |
+| D3.10 versioning and JSON representation | Done in foundation and syntax/IR; existing version semantics unchanged here. |
+| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; workflow execution remains gated. |
+| Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
+| D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+| D3.7–8 product/output qualification and runtime ambiguity | Static checks done in syntax/IR. Runtime ambiguity, output-local witnesses and existing warning-channel propagation prepared here. |
+| Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
+| D3.1–2 count ranges, quantifiers, exact NOT duality | Prepared here with synthetic open/complete-evidence regressions; local acceptance pending. |
+| D3.4–5 extrema ranges and branch-local membership | Prepared here, including missing leaves, other-band exclusion and explicit limit/quality conditions; local acceptance pending. |
 | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
-| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; regression checks remain local. |
-| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection execution is gated here. |
+| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
+| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection workflow execution is gated here. Internal filter/warning propagation is prepared, not facade acceptance. |
 | Initial where/latest and missing-material placements | Explicit item-4a rejection belongs to admission slice. |
 | Collection confirm | Rejection belongs to admission slice; execution unavailable here. |
 | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
 | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
 
-Once evaluation and admission land with open completeness, witnesses can prove
+Once admission lands with open completeness, witnesses can prove
 lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
 zero-count claims, `min > x`, and an `every` failure based only on a short band stay
 unknown until applicable collection completeness exists. A contradictory known
-witness can still disprove a comparison. No such collection query runs in this
-syntax/IR-only checkpoint.
+witness can still disprove a comparison. Local evaluation does not bypass the
+public DSL or canonical planner admission gate at this checkpoint.
