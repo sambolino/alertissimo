@@ -1,0 +1,1319 @@
+diff --git a/.github/ai-context.md b/.github/ai-context.md
+--- a/.github/ai-context.md
++++ b/.github/ai-context.md
+@@ -9,7 +9,12 @@
+ required priorities. Cutouts are the last required feature expansion.
+ 
+ - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
+-  are prepared; collection evaluation and admission remain explicitly deferred.
++  are implemented. Evaluation is prepared in the existing predicate owner;
++  maintainer-run tests/CI establish acceptance. Workflow admission remains gated.
++  Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
++  and membership is branch-local. Competing products use existing StepRun warnings;
++  material selection controls audit projection. Synthetic transient evidence tests
++  complete collections; no production route supplies collection completeness.
+   Frozen aggregate/element/quantifier nodes use the existing kind discriminator;
+   version 1 rejects them. Multiline predicates preserve original coordinates.
+   No delivered-band declarations, recipe or capability changes belong to these
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -176,9 +176,13 @@
+   relative element paths, filtered aggregates and parenthesized quantifier bodies.
+   Extend existing semantic-model/expression/IR owners rather than add an engine.
+   The ordered ontology reader retains array items and scoped parameter domains;
+-  the syntax/IR slice adds scoped aggregates and quantifiers without enabling
+-  collection execution. The existing evaluator/admission owners explicitly defer
+-  these predicates until their implementation slices. WorkflowIR carries
++  syntax/IR adds scoped aggregates and quantifiers. Local evaluation extends the
++  existing normalization predicate owner with ranges and Kleene quantifiers;
++  admission remains gated. Ambiguity uses existing StepRun warnings, surviving
++  rejected candidates and serialization. Physical audit projection follows the
++  material decision rather than re-evaluating collection fragments. Synthetic
++  transient evidence exercises completeness; no production route supplies it.
++  No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+   `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
+   and newer versions are refused. Route delivery and collection completeness are
+   separate evidence; observed bands establish neither the full domain nor completeness.
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -780,7 +780,7 @@
+         if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
+             collection_checks.append(SurfaceCapabilityCheck(
+                 subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
+-                reason="collection syntax and IR are valid; collection evaluation and admission are not implemented yet",
++                reason="collection syntax and IR are valid; collection admission is pending (evaluator implemented, workflow execution remains gated)",
+             ))
+     if collection_checks:
+         return SurfaceCapabilityReport(checks=tuple(collection_checks))
+diff --git a/alertissimo/orchestration/normalization/normalize.py b/alertissimo/orchestration/normalization/normalize.py
+--- a/alertissimo/orchestration/normalization/normalize.py
++++ b/alertissimo/orchestration/normalization/normalize.py
+@@ -18,7 +18,9 @@
+ from alertissimo.orchestration.ir import (
+     DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
+ )
+-from alertissimo.orchestration.ir.predicates import Predicate, iter_semantic_references
++from alertissimo.orchestration.ir.predicates import (
++    Predicate, contains_collection_predicate, iter_semantic_references,
++)
+ from alertissimo.orchestration.runtime import (
+     EndpointPlan,
+     EndpointPlanRef,
+@@ -340,18 +342,22 @@
+ 
+ 
+ def filter_execution_groups(source, predicate, materialized):
+-    """Retain audit evidence for selected headline candidates without rederiving it.
+-
+-    A composed headline belongs to the material view, not an individual physical
+-    call. Native predicates retain their historical execution-local projection.
+-    """
+-    normalized = any(headline_reference(ref) for ref in iter_semantic_references(predicate))
++    """Project material selection back onto physical audit groups.
++
++    Collections and composed headlines belong to the material view. Re-evaluating
++    either on a partial physical response would make a second, different decision.
++    Existing scalar predicates retain their execution-local projection.
++    """
++    normalized = contains_collection_predicate(predicate) or any(
++        headline_reference(ref) for ref in iter_semantic_references(predicate))
+     survivors = {summary_object_identity(p) for p in materialized} - {None}
++    surviving_ids = {p.internal_portfolio_id for p in materialized}
+     return tuple(
+         ExecutionPortfolioResult(
+             execution_id=execution.execution_id,
+             portfolios=(tuple(p for p in execution.portfolios
+-                              if summary_object_identity(p) in survivors)
++                              if summary_object_identity(p) in survivors
++                              or p.internal_portfolio_id in surviving_ids)
+                         if normalized else prune_portfolios(execution.portfolios, predicate)),
+         )
+         for execution in source.executions
+@@ -362,6 +368,7 @@
+     step: FilterStep,
+     step_run: StepRun,
+     normalized_steps: list[StepPortfolioResult],
++    *, diagnostics: list[str] | None = None,
+ ) -> StepPortfolioResult:
+     """Apply one local FilterStep to an earlier normalized semantic view.
+ 
+@@ -392,7 +399,7 @@
+         executions = source.executions
+         materialized = source.portfolios
+     else:
+-        materialized = prune_portfolios(source.portfolios, step.predicate)
++        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
+         executions = filter_execution_groups(source, step.predicate, materialized)
+     return StepPortfolioResult(
+         step_index=step_run.step_index,
+@@ -707,6 +714,7 @@
+         else {}
+     )
+     normalized_steps: list[StepPortfolioResult] = []
++    updated_steps = list(result.run.steps)
+     for step_run, step_result in zip(result.run.steps, result.steps):
+         if step_run.step_index < len(preserved_steps):
+             normalized_steps.append(preserved_steps[step_run.step_index])
+@@ -721,9 +729,16 @@
+             )
+             continue
+         if isinstance(step, FilterStep):
++            diagnostics: list[str] = []
++            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics)
++            if diagnostics:
++                updated_steps[step_run.step_index] = step_run.model_copy(update={
++                    "warnings": step_run.warnings + tuple(
++                        message for message in diagnostics if message not in step_run.warnings),
++                })
+             normalized_steps.append(
+                 apply_deferred_search_selection(
+-                    result.run.workflow, _filter_candidate_view(step, step_run, normalized_steps),
++                    result.run.workflow, view,
+                     {item.step_index: item for item in normalized_steps}, result.run.steps,
+                 )
+             )
+@@ -742,7 +757,8 @@
+         )
+ 
+     return WorkflowPortfolioResult(
+-        run=result.run,
++        run=(result.run if tuple(updated_steps) == result.run.steps else
++             result.run.model_copy(update={"steps": tuple(updated_steps)})),
+         steps=tuple(normalized_steps),
+     )
+ 
+diff --git a/alertissimo/orchestration/normalization/predicate.py b/alertissimo/orchestration/normalization/predicate.py
+--- a/alertissimo/orchestration/normalization/predicate.py
++++ b/alertissimo/orchestration/normalization/predicate.py
+@@ -7,8 +7,10 @@
+ 
+ from __future__ import annotations
+ 
++from collections.abc import Mapping
+ import math
+ import operator
++import re
+ from typing import Any
+ 
+ from alertissimo.data_layer.representations import Portfolio, SemanticRecord
+@@ -16,6 +18,7 @@
+     compare_taxa, headline_reference, is_headline_record, materialize_headlines,
+ )
+ from alertissimo.orchestration.ir.predicates import (
++    AggregateOperand, ElementReference, QuantifierPredicate, _collection_paths,
+     BooleanPredicate,
+     ComparisonPredicate,
+     ExistsPredicate,
+@@ -117,67 +120,413 @@
+     return tuple(record for record in portfolio.records if _record_matches(record, probe, portfolio))
+ 
+ 
+-def evaluate_portfolio_predicate(portfolio: Portfolio, predicate: Predicate) -> bool:
+-    """Return whether a normalized candidate Portfolio satisfies ``predicate``.
+-
+-    Bind one record per exact (noun, producer, channel) selector for the whole
+-    expression, independent of Boolean grouping. Repeated fields therefore
+-    belong to the same assertion even in a mixed classification/summary AND.
+-    Different explicitly qualified selectors retain independent witnesses.
+-
+-    Comparisons use three-valued logic: missing, null, nonfinite and incompatible
+-    values are unknown; NOT cannot turn them into evidence. Only True selects.
+-    Explicit NOT EXISTS asks about absence in this materialized Portfolio, not
+-    absence from an unqueried provider. A partial record cannot establish field
+-    absence if another matching record supplies that field.
++def _lookup(value: Any, path: str) -> Any:
++    """Read normalized flat fields and nested collection-element dictionaries."""
++    if isinstance(value, SemanticRecord):
++        value = value.fields
++    parts = path.split(".") if path else ()
++    for index, component in enumerate(parts):
++        if not isinstance(value, Mapping):
++            return _MISSING
++        remainder = ".".join(parts[index:])
++        if remainder in value:
++            return value[remainder]
++        value = value.get(component, _MISSING)
++    return value
++
++
++def _branch_present(value: Any, path: str) -> bool:
++    if isinstance(value, SemanticRecord):
++        value = value.fields
++    if not isinstance(value, Mapping):
++        return False
++    if any(key == path or key.startswith(path + ".") for key in value):
++        return True
++    first, dot, rest = path.partition(".")
++    return bool(dot and _branch_present(value.get(first, _MISSING), rest))
++
++
++def _array_members(value: Any, path: str) -> tuple[tuple[Any, ...] | None, bool]:
++    """Resolve an explicit array path within one product, retaining malformed gaps."""
++    if isinstance(value, SemanticRecord):
++        value = value.fields
++    if not path:
++        return (tuple(value), True) if isinstance(value, (tuple, list)) else (None, False)
++    if isinstance(value, (tuple, list)):
++        members, valid, found = [], True, not value
++        for item in value:
++            current, shape = _array_members(item, path)
++            valid = valid and shape
++            if current is not None:
++                found = True
++                members.extend(current)
++        return (tuple(members) if found else None), valid
++    if not isinstance(value, Mapping):
++        return None, False
++    if path in value:
++        return _array_members(value[path], "")
++    first, dot, rest = path.partition(".")
++    if first not in value:
++        return None, False
++    return _array_members(value[first], rest if dot else "")
++
++
++def _compare_interval(
++    interval: tuple[int | float, int | float] | None,
++    operator_name: str, value: int | float, *, integer: bool = False,
++) -> bool | None:
++    if interval is None:
++        return None
++    lower, upper = interval
++    if operator_name in {"=", "!="}:
++        equal = (False if value < lower or value > upper
++                 or integer and type(value) is float and not value.is_integer()
++                 else True if lower == upper == value else None)
++        return equal if operator_name == "=" or equal is None else not equal
++    if operator_name == "<":
++        return True if upper < value else False if lower >= value else None
++    if operator_name == "<=":
++        return True if upper <= value else False if lower > value else None
++    if operator_name == ">":
++        return True if lower > value else False if upper <= value else None
++    if operator_name == ">=":
++        return True if lower >= value else False if upper < value else None
++    raise ValueError(f"unknown comparison operator {operator_name!r}")
++
++
++def _scalar_references(node):
++    # Aggregates bind whole products/record collections independently of scalar
++    # witness search; their references must never become a first-match choice.
++    if isinstance(node, ComparisonPredicate):
++        for operand in (node.left, node.right):
++            if isinstance(operand, SemanticReference):
++                yield operand
++    elif isinstance(node, ExistsPredicate) and isinstance(node.reference, SemanticReference):
++        yield node.reference
++    elif isinstance(node, (NotPredicate, QuantifierPredicate)):
++        yield from _scalar_references(node.operand)
++    elif isinstance(node, BooleanPredicate):
++        for operand in node.operands:
++            yield from _scalar_references(operand)
++
++
++def _element_paths(node, filter_domain=None):
++    """Collect this element's branch dependencies, respecting inner quantifiers.
++
++    Expand an inner filter domain for membership before evaluating its condition;
++    otherwise NOT inside an inner quantifier could admit another band's point.
++    Nested aggregates bind their own elements and deliberately contribute no path.
+     """
+-    from alertissimo.orchestration.ir.predicates import contains_collection_predicate
+-    if contains_collection_predicate(predicate):
+-        raise ValueError("collection predicate evaluation is not implemented yet")
+-    selectors = tuple(dict.fromkeys(_selector(ref) for ref in iter_semantic_references(predicate)))
+-    records = {key: _matching_records(portfolio, key) for key in selectors}
++    if isinstance(node, ComparisonPredicate):
++        for operand in (node.left, node.right):
++            if isinstance(operand, ElementReference):
++                yield operand.field_path
++    elif isinstance(node, ExistsPredicate) and isinstance(node.reference, ElementReference):
++        yield node.reference.field_path
++    elif isinstance(node, QuantifierPredicate) and node.parameter == "filter":
++        for path in _element_paths(node.operand, filter_domain):
++            domain = node.values or filter_domain
++            if domain:
++                for value in domain:
++                    yield path.replace("{filter}", value)
++            else:
++                yield path  # Unresolved domain must remain unavailable.
++    elif isinstance(node, (NotPredicate, QuantifierPredicate)):
++        yield from _element_paths(node.operand, filter_domain)
++    elif isinstance(node, BooleanPredicate):
++        for operand in node.operands:
++            yield from _element_paths(operand, filter_domain)
++
++
++def evaluate_portfolio_predicate_truth(
++    portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
++    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
++) -> bool | None:
++    """Evaluate one predicate in the existing scalar witness search using Kleene logic.
++
++    ``collection_evidence`` is transient explicit evidence keyed by record ID and
++    exact array path, with (complete, delivered bands) values. No production route
++    supplies it in this slice. Tests supply synthetic proofs; record collections
++    such as incidental measurement records always retain open completeness.
++    Diagnostics use the caller's existing warnings collector, including when a
++    candidate is rejected. No Portfolio or runtime schema field is introduced.
++    """
++    selectors = tuple(dict.fromkeys(_selector(ref) for ref in _scalar_references(predicate)))
+     references = tuple(iter_semantic_references(predicate))
+-    for key in selectors:
++    all_selectors = tuple(dict.fromkeys(_selector(ref) for ref in references))
++    records = {key: _matching_records(portfolio, key) for key in all_selectors}
++    for key in all_selectors:
+         derived = key[1] == "headline" or any(headline_reference(ref) for ref in references if _selector(ref) == key)
+-        # Preserve native best and bare existence semantics. In a normalized
+-        # expression, bind all fields to the same stored headline assertion.
+         records[key] = tuple(r for r in records[key] if is_headline_record(r) == derived)
+     bound: dict[tuple[str, str | None, str | None], SemanticRecord | None] = {}
+-
+-    def operand_value(operand):
++    parameters: dict[str, str] = {}
++    aggregate_cache: dict[tuple, tuple[int | float, int | float] | None] = {}
++    branch_cache = {}
++    evidence = collection_evidence or {}
++
++    def substitute(path):
++        if any(name not in parameters for name in re.findall(r"\{([^{}]+)\}", path)):
++            return None
++        return re.sub(r"\{([^{}]+)\}", lambda match: parameters[match.group(1)], path)
++
++    def matching(reference):
++        return records.get(_selector(reference), ())
++
++    def declared_filters():
++        from .models import summary_object_identity
++        identity = summary_object_identity(portfolio)
++        return (_collection_paths().parameter_domain("photometry.{filter}", identity[0])
++                if identity else None)
++
++    def ambiguous(reference, matches):
++        from .models import summary_object_identity
++        identity = summary_object_identity(portfolio)
++        candidate = (f"{identity[0]}/{identity[1]}" if identity is not None
++                     else portfolio.internal_portfolio_id.value)
++        label = reference.qualified_record_type + ("." + reference.field_path if reference.field_path else "")
++        message = f"ambiguous_product: candidate={candidate} selector={label} matches={len(matches)}"
++        if diagnostics is not None and message not in diagnostics:
++            diagnostics.append(message)
++
++    def branch_requirements(collection, paths):
++        paths = tuple(paths)
++        cache_key = (collection, paths, tuple(sorted(parameters.items())))
++        if cache_key in branch_cache:
++            return branch_cache[cache_key]
++        absolute = collection.ontology_path
++        groups, bands = {}, set()
++        model = _collection_paths()
++        for path in paths:
++            full = absolute + ("." + path if path else "")
++            for prefix, parameter in model.parameter_scopes(full):
++                resolved = substitute(prefix)
++                if resolved is None:
++                    continue
++                if parameter == "filter":
++                    bands.add(resolved.rsplit(".", 1)[-1])
++                if prefix.startswith(absolute + "."):
++                    relative = resolved[len(absolute) + 1:]
++                    groups.setdefault(parameter, set()).add(relative)
++        result = tuple(tuple(paths) for paths in groups.values()), frozenset(bands)
++        branch_cache[cache_key] = result
++        return result
++
++    def member(item, groups):
++        return all(any(_branch_present(item, path) for path in alternatives) for alternatives in groups)
++
++    def absent_element_branch(operand, element, collection):
++        if not isinstance(operand, ElementReference) or collection is None:
++            return False
++        groups, _ = branch_requirements(collection, (operand.field_path,))
++        return not member(element, groups)
++
++    def aggregate(node):
++        cache_key = (node, tuple(sorted(parameters.items())))
++        if cache_key in aggregate_cache:
++            return aggregate_cache[cache_key]
++        reference = node.reference
++        projection = None
++        collection = reference
++        if node.function != "count":
++            boundary = _collection_paths().array_boundaries(reference.ontology_path)[-1]
++            field = boundary.partition(".")[2]
++            collection = reference.model_copy(update={"field_path": field})
++            projection = reference.field_path[len(field) + 1:]
++        matches = matching(reference)
++        complete, delivered = False, frozenset()
++        if not collection.field_path:
++            # Record counts never pool lightcurve point representations.
++            items = matches if matches else None
++        elif len(matches) > 1:
++            ambiguous(collection, matches)
++            aggregate_cache[cache_key] = None
++            return None
++        elif not matches:
++            items = None
++        else:
++            record = matches[0]
++            path = substitute(collection.field_path)
++            if path is None:
++                items = None
++            else:
++                items, shape_valid = _array_members(record, path)
++                proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
++                complete = proof[0] is True and shape_valid and items is not None
++                delivered = frozenset(proof[1])
++        relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
++        groups, bands = branch_requirements(collection, relative_paths)
++        complete = complete and bands <= delivered
++        if items is None:
++            result = (0, math.inf) if node.function == "count" else (-math.inf, math.inf)
++        else:
++            items = tuple(item for item in items if member(item, groups))
++            if node.function == "count":
++                lower = unknown = 0
++                for item in items:
++                    value = True if node.condition is None else evaluate(node.condition, element=item, collection=collection)
++                    lower += value is True
++                    unknown += value is None
++                result = (lower, lower + unknown if complete else math.inf)
++            else:
++                known, unknown = [], False
++                path = substitute(projection)
++                for item in items:
++                    value = _lookup(item, path) if path is not None else _MISSING
++                    if type(value) is int or type(value) is float and math.isfinite(value):
++                        known.append(value)
++                    else:
++                        unknown = True
++                if not known:
++                    result = None if complete and not items else (-math.inf, math.inf)
++                elif node.function == "min":
++                    smallest = min(known)
++                    result = (smallest if complete and not unknown else -math.inf, smallest)
++                else:
++                    largest = max(known)
++                    result = (largest, largest if complete and not unknown else math.inf)
++        aggregate_cache[cache_key] = result
++        return result
++
++    def operand_value(operand, element):
+         if isinstance(operand, PredicateLiteral):
+             return operand.value
++        if isinstance(operand, ElementReference):
++            path = substitute(operand.field_path)
++            return _lookup(element, path) if element is not None and path is not None else _MISSING
+         record = bound.get(_selector(operand))
+-        return _MISSING if record is None else _record_value(record, operand, portfolio)
+-
+-    def evaluate(node: Predicate, *, negate: bool = False) -> bool | None:
++        if record is None:
++            return _MISSING
++        path = substitute(operand.field_path)
++        if path is None:
++            return _MISSING
++        reference = operand.model_copy(update={"field_path": path}) if path != operand.field_path else operand
++        value = _record_value(record, reference, portfolio)
++        if value is _MISSING and path != operand.field_path:
++            value = _lookup(record, path)
++        return value
++
++    def output_domain(node, element, collection):
++        refs = tuple(iter_semantic_references(node.operand, collection))
++        reference = next((ref for ref in refs if "{output}" in ref.field_path), None)
++        if reference is None:
++            return None, None, None
++        key = _selector(reference)
++        if isinstance(element, SemanticRecord) and collection is not None and _selector(collection) == key:
++            record = element
++        elif reference.producer is None and reference.channel is None and node.quantifier == "any":
++            if key not in bound:
++                return None, None, None
++            record = bound[key]
++        else:
++            matches = matching(reference)
++            if len(matches) > 1:
++                ambiguous(reference, matches)
++                return None, None, None
++            record = matches[0] if matches else None
++        if record is None:
++            return None, None, None
++        prefix = reference.field_path.partition("{output}")[0].rstrip(".")
++        prefix = substitute(prefix)
++        if prefix is None:
++            return None, None, None
++        names = []
++        nested = _lookup(record, prefix)
++        if isinstance(nested, Mapping):
++            names.extend(str(name) for name in nested)
++        for path in record.fields:
++            if path.startswith(prefix + "."):
++                names.append(path[len(prefix) + 1:].split(".", 1)[0])
++        domain = tuple(dict.fromkeys(name for name in names if name))
++        if node.values is not None:
++            if not set(node.values) <= set(domain):
++                return None, None, None
++            domain = node.values
++        return domain, key, record
++
++    def quantify(node, negate, element, collection):
++        if node.parameter == "filter":
++            domain = declared_filters()
++            if node.values is not None:
++                domain = node.values if domain is not None and set(node.values) <= set(domain) else None
++            key = record = None
++        else:
++            domain, key, record = output_domain(node, element, collection)
++        if not domain:
++            return None  # Empty data-derived domains remain unknown under NOT too.
++        previous_parameter = parameters.get(node.parameter, _MISSING)
++        previous_record = bound.get(key, _MISSING) if key is not None else _MISSING
++        conjunction = (node.quantifier == "every") != negate
++        unknown = False
++        try:
++            if key is not None:
++                bound[key] = record
++            for value in domain:
++                parameters[node.parameter] = value
++                result = evaluate(node.operand, negate=negate, element=element, collection=collection)
++                if result is None:
++                    unknown = True
++                elif result != conjunction:
++                    return result
++            return None if unknown else conjunction
++        finally:
++            if previous_parameter is _MISSING:
++                parameters.pop(node.parameter, None)
++            else:
++                parameters[node.parameter] = previous_parameter
++            if key is not None:
++                if previous_record is _MISSING:
++                    bound.pop(key, None)
++                else:
++                    bound[key] = previous_record
++
++    def evaluate(node, *, negate=False, element=None, collection=None):
+         if isinstance(node, NotPredicate):
+-            return evaluate(node.operand, negate=not negate)
+-        if isinstance(node, ExistsPredicate) and negate:
+-            # Absence is a property of the complete current view of this
+-            # selector, not of whichever partial row is being tried as witness.
+-            return not any(
+-                _available(_record_value(record, node.reference, portfolio))
+-                for record in records[_selector(node.reference)]
+-            )
++            return evaluate(node.operand, negate=not negate, element=element, collection=collection)
++        if isinstance(node, QuantifierPredicate):
++            return quantify(node, negate, element, collection)
++        if isinstance(node, ExistsPredicate) and negate and isinstance(node.reference, SemanticReference):
++            # Preserve explicit scalar NOT EXISTS across the whole current view.
++            path = substitute(node.reference.field_path)
++            if path is None:
++                return None
++            reference = node.reference.model_copy(update={"field_path": path})
++            if "{output}" in node.reference.field_path:
++                # A new output quantifier binds one assertion. Preserve the
++                # whole-view explicit-absence rule only for existing scalar forms.
++                return not _available(operand_value(node.reference, element))
++            return not any(_available(_record_value(record, reference, portfolio))
++                           for record in records[_selector(node.reference)])
+         if isinstance(node, ComparisonPredicate):
+-            if isinstance(node.right, PredicateLiteral) and isinstance(node.right.value, tuple):
+-                value = compare_taxa(operand_value(node.left), node.right.value, node.operator)
++            left_aggregate = isinstance(node.left, AggregateOperand)
++            right_aggregate = isinstance(node.right, AggregateOperand)
++            if left_aggregate or right_aggregate:
++                selected = node.left if left_aggregate else node.right
++                literal = node.right if left_aggregate else node.left
++                operation = node.operator if left_aggregate else {
++                    "=": "=", "!=": "!=", "<": ">", "<=": ">=", ">": "<", ">=": "<=",
++                }[node.operator]
++                value = _compare_interval(aggregate(selected), operation, literal.value,
++                                          integer=selected.function == "count")
++            elif (absent_element_branch(node.left, element, collection)
++                  or absent_element_branch(node.right, element, collection)):
++                # An absent band branch is a non-member, distinct from a missing
++                # scalar within an existing branch, which remains unknown.
++                value = False
++            elif isinstance(node.right, PredicateLiteral) and isinstance(node.right.value, tuple):
++                value = compare_taxa(operand_value(node.left, element), node.right.value, node.operator)
+             elif isinstance(node.left, PredicateLiteral) and isinstance(node.left.value, tuple):
+-                value = compare_taxa(operand_value(node.right), node.left.value, node.operator)
++                value = compare_taxa(operand_value(node.right, element), node.left.value, node.operator)
+             else:
+-                value = _compare(operand_value(node.left), node.operator, operand_value(node.right))
++                value = _compare(operand_value(node.left, element), node.operator, operand_value(node.right, element))
+         elif isinstance(node, ExistsPredicate):
+-            if _selector(node.reference) not in bound:
++            if isinstance(node.reference, SemanticReference) and _selector(node.reference) not in bound:
+                 return None
+-            value = _available(operand_value(node.reference))
++            value = _available(operand_value(node.reference, element))
+         elif isinstance(node, BooleanPredicate):
+-            # Applying negation recursively preserves unknown values and also
+-            # makes NOT (EXISTS ...) consistent through De Morgan's laws.
+             conjunction = (node.operator == "and") != negate
+             unknown = False
+             for child in node.operands:
+-                value = evaluate(child, negate=negate)
++                value = evaluate(child, negate=negate, element=element, collection=collection)
+                 if value is None:
+                     unknown = True
+                 elif value != conjunction:
+@@ -187,39 +536,45 @@
+             return None
+         return None if value is None else (not value if negate else value)
+ 
+-    def search(index: int) -> bool:
++    def search(index):
+         value = evaluate(predicate)
+-        if value is not None:
++        if value is not None or index == len(selectors):
+             return value
+-        if index == len(selectors):
+-            return False
+         key = selectors[index]
+-        # An absent selector must leave OR branches evaluable. Its comparisons
+-        # remain unknown; positive existence is false, explicit absence is true.
+-        for record in records[key] or (None,):
+-            bound[key] = record
+-            if search(index + 1):
+-                return True
+-        del bound[key]
+-        return False
+-
+-    # Search lazily and stop on a proved result; no Cartesian product is stored.
++        unknown = False
++        try:
++            for record in records[key] or (None,):
++                bound[key] = record
++                value = search(index + 1)
++                if value is True:
++                    return True
++                unknown = unknown or value is None
++        finally:
++            bound.pop(key, None)
++        return None if unknown else False
++
+     return search(0)
+ 
+ 
++def evaluate_portfolio_predicate(
++    portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
++    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
++) -> bool:
++    """Select only established True; retain the existing Boolean caller contract."""
++    return evaluate_portfolio_predicate_truth(
++        portfolio, predicate, diagnostics=diagnostics, collection_evidence=collection_evidence,
++    ) is True
++
++
+ def prune_portfolios(
+-    portfolios: tuple[Portfolio, ...] | list[Portfolio],
+-    predicate: Predicate,
++    portfolios: tuple[Portfolio, ...] | list[Portfolio], predicate: Predicate,
++    *, diagnostics: list[str] | None = None,
+ ) -> tuple[Portfolio, ...]:
+-    """Keep only normalized candidate Portfolios satisfying a residual predicate."""
+-
++    """Refine existing candidates without changing their scientific records."""
+     if any(headline_reference(ref) for ref in iter_semantic_references(predicate)):
+         portfolios = tuple(materialize_headlines(p) for p in portfolios)
+-    return tuple(
+-        portfolio
+-        for portfolio in portfolios
+-        if evaluate_portfolio_predicate(portfolio, predicate)
+-    )
+-
+-
+-__all__ = ["evaluate_portfolio_predicate", "prune_portfolios"]
++    return tuple(portfolio for portfolio in portfolios
++                 if evaluate_portfolio_predicate(portfolio, predicate, diagnostics=diagnostics))
++
++
++__all__ = ["evaluate_portfolio_predicate", "evaluate_portfolio_predicate_truth", "prune_portfolios"]
+diff --git a/alertissimo/orchestration/pipeline.py b/alertissimo/orchestration/pipeline.py
+--- a/alertissimo/orchestration/pipeline.py
++++ b/alertissimo/orchestration/pipeline.py
+@@ -243,6 +243,7 @@
+     step: FilterStep,
+     step_index: int,
+     source: StepPortfolioResult,
++    *, diagnostics: list[str] | None = None,
+ ) -> StepPortfolioResult:
+     if step.predicate is None:
+         if step.criteria:
+@@ -252,7 +253,7 @@
+         executions = source.executions
+         materialized = source.portfolios
+     else:
+-        materialized = prune_portfolios(source.portfolios, step.predicate)
++        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
+         executions = filter_execution_groups(source, step.predicate, materialized)
+     return StepPortfolioResult(
+         step_index=step_index,
+@@ -376,6 +377,7 @@
+             continue
+ 
+         if isinstance(step, FilterStep):
++            diagnostics: list[str] = []
+             binding = StepBindingResult(step_index=step_index, bound_calls=())
+             bindings.append(binding)
+             result = StepExecutionResult(step_index=step_index, executions=())
+@@ -396,7 +398,7 @@
+                 if step_index < len(_prior_steps):
+                     view = _prior_steps[step_index]
+                 else:
+-                    view = _filter_view(step, step_index, source_view)
++                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics)
+                     view = apply_deferred_search_selection(
+                         run.workflow, view, candidate_views_by_step, updated_run.steps,
+                     )
+@@ -424,6 +426,8 @@
+                     "state": StepRunState.SUCCEEDED,
+                     "execution_ids": (),
+                     "error": None,
++                    "warnings": original_step_run.warnings + tuple(
++                        message for message in diagnostics if message not in original_step_run.warnings),
+                 }
+             )
+             updated_run = _updated_run(updated_run, succeeded)
+diff --git a/alertissimo/orchestration/validation.py b/alertissimo/orchestration/validation.py
+--- a/alertissimo/orchestration/validation.py
++++ b/alertissimo/orchestration/validation.py
+@@ -1278,7 +1278,7 @@
+     if contains_collection_predicate(getattr(step, "predicate", None)):
+         return CapabilityValidationResult(
+             operation, semantic_type, "deferred", (),
+-            "collection predicate evaluation and admission are not implemented yet",
++            "collection admission is pending (evaluator implemented, workflow execution remains gated)",
+         )
+     if isinstance(step, LookupStep):
+         semantic_type = "summary" if step.target.kind == "object" else "measurement"
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -1,10 +1,11 @@
+ # Collection expression contract
+ 
+ Agreed design with D3 decisions fixed on 13 November 2026. **Syntax and canonical
+-IR are prepared; collection expressions are not runnable.** The syntax/IR slice
+-adds frozen nodes, scoped validation, multiline parsing and JSON representation.
+-Evaluation and admission remain explicitly gated pending their subsequent slices.
+-Maintainer-run tests and CI establish acceptance of this slice.
++IR are implemented; local evaluation is prepared, but collection expressions remain
++not runnable through workflows.** The evaluator in the existing normalization
++owner adds ranges, Kleene quantifiers, branch membership and ambiguity warnings.
++Admission remains gated for the next slice. Evaluation acceptance awaits the
++maintainer's local tests and CI; static source checks are not execution evidence.
+ This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
+ It does not create another query engine or authorize deferred FP policy.
+ 
+@@ -89,8 +90,9 @@
+ 
+ ## D3 decisions
+ 
+-These are the agreed evaluator/admission contract. The syntax/IR slice represents
+-and validates the constructs; it does not implement their scientific evaluation.
++These are the agreed evaluator/admission contract. Syntax/IR represents and
++validates the constructs. The existing normalization predicate evaluator now
++implements their local evaluation; workflow admission remains a separate slice.
+ 
+ 1. **Counts are ranges.** For `count(C where P)`, L is the number of true members;
+    U is L plus unknown members only when C is known complete, otherwise infinity.
+@@ -173,6 +175,26 @@
+ Collection references and relative leaves feed the existing material/headline
+ walkers. Native predicate realization leaves collection expressions residual.
+ 
++## Evaluation boundary
++
++The existing predicate owner exposes a three-valued internal result; its existing
++Boolean callers still select only established `True`. Scalar assertion binding,
++explicit absence and taxon comparisons retain their existing meaning. Collection
++comparisons do not create provider parameters or retrievals.
++
++For testing the closed-bound branch, the evaluator accepts transient explicit
++evidence keyed by `(internal_record_id, exact_array_path)`, with completeness and
++delivered-band values. Synthetic test proofs exercise this branch; no production
++route supplies them. The evidence is not stored in Portfolio, WorkflowRun or IR.
++No current response, summary count, temporal proof or observed band implicitly
++closes a collection. Actual route evidence and declarations await item 7.
++
++Competing array products or qualified classification versions yield unknown and
++`ambiguous_product` messages in the existing StepRun `warnings`. Messages retain
++candidate and selector identity even when selection removes that candidate, and
++survive run serialization. Physical audit groups follow the material decision;
++collection predicates are not re-evaluated against partial physical fragments.
++
+ ## Scheduling and compatibility
+ 
+ Required initial predicate material precedes evaluation and global latest. A later
+@@ -214,30 +236,30 @@
+ correlated nested collections (item 10). They must not replace the simple forms
+ above. FP request syntax/policy is separately deferred in item 11.
+ 
+-## Instruction accounting at the syntax/IR checkpoint
++## Instruction accounting at the evaluation checkpoint
+ 
+ | Requirement | Status / owner of remaining work |
+ |---|---|
+ | Ordered arrays/items, parameter scopes, declared filters | Done in the structural foundation; scalar-field recognition extended here. |
+-| D3.10 versioning and JSON representation | Done in foundation and this slice; local verification pending. |
+-| Count/min/max/quantifier syntax and canonical nodes | Prepared in this slice; execution explicitly deferred. |
+-| Parenthesized multiline, comments, source coordinates | Prepared here; regression verification is maintainer-run. |
+-| D3.3 static empty restrictions, domain members and shadowing | Prepared here. Empty data-derived-domain evaluation awaits evaluation slice. |
+-| D3.7–8 static product/output qualification | Prepared here. Runtime versions, ambiguity and diagnostics await evaluation slice. |
+-| Reference/material/headline walkers; no native pushdown | Extended here; collection native realization remains residual. |
+-| D3.1–2 count ranges, quantifiers, exact NOT duality | Deferred to evaluation slice, with synthetic complete-evidence tests. |
+-| D3.4–5 extrema ranges and branch-local membership | Deferred to evaluation slice. |
++| D3.10 versioning and JSON representation | Done in foundation and syntax/IR; existing version semantics unchanged here. |
++| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; workflow execution remains gated. |
++| Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
++| D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
++| D3.7–8 product/output qualification and runtime ambiguity | Static checks done in syntax/IR. Runtime ambiguity, output-local witnesses and existing warning-channel propagation prepared here. |
++| Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
++| D3.1–2 count ranges, quantifiers, exact NOT duality | Prepared here with synthetic open/complete-evidence regressions; local acceptance pending. |
++| D3.4–5 extrema ranges and branch-local membership | Prepared here, including missing leaves, other-band exclusion and explicit limit/quality conditions; local acceptance pending. |
+ | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
+-| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; regression checks remain local. |
+-| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection execution is gated here. |
++| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
++| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection workflow execution is gated here. Internal filter/warning propagation is prepared, not facade acceptance. |
+ | Initial where/latest and missing-material placements | Explicit item-4a rejection belongs to admission slice. |
+ | Collection confirm | Rejection belongs to admission slice; execution unavailable here. |
+ | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
+ | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
+ 
+-Once evaluation and admission land with open completeness, witnesses can prove
++Once admission lands with open completeness, witnesses can prove
+ lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
+ zero-count claims, `min > x`, and an `every` failure based only on a short band stay
+ unknown until applicable collection completeness exists. A contradictory known
+-witness can still disprove a comparison. No such collection query runs in this
+-syntax/IR-only checkpoint.
++witness can still disprove a comparison. Local evaluation does not bypass the
++public DSL or canonical planner admission gate at this checkpoint.
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -109,13 +109,16 @@
+ ## 6. Collection DSL
+ 
+ **Current:** scalar comparisons/Boolean/existence work. Collection syntax and
+-canonical IR are prepared with scope, domain, product-ambiguity and version checks;
+-multiline predicates preserve source coordinates. Local tests/CI establish acceptance.
+-Evaluation and admission remain explicitly unavailable. Delivered-band declarations
+-are deferred to the first per-route collection-completeness slice, alongside the
+-approved loader amendment; recipes and capability files remain untouched here.
+-
+-Once evaluation/admission land, witnessed lower bounds (`count >= N`), `min < x`
++canonical IR are implemented with scope, domain, product-ambiguity and version
++checks; multiline predicates preserve source coordinates. Local evaluation is
++prepared in the existing predicate owner: count/extrema ranges, Kleene quantifiers,
++branch membership and existing StepRun ambiguity warnings. Evaluation acceptance
++awaits maintainer-run tests/CI. Workflow admission remains explicitly gated.
++Delivered-band declarations are deferred to the first per-route collection-
++completeness slice, alongside the approved loader amendment; recipes and capability
++files remain untouched here. Closed-bound logic has synthetic test proofs only.
++
++After admission, witnessed lower bounds (`count >= N`), `min < x`
+ and `for any` can work with open completeness. Exact counts, `count = 0`, `min > x`
+ and `for every` failing only on a short band remain unknown until a route establishes
+ collection completeness. Known contradictory witnesses can still disprove a claim.
+diff --git a/tests/test_dsl_collection_syntax.py b/tests/test_dsl_collection_syntax.py
+--- a/tests/test_dsl_collection_syntax.py
++++ b/tests/test_dsl_collection_syntax.py
+@@ -39,7 +39,7 @@
+     assert result.is_valid, result
+     assert not result.is_runnable
+     assert result.capabilities.deferred
+-    assert "evaluation and admission" in result.capabilities.deferred[0].reason
++    assert "collection admission is pending" in result.capabilities.deferred[0].reason
+ 
+ 
+ def test_multiline_quantifier_comments_and_json_round_trip(paths):
+diff --git a/tests/test_orchestration_collection_predicates.py b/tests/test_orchestration_collection_predicates.py
+--- a/tests/test_orchestration_collection_predicates.py
++++ b/tests/test_orchestration_collection_predicates.py
+@@ -147,7 +147,7 @@
+     assert predicate_material_gaps(predicate, outputs, broker="fink") == ()
+     result = validate_step_capabilities(FilterStep(predicate=predicate), graph)
+     assert result.status == "deferred"
+-    assert "evaluation and admission" in result.reason
++    assert "collection admission is pending" in result.reason
+ 
+ 
+ @pytest.mark.parametrize("function,field", [
+@@ -185,5 +185,5 @@
+ def test_workflow_planning_cannot_bypass_the_local_filter_gate(graph):
+     from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
+     workflow = WorkflowIR(steps=[FilterStep(predicate=comparison())])
+-    with pytest.raises(PlanningDeferredError, match="evaluation and admission"):
++    with pytest.raises(PlanningDeferredError, match="collection admission is pending"):
+         plan_workflow(workflow, graph)
+diff --git a/tests/test_orchestration_collection_evaluation.py b/tests/test_orchestration_collection_evaluation.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_orchestration_collection_evaluation.py
+@@ -0,0 +1,398 @@
++"""Scientific counterexamples for collections, using synthetic offline evidence.
++
++Completeness inputs here are invented test proofs, never route declarations.
++Public workflow execution remains gated until the separate admission slice.
++"""
++from dataclasses import replace
++from functools import lru_cache
++from itertools import product
++
++import pytest
++
++from alertissimo.data_layer.representations import (
++    InternalPortfolioId, InternalRecordId, Portfolio, SemanticRecord,
++)
++from alertissimo.data_layer.semantic_model import SemanticPathModel
++from alertissimo.dsl.predicate_lowering import lower_expression_predicate
++from alertissimo.orchestration.ir.predicates import NotPredicate, QuantifierPredicate
++from alertissimo.orchestration.normalization import ExecutionPortfolioResult, StepPortfolioResult
++from alertissimo.orchestration.normalization.normalize import (
++    filter_execution_groups, normalize_workflow_execution,
++)
++from alertissimo.orchestration.normalization.predicate import (
++    evaluate_portfolio_predicate, evaluate_portfolio_predicate_truth, prune_portfolios,
++)
++from alertissimo.orchestration.pipeline import _filter_view
++
++LC = 'lightcurve@ztf:fink'
++CLASS = 'classification@lc_classifier:alerce'
++ABSENT = object()
++
++
++@lru_cache(maxsize=1)
++def paths():
++    return SemanticPathModel.from_ontology()
++
++
++@lru_cache(maxsize=128)
++def predicate(text, origin='ztf'):
++    return lower_expression_predicate(text, paths().record_types, semantic_paths=paths(), origins=(origin,))
++
++
++def candidate(*rows, origin='ztf', name='candidate'):
++    return Portfolio(
++        internal_portfolio_id=InternalPortfolioId(name),
++        records=tuple(SemanticRecord(
++            internal_record_id=InternalRecordId(f'{name}:{index}'), semantic_type=kind, fields=fields,
++        ) for index, (kind, fields) in enumerate([
++            (f'summary@{origin}:fink', {'identity.object_id': 'object-1', 'detection_count': 100000}),
++            *rows,
++        ])),
++    )
++
++
++def curve(points, *, forced=ABSENT, kind=LC):
++    fields = {'points': tuple(points)}
++    if forced is not ABSENT:
++        fields['forced_photometry_points'] = tuple(forced)
++    return kind, fields
++
++
++def point(band='g', mag=18.5, limit=False, score=0.9, *, nested=False):
++    fields = {f'photometry.{band}.psf.mag': mag, 'time.mjd': 60000.0}
++    if limit is not ABSENT:
++        fields[f'photometry.{band}.upper_limit'] = limit
++    if score is not ABSENT:
++        fields['quality.real_bogus'] = score
++    if nested:
++        fields = {'photometry': {band: {'psf': {'mag': mag}, **(
++            {} if limit is ABSENT else {'upper_limit': limit})}}, 'time': {'mjd': 60000.0}}
++    return fields
++
++
++def proof(p, bands=('g', 'r', 'i'), *, field='points', record=1, complete=True):
++    return {(p.records[record].internal_record_id.value, field): (complete, frozenset(bands))}
++
++
++def truth(p, text, evidence=None, diagnostics=None, *, origin='ztf'):
++    return evaluate_portfolio_predicate_truth(
++        p, predicate(text, origin), collection_evidence=evidence, diagnostics=diagnostics,
++    )
++
++
++def test_default_six_band_domain_short_band_is_unknown_until_complete():
++    points = [point(band) for band, n in zip('ugrizy', (5, 5, 5, 5, 5, 4)) for _ in range(n)]
++    p = candidate(curve(points, kind='lightcurve@lsst:fink'), origin='lsst')
++    text = ('for every {filter}: (count(lightcurve.points where '
++            'photometry.{filter}.psf.mag exists) >= 5)')
++    assert truth(p, text, origin='lsst') is None
++    assert truth(p, text, proof(p, 'ugrizy'), origin='lsst') is False
++    # Complete response size, summary counts and observed bands prove neither completeness nor domain.
++    assert truth(p, text, proof(p, 'ugrizy', complete=False), origin='lsst') is None
++
++
++@pytest.mark.parametrize('known,expected', [(5, True), (4, None)])
++def test_count_range_includes_unknown_members_and_unseen_members(known, expected):
++    p = candidate(curve([point() for _ in range(known)] + [point(score=ABSENT)]))
++    text = f'count({LC}.points where quality.real_bogus >= 0.8)'
++    assert truth(p, text + ' >= 5') is expected
++    assert truth(p, text + ' >= 5', proof(p)) is expected
++    assert truth(p, text + ' = 5', proof(p)) is None
++    assert truth(p, text + ' = 5') is None
++    if known == 5:
++        assert truth(p, text + ' <= 4') is False
++        assert truth(p, 'not (' + text + ' >= 5)') is False
++
++
++@pytest.mark.parametrize('op,value,open_result,closed_result', [
++    ('=', 2, None, True), ('!=', 2, None, False),
++    ('<', 2, False, False), ('<=', 2, None, True),
++    ('>', 2, None, False), ('>=', 2, True, True),
++    ('=', 1, False, False), ('!=', 1, True, True),
++    ('=', 2.5, False, False), ('!=', 2.5, True, True),
++    ('<', 2.5, None, True), ('>=', 2.5, None, False),
++])
++def test_all_count_comparisons_use_integer_ranges(op, value, open_result, closed_result):
++    p = candidate(curve([point(), point()]))
++    expression = f'count({LC}.points) {op} {value}'
++    assert truth(p, expression) is open_result
++    assert truth(p, expression, proof(p)) is closed_result
++    inverse = {'=': '=', '!=': '!=', '<': '>', '<=': '>=', '>': '<', '>=': '<='}[op]
++    assert truth(p, f'{value} {inverse} count({LC}.points)', proof(p)) is closed_result
++
++
++@pytest.mark.parametrize('rows', [(), (curve([]),), ((LC, {}),)])
++def test_no_material_or_open_empty_is_not_zero(rows):
++    p = candidate(*rows)
++    assert truth(p, f'count({LC}.points) = 0') is None
++    assert truth(p, f'count({LC}.points) >= 0') is True
++    assert truth(p, f'count({LC}.points) < 0') is False
++    assert truth(p, f'min({LC}.points.time.mjd) < 1') is None
++
++
++def test_only_explicit_applicable_evidence_closes_the_exact_array():
++    p = candidate(curve([], forced=[]))
++    assert truth(p, f'count({LC}.points) = 0', proof(p)) is True
++    assert truth(p, f'count({LC}.forced_photometry_points) = 0', proof(p)) is None
++    assert truth(p, f'count({LC}.points) = 0', proof(p, field='other')) is None
++    malformed = candidate((LC, {'points': None}))
++    assert truth(malformed, f'count({LC}.points) = 0', proof(malformed)) is None
++
++
++@pytest.mark.parametrize('function,relation,threshold,result', [
++    ('min', '<', 19, True), ('min', '>', 19, False),
++    ('min', '>', 18, None), ('min', '=', 18.5, None),
++    ('max', '>', 18, True), ('max', '<', 18, False),
++    ('max', '<', 19, None), ('max', '=', 18.5, None),
++])
++def test_extrema_with_a_known_value_and_unknown_value(function, relation, threshold, result):
++    p = candidate(curve([point(), point(mag=None)]))
++    text = f'{function}({LC}.points.photometry.g.psf.mag) {relation} {threshold}'
++    assert truth(p, text) is result
++    assert truth(p, text, proof(p)) is result
++
++
++@pytest.mark.parametrize('function', ['min', 'max'])
++def test_complete_empty_extremum_is_unknown_and_never_zero(function):
++    p = candidate(curve([]))
++    for suffix in (' = 0', ' != 0', ' < 100', ' >= 0'):
++        expression = f'{function}({LC}.points.photometry.g.psf.mag)' + suffix
++        assert truth(p, expression, proof(p)) is None
++        assert truth(p, f'not ({expression})', proof(p)) is None
++
++
++@pytest.mark.parametrize('value', [None, float('nan'), float('inf'), True, '18.5'])
++def test_invalid_extremum_value_is_unknown(value):
++    p = candidate(curve([point(mag=value)]))
++    assert truth(p, f'min({LC}.points.photometry.g.psf.mag) < 19', proof(p)) is None
++
++
++def test_complete_known_extrema_and_negative_flux_do_not_get_reinterpreted():
++    p = candidate(curve([point(mag=20), point(mag=21)]))
++    assert truth(p, f'min({LC}.points.photometry.g.psf.mag) > 19') is None
++    assert truth(p, f'min({LC}.points.photometry.g.psf.mag) > 19', proof(p)) is True
++    assert truth(p, f'max({LC}.points.photometry.g.psf.mag) = 21', proof(p)) is True
++    flux_only = candidate(curve([{'photometry.g.psf.flux': -5.0}]))
++    assert truth(flux_only, f'min({LC}.points.photometry.g.psf.mag) < 19') is None
++
++
++@pytest.mark.parametrize('nested', [False, True])
++def test_branch_membership_is_not_shared_across_bands_even_under_not(nested):
++    p = candidate(curve([point('g', nested=nested)]))
++    assert truth(p, f'count({LC}.points where photometry.r.upper_limit != true) >= 1') is None
++    assert truth(p, f'count({LC}.points where not (photometry.r.upper_limit = true)) = 0', proof(p)) is True
++    assert truth(p, f'count({LC}.points where photometry.g.upper_limit = false) = 1', proof(p)) is True
++    assert truth(p, f'min({LC}.points.photometry.r.psf.mag) < 19', proof(p)) is None
++
++
++def test_missing_leaf_in_present_branch_is_unknown_but_other_band_is_not_a_member():
++    p = candidate(curve([point('g'), {'photometry.r.upper_limit': False}]))
++    expression = f'count({LC}.points where photometry.r.psf.mag < 19)'
++    assert truth(p, expression + ' >= 1', proof(p)) is None
++    assert truth(p, expression + ' > 1', proof(p)) is False
++    assert truth(p, expression + ' = 0', proof(p)) is None
++
++
++def test_no_implicit_censoring_or_quality_policy_and_missing_flags_stay_unknown():
++    p = candidate(curve([point(mag=None, limit=True), point(mag=18, limit=ABSENT), point(mag=20, score=0.1)]))
++    expression = f'count({LC}.points where photometry.g.psf.mag exists and photometry.g.upper_limit = false)'
++    assert truth(p, expression + ' = 1', proof(p)) is None
++    assert truth(p, expression + ' >= 1') is True
++    # No automatic score threshold: the explicitly non-limit, faint point is counted.
++    assert truth(p, f'count({LC}.points where photometry.g.upper_limit = false) >= 1') is True
++    # A bright limiting depth alone is no measured magnitude or qualifying detection.
++    only_limit = candidate(curve([{'photometry.g.limit.mag': 17, 'photometry.g.upper_limit': True}]))
++    assert truth(only_limit, expression + ' >= 1', proof(only_limit)) is False
++    # If an explicit magnitude is present on a limit, extrema do not silently discard it.
++    supplied_mag = candidate(curve([point(mag=17, limit=True)]))
++    assert truth(supplied_mag, f'min({LC}.points.photometry.g.psf.mag) < 19') is True
++    assert truth(supplied_mag, expression + ' >= 1', proof(supplied_mag)) is False
++
++
++def test_delivered_bands_are_not_inferred_and_explicit_domain_restriction_is_respected():
++    p = candidate(curve([point(band) for band in ('g', 'r') for _ in range(5)]))
++    body = f'count({LC}.points where photometry.{{filter}}.psf.mag exists) >= 5'
++    assert truth(p, 'for every {filter}: (' + body + ')') is None
++    assert truth(p, 'for every {filter}: (' + body + ')', proof(p)) is False
++    assert truth(p, 'for every {filter}: (' + body + ')', proof(p, ('g', 'r'))) is None
++    assert truth(p, 'for every {filter} in [g, r]: (' + body + ')') is True
++    absent = f'count({LC}.points where photometry.i.psf.mag exists) = 0'
++    assert truth(p, absent, proof(p, ('g', 'r'))) is None
++    assert truth(p, absent, proof(p)) is True
++
++
++@pytest.mark.parametrize('left,right', list(product((True, False, None), repeat=2)))
++def test_kleene_quantifier_truth_tables_and_exact_not_duality(left, right):
++    # min < 19: true has a witness, false needs complete values, unknown has a missing value.
++    points = [point(band, mag=(18 if result is True else 20 if result is False else None))
++              for band, result in (('g', left), ('r', right))]
++    p = candidate(curve(points))
++    body = f'min({LC}.points.photometry.{{filter}}.psf.mag) < 19'
++    expected_any = True if True in (left, right) else None if None in (left, right) else False
++    expected_every = False if False in (left, right) else None if None in (left, right) else True
++    for quantifier, dual, expected in (('any', 'every', expected_any), ('every', 'any', expected_every)):
++        condition = predicate(f'for {quantifier} {{filter}} in [g, r]: ({body})')
++        negated = NotPredicate(operand=condition)
++        dual_form = QuantifierPredicate(quantifier=dual, parameter='filter', values=('g', 'r'),
++                                       operand=NotPredicate(operand=condition.operand))
++        kwargs = {'collection_evidence': proof(p)}
++        assert evaluate_portfolio_predicate_truth(p, condition, **kwargs) is expected
++        expected_not = None if expected is None else not expected
++        assert evaluate_portfolio_predicate_truth(p, negated, **kwargs) is expected_not
++        assert evaluate_portfolio_predicate_truth(p, dual_form, **kwargs) is expected_not
++
++
++def test_output_domains_bind_one_record_and_never_cross_versions():
++    p = candidate((CLASS, {'assessment.SN.class': 'SN', 'assessment.SN.probability': 0.2}),
++                  (CLASS, {'assessment.SN.class': 'AGN', 'assessment.SN.probability': 0.99}))
++    assert truth(p, 'for any {output}: (classification.assessment.{output}.probability >= 0.8)') is True
++    split = ('for any {output}: (classification.assessment.{output}.class = "SN" and '
++             'classification.assessment.{output}.probability >= 0.8)')
++    assert truth(p, split) is False
++    for quantifier in ('any', 'every'):
++        messages = []
++        text = f'for {quantifier} {{output}}: ({CLASS}.assessment.{{output}}.probability >= 0.8)'
++        assert truth(p, text, diagnostics=messages) is None
++        assert len(messages) == 1 and 'ambiguous_product' in messages[0]
++    one = candidate((CLASS, {'assessment': {'SN': {'probability': 0.9}, 'AGN': {'probability': 0.2}}}))
++    assert truth(one, f'for any {{output}}: ({CLASS}.assessment.{{output}}.probability >= 0.8)') is True
++    assert truth(one, f'for every {{output}}: ({CLASS}.assessment.{{output}}.probability >= 0.8)') is False
++
++
++@pytest.mark.parametrize('rows', [(), ((CLASS, {}),)])
++@pytest.mark.parametrize('quantifier', ['any', 'every'])
++def test_empty_data_derived_domain_and_its_negation_are_unknown(rows, quantifier):
++    p = candidate(*rows)
++    text = f'for {quantifier} {{output}}: ({CLASS}.assessment.{{output}}.probability > 0.5)'
++    assert truth(p, text) is None
++    assert truth(p, f'not ({text})') is None
++
++
++def test_count_record_condition_output_domain_stays_on_its_element():
++    p = candidate((CLASS, {'assessment.SN.probability': 0.9}),
++                  (CLASS, {'assessment.AGN.probability': 0.1}))
++    expression = ('count(classification where for any {output}: '
++                  '(assessment.{output}.probability >= 0.8))')
++    assert truth(p, expression + ' >= 1') is True
++    assert truth(p, expression + ' >= 2') is None
++    assert truth(p, expression + ' = 1') is None
++
++
++def test_multiple_products_never_pool_or_pick_first_even_with_complete_test_proofs():
++    p = candidate(curve([point()] * 4), curve([point()] * 5))
++    for expression in (f'count({LC}.points) >= 5', f'min({LC}.points.photometry.g.psf.mag) < 19'):
++        messages = []
++        evidence = {**proof(p, record=1), **proof(p, record=2)}
++        assert truth(p, expression, evidence, messages) is None
++        assert not evaluate_portfolio_predicate(p, predicate(expression), diagnostics=messages)
++        assert len(messages) == 1 and 'matches=2' in messages[0]
++    qualified = candidate(curve([point()] * 5), curve([point()] * 4, kind='lightcurve@ztf:lasair'))
++    assert truth(qualified, f'count({LC}.points) >= 5') is True
++    assert truth(qualified, 'count(lightcurve.points) >= 5') is None
++
++
++def test_point_arrays_and_incidental_measurements_count_separately_and_stay_open():
++    p = candidate(curve([point()] * 2, forced=[{'forced_photometry.g.psf.mag': 20.0}] * 3),
++                  ('measurement@ztf:fink', point()), ('measurement@ztf:fink', point()))
++    assert truth(p, f'count({LC}.points) = 2', proof(p)) is True
++    assert truth(p, f'count({LC}.forced_photometry_points) = 3', proof(p, field='forced_photometry_points')) is True
++    assert truth(p, 'count(measurement@ztf:fink) >= 2') is True
++    assert truth(p, 'count(measurement@ztf:fink) >= 4') is None
++    assert truth(p, 'count(measurement@ztf:fink) = 2', proof(p)) is None
++
++
++def test_material_audit_projection_does_not_reevaluate_partial_physical_products():
++    p = candidate(curve([point()] * 5))
++    raw = candidate(name='raw')  # Same object; physical call alone does not contain the array.
++    source = StepPortfolioResult(step_index=0, executions=(
++        ExecutionPortfolioResult(execution_id='physical', portfolios=(raw,)),
++    ), materialized_portfolios=(p,))
++    condition = predicate(f'count({LC}.points) >= 5')
++    assert filter_execution_groups(source, condition, (p,))[0].portfolios == (raw,)
++    assert prune_portfolios((raw,), condition) == ()
++    assert source.portfolios == (p,)  # Immutable input snapshot.
++    from alertissimo.orchestration.ir import FilterStep
++    assert _filter_view(FilterStep(predicate=condition), 1, source).executions[0].portfolios == (raw,)
++
++
++def test_ambiguity_warning_survives_rejection_run_serialization_and_replay():
++    from alertissimo.orchestration.ir import FilterStep, LookupStep, TargetSelector, WorkflowIR
++    from alertissimo.orchestration.runtime import (
++        CandidateInputRef, StepExecutionResult, StepRun, StepRunState, WorkflowExecutionResult, WorkflowRun,
++    )
++    p = candidate(curve([point()] * 5), curve([point()] * 5))
++    condition = predicate(f'count({LC}.points) >= 5')
++    source = StepPortfolioResult(step_index=0, executions=(), materialized_portfolios=(p,))
++    workflow = WorkflowIR(steps=[LookupStep(target=TargetSelector(kind='object', ids=['object-1'])),
++                                 FilterStep(predicate=condition)])
++    run = WorkflowRun(workflow=workflow, steps=(
++        StepRun(step_index=0, state=StepRunState.SUCCEEDED),
++        StepRun(step_index=1, state=StepRunState.SUCCEEDED,
++                candidate_input_from=CandidateInputRef(step_index=0), warnings=('existing warning', 'existing warning')),
++    ))
++    physical = WorkflowExecutionResult(run=run, steps=(StepExecutionResult(0, ()), StepExecutionResult(1, ())))
++    normalized = normalize_workflow_execution(physical, preserved_steps=(source,))
++    assert normalized.steps[1].portfolios == ()
++    assert normalized.run.steps[1].warnings[:2] == ('existing warning', 'existing warning')
++    assert len(normalized.run.steps[1].warnings) == 3
++    assert 'ambiguous_product' in normalized.run.steps[1].warnings[2]
++    assert run.steps[1].warnings == ('existing warning', 'existing warning')
++    loaded = WorkflowRun.model_validate_json(normalized.run.model_dump_json())
++    assert loaded.steps[1].warnings == normalized.run.steps[1].warnings
++    replay = normalize_workflow_execution(replace(physical, run=loaded), preserved_steps=(source,))
++    assert replay.run.steps[1].warnings == normalized.run.steps[1].warnings
++    diagnostics = []
++    assert _filter_view(workflow.steps[1], 1, source, diagnostics=diagnostics).portfolios == ()
++    assert diagnostics == [normalized.run.steps[1].warnings[2]]
++
++
++def test_scalar_not_keeps_existential_record_semantics():
++    p = candidate((CLASS, {'best.class': 'SN'}), (CLASS, {'best.class': 'AGN'}))
++    assert truth(p, f'{CLASS}.best.class = "SN"') is True
++    assert truth(p, f'not ({CLASS}.best.class = "SN")') is True
++    assert truth(p, f'{CLASS}.best.probability >= 0.8') is None
++    assert truth(p, f'not ({CLASS}.best.probability >= 0.8)') is None
++
++
++def test_inner_filter_domain_membership_precedes_negated_condition():
++    p = candidate(curve([point('g')]))
++    expression = (f'count({LC}.points where for any {{filter}} in [r]: '
++                  '(not (photometry.{filter}.upper_limit = true))) = 0')
++    assert truth(p, expression, proof(p)) is True
++
++
++def test_negated_output_existence_remains_on_the_bound_assertion():
++    p = candidate((CLASS, {'assessment.SN.class': 'SN'}),
++                  (CLASS, {'assessment.SN.probability': 0.9}))
++    expression = ('for any {output}: '
++                  '(not (classification.assessment.{output}.probability exists))')
++    assert truth(p, expression) is True
++    # Existing scalar NOT EXISTS still asks about the complete current view.
++    assert truth(p, 'not (classification.assessment.SN.probability exists)') is False
++
++
++def test_output_fields_never_mix_between_outputs_in_one_record():
++    p = candidate((CLASS, {'assessment.SN.class': 'SN', 'assessment.SN.probability': 0.1,
++                          'assessment.AGN.class': 'AGN', 'assessment.AGN.probability': 0.99}))
++    expression = ('for any {output}: (classification.assessment.{output}.class = "SN" '
++                  'and classification.assessment.{output}.probability >= 0.8)')
++    assert truth(p, expression) is False
++
++
++def test_ambiguity_identity_is_stable_when_the_material_portfolio_is_rebuilt():
++    p = candidate(curve([point()] * 5), curve([point()] * 5))
++    diagnostics = []
++    condition = predicate(f'count({LC}.points) >= 5')
++    assert not evaluate_portfolio_predicate(p, condition, diagnostics=diagnostics)
++    rebuilt = replace(p, internal_portfolio_id=InternalPortfolioId('rebuilt'))
++    assert not evaluate_portfolio_predicate(rebuilt, condition, diagnostics=diagnostics)
++    assert len(diagnostics) == 1
++    assert 'candidate=ztf/object-1' in diagnostics[0]
++
++
++def test_mixed_band_conditions_treat_absent_branches_as_false_not_unknown():
++    p = candidate(curve([point('g', mag=20)]))
++    for condition in ('photometry.g.psf.mag exists and photometry.r.psf.mag < 19',
++                      'photometry.g.psf.mag < 19 or photometry.r.psf.mag < 19'):
++        expression = f'count({LC}.points where {condition}) = 0'
++        assert truth(p, expression, proof(p)) is True
