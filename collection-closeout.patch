@@ -1,0 +1,215 @@
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -12,7 +12,9 @@
+ 
+ Current-state notes were checked on main `b7f9905` (7 November 2026): public offline
+ planning, relevant source/fixtures, focused regressions and a clean installed wheel.
+-They are not fresh live acceptance. Recheck the current revision before coding.
++They are not fresh live acceptance. Items 1–2 and 6 record later accepted merges;
++other provider/UI states retain that audit baseline until explicitly rechecked.
++Recheck the current revision before coding.
+ 
+ ## 1. Coarse classification normalization
+ 
+@@ -108,13 +110,15 @@
+ 
+ ## 6. Collection DSL
+ 
+-**Current:** syntax/IR and evaluation are accepted in #359/#360: scoped collection
+-nodes, multiline source coordinates, count/extrema ranges, Kleene quantifiers,
+-branch membership and existing StepRun ambiguity warnings. Admission is prepared
+-for later filters over guaranteed preceding material, including immutable version-2
+-continuations and non-refilling selection. Surface and canonical guards reject
+-initial collection/latest and missing-material placements naming item 4a, and reject
+-collection propositions in confirm. Admission acceptance awaits maintainer-run tests/CI.
++**Accepted baseline:** syntax/IR #359, evaluation #360 and admission #361 are
++merged after maintainer-run checks and CI. Scoped nodes, multiline coordinates,
++count/extrema ranges, Kleene quantifiers, branch membership and ambiguity warnings
++are connected to later filters over guaranteed preceding material. Version-2
++continuations preserve the immutable prefix and scientific diagnostics; acquisition
++warnings still block continuation. Later filtering does not refill latest.
++Surface and canonical guards name item 4a for initial collection/latest and missing
++material, and reject collection propositions in confirm. This is offline regression
++acceptance, not a new live-provider acceptance claim.
+ Delivered-band declarations are deferred to the first per-route collection-
+ completeness slice under item 7; recipes and capability files remain untouched.
+ Closed-bound logic has synthetic test proofs only.
+@@ -124,17 +128,17 @@
+ and `for every` failing only on a short band remain unknown until a route establishes
+ collection completeness. Known contradictory witnesses can still disprove a claim.
+ 
+-**Target/work:** implement the [agreed contract](dsl_collections.md) in existing
+-semantic-model, expression/IR, evaluator and planner owners. Use `{filter}`/
+-`{output}`, relative element paths and `where for …: (...)`. No second variable
+-notation or aliases for ordinary single-collection cases.
+-
+-**Completion:** accepted count/min/max/any/every examples implementing the fixed D3
+-decisions; continuation, serialization and compatibility regressions. Initial
+-collection predicates with latest or without guaranteed evidence remain explicitly
+-deferred to item 4a, and collection confirm predicates are out of scope. Resolve
+-item 7's field dependencies.
+-Optional pairwise aliases are item 10, not initial scope.
++**Completed scope:** the [agreed contract](dsl_collections.md) is implemented in
++existing semantic-model, expression/IR, evaluator and planner owners. Count/min/max,
++any/every, exact NOT duality, serialization, continuation and compatibility have
++accepted regressions. The instruction accounting records each requirement's status.
++Use `{filter}`/`{output}`, relative paths and `where for …: (...)`; no second variable
++notation or ordinary-case aliases were introduced.
++
++**Remaining work:** initial collections with latest or without guaranteed material
++remain item 4a; collection confirm is explicitly out of scope. Actual completeness
++and scientific field coverage remain item 7. Optional pairwise aliases remain item
++10, and FP surface/policy remains item 11. None is silently included in completion.
+ 
+ ## 7. Measurements, non-detections and lightcurve boundaries
+ 
+@@ -156,6 +160,21 @@
+ approved existing-loader support. Keep incidental measurement counts open until
+ acquisition/completeness is defined.
+ 
++**Completeness entry audit after #361:** the checked material-history routes do
++not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both
++`query_lightcurve.detections` and `query_lightcurve.non_detections` into `points`.
++ANTARES/ZTF maps `locus_alerts`, including the explicit upper-limit discriminator,
++into `points`. Lasair/ZTF maps `lightcurve_candidates`, where existing guards/tests
++allow limit-only rows, into `points`. Their detection proofs cannot be applied
++unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
++This is a current implementation boundary, not an upstream impossibility claim.
++
++Before implementing the first closure, review a concrete proposal for either a
++proven complete existing mixed array or a detection-only semantic projection with
++a matching proof. Do not introduce a projection, new schema field or recipe/
++capability structure under the completed collection-syntax approval. Delivered-band
++metadata alone does not resolve the evidence boundary.
++
+ **Completion:** executable supported measurement intent and reliable field semantics,
+ preserving incidental evidence, distinct products and shared presentation. Do not
+ silently add a new IR operation/local builder or settle deferred FP policy here.
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -1,11 +1,11 @@
+ # Collection expression contract
+ 
+-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR and local
+-evaluation are accepted in #359 and #360. Admission is prepared for collection
+-filters whose required material precedes evaluation.** The existing validator and
+-planner prove call-scoped availability; execution uses the existing normalization
+-evaluator. Admission acceptance awaits maintainer-run tests and CI. Static source
+-checks are not execution evidence. No route establishes collection completeness.
++Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR #359,
++evaluation #360 and admission #361 are accepted after maintainer-run checks and CI.**
++The existing validator/planner prove call-scoped material availability; execution
++uses the existing normalization evaluator. This acceptance covers the stated
++admitted placements and guards, not fresh live-provider acceptance. No route yet
++establishes collection completeness.
+ This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
+ It does not create another query engine or authorize deferred FP policy.
+ 
+@@ -51,7 +51,7 @@
+ one. Parenthesized bodies/aggregate arguments may span lines with `#` comments;
+ indentation is cosmetic and error coordinates must refer to the original text.
+ 
+-The currently admitted placement is a later filter over requested material:
++An admitted example is a later filter over requested material:
+ 
+ ```text
+ objects ZTF20aaaaaaa, ZTF20bbbbbbb from ztf via alerce
+@@ -274,19 +274,42 @@
+ [`expression.lark`](../alertissimo/dsl/expression.lark); repetition/domain metadata
+ must be retained by the existing semantic-model owner.
+ 
++## First completeness route: entry audit
++
++This audit checks the current mappings and existing proofs; it does not make a
++new upstream completeness claim or enable any production closure.
++
++| Checked route/array | Existing boundary | Consequence |
++|---|---|---|
++| ALeRCE/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/alerce/ztf/mappings.yaml) combine `query_lightcurve.detections` and `query_lightcurve.non_detections`; the [material time proof](../alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml) covers detections. | Do not apply the detection proof to the mixed array. |
++| ANTARES/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/antares/ztf/mappings.yaml) use `locus_alerts`, including `ant_survey = 2` upper limits; [temporal history contracts](../alertissimo/data_layer/providers/antares/ztf/capabilities.yaml) establish detection selection. | Do not infer completeness of every point from detection-history coverage. |
++| Lasair/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/lasair/ztf/mappings.yaml) use `lightcurve_candidates`; [existing regressions](../tests/test_orchestration_lasair_time.py) allow limit-only rows in that branch while excluding them as detection witnesses. | The [detection proof](../alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml) is not a proof covering the whole array. |
++
++These candidate routes do not currently meet the instruction's detection-only-
++array entry condition. This does not prove a provider cannot supply a complete
++array. The next completeness slice needs a reviewed population/projection contract:
++either evidence covering the full existing mixed array or an explicitly reviewed
++detection-only projection matched to the existing proof. Do not split arrays,
++rename semantic paths, add schema fields or broaden a temporal proof implicitly.
++The proposal must account for required-call success, payload/identity coverage and
++raw-row-to-point normalization, including omitted or invalid rows; matching time
++bounds alone is insufficient.
++The already-approved delivered-band amendment remains coupled to the first actual
++complete route; declarations alone cannot close these collections.
++
+ ## Deferred extension
+ 
+ Named binders such as `as p` are reserved for later reevaluation of self-joins and
+ correlated nested collections (item 10). They must not replace the simple forms
+ above. FP request syntax/policy is separately deferred in item 11.
+ 
+-## Instruction accounting at the admission checkpoint
++## Completed instruction accounting
+ 
+ | Requirement | Status / owner of remaining work |
+ |---|---|
+ | Ordered arrays/items, parameter scopes, declared filters | Done in the foundation and syntax/IR; metadata unchanged by admission. |
+ | D3.10 versioning and JSON representation | Done in foundation/syntax. Admission preserves version 2 and explicitly refuses collection additions to version-1 continuations; no schema fields added. |
+-| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; proven local filter execution prepared in admission. |
++| Count/min/max/quantifier syntax and canonical nodes | Done in #359; local filter admission accepted in #361. |
+ | Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
+ | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+ | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
+@@ -294,10 +317,10 @@
+ | D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
+ | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
+ | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
+-| D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
+-| Later filter, continuation, non-refill, facade acceptance | Prepared in admission with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest; maintainer acceptance pending. |
+-| Initial where/latest and missing-material placements | Guards prepared in surface capability validation and canonical planning; completion remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+-| Collection confirm | Explicit rejection prepared, including attached propositions; bare existence confirm after a filter remains independent. |
++| D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
++| Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
++| Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
++| Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
+ | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
+ | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
+ 
+diff --git a/.github/ai-context.md b/.github/ai-context.md
+--- a/.github/ai-context.md
++++ b/.github/ai-context.md
+@@ -9,14 +9,16 @@
+ required priorities. Cutouts are the last required feature expansion.
+ 
+ - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
+-  are implemented; evaluation is accepted in #360. Admission is prepared in the
+-  existing capability validator/planner for filters with guaranteed preceding
++  are accepted through #359/#360/#361 after maintainer-run checks and CI. Admission
++  uses the existing capability validator/planner for filters with guaranteed preceding
+   material, including version-2 continuation and non-refilling latest. Required
+   calls/projections and candidate origins govern proof; optional/future calls do
+   not. Static ambiguity uses occurrence-local/inherited material. Initial
+   collection/latest and missing evidence report item 4a; confirm propositions are
+   rejected. Version-1 continuations refuse collections without an implicit upgrade.
+-  Maintainer-run tests/CI establish admission acceptance.
++  The instruction accounting is closed for this agreed scope. Initial scheduling
++  remains item 4a, real completeness/field coverage item 7, binders item 10 and FP
++  policy item 11; collection confirm remains explicitly out of scope.
+   Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
+   and membership is branch-local. Competing products use existing StepRun warnings;
+   material selection controls audit projection. Synthetic transient evidence tests
+@@ -26,8 +28,11 @@
+   No delivered-band declarations, recipe or capability changes belong to these
+   slices. Delivery metadata and its approved loader amendment await the first
+   route-completeness slice under item 7; mixed detection/non-detection arrays need
+-  evidence covering the whole collection. Initial collections plus latest await
+-  item 4a; collection confirm, measurement acquisition, binders and FP syntax remain deferred.
++  evidence covering the whole collection. The current ALeRCE/ZTF, ANTARES/ZTF and
++  Lasair/ZTF candidate `points` arrays are not eligible for unchanged reuse of a
++  detection-only proof; see the entry audit in the collection contract. A new
++  projection/schema or broader recipe proof needs its concrete review before
++  implementation. Measurement acquisition, binders and FP syntax remain deferred.
+   The maintainer runs tests and all implementation Git/GitHub commands locally.
+   Deliver generated .patch files only through the authorized `artifact-delivery`
+   branch; leave implementation branches and PRs untouched. Include fetch/git-show,
