@@ -780,7 +780,7 @@ def _validate_surface_capabilities(
         if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
             collection_checks.append(SurfaceCapabilityCheck(
                 subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
-                reason="collection syntax and IR are valid; collection evaluation and admission are not implemented yet",
+                reason="collection syntax and IR are valid; collection admission is pending (evaluator implemented, workflow execution remains gated)",
             ))
     if collection_checks:
         return SurfaceCapabilityReport(checks=tuple(collection_checks))

@@ -18,7 +18,9 @@ from alertissimo.data_layer.runtime.classification_headline import (
 from alertissimo.orchestration.ir import (
     DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
 )
-from alertissimo.orchestration.ir.predicates import Predicate, iter_semantic_references
+from alertissimo.orchestration.ir.predicates import (
+    Predicate, contains_collection_predicate, iter_semantic_references,
+)
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
     EndpointPlanRef,
@@ -340,18 +342,22 @@ def _materialize_enrichment_view(
 
 
 def filter_execution_groups(source, predicate, materialized):
-    """Retain audit evidence for selected headline candidates without rederiving it.
+    """Project material selection back onto physical audit groups.
 
-    A composed headline belongs to the material view, not an individual physical
-    call. Native predicates retain their historical execution-local projection.
+    Collections and composed headlines belong to the material view. Re-evaluating
+    either on a partial physical response would make a second, different decision.
+    Existing scalar predicates retain their execution-local projection.
     """
-    normalized = any(headline_reference(ref) for ref in iter_semantic_references(predicate))
+    normalized = contains_collection_predicate(predicate) or any(
+        headline_reference(ref) for ref in iter_semantic_references(predicate))
     survivors = {summary_object_identity(p) for p in materialized} - {None}
+    surviving_ids = {p.internal_portfolio_id for p in materialized}
     return tuple(
         ExecutionPortfolioResult(
             execution_id=execution.execution_id,
             portfolios=(tuple(p for p in execution.portfolios
-                              if summary_object_identity(p) in survivors)
+                              if summary_object_identity(p) in survivors
+                              or p.internal_portfolio_id in surviving_ids)
                         if normalized else prune_portfolios(execution.portfolios, predicate)),
         )
         for execution in source.executions
@@ -362,6 +368,7 @@ def _filter_candidate_view(
     step: FilterStep,
     step_run: StepRun,
     normalized_steps: list[StepPortfolioResult],
+    *, diagnostics: list[str] | None = None,
 ) -> StepPortfolioResult:
     """Apply one local FilterStep to an earlier normalized semantic view.
 
@@ -392,7 +399,7 @@ def _filter_candidate_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        materialized = prune_portfolios(source.portfolios, step.predicate)
+        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
         executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_run.step_index,
@@ -707,6 +714,7 @@ def normalize_workflow_execution(
         else {}
     )
     normalized_steps: list[StepPortfolioResult] = []
+    updated_steps = list(result.run.steps)
     for step_run, step_result in zip(result.run.steps, result.steps):
         if step_run.step_index < len(preserved_steps):
             normalized_steps.append(preserved_steps[step_run.step_index])
@@ -721,9 +729,16 @@ def normalize_workflow_execution(
             )
             continue
         if isinstance(step, FilterStep):
+            diagnostics: list[str] = []
+            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics)
+            if diagnostics:
+                updated_steps[step_run.step_index] = step_run.model_copy(update={
+                    "warnings": step_run.warnings + tuple(
+                        message for message in diagnostics if message not in step_run.warnings),
+                })
             normalized_steps.append(
                 apply_deferred_search_selection(
-                    result.run.workflow, _filter_candidate_view(step, step_run, normalized_steps),
+                    result.run.workflow, view,
                     {item.step_index: item for item in normalized_steps}, result.run.steps,
                 )
             )
@@ -742,7 +757,8 @@ def normalize_workflow_execution(
         )
 
     return WorkflowPortfolioResult(
-        run=result.run,
+        run=(result.run if tuple(updated_steps) == result.run.steps else
+             result.run.model_copy(update={"steps": tuple(updated_steps)})),
         steps=tuple(normalized_steps),
     )
 

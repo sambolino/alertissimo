@@ -1278,7 +1278,7 @@ def validate_step_capabilities(
     if contains_collection_predicate(getattr(step, "predicate", None)):
         return CapabilityValidationResult(
             operation, semantic_type, "deferred", (),
-            "collection predicate evaluation and admission are not implemented yet",
+            "collection admission is pending (evaluator implemented, workflow execution remains gated)",
         )
     if isinstance(step, LookupStep):
         semantic_type = "summary" if step.target.kind == "object" else "measurement"

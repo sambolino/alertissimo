@@ -9,7 +9,12 @@ catalogue diversity, semantic discovery and uniform temporal/latest selection ar
 required priorities. Cutouts are the last required feature expansion.
 
 - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
-  are prepared; collection evaluation and admission remain explicitly deferred.
+  are implemented. Evaluation is prepared in the existing predicate owner;
+  maintainer-run tests/CI establish acceptance. Workflow admission remains gated.
+  Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
+  and membership is branch-local. Competing products use existing StepRun warnings;
+  material selection controls audit projection. Synthetic transient evidence tests
+  complete collections; no production route supplies collection completeness.
   Frozen aggregate/element/quantifier nodes use the existing kind discriminator;
   version 1 rejects them. Multiline predicates preserve original coordinates.
   No delivered-band declarations, recipe or capability changes belong to these

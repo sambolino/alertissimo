@@ -176,9 +176,13 @@ versions through its existing declarative recipe.
   relative element paths, filtered aggregates and parenthesized quantifier bodies.
   Extend existing semantic-model/expression/IR owners rather than add an engine.
   The ordered ontology reader retains array items and scoped parameter domains;
-  the syntax/IR slice adds scoped aggregates and quantifiers without enabling
-  collection execution. The existing evaluator/admission owners explicitly defer
-  these predicates until their implementation slices. WorkflowIR carries
+  syntax/IR adds scoped aggregates and quantifiers. Local evaluation extends the
+  existing normalization predicate owner with ranges and Kleene quantifiers;
+  admission remains gated. Ambiguity uses existing StepRun warnings, surviving
+  rejected candidates and serialization. Physical audit projection follows the
+  material decision rather than re-evaluating collection fragments. Synthetic
+  transient evidence exercises completeness; no production route supplies it.
+  No Portfolio/result schema or runtime layer is added. WorkflowIR carries
   `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
   and newer versions are refused. Route delivery and collection completeness are
   separate evidence; observed bands establish neither the full domain nor completeness.
