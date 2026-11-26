@@ -1,0 +1,1397 @@
+diff --git a/.github/ai-context.md b/.github/ai-context.md
+--- a/.github/ai-context.md
++++ b/.github/ai-context.md
+@@ -9,8 +9,14 @@
+ required priorities. Cutouts are the last required feature expansion.
+ 
+ - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
+-  are implemented. Evaluation is prepared in the existing predicate owner;
+-  maintainer-run tests/CI establish acceptance. Workflow admission remains gated.
++  are implemented; evaluation is accepted in #360. Admission is prepared in the
++  existing capability validator/planner for filters with guaranteed preceding
++  material, including version-2 continuation and non-refilling latest. Required
++  calls/projections and candidate origins govern proof; optional/future calls do
++  not. Static ambiguity uses occurrence-local/inherited material. Initial
++  collection/latest and missing evidence report item 4a; confirm propositions are
++  rejected. Version-1 continuations refuse collections without an implicit upgrade.
++  Maintainer-run tests/CI establish admission acceptance.
+   Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
+   and membership is branch-local. Competing products use existing StepRun warnings;
+   material selection controls audit projection. Synthetic transient evidence tests
+@@ -22,8 +28,11 @@
+   route-completeness slice under item 7; mixed detection/non-detection arrays need
+   evidence covering the whole collection. Initial collections plus latest await
+   item 4a; collection confirm, measurement acquisition, binders and FP syntax remain deferred.
+-  The maintainer runs tests and all Git/GitHub commands locally. Prepare patches
+-  and include complete apply/test/commit/push/PR/check/squash/update commands.
++  The maintainer runs tests and all implementation Git/GitHub commands locally.
++  Deliver generated .patch files only through the authorized `artifact-delivery`
++  branch; leave implementation branches and PRs untouched. Include fetch/git-show,
++  apply/test/commit/push/PR/check/squash/update commands. Do not use sandbox downloads
++  or inline Base64 for delivery unless requested.
+ - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
+   audit tooling; preserve catalogue scope, units and ownership.
+ - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted
+diff --git a/AGENTS.md b/AGENTS.md
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -16,8 +16,11 @@
+   and the agreed collection DSL are required priorities; cutouts come last.
+ - Do not silently choose unreviewed thresholds, taxonomy, output eligibility,
+   model precedence or cross-method score comparisons.
+-- Use a focused branch from current main. Do not mutate GitHub PRs, push or merge
+-  through tools. Supply reviewable commits/bundles and exact git/gh commands.
++- Use a focused branch from current main. Do not mutate implementation branches
++  or GitHub PRs through tools. The authorized delivery exception writes generated
++  `.patch` files only to `artifact-delivery`; the maintainer fetches/applies them
++  and runs tests and all implementation git/gh commands locally. Include the full
++  retrieval, apply, test, commit, push, PR, check and squash/update commands.
+ 
+ ## Scientific and architectural contracts
+ 
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -177,9 +177,15 @@
+   Extend existing semantic-model/expression/IR owners rather than add an engine.
+   The ordered ontology reader retains array items and scoped parameter domains;
+   syntax/IR adds scoped aggregates and quantifiers. Local evaluation extends the
+-  existing normalization predicate owner with ranges and Kleene quantifiers;
+-  admission remains gated. Ambiguity uses existing StepRun warnings, surviving
+-  rejected candidates and serialization. Physical audit projection follows the
++  existing normalization predicate owner with ranges and Kleene quantifiers.
++  The existing capability validator/planner admit filters from guaranteed preceding
++  required-call outputs and projections, preserving origin and classifier scope.
++  Static product ambiguity uses occurrence-local/inherited material. Initial
++  collections plus latest and unproven material report item 4a; collection confirm
++  is rejected. Scalar continuation retains its version; collections require 2.
++  Ambiguity uses existing StepRun warnings, surviving
++  rejected candidates, serialization and immutable continuation; acquisition
++  warnings still block continuation. Physical audit projection follows the
+   material decision rather than re-evaluating collection fragments. Synthetic
+   transient evidence exercises completeness; no production route supplies it.
+   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -17,14 +17,13 @@
+ from alertissimo.data_layer.runtime.capability_graph import (
+     CapabilityGraph,
+     EndpointCapability,
+-    FieldMappingCapability,
+     SemanticRecordCapability,
+     build_capability_graph,
+ )
+-from alertissimo.data_layer.runtime.recipes import ConstantValueSource
+ from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
+ from alertissimo.orchestration.validation import (
+-    SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
++    classification_material_capabilities, collection_workflow_issues,
++    predicate_material_gaps, required_material_variants as _required_material_variants, validate_step_capabilities,
+ )
+ 
+ from .fragment import fragment_surface_context
+@@ -307,35 +306,6 @@
+     return tuple(evidence)
+ 
+ 
+-def _required_material_variants(
+-    item: SourceCapabilityResult, graph: CapabilityGraph,
+-) -> tuple[tuple[FieldMappingCapability, ...], ...]:
+-    """Inspect each eligible route's required, projected call outputs without choosing one."""
+-    variants, owned = [], set()
+-    for recipe in item.recipes:
+-        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
+-        fields = []
+-        for call in recipe.calls:
+-            if not call.required:
+-                continue
+-            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
+-                         if endpoint.endpoint == call.endpoint)
+-            outputs = call.outputs
+-            projection = next((param.source for param in call.params
+-                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
+-            if projection is not None:
+-                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+-                    continue  # A dynamic projection is not a field-availability proof.
+-                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+-                outputs = tuple(field for field in outputs if field.raw_field in columns)
+-            fields.extend(outputs)
+-        variants.append(tuple(fields))
+-    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+-                    for endpoint in item.candidates
+-                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
+-    return tuple(variants) or ((),)
+-
+-
+ def _initial_material_gaps(
+     surface: SurfaceScript, predicate: Predicate, *, origin: str, graph: CapabilityGraph,
+     record_types: frozenset[str], semantic_paths: _SemanticPaths | None,
+@@ -681,7 +651,7 @@
+                         else SurfaceCapabilityStatus.DEFERRED if result.status == "deferred"
+                         else SurfaceCapabilityStatus.UNSUPPORTED
+                     ),
+-                    reason=positive_reason if supported else result.source_results[0].reason,
++                    reason=positive_reason if supported else (result.source_results[0].reason if result.source_results else result.reason),
+                     clause_index=clause_index,
+                     origin=origin,
+                     broker=broker,
+@@ -763,7 +733,7 @@
+     semantic_model = semantic_paths or _semantic_path_model()
+     semantic_report = validate_surface_semantics(
+         surface,
+-        semantic_paths=semantic_model,
++        semantic_paths=semantic_model, base_workflow=base_workflow,
+     )
+     if not semantic_report.is_valid:
+         codes = ", ".join(issue.code for issue in semantic_report.errors)
+@@ -773,19 +743,49 @@
+         )
+ 
+     from .expression import contains_collection_expression, parse_expression
++    from alertissimo.orchestration.ir.predicates import contains_collection_predicate
++    collection_clauses = tuple(
++        (index, clause) for index, clause in enumerate(surface.clauses)
++        if any(contains_collection_expression(parse_expression(condition)) for condition in (
++            (clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
++            else clause.predicates if isinstance(clause, RequirementClause) else ()))
++    )
++    capability_graph = graph or build_capability_graph()
+     collection_checks = []
+-    for index, clause in enumerate(surface.clauses):
+-        conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
+-                      else clause.predicates if isinstance(clause, RequirementClause) else ())
+-        if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
++    if collection_clauses:
++        from .lowering import (
++            SurfaceLoweringError, _confirmation_scope, _first_filter_index,
++            _lower_fragment_intent, _lower_surface_intent,
++        )
++        try:
++            propositions, _ = _confirmation_scope(surface, record_types=semantic_model.record_types)
++            for index, predicate in propositions.items():
++                if contains_collection_predicate(predicate):
++                    collection_checks.append(SurfaceCapabilityCheck(
++                        subject="confirm", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
++                        reason="collection predicates in confirm are not admitted (item 6)",
++                    ))
++            first_filter = _first_filter_index(surface)
++            if not collection_checks and any(isinstance(clause, LatestClause) for clause in surface.clauses):
++                collection_checks.extend(SurfaceCapabilityCheck(
++                    subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
++                    reason="item 4a: initial collection predicates with latest require complete selection scheduling",
++                ) for index, clause in collection_clauses if index < first_filter)
++            if not collection_checks:
++                kwargs = dict(record_types=semantic_model.record_types, graph=capability_graph, semantic_paths=semantic_model)
++                compilation = (_lower_surface_intent(surface, **kwargs) if base_workflow is None else
++                               _lower_fragment_intent(surface, base_workflow, **kwargs))
++                collection_checks.extend(SurfaceCapabilityCheck(
++                    subject="selection", status=SurfaceCapabilityStatus.DEFERRED, reason=f"step_index {index}: {reason}",
++                ) for index, reason in collection_workflow_issues(compilation.workflow, capability_graph))
++        except SurfaceLoweringError as error:
+             collection_checks.append(SurfaceCapabilityCheck(
+-                subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
+-                reason="collection syntax and IR are valid; collection admission is pending (evaluator implemented, workflow execution remains gated)",
++                subject="selection", status=SurfaceCapabilityStatus.DEFERRED,
++                reason=str(error), clause_index=error.clause_index,
+             ))
+-    if collection_checks:
+-        return SurfaceCapabilityReport(checks=tuple(collection_checks))
+-
+-    capability_graph = graph or build_capability_graph()
++        if collection_checks:
++            return SurfaceCapabilityReport(checks=tuple(collection_checks))
++
+     checks: list[SurfaceCapabilityCheck] = list(
+         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
+     )
+diff --git a/alertissimo/dsl/lowering.py b/alertissimo/dsl/lowering.py
+--- a/alertissimo/dsl/lowering.py
++++ b/alertissimo/dsl/lowering.py
+@@ -791,8 +791,10 @@
+     )
+ 
+ 
+-def _validate_semantics(surface: SurfaceScript, semantic_paths: _SemanticPaths) -> None:
+-    report = validate_surface_semantics(surface, semantic_paths=semantic_paths)
++def _validate_semantics(
++    surface: SurfaceScript, semantic_paths: _SemanticPaths, *, base_workflow: WorkflowIR | None = None,
++) -> None:
++    report = validate_surface_semantics(surface, semantic_paths=semantic_paths, base_workflow=base_workflow)
+     if report.is_valid:
+         return
+     first = report.errors[0]
+@@ -1122,7 +1124,7 @@
+             code="invalid_fragment_base_workflow",
+         ) from error
+ 
+-    _validate_semantics(context, semantic_model)
++    _validate_semantics(context, semantic_model, base_workflow=base_workflow)
+     capability_report = validate_surface_fragment_capabilities(
+         fragment,
+         base_workflow,
+@@ -1161,6 +1163,16 @@
+     semantic_paths=None, graph: CapabilityGraph | None = None,
+ ) -> SurfaceCompilation:
+     """Lower continuation intent using its actual canonical base."""
++    if base_workflow.dsl_version < 2:
++        from .expression import contains_collection_expression, parse_expression
++        for index, clause in enumerate(context.clauses):
++            conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
++                          else clause.predicates if isinstance(clause, RequirementClause) else ())
++            if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
++                raise SurfaceLoweringError(
++                    "collection predicates require dsl_version 2; a version-1 continuation is not implicitly upgraded",
++                    code="collection_language_version", clause_index=index,
++                )
+     confirm_predicates, _ = _confirmation_scope(context, record_types=record_types)
+     steps = list(base_workflow.steps)
+     view = ResultViewSpec()
+diff --git a/alertissimo/dsl/validation.py b/alertissimo/dsl/validation.py
+--- a/alertissimo/dsl/validation.py
++++ b/alertissimo/dsl/validation.py
+@@ -406,6 +406,7 @@
+     surface: SurfaceScript,
+     *,
+     semantic_paths: _SemanticPaths | None = None,
++    base_workflow: WorkflowIR | None = None,
+ ) -> SurfaceValidationReport:
+     """Validate ontology-grounded intent without asking provider capabilities.
+ 
+@@ -495,8 +496,16 @@
+                     scoped_channel=(clause.via or surface.candidates.broker) if noun else None,
+                     semantic_paths=model, origins=surface.candidates.origins,
+                 )
+-                scope = surface.clauses if isinstance(clause, WhereClause) else surface.clauses[:index + 1]
+-                material = tuple((resolve_record_type(req.product, model.record_types), req.source or origin,
++                initial_end = next((owner for owner, item in enumerate(surface.clauses)
++                                    if isinstance(item, FilterClause)), len(surface.clauses))
++                scope = surface.clauses[:initial_end] if isinstance(clause, WhereClause) else surface.clauses[:index + 1]
++                from alertissimo.orchestration.ir import GetLightcurveStep, GetForcedPhotometryStep
++                inherited = tuple(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
++                                  for step in (base_workflow.steps if base_workflow is not None else ())
++                                  if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep))
++                                  for source in step.sources if source.broker is not None
++                                  for origin in surface.candidates.origins)
++                material = inherited + tuple((resolve_record_type(req.product, model.record_types), req.source or origin,
+                                   req.via or surface.candidates.broker, origin)
+                                  for item in scope if isinstance(item, RequirementClause)
+                                  for req in item.broker_requirements()
+@@ -520,7 +529,7 @@
+ 
+     return validate_surface_semantics(
+         fragment_surface_context(fragment, base_workflow),
+-        semantic_paths=semantic_paths,
++        semantic_paths=semantic_paths, base_workflow=base_workflow,
+     )
+ 
+ 
+diff --git a/alertissimo/orchestration/incremental.py b/alertissimo/orchestration/incremental.py
+--- a/alertissimo/orchestration/incremental.py
++++ b/alertissimo/orchestration/incremental.py
+@@ -180,7 +180,9 @@
+                 raise IncrementalExecutionError(
+                     f"previous temporal reference is inconsistent at step_index {index}"
+                 )
+-        if previous_step_run.warnings:
++        if any(not warning.startswith("ambiguous_product:") for warning in previous_step_run.warnings):
++            # Scientific abstention preserves an immutable, fully acquired prefix.
++            # Other warnings still mean supplementary acquisition may be incomplete.
+             raise IncrementalExecutionError(
+                 "cannot safely continue a prior Step with incomplete supplementary "
+                 f"execution at step_index {index}; start a fresh execution instead"
+@@ -255,6 +257,11 @@
+     """
+ 
+     _require_extension_prefix(previous, run)
++    prior_count = len(previous.run.steps)
++    run = run.model_copy(update={"steps": tuple(
++        step.model_copy(update={"warnings": previous.run.steps[index].warnings})
++        if index < prior_count else step for index, step in enumerate(run.steps)
++    )})
+     replay = _PrefixReplayExecutor(_physical_calls(previous), executor)
+     staged = execute_staged_workflow_run(
+         run,
+diff --git a/alertissimo/orchestration/ir/models.py b/alertissimo/orchestration/ir/models.py
+--- a/alertissimo/orchestration/ir/models.py
++++ b/alertissimo/orchestration/ir/models.py
+@@ -564,11 +564,14 @@
+                                  validate_collection_selectors)
+         origins = tuple(dict.fromkeys(source.origin for step in self.steps[:1]
+                                       for source in step.sources if source.origin))
+-        material = tuple(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
+-                         for step in self.steps if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep))
+-                         for source in step.sources if source.broker is not None
+-                         for origin in (origins or (None,)))
++        material = []
+         for step in self.steps:
++            if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
++                material = []
++            if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
++                material.extend(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
++                                for source in step.sources if source.broker is not None
++                                for origin in (origins or (None,)))
+             predicate = getattr(step, "predicate", None)
+             if predicate is not None and contains_collection_predicate(predicate):
+                 if self.dsl_version < 2:
+diff --git a/alertissimo/orchestration/normalization/normalize.py b/alertissimo/orchestration/normalization/normalize.py
+--- a/alertissimo/orchestration/normalization/normalize.py
++++ b/alertissimo/orchestration/normalization/normalize.py
+@@ -245,6 +245,7 @@
+     normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
+     *,
+     validate_semantic_model: bool,
++    diagnostics: list[str] | None = None,
+ ) -> ExecutionPortfolioResult:
+     """Reuse base normalization for one physical execution, then apply a Step view.
+ 
+@@ -263,7 +264,7 @@
+         )
+         normalized_by_execution_id[execution_id] = portfolios
+     if residual is not None:
+-        portfolios = prune_portfolios(portfolios, residual)
++        portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
+     return ExecutionPortfolioResult(
+         execution_id=execution_id,
+         portfolios=portfolios,
+@@ -277,6 +278,7 @@
+     normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
+     *,
+     validate_semantic_model: bool,
++    diagnostics: list[str] | None = None,
+ ) -> StepPortfolioResult:
+     """Normalize successful executions against their owning endpoint plans."""
+ 
+@@ -294,7 +296,7 @@
+                     plan_index,
+                 ),
+                 normalized_by_execution_id,
+-                validate_semantic_model=validate_semantic_model,
++                validate_semantic_model=validate_semantic_model, diagnostics=diagnostics,
+             )
+             for plan_index, execution in zip(plan_indexes, result.executions)
+         ),
+@@ -743,13 +745,19 @@
+                 )
+             )
+             continue
++        diagnostics = []
+         own = _normalize_planned_step(
+             step_result,
+             step_run,
+             result.run,
+             normalized_by_execution_id,
+-            validate_semantic_model=validate_semantic_model,
+-        )
++            validate_semantic_model=validate_semantic_model, diagnostics=diagnostics,
++        )
++        if diagnostics:
++            updated_steps[step_run.step_index] = step_run.model_copy(update={
++                "warnings": step_run.warnings + tuple(
++                    message for message in diagnostics if message not in step_run.warnings),
++            })
+         normalized_steps.append(
+             apply_classification_selection(step, _materialize_enrichment_view(
+                 step_run, apply_search_selection(step, apply_time_selection(step, step_run, own), step_run), normalized_steps,
+diff --git a/alertissimo/orchestration/pipeline.py b/alertissimo/orchestration/pipeline.py
+--- a/alertissimo/orchestration/pipeline.py
++++ b/alertissimo/orchestration/pipeline.py
+@@ -137,6 +137,7 @@
+     material_source: StepPortfolioResult | None = None,
+     normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
+     validate_semantic_model: bool,
++    diagnostics: list[str] | None = None,
+ ) -> StepPortfolioResult:
+     """Build the semantic candidate/material view needed during staged execution."""
+ 
+@@ -157,7 +158,7 @@
+         realization = plan.predicate_realization
+         residual = realization.residual if realization is not None else None
+         if residual is not None:
+-            portfolios = prune_portfolios(portfolios, residual)
++            portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
+         executions.append(
+             ExecutionPortfolioResult(
+                 execution_id=execution_id,
+@@ -209,6 +210,7 @@
+     *,
+     normalized_execution_cache: dict[str, tuple[Portfolio, ...]],
+     validate_semantic_model: bool,
++    diagnostics: list[str] | None = None,
+ ) -> StepPortfolioResult:
+     """Normalize one physical plan early for a same-Step dependent plan."""
+ 
+@@ -226,7 +228,7 @@
+         realization = plan.predicate_realization
+         residual = realization.residual if realization is not None else None
+         if residual is not None:
+-            portfolios = prune_portfolios(portfolios, residual)
++            portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
+         normalized.append(
+             ExecutionPortfolioResult(
+                 execution_id=execution_id,
+@@ -499,7 +501,7 @@
+         vacuous_plan_indexes: list[int] = []
+         executions: list[ExecutionResult] = []
+         execution_plan_indexes: list[int] = []
+-        warnings: list[str] = []
++        warnings: list[str] = (list(original_step_run.warnings) if step_index < len(_prior_steps) else [])
+         candidate_ids_by_origin_by_plan: dict[int, dict[str, tuple[str, ...]]] = {}
+ 
+         for plan_index, plan in enumerate(original_step_run.endpoint_plans):
+@@ -651,7 +653,7 @@
+                     plan_index,
+                     tuple(plan_executions),
+                     normalized_execution_cache=normalized_execution_cache,
+-                    validate_semantic_model=validate_semantic_model,
++                    validate_semantic_model=validate_semantic_model, diagnostics=warnings,
+                 )
+                 candidate_ids_by_origin_by_plan[plan_index] = (
+                     _candidate_ids_by_origin_from_view(view)
+@@ -706,8 +708,11 @@
+                 result,
+                 material_source=material_source,
+                 normalized_execution_cache=normalized_execution_cache,
+-                validate_semantic_model=validate_semantic_model,
+-            )
++                validate_semantic_model=validate_semantic_model, diagnostics=warnings,
++            )
++            if tuple(warnings) != succeeded.warnings:
++                succeeded = succeeded.model_copy(update={"warnings": tuple(warnings)})
++                updated_run = _updated_run(updated_run, succeeded)
+             view = apply_classification_selection(step, view)
+             view = apply_time_selection(step, succeeded, view)
+             view = apply_search_selection(step, view, succeeded)
+@@ -748,6 +753,8 @@
+         normalized_execution_cache=normalized_execution_cache,
+         preserved_steps=_prior_steps,
+     )
++    if normalized.run is not execution_result.run:
++        execution_result = WorkflowExecutionResult(run=normalized.run, steps=execution_result.steps)
+     return StagedWorkflowResult(
+         execution=execution_result,
+         bindings=tuple(bindings),
+diff --git a/alertissimo/orchestration/planner/planner.py b/alertissimo/orchestration/planner/planner.py
+--- a/alertissimo/orchestration/planner/planner.py
++++ b/alertissimo/orchestration/planner/planner.py
+@@ -55,6 +55,7 @@
+     CapabilityValidationResult,
+     SourceCapabilityResult,
+     classification_material_capabilities,
++    collection_workflow_issues,
+     predicate_material_gaps,
+     retrieval_record_requirement as _get_record_requirement,
+     validate_step_capabilities,
+@@ -815,9 +816,6 @@
+ ) -> tuple[EndpointPlan, ...]:
+     """Plan one workflow occurrence, admitting orchestrated local steps."""
+ 
+-    from ..ir.predicates import contains_collection_predicate
+-    if contains_collection_predicate(getattr(step, "predicate", None)):
+-        return plan_step(step, graph)  # Retain the explicit collection deferral for local Steps too.
+     if isinstance(step, (FilterStep, MatchStep)):
+         return ()
+     # Prefer proven, already-required discovery material even when a fresh
+@@ -832,6 +830,10 @@
+ def plan_workflow(workflow: WorkflowIR, graph: CapabilityGraph) -> WorkflowRun:
+     """Plan Steps, then mark candidate dependencies and proven execution reuse."""
+ 
++    issues = collection_workflow_issues(workflow, graph)
++    if issues:
++        index, reason = issues[0]
++        raise PlanningDeferredError(f"step_index {index}: {reason}")
+     pending_run = WorkflowRun.from_workflow(workflow)
+     earlier: list[StepRun] = []
+     for step_run in pending_run.steps:
+diff --git a/alertissimo/orchestration/validation.py b/alertissimo/orchestration/validation.py
+--- a/alertissimo/orchestration/validation.py
++++ b/alertissimo/orchestration/validation.py
+@@ -481,11 +481,41 @@
+     return producer or None
+ 
+ 
++def required_material_variants(
++    item: SourceCapabilityResult, graph: CapabilityGraph, *, discovery_only: bool = False,
++) -> tuple[tuple[FieldMappingCapability, ...], ...]:
++    """Inspect each eligible route's required, projected call outputs without choosing one."""
++    variants, owned = [], set()
++    for recipe in item.recipes:
++        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
++        fields = []
++        for call in (recipe.calls[:1] if discovery_only else recipe.calls):
++            if not call.required:
++                continue
++            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
++                         if endpoint.endpoint == call.endpoint)
++            outputs = call.outputs
++            projection = next((param.source for param in call.params
++                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
++            if projection is not None:
++                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
++                    continue  # A dynamic projection is not a field-availability proof.
++                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
++                outputs = tuple(field for field in outputs if field.raw_field in columns)
++            fields.extend(outputs)
++        variants.append(tuple(fields))
++    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
++                    for endpoint in item.candidates
++                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
++    return tuple(variants) or ((),)
++
++
+ def predicate_material_gaps(
+     predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
+ ) -> tuple[str, ...]:
+     """Inspect call-scoped mapped material without selecting or executing a route."""
+-    from .ir.predicates import iter_aggregate_operands
++    from .ir.predicates import contains_collection_predicate, iter_aggregate_operands
++    collection_pattern = contains_collection_predicate(predicate)
+     collections = {item.reference for item in iter_aggregate_operands(predicate) if item.function == "count"}
+     def mapped(reference: SemanticReference) -> bool:
+         if headline_material_available(reference, outputs):
+@@ -511,6 +541,7 @@
+                              else len(declared) == len(requested))
+             if lengths_match and all(
+                 actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
++                or collection_pattern and wanted in {"{filter}", "{output}"}
+                 for actual, wanted in zip(declared, requested)
+             ):
+                 return True
+@@ -1276,10 +1307,16 @@
+     semantic_type = getattr(step, "semantic_type", None)
+     from .ir.predicates import contains_collection_predicate
+     if contains_collection_predicate(getattr(step, "predicate", None)):
+-        return CapabilityValidationResult(
+-            operation, semantic_type, "deferred", (),
+-            "collection admission is pending (evaluator implemented, workflow execution remains gated)",
+-        )
++        if isinstance(step, ConfirmStep):
++            return CapabilityValidationResult(
++                operation, semantic_type, "deferred", (),
++                "collection predicates in confirm are not admitted (item 6)",
++            )
++        if isinstance(step, SearchStep) and step.selection is not None:
++            return CapabilityValidationResult(
++                operation, semantic_type, "deferred", (),
++                "item 4a: initial collection predicates with latest require complete selection scheduling",
++            )
+     if isinstance(step, LookupStep):
+         semantic_type = "summary" if step.target.kind == "object" else "measurement"
+ 
+@@ -1500,10 +1537,111 @@
+     return tuple(material)
+ 
+ 
++def collection_workflow_issues(
++    workflow: WorkflowIR, graph: CapabilityGraph,
++) -> tuple[tuple[int, str], ...]:
++    """Prove collection inputs from required material before their occurrence.
++
++    A source group consists of alternative feasible routes. A reference must be
++    supplied by every route in at least one earlier required source group. Groups
++    from independent required calls/Steps can jointly supply different references.
++    This proves mapped material availability, never collection completeness,
++    observed values, delivered bands, or success of an optional call.
++    """
++    from .ir.predicates import contains_collection_predicate
++    targets = tuple(index for index, step in enumerate(workflow.steps)
++                    if contains_collection_predicate(getattr(step, "predicate", None)))
++    if not targets:
++        return ()
++    forbidden = tuple((index, "collection predicates in confirm are not admitted (item 6)")
++                      for index in targets if isinstance(workflow.steps[index], ConfirmStep))
++    if forbidden:
++        return forbidden
++    for owner_index, step in enumerate(workflow.steps):
++        if isinstance(step, SearchStep) and step.selection is not None:
++            boundary = step.selection.after_step
++            if (contains_collection_predicate(step.predicate)
++                or boundary in targets):
++                owner = boundary if boundary in targets else owner_index
++                return ((owner, "item 4a: initial collection predicates with latest require complete selection scheduling"),)
++
++    # Each group is a tuple of alternative required output sets. Empty variants
++    # are retained: a projection or route without a field is not a proof.
++    groups = []
++    origins = ()
++    issues = []
++
++    def gaps(predicate, material, candidate_origins):
++        labels = set(predicate_material_gaps(predicate, (), broker=""))
++        missing = []
++        for origin in candidate_origins or (None,):
++            absent = set(labels)
++            for variants in material:
++                applicable = tuple(tuple(field for field in fields if origin in (None, field.origin))
++                                   for fields in variants
++                                   if not fields or origin is None or any(field.origin == origin for field in fields))
++                if applicable:
++                    route_gaps = {gap for fields in applicable
++                                  for gap in predicate_material_gaps(predicate, fields, broker="")}
++                    absent.intersection_update(route_gaps)
++            missing.extend(f"{origin or 'unresolved origin'}: {label}" for label in sorted(absent))
++        return tuple(missing)
++
++    for index, step in enumerate(workflow.steps[:max(targets) + 1]):
++        predicate = getattr(step, "predicate", None)
++        collection = index in targets
++        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
++            groups = []
++            origins = tuple(dict.fromkeys(source.origin for source in step.sources if source.origin))
++        if isinstance(step, GetClassificationStep) and step.classifier is not None:
++            def keep(field):
++                affected = not step.sources or any(
++                    source.broker in (None, field.broker) and source.origin in (None, field.origin)
++                    for source in step.sources)
++                producer = _semantic_record_producer(field.semantic_record_type)
++                return (not affected or not semantic_record_noun_matches(field.semantic_record_type, "classification")
++                        or producer == step.classifier or bool(_DYNAMIC_QUALIFIER.fullmatch(producer or "")))
++            groups = [tuple(tuple(field for field in fields if keep(field)) for fields in variants)
++                      for variants in groups]
++        else:
++            keep = lambda field: True
++
++        available = []
++        if isinstance(step, (SearchStep, LookupStep, GetStep)) and not isinstance(step, SqlQueryStep):
++            validation = validate_step_capabilities(step, graph)
++            for source in validation.source_results:
++                if source.status != "supported":
++                    continue
++                variants = required_material_variants(source, graph)
++                available.append(tuple(tuple(field for field in fields if keep(field)) for fields in variants))
++            if collection and isinstance(step, SearchStep):
++                # A discovery residual runs before supplementary retrievals.
++                discovery = tuple(required_material_variants(source, graph, discovery_only=True)
++                                  for source in validation.source_results if source.status == "supported")
++                missing = gaps(predicate, discovery, origins)
++                if missing:
++                    issues.append((index, "item 4a: initial collection predicate lacks guaranteed discovery-call material: "
++                                   + repr(missing)))
++            groups.extend(available)
++        elif collection and isinstance(step, FilterStep):
++            missing = gaps(predicate, groups, origins)
++            if missing:
++                issues.append((index, "item 4a: collection filter requires material guaranteed before this step: "
++                               + repr(missing)))
++        elif collection:
++            issues.append((index, "item 4a: collection predicate has no admitted material evaluation placement"))
++    return tuple(issues)
++
++
+ def validate_workflow_capabilities(
+     workflow: WorkflowIR, graph: CapabilityGraph
+ ) -> tuple[CapabilityValidationResult, ...]:
+-    return tuple(validate_step_capabilities(step, graph) for step in workflow.steps)
++    issues = dict(collection_workflow_issues(workflow, graph))
++    return tuple(
++        CapabilityValidationResult(step.op, getattr(step, "semantic_type", None), "deferred", (), issues[index])
++        if index in issues else validate_step_capabilities(step, graph)
++        for index, step in enumerate(workflow.steps)
++    )
+ 
+ 
+ __all__ = [
+@@ -1513,6 +1651,8 @@
+     "ValidationStatus",
+     "candidate_capabilities",
+     "classification_material_capabilities",
++    "collection_workflow_issues",
++    "required_material_variants",
+     "retrieval_record_requirement",
+     "validate_step_capabilities",
+     "validate_workflow_capabilities",
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -1,11 +1,11 @@
+ # Collection expression contract
+ 
+-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax and canonical
+-IR are implemented; local evaluation is prepared, but collection expressions remain
+-not runnable through workflows.** The evaluator in the existing normalization
+-owner adds ranges, Kleene quantifiers, branch membership and ambiguity warnings.
+-Admission remains gated for the next slice. Evaluation acceptance awaits the
+-maintainer's local tests and CI; static source checks are not execution evidence.
++Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR and local
++evaluation are accepted in #359 and #360. Admission is prepared for collection
++filters whose required material precedes evaluation.** The existing validator and
++planner prove call-scoped availability; execution uses the existing normalization
++evaluator. Admission acceptance awaits maintainer-run tests and CI. Static source
++checks are not execution evidence. No route establishes collection completeness.
+ This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
+ It does not create another query engine or authorize deferred FP policy.
+ 
+@@ -50,6 +50,24 @@
+ with `min`. Quantifiers may nest, but an inner parameter may not shadow an outer
+ one. Parenthesized bodies/aggregate arguments may span lines with `#` comments;
+ indentation is cosmetic and error coordinates must refer to the original text.
++
++The currently admitted placement is a later filter over requested material:
++
++```text
++objects ZTF20aaaaaaa, ZTF20bbbbbbb from ztf via alerce
++with lightcurve via fink
++filter for every {filter} in [g, r]: (
++    count(lightcurve@ztf:fink.points
++          where photometry.{filter}.psf.mag exists
++            and photometry.{filter}.upper_limit = false) >= 5
++)
++```
++
++This selects only established true candidates. Five g and five r witnesses suffice;
++a short band remains unknown without completeness and does not select. Native
++fields without a guaranteed preceding mapping/retrieval remain deferred to item 4a.
++The earlier `where` examples state expression semantics; initial admission depends
++on the scheduling rules below.
+ 
+ ## Scope and domains
+ 
+@@ -92,7 +110,8 @@
+ 
+ These are the agreed evaluator/admission contract. Syntax/IR represents and
+ validates the constructs. The existing normalization predicate evaluator now
+-implements their local evaluation; workflow admission remains a separate slice.
++implements their local evaluation. Workflow admission proves the material and
++placement rules below without changing these scientific decisions.
+ 
+ 1. **Counts are ranges.** For `count(C where P)`, L is the number of true members;
+    U is L plus unknown members only when C is known complete, otherwise infinity.
+@@ -208,10 +227,35 @@
+ training. Collection predicates always evaluate locally; never translate them to
+ provider parameters.
+ 
+-Initial collection `where` combined with `latest`, or another placement lacking
+-guaranteed material before evaluation, must explicitly report deferred **item 4a**.
+-Collection predicates within `confirm` are out of scope. A later `filter` after
+-retrieval is the minimum required end-to-end placement for a subsequent slice.
++A later `filter` is admitted only when every candidate origin has guaranteed
++preceding mapped material for the entire predicate. Required outputs are checked
++per feasible route and authored projection; optional calls, endpoint-wide mappings
++outside the route, future retrievals and another origin's fields are not proof.
++Matching a bound `{filter}`/`{output}` path proves possible mapped material, not
++that every branch or value is present. Missing values remain unknown at evaluation.
++Classification method selection removes other methods from the material proof.
++
++An initial collection `where` with `latest` explicitly reports deferred **item 4a**.
++Without latest, an initial discovery predicate can use its required discovery-call
++material; supplementary calls cannot supply its residual. Existing lookup lowering
++may schedule an implied retrieval before its initial filter. Other placements
++without guaranteed material also report **item 4a**. A later filter after latest
++refines that already selected population without refilling it.
++
++Collection propositions in `confirm` are rejected, including conditions attached
++through `where` or a scoped material request. A bare confirm after an explicit
++collection filter remains a separate existence question. Surface compilation and
++canonical planning enforce the same boundaries.
++
++Continuation uses its immutable canonical prefix, including inherited product
++qualifiers; future products do not make an earlier filter ambiguous. Version-2
++continuations admit collection filters when material is proven. A version-1
++continuation refuses collection syntax explicitly and is not implicitly upgraded;
++scalar continuation preserves its existing version. Existing StepRun warnings also
++retain discovery-residual ambiguity before supplementary calls and finalization.
++`ambiguous_product` is scientific abstention, not incomplete acquisition: immutable
++continuation retains these diagnostics. Other acquisition warnings still prevent
++continuation under the existing safety rule.
+ 
+ ## Acceptance examples
+ 
+@@ -236,30 +280,30 @@
+ correlated nested collections (item 10). They must not replace the simple forms
+ above. FP request syntax/policy is separately deferred in item 11.
+ 
+-## Instruction accounting at the evaluation checkpoint
++## Instruction accounting at the admission checkpoint
+ 
+ | Requirement | Status / owner of remaining work |
+ |---|---|
+-| Ordered arrays/items, parameter scopes, declared filters | Done in the structural foundation; scalar-field recognition extended here. |
+-| D3.10 versioning and JSON representation | Done in foundation and syntax/IR; existing version semantics unchanged here. |
+-| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; workflow execution remains gated. |
++| Ordered arrays/items, parameter scopes, declared filters | Done in the foundation and syntax/IR; metadata unchanged by admission. |
++| D3.10 versioning and JSON representation | Done in foundation/syntax. Admission preserves version 2 and explicitly refuses collection additions to version-1 continuations; no schema fields added. |
++| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; proven local filter execution prepared in admission. |
+ | Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
+ | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+-| D3.7–8 product/output qualification and runtime ambiguity | Static checks done in syntax/IR. Runtime ambiguity, output-local witnesses and existing warning-channel propagation prepared here. |
++| D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
+ | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
+-| D3.1–2 count ranges, quantifiers, exact NOT duality | Prepared here with synthetic open/complete-evidence regressions; local acceptance pending. |
+-| D3.4–5 extrema ranges and branch-local membership | Prepared here, including missing leaves, other-band exclusion and explicit limit/quality conditions; local acceptance pending. |
++| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
++| D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
+ | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
+ | D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
+-| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection workflow execution is gated here. Internal filter/warning propagation is prepared, not facade acceptance. |
+-| Initial where/latest and missing-material placements | Explicit item-4a rejection belongs to admission slice. |
+-| Collection confirm | Rejection belongs to admission slice; execution unavailable here. |
++| Later filter, continuation, non-refill, facade acceptance | Prepared in admission with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest; maintainer acceptance pending. |
++| Initial where/latest and missing-material placements | Guards prepared in surface capability validation and canonical planning; completion remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
++| Collection confirm | Explicit rejection prepared, including attached propositions; bare existence confirm after a filter remains independent. |
+ | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
+ | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
+ 
+-Once admission lands with open completeness, witnesses can prove
++With admitted material and open completeness, witnesses can prove
+ lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
+ zero-count claims, `min > x`, and an `every` failure based only on a short band stay
+ unknown until applicable collection completeness exists. A contradictory known
+ witness can still disprove a comparison. Local evaluation does not bypass the
+-public DSL or canonical planner admission gate at this checkpoint.
++public DSL or canonical planner material/placement guards.
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -108,18 +108,19 @@
+ 
+ ## 6. Collection DSL
+ 
+-**Current:** scalar comparisons/Boolean/existence work. Collection syntax and
+-canonical IR are implemented with scope, domain, product-ambiguity and version
+-checks; multiline predicates preserve source coordinates. Local evaluation is
+-prepared in the existing predicate owner: count/extrema ranges, Kleene quantifiers,
+-branch membership and existing StepRun ambiguity warnings. Evaluation acceptance
+-awaits maintainer-run tests/CI. Workflow admission remains explicitly gated.
++**Current:** syntax/IR and evaluation are accepted in #359/#360: scoped collection
++nodes, multiline source coordinates, count/extrema ranges, Kleene quantifiers,
++branch membership and existing StepRun ambiguity warnings. Admission is prepared
++for later filters over guaranteed preceding material, including immutable version-2
++continuations and non-refilling selection. Surface and canonical guards reject
++initial collection/latest and missing-material placements naming item 4a, and reject
++collection propositions in confirm. Admission acceptance awaits maintainer-run tests/CI.
+ Delivered-band declarations are deferred to the first per-route collection-
+-completeness slice, alongside the approved loader amendment; recipes and capability
+-files remain untouched here. Closed-bound logic has synthetic test proofs only.
+-
+-After admission, witnessed lower bounds (`count >= N`), `min < x`
+-and `for any` can work with open completeness. Exact counts, `count = 0`, `min > x`
++completeness slice under item 7; recipes and capability files remain untouched.
++Closed-bound logic has synthetic test proofs only.
++
++With admitted material, witnessed lower bounds (`count >= N`), `min < x`
++and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
+ and `for every` failing only on a short band remain unknown until a route establishes
+ collection completeness. Known contradictory witnesses can still disprove a claim.
+ 
+diff --git a/tests/test_dsl_collection_syntax.py b/tests/test_dsl_collection_syntax.py
+--- a/tests/test_dsl_collection_syntax.py
++++ b/tests/test_dsl_collection_syntax.py
+@@ -1,4 +1,4 @@
+-"""Collection syntax is representable and validated, but not executable yet."""
++"""Collection syntax, scope and admission remain separate contracts."""
+ 
+ import pytest
+ from pydantic import TypeAdapter
+@@ -34,12 +34,12 @@
+     "for any {output}: (classification.assessment.{output}.probability >= 0.8)",
+     "for every {output}: (classification@lc_classifier:alerce.assessment.{output}.probability >= 0.8)",
+ ])
+-def test_agreed_forms_validate_but_are_explicitly_not_runnable(source):
+-    result = validate_dsl(PREFIX + "filter " + source, continue_from=None)
++def test_agreed_forms_without_required_material_validate_but_are_not_runnable(source):
++    result = validate_dsl("object ZTF20acpwljl from ztf via alerce\nfilter " + source, continue_from=None)
+     assert result.is_valid, result
+     assert not result.is_runnable
+     assert result.capabilities.deferred
+-    assert "collection admission is pending" in result.capabilities.deferred[0].reason
++    assert "item 4a" in result.capabilities.deferred[0].reason
+ 
+ 
+ def test_multiline_quantifier_comments_and_json_round_trip(paths):
+@@ -121,14 +121,14 @@
+ 
+ 
+ def test_static_product_ambiguity_requires_existing_qualifier():
+-    source = PREFIX + "with lightcurve via fink\nwith lightcurve via lasair\nfilter count(lightcurve.points) >= 5"
++    source = "object ZTF20acpwljl from ztf via alerce\nwith lightcurve via fink\nwith lightcurve via lasair\nfilter count(lightcurve.points) >= 5"
+     result = validate_dsl(source, continue_from=None)
+     assert not result.is_valid
+     assert any("qualify" in issue.message for issue in result.semantic.errors)
+     qualified = source.replace("count(lightcurve.points)", "count(lightcurve@ztf:fink.points)")
+     result = validate_dsl(qualified, continue_from=None)
+     assert result.is_valid
+-    assert not result.is_runnable
++    assert result.is_runnable, result.lowering_error
+ 
+ 
+ def test_distinct_nested_parameters_are_allowed_without_shadowing():
+diff --git a/tests/test_orchestration_collection_predicates.py b/tests/test_orchestration_collection_predicates.py
+--- a/tests/test_orchestration_collection_predicates.py
++++ b/tests/test_orchestration_collection_predicates.py
+@@ -146,8 +146,7 @@
+     outputs = graph.fields_for_endpoint("fink", "ztf", "objects")
+     assert predicate_material_gaps(predicate, outputs, broker="fink") == ()
+     result = validate_step_capabilities(FilterStep(predicate=predicate), graph)
+-    assert result.status == "deferred"
+-    assert "collection admission is pending" in result.reason
++    assert result.status == "not_applicable"  # Local execution; workflow admission checks preceding material.
+ 
+ 
+ @pytest.mark.parametrize("function,field", [
+@@ -182,8 +181,8 @@
+         assert contains_collection_predicate(result.residual)
+ 
+ 
+-def test_workflow_planning_cannot_bypass_the_local_filter_gate(graph):
++def test_workflow_planning_requires_material_for_a_standalone_collection_filter(graph):
+     from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
+     workflow = WorkflowIR(steps=[FilterStep(predicate=comparison())])
+-    with pytest.raises(PlanningDeferredError, match="collection admission is pending"):
++    with pytest.raises(PlanningDeferredError, match="item 4a"):
+         plan_workflow(workflow, graph)
+diff --git a/tests/test_orchestration_collection_admission.py b/tests/test_orchestration_collection_admission.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_orchestration_collection_admission.py
+@@ -0,0 +1,451 @@
++"""Collection admission through the real facade; controlled native payloads only."""
++from copy import deepcopy
++from dataclasses import replace
++from itertools import count
++
++import pytest
++
++from alertissimo.api import execute_dsl, validate_dsl
++from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
++from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++from alertissimo.data_layer.runtime.recipes import ConstantValueSource, RecipeParameter
++from alertissimo.dsl import (
++    SurfaceLoweringError, compile_surface_fragment, lower_surface,
++    parse_surface_fragment, parse_surface_script,
++)
++from alertissimo.dsl.predicate_lowering import lower_expression_predicate
++from alertissimo.data_layer.semantic_model import SemanticPathModel
++from alertissimo.orchestration.ir import (
++    ConfirmStep, FilterStep, GetLightcurveStep, LookupStep, Source, TargetSelector, WorkflowIR,
++)
++from alertissimo.orchestration.normalization import summary_object_identity
++from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
++from alertissimo.orchestration.runtime import WorkflowRun
++from alertissimo.orchestration.validation import (
++    SourceCapabilityResult, collection_workflow_issues, predicate_material_gaps,
++    required_material_variants, validate_step_capabilities, validate_workflow_capabilities,
++)
++
++IDS = ('ZTF20aaaaaaa', 'ZTF20bbbbbbb')
++LOOKUP = f'objects {", ".join(IDS)} from ztf via alerce\n'
++GET = 'with lightcurve via fink\n'
++LC = 'lightcurve@ztf:fink'
++COUNT = f'count({LC}.points where photometry.g.psf.mag exists and photometry.g.upper_limit = false) >= 5'
++EVERY = (f'for every {{filter}} in [g, r]: (count({LC}.points where '
++         'photometry.{filter}.psf.mag exists and photometry.{filter}.upper_limit = false) >= 5)')
++
++
++@pytest.fixture(scope='module')
++def graph():
++    return build_capability_graph()
++
++
++@pytest.fixture(scope='module')
++def paths():
++    return SemanticPathModel.from_ontology()
++
++
++def condition(text, paths):
++    return lower_expression_predicate(text, paths.record_types, semantic_paths=paths, origins=('ztf',))
++
++
++def identities(portfolios):
++    return [summary_object_identity(p)[1] for p in portfolios]
++
++
++class Executor:
++    def __init__(self, *, fail_fink=False, missing_flags=False):
++        self.calls, self.sequence = [], count()
++        self.fail_fink, self.missing_flags = fail_fink, missing_flags
++
++    def execute(self, broker, origin, endpoint, params=None, headers=None):
++        assert headers is None and origin == 'ztf'
++        params = deepcopy(dict(params or {}))
++        self.calls.append((broker, endpoint, params))
++        if broker == 'alerce' and endpoint == 'query_object':
++            payload = {'oid': params['oid'], 'meanra': 10.0, 'meandec': 20.0,
++                       'ndet': 10, 'firstmjd': 59000, 'lastmjd': 59002 if params['oid'] == IDS[1] else 59001}
++        elif broker == 'alerce' and endpoint == 'query_objects':
++            # B is most recent but has only four g witnesses. A must not refill it.
++            payload = {'items': [{'oid': oid, 'meanra': 10.0, 'meandec': 20.0, 'ndet': 10,
++                                  'firstmjd': 59000, 'lastmjd': 59002 if oid == IDS[1] else 59001}
++                                 for oid in reversed(IDS)], 'total': 2}
++        else:
++            assert (broker, endpoint) == ('fink', 'objects'), self.calls[-1]
++            if self.fail_fink:
++                raise RuntimeError('controlled required history failure')
++            payload = []
++            for oid in params['objectId'].split(','):
++                for band, number in ((1, 5 if oid == IDS[0] else 4), (2, 5)):
++                    for index in range(number):
++                        payload.append({'i:objectId': oid, 'i:candid': 10000 * (IDS.index(oid) + 1) + band * 100 + index,
++                                        'i:jd': 2459000.5 + index, 'i:fid': band,
++                                        'i:magpsf': 18.0, 'i:sigmapsf': 0.1, 'i:drb': 0.99,
++                                        'i:ra': 10.0, 'i:dec': 20.0, 'i:ndethist': 10,
++                                        'v:classification': 'SN candidate', 'd:snn_sn_vs_all': 0.99,
++                                        **({} if self.missing_flags else {'d:tag': 'valid'})})
++        return ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
++            internal_execution_id=InternalExecutionId(f'collection-admission:{next(self.sequence)}'),
++            broker=broker, origin=origin, endpoint=endpoint, params=params,
++        ))
++
++
++@pytest.mark.parametrize('expression', [
++    COUNT, EVERY, f'count({LC}.points) >= 10',
++    f'for any {{filter}}: (min({LC}.points.photometry.{{filter}}.psf.mag) < 19)',
++    f'max({LC}.points.photometry.g.psf.mag) < 19',
++    'for any {output}: (classification.assessment.{output}.probability >= 0.8)',
++])
++def test_later_collection_filters_validate_and_plan_after_required_material(graph, expression):
++    # max < 19 is admissible but still unknown on open completeness.
++    source = LOOKUP + GET + 'filter ' + expression
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    assert result.compilation.workflow.dsl_version == 2
++    plan = plan_workflow(result.compilation.workflow, graph)
++    assert plan.steps[-1].endpoint_plans == ()
++    assert plan.steps[-1].candidate_input_from.step_index == len(plan.steps) - 2
++
++
++@pytest.mark.parametrize('expression', [COUNT, EVERY])
++def test_public_filter_selects_witnessed_candidates_and_binds_only_survivors(graph, expression):
++    executor = Executor()
++    source = LOOKUP + GET + 'filter ' + expression + '\nwith classification via fink'
++    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert identities(result.portfolios) == [IDS[0]]
++    fink = [params['objectId'].split(',') for broker, endpoint, params in executor.calls if broker == 'fink']
++    assert fink[0] == list(IDS)
++    assert fink[-1] == [IDS[0]]
++    assert result.run.workflow.dsl_version == 2
++    loaded = WorkflowRun.model_validate_json(result.run.model_dump_json())
++    assert loaded == result.run
++    assert len(result.result.steps[-2].portfolios) == 1
++
++
++@pytest.mark.parametrize('expression', [
++    f'count({LC}.points) = 10',
++    f'count({LC}.points) = 0',
++    f'min({LC}.points.photometry.g.psf.mag) > 17',
++    f'for every {{filter}}: (count({LC}.points where photometry.{{filter}}.psf.mag exists) >= 5)',
++])
++def test_open_completeness_stays_unknown_through_the_public_facade(graph, expression):
++    executor = Executor()
++    result = execute_dsl(LOOKUP + GET + 'filter ' + expression, graph=graph,
++                         executor=executor, continue_from=None)
++    assert result.portfolios == ()
++    assert len(result.result.steps[-2].portfolios) == 2  # Retain the input snapshot.
++
++
++def test_missing_flag_values_do_not_become_false_after_admission(graph):
++    result = execute_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph,
++                         executor=Executor(missing_flags=True), continue_from=None)
++    assert result.portfolios == ()
++
++
++def test_continuation_uses_the_immutable_material_prefix_without_new_calls(graph):
++    executor = Executor()
++    first = execute_dsl(LOOKUP + GET, graph=graph, executor=executor, continue_from=None)
++    before, calls = first.to_dict(), len(executor.calls)
++    validation = validate_dsl('filter ' + EVERY, graph=graph, continue_from=first)
++    assert validation.is_runnable, validation.lowering_error
++    second = execute_dsl('filter ' + EVERY, graph=graph, executor=executor, continue_from=first)
++    assert identities(second.portfolios) == [IDS[0]]
++    assert len(executor.calls) == calls
++    assert first.to_dict() == before
++    assert second.run.steps[:len(first.run.steps)] == first.run.steps
++    assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
++    assert second.workflow.dsl_version == first.workflow.dsl_version == 2
++
++
++def test_later_filter_after_latest_does_not_refill_the_selected_population(graph):
++    executor = Executor()
++    source = ('objects from ztf via alerce\ninside (10, 20, 30arcsec)\nlatest 1\n'
++              + GET + 'filter ' + COUNT)
++    validation = validate_dsl(source, graph=graph, continue_from=None)
++    assert validation.is_runnable, validation.lowering_error
++    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert result.portfolios == ()
++    assert [params['objectId'] for broker, _, params in executor.calls if broker == 'fink'] == [IDS[1]]
++    assert identities(result.result.steps[0].portfolios) == [IDS[1]]
++
++
++@pytest.mark.parametrize('tail', [
++    'where ' + COUNT + '\nlatest 1\n' + GET,
++    'latest 1\n' + GET + 'where ' + COUNT,
++])
++def test_initial_collection_latest_is_explicitly_deferred_to_item_4a(graph, tail):
++    result = validate_dsl('objects from ztf via alerce\ninside (10, 20, 30arcsec)\n' + tail,
++                          graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'item 4a' in result.lowering_error.message
++    assert result.capabilities.deferred
++
++
++def test_initial_discovery_cannot_borrow_later_history_material(graph):
++    source = 'objects from ztf via alerce\ninside (10, 20, 30arcsec)\nwhere ' + COUNT + '\n' + GET
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'item 4a' in result.lowering_error.message
++
++
++def test_future_retrieval_does_not_supply_an_earlier_filter(graph):
++    result = validate_dsl(LOOKUP + 'filter ' + COUNT + '\n' + GET, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'item 4a' in result.lowering_error.message
++    assert 'before this step' in result.lowering_error.message
++
++
++@pytest.mark.parametrize('clause', ['where ' + COUNT, 'with lightcurve via fink where ' + COUNT])
++def test_collection_propositions_in_confirm_are_rejected(graph, clause):
++    result = validate_dsl(LOOKUP + clause + '\nconfirm by 1 via fink', graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'collection predicates in confirm' in result.lowering_error.message
++    assert result.capabilities.deferred[0].subject == 'confirm'
++
++
++def test_bare_confirm_after_a_collection_filter_does_not_inherit_its_condition(graph):
++    executor = Executor()
++    result = execute_dsl(LOOKUP + GET + 'filter ' + COUNT + '\nconfirm by 1 via fink',
++                         graph=graph, executor=executor, continue_from=None)
++    assert identities(result.portfolios) == [IDS[0]]
++    assert isinstance(result.workflow.steps[-1], ConfirmStep)
++    assert result.workflow.steps[-1].predicate is None
++
++
++def test_required_retrieval_failure_remains_a_workflow_failure(graph):
++    from alertissimo.orchestration.runtime import WorkflowExecutionError
++    with pytest.raises(WorkflowExecutionError, match='controlled required history failure'):
++        execute_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph,
++                    executor=Executor(fail_fink=True), continue_from=None)
++
++
++def test_canonical_ir_cannot_bypass_material_or_confirmation_guards(graph, paths):
++    predicate = condition(COUNT, paths)
++    lookup = LookupStep(target=TargetSelector(kind='object', ids=[IDS[0]]),
++                        sources=[Source(origin='ztf', broker='alerce')])
++    filtered = FilterStep(predicate=predicate)
++    no_material = WorkflowIR(steps=[lookup, filtered])
++    assert validate_step_capabilities(filtered, graph).status == 'not_applicable'
++    assert validate_workflow_capabilities(no_material, graph)[-1].status == 'deferred'
++    with pytest.raises(PlanningDeferredError, match='item 4a'):
++        plan_workflow(no_material, graph)
++    material = GetLightcurveStep(sources=[Source(origin='ztf', broker='fink')])
++    assert collection_workflow_issues(WorkflowIR(steps=[lookup, material, filtered]), graph) == ()
++    plan_workflow(WorkflowIR(steps=[lookup, material, filtered]), graph)
++    confirmed = ConfirmStep(predicate=predicate, sources=[Source(origin='ztf', broker='fink')])
++    assert validate_step_capabilities(confirmed, graph).status == 'deferred'
++    with pytest.raises(PlanningDeferredError, match='collection predicates in confirm'):
++        plan_workflow(WorkflowIR(steps=[lookup, material, confirmed]), graph)
++
++
++def test_version_one_continuations_refuse_collections_without_implicit_upgrade(graph):
++    base = lower_surface(parse_surface_script(LOOKUP + GET), graph=graph).workflow
++    legacy = WorkflowIR.model_validate({**base.model_dump(), 'dsl_version': 1})
++    fragment = parse_surface_fragment('filter ' + COUNT)
++    with pytest.raises(SurfaceLoweringError, match='dsl_version 2'):
++        compile_surface_fragment(fragment, legacy, graph=graph)
++    assert legacy.dsl_version == 1
++
++
++def test_required_output_proof_excludes_optional_calls_and_nonprojected_fields(graph, paths):
++    original, = graph.query_recipes(op='get_lightcurve', broker='fink', origin='ztf')
++    primary, = original.calls
++    flags = tuple(field for field in primary.outputs if field.relative_field_path.endswith('.upper_limit'))
++    assert flags
++    thin = replace(primary, outputs=tuple(field for field in primary.outputs if field not in flags))
++    optional = replace(primary, required=False, outputs=flags)
++    recipe = replace(original, calls=(thin, optional))
++    endpoint = next(item for item in graph.endpoint_capabilities
++                    if (item.broker, item.origin, item.endpoint) == ('fink', 'ztf', primary.endpoint))
++    source = SourceCapabilityResult(Source(origin='ztf', broker='fink'), 'supported', (endpoint,),
++                                    'synthetic optional-proof case', (recipe,))
++    predicate = condition(COUNT, paths)
++    variants = required_material_variants(source, graph)
++    assert len(variants) == 1
++    assert any('upper_limit' in gap for gap in predicate_material_gaps(predicate, variants[0], broker='fink'))
++    # Endpoint-wide mappings cannot supply a field omitted by the required call.
++    graph_without_flag = replace(graph, recipe_capabilities=tuple(
++        replace(item, calls=(thin,)) if item == original else item for item in graph.recipe_capabilities))
++    result = validate_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph_without_flag, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'upper_limit' in result.lowering_error.message
++    projected_endpoint = replace(endpoint, supports_projection=True, projection_param='columns')
++    projected_graph = replace(graph, endpoint_capabilities=tuple(
++        projected_endpoint if item == endpoint else item for item in graph.endpoint_capabilities))
++    projected_call = replace(primary, params=primary.params + (
++        RecipeParameter(parameter='columns', source=ConstantValueSource(value='i:objectId')),
++    ))
++    projected_source = replace(source, recipes=(replace(original, calls=(projected_call,)),))
++    outputs, = required_material_variants(projected_source, projected_graph)
++    assert predicate_material_gaps(predicate, outputs, broker='fink')
++
++
++def test_one_incomplete_alternative_route_cannot_borrow_another_routes_fields(graph):
++    original, = graph.query_recipes(op='get_lightcurve', broker='fink', origin='ztf')
++    primary, = original.calls
++    thin = replace(primary, outputs=tuple(field for field in primary.outputs
++                                        if not field.relative_field_path.endswith('.upper_limit')))
++    alternative = replace(original, alternative_index=original.alternative_index + 1, calls=(thin,))
++    graph = replace(graph, recipe_capabilities=graph.recipe_capabilities + (alternative,))
++    result = validate_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'upper_limit' in result.lowering_error.message
++
++
++def test_future_product_does_not_make_an_earlier_unqualified_filter_ambiguous(graph):
++    source = LOOKUP + GET + 'filter count(lightcurve.points) >= 5\nwith lightcurve via alerce'
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    # Canonical validation retains that occurrence order through JSON too.
++    restored = WorkflowIR.model_validate_json(result.compilation.workflow.model_dump_json())
++    assert restored == result.compilation.workflow
++
++
++def test_continuation_static_product_ambiguity_includes_the_inherited_prefix(graph):
++    base = lower_surface(parse_surface_script(LOOKUP + GET + 'with lightcurve via lasair'), graph=graph).workflow
++    fragment = parse_surface_fragment('filter count(lightcurve.points) >= 5')
++    from alertissimo.dsl import validate_surface_fragment_semantics
++    report = validate_surface_fragment_semantics(fragment, base)
++    assert not report.is_valid
++    assert any('qualify' in issue.message for issue in report.errors)
++    with pytest.raises(SurfaceLoweringError, match='qualify'):
++        compile_surface_fragment(fragment, base, graph=graph)
++
++
++def test_lookup_initial_where_can_use_its_scheduled_implicit_retrieval(graph):
++    # Existing lookup lowering requests named material before its initial filter.
++    result = validate_dsl(LOOKUP + 'where ' + COUNT, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    assert [step.op for step in result.compilation.workflow.steps] == ['lookup', 'get_lightcurve', 'filter']
++
++
++def test_runtime_ambiguity_is_visible_through_the_public_facade(graph, monkeypatch):
++    import alertissimo.orchestration.pipeline as pipeline
++    from alertissimo.data_layer.representations import InternalRecordId
++    normalizer = pipeline.normalize_execution
++
++    def competing_version(execution, **kwargs):
++        portfolios = normalizer(execution, **kwargs)
++        if execution.execution_provenance.broker != 'fink':
++            return portfolios
++        result = []
++        for portfolio in portfolios:
++            product = next(record for record in portfolio.records if record.semantic_type == LC)
++            another = replace(product, internal_record_id=InternalRecordId(product.internal_record_id.value + ':v2'),
++                              fields={**product.fields, 'provenance.producer.version': 'synthetic-v2'})
++            result.append(replace(portfolio, records=portfolio.records + (another,)))
++        return tuple(result)
++
++    monkeypatch.setattr(pipeline, 'normalize_execution', competing_version)
++    executor = Executor()
++    result = execute_dsl(LOOKUP + GET + 'filter ' + COUNT, graph=graph,
++                         executor=executor, continue_from=None)
++    assert result.portfolios == ()
++    warnings = result.run.steps[-1].warnings
++    assert len(warnings) == 2 and all('ambiguous_product' in warning for warning in warnings)
++    assert all(any(oid in warning for warning in warnings) for oid in IDS)
++    assert WorkflowRun.model_validate_json(result.run.model_dump_json()).steps[-1].warnings == warnings
++    assert result.to_dict()['run']['steps'][-1]['warnings'] == list(warnings)
++    before, calls = result.to_dict(), len(executor.calls)
++    continued = execute_dsl('with classification via fink', graph=graph, executor=executor, continue_from=result)
++    assert continued.portfolios == () and len(executor.calls) == calls
++    assert continued.run.steps[:len(result.run.steps)] == result.run.steps
++    assert result.to_dict() == before
++    assert continued.run.steps[len(result.run.steps) - 1].warnings == warnings
++    # A scientific diagnostic must never exempt a genuine acquisition warning.
++    from alertissimo.orchestration.incremental import IncrementalExecutionError, _require_extension_prefix
++    bad = result.run.steps[-1].model_copy(update={'warnings': warnings + ('supplementary retrieval incomplete',)})
++    bad_run = result.run.model_copy(update={'steps': result.run.steps[:-1] + (bad,)})
++    bad_prefix = replace(result.staged, execution=replace(result.staged.execution, run=bad_run))
++    with pytest.raises(IncrementalExecutionError, match='incomplete supplementary'):
++        _require_extension_prefix(bad_prefix, plan_workflow(result.workflow, graph))
++
++
++@pytest.mark.parametrize('source', [
++    LOOKUP + 'filter ' + COUNT + '\n' + GET,
++    LOOKUP + 'where ' + COUNT + '\nconfirm by 1 via fink',
++    'objects from ztf via alerce\ninside (10, 20, 30arcsec)\nlatest 1\nwhere ' + COUNT,
++])
++def test_rejected_collection_programs_make_no_provider_calls(graph, source):
++    executor = Executor()
++    with pytest.raises(SurfaceLoweringError):
++        execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert executor.calls == []
++
++
++def test_initial_where_without_latest_can_use_required_discovery_witnesses(graph):
++    class ConeExecutor(Executor):
++        def execute(self, broker, origin, endpoint, params=None, headers=None):
++            assert (broker, origin, endpoint) == ('fink', 'ztf', 'conesearch')
++            assert headers is None
++            self.calls.append((broker, endpoint, dict(params or {})))
++            payload = [{'i:objectId': oid, 'i:candid': index + 1, 'i:jd': 2459000.5,
++                        'i:ra': 10.0, 'i:dec': 20.0, 'i:fid': 1, 'i:magpsf': 18.0,
++                        'i:drb': 0.99 if oid == IDS[0] else 0.1}
++                       for index, oid in enumerate(IDS)]
++            return ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
++                InternalExecutionId('collection-cone'), broker, origin, endpoint, dict(params or {})))
++    expression = 'count(measurement@ztf:fink where quality.real_bogus >= 0.8) >= 1'
++    source = 'objects from ztf via fink\ninside (10, 20, 30arcsec)\nwhere ' + expression
++    validation = validate_dsl(source, graph=graph, continue_from=None)
++    assert validation.is_valid and validation.is_runnable, validation.lowering_error
++    plans = plan_workflow(validation.compilation.workflow, graph)
++    assert plans.steps[0].endpoint_plans[0].predicate_realization.pushdown is None
++    executor = ConeExecutor()
++    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert identities(result.portfolios) == [IDS[0]]
++    assert len(executor.calls) == 1
++
++
++def test_discovery_residual_ambiguity_reaches_existing_warnings_in_each_phase(paths):
++    from alertissimo.data_layer.representations import (
++        InternalPortfolioId, InternalRecordId, Portfolio, SemanticRecord,
++    )
++    from alertissimo.orchestration.ir import ConeSearchStep
++    from alertissimo.orchestration.normalization import normalize_workflow_execution
++    from alertissimo.orchestration.pipeline import (
++        _candidate_view_from_step, _candidate_view_from_plan_executions,
++    )
++    from alertissimo.orchestration.runtime import (
++        EndpointPlan, PredicateRealization, StepExecutionResult, StepRun, StepRunState, WorkflowExecutionResult,
++    )
++    predicate = condition(COUNT, paths)
++    data = Portfolio(InternalPortfolioId('two-products'), records=(
++        SemanticRecord(InternalRecordId('identity'), 'summary@ztf:fink', {'identity.object_id': IDS[0]}),
++        *(SemanticRecord(InternalRecordId(f'lc-{version}'), LC, {'points': ()}) for version in (1, 2)),
++    ))
++    execution = ExecutionResult(payload=[], execution_provenance=InternalExecutionProvenance(
++        InternalExecutionId('discovery-proof'), 'fink', 'ztf', 'conesearch'))
++    cache = {'discovery-proof': (data,)}
++    step = ConeSearchStep(semantic_type='summary', ra=10, dec=20, radius=30, predicate=predicate,
++                          sources=[Source(origin='ztf', broker='fink')])
++    plan = EndpointPlan(broker='fink', origin='ztf', endpoint='conesearch',
++                        predicate_realization=PredicateRealization(residual=predicate))
++    occurrence = StepRun(step_index=0, state=StepRunState.SUCCEEDED, endpoint_plans=(plan,),
++                         execution_ids=('discovery-proof',))
++    raw = StepExecutionResult(0, (execution,))
++    run = WorkflowRun(workflow=WorkflowIR(steps=[step]), steps=(occurrence,))
++    normalized = normalize_workflow_execution(WorkflowExecutionResult(run, (raw,)),
++                                               normalized_execution_cache=cache)
++    assert normalized.steps[0].portfolios == ()
++    warnings = normalized.run.steps[0].warnings
++    assert len(warnings) == 1 and 'ambiguous_product' in warnings[0]
++    for early in (False, True):
++        messages = []
++        if early:
++            view = _candidate_view_from_plan_executions(occurrence, 0, (execution,),
++                normalized_execution_cache=cache, validate_semantic_model=True, diagnostics=messages)
++        else:
++            view = _candidate_view_from_step(occurrence, raw,
++                normalized_execution_cache=cache, validate_semantic_model=True, diagnostics=messages)
++        assert view.portfolios == ()
++        assert messages == list(warnings)
++
++
++def test_another_brokers_material_cannot_supply_a_qualified_collection(graph):
++    lasair_condition = COUNT.replace('lightcurve@ztf:fink', 'lightcurve@ztf:lasair')
++    result = validate_dsl(LOOKUP + GET + 'filter ' + lasair_condition, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'item 4a' in result.lowering_error.message
++    assert 'lightcurve@ztf:lasair' in result.lowering_error.message
