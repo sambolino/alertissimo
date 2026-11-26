@@ -245,6 +245,7 @@ def _normalize_planned_execution(
     normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
     *,
     validate_semantic_model: bool,
+    diagnostics: list[str] | None = None,
 ) -> ExecutionPortfolioResult:
     """Reuse base normalization for one physical execution, then apply a Step view.
 
@@ -263,7 +264,7 @@ def _normalize_planned_execution(
         )
         normalized_by_execution_id[execution_id] = portfolios
     if residual is not None:
-        portfolios = prune_portfolios(portfolios, residual)
+        portfolios = prune_portfolios(portfolios, residual, diagnostics=diagnostics)
     return ExecutionPortfolioResult(
         execution_id=execution_id,
         portfolios=portfolios,
@@ -277,6 +278,7 @@ def _normalize_planned_step(
     normalized_by_execution_id: dict[str, tuple[Portfolio, ...]],
     *,
     validate_semantic_model: bool,
+    diagnostics: list[str] | None = None,
 ) -> StepPortfolioResult:
     """Normalize successful executions against their owning endpoint plans."""
 
@@ -294,7 +296,7 @@ def _normalize_planned_step(
                     plan_index,
                 ),
                 normalized_by_execution_id,
-                validate_semantic_model=validate_semantic_model,
+                validate_semantic_model=validate_semantic_model, diagnostics=diagnostics,
             )
             for plan_index, execution in zip(plan_indexes, result.executions)
         ),
@@ -743,13 +745,19 @@ def normalize_workflow_execution(
                 )
             )
             continue
+        diagnostics = []
         own = _normalize_planned_step(
             step_result,
             step_run,
             result.run,
             normalized_by_execution_id,
-            validate_semantic_model=validate_semantic_model,
+            validate_semantic_model=validate_semantic_model, diagnostics=diagnostics,
         )
+        if diagnostics:
+            updated_steps[step_run.step_index] = step_run.model_copy(update={
+                "warnings": step_run.warnings + tuple(
+                    message for message in diagnostics if message not in step_run.warnings),
+            })
         normalized_steps.append(
             apply_classification_selection(step, _materialize_enrichment_view(
                 step_run, apply_search_selection(step, apply_time_selection(step, step_run, own), step_run), normalized_steps,

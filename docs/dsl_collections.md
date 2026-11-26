@@ -1,11 +1,11 @@
 # Collection expression contract
 
-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax and canonical
-IR are implemented; local evaluation is prepared, but collection expressions remain
-not runnable through workflows.** The evaluator in the existing normalization
-owner adds ranges, Kleene quantifiers, branch membership and ambiguity warnings.
-Admission remains gated for the next slice. Evaluation acceptance awaits the
-maintainer's local tests and CI; static source checks are not execution evidence.
+Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR and local
+evaluation are accepted in #359 and #360. Admission is prepared for collection
+filters whose required material precedes evaluation.** The existing validator and
+planner prove call-scoped availability; execution uses the existing normalization
+evaluator. Admission acceptance awaits maintainer-run tests and CI. Static source
+checks are not execution evidence. No route establishes collection completeness.
 This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
 It does not create another query engine or authorize deferred FP policy.
 
@@ -51,6 +51,24 @@ with `min`. Quantifiers may nest, but an inner parameter may not shadow an outer
 one. Parenthesized bodies/aggregate arguments may span lines with `#` comments;
 indentation is cosmetic and error coordinates must refer to the original text.
 
+The currently admitted placement is a later filter over requested material:
+
+```text
+objects ZTF20aaaaaaa, ZTF20bbbbbbb from ztf via alerce
+with lightcurve via fink
+filter for every {filter} in [g, r]: (
+    count(lightcurve@ztf:fink.points
+          where photometry.{filter}.psf.mag exists
+            and photometry.{filter}.upper_limit = false) >= 5
+)
+```
+
+This selects only established true candidates. Five g and five r witnesses suffice;
+a short band remains unknown without completeness and does not select. Native
+fields without a guaranteed preceding mapping/retrieval remain deferred to item 4a.
+The earlier `where` examples state expression semantics; initial admission depends
+on the scheduling rules below.
+
 ## Scope and domains
 
 - Reuse ontology path parameters. Do not introduce `$band`, bracketed variable
@@ -92,7 +110,8 @@ retrieval failures or current execution-policy completeness failures.
 
 These are the agreed evaluator/admission contract. Syntax/IR represents and
 validates the constructs. The existing normalization predicate evaluator now
-implements their local evaluation; workflow admission remains a separate slice.
+implements their local evaluation. Workflow admission proves the material and
+placement rules below without changing these scientific decisions.
 
 1. **Counts are ranges.** For `count(C where P)`, L is the number of true members;
    U is L plus unknown members only when C is known complete, otherwise infinity.
@@ -208,10 +227,35 @@ Keep round-trip, unknown/evidence and compatibility examples suitable for NLP
 training. Collection predicates always evaluate locally; never translate them to
 provider parameters.
 
-Initial collection `where` combined with `latest`, or another placement lacking
-guaranteed material before evaluation, must explicitly report deferred **item 4a**.
-Collection predicates within `confirm` are out of scope. A later `filter` after
-retrieval is the minimum required end-to-end placement for a subsequent slice.
+A later `filter` is admitted only when every candidate origin has guaranteed
+preceding mapped material for the entire predicate. Required outputs are checked
+per feasible route and authored projection; optional calls, endpoint-wide mappings
+outside the route, future retrievals and another origin's fields are not proof.
+Matching a bound `{filter}`/`{output}` path proves possible mapped material, not
+that every branch or value is present. Missing values remain unknown at evaluation.
+Classification method selection removes other methods from the material proof.
+
+An initial collection `where` with `latest` explicitly reports deferred **item 4a**.
+Without latest, an initial discovery predicate can use its required discovery-call
+material; supplementary calls cannot supply its residual. Existing lookup lowering
+may schedule an implied retrieval before its initial filter. Other placements
+without guaranteed material also report **item 4a**. A later filter after latest
+refines that already selected population without refilling it.
+
+Collection propositions in `confirm` are rejected, including conditions attached
+through `where` or a scoped material request. A bare confirm after an explicit
+collection filter remains a separate existence question. Surface compilation and
+canonical planning enforce the same boundaries.
+
+Continuation uses its immutable canonical prefix, including inherited product
+qualifiers; future products do not make an earlier filter ambiguous. Version-2
+continuations admit collection filters when material is proven. A version-1
+continuation refuses collection syntax explicitly and is not implicitly upgraded;
+scalar continuation preserves its existing version. Existing StepRun warnings also
+retain discovery-residual ambiguity before supplementary calls and finalization.
+`ambiguous_product` is scientific abstention, not incomplete acquisition: immutable
+continuation retains these diagnostics. Other acquisition warnings still prevent
+continuation under the existing safety rule.
 
 ## Acceptance examples
 
@@ -236,30 +280,30 @@ Named binders such as `as p` are reserved for later reevaluation of self-joins a
 correlated nested collections (item 10). They must not replace the simple forms
 above. FP request syntax/policy is separately deferred in item 11.
 
-## Instruction accounting at the evaluation checkpoint
+## Instruction accounting at the admission checkpoint
 
 | Requirement | Status / owner of remaining work |
 |---|---|
-| Ordered arrays/items, parameter scopes, declared filters | Done in the structural foundation; scalar-field recognition extended here. |
-| D3.10 versioning and JSON representation | Done in foundation and syntax/IR; existing version semantics unchanged here. |
-| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; workflow execution remains gated. |
+| Ordered arrays/items, parameter scopes, declared filters | Done in the foundation and syntax/IR; metadata unchanged by admission. |
+| D3.10 versioning and JSON representation | Done in foundation/syntax. Admission preserves version 2 and explicitly refuses collection additions to version-1 continuations; no schema fields added. |
+| Count/min/max/quantifier syntax and canonical nodes | Done in syntax/IR; proven local filter execution prepared in admission. |
 | Parenthesized multiline, comments, source coordinates | Done in syntax/IR; grammar unchanged here. |
 | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
-| D3.7–8 product/output qualification and runtime ambiguity | Static checks done in syntax/IR. Runtime ambiguity, output-local witnesses and existing warning-channel propagation prepared here. |
+| D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
 | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
-| D3.1–2 count ranges, quantifiers, exact NOT duality | Prepared here with synthetic open/complete-evidence regressions; local acceptance pending. |
-| D3.4–5 extrema ranges and branch-local membership | Prepared here, including missing leaves, other-band exclusion and explicit limit/quality conditions; local acceptance pending. |
+| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
+| D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
 | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
 | D3.9 scalar/exists/Boolean/taxon compatibility | Existing semantics and taxon validator retained; scalar and collection regressions run locally by the maintainer. |
-| Later filter, continuation, non-refill, facade acceptance | Deferred to admission slice; all collection workflow execution is gated here. Internal filter/warning propagation is prepared, not facade acceptance. |
-| Initial where/latest and missing-material placements | Explicit item-4a rejection belongs to admission slice. |
-| Collection confirm | Rejection belongs to admission slice; execution unavailable here. |
+| Later filter, continuation, non-refill, facade acceptance | Prepared in admission with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest; maintainer acceptance pending. |
+| Initial where/latest and missing-material placements | Guards prepared in surface capability validation and canonical planning; completion remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+| Collection confirm | Explicit rejection prepared, including attached propositions; bare existence confirm after a filter remains independent. |
 | Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
 | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
 
-Once admission lands with open completeness, witnesses can prove
+With admitted material and open completeness, witnesses can prove
 lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
 zero-count claims, `min > x`, and an `every` failure based only on a short band stay
 unknown until applicable collection completeness exists. A contradictory known
 witness can still disprove a comparison. Local evaluation does not bypass the
-public DSL or canonical planner admission gate at this checkpoint.
+public DSL or canonical planner material/placement guards.

@@ -16,8 +16,11 @@ invariants, retired interfaces and functional priorities before changing code.
   and the agreed collection DSL are required priorities; cutouts come last.
 - Do not silently choose unreviewed thresholds, taxonomy, output eligibility,
   model precedence or cross-method score comparisons.
-- Use a focused branch from current main. Do not mutate GitHub PRs, push or merge
-  through tools. Supply reviewable commits/bundles and exact git/gh commands.
+- Use a focused branch from current main. Do not mutate implementation branches
+  or GitHub PRs through tools. The authorized delivery exception writes generated
+  `.patch` files only to `artifact-delivery`; the maintainer fetches/applies them
+  and runs tests and all implementation git/gh commands locally. Include the full
+  retrieval, apply, test, commit, push, PR, check and squash/update commands.
 
 ## Scientific and architectural contracts
 

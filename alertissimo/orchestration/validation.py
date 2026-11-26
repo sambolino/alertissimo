@@ -481,11 +481,41 @@ def _semantic_record_producer(semantic_record_type: str) -> str | None:
     return producer or None
 
 
+def required_material_variants(
+    item: SourceCapabilityResult, graph: CapabilityGraph, *, discovery_only: bool = False,
+) -> tuple[tuple[FieldMappingCapability, ...], ...]:
+    """Inspect each eligible route's required, projected call outputs without choosing one."""
+    variants, owned = [], set()
+    for recipe in item.recipes:
+        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
+        fields = []
+        for call in (recipe.calls[:1] if discovery_only else recipe.calls):
+            if not call.required:
+                continue
+            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
+                         if endpoint.endpoint == call.endpoint)
+            outputs = call.outputs
+            projection = next((param.source for param in call.params
+                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
+            if projection is not None:
+                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                    continue  # A dynamic projection is not a field-availability proof.
+                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+                outputs = tuple(field for field in outputs if field.raw_field in columns)
+            fields.extend(outputs)
+        variants.append(tuple(fields))
+    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
+                    for endpoint in item.candidates
+                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
+    return tuple(variants) or ((),)
+
+
 def predicate_material_gaps(
     predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
 ) -> tuple[str, ...]:
     """Inspect call-scoped mapped material without selecting or executing a route."""
-    from .ir.predicates import iter_aggregate_operands
+    from .ir.predicates import contains_collection_predicate, iter_aggregate_operands
+    collection_pattern = contains_collection_predicate(predicate)
     collections = {item.reference for item in iter_aggregate_operands(predicate) if item.function == "count"}
     def mapped(reference: SemanticReference) -> bool:
         if headline_material_available(reference, outputs):
@@ -511,6 +541,7 @@ def predicate_material_gaps(
                              else len(declared) == len(requested))
             if lengths_match and all(
                 actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
+                or collection_pattern and wanted in {"{filter}", "{output}"}
                 for actual, wanted in zip(declared, requested)
             ):
                 return True
@@ -1276,10 +1307,16 @@ def validate_step_capabilities(
     semantic_type = getattr(step, "semantic_type", None)
     from .ir.predicates import contains_collection_predicate
     if contains_collection_predicate(getattr(step, "predicate", None)):
-        return CapabilityValidationResult(
-            operation, semantic_type, "deferred", (),
-            "collection admission is pending (evaluator implemented, workflow execution remains gated)",
-        )
+        if isinstance(step, ConfirmStep):
+            return CapabilityValidationResult(
+                operation, semantic_type, "deferred", (),
+                "collection predicates in confirm are not admitted (item 6)",
+            )
+        if isinstance(step, SearchStep) and step.selection is not None:
+            return CapabilityValidationResult(
+                operation, semantic_type, "deferred", (),
+                "item 4a: initial collection predicates with latest require complete selection scheduling",
+            )
     if isinstance(step, LookupStep):
         semantic_type = "summary" if step.target.kind == "object" else "measurement"
 
@@ -1500,10 +1537,111 @@ def classification_material_capabilities(
     return tuple(material)
 
 
+def collection_workflow_issues(
+    workflow: WorkflowIR, graph: CapabilityGraph,
+) -> tuple[tuple[int, str], ...]:
+    """Prove collection inputs from required material before their occurrence.
+
+    A source group consists of alternative feasible routes. A reference must be
+    supplied by every route in at least one earlier required source group. Groups
+    from independent required calls/Steps can jointly supply different references.
+    This proves mapped material availability, never collection completeness,
+    observed values, delivered bands, or success of an optional call.
+    """
+    from .ir.predicates import contains_collection_predicate
+    targets = tuple(index for index, step in enumerate(workflow.steps)
+                    if contains_collection_predicate(getattr(step, "predicate", None)))
+    if not targets:
+        return ()
+    forbidden = tuple((index, "collection predicates in confirm are not admitted (item 6)")
+                      for index in targets if isinstance(workflow.steps[index], ConfirmStep))
+    if forbidden:
+        return forbidden
+    for owner_index, step in enumerate(workflow.steps):
+        if isinstance(step, SearchStep) and step.selection is not None:
+            boundary = step.selection.after_step
+            if (contains_collection_predicate(step.predicate)
+                or boundary in targets):
+                owner = boundary if boundary in targets else owner_index
+                return ((owner, "item 4a: initial collection predicates with latest require complete selection scheduling"),)
+
+    # Each group is a tuple of alternative required output sets. Empty variants
+    # are retained: a projection or route without a field is not a proof.
+    groups = []
+    origins = ()
+    issues = []
+
+    def gaps(predicate, material, candidate_origins):
+        labels = set(predicate_material_gaps(predicate, (), broker=""))
+        missing = []
+        for origin in candidate_origins or (None,):
+            absent = set(labels)
+            for variants in material:
+                applicable = tuple(tuple(field for field in fields if origin in (None, field.origin))
+                                   for fields in variants
+                                   if not fields or origin is None or any(field.origin == origin for field in fields))
+                if applicable:
+                    route_gaps = {gap for fields in applicable
+                                  for gap in predicate_material_gaps(predicate, fields, broker="")}
+                    absent.intersection_update(route_gaps)
+            missing.extend(f"{origin or 'unresolved origin'}: {label}" for label in sorted(absent))
+        return tuple(missing)
+
+    for index, step in enumerate(workflow.steps[:max(targets) + 1]):
+        predicate = getattr(step, "predicate", None)
+        collection = index in targets
+        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+            groups = []
+            origins = tuple(dict.fromkeys(source.origin for source in step.sources if source.origin))
+        if isinstance(step, GetClassificationStep) and step.classifier is not None:
+            def keep(field):
+                affected = not step.sources or any(
+                    source.broker in (None, field.broker) and source.origin in (None, field.origin)
+                    for source in step.sources)
+                producer = _semantic_record_producer(field.semantic_record_type)
+                return (not affected or not semantic_record_noun_matches(field.semantic_record_type, "classification")
+                        or producer == step.classifier or bool(_DYNAMIC_QUALIFIER.fullmatch(producer or "")))
+            groups = [tuple(tuple(field for field in fields if keep(field)) for fields in variants)
+                      for variants in groups]
+        else:
+            keep = lambda field: True
+
+        available = []
+        if isinstance(step, (SearchStep, LookupStep, GetStep)) and not isinstance(step, SqlQueryStep):
+            validation = validate_step_capabilities(step, graph)
+            for source in validation.source_results:
+                if source.status != "supported":
+                    continue
+                variants = required_material_variants(source, graph)
+                available.append(tuple(tuple(field for field in fields if keep(field)) for fields in variants))
+            if collection and isinstance(step, SearchStep):
+                # A discovery residual runs before supplementary retrievals.
+                discovery = tuple(required_material_variants(source, graph, discovery_only=True)
+                                  for source in validation.source_results if source.status == "supported")
+                missing = gaps(predicate, discovery, origins)
+                if missing:
+                    issues.append((index, "item 4a: initial collection predicate lacks guaranteed discovery-call material: "
+                                   + repr(missing)))
+            groups.extend(available)
+        elif collection and isinstance(step, FilterStep):
+            missing = gaps(predicate, groups, origins)
+            if missing:
+                issues.append((index, "item 4a: collection filter requires material guaranteed before this step: "
+                               + repr(missing)))
+        elif collection:
+            issues.append((index, "item 4a: collection predicate has no admitted material evaluation placement"))
+    return tuple(issues)
+
+
 def validate_workflow_capabilities(
     workflow: WorkflowIR, graph: CapabilityGraph
 ) -> tuple[CapabilityValidationResult, ...]:
-    return tuple(validate_step_capabilities(step, graph) for step in workflow.steps)
+    issues = dict(collection_workflow_issues(workflow, graph))
+    return tuple(
+        CapabilityValidationResult(step.op, getattr(step, "semantic_type", None), "deferred", (), issues[index])
+        if index in issues else validate_step_capabilities(step, graph)
+        for index, step in enumerate(workflow.steps)
+    )
 
 
 __all__ = [
@@ -1513,6 +1651,8 @@ __all__ = [
     "ValidationStatus",
     "candidate_capabilities",
     "classification_material_capabilities",
+    "collection_workflow_issues",
+    "required_material_variants",
     "retrieval_record_requirement",
     "validate_step_capabilities",
     "validate_workflow_capabilities",

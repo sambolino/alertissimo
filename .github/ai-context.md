@@ -9,8 +9,14 @@ catalogue diversity, semantic discovery and uniform temporal/latest selection ar
 required priorities. Cutouts are the last required feature expansion.
 
 - [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
-  are implemented. Evaluation is prepared in the existing predicate owner;
-  maintainer-run tests/CI establish acceptance. Workflow admission remains gated.
+  are implemented; evaluation is accepted in #360. Admission is prepared in the
+  existing capability validator/planner for filters with guaranteed preceding
+  material, including version-2 continuation and non-refilling latest. Required
+  calls/projections and candidate origins govern proof; optional/future calls do
+  not. Static ambiguity uses occurrence-local/inherited material. Initial
+  collection/latest and missing evidence report item 4a; confirm propositions are
+  rejected. Version-1 continuations refuse collections without an implicit upgrade.
+  Maintainer-run tests/CI establish admission acceptance.
   Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
   and membership is branch-local. Competing products use existing StepRun warnings;
   material selection controls audit projection. Synthetic transient evidence tests
@@ -22,8 +28,11 @@ required priorities. Cutouts are the last required feature expansion.
   route-completeness slice under item 7; mixed detection/non-detection arrays need
   evidence covering the whole collection. Initial collections plus latest await
   item 4a; collection confirm, measurement acquisition, binders and FP syntax remain deferred.
-  The maintainer runs tests and all Git/GitHub commands locally. Prepare patches
-  and include complete apply/test/commit/push/PR/check/squash/update commands.
+  The maintainer runs tests and all implementation Git/GitHub commands locally.
+  Deliver generated .patch files only through the authorized `artifact-delivery`
+  branch; leave implementation branches and PRs untouched. Include fetch/git-show,
+  apply/test/commit/push/PR/check/squash/update commands. Do not use sandbox downloads
+  or inline Base64 for delivery unless requested.
 - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
   audit tooling; preserve catalogue scope, units and ownership.
 - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted

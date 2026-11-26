@@ -180,7 +180,9 @@ def _require_extension_prefix(
                 raise IncrementalExecutionError(
                     f"previous temporal reference is inconsistent at step_index {index}"
                 )
-        if previous_step_run.warnings:
+        if any(not warning.startswith("ambiguous_product:") for warning in previous_step_run.warnings):
+            # Scientific abstention preserves an immutable, fully acquired prefix.
+            # Other warnings still mean supplementary acquisition may be incomplete.
             raise IncrementalExecutionError(
                 "cannot safely continue a prior Step with incomplete supplementary "
                 f"execution at step_index {index}; start a fresh execution instead"
@@ -255,6 +257,11 @@ def execute_incremental_workflow_run(
     """
 
     _require_extension_prefix(previous, run)
+    prior_count = len(previous.run.steps)
+    run = run.model_copy(update={"steps": tuple(
+        step.model_copy(update={"warnings": previous.run.steps[index].warnings})
+        if index < prior_count else step for index, step in enumerate(run.steps)
+    )})
     replay = _PrefixReplayExecutor(_physical_calls(previous), executor)
     staged = execute_staged_workflow_run(
         run,

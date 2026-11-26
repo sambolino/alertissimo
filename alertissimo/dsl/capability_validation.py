@@ -17,14 +17,13 @@ from pydantic import BaseModel, ConfigDict
 from alertissimo.data_layer.runtime.capability_graph import (
     CapabilityGraph,
     EndpointCapability,
-    FieldMappingCapability,
     SemanticRecordCapability,
     build_capability_graph,
 )
-from alertissimo.data_layer.runtime.recipes import ConstantValueSource
 from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
-    SourceCapabilityResult, classification_material_capabilities, predicate_material_gaps, validate_step_capabilities,
+    classification_material_capabilities, collection_workflow_issues,
+    predicate_material_gaps, required_material_variants as _required_material_variants, validate_step_capabilities,
 )
 
 from .fragment import fragment_surface_context
@@ -305,35 +304,6 @@ def _qualified_endpoint_evidence(
                 semantic_record_type=record.semantic_record_type, endpoints=names,
             ))
     return tuple(evidence)
-
-
-def _required_material_variants(
-    item: SourceCapabilityResult, graph: CapabilityGraph,
-) -> tuple[tuple[FieldMappingCapability, ...], ...]:
-    """Inspect each eligible route's required, projected call outputs without choosing one."""
-    variants, owned = [], set()
-    for recipe in item.recipes:
-        owned.add((recipe.broker, recipe.origin, recipe.calls[0].endpoint))
-        fields = []
-        for call in recipe.calls:
-            if not call.required:
-                continue
-            endpoint, = (endpoint for endpoint in graph.query_endpoints(broker=recipe.broker, origin=recipe.origin)
-                         if endpoint.endpoint == call.endpoint)
-            outputs = call.outputs
-            projection = next((param.source for param in call.params
-                               if endpoint.supports_projection and param.parameter == endpoint.projection_param), None)
-            if projection is not None:
-                if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
-                    continue  # A dynamic projection is not a field-availability proof.
-                columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
-                outputs = tuple(field for field in outputs if field.raw_field in columns)
-            fields.extend(outputs)
-        variants.append(tuple(fields))
-    variants.extend(graph.fields_for_endpoint(endpoint.broker, endpoint.origin, endpoint.endpoint)
-                    for endpoint in item.candidates
-                    if (endpoint.broker, endpoint.origin, endpoint.endpoint) not in owned)
-    return tuple(variants) or ((),)
 
 
 def _initial_material_gaps(
@@ -681,7 +651,7 @@ def _confirm_checks(
                         else SurfaceCapabilityStatus.DEFERRED if result.status == "deferred"
                         else SurfaceCapabilityStatus.UNSUPPORTED
                     ),
-                    reason=positive_reason if supported else result.source_results[0].reason,
+                    reason=positive_reason if supported else (result.source_results[0].reason if result.source_results else result.reason),
                     clause_index=clause_index,
                     origin=origin,
                     broker=broker,
@@ -763,7 +733,7 @@ def _validate_surface_capabilities(
     semantic_model = semantic_paths or _semantic_path_model()
     semantic_report = validate_surface_semantics(
         surface,
-        semantic_paths=semantic_model,
+        semantic_paths=semantic_model, base_workflow=base_workflow,
     )
     if not semantic_report.is_valid:
         codes = ", ".join(issue.code for issue in semantic_report.errors)
@@ -773,19 +743,49 @@ def _validate_surface_capabilities(
         )
 
     from .expression import contains_collection_expression, parse_expression
-    collection_checks = []
-    for index, clause in enumerate(surface.clauses):
-        conditions = ((clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
-                      else clause.predicates if isinstance(clause, RequirementClause) else ())
-        if any(contains_collection_expression(parse_expression(condition)) for condition in conditions):
-            collection_checks.append(SurfaceCapabilityCheck(
-                subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
-                reason="collection syntax and IR are valid; collection admission is pending (evaluator implemented, workflow execution remains gated)",
-            ))
-    if collection_checks:
-        return SurfaceCapabilityReport(checks=tuple(collection_checks))
-
+    from alertissimo.orchestration.ir.predicates import contains_collection_predicate
+    collection_clauses = tuple(
+        (index, clause) for index, clause in enumerate(surface.clauses)
+        if any(contains_collection_expression(parse_expression(condition)) for condition in (
+            (clause.condition,) if isinstance(clause, (WhereClause, FilterClause))
+            else clause.predicates if isinstance(clause, RequirementClause) else ()))
+    )
     capability_graph = graph or build_capability_graph()
+    collection_checks = []
+    if collection_clauses:
+        from .lowering import (
+            SurfaceLoweringError, _confirmation_scope, _first_filter_index,
+            _lower_fragment_intent, _lower_surface_intent,
+        )
+        try:
+            propositions, _ = _confirmation_scope(surface, record_types=semantic_model.record_types)
+            for index, predicate in propositions.items():
+                if contains_collection_predicate(predicate):
+                    collection_checks.append(SurfaceCapabilityCheck(
+                        subject="confirm", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
+                        reason="collection predicates in confirm are not admitted (item 6)",
+                    ))
+            first_filter = _first_filter_index(surface)
+            if not collection_checks and any(isinstance(clause, LatestClause) for clause in surface.clauses):
+                collection_checks.extend(SurfaceCapabilityCheck(
+                    subject="selection", status=SurfaceCapabilityStatus.DEFERRED, clause_index=index,
+                    reason="item 4a: initial collection predicates with latest require complete selection scheduling",
+                ) for index, clause in collection_clauses if index < first_filter)
+            if not collection_checks:
+                kwargs = dict(record_types=semantic_model.record_types, graph=capability_graph, semantic_paths=semantic_model)
+                compilation = (_lower_surface_intent(surface, **kwargs) if base_workflow is None else
+                               _lower_fragment_intent(surface, base_workflow, **kwargs))
+                collection_checks.extend(SurfaceCapabilityCheck(
+                    subject="selection", status=SurfaceCapabilityStatus.DEFERRED, reason=f"step_index {index}: {reason}",
+                ) for index, reason in collection_workflow_issues(compilation.workflow, capability_graph))
+        except SurfaceLoweringError as error:
+            collection_checks.append(SurfaceCapabilityCheck(
+                subject="selection", status=SurfaceCapabilityStatus.DEFERRED,
+                reason=str(error), clause_index=error.clause_index,
+            ))
+        if collection_checks:
+            return SurfaceCapabilityReport(checks=tuple(collection_checks))
+
     checks: list[SurfaceCapabilityCheck] = list(
         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
     )
@@ -830,25 +830,30 @@ def _validate_surface_capabilities(
                     semantic_paths=semantic_model,
                 ))
         elif isinstance(clause, WhereClause):
-            for ref in extract_semantic_record_references(
-                clause.condition, semantic_model.record_types
-            ):
+            if contains_collection_expression(parse_expression(clause.condition)):
+                # Validate the same requests lowering will emit. Collection
+                # material availability was already proved for the whole IR.
+                from .lowering import _implicit_requirements_from_where
+                requirements = _implicit_requirements_from_where(
+                    surface, clause, record_types=semantic_model.record_types,
+                )
+            else:
+                requirements = tuple(RequirementClause(
+                    product=ref.noun, source=ref.producer, via=ref.channel,
+                ) for ref in extract_semantic_record_references(
+                    clause.condition, semantic_model.record_types,
+                ))
+            for requirement in requirements:
                 signature = (
-                    ref.noun,
-                    ref.producer,
-                    ref.channel or surface.candidates.broker,
+                    requirement.product, requirement.source,
+                    requirement.via or surface.candidates.broker,
                 )
                 if signature in checked_requirements:
                     continue
                 checked_requirements.add(signature)
                 checks.extend(
                     _requirement_checks(
-                        surface,
-                        RequirementClause(
-                            product=ref.noun,
-                            source=ref.producer,
-                            via=ref.channel,
-                        ),
+                        surface, requirement,
                         clause_index=index,
                         graph=capability_graph,
                         record_types=semantic_model.record_types,

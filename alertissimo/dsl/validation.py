@@ -406,6 +406,7 @@ def validate_surface_semantics(
     surface: SurfaceScript,
     *,
     semantic_paths: _SemanticPaths | None = None,
+    base_workflow: WorkflowIR | None = None,
 ) -> SurfaceValidationReport:
     """Validate ontology-grounded intent without asking provider capabilities.
 
@@ -495,8 +496,16 @@ def validate_surface_semantics(
                     scoped_channel=(clause.via or surface.candidates.broker) if noun else None,
                     semantic_paths=model, origins=surface.candidates.origins,
                 )
-                scope = surface.clauses if isinstance(clause, WhereClause) else surface.clauses[:index + 1]
-                material = tuple((resolve_record_type(req.product, model.record_types), req.source or origin,
+                initial_end = next((owner for owner, item in enumerate(surface.clauses)
+                                    if isinstance(item, FilterClause)), len(surface.clauses))
+                scope = surface.clauses[:initial_end] if isinstance(clause, WhereClause) else surface.clauses[:index + 1]
+                from alertissimo.orchestration.ir import GetLightcurveStep, GetForcedPhotometryStep
+                inherited = tuple(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
+                                  for step in (base_workflow.steps if base_workflow is not None else ())
+                                  if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep))
+                                  for source in step.sources if source.broker is not None
+                                  for origin in surface.candidates.origins)
+                material = inherited + tuple((resolve_record_type(req.product, model.record_types), req.source or origin,
                                   req.via or surface.candidates.broker, origin)
                                  for item in scope if isinstance(item, RequirementClause)
                                  for req in item.broker_requirements()
@@ -520,7 +529,7 @@ def validate_surface_fragment_semantics(
 
     return validate_surface_semantics(
         fragment_surface_context(fragment, base_workflow),
-        semantic_paths=semantic_paths,
+        semantic_paths=semantic_paths, base_workflow=base_workflow,
     )
 
 

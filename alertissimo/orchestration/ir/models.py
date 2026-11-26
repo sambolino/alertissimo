@@ -564,11 +564,14 @@ class WorkflowIR(IRModel):
                                  validate_collection_selectors)
         origins = tuple(dict.fromkeys(source.origin for step in self.steps[:1]
                                       for source in step.sources if source.origin))
-        material = tuple(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
-                         for step in self.steps if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep))
-                         for source in step.sources if source.broker is not None
-                         for origin in (origins or (None,)))
+        material = []
         for step in self.steps:
+            if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+                material = []
+            if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
+                material.extend(("lightcurve", source.origin or origin, source.broker, source.origin or origin)
+                                for source in step.sources if source.broker is not None
+                                for origin in (origins or (None,)))
             predicate = getattr(step, "predicate", None)
             if predicate is not None and contains_collection_predicate(predicate):
                 if self.dsl_version < 2:
