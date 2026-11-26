@@ -1,0 +1,62 @@
+diff --git a/alertissimo/dsl/lowering.py b/alertissimo/dsl/lowering.py
+--- a/alertissimo/dsl/lowering.py
++++ b/alertissimo/dsl/lowering.py
+@@ -834,11 +834,20 @@
+     *,
+     record_types: frozenset[str],
+ ) -> tuple[RequirementClause, ...]:
++    from .expression import contains_collection_expression, parse_expression
++    collection = contains_collection_expression(parse_expression(clause.condition))
+     requirements: list[RequirementClause] = []
+     for ref in extract_semantic_record_references(clause.condition, record_types):
++        producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
++        if (collection and ref.noun == "lightcurve"
++            and len(surface.candidates.origins) == 1
++            and producer == surface.candidates.origins[0]):
++            # lightcurve@<origin>:<broker> is preserved by Get.sources plus the
++            # unchanged predicate. It is not a method request on the Get itself.
++            # Multiple origins or other producers cannot use this equivalence.
++            producer = None
+         requirement = RequirementClause(
+-            product=ref.noun,
+-            source=None if ref.noun == "classification" and ref.producer == "headline" else ref.producer,
++            product=ref.noun, source=producer,
+             via=ref.channel,
+         )
+         try:
+diff --git a/tests/test_orchestration_collection_admission.py b/tests/test_orchestration_collection_admission.py
+--- a/tests/test_orchestration_collection_admission.py
++++ b/tests/test_orchestration_collection_admission.py
+@@ -318,6 +318,10 @@
+     result = validate_dsl(LOOKUP + 'where ' + COUNT, graph=graph, continue_from=None)
+     assert result.is_valid and result.is_runnable, result.lowering_error
+     assert [step.op for step in result.compilation.workflow.steps] == ['lookup', 'get_lightcurve', 'filter']
++    assert result.compilation.workflow.steps[1].sources == [Source(origin='ztf', broker='fink')]
++    from alertissimo.orchestration.ir.predicates import iter_semantic_references
++    references = tuple(iter_semantic_references(result.compilation.workflow.steps[-1].predicate))
++    assert {(ref.producer, ref.channel) for ref in references} == {('ztf', 'fink')}
+ 
+ 
+ def test_runtime_ambiguity_is_visible_through_the_public_facade(graph, monkeypatch):
+@@ -449,3 +453,21 @@
+     assert result.is_valid and not result.is_runnable
+     assert 'item 4a' in str(result.lowering_error)
+     assert 'lightcurve@ztf:lasair' in str(result.lowering_error)
++
++
++@pytest.mark.parametrize('producer', ['custom_model', 'lsst'])
++def test_implicit_collection_retrieval_does_not_drop_an_unrepresented_producer(graph, producer):
++    expression = COUNT.replace('lightcurve@ztf:fink', f'lightcurve@{producer}:fink')
++    result = validate_dsl(LOOKUP + 'where ' + expression, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert 'unrepresentable_producer_constraint' in str(result.lowering_error)
++
++
++def test_multi_origin_implicit_collection_request_retains_its_producer():
++    from alertissimo.dsl.lowering import _implicit_requirements_from_where
++    from alertissimo.dsl.surface import WhereClause
++    surface = parse_surface_script('objects from ztf, lsst via fink\nwhere ' + COUNT)
++    paths = SemanticPathModel.from_ontology()
++    where = next(clause for clause in surface.clauses if isinstance(clause, WhereClause))
++    requests = _implicit_requirements_from_where(surface, where, record_types=paths.record_types)
++    assert requests and all(request.source == 'ztf' and request.via == 'fink' for request in requests)
