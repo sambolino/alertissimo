@@ -1,0 +1,85 @@
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -800,6 +800,14 @@
+         kwargs = dict(record_types=semantic_model.record_types, graph=capability_graph, semantic_paths=semantic_model)
+         component_ir = (_lower_surface_intent(surface, **kwargs) if base_workflow is None else
+                         _lower_fragment_intent(surface, base_workflow, **kwargs)).workflow
++        # Scalar container existence uses the same occurrence-local material
++        # proof as aggregates. Check it before legacy noun/producer admission.
++        component_issues = collection_workflow_issues(component_ir, capability_graph)
++        if component_issues:
++            return SurfaceCapabilityReport(checks=tuple(SurfaceCapabilityCheck(
++                subject="selection", status=SurfaceCapabilityStatus.DEFERRED,
++                reason=f"step_index {index}: {reason}",
++            ) for index, reason in component_issues))
+         for step in component_ir.steps:
+             if isinstance(step, GetStep) and step.required_components:
+                 result = validate_step_capabilities(step, capability_graph)
+@@ -855,7 +863,12 @@
+                     semantic_paths=semantic_model,
+                 ))
+         elif isinstance(clause, WhereClause):
+-            if contains_collection_expression(parse_expression(clause.condition)):
++            from .lowering import _semantic_predicate
++            from alertissimo.orchestration.ir.predicates import contains_container_reference
++            if (contains_collection_expression(parse_expression(clause.condition))
++                or contains_container_reference(_semantic_predicate(
++                    clause.condition, record_types=semantic_model.record_types, clause_index=index,
++                ))):
+                 # Validate the same requests lowering will emit. Collection
+                 # material availability was already proved for the whole IR.
+                 from .lowering import _implicit_requirements_from_where
+diff --git a/alertissimo/dsl/lowering.py b/alertissimo/dsl/lowering.py
+--- a/alertissimo/dsl/lowering.py
++++ b/alertissimo/dsl/lowering.py
+@@ -857,11 +857,12 @@
+     graph: CapabilityGraph | None = None,
+ ) -> tuple[RequirementClause, ...]:
+     from .expression import contains_collection_expression, parse_expression
+-    collection = contains_collection_expression(parse_expression(clause.condition))
++    from alertissimo.orchestration.ir.predicates import contains_container_reference
++    predicate = _semantic_predicate(clause.condition, record_types=record_types, clause_index=0)
++    collection = (contains_collection_expression(parse_expression(clause.condition))
++                  or contains_container_reference(predicate))
+     requirements: list[RequirementClause] = []
+-    references = tuple(iter_semantic_references(_semantic_predicate(
+-        clause.condition, record_types=record_types, clause_index=0,
+-    )))
++    references = tuple(iter_semantic_references(predicate))
+     for ref in extract_semantic_record_references(clause.condition, record_types):
+         if ref.noun == "measurement":
+             # Existing predicates use incidental observation material. A new
+diff --git a/tests/test_dsl_required_components.py b/tests/test_dsl_required_components.py
+--- a/tests/test_dsl_required_components.py
++++ b/tests/test_dsl_required_components.py
+@@ -165,6 +165,8 @@
+     "filter count(lightcurve@ztf:alerce.forced_photometry_points) >= 1",
+     "where count(lightcurve@ztf:alerce.forced_photometry_points) >= 1",
+     "where lightcurve@ztf:alerce.forced_photometry_points exists",
++    "where lightcurve.forced_photometry_points exists",
++    "filter lightcurve@ztf:alerce.forced_photometry_points exists",
+ ])
+ def test_no_parent_retrieval_still_names_item_4a(graph, tail):
+     executor = Executor()
+@@ -174,6 +176,20 @@
+     assert "item 4a" in str(result.lowering_error)
+     pure = lower_surface(parse_surface_script(source), graph=graph).workflow
+     assert not any(isinstance(step, GetLightcurveStep) for step in pure.steps)
++
++
++@pytest.mark.parametrize("clause", ["where", "filter"])
++@pytest.mark.parametrize("empty", [False, True])
++def test_qualified_component_exists_uses_an_existing_retrieval(graph, clause, empty):
++    executor = Executor(empty=empty)
++    source = (executor.lookup + "with lightcurve\n" + clause
++              + " lightcurve@ztf:alerce.forced_photometry_points exists")
++    validation = validate_dsl(source, graph=graph, continue_from=None)
++    assert validation.is_valid and validation.is_runnable, validation.lowering_error
++    assert [step.op for step in validation.compilation.workflow.steps] == ["lookup", "get_lightcurve", "filter"]
++    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert len(result.portfolios) == (0 if empty else 1)
++    assert [endpoint for endpoint, _ in executor.calls] == ["query_object", "query_lightcurve", "query_forced_photometry"]
+ 
+ 
+ def test_no_route_names_broker_and_does_not_borrow_other_operation_calls(graph):
