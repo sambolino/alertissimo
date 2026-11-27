@@ -52,6 +52,7 @@ from .ir.models import (
     GetDataProductStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
+    GetMeasurementStep,
     GetSpectrumStep,
     GetStep,
     LookupStep,
@@ -397,7 +398,7 @@ def _lookup_recipe_evidence(
 
 
 def _photometry_recipe_evidence(
-    step: GetLightcurveStep | GetForcedPhotometryStep,
+    step: GetLightcurveStep | GetForcedPhotometryStep | GetMeasurementStep,
     graph: CapabilityGraph, source: Source | None,
 ) -> _CandidateEvidence | None:
     """Select declared retrievals; supplementary calls remain best effort."""
@@ -406,9 +407,15 @@ def _photometry_recipe_evidence(
         origin=source.origin if source else None, op=step.op,
     )
     if not declared:
+        if isinstance(step, GetMeasurementStep):
+            return _CandidateEvidence(
+                raw=(), compatible=(), empty_status="unsupported",
+                empty_reason=(f"no get_measurement recipe for "
+                              f"{source.broker if source else '*'}/{source.origin if source else '*'}"),
+            )
         return None
     migrated = {(recipe.broker, recipe.origin) for recipe in declared}
-    legacy = tuple(
+    legacy = () if isinstance(step, GetMeasurementStep) else tuple(
         endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
         if (endpoint.broker, endpoint.origin) not in migrated
     )
@@ -423,8 +430,9 @@ def _photometry_recipe_evidence(
         first = recipe.calls[0]
         # Forced measurements are mapped as detection/lightcurve material in the
         # current ontology. Their retrieval intent is the authored IR operation.
+        noun = "measurement" if isinstance(step, GetMeasurementStep) else "lightcurve"
         if not first.required or not any(
-            semantic_record_noun_matches(output.semantic_record_type, "lightcurve")
+            semantic_record_noun_matches(output.semantic_record_type, noun)
             for output in first.outputs
         ):
             continue
@@ -438,7 +446,7 @@ def _photometry_recipe_evidence(
             }
             missing = tuple(
                 name for name in ("bands", "time_context")
-                if getattr(step, name) is not None and (name,) not in paths
+                if getattr(step, name, None) is not None and (name,) not in paths
             )
             reason = None
             if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
@@ -469,7 +477,10 @@ def _photometry_recipe_evidence(
             for recipe in feasible
         ),
         empty_status="deferred" if reasons else "unsupported",
-        empty_reason="; ".join(dict.fromkeys(reasons)) or "no photometry recipe maps lightcurve material",
+        empty_reason="; ".join(dict.fromkeys(reasons)) or (
+            "no measurement recipe maps measurement material" if isinstance(step, GetMeasurementStep)
+            else "no photometry recipe maps lightcurve material"
+        ),
     )
 
 
@@ -1153,7 +1164,7 @@ def _operation_candidate_evidence_for_source(
         recipes = _search_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
-    if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
+    if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep, GetMeasurementStep)):
         recipes = _photometry_recipe_evidence(step, graph, source)
         if recipes is not None:
             return recipes
@@ -1401,6 +1412,8 @@ def retrieval_record_requirement(step: GetStep) -> SemanticReference | None:
         if step.bands is not None or step.time_context is not None:
             return None
         return SemanticReference(semantic_type="lightcurve")
+    if isinstance(step, GetMeasurementStep):
+        return SemanticReference(semantic_type="measurement")
     if isinstance(step, GetForcedPhotometryStep):
         if step.bands is not None or step.time_context is not None:
             return None

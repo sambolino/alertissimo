@@ -164,10 +164,11 @@ placement rules below without changing these scientific decisions.
    `every` for all/none; existing scalar, existence, Boolean, taxon and confirm
    semantics must not be reinterpreted.
 10. **Language version.** No text marker is added. Newly constructed WorkflowIR
-    defaults to integer `dsl_version: 2`; serialized IR missing the field loads
+    defaults to integer `dsl_version: 3`; serialized IR missing the field loads
     as pre-collection version 1, including within a WorkflowRun. A runtime refuses
     a newer version. Scalar continuation preserves the existing version. Version
-    2 metadata alone does not assert that collection syntax is runnable.
+    2 remains sufficient for collection syntax; `get_measurement` requires version
+    3. Neither version metadata alone asserts that a request is runnable.
 
 ## Representation and validation
 

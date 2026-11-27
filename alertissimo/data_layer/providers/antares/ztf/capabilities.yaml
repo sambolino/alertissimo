@@ -140,6 +140,11 @@ recipes:
             center:
               from: {ra: step.ra, dec: step.dec}
             radius: {from: step.radius}
+  get_measurement:
+    - calls:
+        - endpoint: get_by_ztf_object_id
+          params:
+            ztf_object_id: {from: step.target.ids}
   get_lightcurve:
     - calls:
         - endpoint: get_by_ztf_object_id

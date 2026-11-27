@@ -30,6 +30,7 @@ from alertissimo.orchestration.ir.models import (
     GetClassificationStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
+    GetMeasurementStep,
     GetStep,
     LookupStep,
     MatchStep,
@@ -677,7 +678,7 @@ def _mark_candidate_dependencies(
 def _same_forced_retrieval_input(
     owner_step: GetForcedPhotometryStep,
     owner_plan: EndpointPlan,
-    lightcurve_step: GetLightcurveStep,
+    lightcurve_step: GetLightcurveStep | GetMeasurementStep,
     supplement_plan: EndpointPlan,
 ) -> bool:
     if (
@@ -688,9 +689,9 @@ def _same_forced_retrieval_input(
         or supplement_plan.candidate_input_from_plan is not None
     ):
         return False
-    if owner_step.bands != lightcurve_step.bands:
+    if owner_step.bands != getattr(lightcurve_step, "bands", None):
         return False
-    if owner_step.time_context != lightcurve_step.time_context:
+    if owner_step.time_context != getattr(lightcurve_step, "time_context", None):
         return False
 
     owner_target = owner_step.target
@@ -715,7 +716,7 @@ def _mark_equivalent_forced_reuse(
 ) -> tuple[StepRun, ...]:
     rewritten = list(planned_steps)
     for step_index, step in enumerate(workflow.steps):
-        if not isinstance(step, GetLightcurveStep):
+        if not isinstance(step, (GetLightcurveStep, GetMeasurementStep)):
             continue
 
         current_run = rewritten[step_index]

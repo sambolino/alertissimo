@@ -142,7 +142,10 @@ and scientific field coverage remain item 7. Optional pairwise aliases remain it
 
 ## 7. Measurements, non-detections and lightcurve boundaries
 
-**Current:** `with measurement` is ontology-valid but lacks retrieval lowering.
+**Current:** `with measurement` lowers to `GetMeasurementStep`/`get_measurement`
+and has declared acquisition recipes for all eight pairs. New workflows use
+`dsl_version: 3`; version-1/2 workflows still load and retain their version, but
+cannot acquire the new operation through implicit continuation upgrades.
 Provider lightcurve retrieval plans on all pairs; local `LightcurveStep` construction
 explicitly remains unimplemented. Ordinary upper-limit flag mappings now cover
 all eight pairs on measurements and existing lightcurve points: ALeRCE/ZTF uses
@@ -153,17 +156,53 @@ Lasair/ZTF detection-only values use a same-row guard to prevent copied rich-for
 limit values from becoming PSF measurements. No route completeness is enabled by
 these flag mappings.
 
-**Agreed 27 November 2026; remaining implementation:** add the approved
-`get_measurement` operation/recipes, then product-component requirements and
+**Acquisition sources (27 November 2026):** existing endpoint/mapping contracts and
+the saved fixtures establish these choices, not collection completeness.
+
+| Pair | Measurement route | Source evidence |
+|---|---|---|
+| ALeRCE/ZTF | `query_lightcurve`; optional `query_forced_photometry` | `tests/fixtures/alerce/ztf/query_lightcurve.json`: both detections and non-detections, whereas `query_detections.json` contains only detections. |
+| ALeRCE/LSST | `query_lightcurve`; optional `query_forced_photometry` | Corresponding LSST fixtures supply DIASource rows and bundled forced epochs; the separate forced endpoint is already mapped to measurements. |
+| Fink/ZTF | `objects` with `withupperlim: true` | `objects_withupperlim.request.json` and response in `tests/fixtures/fink/ztf/`: 14 valid and 19 upper-limit rows. The endpoint contract says the option also includes bad-quality rows, whose status stays unknown. |
+| Fink/LSST | `sources`; optional `fp` | `tests/fixtures/fink/lsst/sources.json` and `fp.json`: ordinary DIASources and separate forced measurements. |
+| Lasair/ZTF | `lightcurves` | Maintainer's `ZTF23aamxeqf` object/lightcurves captures each contain 21 candidate/limit rows; the lightcurves mappings also supply guarded PSF measurements. Existing object-candidate magnitude debt is unchanged. |
+| Lasair/LSST | `object`, `diaSourcesList` | Existing object fixtures and mappings retain DIASource rows and the separately named forced-source array. |
+| ANTARES/ZTF | `get_by_ztf_object_id`, `locus_alerts` | Saved locus plus `alerts.json` contains 316 authoritative alerts; the 280-row secondary client lightcurve is not substituted. |
+| ANTARES/LSST | `get_by_lsst_dia_object_id`, `locus_alerts` | Saved locus plus `alerts.json` supplies the LSST DIASource properties used by measurement mappings. |
+
+Optional calls retain the lightcurve policy, including omission of a singular
+optional call when a dependency's target population is not yet known. Required
+calls still fan out through the binder. Plain lookup/lightcurve recipes are
+unchanged. No-route measurement requests name the broker and fail admission;
+incidental observation predicates do not silently gain history calls. Existing
+mapped records/products remain distinct in material views; point arrays and
+measurement records are never pooled into one count.
+
+For example, this requests the existing broker history before selecting objects
+with a witnessed detection in g:
+
+```text
+object ZTF23aamxeqf from ztf via lasair
+with measurement
+filter count(measurement@ztf:lasair where photometry.g.upper_limit = false) >= 1
+```
+
+This counts measurement records, not distinct upstream observation identities;
+the existing collection contract still requires a reviewed identity rule for
+distinct counting. Material history is preserved rather than deduplicated by a
+guessed scientific key.
+
+**Agreed 27 November 2026; remaining implementation:** product-component requirements and
 reference-driven promotion within existing retrievals, preserving plain plans.
 Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
 and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
 nearest-reference-source coordinate debt, without adding a branch. These changes
 are approved but not yet runnable. Local `LightcurveStep` remains deferred.
 
-**Target/work:** define measurement acquisition using concrete source/scope examples
-and a reviewed canonical mapping. Map true/false limit flags where native evidence
-establishes them; retain unknown otherwise. Missing flux alone is not non-detection,
+**Target/work:** finish the approved component acquisition, Lasair forced-photometry
+mapping and scoped detection-completeness slices. Map true/false limit flags where
+native evidence establishes them; retain unknown otherwise. Missing flux alone is
+not non-detection,
 nor is a detection's limiting depth another observation.
 
 **Per-route collection completeness:** establish evidence on the existing path,
@@ -172,8 +211,8 @@ A detection-history proof does not close a whole mixed array. The approved next
 slice may close a count only when its condition entails `upper_limit = false`
 and its population is covered by the audited proof payload and normalization.
 The first proven route also introduces its delivered-band declaration and the
-approved existing-loader support. Keep incidental measurement counts open until
-acquisition/completeness is defined.
+approved existing-loader support. Measurement collection completeness remains
+open; acquisition alone does not close its upper bounds.
 
 **Completeness entry audit after #361:** the checked material-history routes do
 not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both

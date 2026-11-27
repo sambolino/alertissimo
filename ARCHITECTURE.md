@@ -61,6 +61,13 @@ Ontology components and enum values do not become standalone request nouns. The
 and transient display projection remain distinct. Existing `GetLightcurveStep`
 retrieval is not the unimplemented local `LightcurveStep` construction.
 
+`with measurement` uses `GetMeasurementStep` and provider-local `get_measurement`
+recipes for the broker's existing per-epoch observations, including supplied limits.
+It shares the existing retrieval, binding and material-lineage owners. Optional
+forced calls follow the lightcurve policy. No recipe means unsupported acquisition;
+incidental measurement predicates retain their existing scheduling. Measurements
+and lightcurve points remain distinct collections, with open completeness.
+
 An abstract-family request expands deterministically into supported concrete Gets
 using the supplied capability graph and candidate origins. Identical explicit or
 continued requests are deduplicated. Deferred members are not activated, an empty
@@ -189,8 +196,10 @@ versions through its existing declarative recipe.
   material decision rather than re-evaluating collection fragments. Synthetic
   transient evidence exercises completeness; no production route supplies it.
   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
-  `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
-  and newer versions are refused. Route delivery and collection completeness are
+  `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
+  and newer versions are refused. Existing version-1/2 workflows retain their
+  versions; `get_measurement` requires 3 and cannot implicitly upgrade continuation.
+  Route delivery and collection completeness are
   separate evidence; observed bands establish neither the full domain nor completeness.
 - Preserve measurement/product/display boundaries. Non-detections are measurements;
   missing flux alone does not establish one, and limiting depth alongside a value

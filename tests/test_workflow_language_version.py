@@ -12,10 +12,10 @@ from alertissimo.orchestration.runtime.models import WorkflowRun
 
 def test_new_ir_defaults_to_current_and_round_trips_without_version_drift():
     workflow = WorkflowIR(steps=[])
-    assert workflow.dsl_version == CURRENT_DSL_VERSION == 2
+    assert workflow.dsl_version == CURRENT_DSL_VERSION == 3
     assert WorkflowIR.model_validate(workflow.model_dump()) == workflow
     assert WorkflowIR.model_validate_json(workflow.model_dump_json()) == workflow
-    assert WorkflowIR.model_json_schema()["properties"]["dsl_version"]["default"] == 2
+    assert WorkflowIR.model_json_schema()["properties"]["dsl_version"]["default"] == 3
 
 
 def test_unversioned_ir_loads_as_legacy_without_mutating_the_input():
@@ -35,7 +35,7 @@ def test_nested_and_adapter_deserialization_also_use_the_legacy_version():
     assert adapter.validate_python([{"steps": []}])[0].dsl_version == 1
     assert adapter.validate_json('[{"steps": []}]')[0].dsl_version == 1
     workflow = WorkflowIR(steps=[])
-    assert WorkflowRun(workflow=workflow, steps=()).workflow.dsl_version == 2
+    assert WorkflowRun(workflow=workflow, steps=()).workflow.dsl_version == 3
 
 
 @pytest.mark.parametrize("version", [0, -1, True, False, 1.0, "1", None])
@@ -59,7 +59,7 @@ def test_newer_versions_are_refused_on_all_deserialization_paths():
             load()
 
 
-@pytest.mark.parametrize("version", [1, CURRENT_DSL_VERSION])
+@pytest.mark.parametrize("version", [1, 2, CURRENT_DSL_VERSION])
 def test_scalar_fragment_continuation_preserves_the_existing_ir_version(version):
     from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
     from alertissimo.dsl import compile_surface, compile_surface_fragment, parse_surface_fragment, parse_surface_script
