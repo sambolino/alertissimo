@@ -108,6 +108,9 @@ mappings:
   measurement@lsst:alerce.photometry.{filter}:
   - query_detections#band_name
   - query_lightcurve.detections#band_name
+  measurement@lsst:alerce.photometry.{filter}.upper_limit:
+  - query_detections#band_name
+  - query_lightcurve.detections#band_name
   measurement@lsst:alerce.identity.object_id:
   - query_detections#oid
   - query_lightcurve.detections#oid
@@ -426,6 +429,8 @@ mappings:
   - query_lightcurve.detections#templateFluxErr
   lightcurve@lsst:alerce.points.photometry.{filter}:
   - query_lightcurve.detections#band_name
+  lightcurve@lsst:alerce.points.photometry.{filter}.upper_limit:
+  - query_lightcurve.detections#band_name
   lightcurve@lsst:alerce.points.identity.source_id:
   - query_lightcurve.detections#measurement_id
   lightcurve@lsst:alerce.points.identity.visit_id:
@@ -536,3 +541,17 @@ transforms:
     query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
   lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.no_good_pixels:
     query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
+  measurement@lsst:alerce.photometry.{filter}.upper_limit:
+    query_detections#band_name:
+      type: value_map
+      map: {}
+      default: false
+    query_lightcurve.detections#band_name:
+      type: value_map
+      map: {}
+      default: false
+  lightcurve@lsst:alerce.points.photometry.{filter}.upper_limit:
+    query_lightcurve.detections#band_name:
+      type: value_map
+      map: {}
+      default: false

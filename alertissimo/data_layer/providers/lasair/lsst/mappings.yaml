@@ -413,6 +413,8 @@ mappings:
   - diaForcedSourcesList#decl
   measurement@lsst:lasair.photometry.{filter}:
   - diaSourcesList#band
+  measurement@lsst:lasair.photometry.{filter}.upper_limit:
+  - diaSourcesList#band
   measurement@lsst:lasair.forced_photometry.{filter}:
   - diaSourcesList#band
   - diaForcedSourcesList#band
@@ -437,6 +439,8 @@ mappings:
   lightcurve@lsst:lasair.points.quality.signal_to_noise:
   - diaSourcesList#snr
   lightcurve@lsst:lasair.points.photometry.{filter}:
+  - diaSourcesList#band
+  lightcurve@lsst:lasair.points.photometry.{filter}.upper_limit:
   - diaSourcesList#band
   lightcurve@lsst:lasair.points.photometry.{filter}.psf.flux:
   - diaSourcesList#psfFlux
@@ -984,3 +988,13 @@ transforms:
       skip_null: true
     sherlock_object_crossmatches#classification:
       skip_null: true
+  measurement@lsst:lasair.photometry.{filter}.upper_limit:
+    diaSourcesList#band:
+      type: value_map
+      map: {}
+      default: false
+  lightcurve@lsst:lasair.points.photometry.{filter}.upper_limit:
+    diaSourcesList#band:
+      type: value_map
+      map: {}
+      default: false

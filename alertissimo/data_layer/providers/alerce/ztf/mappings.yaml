@@ -124,6 +124,11 @@ mappings:
   - query_lightcurve.detections#fid
   - query_lightcurve.non_detections#fid
   - query_non_detections#fid
+  measurement@ztf:alerce.photometry.{filter}.upper_limit:
+  - query_detections#fid
+  - query_lightcurve.detections#fid
+  - query_lightcurve.non_detections#fid
+  - query_non_detections#fid
   measurement@ztf:alerce.identity.object_id:
   - query_detections#oid
   - query_lightcurve.detections#oid
@@ -328,6 +333,9 @@ mappings:
   classification@{producer}:alerce.assessment.{output}.rank:
   - query_probabilities#ranking
   lightcurve@ztf:alerce.points.photometry.{filter}:
+  - query_lightcurve.detections#fid
+  - query_lightcurve.non_detections#fid
+  lightcurve@ztf:alerce.points.photometry.{filter}.upper_limit:
   - query_lightcurve.detections#fid
   - query_lightcurve.non_detections#fid
   lightcurve@ztf:alerce.points.identity.source_id:
@@ -554,3 +562,29 @@ transforms:
         3: i
         '3': i
       default: unknown
+  measurement@ztf:alerce.photometry.{filter}.upper_limit:
+    query_detections#fid:
+      type: value_map
+      map: {}
+      default: false
+    query_lightcurve.detections#fid:
+      type: value_map
+      map: {}
+      default: false
+    query_lightcurve.non_detections#fid:
+      type: value_map
+      map: {}
+      default: true
+    query_non_detections#fid:
+      type: value_map
+      map: {}
+      default: true
+  lightcurve@ztf:alerce.points.photometry.{filter}.upper_limit:
+    query_lightcurve.detections#fid:
+      type: value_map
+      map: {}
+      default: false
+    query_lightcurve.non_detections#fid:
+      type: value_map
+      map: {}
+      default: true

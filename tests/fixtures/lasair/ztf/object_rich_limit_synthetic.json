@@ -1,0 +1,16 @@
+{
+  "objectId": "ZTF23aamxeqf",
+  "candidates": [
+    {
+      "jd": 2460000.5,
+      "fid": 1,
+      "diffmaglim": 20.5,
+      "magpsf": 20.5,
+      "sigmapsf": 0.0,
+      "mjd": 60000.0,
+      "json": null,
+      "since_now": 3.0
+    }
+  ],
+  "forcedphot": []
+}

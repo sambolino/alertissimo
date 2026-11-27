@@ -144,9 +144,22 @@ and scientific field coverage remain item 7. Optional pairwise aliases remain it
 
 **Current:** `with measurement` is ontology-valid but lacks retrieval lowering.
 Provider lightcurve retrieval plans on all pairs; local `LightcurveStep` construction
-explicitly remains unimplemented. Ordinary upper-limit flag mappings exist for
-Fink/ZTF and ANTARES/ZTF; ALeRCE/Lasair ZTF have limit values without that flag, and
-the checked LSST definitions have no corresponding flag mapping.
+explicitly remains unimplemented. Ordinary upper-limit flag mappings now cover
+all eight pairs on measurements and existing lightcurve points: ALeRCE/ZTF uses
+the source array, Lasair/ZTF uses non-null `candid` before `diffmaglim`, Fink/ZTF
+uses `d:tag` (`badquality` remains unknown), ANTARES/ZTF uses `ant_survey`, and LSST
+DIASource rows are detections. Forced-only epochs acquire no ordinary status.
+Lasair/ZTF detection-only values use a same-row guard to prevent copied rich-format
+limit values from becoming PSF measurements. No route completeness is enabled by
+these flag mappings.
+
+**Agreed 27 November 2026; remaining implementation:** add the approved
+`get_measurement` operation/recipes, then product-component requirements and
+reference-driven promotion within existing retrievals, preserving plain plans.
+Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
+and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
+nearest-reference-source coordinate debt, without adding a branch. These changes
+are approved but not yet runnable. Local `LightcurveStep` remains deferred.
 
 **Target/work:** define measurement acquisition using concrete source/scope examples
 and a reviewed canonical mapping. Map true/false limit flags where native evidence
@@ -155,7 +168,9 @@ nor is a detection's limiting depth another observation.
 
 **Per-route collection completeness:** establish evidence on the existing path,
 starting with detection-only arrays that exactly match an existing temporal proof.
-A detection-history proof does not cover an array containing non-detections.
+A detection-history proof does not close a whole mixed array. The approved next
+slice may close a count only when its condition entails `upper_limit = false`
+and its population is covered by the audited proof payload and normalization.
 The first proven route also introduces its delivered-band declaration and the
 approved existing-loader support. Keep incidental measurement counts open until
 acquisition/completeness is defined.
@@ -169,16 +184,17 @@ allow limit-only rows, into `points`. Their detection proofs cannot be applied
 unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
 This is a current implementation boundary, not an upstream impossibility claim.
 
-Before implementing the first closure, review a concrete proposal for either a
-proven complete existing mixed array or a detection-only semantic projection with
-a matching proof. Do not introduce a projection, new schema field or recipe/
-capability structure under the completed collection-syntax approval. Delivered-band
-metadata alone does not resolve the evidence boundary.
+Before implementing the first closure, audit required-call success, payload and
+identity coverage, and raw-row-to-element normalization, including omitted or
+invalid rows. Derive the link from the existing proof payload and status mappings;
+any additional YAML structure needs review. LSST and measurement completeness
+remain open. Delivered-band metadata alone does not resolve the evidence boundary.
 
 **Completion:** executable supported measurement intent and reliable field semantics,
 preserving incidental evidence, distinct products and shared presentation. Do not
-silently add a new IR operation/local builder or settle deferred FP policy here.
-Default visibility/composition choices remain open.
+add an operation beyond the approved `get_measurement`, or add a local builder.
+FP component requests are approved for a later slice; on-demand computation remains
+item 11. Default visibility/composition choices remain open.
 
 ## 8. Deployable UI
 

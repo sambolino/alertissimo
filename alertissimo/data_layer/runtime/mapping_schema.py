@@ -26,6 +26,7 @@ PAYLOAD_KEYS = {"path", "endpoint", "description", "row_filter", "object_partiti
 OBJECT_PARTITION_KEYS = {"mode", "field"}
 TRANSFORM_KEYS = {
     "type", "map", "default", "factor", "skip_null", "skip_empty", "note", "object_key",
+    "requires",
 }
 TRANSFORM_TYPES = {
     "boolean_not",
@@ -368,6 +369,7 @@ def validate_mapping_file(path: str | Path) -> None:
 
     transforms = document.get("transforms", {})
     transforms = _mapping(transforms, f"{path}: transforms")
+    required_row_fields: list[tuple[str, str]] = []
     for semantic_path, raw_transforms in transforms.items():
         if semantic_path not in mappings:
             raise MappingSchemaError(
@@ -387,6 +389,23 @@ def validate_mapping_file(path: str | Path) -> None:
                 specification, TRANSFORM_KEYS,
                 f"{path}: transform {semantic_path!r} {raw_reference!r}",
             )
+            if "requires" in specification:
+                required = specification["requires"]
+                if (
+                    not isinstance(required, list)
+                    or not required
+                    or any(
+                        not isinstance(field, str) or not field.strip()
+                        or field != field.strip() or "#" in field
+                        for field in required
+                    )
+                    or len(set(required)) != len(required)
+                ):
+                    raise MappingSchemaError(
+                        f"{path}: transform requires must be a non-empty list of unique "
+                        "row-relative raw field names (no payload qualifier)"
+                    )
+                required_row_fields.extend((raw_reference, field) for field in required)
             transform_type = specification.get("type")
             if transform_type is not None and transform_type not in TRANSFORM_TYPES:
                 raise MappingSchemaError(
@@ -423,6 +442,15 @@ def validate_mapping_file(path: str | Path) -> None:
     unmapped_references = _validate_unmapped(
         path.with_name("unmapped_fields.yaml"), broker, origin, payloads
     )
+    known_references = mapped_references | unmapped_references
+    for raw_reference, field in required_row_fields:
+        payload_key = raw_reference.split("#", 1)[0]
+        if f"{payload_key}#{field}" not in known_references:
+            raise MappingSchemaError(
+                f"{path}: transform {raw_reference!r} requires unknown raw field "
+                f"{field!r} in the same payload row {payload_key!r}; declare it in "
+                "mappings or unmapped_fields for that payload"
+            )
     overlap = mapped_references & unmapped_references
     if overlap:
         raise MappingSchemaError(

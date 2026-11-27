@@ -108,6 +108,8 @@ mappings:
   - locus_alerts#properties.lsst_diaSource_timeProcessedMjdTai
   measurement@lsst:antares.photometry.{filter}:
   - locus_alerts#properties.lsst_diaSource_band
+  measurement@lsst:antares.photometry.{filter}.upper_limit:
+  - locus_alerts#properties.lsst_diaSource_band
   measurement@lsst:antares.photometry.{filter}.psf.mag:
   - locus_alerts#properties.ant_mag
   measurement@lsst:antares.photometry.{filter}.psf.mag.error:
@@ -291,6 +293,8 @@ mappings:
   lightcurve@lsst:antares.points.quality.signal_to_noise:
   - locus_alerts#properties.lsst_diaSource_snr
   lightcurve@lsst:antares.points.photometry.{filter}:
+  - locus_alerts#properties.lsst_diaSource_band
+  lightcurve@lsst:antares.points.photometry.{filter}.upper_limit:
   - locus_alerts#properties.lsst_diaSource_band
   lightcurve@lsst:antares.points.photometry.{filter}.psf.flux:
   - locus_alerts#properties.lsst_diaSource_psfFlux
@@ -792,3 +796,13 @@ transforms:
     locus_alerts#properties.lsst_diaSource_isNegative:
       type: boolean_not
       note: Invert the authoritative Python boolean only.
+  measurement@lsst:antares.photometry.{filter}.upper_limit:
+    locus_alerts#properties.lsst_diaSource_band:
+      type: value_map
+      map: {}
+      default: false
+  lightcurve@lsst:antares.points.photometry.{filter}.upper_limit:
+    locus_alerts#properties.lsst_diaSource_band:
+      type: value_map
+      map: {}
+      default: false

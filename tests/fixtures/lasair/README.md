@@ -9,6 +9,8 @@ possible API response field is complete.
 | ZTF | cone | `ztf/cone.json` | authoritative | Documented normal Lasair cone result shape. |
 | ZTF | sherlock_position | `ztf/sherlock_position.json` | authoritative | Observed `ZTF20acpwljl` response supplied by the user. |
 | ZTF | object | `ztf/object.json` | provisional | Reduced representative payload; no complete official example was available locally. |
+| ZTF | object, lightcurves | `ztf/object_ZTF23aamxeqf.json`, `ztf/lightcurves_ZTF23aamxeqf.json` | maintainer capture | Supplied 27 November 2026; each contains 2 candidates with `candid` and 19 limit rows, with empty `forcedphot`. Bytes retained unchanged; no retrieval-completeness claim. |
+| ZTF | candidate row | `ztf/object_rich_limit_synthetic.json` | synthetic regression | Rich-format limit: absent `candid`, copied `magpsf == diffmaglim`, plus `json`, `mjd` and `since_now`; not a provider capture. |
 | ZTF | objects, lightcurves, query, sherlock_objects | corresponding `ztf/*.json` | provisional | Representative mapping fixtures; query columns are caller-selected. |
 | LSST | object | `lsst/object.json` | provisional | Representative synthetic payload, not an observed full API response. |
 | LSST | cone | `lsst/cone.json` | provisional | Representative synthetic payload, not an observed full API response. |

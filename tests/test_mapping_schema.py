@@ -277,6 +277,59 @@ def test_skip_null_boolean_passes(tmp_path, valid_mapping):
     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
 
 
+def test_requires_accepts_a_declared_same_row_field(tmp_path, valid_mapping):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["oid"]}}}
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_requires_accepts_a_same_row_field_in_the_unmapped_inventory(tmp_path, valid_mapping):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["gate"]}}}
+    write_yaml(tmp_path / "unmapped_fields.yaml", {
+        "broker": "example", "origin": "ztf",
+        "unmapped": [{"objects#gate": {"reason": "Guard metadata only"}}],
+    })
+    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("required", [
+    None, "oid", [], [""], [" oid"], ["oid", "oid"], [False],
+    [{"oid": True}], ["other#oid"],
+])
+def test_requires_rejects_non_field_list_forms(tmp_path, valid_mapping, required):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": required}}}
+    with pytest.raises(MappingSchemaError, match="requires must be"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+@pytest.mark.parametrize("required", ["missing", "oid != null", "not oid", "other.oid"])
+def test_requires_rejects_unknown_row_fields_and_expressions(tmp_path, valid_mapping, required):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": [required]}}}
+    with pytest.raises(MappingSchemaError, match="requires unknown raw field"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_requires_cannot_borrow_a_field_from_another_payload(tmp_path, valid_mapping):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["payloads"]["other"] = {"path": ".", "object_partition": {"mode": "single"}}
+    valid_mapping["mappings"]["measurement@ztf:example.quality.real_bogus"] = ["other#gate"]
+    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["gate"]}}}
+    with pytest.raises(MappingSchemaError, match="same payload row 'objects'"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
+def test_requires_does_not_admit_other_option_names(tmp_path, valid_mapping):
+    semantic = "measurement@ztf:example.identity.source_id"
+    valid_mapping["transforms"] = {
+        semantic: {"objects#oid": {"requires": ["oid"], "unless": ["oid"]}}
+    }
+    with pytest.raises(MappingSchemaError, match="unsupported key.*unless"):
+        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+
+
 def test_object_key_is_orthogonal_to_scalar_transform(tmp_path, valid_mapping):
     semantic = "measurement@ztf:example.identity.source_id"
     valid_mapping["transforms"] = {
