@@ -1,0 +1,1751 @@
+diff --git a/AGENTS.md b/AGENTS.md
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -26,9 +26,11 @@
+ 
+ - Keep one public facade, canonical WorkflowIR, ontology and normalized Portfolio.
+   Preserve existing semantic IDs; prefer additive mappings over renaming.
+-- Keep `with` requirements tied to Portfolio record nouns/family members. Nested
+-  components and enum values do not automatically become request nouns. Explicit FP
+-  surface/policy changes and optional element bindings remain deferred.
++- Keep `with` requirements tied to Portfolio record nouns/family members.
++  `with <product>.<component>` strengthens that product's own recipe; components
++  and enum values do not become standalone nouns. References may strengthen only
++  unexecuted retrievals, never add a Get or rewrite a completed continuation prefix.
++  Optional element bindings and on-demand forced-photometry computation remain deferred.
+ - Provider details belong in declarations and pure adapters, not broker switches
+   in the DSL, planner or UI. Do not restore retired `core` execution code.
+ - Keep scientific extraction in shared presentation. Display dictionaries are
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -67,6 +67,19 @@
+ forced calls follow the lightcurve policy. No recipe means unsupported acquisition;
+ incidental measurement predicates retain their existing scheduling. Measurements
+ and lightcurve points remain distinct collections, with open completeness.
++
++An ontology-valid `with <product>.<component>` records qualified semantic references
++in the Get's `required_components`. The existing resolver promotes every producing
++call within that product's own recipe, without changing declarations or importing
++another operation's calls. References strengthen matching unexecuted Gets; completed
++continuation prefixes stay immutable. Required empty successes keep the object;
++existing receipts can prove an empty requested array transiently, without adding
++Portfolio fields or fabricated records. Missing/malformed arrays and normalization
++loss are not empty evidence. Scalar values keep their existing existence semantics;
++container existence asks for supplied content. Sibling arrays are distinct, while
++multiple records carrying the requested array remain ambiguous. Nonempty histories
++retain open completeness. Empty component metadata is omitted from serialization;
++nonempty metadata requires version 3, preserving older workflow wire formats.
+ 
+ An abstract-family request expands deterministically into supported concrete Gets
+ using the supplied capability graph and candidate origins. Identical explicit or
+@@ -194,7 +207,8 @@
+   rejected candidates, serialization and immutable continuation; acquisition
+   warnings still block continuation. Physical audit projection follows the
+   material decision rather than re-evaluating collection fragments. Synthetic
+-  transient evidence exercises completeness; no production route supplies it.
++  transient evidence exercises nonempty completeness; required-component receipts
++  prove only explicit empty arrays. Nonempty route completeness remains deferred.
+   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+   `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
+   and newer versions are refused. Existing version-1/2 workflows retain their
+@@ -205,8 +219,8 @@
+   missing flux alone does not establish one, and limiting depth alongside a value
+   is not another observation.
+ - Cutouts follow the higher-priority scientific work. Optional `as p` bindings and
+-  the FP surface/acquisition policy remain deferred for reevaluation. Do not
+-  broaden the Portfolio noun rule or change automatic FP supplementation now.
++  on-demand FP computation remain deferred. The component rule retains Portfolio
++  nouns and preserves automatic supplementation when no component is required.
+ 
+ The [field coverage contract](docs/provider_field_coverage.md) owns the audit
+ checklist and dated targeted-catalogue snapshot. The existing
+diff --git a/alertissimo/api.py b/alertissimo/api.py
+--- a/alertissimo/api.py
++++ b/alertissimo/api.py
+@@ -352,12 +352,16 @@
+             if executor is not None
+             else RegistryEndpointExecutor(registry=effective_registry)
+         )
++        component_options = ({"graph": effective_graph} if any(
++            getattr(step, "required_components", ()) for step in getattr(compilation.workflow, "steps", ())
++        ) else {})
+         if previous is None:
+             staged = execute_staged_workflow_run(
+                 run,
+                 effective_registry,
+                 effective_executor,
+                 validate_semantic_model=validate_semantic_model,
++                **component_options,
+                 **({"reference_time": reference_time} if reference_time is not None else {}),
+             )
+         else:
+@@ -367,6 +371,7 @@
+                 effective_registry,
+                 effective_executor,
+                 validate_semantic_model=validate_semantic_model,
++                **component_options,
+                 **({"reference_time": reference_time} if reference_time is not None else {}),
+             )
+         result = finalize_local_semantics(
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -793,6 +793,26 @@
+     checks: list[SurfaceCapabilityCheck] = list(
+         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
+     )
++    # Reference promotion is scientific IR intent, not a second vocabulary of
++    # component capabilities. Inspect the same strengthened retrievals as planning.
++    from .lowering import SurfaceLoweringError, _lower_fragment_intent, _lower_surface_intent
++    try:
++        kwargs = dict(record_types=semantic_model.record_types, graph=capability_graph, semantic_paths=semantic_model)
++        component_ir = (_lower_surface_intent(surface, **kwargs) if base_workflow is None else
++                        _lower_fragment_intent(surface, base_workflow, **kwargs)).workflow
++        for step in component_ir.steps:
++            if isinstance(step, GetStep) and step.required_components:
++                result = validate_step_capabilities(step, capability_graph)
++                for item in result.source_results:
++                    if item.status != "supported":
++                        checks.append(SurfaceCapabilityCheck(
++                            subject="requirement", status=SurfaceCapabilityStatus(item.status), reason=item.reason,
++                            broker=item.source.broker if item.source else None,
++                            origin=item.source.origin if item.source else None,
++                            semantic_noun=step.op.removeprefix("get_"),
++                        ))
++    except SurfaceLoweringError:
++        pass  # Existing clause checks retain the original lowering diagnostic.
+     checked_requirements: set[tuple[str, str | None, str | None]] = set()
+     checked_measurement_references: set[tuple[str, str | None, str | None]] = set()
+ 
+@@ -823,7 +843,7 @@
+             noun = resolve_record_type(clause.product, semantic_model.record_types)
+             for requirement in clause.broker_requirements():
+                 signature = (
+-                    noun or requirement.product, requirement.source,
++                    requirement.product if "." in requirement.product else noun or requirement.product, requirement.source,
+                     requirement.via or surface.candidates.broker,
+                 )
+                 if signature in checked_requirements:
+@@ -841,6 +861,7 @@
+                 from .lowering import _implicit_requirements_from_where
+                 requirements = _implicit_requirements_from_where(
+                     surface, clause, record_types=semantic_model.record_types,
++                    graph=capability_graph,
+                 )
+             else:
+                 requirements = tuple(RequirementClause(
+diff --git a/alertissimo/dsl/lowering.py b/alertissimo/dsl/lowering.py
+--- a/alertissimo/dsl/lowering.py
++++ b/alertissimo/dsl/lowering.py
+@@ -37,8 +37,10 @@
+     MatchStep,
+     Predicate,
+     SearchSelection,
++    SearchStep,
+     SemanticSearchStep,
+     Source,
++    SemanticReference,
+     TargetSelector,
+     TimeContext,
+     WorkflowIR,
+@@ -584,6 +586,18 @@
+             clause_index=clause_index,
+         )
+ 
++    product = _normalized_product(clause.product)
++    if product.startswith(noun + "."):
++        plain = clause.model_copy(update={"product": noun})
++        step = _lower_requirement(surface, plain, clause_index=clause_index, record_types=record_types)
++        if not isinstance(step, GetStep):
++            raise SurfaceLoweringError("components require a retrieval product",
++                                       code="unsupported_product_detail", clause_index=clause_index)
++        return type(step).model_validate({**step.model_dump(), "required_components": (
++            SemanticReference(semantic_type=noun, field_path=product[len(noun) + 1:],
++                              producer=clause.source, channel=clause.via or surface.candidates.broker),
++        )})
++
+     effective_broker = clause.via or surface.candidates.broker
+     sources = _candidate_sources(surface, broker=effective_broker)
+ 
+@@ -840,15 +854,37 @@
+     clause: WhereClause,
+     *,
+     record_types: frozenset[str],
++    graph: CapabilityGraph | None = None,
+ ) -> tuple[RequirementClause, ...]:
+     from .expression import contains_collection_expression, parse_expression
+     collection = contains_collection_expression(parse_expression(clause.condition))
+     requirements: list[RequirementClause] = []
++    references = tuple(iter_semantic_references(_semantic_predicate(
++        clause.condition, record_types=record_types, clause_index=0,
++    )))
+     for ref in extract_semantic_record_references(clause.condition, record_types):
+         if ref.noun == "measurement":
+             # Existing predicates use incidental observation material. A new
+             # explicit Get must not silently add history calls to old programs.
+             continue
++        if graph is not None:
++            from alertissimo.orchestration.validation import component_output_matches
++            try:
++                probe = _lower_requirement(surface, RequirementClause(product=ref.noun, via=ref.channel),
++                                           clause_index=0, record_types=record_types)
++            except SurfaceLoweringError:
++                probe = None
++            if isinstance(probe, GetStep):
++                calls = tuple(call for source in probe.sources
++                              for recipe in graph.query_recipes(op=probe.op, broker=source.broker, origin=source.origin)
++                              for call in recipe.calls)
++                components = tuple(reference.model_copy(update={"field_path": reference.field_path.split(".")[0]})
++                                   for reference in references if reference.semantic_type == ref.noun and reference.field_path)
++                if any(any(not call.required and any(component_output_matches(probe, f, component) for f in call.outputs)
++                           for call in calls)
++                       and not any(call.required and any(component_output_matches(probe, f, component) for f in call.outputs)
++                                   for call in calls) for component in components):
++                    continue  # No new implicit retrieval for unguaranteed component material.
+         producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
+         if (collection and ref.noun == "lightcurve"
+             and len(surface.candidates.origins) == 1
+@@ -871,6 +907,80 @@
+         if isinstance(step, GetStep):
+             requirements.append(requirement)
+     return tuple(requirements)
++
++
++def _append_requirement_step(steps, step, *, protected_prefix=0):
++    if step in steps:
++        return
++    if isinstance(step, GetStep):
++        if any(isinstance(previous, GetStep)
++               and previous.model_dump(exclude={"required_components"}) == step.model_dump(exclude={"required_components"})
++               and set(step.required_components) <= set(previous.required_components) for previous in steps):
++            return
++        for index in range(len(steps) - 1, protected_prefix - 1, -1):
++            previous = steps[index]
++            if not isinstance(previous, GetStep):
++                break
++            if previous.model_dump(exclude={"required_components"}) == step.model_dump(exclude={"required_components"}):
++                components = tuple(dict.fromkeys(previous.required_components + step.required_components))
++                steps[index] = type(previous).model_validate({**previous.model_dump(), "required_components": components})
++                return
++    steps.append(step)
++
++
++def _require_referenced_components(workflow: WorkflowIR, graph: CapabilityGraph, *, protected_prefix: int = 0) -> WorkflowIR:
++    """Strengthen existing, unexecuted retrievals; never schedule another Get."""
++    steps = list(workflow.steps)
++    origins = {endpoint.origin for endpoint in graph.endpoint_capabilities}
++    population_start = 0
++    changed = False
++    for index, step in enumerate(steps):
++        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
++            population_start = index
++        predicate = getattr(step, "predicate", None)
++        if predicate is None or isinstance(step, ConfirmStep):
++            continue
++        for reference in iter_semantic_references(predicate):
++            if not reference.field_path or headline_reference(reference):
++                continue
++            component = reference.model_copy(update={"field_path": reference.field_path.split(".")[0]})
++            for owner_index in range(index - 1, population_start - 1, -1):
++                owner = steps[owner_index]
++                if not isinstance(owner, GetStep) or owner.op != "get_" + reference.semantic_type:
++                    continue
++                if owner.sources and not any(
++                    (reference.channel in (None, s.broker) or s.broker is None) and
++                    (reference.semantic_type not in {"lightcurve", "measurement"} or reference.producer not in origins
++                     or s.origin in (None, reference.producer))
++                    for s in owner.sources
++                ):
++                    continue
++                producer = getattr(owner, "classifier", None) or getattr(owner, "catalog", None)
++                if producer is not None and reference.producer not in (None, producer):
++                    continue
++                recipes = tuple(r for r in graph.query_recipes(op=owner.op)
++                                if (not owner.sources or any(s.broker in (None, r.broker) and s.origin in (None, r.origin)
++                                                             for s in owner.sources)))
++                if not recipes:
++                    continue  # Legacy field evidence is not an owned recipe to strengthen.
++                if component not in owner.required_components:
++                    if owner_index >= protected_prefix and workflow.dsl_version >= 3:
++                        steps[owner_index] = type(owner).model_validate({
++                            **owner.model_dump(), "required_components": owner.required_components + (component,),
++                        })
++                        changed = True
++                break
++    return WorkflowIR.model_validate({**workflow.model_dump(), "steps": steps}) if changed else workflow
++
++
++def _require_components(compilation, graph, *, protected_prefix=0):
++    if not any(isinstance(step, GetStep) for step in compilation.workflow.steps):
++        return compilation
++    if not any(getattr(step, "predicate", None) is not None for step in compilation.workflow.steps[protected_prefix:]):
++        return compilation
++    from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++    workflow = _require_referenced_components(compilation.workflow, graph or build_capability_graph(), protected_prefix=protected_prefix)
++    return SurfaceCompilation(workflow=workflow, view=compilation.view)
+ 
+ 
+ def lower_surface(
+@@ -950,6 +1060,7 @@
+                     surface,
+                     clause,
+                     record_types=record_types,
++                    graph=graph,
+                 ):
+                     signature = _requirement_signature(
+                         surface, implied, record_types
+@@ -987,7 +1098,7 @@
+                         "requirement must resolve to one ontology record type before lowering",
+                         code="unresolved_requirement", clause_index=index,
+                     )
+-                if signature in emitted:
++                if signature in emitted and "." not in requirement.product:
+                     continue
+                 if signature == stop_before:
+                     return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
+@@ -995,8 +1106,7 @@
+                     surface, requirement, clause_index=index, record_types=record_types,
+                     semantic_paths=semantic_paths, graph=graph,
+                 ):
+-                    if step not in steps:
+-                        steps.append(step)
++                    _append_requirement_step(steps, step)
+                 emitted.add(signature)
+ 
+             if clause.predicates and (lookup or index >= first_filter):
+@@ -1056,10 +1166,10 @@
+             "requirement has no emitted retrieval occurrence in this workflow",
+             code="missing_requirement_occurrence",
+         )
+-    return SurfaceCompilation(
++    return _require_components(SurfaceCompilation(
+         workflow=WorkflowIR(steps=steps, name=name),
+         view=view,
+-    )
++    ), graph)
+ 
+ 
+ def _deferred_check_is_lowerable(
+@@ -1212,11 +1322,13 @@
+                     semantic_paths=semantic_paths, graph=graph,
+                 )
+                 if base_workflow.dsl_version < 3 and any(
+-                    isinstance(step, GetMeasurementStep) for step in requested
++                    isinstance(step, GetMeasurementStep) or isinstance(step, GetStep) and step.required_components for step in requested
+                 ):
++                    measurement = any(isinstance(step, GetMeasurementStep) for step in requested)
+                     raise SurfaceLoweringError(
+-                        "measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded",
+-                        code="measurement_language_version", clause_index=index,
++                        ("measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded"
++                         if measurement else "required components require dsl_version 3; an older continuation is not implicitly upgraded"),
++                        code="measurement_language_version" if measurement else "component_language_version", clause_index=index,
+                     )
+                 if _requirement_signature(context, requirement, record_types) == stop_before:
+                     step = requested[0]
+@@ -1231,8 +1343,7 @@
+                         view=view,
+                     )
+                 for step in requested:
+-                    if step not in steps:
+-                        steps.append(step)
++                    _append_requirement_step(steps, step, protected_prefix=len(base_workflow.steps))
+             if clause.predicates:
+                 noun = resolve_record_type(clause.product, record_types)
+                 assert noun is not None
+@@ -1280,7 +1391,7 @@
+             "requirement has no emitted retrieval occurrence in this continuation",
+             code="missing_requirement_occurrence",
+         )
+-    return SurfaceCompilation(
++    return _require_components(SurfaceCompilation(
+         workflow=WorkflowIR(
+             steps=steps,
+             name=name if name is not None else base_workflow.name,
+@@ -1288,7 +1399,7 @@
+             dsl_version=base_workflow.dsl_version,
+         ),
+         view=view,
+-    )
++    ), graph, protected_prefix=len(base_workflow.steps))
+ 
+ 
+ def _requirement_prefix(
+diff --git a/alertissimo/dsl/validation.py b/alertissimo/dsl/validation.py
+--- a/alertissimo/dsl/validation.py
++++ b/alertissimo/dsl/validation.py
+@@ -109,6 +109,10 @@
+ ) -> str | None:
+     """Resolve one ontology record noun embedded in a user requirement phrase."""
+ 
++    if "." in product:
++        head = _normalize_noun(product.partition(".")[0].strip())
++        if head in record_types:
++            return head
+     words = [_normalize_noun(token) for token in _WORD.findall(product)]
+     matches: list[str] = []
+     for start in range(len(words)):
+@@ -436,6 +440,14 @@
+                     )
+                 )
+             else:
++                if "." in clause.product:
++                    normalized = _normalize_noun(clause.product.split(".", 1)[0])
++                    component = clause.product.split(".", 1)[1]
++                    if normalized != noun or not model.is_valid(f"{noun}@dsl.{component}"):
++                        issues.append(SurfaceValidationIssue(
++                            severity=ValidationSeverity.ERROR, code="unknown_requirement_component",
++                            message=f"unknown ontology component {clause.product!r}", clause_index=index,
++                        ))
+                 for predicate in clause.predicates:
+                     issues.extend(
+                         _validate_expression_paths(
+diff --git a/alertissimo/orchestration/incremental.py b/alertissimo/orchestration/incremental.py
+--- a/alertissimo/orchestration/incremental.py
++++ b/alertissimo/orchestration/incremental.py
+@@ -247,6 +247,7 @@
+     *,
+     validate_semantic_model: bool = True,
+     reference_time: datetime | None = None,
++    graph=None,
+ ) -> StagedWorkflowResult:
+     """Execute an extended planned workflow while replaying its prior call prefix.
+ 
+@@ -274,6 +275,7 @@
+             for binding in previous.bindings if binding.reference_time is not None
+         },
+         _prior_steps=previous.normalized.steps,
++        **({"graph": graph} if graph is not None else {}),
+     )
+     replay.require_complete_replay()
+     return staged
+diff --git a/alertissimo/orchestration/ir/models.py b/alertissimo/orchestration/ir/models.py
+--- a/alertissimo/orchestration/ir/models.py
++++ b/alertissimo/orchestration/ir/models.py
+@@ -11,9 +11,9 @@
+ from datetime import datetime, timedelta
+ from typing import Annotated, Any, Literal
+ 
+-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+-
+-from .predicates import Predicate
++from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_serializer, model_validator
++
++from .predicates import Predicate, SemanticReference
+ 
+ 
+ NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
+@@ -209,6 +209,32 @@
+     """
+ 
+     target: TargetSelector | None = None
++    required_components: tuple[SemanticReference, ...] = ()
++
++    @model_validator(mode="after")
++    def valid_required_components(self):
++        if not self.required_components:
++            return self
++        from .predicates import _collection_paths
++        if len(set(self.required_components)) != len(self.required_components):
++            raise ValueError("required components must be duplicate-free")
++        noun = getattr(self, "op", "").removeprefix("get_")
++        for component in self.required_components:
++            if (component.semantic_type != noun or not component.field_path
++                or not _collection_paths().is_valid(f"{noun}@dsl.{component.field_path}")):
++                raise ValueError(f"unknown component {component!r} under {noun!r}")
++            if self.sources and component.channel is not None and all(
++                source.broker not in (None, component.channel) for source in self.sources
++            ):
++                raise ValueError("component selector is outside the retrieval sources")
++        return self
++
++    @model_serializer(mode="wrap")
++    def serialize_required_components(self, handler):
++        data = handler(self)
++        if not self.required_components:
++            data.pop("required_components", None)
++        return data
+ 
+ 
+ class GetMeasurementStep(GetStep):
+@@ -240,24 +266,17 @@
+     lightcurve requirement, and providers that already combine the evidence need
+     only one physical execution.
+ 
+-    IMPORTANT / PROVISIONAL COMPATIBILITY POLICY:
+-    standalone forced-photometry selection is currently unsupported by the public
+-    DSL. We intentionally do not expose ``with forced_photometry`` (nor invent a
+-    modifier such as ``with lightcurve --forced``) yet. In the current ontology,
+-    forced photometry is represented inside detection/summary photometric structure
+-    rather than as a first-level Portfolio record type, so presenting it as a
+-    separate surface product would commit us to semantics that have not been
+-    decided. ``GetForcedPhotometryStep`` remains in the canonical IR as an
+-    internal/provider-facing retrieval operation for direct programmatic workflows
+-    and for a future DSL decision.
+-
+-    The future decision should be made together with analogous product-completeness
+-    cases. It needs to define whether the DSL eventually needs general concepts such
+-    as ``including``, ``only`` or ``without``; how explicit forced-photometry intent
+-    composes with bands and time windows; and how to treat providers whose ordinary
+-    lightcurve endpoint already includes some or all forced measurements.
+-
+-    Declared forced photometry is therefore strictly supplementary. Its absence,
++    The public DSL keeps Portfolio nouns: ``with forced_photometry`` is not a
++    standalone product. Explicit acquisition uses
++    ``with lightcurve.forced_photometry_points`` (or the corresponding measurement
++    component). GetStep.required_components makes every producing call within this
++    product's own recipe required. The call may succeed empty; predicates select
++    objects with actual supplied data separately.
++
++    GetForcedPhotometryStep remains available for programmatic retrieval of
++    existing data. Triggering new computation remains outside these Get operations.
++
++    Without a required component, declared forced photometry stays supplementary. Its absence,
+     incompatible target cardinality, or inability to prove compatibility
+     must never make an otherwise satisfiable ``GetLightcurveStep`` unsupported.
+     Constrained requests (currently ``bands`` or ``time_context``) require declared
+@@ -292,8 +311,8 @@
+ 
+     This provider-facing IR operation is intentionally retained even though forced
+     photometry is not currently a standalone public DSL product. The ordinary DSL
+-    path is ``with lightcurve``; see ``GetLightcurveStep`` for the provisional
+-    automatic-inclusion and future compatibility policy. Generation belongs to
++    paths are ``with lightcurve`` and its required component form; see
++    ``GetLightcurveStep`` for the supplementation policy. Generation belongs to
+     ``FollowupRequestStep`` because it causes a new product.
+     """
+ 
+@@ -579,6 +598,8 @@
+         for step in self.steps:
+             if isinstance(step, GetMeasurementStep) and self.dsl_version < 3:
+                 raise ValueError("measurement retrieval requires dsl_version 3")
++            if isinstance(step, GetStep) and step.required_components and self.dsl_version < 3:
++                raise ValueError("required components require dsl_version 3")
+             if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+                 material = []
+             if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
+diff --git a/alertissimo/orchestration/ir/predicates.py b/alertissimo/orchestration/ir/predicates.py
+--- a/alertissimo/orchestration/ir/predicates.py
++++ b/alertissimo/orchestration/ir/predicates.py
+@@ -297,6 +297,11 @@
+     elif isinstance(predicate, BooleanPredicate):
+         for child in predicate.operands:
+             yield from iter_aggregate_operands(child)
++
++
++def contains_container_reference(predicate) -> bool:
++    return any(reference.field_path and not _collection_paths().is_scalar_path(reference.ontology_path)
++               for reference in iter_semantic_references(predicate))
+ 
+ 
+ def validate_collection_selectors(predicate, material):
+@@ -419,7 +424,7 @@
+ 
+ __all__ = [
+     "AggregateOperand", "ElementReference", "QuantifierPredicate",
+-    "contains_collection_predicate", "validate_collection_predicate",
++    "contains_collection_predicate", "contains_container_reference", "validate_collection_predicate",
+     "iter_aggregate_operands", "validate_collection_selectors",
+     "BooleanPredicate",
+     "ComparisonPredicate",
+diff --git a/alertissimo/orchestration/normalization/normalize.py b/alertissimo/orchestration/normalization/normalize.py
+--- a/alertissimo/orchestration/normalization/normalize.py
++++ b/alertissimo/orchestration/normalization/normalize.py
+@@ -5,21 +5,21 @@
+ from dataclasses import replace
+ from uuid import uuid4
+ 
+-from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
+ from alertissimo.data_layer.representations import (
+     InternalEdgeId, InternalPortfolioId, InternalRecordId, Portfolio,
+ )
+ from alertissimo.data_layer.runtime.record_builder import (
+-    _semantic_identifier, build_portfolios_from_execution,
++    _bound_target_ids, _semantic_identifier, build_portfolios_from_execution,
+ )
+ from alertissimo.data_layer.runtime.classification_headline import (
+     headline_reference, is_headline_record, materialize_headlines,
+ )
+ from alertissimo.orchestration.ir import (
+-    DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
++    DeriveStep, FilterStep, GetClassificationStep, GetStep, LookupStep, MatchStep, SearchStep, Step, and_predicates,
+ )
+ from alertissimo.orchestration.ir.predicates import (
+-    Predicate, contains_collection_predicate, iter_semantic_references,
++    Predicate, contains_collection_predicate, contains_container_reference, iter_semantic_references,
+ )
+ from alertissimo.orchestration.runtime import (
+     EndpointPlan,
+@@ -350,7 +350,7 @@
+     either on a partial physical response would make a second, different decision.
+     Existing scalar predicates retain their execution-local projection.
+     """
+-    normalized = contains_collection_predicate(predicate) or any(
++    normalized = contains_collection_predicate(predicate) or contains_container_reference(predicate) or any(
+         headline_reference(ref) for ref in iter_semantic_references(predicate))
+     survivors = {summary_object_identity(p) for p in materialized} - {None}
+     surviving_ids = {p.internal_portfolio_id for p in materialized}
+@@ -366,11 +366,111 @@
+     )
+ 
+ 
++def _component_empty_evidence(run, results, portfolios, before_step, graph, registry):
++    """Reconstruct empty receipts, never completeness of a nonempty history.
++
++    Keys reuse transient collection evidence: (Portfolio ID, qualified array).
++    Nothing is persisted, and no empty observation/product record is fabricated.
++    Missing/null/malformed arrays and rows omitted by normalization are not empty.
++    """
++    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
++    from alertissimo.orchestration.ir.predicates import _collection_paths
++    from alertissimo.orchestration.validation import component_output_matches
++    if graph is None:
++        return {}
++    model = _collection_paths()
++    def product_key(field):
++        product = field.semantic_record_type
++        return product + ":" + field.broker if "@" in product and ":" not in product else product
++    evidence = {}
++    start = 0
++    for index, step in enumerate(run.workflow.steps[:before_step]):
++        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
++            start = index
++    for index in range(start, min(before_step, len(results))):
++        step = run.workflow.steps[index]
++        if not isinstance(step, GetStep) or not step.required_components:
++            continue
++        step_run = run.steps[index]
++        if step_run.state is not StepRunState.SUCCEEDED:
++            continue
++        execution_result = results[index]
++        indexes = _execution_plan_indexes(step_run, execution_result)
++        for component in step.required_components:
++            boundaries = model.array_boundaries(component.ontology_path)
++            if not boundaries:
++                continue
++            array = component.model_copy(update={"field_path": boundaries[-1].partition(".")[2]})
++            owners = []
++            for plan_index, plan in enumerate(step_run.endpoint_plans):
++                fields = tuple(f for f in graph.fields_for_endpoint(plan.broker, plan.origin, plan.endpoint)
++                               if component_output_matches(step, f, array))
++                if fields:
++                    owners.append((plan_index, plan, fields))
++            if not owners or any(not plan.required for _, plan, _ in owners):
++                continue
++            for portfolio in portfolios:
++                identity = summary_object_identity(portfolio)
++                if identity is None:
++                    continue
++                origin, object_id = identity
++                relevant = tuple(owner for owner in owners if owner[1].origin == origin)
++                if not relevant:
++                    continue
++                for _, _, fields in relevant:
++                    for field in fields:
++                        evidence.pop((portfolio.internal_portfolio_id.value,
++                                      product_key(field) + "." + array.field_path), None)
++                products = set()
++                established = True
++                for plan_index, plan, fields in relevant:
++                    covered = False
++                    for owner, execution in zip(indexes, execution_result.executions):
++                        if owner != plan_index:
++                            continue
++                        targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
++                        if object_id not in targets:
++                            continue
++                        paths = {field.payload_path for field in fields}
++                        # Only a wholly empty returned collection, or an explicit
++                        # empty collection in a single-target object, proves this.
++                        empty = True
++                        for path in paths:
++                            if path == "[]":
++                                value = execution.payload
++                            elif len(targets) == 1 and path.endswith("[]") and not path.startswith("[]."):
++                                try:
++                                    value = extract_raw_field(execution.payload, path[:-2])
++                                except RawFieldMissing:
++                                    empty = False
++                                    break
++                            else:
++                                empty = False
++                                break
++                            if not isinstance(value, (tuple, list)) or value:
++                                empty = False
++                                break
++                        if not empty:
++                            established = False
++                            break
++                        covered = True
++                        products.update(product_key(f) for f in fields)
++                    if not covered:
++                        established = False
++                    if not established:
++                        break
++                if established:
++                    for product in products:
++                        evidence[(portfolio.internal_portfolio_id.value, product + "." + array.field_path)] = (True, frozenset())
++    return evidence
++
++
+ def _filter_candidate_view(
+     step: FilterStep,
+     step_run: StepRun,
+     normalized_steps: list[StepPortfolioResult],
+     *, diagnostics: list[str] | None = None,
++    collection_evidence=None,
+ ) -> StepPortfolioResult:
+     """Apply one local FilterStep to an earlier normalized semantic view.
+ 
+@@ -401,7 +501,8 @@
+         executions = source.executions
+         materialized = source.portfolios
+     else:
+-        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
++        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics,
++                                       collection_evidence=collection_evidence)
+         executions = filter_execution_groups(source, step.predicate, materialized)
+     return StepPortfolioResult(
+         step_index=step_run.step_index,
+@@ -687,6 +788,8 @@
+     validate_semantic_model: bool = True,
+     normalized_execution_cache: dict[str, tuple[Portfolio, ...]] | None = None,
+     preserved_steps: tuple[StepPortfolioResult, ...] = (),
++    graph=None,
++    registry=None,
+ ) -> WorkflowPortfolioResult:
+     """Normalize physical executions once, then expose Step-specific semantic views.
+ 
+@@ -710,6 +813,11 @@
+     """
+ 
+     _validate_workflow_alignment(result)
++    if any(isinstance(step, GetStep) and step.required_components for step in result.run.workflow.steps):
++        registry = registry or EndpointRegistry()
++        if graph is None:
++            from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++            graph = build_capability_graph(registry.root)
+     normalized_by_execution_id = (
+         normalized_execution_cache
+         if normalized_execution_cache is not None
+@@ -732,7 +840,11 @@
+             continue
+         if isinstance(step, FilterStep):
+             diagnostics: list[str] = []
+-            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics)
++            source = normalized_steps[step_run.candidate_input_from.step_index]
++            evidence = _component_empty_evidence(result.run, result.steps, source.portfolios,
++                                                  step_run.step_index, graph, registry)
++            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics,
++                                          collection_evidence=evidence)
+             if diagnostics:
+                 updated_steps[step_run.step_index] = step_run.model_copy(update={
+                     "warnings": step_run.warnings + tuple(
+diff --git a/alertissimo/orchestration/normalization/predicate.py b/alertissimo/orchestration/normalization/predicate.py
+--- a/alertissimo/orchestration/normalization/predicate.py
++++ b/alertissimo/orchestration/normalization/predicate.py
+@@ -86,6 +86,19 @@
+     return value is not _MISSING and value is not None and not (
+         isinstance(value, float) and not math.isfinite(value)
+     )
++
++
++def _existing_component(record, reference, portfolio, *, value=_MISSING):
++    if value is _MISSING:
++        value = _record_value(record, reference, portfolio)
++    if reference.field_path and not _collection_paths().is_scalar_path(reference.ontology_path):
++        if value is _MISSING:
++            value = _lookup(record, reference.field_path)
++        if value is _MISSING:
++            values = (v for key, v in record.fields.items() if key.startswith(reference.field_path + "."))
++            return any(_available(v) and (bool(v) if isinstance(v, (Mapping, tuple, list)) else True) for v in values)
++        return _available(value) and (bool(value) if isinstance(value, (Mapping, tuple, list)) else True)
++    return _available(value)
+ 
+ 
+ def _compare(left: Any, operator_name: str, right: Any) -> bool | None:
+@@ -245,8 +258,9 @@
+     """Evaluate one predicate in the existing scalar witness search using Kleene logic.
+ 
+     ``collection_evidence`` is transient explicit evidence keyed by record ID and
+-    exact array path, with (complete, delivered bands) values. No production route
+-    supplies it in this slice. Tests supply synthetic proofs; record collections
++    exact array path, with (complete, delivered bands) values. A successful required
++    component may also supply (Portfolio ID, qualified array) for an empty receipt.
++    No nonempty production history is closed here. Tests supply synthetic proofs; record collections
+     such as incidental measurement records always retain open completeness.
+     Diagnostics use the caller's existing warnings collector, including when a
+     candidate is rejected. No Portfolio or runtime schema field is introduced.
+@@ -263,6 +277,27 @@
+     aggregate_cache: dict[tuple, tuple[int | float, int | float] | None] = {}
+     branch_cache = {}
+     evidence = collection_evidence or {}
++
++    def product_key(record):
++        noun, producer, channel = _record_parts(record.semantic_type)
++        if channel is None and record.internal_source is not None:
++            execution = portfolio.execution(record.internal_source.internal_execution_id)
++            channel = execution.broker if execution is not None else None
++        return noun + ("@" + producer if producer else "") + (":" + channel if producer and channel else "")
++
++    def empty_products(reference):
++        path = substitute(reference.field_path)
++        result = set()
++        for (owner, qualified), proof in evidence.items():
++            if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
++                continue
++            head, _, field = qualified.partition(".")
++            noun, _, qualifiers = head.partition("@")
++            producer, _, channel = qualifiers.partition(":")
++            if (noun == reference.semantic_type and field == path
++                and reference.producer in (None, producer) and reference.channel in (None, channel)):
++                result.add(head)
++        return result
+ 
+     def substitute(path):
+         if any(name not in parameters for name in re.findall(r"\{([^{}]+)\}", path)):
+@@ -333,7 +368,26 @@
+             collection = reference.model_copy(update={"field_path": field})
+             projection = reference.field_path[len(field) + 1:]
+         matches = matching(reference)
++        if collection.field_path and len(matches) > 1 and len({product_key(r) for r in matches}) == 1:
++            path = substitute(collection.field_path)
++            holders = tuple(r for r in matches if path is not None and _lookup(r, path) is not _MISSING)
++            # Separate physical calls can deliver sibling arrays of one product.
++            # They do not compete for the named array. Multiple holders still do.
++            siblings = tuple(r for r in matches if r not in holders and any(
++                key != path and _collection_paths().array_boundaries(r.semantic_type + "." + key)
++                for key in r.fields
++            ))
++            if holders and len(holders) + len(siblings) == len(matches):
++                matches = holders
++            elif not holders and len(siblings) == len(matches) and empty_products(collection):
++                matches = ()  # Empty receipt concerns this array, not sibling histories.
++        empties = empty_products(collection) if collection.field_path else set()
++        if empties and (len({product_key(r) for r in matches} | empties) > 1 or len(matches) > 1):
++            ambiguous(collection, tuple(matches) + tuple(empties))
++            aggregate_cache[cache_key] = None
++            return None
+         complete, delivered = False, frozenset()
++        malformed_array = False
+         if not collection.field_path:
+             # Record counts never pool lightcurve point representations.
+             items = matches if matches else None
+@@ -350,9 +404,12 @@
+                 items = None
+             else:
+                 items, shape_valid = _array_members(record, path)
++                malformed_array = not shape_valid and _lookup(record, path) is not _MISSING
+                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
+                 complete = proof[0] is True and shape_valid and items is not None
+                 delivered = frozenset(proof[1])
++        if empties and not malformed_array and (items is None or not items):
++            items, complete, delivered = (), True, frozenset()
+         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
+         groups, bands = branch_requirements(collection, relative_paths)
+         complete = complete and bands <= delivered
+@@ -493,8 +550,10 @@
+             if "{output}" in node.reference.field_path:
+                 # A new output quantifier binds one assertion. Preserve the
+                 # whole-view explicit-absence rule only for existing scalar forms.
+-                return not _available(operand_value(node.reference, element))
+-            return not any(_available(_record_value(record, reference, portfolio))
++                record = bound.get(_selector(node.reference))
++                return not (record is not None and _existing_component(
++                    record, reference, portfolio, value=operand_value(node.reference, element)))
++            return not any(_existing_component(record, reference, portfolio)
+                            for record in records[_selector(node.reference)])
+         if isinstance(node, ComparisonPredicate):
+             left_aggregate = isinstance(node.left, AggregateOperand)
+@@ -521,7 +580,14 @@
+         elif isinstance(node, ExistsPredicate):
+             if isinstance(node.reference, SemanticReference) and _selector(node.reference) not in bound:
+                 return None
+-            value = _available(operand_value(node.reference, element))
++            if isinstance(node.reference, SemanticReference):
++                record = bound.get(_selector(node.reference))
++                path = substitute(node.reference.field_path)
++                value = (record is not None and path is not None and _existing_component(
++                    record, node.reference.model_copy(update={"field_path": path}), portfolio,
++                    value=operand_value(node.reference, element)))
++            else:
++                value = _available(operand_value(node.reference, element))
+         elif isinstance(node, BooleanPredicate):
+             conjunction = (node.operator == "and") != negate
+             unknown = False
+@@ -569,12 +635,14 @@
+ def prune_portfolios(
+     portfolios: tuple[Portfolio, ...] | list[Portfolio], predicate: Predicate,
+     *, diagnostics: list[str] | None = None,
++    collection_evidence=None,
+ ) -> tuple[Portfolio, ...]:
+     """Refine existing candidates without changing their scientific records."""
+     if any(headline_reference(ref) for ref in iter_semantic_references(predicate)):
+         portfolios = tuple(materialize_headlines(p) for p in portfolios)
+     return tuple(portfolio for portfolio in portfolios
+-                 if evaluate_portfolio_predicate(portfolio, predicate, diagnostics=diagnostics))
++                 if evaluate_portfolio_predicate(portfolio, predicate, diagnostics=diagnostics,
++                                                  collection_evidence=collection_evidence))
+ 
+ 
+ __all__ = ["evaluate_portfolio_predicate", "evaluate_portfolio_predicate_truth", "prune_portfolios"]
+diff --git a/alertissimo/orchestration/pipeline.py b/alertissimo/orchestration/pipeline.py
+--- a/alertissimo/orchestration/pipeline.py
++++ b/alertissimo/orchestration/pipeline.py
+@@ -19,9 +19,9 @@
+ from alertissimo.orchestration.normalization.selection import (
+     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
+ )
+-from alertissimo.orchestration.normalization.normalize import filter_execution_groups
++from alertissimo.orchestration.normalization.normalize import _component_empty_evidence, filter_execution_groups
+ from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
+-from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
++from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, GetStep, MatchStep
+ from alertissimo.orchestration.matching import match_step_portfolios
+ from alertissimo.orchestration.normalization import (
+     ExecutionPortfolioResult,
+@@ -246,6 +246,7 @@
+     step_index: int,
+     source: StepPortfolioResult,
+     *, diagnostics: list[str] | None = None,
++    collection_evidence=None,
+ ) -> StepPortfolioResult:
+     if step.predicate is None:
+         if step.criteria:
+@@ -255,7 +256,8 @@
+         executions = source.executions
+         materialized = source.portfolios
+     else:
+-        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
++        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics,
++                                       collection_evidence=collection_evidence)
+         executions = filter_execution_groups(source, step.predicate, materialized)
+     return StepPortfolioResult(
+         step_index=step_index,
+@@ -294,6 +296,7 @@
+     reference_time: datetime | None = None,
+     _reference_times: dict[int, datetime] | None = None,
+     _prior_steps: tuple[StepPortfolioResult, ...] = (),
++    graph=None,
+ ) -> StagedWorkflowResult:
+     """Bind and execute a planned workflow as runtime values become available.
+ 
+@@ -308,6 +311,9 @@
+         raise CandidateFlowError("staged execution requires a fully planned WorkflowRun")
+     if reference_time is not None:
+         reference_time = utc_instant(reference_time)
++    if graph is None and any(isinstance(step, GetStep) and step.required_components for step in run.workflow.steps):
++        from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++        graph = build_capability_graph(registry.root)
+ 
+     updated_run = run
+     bindings: list[StepBindingResult] = []
+@@ -400,7 +406,10 @@
+                 if step_index < len(_prior_steps):
+                     view = _prior_steps[step_index]
+                 else:
+-                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics)
++                    evidence = _component_empty_evidence(updated_run, step_results, source_view.portfolios,
++                                                          step_index, graph, registry)
++                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics,
++                                        collection_evidence=evidence)
+                     view = apply_deferred_search_selection(
+                         run.workflow, view, candidate_views_by_step, updated_run.steps,
+                     )
+@@ -752,6 +761,7 @@
+         validate_semantic_model=validate_semantic_model,
+         normalized_execution_cache=normalized_execution_cache,
+         preserved_steps=_prior_steps,
++        **({"graph": graph, "registry": registry} if graph is not None else {}),
+     )
+     if normalized.run is not execution_result.run:
+         execution_result = WorkflowExecutionResult(run=normalized.run, steps=execution_result.steps)
+diff --git a/alertissimo/orchestration/planner/planner.py b/alertissimo/orchestration/planner/planner.py
+--- a/alertissimo/orchestration/planner/planner.py
++++ b/alertissimo/orchestration/planner/planner.py
+@@ -715,6 +715,41 @@
+     planned_steps: tuple[StepRun, ...],
+ ) -> tuple[StepRun, ...]:
+     rewritten = list(planned_steps)
++    # A new component request may add required calls without repeating an earlier
++    # required call with identical inputs. Never borrow a formerly optional call.
++    for index, step in enumerate(workflow.steps):
++        if not isinstance(step, GetStep) or not step.required_components:
++            continue
++        plans = list(rewritten[index].endpoint_plans)
++        for position, plan in enumerate(plans):
++            if plan.execution_reuse_from is not None:
++                continue
++            for owner_index in range(index - 1, -1, -1):
++                owner_step = workflow.steps[owner_index]
++                if not isinstance(owner_step, GetStep):
++                    continue
++                if (type(owner_step) is not type(step)
++                    or owner_step.model_dump(exclude={"required_components"}) != step.model_dump(exclude={"required_components"})):
++                    continue
++                for owner_position, owner in enumerate(rewritten[owner_index].endpoint_plans):
++                    same_target = (step.target is not None and step.target == owner_step.target)
++                    same_candidates = (step.target is None and owner_step.target is None
++                                       and plan.candidate_input_from is not None
++                                       and plan.candidate_input_from == owner.candidate_input_from)
++                    if (owner.required and (same_target or same_candidates)
++                        and (plan.broker, plan.origin, plan.endpoint) == (owner.broker, owner.origin, owner.endpoint)
++                        and plan.request_params == owner.request_params
++                        and plan.parameter_sources == owner.parameter_sources
++                        and plan.predicate_realization == owner.predicate_realization
++                        and plan.candidate_input_from_plan is None and owner.candidate_input_from_plan is None):
++                        plans[position] = plan.model_copy(update={
++                            "execution_reuse_from": EndpointPlanRef(step_index=owner_index, plan_index=owner_position),
++                            "candidate_input_from": None,
++                        })
++                        break
++                if plans[position].execution_reuse_from is not None:
++                    break
++        rewritten[index] = rewritten[index].model_copy(update={"endpoint_plans": tuple(plans)})
+     for step_index, step in enumerate(workflow.steps):
+         if not isinstance(step, (GetLightcurveStep, GetMeasurementStep)):
+             continue
+diff --git a/alertissimo/orchestration/validation.py b/alertissimo/orchestration/validation.py
+--- a/alertissimo/orchestration/validation.py
++++ b/alertissimo/orchestration/validation.py
+@@ -525,12 +525,13 @@
+     predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
+ ) -> tuple[str, ...]:
+     """Inspect call-scoped mapped material without selecting or executing a route."""
+-    from .ir.predicates import contains_collection_predicate, iter_aggregate_operands
++    from .ir.predicates import _collection_paths, contains_collection_predicate, iter_aggregate_operands
+     collection_pattern = contains_collection_predicate(predicate)
+     collections = {item.reference for item in iter_aggregate_operands(predicate) if item.function == "count"}
+     def mapped(reference: SemanticReference) -> bool:
+         if headline_material_available(reference, outputs):
+             return True
++        container = bool(reference.field_path) and not _collection_paths().is_scalar_path(reference.ontology_path)
+         for field in outputs:
+             record = field.semantic_record_type
+             if not semantic_record_noun_matches(record, reference.semantic_type):
+@@ -548,7 +549,7 @@
+             if not reference.field_path:
+                 return True
+             declared, requested = field.relative_field_path.split("."), reference.field_path.split(".")
+-            lengths_match = (len(declared) >= len(requested) if reference in collections
++            lengths_match = (len(declared) >= len(requested) if reference in collections or container
+                              else len(declared) == len(requested))
+             if lengths_match and all(
+                 actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
+@@ -1050,7 +1051,9 @@
+ def _candidate_evidence_for_source(
+     step: Step, graph: CapabilityGraph, source: Source | None
+ ) -> _CandidateEvidence:
+-    evidence = _operation_candidate_evidence_for_source(step, graph, source)
++    evidence = (_component_recipe_evidence(step, graph, source)
++                if isinstance(step, GetStep) and step.required_components else
++                _operation_candidate_evidence_for_source(step, graph, source))
+     if not isinstance(step, SearchStep) or step.selection is None or not evidence.compatible:
+         return evidence
+     compatible, recipes = [], []
+@@ -1171,6 +1174,78 @@
+     return _legacy_candidate_evidence_for_source(step, graph, source)
+ 
+ 
++def component_output_matches(step: GetStep, field: FieldMappingCapability, component: SemanticReference) -> bool:
++    """Match an ontology component to this product's own mapped output fields."""
++    noun = step.op.removeprefix("get_")
++    if not semantic_record_noun_matches(field.semantic_record_type, noun):
++        return False
++    if component.channel is not None and component.channel != field.broker:
++        return False
++    if component.producer is not None and component.producer != _semantic_record_producer(field.semantic_record_type) and not _DYNAMIC_QUALIFIER.fullmatch(_semantic_record_producer(field.semantic_record_type) or ""):
++        return False
++    producer = getattr(step, "classifier", None) or getattr(step, "catalog", None)
++    actual_producer = _semantic_record_producer(field.semantic_record_type)
++    if producer is not None and actual_producer != producer and not _DYNAMIC_QUALIFIER.fullmatch(actual_producer or ""):
++        return False
++    declared, requested = field.relative_field_path.split("."), component.field_path.split(".")
++    return len(declared) >= len(requested) and all(
++        actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual) or _DYNAMIC_QUALIFIER.fullmatch(wanted)
++        for actual, wanted in zip(declared, requested)
++    )
++
++
++def _component_recipe_evidence(step: GetStep, graph: CapabilityGraph, source: Source | None) -> _CandidateEvidence:
++    """Strengthen calls within this operation's recipes; never import calls."""
++    declared = graph.query_recipes(broker=source.broker if source else None,
++                                   origin=source.origin if source else None, op=step.op)
++    promoted = []
++    origins = {endpoint.origin for endpoint in graph.endpoint_capabilities}
++    for recipe in declared:
++        components = tuple(c for c in step.required_components
++                           if c.channel in (None, recipe.broker)
++                           and (c.semantic_type not in {"lightcurve", "measurement"}
++                                or c.producer not in origins or c.producer == recipe.origin))
++        def outputs(call):
++            endpoint = next(e for e in graph.endpoint_capabilities
++                            if (e.broker, e.origin, e.endpoint) == (recipe.broker, recipe.origin, call.endpoint))
++            projection = next((p.source for p in call.params
++                               if endpoint.supports_projection and p.parameter == endpoint.projection_param), None)
++            if projection is None:
++                return call.outputs
++            if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
++                return ()
++            columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
++            return tuple(f for f in call.outputs if f.raw_field in columns)
++        owners = {component: tuple(index for index, call in enumerate(recipe.calls)
++                                   if any(component_output_matches(step, field, component) for field in outputs(call)))
++                  for component in components}
++        if any(not calls for calls in owners.values()):
++            continue
++        required = {index for indexes in owners.values() for index in indexes}
++        promoted.append(replace(recipe, calls=tuple(
++            replace(call, required=True) if index in required else call
++            for index, call in enumerate(recipe.calls)
++        )))
++    reason = (f"{source.broker if source else '*'}/{source.origin if source else '*'}: "
++              f"no {step.op} recipe can produce required component(s) {step.required_components!r}")
++    if not promoted:
++        return _CandidateEvidence(raw=(), compatible=(), empty_reason=reason)
++    replacements = {(r.broker, r.origin, r.op, r.alternative_index): r for r in promoted}
++    declared_keys = {(r.broker, r.origin, r.op, r.alternative_index) for r in declared}
++    adjusted = replace(graph, recipe_capabilities=tuple(
++        replacements.get((r.broker, r.origin, r.op, r.alternative_index), r)
++        for r in graph.recipe_capabilities
++        if (r.broker, r.origin, r.op, r.alternative_index) not in declared_keys
++        or (r.broker, r.origin, r.op, r.alternative_index) in replacements
++    ))
++    evidence = _operation_candidate_evidence_for_source(step, adjusted, source)
++    recipes = tuple(r for r in evidence.recipes if (r.broker, r.origin, r.op, r.alternative_index) in replacements)
++    keys = {(r.broker, r.origin, r.calls[0].endpoint) for r in recipes}
++    candidates = tuple(e for e in evidence.compatible if (e.broker, e.origin, e.endpoint) in keys)
++    return replace(evidence, compatible=candidates, recipes=recipes,
++                   empty_reason=evidence.empty_reason if evidence.empty_status == "deferred" else reason)
++
++
+ def _legacy_candidate_evidence_for_source(
+     step: Step, graph: CapabilityGraph, source: Source | None,
+ ) -> _CandidateEvidence:
+@@ -1441,7 +1516,7 @@
+     still comes from validate_step_capabilities. Empty evidence means this proof
+     cannot establish an owner for every requested source.
+     """
+-    if step.target is not None or step.classifier is None or not step.sources:
++    if step.target is not None or step.classifier is None or not step.sources or step.required_components:
+         return ()
+     owner_index = None
+     for index in range(len(earlier_steps) - 1, -1, -1):
+@@ -1561,9 +1636,10 @@
+     This proves mapped material availability, never collection completeness,
+     observed values, delivered bands, or success of an optional call.
+     """
+-    from .ir.predicates import contains_collection_predicate
++    from .ir.predicates import contains_container_reference, contains_collection_predicate
+     targets = tuple(index for index, step in enumerate(workflow.steps)
+-                    if contains_collection_predicate(getattr(step, "predicate", None)))
++                    if contains_collection_predicate(getattr(step, "predicate", None)) or
++                    (not isinstance(step, ConfirmStep) and contains_container_reference(getattr(step, "predicate", None))))
+     if not targets:
+         return ()
+     forbidden = tuple((index, "collection predicates in confirm are not admitted (item 6)")
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -88,6 +88,55 @@
+   existing scalar, existence and Boolean forms.
+ 
+ ## Counting, projection and evidence
++
++### Required components and references
++
++```text
++object ZTF18abbuksn from ztf via alerce
++with lightcurve.forced_photometry_points
++```
++
++This requires the producing calls in the lightcurve recipe and keeps an object
++whose calls succeed with empty arrays. It does not select objects with FP. To
++select those that actually have it, use either:
++
++```text
++object ZTF18abbuksn from ztf via alerce
++with lightcurve where forced_photometry_points exists
++```
++
++```text
++object ZTF18abbuksn from ztf via alerce
++with lightcurve
++filter count(lightcurve@ztf:alerce.forced_photometry_points where time.mjd > 60000) >= 1
++```
++
++The reference strengthens the existing retrieval; it does not create another Get.
++Without guaranteed preceding material, admission still reports item 4a. Previously
++admitted initial-where scheduling is retained for already guaranteed material;
++an optional-only component cannot introduce implicit acquisition. A completed
++continuation prefix is never strengthened retroactively. Request the component
++explicitly in a new retrieval if the prefix did not guarantee it; identical earlier
++required calls may be reused, while an earlier optional call is not a guarantee.
++
++The same rule applies to other ontology components, including
++`with measurement.forced_photometry` on ALeRCE/LSST. Every matching producer call in
++that Get's own recipe becomes required. Another product's recipe cannot supply a
++missing route. Unknown paths and no-route brokers are rejected. Plain requests
++retain their recipe policy, including optional supplements and cardinality guards.
++
++A successful required empty collection receipt can establish
++`count(lightcurve.forced_photometry_points) = 0`. This is reconstructed from the
++required calls, their explicit raw arrays and bound object identities. Missing,
++null or malformed arrays and nonempty rows omitted during normalization do not
++prove empty. No empty observation or product record is invented. This proof does
++not close a nonempty history, a measurement record collection, or an unavailable
++band. No delivered-band declarations are introduced here.
++
++Sibling arrays returned in separate records of the same qualified product do not
++compete for the named array: Fink/LSST `points` and `forced_photometry_points` remain
++separate. Multiple records carrying the requested array, multiple qualified
++products, and malformed competing arrays retain `ambiguous_product` handling.
+ 
+ `count` counts named collection elements. Records, values and distinct observations
+ are not interchangeable. One record containing ordinary and forced values is not
+@@ -150,10 +199,11 @@
+    collection-completeness slice under item 7. Recipes and capability files remain
+    untouched in the syntax, evaluation and admission slices.
+ 7. **Bind one product.** An aggregate/quantifier collection selector binds one
+-   product record per candidate, without pooling or first-match selection.
++   qualified product and named array per candidate, without pooling or first-match
++   selection. Records carrying only sibling arrays do not compete for that array.
+    Statically visible ambiguity requires an existing qualifier, for example
+-   `lightcurve@ztf:fink.points`. Multiple matching runtime records produce unknown
+-   and a visible `ambiguous_product` diagnostic, not an exception. Never combine
++   `lightcurve@ztf:fink.points`. Multiple runtime records carrying the requested
++   array produce unknown and a visible `ambiguous_product` diagnostic, not an exception. Never combine
+    measurement records with lightcurve points into one count.
+ 8. **Output scope is one classification record.** `every {output}` requires
+    qualification to one producer. Multiple records/versions even after that
+@@ -167,8 +217,8 @@
+     defaults to integer `dsl_version: 3`; serialized IR missing the field loads
+     as pre-collection version 1, including within a WorkflowRun. A runtime refuses
+     a newer version. Scalar continuation preserves the existing version. Version
+-    2 remains sufficient for collection syntax; `get_measurement` requires version
+-    3. Neither version metadata alone asserts that a request is runnable.
++    2 remains sufficient for collection syntax; `get_measurement` and nonempty
++    `required_components` require version 3. Neither version metadata alone asserts that a request is runnable.
+ 
+ ## Representation and validation
+ 
+@@ -202,12 +252,15 @@
+ explicit absence and taxon comparisons retain their existing meaning. Collection
+ comparisons do not create provider parameters or retrievals.
+ 
+-For testing the closed-bound branch, the evaluator accepts transient explicit
+-evidence keyed by `(internal_record_id, exact_array_path)`, with completeness and
+-delivered-band values. Synthetic test proofs exercise this branch; no production
+-route supplies them. The evidence is not stored in Portfolio, WorkflowRun or IR.
+-No current response, summary count, temporal proof or observed band implicitly
+-closes a collection. Actual route evidence and declarations await item 7.
++The evaluator accepts transient explicit evidence keyed by
++`(internal_record_id, exact_array_path)`, with completeness and delivered-band
++values. Synthetic test proofs exercise nonempty complete histories; no production
++route supplies those proofs yet. Required-component receipts can separately prove
++an explicitly empty requested array, keyed by Portfolio identity and the qualified
++array path. Neither proof is stored in Portfolio, WorkflowRun or IR. Missing or
++malformed arrays and normalization losses do not prove emptiness. No summary count,
++temporal proof or observed band implicitly closes a collection; nonempty route
++completeness and delivered-band declarations await the next item 7 slice.
+ 
+ Competing array products or qualified classification versions yield unknown and
+ `ambiguous_product` messages in the existing StepRun `warnings`. Messages retain
+@@ -271,14 +324,15 @@
+ | Initial collection predicate plus latest | Explicitly deferred to item 4a; no partial evaluation before ranking. |
+ | Equivalent later filter | Refine existing candidates without refill. |
+ 
+-Flag mappings are currently uneven; see item 7. Current grammar is
++Flag mappings follow explicit broker status; missing status stays unknown (item 7). Current grammar is
+ [`expression.lark`](../alertissimo/dsl/expression.lark); repetition/domain metadata
+ must be retained by the existing semantic-model owner.
+ 
+ ## First completeness route: entry audit
+ 
+ This audit checks the current mappings and existing proofs; it does not make a
+-new upstream completeness claim or enable any production closure.
++new upstream completeness claim or close any nonempty production history.
++Required-component empty-array receipts are the separate narrow case above.
+ 
+ | Checked route/array | Existing boundary | Consequence |
+ |---|---|---|
+@@ -286,15 +340,14 @@
+ | ANTARES/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/antares/ztf/mappings.yaml) use `locus_alerts`, including `ant_survey = 2` upper limits; [temporal history contracts](../alertissimo/data_layer/providers/antares/ztf/capabilities.yaml) establish detection selection. | Do not infer completeness of every point from detection-history coverage. |
+ | Lasair/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/lasair/ztf/mappings.yaml) use `lightcurve_candidates`; [existing regressions](../tests/test_orchestration_lasair_time.py) allow limit-only rows in that branch while excluding them as detection witnesses. | The [detection proof](../alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml) is not a proof covering the whole array. |
+ 
+-These candidate routes do not currently meet the instruction's detection-only-
+-array entry condition. This does not prove a provider cannot supply a complete
+-array. The next completeness slice needs a reviewed population/projection contract:
+-either evidence covering the full existing mixed array or an explicitly reviewed
+-detection-only projection matched to the existing proof. Do not split arrays,
+-rename semantic paths, add schema fields or broaden a temporal proof implicitly.
+-The proposal must account for required-call success, payload/identity coverage and
+-raw-row-to-point normalization, including omitted or invalid rows; matching time
+-bounds alone is insufficient.
++The agreed next slice may establish detection-scoped completeness without splitting
++these arrays: the count condition must entail `photometry.{filter}.upper_limit =
++false`, and the proof must cover exactly that population. The audit must account
++for required-call success, payload/identity coverage and raw-row-to-point
++normalization, including omitted or invalid rows; matching time bounds alone is
++insufficient. Counts without that status condition keep their open upper bound.
++Do not rename paths, add schema fields or broaden a temporal proof implicitly.
++LSST and measurement completeness remain open.
+ The already-approved delivered-band amendment remains coupled to the first actual
+ complete route; declarations alone cannot close these collections.
+ 
+@@ -302,7 +355,8 @@
+ 
+ Named binders such as `as p` are reserved for later reevaluation of self-joins and
+ correlated nested collections (item 10). They must not replace the simple forms
+-above. FP request syntax/policy is separately deferred in item 11.
++above. On-demand FP computation is separately deferred in item 11. Broker-held FP uses
++the required-component rule above.
+ 
+ ## Completed instruction accounting
+ 
+@@ -315,19 +369,21 @@
+ | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+ | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
+ | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
+-| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
++| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Nonempty production histories remain open; explicit required-component empty-array receipts can establish zero. |
+ | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
+ | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
+ | D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
+ | Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
+ | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+ | Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
+-| Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
++| Measurement acquisition, named binders, FP policy | Measurement acquisition and broker-held FP component requests are implemented under item 7. Named binders remain item 10; on-demand FP services remain item 11. |
+ | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
+ 
+ With admitted material and open completeness, witnesses can prove
+ lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
+ zero-count claims, `min > x`, and an `every` failure based only on a short band stay
+-unknown until applicable collection completeness exists. A contradictory known
++unknown until applicable collection completeness exists. An explicit empty-array
++receipt for a required component can prove its zero count; it does not prove band
++delivery or close a nonempty history. A contradictory known
+ witness can still disprove a comparison. Local evaluation does not bypass the
+ public DSL or canonical planner material/placement guards.
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -138,7 +138,7 @@
+ **Remaining work:** initial collections with latest or without guaranteed material
+ remain item 4a; collection confirm is explicitly out of scope. Actual completeness
+ and scientific field coverage remain item 7. Optional pairwise aliases remain item
+-10, and FP surface/policy remains item 11. None is silently included in completion.
++10, and on-demand FP computation remains item 11. None is silently included in completion.
+ 
+ ## 7. Measurements, non-detections and lightcurve boundaries
+ 
+@@ -192,21 +192,33 @@
+ distinct counting. Material history is preserved rather than deduplicated by a
+ guessed scientific key.
+ 
+-**Agreed 27 November 2026; remaining implementation:** product-component requirements and
+-reference-driven promotion within existing retrievals, preserving plain plans.
++**Component acquisition:** `with <product>.<component>` and reference-driven
++promotion are implemented in version 3 through the existing IR/resolver. Only
++calls in that product's own recipe are promoted, with no declaration edits.
++Qualified requirements retain origin/producer/broker scope. Empty successes retain
++objects; explicit empty collection receipts can prove zero without closing a
++nonempty history or introducing result fields. Missing/malformed payloads and
++normalization loss stay unknown. Sibling arrays stay separate and competing arrays
++remain ambiguous. See [the component rules](dsl_collections.md#required-components-and-references).
++Completed prefixes are immutable: a later unguaranteed reference keeps the material
++error; an explicit new component retrieval may reuse identical prior required
++calls, but cannot treat an optional prior call as guaranteed. Plain plans and
++version-1/2 wire formats are preserved; component metadata requires version 3.
++
++**Agreed 27 November 2026; remaining implementation:** Lasair/ZTF forced photometry
++and per-route scoped detection completeness.
+ Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
+ and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
+ nearest-reference-source coordinate debt, without adding a branch. These changes
+ are approved but not yet runnable. Local `LightcurveStep` remains deferred.
+ 
+-**Target/work:** finish the approved component acquisition, Lasair forced-photometry
+-mapping and scoped detection-completeness slices. Map true/false limit flags where
++**Target/work:** finish Lasair forced-photometry mapping and scoped
++detection completeness. Map true/false limit flags where
+ native evidence establishes them; retain unknown otherwise. Missing flux alone is
+-not non-detection,
+-nor is a detection's limiting depth another observation.
++not non-detection, nor is a detection's limiting depth another observation.
+ 
+ **Per-route collection completeness:** establish evidence on the existing path,
+-starting with detection-only arrays that exactly match an existing temporal proof.
++starting with detection populations that exactly match an existing temporal proof.
+ A detection-history proof does not close a whole mixed array. The approved next
+ slice may close a count only when its condition entails `upper_limit = false`
+ and its population is covered by the audited proof payload and normalization.
+@@ -232,7 +244,7 @@
+ **Completion:** executable supported measurement intent and reliable field semantics,
+ preserving incidental evidence, distinct products and shared presentation. Do not
+ add an operation beyond the approved `get_measurement`, or add a local builder.
+-FP component requests are approved for a later slice; on-demand computation remains
++FP component requests use the general rule above; on-demand computation remains
+ item 11. Default visibility/composition choices remain open.
+ 
+ ## 8. Deployable UI
+@@ -273,12 +285,13 @@
+ points or an FP measurement near each outer point. Review scope, distinctness,
+ temporal ordering and units then. Do not complicate item 6's ordinary cases.
+ 
+-## 11. FP surface and acquisition policy — deferred
+-
+-**Current:** programmatic `GetForcedPhotometryStep` exists; public
+-`with forced_photometry` fails the Portfolio noun gate. Lightcurve recipes can
+-include optional FP calls; ALeRCE/LSST can also return bundled FP.
+-
+-**Later decision:** explicit FP intent, required versus incidental evidence,
+-lightcurve composition and the existing Step together. No new FP noun/record,
+-broader component admission, or automatic-supplementation change is approved.
++## 11. On-demand forced-photometry services — deferred
++
++**Current:** existing FP retrieval uses the component rule in item 7.
++Programmatic `GetForcedPhotometryStep` remains available; public
++`with forced_photometry` remains outside the Portfolio noun gate. Plain recipes
++can include optional FP calls; ALeRCE/LSST also returns bundled FP.
++
++**Later decision:** requests that trigger new computation, such as IPAC ZTF or an
++on-demand broker run. Item 7 retrieves existing data only; no service invocation,
++new FP noun/record or automatic computation is introduced by the component rule.
+diff --git a/tests/test_dsl_required_components.py b/tests/test_dsl_required_components.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_dsl_required_components.py
+@@ -0,0 +1,329 @@
++"""Required product components use existing recipes and immutable evidence."""
++
++from copy import deepcopy
++from dataclasses import replace
++from itertools import count
++import json
++from pathlib import Path
++
++import pytest
++from pydantic import ValidationError
++
++from alertissimo.api import execute_dsl, validate_dsl
++from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance, InternalRecordId
++from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++from alertissimo.data_layer.runtime.recipes import ConstantValueSource, RecipeParameter
++from alertissimo.data_layer.semantic_model import SemanticPathModel
++from alertissimo.dsl import lower_surface, parse_surface_script
++from alertissimo.dsl.predicate_lowering import lower_expression_predicate
++from alertissimo.orchestration.ir import (
++    FilterStep, GetLightcurveStep, GetMeasurementStep, LookupStep, SemanticReference, Source, TargetSelector, WorkflowIR,
++)
++from alertissimo.orchestration.normalization.predicate import evaluate_portfolio_predicate_truth
++from alertissimo.orchestration.planner import plan_workflow
++from alertissimo.orchestration.runtime import WorkflowExecutionError, WorkflowRun
++from alertissimo.orchestration.validation import validate_step_capabilities
++from alertissimo.dsl.lowering import _require_referenced_components as require_referenced_components
++
++
++FIXTURES = Path(__file__).parent / "fixtures"
++
++
++@pytest.fixture(scope="module")
++def graph():
++    return build_capability_graph()
++
++
++class Executor:
++    def __init__(self, broker="alerce", origin="ztf", *, empty=False, fail=False, malformed=False):
++        self.broker, self.origin = broker, origin
++        self.calls, self.sequence = [], count()
++        self.fail = fail
++        def read(name):
++            return json.loads((FIXTURES / broker / origin / (name + ".json")).read_text())
++        if broker == "alerce":
++            self.payloads = {name: read(name) for name in ("query_object", "query_lightcurve", "query_forced_photometry")}
++            self.object_id = str(self.payloads["query_object"]["oid"])
++            self.forced_endpoint = "query_forced_photometry"
++            bundle = self.payloads["query_lightcurve"]
++            for key, rows in bundle.items():
++                if isinstance(rows, list):
++                    bundle[key] = [] if empty and key == "forced_photometry" else rows[:1]
++        else:
++            self.payloads = {name: read(name) for name in ("objects", "sources", "fp")}
++            self.object_id = str(self.payloads["objects"][0]["r:diaObjectId"])
++            self.payloads["sources"] = self.payloads["sources"][:1]
++            self.forced_endpoint = "fp"
++        self.payloads[self.forced_endpoint] = ([] if empty else self.payloads[self.forced_endpoint][:1])
++        if malformed:
++            self.payloads[self.forced_endpoint] = None
++
++    @property
++    def lookup(self):
++        return f"object {self.object_id} from {self.origin} via {self.broker}\n"
++
++    def execute(self, broker, origin, endpoint, params=None, headers=None):
++        assert (broker, origin) == (self.broker, self.origin) and endpoint in self.payloads
++        params = deepcopy(dict(params or {}))
++        self.calls.append((endpoint, params))
++        if endpoint == self.forced_endpoint and self.fail:
++            raise RuntimeError("required component failed")
++        return ExecutionResult(
++            payload=deepcopy(self.payloads[endpoint]),
++            execution_provenance=InternalExecutionProvenance(
++                InternalExecutionId(f"component:{next(self.sequence)}"), broker, origin, endpoint, params=params,
++            ),
++        )
++
++
++def count_for(executor, relation=">= 1"):
++    return f"count(lightcurve@{executor.origin}:{executor.broker}.forced_photometry_points) {relation}"
++
++
++@pytest.mark.parametrize("broker,origin,product", [
++    ("alerce", "ztf", "lightcurve.forced_photometry_points"),
++    ("fink", "lsst", "lightcurve.forced_photometry_points"),
++    ("alerce", "lsst", "measurement.forced_photometry"),
++])
++def test_explicit_component_promotes_all_own_producing_calls(graph, broker, origin, product):
++    executor = Executor(broker, origin)
++    result = validate_dsl(executor.lookup + "with " + product, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    workflow = result.compilation.workflow
++    step = workflow.steps[-1]
++    assert step.required_components and all(isinstance(c, SemanticReference) for c in step.required_components)
++    plans = plan_workflow(workflow, graph).steps[-1].endpoint_plans
++    assert [plan.required for plan in plans] == [True, True]
++    assert [plan.endpoint for plan in plans] == (["query_lightcurve", "query_forced_photometry"]
++                                                if broker == "alerce" else ["sources", "fp"])
++    executed = execute_dsl(executor.lookup + "with " + product, graph=graph, executor=executor, continue_from=None)
++    assert len(executed.portfolios) == 1
++    assert WorkflowRun.model_validate_json(executed.run.model_dump_json()) == executed.run
++    assert WorkflowIR.model_validate_json(workflow.model_dump_json()) == workflow
++
++
++@pytest.mark.parametrize("broker,origin", [("alerce", "ztf"), ("fink", "lsst")])
++def test_required_component_failure_is_visible(graph, broker, origin):
++    executor = Executor(broker, origin, fail=True)
++    with pytest.raises(WorkflowExecutionError, match="required component failed"):
++        execute_dsl(executor.lookup + "with lightcurve.forced_photometry_points", graph=graph,
++                    executor=executor, continue_from=None)
++
++
++@pytest.mark.parametrize("broker,origin", [("alerce", "ztf"), ("alerce", "lsst"), ("fink", "lsst")])
++def test_empty_success_keeps_the_object_and_proves_only_the_empty_component(graph, broker, origin):
++    executor = Executor(broker, origin, empty=True)
++    source = executor.lookup + "with lightcurve.forced_photometry_points\n"
++    first = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert len(first.portfolios) == 1
++    assert not any(record.fields.get("forced_photometry_points") for record in first.portfolios[0].records)
++    calls, before = deepcopy(executor.calls), first.to_dict()
++    zero = execute_dsl("filter " + count_for(executor, "= 0"), graph=graph, executor=executor, continue_from=first)
++    assert len(zero.portfolios) == 1
++    assert executor.calls == calls and first.to_dict() == before
++    # The ordinary nonempty history still has an open upper bound.
++    actual = sum(len(record.fields.get("points", ())) for record in first.portfolios[0].records)
++    unknown = execute_dsl(f"filter count(lightcurve@{origin}:{broker}.points) = {actual}", graph=graph,
++                          executor=executor, continue_from=first)
++    assert unknown.portfolios == ()
++
++
++@pytest.mark.parametrize("broker,origin", [("alerce", "ztf"), ("fink", "lsst")])
++def test_same_program_empty_filter_agrees_with_continuation_and_final_normalization(graph, broker, origin):
++    executor = Executor(broker, origin, empty=True)
++    result = execute_dsl(executor.lookup + "with lightcurve\nfilter " + count_for(executor, "= 0"),
++                         graph=graph, executor=executor, continue_from=None)
++    assert len(result.portfolios) == 1
++    assert all(plan.required for plan in result.run.steps[1].endpoint_plans)
++
++
++@pytest.mark.parametrize("tail", [
++    "with lightcurve\nfilter count(lightcurve@ztf:alerce.forced_photometry_points where time.mjd > 60000) >= 1",
++    "with lightcurve where forced_photometry_points exists",
++])
++def test_references_strengthen_existing_retrieval_without_adding_a_step(graph, tail):
++    executor = Executor()
++    result = validate_dsl(executor.lookup + tail, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    assert [step.op for step in result.compilation.workflow.steps] == ["lookup", "get_lightcurve", "filter"]
++    assert all(plan.required for plan in plan_workflow(result.compilation.workflow, graph).steps[1].endpoint_plans)
++
++
++@pytest.mark.parametrize("empty", [False, True])
++@pytest.mark.parametrize("selection", ["filter_count", "scoped_exists"])
++def test_selection_and_retrieval_are_distinct(graph, empty, selection):
++    executor = Executor(empty=empty)
++    tail = ("with lightcurve\nfilter " + count_for(executor) if selection == "filter_count"
++            else "with lightcurve where forced_photometry_points exists")
++    result = execute_dsl(executor.lookup + tail, graph=graph, executor=executor, continue_from=None)
++    assert len(result.portfolios) == (0 if empty else 1)
++    assert [step.op for step in result.workflow.steps] == ["lookup", "get_lightcurve", "filter"]
++
++
++@pytest.mark.parametrize("tail", [
++    "filter count(lightcurve@ztf:alerce.forced_photometry_points) >= 1",
++    "where count(lightcurve@ztf:alerce.forced_photometry_points) >= 1",
++    "where lightcurve@ztf:alerce.forced_photometry_points exists",
++])
++def test_no_parent_retrieval_still_names_item_4a(graph, tail):
++    executor = Executor()
++    source = executor.lookup + tail
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert "item 4a" in str(result.lowering_error)
++    pure = lower_surface(parse_surface_script(source), graph=graph).workflow
++    assert not any(isinstance(step, GetLightcurveStep) for step in pure.steps)
++
++
++def test_no_route_names_broker_and_does_not_borrow_other_operation_calls(graph):
++    executor = Executor()
++    source = executor.lookup + "with lightcurve.forced_photometry_points via antares"
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert "antares" in str(result.lowering_error)
++    restricted = replace(graph, recipe_capabilities=tuple(
++        replace(recipe, calls=recipe.calls[:1]) if (recipe.broker, recipe.origin, recipe.op) == ("alerce", "ztf", "get_lightcurve")
++        else recipe for recipe in graph.recipe_capabilities
++    ))
++    assert restricted.query_recipes(broker="alerce", origin="ztf", op="get_forced_photometry")
++    result = validate_dsl(executor.lookup + "with lightcurve.forced_photometry_points", graph=restricted, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++
++
++
++def test_projected_out_component_is_not_guaranteed_by_its_mapping(graph):
++    # The endpoint can map forced flux, but this recipe requests identity only.
++    def project(recipe):
++        if (recipe.broker, recipe.origin, recipe.op) != ("alerce", "ztf", "get_lightcurve"):
++            return recipe
++        return replace(recipe, calls=tuple(
++            replace(call, params=call.params + (RecipeParameter("columns", ConstantValueSource("measurement_id")),))
++            if call.endpoint == "query_forced_photometry" else call for call in recipe.calls
++        ))
++    projected = replace(graph, recipe_capabilities=tuple(project(r) for r in graph.recipe_capabilities),
++                        endpoint_capabilities=tuple(
++                            replace(e, supports_projection=True, projection_param="columns", params=e.params + ("columns",))
++                            if (e.broker, e.origin, e.endpoint) == ("alerce", "ztf", "query_forced_photometry") else e
++                            for e in graph.endpoint_capabilities))
++    step = GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object"),
++                            sources=[Source(broker="alerce", origin="ztf")],
++                            required_components=(SemanticReference(semantic_type="lightcurve",
++                                field_path="forced_photometry_points.forced_photometry"),))
++    assert validate_step_capabilities(step, graph).status == "supported"
++    rejected = validate_step_capabilities(step, projected)
++    assert rejected.status == "unsupported" and "alerce" in rejected.source_results[0].reason
++
++
++def test_unknown_component_and_bare_component_noun_are_rejected(graph):
++    executor = Executor()
++    for tail in ("with lightcurve.no_such_component", "with forced_photometry"):
++        result = validate_dsl(executor.lookup + tail, graph=graph, continue_from=None)
++        assert not result.is_valid
++
++
++def test_plain_plans_and_legacy_wire_format_remain_unchanged(graph):
++    executor = Executor()
++    plain = validate_dsl(executor.lookup + "with lightcurve", graph=graph, continue_from=None).compilation.workflow
++    assert [p.endpoint for p in plan_workflow(plain, graph).steps[-1].endpoint_plans] == ["query_lightcurve"]
++    assert not plain.steps[-1].required_components
++    assert "required_components" not in plain.steps[-1].model_dump()
++    legacy = WorkflowIR.model_validate({**plain.model_dump(), "dsl_version": 2})
++    assert WorkflowIR.model_validate_json(legacy.model_dump_json()) == legacy
++    target = TargetSelector(ids=[executor.object_id], kind="object")
++    sources = [Source(broker="alerce", origin="ztf")]
++    direct = WorkflowIR(steps=[GetLightcurveStep(target=target, sources=sources)])
++    assert [(p.endpoint, p.required) for p in plan_workflow(direct, graph).steps[0].endpoint_plans] == [
++        ("query_lightcurve", True), ("query_forced_photometry", False),
++    ]
++
++
++def test_general_component_rule_keeps_other_product_calls_optional(graph):
++    step = GetLightcurveStep(target=TargetSelector(ids=["A"], kind="object"), sources=[Source(broker="alerce", origin="ztf")],
++                            required_components=(SemanticReference(semantic_type="lightcurve", field_path="points"),))
++    plans = plan_workflow(WorkflowIR(steps=[step]), graph).steps[0].endpoint_plans
++    assert [(p.endpoint, p.required) for p in plans] == [("query_lightcurve", True), ("query_forced_photometry", False)]
++
++
++def test_qualified_reference_does_not_promote_another_origin(graph):
++    sources = [Source(broker="alerce", origin=origin) for origin in ("ztf", "lsst")]
++    predicate = lower_expression_predicate("count(lightcurve@ztf:alerce.forced_photometry_points) >= 1",
++                                          SemanticPathModel.from_ontology().record_types)
++    workflow = WorkflowIR(steps=[LookupStep(target=TargetSelector(ids=["A"], kind="object"), sources=sources),
++                                 GetLightcurveStep(sources=sources), FilterStep(predicate=predicate)])
++    strengthened = require_referenced_components(workflow, graph)
++    validation = validate_step_capabilities(strengthened.steps[1], graph)
++    for source in validation.source_results:
++        assert source.status == "supported"
++        calls = source.recipes[0].calls
++        assert len(calls) == (2 if source.source.origin == "ztf" else 1)
++
++
++def test_sealed_prefix_is_immutable_and_explicit_new_request_reuses_only_required_calls(graph):
++    executor = Executor()
++    first = execute_dsl(executor.lookup + "with lightcurve", graph=graph, executor=executor, continue_from=None)
++    calls, before = len(executor.calls), first.to_dict()
++    unavailable = validate_dsl("filter " + count_for(executor), graph=graph, continue_from=first)
++    assert not unavailable.is_runnable and "item 4a" in str(unavailable.lowering_error)
++    second = execute_dsl("with lightcurve.forced_photometry_points\nfilter " + count_for(executor), graph=graph,
++                         executor=executor, continue_from=first)
++    assert len(second.portfolios) == 1
++    assert [endpoint for endpoint, _ in executor.calls[calls:]] == ["query_forced_photometry"]
++    assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
++    assert first.to_dict() == before
++
++
++def test_empty_component_after_a_later_filter_does_not_pool_sibling_histories(graph):
++    executor = Executor(empty=True)
++    first = execute_dsl(executor.lookup + "with lightcurve", graph=graph, executor=executor, continue_from=None)
++    result = execute_dsl("filter summary.identity.object_id exists\n"
++                         "with lightcurve.forced_photometry_points\nfilter " + count_for(executor, "= 0"),
++                         graph=graph, executor=executor, continue_from=first)
++    assert len(result.portfolios) == 1
++    assert result.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
++
++
++@pytest.mark.parametrize("payload", [None, [{}]])
++def test_empty_and_normalization_loss_are_not_confused(graph, payload):
++    executor = Executor(malformed=True)
++    executor.payloads[executor.forced_endpoint] = payload
++    source = executor.lookup + "with lightcurve.forced_photometry_points\nfilter " + count_for(executor, "= 0")
++    result = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert result.portfolios == ()
++
++
++def test_nested_component_does_not_become_a_second_record_noun(graph):
++    result = validate_dsl("object ZTF18abbuksn from ztf via alerce\n"
++                          "with crossmatch.classification from gaia via antares", graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    assert result.compilation.workflow.steps[-1].op == "get_crossmatch"
++
++
++def test_sibling_arrays_are_distinct_but_two_actual_forced_products_stay_ambiguous(graph):
++    executor = Executor("fink", "lsst")
++    result = execute_dsl(executor.lookup + "with lightcurve\nfilter " + count_for(executor), graph=graph,
++                         executor=executor, continue_from=None)
++    assert len(result.portfolios) == 1
++    portfolio = result.portfolios[0]
++    forced = next(r for r in portfolio.records if r.fields.get("forced_photometry_points"))
++    competing = replace(forced, internal_record_id=InternalRecordId("component:another-product"))
++    candidate = replace(portfolio, records=portfolio.records + (competing,))
++    predicate = lower_expression_predicate(count_for(executor), SemanticPathModel.from_ontology().record_types)
++    diagnostics = []
++    assert evaluate_portfolio_predicate_truth(candidate, predicate, diagnostics=diagnostics) is None
++    assert any("ambiguous_product" in message for message in diagnostics)
++
++
++def test_component_ir_reuses_frozen_references_and_requires_version_three():
++    component = SemanticReference(semantic_type="lightcurve", field_path="forced_photometry_points")
++    step = GetLightcurveStep(required_components=(component,))
++    assert WorkflowIR.model_validate_json(WorkflowIR(steps=[step]).model_dump_json()).steps[0] == step
++    for version in (1, 2):
++        with pytest.raises(ValidationError, match="required components require dsl_version 3"):
++            WorkflowIR(steps=[step], dsl_version=version)
++    with pytest.raises(ValidationError):
++        component.field_path = "points"
++    with pytest.raises(ValidationError, match="duplicate-free"):
++        GetLightcurveStep(required_components=(component, component))
++    with pytest.raises(ValidationError, match="unknown component"):
++        GetMeasurementStep(required_components=(component,))
