@@ -1,0 +1,991 @@
+diff --git a/alertissimo/data_layer/providers/alerce/lsst/mappings.yaml b/alertissimo/data_layer/providers/alerce/lsst/mappings.yaml
+--- a/alertissimo/data_layer/providers/alerce/lsst/mappings.yaml
++++ b/alertissimo/data_layer/providers/alerce/lsst/mappings.yaml
+@@ -106,6 +106,9 @@
+   classification@{producer}:alerce.assessment.{output}.rank:
+   - query_probabilities#ranking
+   measurement@lsst:alerce.photometry.{filter}:
++  - query_detections#band_name
++  - query_lightcurve.detections#band_name
++  measurement@lsst:alerce.photometry.{filter}.upper_limit:
+   - query_detections#band_name
+   - query_lightcurve.detections#band_name
+   measurement@lsst:alerce.identity.object_id:
+@@ -426,6 +429,8 @@
+   - query_lightcurve.detections#templateFluxErr
+   lightcurve@lsst:alerce.points.photometry.{filter}:
+   - query_lightcurve.detections#band_name
++  lightcurve@lsst:alerce.points.photometry.{filter}.upper_limit:
++  - query_lightcurve.detections#band_name
+   lightcurve@lsst:alerce.points.identity.source_id:
+   - query_lightcurve.detections#measurement_id
+   lightcurve@lsst:alerce.points.identity.visit_id:
+@@ -536,3 +541,17 @@
+     query_lightcurve.detections#psfFlux_flag_edge: *strict_psf_flag
+   lightcurve@lsst:alerce.points.photometry.{filter}.psf.flags.no_good_pixels:
+     query_lightcurve.detections#psfFlux_flag_noGoodPixels: *strict_psf_flag
++  measurement@lsst:alerce.photometry.{filter}.upper_limit:
++    query_detections#band_name:
++      type: value_map
++      map: {}
++      default: false
++    query_lightcurve.detections#band_name:
++      type: value_map
++      map: {}
++      default: false
++  lightcurve@lsst:alerce.points.photometry.{filter}.upper_limit:
++    query_lightcurve.detections#band_name:
++      type: value_map
++      map: {}
++      default: false
+diff --git a/alertissimo/data_layer/providers/alerce/ztf/mappings.yaml b/alertissimo/data_layer/providers/alerce/ztf/mappings.yaml
+--- a/alertissimo/data_layer/providers/alerce/ztf/mappings.yaml
++++ b/alertissimo/data_layer/providers/alerce/ztf/mappings.yaml
+@@ -120,6 +120,11 @@
+   - query_object#lastmjd
+   - query_objects#lastmjd
+   measurement@ztf:alerce.photometry.{filter}:
++  - query_detections#fid
++  - query_lightcurve.detections#fid
++  - query_lightcurve.non_detections#fid
++  - query_non_detections#fid
++  measurement@ztf:alerce.photometry.{filter}.upper_limit:
+   - query_detections#fid
+   - query_lightcurve.detections#fid
+   - query_lightcurve.non_detections#fid
+@@ -330,6 +335,9 @@
+   lightcurve@ztf:alerce.points.photometry.{filter}:
+   - query_lightcurve.detections#fid
+   - query_lightcurve.non_detections#fid
++  lightcurve@ztf:alerce.points.photometry.{filter}.upper_limit:
++  - query_lightcurve.detections#fid
++  - query_lightcurve.non_detections#fid
+   lightcurve@ztf:alerce.points.identity.source_id:
+   - query_lightcurve.detections#measurement_id
+   lightcurve@ztf:alerce.points.identity.alert_id:
+@@ -554,3 +562,29 @@
+         3: i
+         '3': i
+       default: unknown
++  measurement@ztf:alerce.photometry.{filter}.upper_limit:
++    query_detections#fid:
++      type: value_map
++      map: {}
++      default: false
++    query_lightcurve.detections#fid:
++      type: value_map
++      map: {}
++      default: false
++    query_lightcurve.non_detections#fid:
++      type: value_map
++      map: {}
++      default: true
++    query_non_detections#fid:
++      type: value_map
++      map: {}
++      default: true
++  lightcurve@ztf:alerce.points.photometry.{filter}.upper_limit:
++    query_lightcurve.detections#fid:
++      type: value_map
++      map: {}
++      default: false
++    query_lightcurve.non_detections#fid:
++      type: value_map
++      map: {}
++      default: true
+diff --git a/alertissimo/data_layer/providers/antares/lsst/mappings.yaml b/alertissimo/data_layer/providers/antares/lsst/mappings.yaml
+--- a/alertissimo/data_layer/providers/antares/lsst/mappings.yaml
++++ b/alertissimo/data_layer/providers/antares/lsst/mappings.yaml
+@@ -107,6 +107,8 @@
+   measurement@lsst:antares.time.processed_mjd:
+   - locus_alerts#properties.lsst_diaSource_timeProcessedMjdTai
+   measurement@lsst:antares.photometry.{filter}:
++  - locus_alerts#properties.lsst_diaSource_band
++  measurement@lsst:antares.photometry.{filter}.upper_limit:
+   - locus_alerts#properties.lsst_diaSource_band
+   measurement@lsst:antares.photometry.{filter}.psf.mag:
+   - locus_alerts#properties.ant_mag
+@@ -291,6 +293,8 @@
+   lightcurve@lsst:antares.points.quality.signal_to_noise:
+   - locus_alerts#properties.lsst_diaSource_snr
+   lightcurve@lsst:antares.points.photometry.{filter}:
++  - locus_alerts#properties.lsst_diaSource_band
++  lightcurve@lsst:antares.points.photometry.{filter}.upper_limit:
+   - locus_alerts#properties.lsst_diaSource_band
+   lightcurve@lsst:antares.points.photometry.{filter}.psf.flux:
+   - locus_alerts#properties.lsst_diaSource_psfFlux
+@@ -792,3 +796,13 @@
+     locus_alerts#properties.lsst_diaSource_isNegative:
+       type: boolean_not
+       note: Invert the authoritative Python boolean only.
++  measurement@lsst:antares.photometry.{filter}.upper_limit:
++    locus_alerts#properties.lsst_diaSource_band:
++      type: value_map
++      map: {}
++      default: false
++  lightcurve@lsst:antares.points.photometry.{filter}.upper_limit:
++    locus_alerts#properties.lsst_diaSource_band:
++      type: value_map
++      map: {}
++      default: false
+diff --git a/alertissimo/data_layer/providers/fink/lsst/mappings.yaml b/alertissimo/data_layer/providers/fink/lsst/mappings.yaml
+--- a/alertissimo/data_layer/providers/fink/lsst/mappings.yaml
++++ b/alertissimo/data_layer/providers/fink/lsst/mappings.yaml
+@@ -354,6 +354,10 @@
+   - sources#f:lsst_schema_version
+   - conesearch#f:lsst_schema_version
+   measurement@lsst:fink.photometry.{filter}:
++  - sources#r:band
++  - conesearch#r:band
++  - sso#r:band
++  measurement@lsst:fink.photometry.{filter}.upper_limit:
+   - sources#r:band
+   - conesearch#r:band
+   - sso#r:band
+@@ -960,6 +964,8 @@
+   - sources#f:lsst_schema_version
+   lightcurve@lsst:fink.points.photometry.{filter}:
+   - sources#r:band
++  lightcurve@lsst:fink.points.photometry.{filter}.upper_limit:
++  - sources#r:band
+   lightcurve@lsst:fink.points.photometry.{filter}.psf.flux:
+   - sources#r:psfFlux
+   lightcurve@lsst:fink.points.photometry.{filter}.psf.flux.error:
+@@ -1067,3 +1073,21 @@
+       type: boolean_not
+   lightcurve@lsst:fink.points.quality.reliability.version:
+     sources#r:reliabilityVersion: *fink_reliability_version
++  measurement@lsst:fink.photometry.{filter}.upper_limit:
++    sources#r:band:
++      type: value_map
++      map: {}
++      default: false
++    conesearch#r:band:
++      type: value_map
++      map: {}
++      default: false
++    sso#r:band:
++      type: value_map
++      map: {}
++      default: false
++  lightcurve@lsst:fink.points.photometry.{filter}.upper_limit:
++    sources#r:band:
++      type: value_map
++      map: {}
++      default: false
+diff --git a/alertissimo/data_layer/providers/lasair/lsst/mappings.yaml b/alertissimo/data_layer/providers/lasair/lsst/mappings.yaml
+--- a/alertissimo/data_layer/providers/lasair/lsst/mappings.yaml
++++ b/alertissimo/data_layer/providers/lasair/lsst/mappings.yaml
+@@ -413,6 +413,8 @@
+   - diaForcedSourcesList#decl
+   measurement@lsst:lasair.photometry.{filter}:
+   - diaSourcesList#band
++  measurement@lsst:lasair.photometry.{filter}.upper_limit:
++  - diaSourcesList#band
+   measurement@lsst:lasair.forced_photometry.{filter}:
+   - diaSourcesList#band
+   - diaForcedSourcesList#band
+@@ -437,6 +439,8 @@
+   lightcurve@lsst:lasair.points.quality.signal_to_noise:
+   - diaSourcesList#snr
+   lightcurve@lsst:lasair.points.photometry.{filter}:
++  - diaSourcesList#band
++  lightcurve@lsst:lasair.points.photometry.{filter}.upper_limit:
+   - diaSourcesList#band
+   lightcurve@lsst:lasair.points.photometry.{filter}.psf.flux:
+   - diaSourcesList#psfFlux
+@@ -984,3 +988,13 @@
+       skip_null: true
+     sherlock_object_crossmatches#classification:
+       skip_null: true
++  measurement@lsst:lasair.photometry.{filter}.upper_limit:
++    diaSourcesList#band:
++      type: value_map
++      map: {}
++      default: false
++  lightcurve@lsst:lasair.points.photometry.{filter}.upper_limit:
++    diaSourcesList#band:
++      type: value_map
++      map: {}
++      default: false
+diff --git a/alertissimo/data_layer/providers/lasair/ztf/mappings.yaml b/alertissimo/data_layer/providers/lasair/ztf/mappings.yaml
+--- a/alertissimo/data_layer/providers/lasair/ztf/mappings.yaml
++++ b/alertissimo/data_layer/providers/lasair/ztf/mappings.yaml
+@@ -134,6 +134,13 @@
+   - candidates#fid
+   - lightcurve_candidates#fid
+   - objects_candidates#fid
++  measurement@ztf:lasair.photometry.{filter}.upper_limit:
++  - candidates#candid
++  - candidates#diffmaglim
++  - lightcurve_candidates#candid
++  - lightcurve_candidates#diffmaglim
++  - objects_candidates#candid
++  - objects_candidates#diffmaglim
+   measurement@ztf:lasair.photometry.{filter}.psf.mag:
+   - lightcurve_candidates#magpsf
+   measurement@ztf:lasair.photometry.{filter}.psf.mag.error:
+@@ -474,6 +481,9 @@
+   - lightcurve_candidates#jd
+   lightcurve@ztf:lasair.points.photometry.{filter}:
+   - lightcurve_candidates#fid
++  lightcurve@ztf:lasair.points.photometry.{filter}.upper_limit:
++  - lightcurve_candidates#candid
++  - lightcurve_candidates#diffmaglim
+   lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
+   - lightcurve_candidates#magpsf
+   lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
+@@ -533,16 +543,19 @@
+       map:
+         t: true
+         f: false
++      requires: [candid]
+     lightcurve_candidates#isdiffpos:
+       type: value_map
+       map:
+         t: true
+         f: false
++      requires: [candid]
+     objects_candidates#isdiffpos:
+       type: value_map
+       map:
+         t: true
+         f: false
++      requires: [candid]
+   measurement@ztf:lasair.solar_system.mpc_match.identity.object_id:
+     candidates#ssnamenr:
+       type: value_map
+@@ -554,10 +567,12 @@
+         '-999.0': null
+         Unknown: null
+       skip_null: true
++      requires: [candid]
+     lightcurve_candidates#ssnamenr:
+       type: value_map
+       map: *id002
+       skip_null: true
++      requires: [candid]
+     objects_candidates#ssnamenr:
+       type: value_map
+       map:
+@@ -568,21 +583,25 @@
+         '-999.0': null
+         Unknown: null
+       skip_null: true
++      requires: [candid]
+   measurement@ztf:lasair.solar_system.mpc_match.separation.total:
+     candidates#ssdistnr:
+       type: value_map
+       map: &id003
+         -999: null
+       skip_null: true
++      requires: [candid]
+     lightcurve_candidates#ssdistnr:
+       type: value_map
+       map: *id003
+       skip_null: true
++      requires: [candid]
+     objects_candidates#ssdistnr:
+       type: value_map
+       map:
+         -999: null
+       skip_null: true
++      requires: [candid]
+   crossmatch@{producer}:lasair.identity.object_id:
+     object#sherlock.catalogue_object_id:
+       type: to_string_strip
+@@ -873,3 +892,105 @@
+         1: g
+         2: r
+         3: i
++  measurement@ztf:lasair.photometry.{filter}.upper_limit:
++    candidates#candid:
++      type: value_map
++      map: {}
++      default: false
++      skip_null: true
++    candidates#diffmaglim:
++      type: value_map
++      map: {}
++      default: true
++    lightcurve_candidates#candid:
++      type: value_map
++      map: {}
++      default: false
++      skip_null: true
++    lightcurve_candidates#diffmaglim:
++      type: value_map
++      map: {}
++      default: true
++    objects_candidates#candid:
++      type: value_map
++      map: {}
++      default: false
++      skip_null: true
++    objects_candidates#diffmaglim:
++      type: value_map
++      map: {}
++      default: true
++  lightcurve@ztf:lasair.points.photometry.{filter}.upper_limit:
++    lightcurve_candidates#candid:
++      type: value_map
++      map: {}
++      default: false
++      skip_null: true
++    lightcurve_candidates#diffmaglim:
++      type: value_map
++      map: {}
++      default: true
++  measurement@ztf:lasair.identity.source_id:
++    candidates#candid:
++      requires:
++      - candid
++    lightcurve_candidates#candid:
++      requires:
++      - candid
++    objects_candidates#candid:
++      requires:
++      - candid
++  measurement@ztf:lasair.position.ra:
++    candidates#ra:
++      requires:
++      - candid
++    lightcurve_candidates#ra:
++      requires:
++      - candid
++    objects_candidates#ra:
++      requires:
++      - candid
++  measurement@ztf:lasair.position.dec:
++    candidates#dec:
++      requires:
++      - candid
++    lightcurve_candidates#dec:
++      requires:
++      - candid
++    objects_candidates#dec:
++      requires:
++      - candid
++  measurement@ztf:lasair.photometry.{filter}.psf.mag:
++    lightcurve_candidates#magpsf:
++      requires:
++      - candid
++  measurement@ztf:lasair.photometry.{filter}.psf.mag.error:
++    lightcurve_candidates#sigmapsf:
++      requires:
++      - candid
++  measurement@ztf:lasair.quality.real_bogus:
++    candidates#drb:
++      requires:
++      - candid
++    lightcurve_candidates#drb:
++      requires:
++      - candid
++    objects_candidates#drb:
++      requires:
++      - candid
++  lightcurve@ztf:lasair.points.identity.source_id:
++    lightcurve_candidates#candid:
++      requires:
++      - candid
++  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
++    lightcurve_candidates#magpsf:
++      requires:
++      - candid
++  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
++    lightcurve_candidates#sigmapsf:
++      requires:
++      - candid
++  lightcurve@ztf:lasair.points.quality.real_bogus:
++    lightcurve_candidates#drb:
++      requires:
++      - candid
+diff --git a/alertissimo/data_layer/runtime/mapping_schema.py b/alertissimo/data_layer/runtime/mapping_schema.py
+--- a/alertissimo/data_layer/runtime/mapping_schema.py
++++ b/alertissimo/data_layer/runtime/mapping_schema.py
+@@ -26,6 +26,7 @@
+ OBJECT_PARTITION_KEYS = {"mode", "field"}
+ TRANSFORM_KEYS = {
+     "type", "map", "default", "factor", "skip_null", "skip_empty", "note", "object_key",
++    "requires",
+ }
+ TRANSFORM_TYPES = {
+     "boolean_not",
+@@ -368,6 +369,7 @@
+ 
+     transforms = document.get("transforms", {})
+     transforms = _mapping(transforms, f"{path}: transforms")
++    required_row_fields: list[tuple[str, str]] = []
+     for semantic_path, raw_transforms in transforms.items():
+         if semantic_path not in mappings:
+             raise MappingSchemaError(
+@@ -387,6 +389,23 @@
+                 specification, TRANSFORM_KEYS,
+                 f"{path}: transform {semantic_path!r} {raw_reference!r}",
+             )
++            if "requires" in specification:
++                required = specification["requires"]
++                if (
++                    not isinstance(required, list)
++                    or not required
++                    or any(
++                        not isinstance(field, str) or not field.strip()
++                        or field != field.strip() or "#" in field
++                        for field in required
++                    )
++                    or len(set(required)) != len(required)
++                ):
++                    raise MappingSchemaError(
++                        f"{path}: transform requires must be a non-empty list of unique "
++                        "row-relative raw field names (no payload qualifier)"
++                    )
++                required_row_fields.extend((raw_reference, field) for field in required)
+             transform_type = specification.get("type")
+             if transform_type is not None and transform_type not in TRANSFORM_TYPES:
+                 raise MappingSchemaError(
+@@ -423,6 +442,15 @@
+     unmapped_references = _validate_unmapped(
+         path.with_name("unmapped_fields.yaml"), broker, origin, payloads
+     )
++    known_references = mapped_references | unmapped_references
++    for raw_reference, field in required_row_fields:
++        payload_key = raw_reference.split("#", 1)[0]
++        if f"{payload_key}#{field}" not in known_references:
++            raise MappingSchemaError(
++                f"{path}: transform {raw_reference!r} requires unknown raw field "
++                f"{field!r} in the same payload row {payload_key!r}; declare it in "
++                "mappings or unmapped_fields for that payload"
++            )
+     overlap = mapped_references & unmapped_references
+     if overlap:
+         raise MappingSchemaError(
+diff --git a/alertissimo/data_layer/runtime/record_builder.py b/alertissimo/data_layer/runtime/record_builder.py
+--- a/alertissimo/data_layer/runtime/record_builder.py
++++ b/alertissimo/data_layer/runtime/record_builder.py
+@@ -504,6 +504,13 @@
+                     if object_key is None and ordinary_value is not _MISSING:
+                         continue
+                     try:
++                        # Guards inspect only this payload row, before value transforms.
++                        # False, zero and empty values are present; null is not.
++                        if any(
++                            extract_raw_field(item.value, required) is None
++                            for required in (specification or {}).get("requires", ())
++                        ):
++                            continue
+                         value = extract_raw_field(item.value, raw_field)
+                     except RawFieldMissing:
+                         continue
+@@ -629,4 +636,4 @@
+             "singular portfolio builder requires exactly one normalized object; "
+             f"found {len(portfolios)}"
+         )
+-    return portfolios[0]
+\ No newline at end of file
++    return portfolios[0]
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -144,9 +144,22 @@
+ 
+ **Current:** `with measurement` is ontology-valid but lacks retrieval lowering.
+ Provider lightcurve retrieval plans on all pairs; local `LightcurveStep` construction
+-explicitly remains unimplemented. Ordinary upper-limit flag mappings exist for
+-Fink/ZTF and ANTARES/ZTF; ALeRCE/Lasair ZTF have limit values without that flag, and
+-the checked LSST definitions have no corresponding flag mapping.
++explicitly remains unimplemented. Ordinary upper-limit flag mappings now cover
++all eight pairs on measurements and existing lightcurve points: ALeRCE/ZTF uses
++the source array, Lasair/ZTF uses non-null `candid` before `diffmaglim`, Fink/ZTF
++uses `d:tag` (`badquality` remains unknown), ANTARES/ZTF uses `ant_survey`, and LSST
++DIASource rows are detections. Forced-only epochs acquire no ordinary status.
++Lasair/ZTF detection-only values use a same-row guard to prevent copied rich-format
++limit values from becoming PSF measurements. No route completeness is enabled by
++these flag mappings.
++
++**Agreed 27 November 2026; remaining implementation:** add the approved
++`get_measurement` operation/recipes, then product-component requirements and
++reference-driven promotion within existing retrievals, preserving plain plans.
++Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
++and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
++nearest-reference-source coordinate debt, without adding a branch. These changes
++are approved but not yet runnable. Local `LightcurveStep` remains deferred.
+ 
+ **Target/work:** define measurement acquisition using concrete source/scope examples
+ and a reviewed canonical mapping. Map true/false limit flags where native evidence
+@@ -155,7 +168,9 @@
+ 
+ **Per-route collection completeness:** establish evidence on the existing path,
+ starting with detection-only arrays that exactly match an existing temporal proof.
+-A detection-history proof does not cover an array containing non-detections.
++A detection-history proof does not close a whole mixed array. The approved next
++slice may close a count only when its condition entails `upper_limit = false`
++and its population is covered by the audited proof payload and normalization.
+ The first proven route also introduces its delivered-band declaration and the
+ approved existing-loader support. Keep incidental measurement counts open until
+ acquisition/completeness is defined.
+@@ -169,16 +184,17 @@
+ unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
+ This is a current implementation boundary, not an upstream impossibility claim.
+ 
+-Before implementing the first closure, review a concrete proposal for either a
+-proven complete existing mixed array or a detection-only semantic projection with
+-a matching proof. Do not introduce a projection, new schema field or recipe/
+-capability structure under the completed collection-syntax approval. Delivered-band
+-metadata alone does not resolve the evidence boundary.
++Before implementing the first closure, audit required-call success, payload and
++identity coverage, and raw-row-to-element normalization, including omitted or
++invalid rows. Derive the link from the existing proof payload and status mappings;
++any additional YAML structure needs review. LSST and measurement completeness
++remain open. Delivered-band metadata alone does not resolve the evidence boundary.
+ 
+ **Completion:** executable supported measurement intent and reliable field semantics,
+ preserving incidental evidence, distinct products and shared presentation. Do not
+-silently add a new IR operation/local builder or settle deferred FP policy here.
+-Default visibility/composition choices remain open.
++add an operation beyond the approved `get_measurement`, or add a local builder.
++FP component requests are approved for a later slice; on-demand computation remains
++item 11. Default visibility/composition choices remain open.
+ 
+ ## 8. Deployable UI
+ 
+diff --git a/docs/provider_field_coverage.md b/docs/provider_field_coverage.md
+--- a/docs/provider_field_coverage.md
++++ b/docs/provider_field_coverage.md
+@@ -23,6 +23,22 @@
+ The same capture has 316 authoritative Alerts versus a 280-row secondary client
+ lightcurve. Preserve the existing authoritative observation route instead of
+ mapping duplicate representations as additional observations.
++
++## Per-field transform options
++
++`mappings.yaml` attaches transform options to an exact semantic-path/raw-reference
++pair. Existing options are `type`, `map`, `default`, `factor`, `skip_null`,
++`skip_empty`, `object_key` and `note`. `requires: [candid]` additionally maps that
++field only when every listed raw field is present and non-null in the **same
++payload row**, before applying the value transform. False, zero and empty strings
++are present values. This option never drops the row or other mapped fields.
++
++The list must be non-empty and duplicate-free. Names are row-relative raw paths,
++inventoried under that payload in mappings or `unmapped_fields.yaml`; nested raw
++paths use the existing dot notation. Payload-qualified names, unknown fields,
++values, comparisons, negation and Boolean expressions are rejected. Unknown
++option names remain errors. In item 7 this guard is used only for Lasair/ZTF's
++detection-only fields, including copied PSF magnitudes on rich-format limit rows.
+ 
+ ## Required audit trail
+ 
+diff --git a/tests/fixtures/lasair/README.md b/tests/fixtures/lasair/README.md
+--- a/tests/fixtures/lasair/README.md
++++ b/tests/fixtures/lasair/README.md
+@@ -9,6 +9,8 @@
+ | ZTF | cone | `ztf/cone.json` | authoritative | Documented normal Lasair cone result shape. |
+ | ZTF | sherlock_position | `ztf/sherlock_position.json` | authoritative | Observed `ZTF20acpwljl` response supplied by the user. |
+ | ZTF | object | `ztf/object.json` | provisional | Reduced representative payload; no complete official example was available locally. |
++| ZTF | object, lightcurves | `ztf/object_ZTF23aamxeqf.json`, `ztf/lightcurves_ZTF23aamxeqf.json` | maintainer capture | Supplied 27 November 2026; each contains 2 candidates with `candid` and 19 limit rows, with empty `forcedphot`. Bytes retained unchanged; no retrieval-completeness claim. |
++| ZTF | candidate row | `ztf/object_rich_limit_synthetic.json` | synthetic regression | Rich-format limit: absent `candid`, copied `magpsf == diffmaglim`, plus `json`, `mjd` and `since_now`; not a provider capture. |
+ | ZTF | objects, lightcurves, query, sherlock_objects | corresponding `ztf/*.json` | provisional | Representative mapping fixtures; query columns are caller-selected. |
+ | LSST | object | `lsst/object.json` | provisional | Representative synthetic payload, not an observed full API response. |
+ | LSST | cone | `lsst/cone.json` | provisional | Representative synthetic payload, not an observed full API response. |
+diff --git a/tests/fixtures/lasair/ztf/lightcurves_ZTF23aamxeqf.json b/tests/fixtures/lasair/ztf/lightcurves_ZTF23aamxeqf.json
+new file mode 100644
+--- /dev/null
++++ b/tests/fixtures/lasair/ztf/lightcurves_ZTF23aamxeqf.json
+@@ -0,0 +1 @@
++[{"objectId":"ZTF23aamxeqf","candidates":[{"candid":2346202521015015005,"jd":2460100.7025231,"ra":255.6540479,"dec":51.8680802,"fid":1,"nid":2346,"magpsf":19.216100692749023,"sigmapsf":0.1320910006761551,"magnr":22.606000900268555,"sigmagnr":0.35899999737739563,"magzpsci":26.313100814819336,"isdiffpos":"t","ssdistnr":null,"ssnamenr":null,"drb":0.9957607984542847},{"candid":2346289181015015003,"jd":2460100.7891898,"ra":255.6539119,"dec":51.8681043,"fid":2,"nid":2346,"magpsf":19.02037239074707,"sigmapsf":0.09285727143287659,"magnr":21.525999069213867,"sigmagnr":0.11599999666213989,"magzpsci":26.20437240600586,"isdiffpos":"t","ssdistnr":-999.0,"ssnamenr":"null","drb":null},{"jd":2460073.7851389,"fid":1,"diffmaglim":20.06559944152832},{"jd":2460073.915463,"fid":2,"diffmaglim":19.973100662231445},{"jd":2460077.8192361,"fid":2,"diffmaglim":20.546899795532227},{"jd":2460077.8886111,"fid":1,"diffmaglim":20.53190040588379},{"jd":2460079.8632407,"fid":1,"diffmaglim":20.73200035095215},{"jd":2460079.909294,"fid":2,"diffmaglim":20.63279914855957},{"jd":2460082.8640162,"fid":2,"diffmaglim":20.60580062866211},{"jd":2460082.8891782,"fid":1,"diffmaglim":20.618200302124023},{"jd":2460084.8630787,"fid":1,"diffmaglim":20.767799377441406},{"jd":2460084.9130671,"fid":2,"diffmaglim":20.292400360107422},{"jd":2460086.8610069,"fid":2,"diffmaglim":20.784099578857422},{"jd":2460086.9343171,"fid":1,"diffmaglim":20.843700408935547},{"jd":2460089.8604514,"fid":2,"diffmaglim":20.7539005279541},{"jd":2460089.9052662,"fid":1,"diffmaglim":20.803199768066406},{"jd":2460091.888206,"fid":2,"diffmaglim":20.752199172973633},{"jd":2460093.9089699,"fid":2,"diffmaglim":20.866600036621094},{"jd":2460093.9485185,"fid":1,"diffmaglim":20.895000457763672},{"jd":2460098.7789931,"fid":1,"diffmaglim":19.38949966430664},{"jd":2460098.8613542,"fid":2,"diffmaglim":19.754600524902344}],"forcedphot":[]}]
+\ No newline at end of file
+diff --git a/tests/fixtures/lasair/ztf/object_ZTF23aamxeqf.json b/tests/fixtures/lasair/ztf/object_ZTF23aamxeqf.json
+new file mode 100644
+--- /dev/null
++++ b/tests/fixtures/lasair/ztf/object_ZTF23aamxeqf.json
+@@ -0,0 +1 @@
++{"objectId":"ZTF23aamxeqf","candidates":[{"candid":2346202521015015005,"jd":2460100.7025231,"ra":255.6540479,"dec":51.8680802,"fid":1,"nid":2346,"magpsf":19.216100692749023,"sigmapsf":0.1320910006761551,"magnr":22.606000900268555,"sigmagnr":0.35899999737739563,"magzpsci":26.313100814819336,"isdiffpos":"t","ssdistnr":null,"ssnamenr":null,"drb":0.9957607984542847},{"candid":2346289181015015003,"jd":2460100.7891898,"ra":255.6539119,"dec":51.8681043,"fid":2,"nid":2346,"magpsf":19.02037239074707,"sigmapsf":0.09285727143287659,"magnr":21.525999069213867,"sigmagnr":0.11599999666213989,"magzpsci":26.20437240600586,"isdiffpos":"t","ssdistnr":-999.0,"ssnamenr":"null","drb":null},{"jd":2460073.7851389,"fid":1,"diffmaglim":20.06559944152832},{"jd":2460073.915463,"fid":2,"diffmaglim":19.973100662231445},{"jd":2460077.8192361,"fid":2,"diffmaglim":20.546899795532227},{"jd":2460077.8886111,"fid":1,"diffmaglim":20.53190040588379},{"jd":2460079.8632407,"fid":1,"diffmaglim":20.73200035095215},{"jd":2460079.909294,"fid":2,"diffmaglim":20.63279914855957},{"jd":2460082.8640162,"fid":2,"diffmaglim":20.60580062866211},{"jd":2460082.8891782,"fid":1,"diffmaglim":20.618200302124023},{"jd":2460084.8630787,"fid":1,"diffmaglim":20.767799377441406},{"jd":2460084.9130671,"fid":2,"diffmaglim":20.292400360107422},{"jd":2460086.8610069,"fid":2,"diffmaglim":20.784099578857422},{"jd":2460086.9343171,"fid":1,"diffmaglim":20.843700408935547},{"jd":2460089.8604514,"fid":2,"diffmaglim":20.7539005279541},{"jd":2460089.9052662,"fid":1,"diffmaglim":20.803199768066406},{"jd":2460091.888206,"fid":2,"diffmaglim":20.752199172973633},{"jd":2460093.9089699,"fid":2,"diffmaglim":20.866600036621094},{"jd":2460093.9485185,"fid":1,"diffmaglim":20.895000457763672},{"jd":2460098.7789931,"fid":1,"diffmaglim":19.38949966430664},{"jd":2460098.8613542,"fid":2,"diffmaglim":19.754600524902344}],"forcedphot":[]}
+\ No newline at end of file
+diff --git a/tests/fixtures/lasair/ztf/object_rich_limit_synthetic.json b/tests/fixtures/lasair/ztf/object_rich_limit_synthetic.json
+new file mode 100644
+--- /dev/null
++++ b/tests/fixtures/lasair/ztf/object_rich_limit_synthetic.json
+@@ -0,0 +1,16 @@
++{
++  "objectId": "ZTF23aamxeqf",
++  "candidates": [
++    {
++      "jd": 2460000.5,
++      "fid": 1,
++      "diffmaglim": 20.5,
++      "magpsf": 20.5,
++      "sigmapsf": 0.0,
++      "mjd": 60000.0,
++      "json": null,
++      "since_now": 3.0
++    }
++  ],
++  "forcedphot": []
++}
+diff --git a/tests/test_lasair_ztf_authoritative_payloads.py b/tests/test_lasair_ztf_authoritative_payloads.py
+--- a/tests/test_lasair_ztf_authoritative_payloads.py
++++ b/tests/test_lasair_ztf_authoritative_payloads.py
+@@ -189,7 +189,7 @@
+     fields = dict(detection.fields)
+     assert fields["time.mjd"] == 59994.351793999784
+     assert fields["photometry.r.limit.mag"] == 20.46820068359375
+-    assert "photometry.r.upper_limit" not in fields
++    assert fields["photometry.r.upper_limit"] is True
+     assert "photometry.r.psf.mag" not in fields
+     assert "photometry.r.psf.mag.error" not in fields
+ 
+@@ -204,7 +204,7 @@
+     assert fields["identity.source_id"] == 1
+     assert fields["photometry.g.psf.mag"] == 18.2
+     assert fields["photometry.g.psf.mag.error"] == 0.1
+-    assert "photometry.g.upper_limit" not in fields
++    assert fields["photometry.g.upper_limit"] is False
+ 
+ 
+ def test_object_candidate_magpsf_is_conditional_debt():
+diff --git a/tests/test_lasair_ztf_live_capture.py b/tests/test_lasair_ztf_live_capture.py
+--- a/tests/test_lasair_ztf_live_capture.py
++++ b/tests/test_lasair_ztf_live_capture.py
+@@ -177,7 +177,7 @@
+         if record.fields.get("photometry.g.limit.mag") == 19.93899917602539
+     )
+     upper_fields = dict(upper.fields)
+-    assert "photometry.g.upper_limit" not in upper_fields
++    assert upper_fields["photometry.g.upper_limit"] is True
+     assert "photometry.g.psf.mag" not in upper_fields
+ 
+ 
+diff --git a/tests/test_mapping_schema.py b/tests/test_mapping_schema.py
+--- a/tests/test_mapping_schema.py
++++ b/tests/test_mapping_schema.py
+@@ -275,6 +275,59 @@
+         semantic: {"objects#oid": {"skip_null": True}}
+     }
+     validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++def test_requires_accepts_a_declared_same_row_field(tmp_path, valid_mapping):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["oid"]}}}
++    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++def test_requires_accepts_a_same_row_field_in_the_unmapped_inventory(tmp_path, valid_mapping):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["gate"]}}}
++    write_yaml(tmp_path / "unmapped_fields.yaml", {
++        "broker": "example", "origin": "ztf",
++        "unmapped": [{"objects#gate": {"reason": "Guard metadata only"}}],
++    })
++    validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++@pytest.mark.parametrize("required", [
++    None, "oid", [], [""], [" oid"], ["oid", "oid"], [False],
++    [{"oid": True}], ["other#oid"],
++])
++def test_requires_rejects_non_field_list_forms(tmp_path, valid_mapping, required):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": required}}}
++    with pytest.raises(MappingSchemaError, match="requires must be"):
++        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++@pytest.mark.parametrize("required", ["missing", "oid != null", "not oid", "other.oid"])
++def test_requires_rejects_unknown_row_fields_and_expressions(tmp_path, valid_mapping, required):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": [required]}}}
++    with pytest.raises(MappingSchemaError, match="requires unknown raw field"):
++        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++def test_requires_cannot_borrow_a_field_from_another_payload(tmp_path, valid_mapping):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["payloads"]["other"] = {"path": ".", "object_partition": {"mode": "single"}}
++    valid_mapping["mappings"]["measurement@ztf:example.quality.real_bogus"] = ["other#gate"]
++    valid_mapping["transforms"] = {semantic: {"objects#oid": {"requires": ["gate"]}}}
++    with pytest.raises(MappingSchemaError, match="same payload row 'objects'"):
++        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
++
++
++def test_requires_does_not_admit_other_option_names(tmp_path, valid_mapping):
++    semantic = "measurement@ztf:example.identity.source_id"
++    valid_mapping["transforms"] = {
++        semantic: {"objects#oid": {"requires": ["oid"], "unless": ["oid"]}}
++    }
++    with pytest.raises(MappingSchemaError, match="unsupported key.*unless"):
++        validate_mapping_file(write_yaml(tmp_path / "mappings.yaml", valid_mapping))
+ 
+ 
+ def test_object_key_is_orthogonal_to_scalar_transform(tmp_path, valid_mapping):
+diff --git a/tests/test_provider_observation_status.py b/tests/test_provider_observation_status.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_provider_observation_status.py
+@@ -0,0 +1,267 @@
++"""Offline status contracts: native rows remain measurements and unsplit points."""
++
++from collections import Counter
++from copy import deepcopy
++import json
++from pathlib import Path
++
++import pytest
++import yaml
++
++from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.representations import (
++    InternalExecutionId,
++    InternalExecutionProvenance,
++)
++from alertissimo.data_layer.runtime.record_builder import build_portfolios_from_execution
++
++
++FIXTURES = Path(__file__).parent / "fixtures"
++
++
++def _read(broker, survey, filename):
++    return json.loads((FIXTURES / broker / survey / filename).read_text(encoding="utf-8"))
++
++
++def _normalize(broker, survey, endpoint, payload):
++    execution = ExecutionResult(
++        payload=payload,
++        execution_provenance=InternalExecutionProvenance(
++            internal_execution_id=InternalExecutionId("execution:observation-status"),
++            broker=broker,
++            origin=survey,
++            endpoint=endpoint,
++        ),
++    )
++    return build_portfolios_from_execution(execution)
++
++
++def _views(portfolios, broker, survey):
++    measurements = []
++    points = []
++    for portfolio in portfolios:
++        for record in portfolio.records:
++            if record.semantic_type == f"measurement@{survey}:{broker}":
++                measurements.append(record.fields)
++                assert record.internal_source is not None
++            elif record.semantic_type == f"lightcurve@{survey}:{broker}":
++                points.extend(record.fields.get("points", ()))
++    return measurements, points
++
++
++def _status(row):
++    values = [value for key, value in row.items()
++              if key.startswith("photometry.") and key.endswith(".upper_limit")]
++    assert len(values) <= 1
++    assert not values or type(values[0]) is bool
++    return values[0] if values else None
++
++
++def _case(broker, survey):
++    if broker == "alerce":
++        payload = _read(broker, survey, "query_lightcurve.json")
++        expected = [False] * len(payload["detections"])
++        if survey == "ztf":
++            expected += [True] * len(payload["non_detections"])
++        return "query_lightcurve", payload, expected
++    if broker == "fink":
++        if survey == "ztf":
++            payload = _read(broker, survey, "objects_withupperlim.json")
++            expected = [{"valid": False, "upperlim": True}.get(row.get("d:tag"))
++                        for row in payload]
++            return "objects", payload, expected
++        payload = _read(broker, survey, "sources.json")
++        return "sources", payload, [False] * len(payload)
++    if broker == "lasair":
++        if survey == "ztf":
++            payload = _read(broker, survey, "lightcurves_ZTF23aamxeqf.json")
++            expected = [False if "candid" in row else True
++                        for row in payload[0]["candidates"]]
++            return "lightcurves", payload, expected
++        payload = _read(broker, survey, "object.json")
++        return "object", payload, [False] * len(payload["diaSourcesList"])
++    endpoint = f"get_by_{'ztf_object' if survey == 'ztf' else 'lsst_dia_object'}_id"
++    payload = _read(broker, survey, endpoint + ".json")
++    # The SDK captures locus and alerts separately; reassemble its declared response.
++    payload["alerts"] = _read(broker, survey, "alerts.json")
++    expected = [({1: False, 2: True}.get(row["properties"].get("ant_survey"))
++                 if survey == "ztf" else False) for row in payload["alerts"]]
++    return endpoint, payload, expected
++
++
++@pytest.mark.parametrize("broker", ["alerce", "fink", "lasair", "antares"])
++@pytest.mark.parametrize("survey", ["ztf", "lsst"])
++def test_native_fixture_status_agrees_between_measurements_and_points(broker, survey):
++    endpoint, payload, expected = _case(broker, survey)
++    before = deepcopy(payload)
++    measurements, points = _views(_normalize(broker, survey, endpoint, payload), broker, survey)
++    # Forced-only measurement epochs have no ordinary photometry branch.
++    ordinary = [row for row in measurements if any(key.startswith("photometry.") for key in row)]
++    assert len(ordinary) == len(expected)
++    assert len(points) == len(expected)
++    assert Counter(map(_status, ordinary)) == Counter(expected)
++    assert Counter(map(_status, points)) == Counter(expected)
++    assert payload == before  # Native evidence is not edited to assign status.
++    if broker == "lasair" and survey == "ztf":
++        assert Counter(expected) == {False: 2, True: 19}
++
++
++def test_fink_badquality_and_absent_tags_remain_unknown():
++    row = _read("fink", "ztf", "objects_withupperlim.json")[0]
++    payload = []
++    for index, tag in enumerate(("valid", "upperlim", "badquality", None)):
++        copy = dict(row, **{"i:jd": 2460000.5 + index})
++        copy.pop("d:tag", None)
++        if tag is not None:
++            copy["d:tag"] = tag
++        payload.append(copy)
++    measurements, points = _views(_normalize("fink", "ztf", "objects", payload), "fink", "ztf")
++    assert list(map(_status, measurements)) == [False, True, None, None]
++    assert list(map(_status, points)) == [False, True, None, None]
++
++
++@pytest.mark.parametrize("broker", ["alerce", "fink", "lasair", "antares"])
++def test_lsst_detection_status_does_not_depend_on_magnitude_or_flux_sign(broker):
++    endpoint, payload, _ = _case(broker, "lsst")
++    if broker == "alerce":
++        rows = payload["detections"]
++    elif broker == "fink":
++        rows = payload
++    elif broker == "lasair":
++        rows = payload["diaSourcesList"]
++    else:
++        rows = [row["properties"] for row in payload["alerts"]]
++    for row in rows:
++        for key in list(row):
++            if key in ("magpsf", "ant_mag", "ant_magerr") or key.endswith(("_mag", "_magerr")):
++                row[key] = None
++            if key.lower().endswith("psfflux"):
++                row[key] = -10.0
++    measurements, points = _views(_normalize(broker, "lsst", endpoint, payload), broker, "lsst")
++    ordinary = [row for row in measurements if any(key.startswith("photometry.") for key in row)]
++    assert ordinary and points
++    assert all(_status(row) is False for row in ordinary)
++    assert all(_status(row) is False for row in points)
++    forced_only = [row for row in measurements
++                   if any(key.startswith("forced_photometry.") for key in row)
++                   and not any(key.startswith("photometry.") for key in row)]
++    assert all(_status(row) is None for row in forced_only)
++
++
++def test_lasair_object_capture_retains_all_twenty_one_measurements():
++    payload = _read("lasair", "ztf", "object_ZTF23aamxeqf.json")
++    measurements, points = _views(_normalize("lasair", "ztf", "object", payload), "lasair", "ztf")
++    assert len(measurements) == 21
++    assert Counter(map(_status, measurements)) == {False: 2, True: 19}
++    # Status mapping alone must not manufacture a new lightcurve product on lookup.
++    assert not points
++
++
++@pytest.mark.parametrize("endpoint", ["lightcurves", "object", "objects"])
++def test_lasair_rich_limit_never_becomes_a_psf_measurement(endpoint):
++    payload = _read("lasair", "ztf", "object_rich_limit_synthetic.json")
++    (row,) = payload["candidates"]
++    assert "candid" not in row and row["magpsf"] == row["diffmaglim"]
++    measurements, points = _views(
++        _normalize("lasair", "ztf", endpoint, payload if endpoint == "object" else [payload]),
++        "lasair", "ztf",
++    )
++    assert len(measurements) == 1
++    assert len(points) == (1 if endpoint == "lightcurves" else 0)
++    for fields in [*measurements, *points]:
++        assert fields["photometry.g.upper_limit"] is True
++        assert fields["photometry.g.limit.mag"] == row["diffmaglim"]
++        assert "photometry.g.psf.mag" not in fields
++        assert "photometry.g.psf.mag.error" not in fields
++
++
++@pytest.mark.parametrize("candid", [None, 123])
++def test_lasair_candid_controls_copied_detection_fields_and_limit_precedence(candid):
++    payload = _read("lasair", "ztf", "object_rich_limit_synthetic.json")
++    row = payload["candidates"][0]
++    row.update(candid=candid, ra=10.0, dec=20.0, drb=0.99, isdiffpos="t",
++               ssnamenr="Example", ssdistnr=1.5)
++    measurements, points = _views(_normalize("lasair", "ztf", "lightcurves", [payload]), "lasair", "ztf")
++    assert len(measurements) == len(points) == 1
++    for fields in [*measurements, *points]:
++        assert fields["photometry.g.upper_limit"] is (candid is None)
++        assert fields["photometry.g.limit.mag"] == row["diffmaglim"]
++        if candid is None:
++            assert "photometry.g.psf.mag" not in fields
++            assert "photometry.g.psf.mag.error" not in fields
++            assert "quality.real_bogus" not in fields
++        else:
++            assert fields["photometry.g.psf.mag"] == row["magpsf"]
++            assert fields["photometry.g.psf.mag.error"] == row["sigmapsf"]
++            assert fields["quality.real_bogus"] == 0.99
++    for field in ("position.ra", "position.dec", "image_metrics.is_positive",
++                  "solar_system.mpc_match.identity.object_id", "solar_system.mpc_match.separation.total"):
++        assert (field in measurements[0]) is (candid is not None)
++
++
++@pytest.mark.parametrize("broker,endpoint,filename", [
++    ("alerce", "query_forced_photometry", "query_forced_photometry.json"),
++    ("fink", "fp", "fp.json"),
++])
++def test_lsst_forced_only_payload_does_not_acquire_an_ordinary_status(broker, endpoint, filename):
++    payload = _read(broker, "lsst", filename)
++    measurements, points = _views(_normalize(broker, "lsst", endpoint, payload), broker, "lsst")
++    assert measurements and not points
++    assert all(any(key.startswith("forced_photometry.") for key in row) for row in measurements)
++    assert all(not any(key.startswith("photometry.") for key in row) for row in measurements)
++
++
++@pytest.mark.parametrize("survey,endpoint,expected", [
++    ("ztf", "query_detections", False),
++    ("ztf", "query_non_detections", True),
++    ("lsst", "query_detections", False),
++])
++def test_alerce_standalone_epoch_arrays_have_the_same_status_rule(survey, endpoint, expected):
++    payload = _read("alerce", survey, endpoint + ".json")[:1]
++    measurements, points = _views(_normalize("alerce", survey, endpoint, payload), "alerce", survey)
++    assert len(measurements) == 1
++    assert _status(measurements[0]) is expected
++    assert not points  # Adding a status does not create a new series product.
++
++
++@pytest.mark.parametrize("gates,expected", [
++    ({"candid": 1, "flags": {"usable": True}}, True),
++    ({"candid": 0, "flags": {"usable": False}}, True),
++    ({"candid": "", "flags": {"usable": ""}}, True),
++    ({"flags": {"usable": True}}, False),
++    ({"candid": None, "flags": {"usable": True}}, False),
++    ({"candid": 1, "flags": {"usable": None}}, False),
++    ({"candid": 1}, False),
++])
++def test_requires_checks_all_same_row_fields_for_presence_and_non_null(tmp_path, gates, expected):
++    semantic = "measurement@ztf:lasair.photometry.g.psf.mag"
++    document = {
++        "broker": "lasair", "origin": "ztf",
++        "payloads": {"rows": {"endpoint": "object", "path": "candidates[]",
++                              "object_partition": {"mode": "single"}}},
++        "mappings": {
++            semantic: ["rows#magpsf"],
++            "measurement@ztf:lasair.time.mjd": ["rows#mjd"],
++            "measurement@ztf:lasair.identity.source_id": ["rows#candid"],
++            "measurement@ztf:lasair.quality.real_bogus": ["rows#flags.usable"],
++        },
++        "transforms": {semantic: {"rows#magpsf": {
++            "type": "to_float", "requires": ["candid", "flags.usable"],
++        }}},
++    }
++    mapping = tmp_path / "mappings.yaml"
++    mapping.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
++    # Parent-level fields must never satisfy a row-level guard.
++    payload = {"candid": 456, "flags": {"usable": True},
++               "candidates": [dict(gates, magpsf="18.5", mjd=60000.0)]}
++    execution = ExecutionResult(
++        payload=payload,
++        execution_provenance=InternalExecutionProvenance(
++            InternalExecutionId("execution:requires"), "lasair", "ztf", "object",
++        ),
++    )
++    (portfolio,) = build_portfolios_from_execution(execution, mappings_path=mapping)
++    (record,) = portfolio.records
++    assert ("photometry.g.psf.mag" in record.fields) is expected
++    if expected:
++        assert record.fields["photometry.g.psf.mag"] == 18.5
