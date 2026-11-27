@@ -134,6 +134,13 @@ mappings:
   - candidates#fid
   - lightcurve_candidates#fid
   - objects_candidates#fid
+  measurement@ztf:lasair.photometry.{filter}.upper_limit:
+  - candidates#candid
+  - candidates#diffmaglim
+  - lightcurve_candidates#candid
+  - lightcurve_candidates#diffmaglim
+  - objects_candidates#candid
+  - objects_candidates#diffmaglim
   measurement@ztf:lasair.photometry.{filter}.psf.mag:
   - lightcurve_candidates#magpsf
   measurement@ztf:lasair.photometry.{filter}.psf.mag.error:
@@ -474,6 +481,9 @@ mappings:
   - lightcurve_candidates#jd
   lightcurve@ztf:lasair.points.photometry.{filter}:
   - lightcurve_candidates#fid
+  lightcurve@ztf:lasair.points.photometry.{filter}.upper_limit:
+  - lightcurve_candidates#candid
+  - lightcurve_candidates#diffmaglim
   lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
   - lightcurve_candidates#magpsf
   lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
@@ -533,16 +543,19 @@ transforms:
       map:
         t: true
         f: false
+      requires: [candid]
     lightcurve_candidates#isdiffpos:
       type: value_map
       map:
         t: true
         f: false
+      requires: [candid]
     objects_candidates#isdiffpos:
       type: value_map
       map:
         t: true
         f: false
+      requires: [candid]
   measurement@ztf:lasair.solar_system.mpc_match.identity.object_id:
     candidates#ssnamenr:
       type: value_map
@@ -554,10 +567,12 @@ transforms:
         '-999.0': null
         Unknown: null
       skip_null: true
+      requires: [candid]
     lightcurve_candidates#ssnamenr:
       type: value_map
       map: *id002
       skip_null: true
+      requires: [candid]
     objects_candidates#ssnamenr:
       type: value_map
       map:
@@ -568,21 +583,25 @@ transforms:
         '-999.0': null
         Unknown: null
       skip_null: true
+      requires: [candid]
   measurement@ztf:lasair.solar_system.mpc_match.separation.total:
     candidates#ssdistnr:
       type: value_map
       map: &id003
         -999: null
       skip_null: true
+      requires: [candid]
     lightcurve_candidates#ssdistnr:
       type: value_map
       map: *id003
       skip_null: true
+      requires: [candid]
     objects_candidates#ssdistnr:
       type: value_map
       map:
         -999: null
       skip_null: true
+      requires: [candid]
   crossmatch@{producer}:lasair.identity.object_id:
     object#sherlock.catalogue_object_id:
       type: to_string_strip
@@ -873,3 +892,105 @@ transforms:
         1: g
         2: r
         3: i
+  measurement@ztf:lasair.photometry.{filter}.upper_limit:
+    candidates#candid:
+      type: value_map
+      map: {}
+      default: false
+      skip_null: true
+    candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+    lightcurve_candidates#candid:
+      type: value_map
+      map: {}
+      default: false
+      skip_null: true
+    lightcurve_candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+    objects_candidates#candid:
+      type: value_map
+      map: {}
+      default: false
+      skip_null: true
+    objects_candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+  lightcurve@ztf:lasair.points.photometry.{filter}.upper_limit:
+    lightcurve_candidates#candid:
+      type: value_map
+      map: {}
+      default: false
+      skip_null: true
+    lightcurve_candidates#diffmaglim:
+      type: value_map
+      map: {}
+      default: true
+  measurement@ztf:lasair.identity.source_id:
+    candidates#candid:
+      requires:
+      - candid
+    lightcurve_candidates#candid:
+      requires:
+      - candid
+    objects_candidates#candid:
+      requires:
+      - candid
+  measurement@ztf:lasair.position.ra:
+    candidates#ra:
+      requires:
+      - candid
+    lightcurve_candidates#ra:
+      requires:
+      - candid
+    objects_candidates#ra:
+      requires:
+      - candid
+  measurement@ztf:lasair.position.dec:
+    candidates#dec:
+      requires:
+      - candid
+    lightcurve_candidates#dec:
+      requires:
+      - candid
+    objects_candidates#dec:
+      requires:
+      - candid
+  measurement@ztf:lasair.photometry.{filter}.psf.mag:
+    lightcurve_candidates#magpsf:
+      requires:
+      - candid
+  measurement@ztf:lasair.photometry.{filter}.psf.mag.error:
+    lightcurve_candidates#sigmapsf:
+      requires:
+      - candid
+  measurement@ztf:lasair.quality.real_bogus:
+    candidates#drb:
+      requires:
+      - candid
+    lightcurve_candidates#drb:
+      requires:
+      - candid
+    objects_candidates#drb:
+      requires:
+      - candid
+  lightcurve@ztf:lasair.points.identity.source_id:
+    lightcurve_candidates#candid:
+      requires:
+      - candid
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag:
+    lightcurve_candidates#magpsf:
+      requires:
+      - candid
+  lightcurve@ztf:lasair.points.photometry.{filter}.psf.mag.error:
+    lightcurve_candidates#sigmapsf:
+      requires:
+      - candid
+  lightcurve@ztf:lasair.points.quality.real_bogus:
+    lightcurve_candidates#drb:
+      requires:
+      - candid

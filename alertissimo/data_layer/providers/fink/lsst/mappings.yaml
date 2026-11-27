@@ -357,6 +357,10 @@ mappings:
   - sources#r:band
   - conesearch#r:band
   - sso#r:band
+  measurement@lsst:fink.photometry.{filter}.upper_limit:
+  - sources#r:band
+  - conesearch#r:band
+  - sso#r:band
   measurement@lsst:fink.photometry.{filter}.psf.flux:
   - sources#r:psfFlux
   - conesearch#r:psfFlux
@@ -960,6 +964,8 @@ mappings:
   - sources#f:lsst_schema_version
   lightcurve@lsst:fink.points.photometry.{filter}:
   - sources#r:band
+  lightcurve@lsst:fink.points.photometry.{filter}.upper_limit:
+  - sources#r:band
   lightcurve@lsst:fink.points.photometry.{filter}.psf.flux:
   - sources#r:psfFlux
   lightcurve@lsst:fink.points.photometry.{filter}.psf.flux.error:
@@ -1067,3 +1073,21 @@ transforms:
       type: boolean_not
   lightcurve@lsst:fink.points.quality.reliability.version:
     sources#r:reliabilityVersion: *fink_reliability_version
+  measurement@lsst:fink.photometry.{filter}.upper_limit:
+    sources#r:band:
+      type: value_map
+      map: {}
+      default: false
+    conesearch#r:band:
+      type: value_map
+      map: {}
+      default: false
+    sso#r:band:
+      type: value_map
+      map: {}
+      default: false
+  lightcurve@lsst:fink.points.photometry.{filter}.upper_limit:
+    sources#r:band:
+      type: value_map
+      map: {}
+      default: false

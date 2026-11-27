@@ -24,6 +24,22 @@ The same capture has 316 authoritative Alerts versus a 280-row secondary client
 lightcurve. Preserve the existing authoritative observation route instead of
 mapping duplicate representations as additional observations.
 
+## Per-field transform options
+
+`mappings.yaml` attaches transform options to an exact semantic-path/raw-reference
+pair. Existing options are `type`, `map`, `default`, `factor`, `skip_null`,
+`skip_empty`, `object_key` and `note`. `requires: [candid]` additionally maps that
+field only when every listed raw field is present and non-null in the **same
+payload row**, before applying the value transform. False, zero and empty strings
+are present values. This option never drops the row or other mapped fields.
+
+The list must be non-empty and duplicate-free. Names are row-relative raw paths,
+inventoried under that payload in mappings or `unmapped_fields.yaml`; nested raw
+paths use the existing dot notation. Payload-qualified names, unknown fields,
+values, comparisons, negation and Boolean expressions are rejected. Unknown
+option names remain errors. In item 7 this guard is used only for Lasair/ZTF's
+detection-only fields, including copied PSF magnitudes on rich-format limit rows.
+
 ## Required audit trail
 
 For every audited field, retain:

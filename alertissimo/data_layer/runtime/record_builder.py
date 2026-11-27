@@ -504,6 +504,13 @@ def build_portfolios_from_execution(
                     if object_key is None and ordinary_value is not _MISSING:
                         continue
                     try:
+                        # Guards inspect only this payload row, before value transforms.
+                        # False, zero and empty values are present; null is not.
+                        if any(
+                            extract_raw_field(item.value, required) is None
+                            for required in (specification or {}).get("requires", ())
+                        ):
+                            continue
                         value = extract_raw_field(item.value, raw_field)
                     except RawFieldMissing:
                         continue
