@@ -9,7 +9,7 @@ from alertissimo.orchestration.ir import (
     ActionStep, AggregateStep, AnalyzeStep, ClassifyStep, CompareStep,
     ConeSearchStep, ConfirmStep, ExportStep, FilterStep, FollowupRequestStep,
     GetClassificationStep, GetCrossmatchStep, GetCutoutStep, GetDataProductStep,
-    GetForcedPhotometryStep, GetLightcurveStep, GetSpectrumStep, GetStep,
+    GetForcedPhotometryStep, GetLightcurveStep, GetMeasurementStep, GetSpectrumStep, GetStep,
     LightcurveStep, LookupStep, MatchStep, MethodAnalysisStep, MonitorStep,
     NotifyStep, SearchStep, SemanticSearchStep, Source, SqlQueryStep, TimeContext,
     Step, TargetKind, TargetSelector, UtilityScoreStep, WorkflowIR,
@@ -29,6 +29,7 @@ def concrete_steps():
         ConeSearchStep(semantic_type="measurement", ra=12.5, dec=-20, radius=0.1),
         SqlQueryStep(semantic_type="classification", query="SELECT class FROM classifications"),
         FilterStep(criteria={"magnitude": {"lt": 20}}),
+        GetMeasurementStep(target=TargetSelector(ids=["target"], kind="object")),
         GetLightcurveStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g", "r"], time_context=time),
         GetCrossmatchStep(target=TargetSelector(ids=["target"], kind="object"), catalog="gaia", radius=1.0),
         GetCutoutStep(target=TargetSelector(ids=["target"], kind="object"), format="fits", size=30),
@@ -57,7 +58,7 @@ def concrete_steps():
 
 def test_constructs_every_concrete_step():
     steps = concrete_steps()
-    assert len(steps) == 24
+    assert len(steps) == 25
     assert len({step.op for step in steps}) == len(steps)
 
 
@@ -70,7 +71,7 @@ def test_hierarchies_express_operation_concepts():
     assert all(isinstance(step, SearchStep) for step in searches)
     assert not issubclass(FilterStep, SearchStep)
 
-    get_types = (GetLightcurveStep, GetCrossmatchStep, GetCutoutStep,
+    get_types = (GetMeasurementStep, GetLightcurveStep, GetCrossmatchStep, GetCutoutStep,
                  GetForcedPhotometryStep, GetClassificationStep, GetSpectrumStep,
                  GetDataProductStep)
     assert all(issubclass(step_type, GetStep) for step_type in get_types)

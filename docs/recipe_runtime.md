@@ -123,8 +123,8 @@ producer records; no unsupported classifier keyword reaches query_probabilities.
 
 ## Current provider scope
 
-All eight broker/survey pairs author cone_search, lookup, get_lightcurve, and
-confirm recipes. Additional declarations are:
+All eight broker/survey pairs author cone_search, lookup, get_measurement,
+get_lightcurve, and confirm recipes. Additional declarations are:
 
 | Provider | Additional owned operations |
 | --- | --- |

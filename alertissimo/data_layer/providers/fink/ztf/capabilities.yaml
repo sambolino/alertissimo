@@ -53,6 +53,12 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+  get_measurement:
+    - calls:
+        - endpoint: objects
+          params:
+            objectId: {from: step.target.ids}
+            withupperlim: {value: true}
   get_lightcurve:
     - calls:
         - endpoint: objects

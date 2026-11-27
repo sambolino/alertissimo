@@ -17,6 +17,11 @@ recipes:
             ra: {from: step.ra}
             dec: {from: step.dec}
             radius: {from: step.radius}
+  get_measurement:
+    - calls:
+        - endpoint: object
+          params:
+            objectId: {from: step.target.ids}
   get_lightcurve:
     - calls:
         - endpoint: object

@@ -18,7 +18,7 @@ from .predicates import Predicate
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
 PositiveFloat = Annotated[float, Field(gt=0)]
-CURRENT_DSL_VERSION = 2
+CURRENT_DSL_VERSION = 3
 
 
 class IRModel(BaseModel):
@@ -209,6 +209,17 @@ class GetStep(Step):
     """
 
     target: TargetSelector | None = None
+
+
+class GetMeasurementStep(GetStep):
+    """Retrieve the broker's existing per-epoch observation records.
+
+    Detections and supplied limits remain measurement records, distinct from
+    lightcurve point arrays. Recipes may supplement these with existing forced
+    photometry; neither this operation nor its name asserts completeness.
+    """
+
+    op: Literal["get_measurement"] = "get_measurement"
 
 
 class GetLightcurveStep(GetStep):
@@ -519,7 +530,7 @@ class ExportStep(ActionStep):
 
 StepUnion = Annotated[
     LookupStep | SemanticSearchStep | ConeSearchStep | SqlQueryStep | FilterStep
-    | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
+    | GetMeasurementStep | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
     | GetForcedPhotometryStep | GetClassificationStep | GetSpectrumStep
     | GetDataProductStep | LightcurveStep | ColorMagnitudeStep | ColorColorStep
     | MatchStep | MethodAnalysisStep | ClassifyStep | AggregateStep | CompareStep
@@ -566,6 +577,8 @@ class WorkflowIR(IRModel):
                                       for source in step.sources if source.origin))
         material = []
         for step in self.steps:
+            if isinstance(step, GetMeasurementStep) and self.dsl_version < 3:
+                raise ValueError("measurement retrieval requires dsl_version 3")
             if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
                 material = []
             if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
@@ -600,7 +613,7 @@ __all__ = [
     "ColorMagnitudeStep", "CompareStep", "ConeSearchStep", "ConfirmStep",
     "DeriveStep", "ExportStep", "FilterStep", "FollowupRequestStep",
     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
-    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
+    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep", "GetMeasurementStep",
     "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
     "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchSelection",
     "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",

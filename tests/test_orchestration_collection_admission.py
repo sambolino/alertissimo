@@ -19,6 +19,7 @@ from alertissimo.data_layer.semantic_model import SemanticPathModel
 from alertissimo.orchestration.ir import (
     ConfirmStep, FilterStep, GetLightcurveStep, LookupStep, Source, TargetSelector, WorkflowIR,
 )
+from alertissimo.orchestration.ir.models import CURRENT_DSL_VERSION
 from alertissimo.orchestration.normalization import summary_object_identity
 from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
 from alertissimo.orchestration.runtime import WorkflowRun
@@ -102,7 +103,7 @@ def test_later_collection_filters_validate_and_plan_after_required_material(grap
     source = LOOKUP + GET + 'filter ' + expression
     result = validate_dsl(source, graph=graph, continue_from=None)
     assert result.is_valid and result.is_runnable, result.lowering_error
-    assert result.compilation.workflow.dsl_version == 2
+    assert result.compilation.workflow.dsl_version == CURRENT_DSL_VERSION
     plan = plan_workflow(result.compilation.workflow, graph)
     assert plan.steps[-1].endpoint_plans == ()
     assert plan.steps[-1].candidate_input_from.step_index == len(plan.steps) - 2
@@ -117,7 +118,7 @@ def test_public_filter_selects_witnessed_candidates_and_binds_only_survivors(gra
     fink = [params['objectId'].split(',') for broker, endpoint, params in executor.calls if broker == 'fink']
     assert fink[0] == list(IDS)
     assert fink[-1] == [IDS[0]]
-    assert result.run.workflow.dsl_version == 2
+    assert result.run.workflow.dsl_version == CURRENT_DSL_VERSION
     loaded = WorkflowRun.model_validate_json(result.run.model_dump_json())
     assert loaded == result.run
     assert len(result.result.steps[-2].portfolios) == 1
@@ -155,7 +156,7 @@ def test_continuation_uses_the_immutable_material_prefix_without_new_calls(graph
     assert first.to_dict() == before
     assert second.run.steps[:len(first.run.steps)] == first.run.steps
     assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
-    assert second.workflow.dsl_version == first.workflow.dsl_version == 2
+    assert second.workflow.dsl_version == first.workflow.dsl_version == CURRENT_DSL_VERSION
 
 
 def test_later_filter_after_latest_does_not_refill_the_selected_population(graph):

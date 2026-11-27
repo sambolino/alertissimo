@@ -30,6 +30,7 @@ from alertissimo.orchestration.ir import (
     GetDataProductStep,
     GetForcedPhotometryStep,
     GetLightcurveStep,
+    GetMeasurementStep,
     GetSpectrumStep,
     GetStep,
     LookupStep,
@@ -606,6 +607,12 @@ def _lower_requirement(
             classifier=clause.source,
         )
 
+    if noun == "measurement":
+        _require_plain_product(clause, noun, clause_index=clause_index)
+        _reject_method(clause, clause_index=clause_index)
+        _reject_producer(clause, clause_index=clause_index)
+        return GetMeasurementStep(sources=sources)
+
     if noun == "lightcurve":
         _require_plain_product(clause, noun, clause_index=clause_index)
         _reject_method(clause, clause_index=clause_index)
@@ -838,6 +845,10 @@ def _implicit_requirements_from_where(
     collection = contains_collection_expression(parse_expression(clause.condition))
     requirements: list[RequirementClause] = []
     for ref in extract_semantic_record_references(clause.condition, record_types):
+        if ref.noun == "measurement":
+            # Existing predicates use incidental observation material. A new
+            # explicit Get must not silently add history calls to old programs.
+            continue
         producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
         if (collection and ref.noun == "lightcurve"
             and len(surface.candidates.origins) == 1
@@ -1200,6 +1211,13 @@ def _lower_fragment_intent(
                     context, requirement, clause_index=index, record_types=record_types,
                     semantic_paths=semantic_paths, graph=graph,
                 )
+                if base_workflow.dsl_version < 3 and any(
+                    isinstance(step, GetMeasurementStep) for step in requested
+                ):
+                    raise SurfaceLoweringError(
+                        "measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded",
+                        code="measurement_language_version", clause_index=index,
+                    )
                 if _requirement_signature(context, requirement, record_types) == stop_before:
                     step = requested[0]
                     prefix = steps[:steps.index(step)] if step in steps else steps

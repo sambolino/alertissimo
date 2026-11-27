@@ -20,7 +20,7 @@ from alertissimo.data_layer.runtime.capability_graph import (
     SemanticRecordCapability,
     build_capability_graph,
 )
-from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
+from alertissimo.orchestration.ir import ConfirmStep, GetMeasurementStep, GetStep, Predicate, Source, WorkflowIR
 from alertissimo.orchestration.validation import (
     classification_material_capabilities, collection_workflow_issues,
     predicate_material_gaps, required_material_variants as _required_material_variants, validate_step_capabilities,
@@ -531,7 +531,11 @@ def _requirement_checks(
         )
     except SurfaceLoweringError:
         canonical = None
-    if isinstance(canonical, GetStep):
+    incidental_measurement = (
+        isinstance(canonical, GetMeasurementStep)
+        and isinstance(surface.clauses[clause_index], WhereClause)
+    )
+    if isinstance(canonical, GetStep) and not incidental_measurement:
         return _retrieval_requirement_checks(
             surface, clause, clause_index=clause_index, noun=noun,
             graph=graph, record_types=record_types,
@@ -790,6 +794,7 @@ def _validate_surface_capabilities(
         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
     )
     checked_requirements: set[tuple[str, str | None, str | None]] = set()
+    checked_measurement_references: set[tuple[str, str | None, str | None]] = set()
 
     for index, clause in enumerate(surface.clauses):
         if isinstance(clause, LatestClause):
@@ -848,9 +853,12 @@ def _validate_surface_capabilities(
                     requirement.product, requirement.source,
                     requirement.via or surface.candidates.broker,
                 )
-                if signature in checked_requirements:
+                # Incidental field evidence is not admission of an explicit Get.
+                checked = (checked_measurement_references if requirement.product == "measurement"
+                           else checked_requirements)
+                if signature in checked:
                     continue
-                checked_requirements.add(signature)
+                checked.add(signature)
                 checks.extend(
                     _requirement_checks(
                         surface, requirement,
