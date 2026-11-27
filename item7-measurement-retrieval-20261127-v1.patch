@@ -1,0 +1,1064 @@
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -60,6 +60,13 @@
+ `measurement` record, explicit `lightcurve` series product, `data_product` artifact
+ and transient display projection remain distinct. Existing `GetLightcurveStep`
+ retrieval is not the unimplemented local `LightcurveStep` construction.
++
++`with measurement` uses `GetMeasurementStep` and provider-local `get_measurement`
++recipes for the broker's existing per-epoch observations, including supplied limits.
++It shares the existing retrieval, binding and material-lineage owners. Optional
++forced calls follow the lightcurve policy. No recipe means unsupported acquisition;
++incidental measurement predicates retain their existing scheduling. Measurements
++and lightcurve points remain distinct collections, with open completeness.
+ 
+ An abstract-family request expands deterministically into supported concrete Gets
+ using the supplied capability graph and candidate origins. Identical explicit or
+@@ -189,8 +196,10 @@
+   material decision rather than re-evaluating collection fragments. Synthetic
+   transient evidence exercises completeness; no production route supplies it.
+   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+-  `dsl_version`: new construction uses 2, unversioned serialized IR loads as 1,
+-  and newer versions are refused. Route delivery and collection completeness are
++  `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
++  and newer versions are refused. Existing version-1/2 workflows retain their
++  versions; `get_measurement` requires 3 and cannot implicitly upgrade continuation.
++  Route delivery and collection completeness are
+   separate evidence; observed bands establish neither the full domain nor completeness.
+ - Preserve measurement/product/display boundaries. Non-detections are measurements;
+   missing flux alone does not establish one, and limiting depth alongside a value
+diff --git a/alertissimo/data_layer/providers/alerce/lsst/capabilities.yaml b/alertissimo/data_layer/providers/alerce/lsst/capabilities.yaml
+--- a/alertissimo/data_layer/providers/alerce/lsst/capabilities.yaml
++++ b/alertissimo/data_layer/providers/alerce/lsst/capabilities.yaml
+@@ -45,6 +45,15 @@
+             ra: {from: step.ra}
+             dec: {from: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: query_lightcurve
++          params:
++            oid: {from: step.target.ids}
++        - endpoint: query_forced_photometry
++          required: false
++          params:
++            oid: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: query_lightcurve
+diff --git a/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml b/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
+@@ -134,6 +134,15 @@
+             dec: {from: step.dec}
+             radius: {from: step.radius}
+             lastmjd: {from: step.time_context}
++  get_measurement:
++    - calls:
++        - endpoint: query_lightcurve
++          params:
++            oid: {from: step.target.ids}
++        - endpoint: query_forced_photometry
++          required: false
++          params:
++            oid: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: query_lightcurve
+diff --git a/alertissimo/data_layer/providers/antares/lsst/capabilities.yaml b/alertissimo/data_layer/providers/antares/lsst/capabilities.yaml
+--- a/alertissimo/data_layer/providers/antares/lsst/capabilities.yaml
++++ b/alertissimo/data_layer/providers/antares/lsst/capabilities.yaml
+@@ -18,6 +18,11 @@
+             center:
+               from: {ra: step.ra, dec: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: get_by_lsst_dia_object_id
++          params:
++            lsst_object_id: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: get_by_lsst_dia_object_id
+diff --git a/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml b/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
+@@ -140,6 +140,11 @@
+             center:
+               from: {ra: step.ra, dec: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: get_by_ztf_object_id
++          params:
++            ztf_object_id: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: get_by_ztf_object_id
+diff --git a/alertissimo/data_layer/providers/fink/lsst/capabilities.yaml b/alertissimo/data_layer/providers/fink/lsst/capabilities.yaml
+--- a/alertissimo/data_layer/providers/fink/lsst/capabilities.yaml
++++ b/alertissimo/data_layer/providers/fink/lsst/capabilities.yaml
+@@ -21,6 +21,15 @@
+             ra: {from: step.ra}
+             dec: {from: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: sources
++          params:
++            diaObjectId: {from: step.target.ids}
++        - endpoint: fp
++          required: false
++          params:
++            diaObjectId: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: sources
+diff --git a/alertissimo/data_layer/providers/fink/ztf/capabilities.yaml b/alertissimo/data_layer/providers/fink/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/fink/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/fink/ztf/capabilities.yaml
+@@ -53,6 +53,12 @@
+             ra: {from: step.ra}
+             dec: {from: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: objects
++          params:
++            objectId: {from: step.target.ids}
++            withupperlim: {value: true}
+   get_lightcurve:
+     - calls:
+         - endpoint: objects
+diff --git a/alertissimo/data_layer/providers/lasair/lsst/capabilities.yaml b/alertissimo/data_layer/providers/lasair/lsst/capabilities.yaml
+--- a/alertissimo/data_layer/providers/lasair/lsst/capabilities.yaml
++++ b/alertissimo/data_layer/providers/lasair/lsst/capabilities.yaml
+@@ -17,6 +17,11 @@
+             ra: {from: step.ra}
+             dec: {from: step.dec}
+             radius: {from: step.radius}
++  get_measurement:
++    - calls:
++        - endpoint: object
++          params:
++            objectId: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: object
+diff --git a/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml b/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
+@@ -258,6 +258,11 @@
+             tables: {value: objects}
+             limit: {value: 100}
+             offset: {value: 0}
++  get_measurement:
++    - calls:
++        - endpoint: lightcurves
++          params:
++            objectIds: {from: step.target.ids}
+   get_lightcurve:
+     - calls:
+         - endpoint: lightcurves
+diff --git a/alertissimo/dsl/capability_validation.py b/alertissimo/dsl/capability_validation.py
+--- a/alertissimo/dsl/capability_validation.py
++++ b/alertissimo/dsl/capability_validation.py
+@@ -20,7 +20,7 @@
+     SemanticRecordCapability,
+     build_capability_graph,
+ )
+-from alertissimo.orchestration.ir import ConfirmStep, GetStep, Predicate, Source, WorkflowIR
++from alertissimo.orchestration.ir import ConfirmStep, GetMeasurementStep, GetStep, Predicate, Source, WorkflowIR
+ from alertissimo.orchestration.validation import (
+     classification_material_capabilities, collection_workflow_issues,
+     predicate_material_gaps, required_material_variants as _required_material_variants, validate_step_capabilities,
+@@ -531,7 +531,11 @@
+         )
+     except SurfaceLoweringError:
+         canonical = None
+-    if isinstance(canonical, GetStep):
++    incidental_measurement = (
++        isinstance(canonical, GetMeasurementStep)
++        and isinstance(surface.clauses[clause_index], WhereClause)
++    )
++    if isinstance(canonical, GetStep) and not incidental_measurement:
+         return _retrieval_requirement_checks(
+             surface, clause, clause_index=clause_index, noun=noun,
+             graph=graph, record_types=record_types,
+@@ -790,6 +794,7 @@
+         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
+     )
+     checked_requirements: set[tuple[str, str | None, str | None]] = set()
++    checked_measurement_references: set[tuple[str, str | None, str | None]] = set()
+ 
+     for index, clause in enumerate(surface.clauses):
+         if isinstance(clause, LatestClause):
+@@ -848,9 +853,12 @@
+                     requirement.product, requirement.source,
+                     requirement.via or surface.candidates.broker,
+                 )
+-                if signature in checked_requirements:
++                # Incidental field evidence is not admission of an explicit Get.
++                checked = (checked_measurement_references if requirement.product == "measurement"
++                           else checked_requirements)
++                if signature in checked:
+                     continue
+-                checked_requirements.add(signature)
++                checked.add(signature)
+                 checks.extend(
+                     _requirement_checks(
+                         surface, requirement,
+diff --git a/alertissimo/dsl/lowering.py b/alertissimo/dsl/lowering.py
+--- a/alertissimo/dsl/lowering.py
++++ b/alertissimo/dsl/lowering.py
+@@ -30,6 +30,7 @@
+     GetDataProductStep,
+     GetForcedPhotometryStep,
+     GetLightcurveStep,
++    GetMeasurementStep,
+     GetSpectrumStep,
+     GetStep,
+     LookupStep,
+@@ -606,6 +607,12 @@
+             classifier=clause.source,
+         )
+ 
++    if noun == "measurement":
++        _require_plain_product(clause, noun, clause_index=clause_index)
++        _reject_method(clause, clause_index=clause_index)
++        _reject_producer(clause, clause_index=clause_index)
++        return GetMeasurementStep(sources=sources)
++
+     if noun == "lightcurve":
+         _require_plain_product(clause, noun, clause_index=clause_index)
+         _reject_method(clause, clause_index=clause_index)
+@@ -838,6 +845,10 @@
+     collection = contains_collection_expression(parse_expression(clause.condition))
+     requirements: list[RequirementClause] = []
+     for ref in extract_semantic_record_references(clause.condition, record_types):
++        if ref.noun == "measurement":
++            # Existing predicates use incidental observation material. A new
++            # explicit Get must not silently add history calls to old programs.
++            continue
+         producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
+         if (collection and ref.noun == "lightcurve"
+             and len(surface.candidates.origins) == 1
+@@ -1200,6 +1211,13 @@
+                     context, requirement, clause_index=index, record_types=record_types,
+                     semantic_paths=semantic_paths, graph=graph,
+                 )
++                if base_workflow.dsl_version < 3 and any(
++                    isinstance(step, GetMeasurementStep) for step in requested
++                ):
++                    raise SurfaceLoweringError(
++                        "measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded",
++                        code="measurement_language_version", clause_index=index,
++                    )
+                 if _requirement_signature(context, requirement, record_types) == stop_before:
+                     step = requested[0]
+                     prefix = steps[:steps.index(step)] if step in steps else steps
+diff --git a/alertissimo/orchestration/ir/__init__.py b/alertissimo/orchestration/ir/__init__.py
+--- a/alertissimo/orchestration/ir/__init__.py
++++ b/alertissimo/orchestration/ir/__init__.py
+@@ -5,7 +5,7 @@
+     ColorMagnitudeStep, CompareStep, ConeSearchStep, ConfirmStep, DeriveStep,
+     ExportStep, FilterStep, FollowupRequestStep, GetClassificationStep,
+     GetCrossmatchStep, GetCutoutStep, GetDataProductStep, GetForcedPhotometryStep,
+-    GetLightcurveStep, GetSpectrumStep, GetStep, LightcurveStep, LookupStep,
++    GetLightcurveStep, GetMeasurementStep, GetSpectrumStep, GetStep, LightcurveStep, LookupStep,
+     MatchStep, MethodAnalysisStep, MonitorStep, NotifyStep, SearchSelection,
+     SearchStep, SemanticSearchStep, Source, SqlQueryStep, Step, StepUnion,
+     TargetKind, TargetSelector, TimeContext, UtilityScoreStep, WorkflowIR,
+@@ -31,7 +31,7 @@
+     "ComparisonPredicate", "ConeSearchStep", "ConfirmStep", "DeriveStep",
+     "ExistsPredicate", "ExportStep", "FilterStep", "FollowupRequestStep",
+     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
+-    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
++    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep", "GetMeasurementStep",
+     "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
+     "MethodAnalysisStep", "MonitorStep", "NotPredicate", "NotifyStep", "Predicate",
+     "PredicateLiteral", "PredicateModel", "SearchSelection", "SearchStep",
+diff --git a/alertissimo/orchestration/ir/models.py b/alertissimo/orchestration/ir/models.py
+--- a/alertissimo/orchestration/ir/models.py
++++ b/alertissimo/orchestration/ir/models.py
+@@ -18,7 +18,7 @@
+ 
+ NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
+ PositiveFloat = Annotated[float, Field(gt=0)]
+-CURRENT_DSL_VERSION = 2
++CURRENT_DSL_VERSION = 3
+ 
+ 
+ class IRModel(BaseModel):
+@@ -209,6 +209,17 @@
+     """
+ 
+     target: TargetSelector | None = None
++
++
++class GetMeasurementStep(GetStep):
++    """Retrieve the broker's existing per-epoch observation records.
++
++    Detections and supplied limits remain measurement records, distinct from
++    lightcurve point arrays. Recipes may supplement these with existing forced
++    photometry; neither this operation nor its name asserts completeness.
++    """
++
++    op: Literal["get_measurement"] = "get_measurement"
+ 
+ 
+ class GetLightcurveStep(GetStep):
+@@ -519,7 +530,7 @@
+ 
+ StepUnion = Annotated[
+     LookupStep | SemanticSearchStep | ConeSearchStep | SqlQueryStep | FilterStep
+-    | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
++    | GetMeasurementStep | GetLightcurveStep | GetCrossmatchStep | GetCutoutStep
+     | GetForcedPhotometryStep | GetClassificationStep | GetSpectrumStep
+     | GetDataProductStep | LightcurveStep | ColorMagnitudeStep | ColorColorStep
+     | MatchStep | MethodAnalysisStep | ClassifyStep | AggregateStep | CompareStep
+@@ -566,6 +577,8 @@
+                                       for source in step.sources if source.origin))
+         material = []
+         for step in self.steps:
++            if isinstance(step, GetMeasurementStep) and self.dsl_version < 3:
++                raise ValueError("measurement retrieval requires dsl_version 3")
+             if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+                 material = []
+             if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
+@@ -600,7 +613,7 @@
+     "ColorMagnitudeStep", "CompareStep", "ConeSearchStep", "ConfirmStep",
+     "DeriveStep", "ExportStep", "FilterStep", "FollowupRequestStep",
+     "GetClassificationStep", "GetCrossmatchStep", "GetCutoutStep",
+-    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep",
++    "GetDataProductStep", "GetForcedPhotometryStep", "GetLightcurveStep", "GetMeasurementStep",
+     "GetSpectrumStep", "GetStep", "LightcurveStep", "LookupStep", "MatchStep",
+     "MethodAnalysisStep", "MonitorStep", "NotifyStep", "SearchSelection",
+     "SearchStep", "SemanticSearchStep", "Source", "SqlQueryStep", "Step",
+diff --git a/alertissimo/orchestration/planner/planner.py b/alertissimo/orchestration/planner/planner.py
+--- a/alertissimo/orchestration/planner/planner.py
++++ b/alertissimo/orchestration/planner/planner.py
+@@ -30,6 +30,7 @@
+     GetClassificationStep,
+     GetForcedPhotometryStep,
+     GetLightcurveStep,
++    GetMeasurementStep,
+     GetStep,
+     LookupStep,
+     MatchStep,
+@@ -677,7 +678,7 @@
+ def _same_forced_retrieval_input(
+     owner_step: GetForcedPhotometryStep,
+     owner_plan: EndpointPlan,
+-    lightcurve_step: GetLightcurveStep,
++    lightcurve_step: GetLightcurveStep | GetMeasurementStep,
+     supplement_plan: EndpointPlan,
+ ) -> bool:
+     if (
+@@ -688,9 +689,9 @@
+         or supplement_plan.candidate_input_from_plan is not None
+     ):
+         return False
+-    if owner_step.bands != lightcurve_step.bands:
++    if owner_step.bands != getattr(lightcurve_step, "bands", None):
+         return False
+-    if owner_step.time_context != lightcurve_step.time_context:
++    if owner_step.time_context != getattr(lightcurve_step, "time_context", None):
+         return False
+ 
+     owner_target = owner_step.target
+@@ -715,7 +716,7 @@
+ ) -> tuple[StepRun, ...]:
+     rewritten = list(planned_steps)
+     for step_index, step in enumerate(workflow.steps):
+-        if not isinstance(step, GetLightcurveStep):
++        if not isinstance(step, (GetLightcurveStep, GetMeasurementStep)):
+             continue
+ 
+         current_run = rewritten[step_index]
+diff --git a/alertissimo/orchestration/validation.py b/alertissimo/orchestration/validation.py
+--- a/alertissimo/orchestration/validation.py
++++ b/alertissimo/orchestration/validation.py
+@@ -52,6 +52,7 @@
+     GetDataProductStep,
+     GetForcedPhotometryStep,
+     GetLightcurveStep,
++    GetMeasurementStep,
+     GetSpectrumStep,
+     GetStep,
+     LookupStep,
+@@ -397,7 +398,7 @@
+ 
+ 
+ def _photometry_recipe_evidence(
+-    step: GetLightcurveStep | GetForcedPhotometryStep,
++    step: GetLightcurveStep | GetForcedPhotometryStep | GetMeasurementStep,
+     graph: CapabilityGraph, source: Source | None,
+ ) -> _CandidateEvidence | None:
+     """Select declared retrievals; supplementary calls remain best effort."""
+@@ -406,9 +407,15 @@
+         origin=source.origin if source else None, op=step.op,
+     )
+     if not declared:
++        if isinstance(step, GetMeasurementStep):
++            return _CandidateEvidence(
++                raw=(), compatible=(), empty_status="unsupported",
++                empty_reason=(f"no get_measurement recipe for "
++                              f"{source.broker if source else '*'}/{source.origin if source else '*'}"),
++            )
+         return None
+     migrated = {(recipe.broker, recipe.origin) for recipe in declared}
+-    legacy = tuple(
++    legacy = () if isinstance(step, GetMeasurementStep) else tuple(
+         endpoint for endpoint in _raw_candidates_for_source(step, graph, source)
+         if (endpoint.broker, endpoint.origin) not in migrated
+     )
+@@ -423,8 +430,9 @@
+         first = recipe.calls[0]
+         # Forced measurements are mapped as detection/lightcurve material in the
+         # current ontology. Their retrieval intent is the authored IR operation.
++        noun = "measurement" if isinstance(step, GetMeasurementStep) else "lightcurve"
+         if not first.required or not any(
+-            semantic_record_noun_matches(output.semantic_record_type, "lightcurve")
++            semantic_record_noun_matches(output.semantic_record_type, noun)
+             for output in first.outputs
+         ):
+             continue
+@@ -438,7 +446,7 @@
+             }
+             missing = tuple(
+                 name for name in ("bands", "time_context")
+-                if getattr(step, name) is not None and (name,) not in paths
++                if getattr(step, name, None) is not None and (name,) not in paths
+             )
+             reason = None
+             if any(isinstance(parameter.source, (CallValueSource, EncoderValueSource)) for parameter in call.params):
+@@ -469,7 +477,10 @@
+             for recipe in feasible
+         ),
+         empty_status="deferred" if reasons else "unsupported",
+-        empty_reason="; ".join(dict.fromkeys(reasons)) or "no photometry recipe maps lightcurve material",
++        empty_reason="; ".join(dict.fromkeys(reasons)) or (
++            "no measurement recipe maps measurement material" if isinstance(step, GetMeasurementStep)
++            else "no photometry recipe maps lightcurve material"
++        ),
+     )
+ 
+ 
+@@ -1153,7 +1164,7 @@
+         recipes = _search_recipe_evidence(step, graph, source)
+         if recipes is not None:
+             return recipes
+-    if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):
++    if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep, GetMeasurementStep)):
+         recipes = _photometry_recipe_evidence(step, graph, source)
+         if recipes is not None:
+             return recipes
+@@ -1401,6 +1412,8 @@
+         if step.bands is not None or step.time_context is not None:
+             return None
+         return SemanticReference(semantic_type="lightcurve")
++    if isinstance(step, GetMeasurementStep):
++        return SemanticReference(semantic_type="measurement")
+     if isinstance(step, GetForcedPhotometryStep):
+         if step.bands is not None or step.time_context is not None:
+             return None
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -164,10 +164,11 @@
+    `every` for all/none; existing scalar, existence, Boolean, taxon and confirm
+    semantics must not be reinterpreted.
+ 10. **Language version.** No text marker is added. Newly constructed WorkflowIR
+-    defaults to integer `dsl_version: 2`; serialized IR missing the field loads
++    defaults to integer `dsl_version: 3`; serialized IR missing the field loads
+     as pre-collection version 1, including within a WorkflowRun. A runtime refuses
+     a newer version. Scalar continuation preserves the existing version. Version
+-    2 metadata alone does not assert that collection syntax is runnable.
++    2 remains sufficient for collection syntax; `get_measurement` requires version
++    3. Neither version metadata alone asserts that a request is runnable.
+ 
+ ## Representation and validation
+ 
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -142,7 +142,10 @@
+ 
+ ## 7. Measurements, non-detections and lightcurve boundaries
+ 
+-**Current:** `with measurement` is ontology-valid but lacks retrieval lowering.
++**Current:** `with measurement` lowers to `GetMeasurementStep`/`get_measurement`
++and has declared acquisition recipes for all eight pairs. New workflows use
++`dsl_version: 3`; version-1/2 workflows still load and retain their version, but
++cannot acquire the new operation through implicit continuation upgrades.
+ Provider lightcurve retrieval plans on all pairs; local `LightcurveStep` construction
+ explicitly remains unimplemented. Ordinary upper-limit flag mappings now cover
+ all eight pairs on measurements and existing lightcurve points: ALeRCE/ZTF uses
+@@ -153,17 +156,53 @@
+ limit values from becoming PSF measurements. No route completeness is enabled by
+ these flag mappings.
+ 
+-**Agreed 27 November 2026; remaining implementation:** add the approved
+-`get_measurement` operation/recipes, then product-component requirements and
++**Acquisition sources (27 November 2026):** existing endpoint/mapping contracts and
++the saved fixtures establish these choices, not collection completeness.
++
++| Pair | Measurement route | Source evidence |
++|---|---|---|
++| ALeRCE/ZTF | `query_lightcurve`; optional `query_forced_photometry` | `tests/fixtures/alerce/ztf/query_lightcurve.json`: both detections and non-detections, whereas `query_detections.json` contains only detections. |
++| ALeRCE/LSST | `query_lightcurve`; optional `query_forced_photometry` | Corresponding LSST fixtures supply DIASource rows and bundled forced epochs; the separate forced endpoint is already mapped to measurements. |
++| Fink/ZTF | `objects` with `withupperlim: true` | `objects_withupperlim.request.json` and response in `tests/fixtures/fink/ztf/`: 14 valid and 19 upper-limit rows. The endpoint contract says the option also includes bad-quality rows, whose status stays unknown. |
++| Fink/LSST | `sources`; optional `fp` | `tests/fixtures/fink/lsst/sources.json` and `fp.json`: ordinary DIASources and separate forced measurements. |
++| Lasair/ZTF | `lightcurves` | Maintainer's `ZTF23aamxeqf` object/lightcurves captures each contain 21 candidate/limit rows; the lightcurves mappings also supply guarded PSF measurements. Existing object-candidate magnitude debt is unchanged. |
++| Lasair/LSST | `object`, `diaSourcesList` | Existing object fixtures and mappings retain DIASource rows and the separately named forced-source array. |
++| ANTARES/ZTF | `get_by_ztf_object_id`, `locus_alerts` | Saved locus plus `alerts.json` contains 316 authoritative alerts; the 280-row secondary client lightcurve is not substituted. |
++| ANTARES/LSST | `get_by_lsst_dia_object_id`, `locus_alerts` | Saved locus plus `alerts.json` supplies the LSST DIASource properties used by measurement mappings. |
++
++Optional calls retain the lightcurve policy, including omission of a singular
++optional call when a dependency's target population is not yet known. Required
++calls still fan out through the binder. Plain lookup/lightcurve recipes are
++unchanged. No-route measurement requests name the broker and fail admission;
++incidental observation predicates do not silently gain history calls. Existing
++mapped records/products remain distinct in material views; point arrays and
++measurement records are never pooled into one count.
++
++For example, this requests the existing broker history before selecting objects
++with a witnessed detection in g:
++
++```text
++object ZTF23aamxeqf from ztf via lasair
++with measurement
++filter count(measurement@ztf:lasair where photometry.g.upper_limit = false) >= 1
++```
++
++This counts measurement records, not distinct upstream observation identities;
++the existing collection contract still requires a reviewed identity rule for
++distinct counting. Material history is preserved rather than deduplicated by a
++guessed scientific key.
++
++**Agreed 27 November 2026; remaining implementation:** product-component requirements and
+ reference-driven promotion within existing retrievals, preserving plain plans.
+ Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
+ and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
+ nearest-reference-source coordinate debt, without adding a branch. These changes
+ are approved but not yet runnable. Local `LightcurveStep` remains deferred.
+ 
+-**Target/work:** define measurement acquisition using concrete source/scope examples
+-and a reviewed canonical mapping. Map true/false limit flags where native evidence
+-establishes them; retain unknown otherwise. Missing flux alone is not non-detection,
++**Target/work:** finish the approved component acquisition, Lasair forced-photometry
++mapping and scoped detection-completeness slices. Map true/false limit flags where
++native evidence establishes them; retain unknown otherwise. Missing flux alone is
++not non-detection,
+ nor is a detection's limiting depth another observation.
+ 
+ **Per-route collection completeness:** establish evidence on the existing path,
+@@ -172,8 +211,8 @@
+ slice may close a count only when its condition entails `upper_limit = false`
+ and its population is covered by the audited proof payload and normalization.
+ The first proven route also introduces its delivered-band declaration and the
+-approved existing-loader support. Keep incidental measurement counts open until
+-acquisition/completeness is defined.
++approved existing-loader support. Measurement collection completeness remains
++open; acquisition alone does not close its upper bounds.
+ 
+ **Completeness entry audit after #361:** the checked material-history routes do
+ not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both
+diff --git a/docs/recipe_runtime.md b/docs/recipe_runtime.md
+--- a/docs/recipe_runtime.md
++++ b/docs/recipe_runtime.md
+@@ -123,8 +123,8 @@
+ 
+ ## Current provider scope
+ 
+-All eight broker/survey pairs author cone_search, lookup, get_lightcurve, and
+-confirm recipes. Additional declarations are:
++All eight broker/survey pairs author cone_search, lookup, get_measurement,
++get_lightcurve, and confirm recipes. Additional declarations are:
+ 
+ | Provider | Additional owned operations |
+ | --- | --- |
+diff --git a/tests/test_dsl_measurement_retrieval.py b/tests/test_dsl_measurement_retrieval.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_dsl_measurement_retrieval.py
+@@ -0,0 +1,367 @@
++"""Measurement acquisition through the facade, using captured offline responses."""
++
++from copy import deepcopy
++from dataclasses import replace
++from itertools import count
++import json
++from pathlib import Path
++
++import pytest
++from pydantic import ValidationError
++
++from alertissimo.api import execute_dsl, validate_dsl
++from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
++from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++from alertissimo.dsl import (
++    SurfaceLoweringError, compile_surface_fragment, lower_surface,
++    parse_surface_fragment, parse_surface_script, validate_surface_capabilities,
++)
++from alertissimo.orchestration.ir import (
++    GetForcedPhotometryStep, GetMeasurementStep, LookupStep, Source, TargetSelector, WorkflowIR,
++)
++from alertissimo.orchestration.normalization import summary_object_identity
++from alertissimo.orchestration.binding import bind_workflow_run
++from alertissimo.orchestration.planner import plan_workflow
++from alertissimo.orchestration.runtime import (
++    EndpointPlanRef, WorkflowExecutionError, WorkflowRun, execute_workflow_run,
++)
++from alertissimo.data_layer.execution import EndpointRegistry
++
++
++FIXTURES = Path(__file__).parent / "fixtures"
++PAIRS = [(broker, origin) for broker in ("alerce", "fink", "lasair", "antares")
++         for origin in ("ztf", "lsst")]
++ROUTES = {
++    ("alerce", "ztf"): [("query_lightcurve", True), ("query_forced_photometry", False)],
++    ("alerce", "lsst"): [("query_lightcurve", True), ("query_forced_photometry", False)],
++    ("fink", "ztf"): [("objects", True)],
++    ("fink", "lsst"): [("sources", True), ("fp", False)],
++    ("lasair", "ztf"): [("lightcurves", True)],
++    ("lasair", "lsst"): [("object", True)],
++    ("antares", "ztf"): [("get_by_ztf_object_id", True)],
++    ("antares", "lsst"): [("get_by_lsst_dia_object_id", True)],
++}
++
++
++@pytest.fixture(scope="module")
++def graph():
++    return build_capability_graph()
++
++
++def fixture(broker, origin, filename):
++    return json.loads((FIXTURES / broker / origin / filename).read_text(encoding="utf-8"))
++
++
++class Executor:
++    """No fallback transport: every physical call must have a fixture."""
++
++    def __init__(self, broker, origin, *, summary_only=False, fail=None):
++        self.broker, self.origin = broker, origin
++        self.calls, self.sequence = [], count()
++        self.fail = fail
++        if broker == "alerce":
++            summary = fixture(broker, origin, "query_object.json")
++            self.object_id = str(summary["oid"])
++            self.payloads = {endpoint: fixture(broker, origin, endpoint + ".json")
++                             for endpoint in ("query_object", "query_lightcurve", "query_forced_photometry")}
++        elif broker == "fink":
++            if origin == "ztf":
++                rows = fixture(broker, origin, "objects_withupperlim.json")
++                self.object_id = rows[0]["i:objectId"]
++                self.payloads = {"objects": fixture(broker, origin, "objects_core.json")}
++                self.upperlim_rows = rows
++            else:
++                self.payloads = {endpoint: fixture(broker, origin, endpoint + ".json")
++                                 for endpoint in ("objects", "sources", "fp")}
++                self.object_id = str(self.payloads["objects"][0]["r:diaObjectId"])
++        elif broker == "lasair":
++            if origin == "ztf":
++                summary = fixture(broker, origin, "object_ZTF23aamxeqf.json")
++                self.object_id = summary["objectId"]
++                self.payloads = {"object": summary, "objects": [deepcopy(summary)],
++                                 "lightcurves": fixture(broker, origin, "lightcurves_ZTF23aamxeqf.json")}
++                if summary_only:
++                    # A valid sparse lookup; the later history response remains complete as captured.
++                    self.payloads["object"] = {"objectId": self.object_id}
++                    self.payloads["objects"] = [{"objectId": self.object_id}]
++            else:
++                summary = fixture(broker, origin, "object.json")
++                self.object_id = str(summary["diaObjectId"])
++                self.payloads = {"object": summary}
++        else:
++            endpoint = "get_by_ztf_object_id" if origin == "ztf" else "get_by_lsst_dia_object_id"
++            summary = fixture(broker, origin, endpoint + ".json")
++            summary["alerts"] = fixture(broker, origin, "alerts.json")
++            self.object_id = (summary["properties"]["ztf_object_id"] if origin == "ztf"
++                              else str(summary["alerts"][0]["properties"]["lsst_diaObject_diaObjectId"]))
++            self.payloads = {endpoint: summary}
++
++    @property
++    def lookup(self):
++        return f"object {self.object_id} from {self.origin} via {self.broker}\n"
++
++    def execute(self, broker, origin, endpoint, params=None, headers=None):
++        assert (broker, origin) == (self.broker, self.origin)
++        assert headers is None and endpoint in self.payloads
++        params = deepcopy(dict(params or {}))
++        self.calls.append((broker, origin, endpoint, params))
++        if endpoint == self.fail:
++            raise RuntimeError("controlled measurement acquisition failure")
++        return ExecutionResult(
++            payload=deepcopy(self.upperlim_rows if (broker, origin, endpoint) == ("fink", "ztf", "objects")
++                             and params.get("withupperlim") is True else self.payloads[endpoint]),
++            execution_provenance=InternalExecutionProvenance(
++                internal_execution_id=InternalExecutionId(f"measurement:{next(self.sequence)}"),
++                broker=broker, origin=origin, endpoint=endpoint, params=params,
++            ),
++        )
++
++
++def measurements(result, broker, origin):
++    return [record for portfolio in result.portfolios for record in portfolio.records
++            if record.semantic_type == f"measurement@{origin}:{broker}"]
++
++
++@pytest.mark.parametrize("broker,origin", PAIRS)
++def test_measurement_is_a_distinct_step_with_a_declared_bound_recipe(graph, broker, origin):
++    executor = Executor(broker, origin)
++    source = executor.lookup + "with measurement"
++    result = validate_dsl(source, graph=graph, continue_from=None)
++    assert result.is_valid and result.is_runnable, result.lowering_error
++    workflow = result.compilation.workflow
++    assert workflow.dsl_version == 3
++    assert [step.op for step in workflow.steps] == ["lookup", "get_measurement"]
++    assert isinstance(workflow.steps[-1], GetMeasurementStep)
++    assert WorkflowIR.model_validate_json(workflow.model_dump_json()) == workflow
++    run = plan_workflow(workflow, graph)
++    # Existing policy omits optional singular calls when the target population is
++    # supplied later by a dependency. Required calls still fan out in the binder.
++    expected = [entry for entry in ROUTES[broker, origin] if broker != "alerce" or entry[1]]
++    assert [(plan.endpoint, plan.required) for plan in run.steps[-1].endpoint_plans] == expected
++    assert all(plan.parameter_sources for plan in run.steps[-1].endpoint_plans)
++    executed = execute_dsl(source, graph=graph, executor=executor, continue_from=None)
++    assert measurements(executed, broker, origin)
++    assert len(executed.portfolios) == 1
++    assert str(summary_object_identity(executed.portfolios[0])[1]) == executor.object_id
++    assert WorkflowRun.model_validate_json(executed.run.model_dump_json()) == executed.run
++    if (broker, origin) == ("fink", "ztf"):
++        assert executor.calls[-1][3]["withupperlim"] is True
++        assert any(any(key.endswith(".upper_limit") and value is True for key, value in row.fields.items())
++                   for row in measurements(executed, broker, origin))
++
++
++@pytest.mark.parametrize("broker", ["alerce", "lasair"])
++def test_measurement_can_acquire_history_absent_from_the_lookup(graph, broker):
++    executor = Executor(broker, "ztf", summary_only=True)
++    plain = execute_dsl(executor.lookup, graph=graph, executor=executor, continue_from=None)
++    assert not measurements(plain, broker, "ztf")
++    before = plain.to_dict()
++    enriched = execute_dsl("with measurement", graph=graph, executor=executor, continue_from=plain)
++    rows = measurements(enriched, broker, "ztf")
++    assert rows
++    assert any(any(key.endswith(".upper_limit") and value is True for key, value in r.fields.items())
++               for r in rows)
++    assert any(any(key.endswith(".upper_limit") and value is False for key, value in r.fields.items())
++               for r in rows)
++    assert plain.to_dict() == before
++    assert enriched.run.steps[:len(plain.run.steps)] == plain.run.steps
++    assert enriched.workflow.steps[-1].op == "get_measurement"
++
++
++@pytest.mark.parametrize("broker,origin", PAIRS)
++def test_missing_measurement_recipe_names_the_provider_and_never_uses_legacy_outputs(graph, broker, origin):
++    restricted = replace(graph, recipe_capabilities=tuple(
++        recipe for recipe in graph.recipe_capabilities
++        if (recipe.broker, recipe.origin, recipe.op) != (broker, origin, "get_measurement")
++    ))
++    executor = Executor(broker, origin)
++    result = validate_dsl(executor.lookup + "with measurement", graph=restricted, continue_from=None)
++    assert result.is_valid and not result.is_runnable
++    assert broker in str(result.lowering_error)
++    assert "get_measurement" in str(result.lowering_error)
++
++
++@pytest.mark.parametrize("tail", [
++    "where measurement.quality.real_bogus > 0.5\nwith measurement",
++    "with measurement\nwhere measurement.quality.real_bogus > 0.5",
++])
++def test_incidental_reference_cannot_discharge_an_explicit_acquisition_requirement(graph, tail):
++    restricted = replace(graph, recipe_capabilities=tuple(
++        recipe for recipe in graph.recipe_capabilities if recipe.op != "get_measurement"
++    ))
++    executor = Executor("lasair", "ztf")
++    surface = parse_surface_script(executor.lookup + tail)
++    report = validate_surface_capabilities(surface, graph=restricted)
++    assert not report.is_supported
++    assert any("no get_measurement recipe" in check.reason for check in report.unsupported)
++
++
++@pytest.mark.parametrize("broker,origin,endpoint", [
++    ("alerce", "ztf", "query_forced_photometry"),
++    ("alerce", "lsst", "query_forced_photometry"),
++    ("fink", "lsst", "fp"),
++])
++def test_supplementary_forced_calls_stay_optional(graph, broker, origin, endpoint):
++    executor = Executor(broker, origin, fail=endpoint)
++    workflow = WorkflowIR(steps=[GetMeasurementStep(
++        target=TargetSelector(ids=[executor.object_id], kind="object"),
++        sources=[Source(broker=broker, origin=origin)],
++    )])
++    run = plan_workflow(workflow, graph)
++    assert [(plan.endpoint, plan.required) for plan in run.steps[0].endpoint_plans] == ROUTES[broker, origin]
++    result = execute_workflow_run(run, bind_workflow_run(run, EndpointRegistry()), executor)
++    assert any(call[2] == endpoint for call in executor.calls)
++    assert result.run.steps[-1].warnings
++
++
++def test_collection_capable_optional_supplement_stays_optional_through_the_facade(graph):
++    executor = Executor("fink", "lsst", fail="fp")
++    result = execute_dsl(executor.lookup + "with measurement", graph=graph,
++                         executor=executor, continue_from=None)
++    assert measurements(result, "fink", "lsst")
++    assert any(call[2] == "fp" for call in executor.calls)
++    assert result.run.steps[-1].warnings
++
++
++def test_required_measurement_call_failure_is_visible(graph):
++    executor = Executor("lasair", "ztf", summary_only=True, fail="lightcurves")
++    with pytest.raises(WorkflowExecutionError, match="controlled measurement acquisition failure"):
++        execute_dsl(executor.lookup + "with measurement", graph=graph,
++                    executor=executor, continue_from=None)
++
++
++def test_measurement_broker_override_binds_the_selected_object_identity(graph):
++    history = Executor("lasair", "ztf")
++    calls = []
++
++    class CrossBrokerExecutor:
++        def execute(self, broker, origin, endpoint, params=None, headers=None):
++            calls.append((broker, origin, endpoint, dict(params or {})))
++            if broker == "alerce":
++                assert (origin, endpoint) == ("ztf", "query_object")
++                assert params["oid"] == history.object_id
++                # Synthetic ALeRCE identity response for the selected captured ZTF object.
++                return ExecutionResult(
++                    payload={"oid": history.object_id, "meanra": 10.0, "meandec": 20.0},
++                    execution_provenance=InternalExecutionProvenance(
++                        InternalExecutionId("measurement:lookup"), broker, origin, endpoint, params=params,
++                    ),
++                )
++            assert params["objectIds"] == history.object_id
++            return history.execute(broker, origin, endpoint, params=params, headers=headers)
++
++    source = f"object {history.object_id} from ztf via alerce\nwith measurement via lasair"
++    result = execute_dsl(source, graph=graph, executor=CrossBrokerExecutor(), continue_from=None)
++    assert len(measurements(result, "lasair", "ztf")) == 21
++    assert [(b, e) for b, _, e, _ in calls] == [("alerce", "query_object"), ("lasair", "lightcurves")]
++
++
++@pytest.mark.parametrize("collection", ["measurement@ztf:lasair", "lightcurve@ztf:lasair.points"])
++def test_measurements_and_series_points_are_not_pooled(graph, collection):
++    executor = Executor("lasair", "ztf", summary_only=True)
++    source = executor.lookup + "with measurement\n"
++    witnessed = execute_dsl(source + f"filter count({collection}) >= 21", graph=graph,
++                            executor=executor, continue_from=None)
++    assert len(witnessed.portfolios) == 1
++    # One history call emits 21 measurements and 21 points. Neither count is 42.
++    not_witnessed = execute_dsl(source + f"filter count({collection}) >= 42", graph=graph,
++                                executor=Executor("lasair", "ztf", summary_only=True), continue_from=None)
++    assert not_witnessed.portfolios == ()
++
++
++def test_measurement_completeness_remains_open_and_later_filters_reuse_material(graph):
++    executor = Executor("lasair", "ztf", summary_only=True)
++    first = execute_dsl(executor.lookup + "with measurement", graph=graph,
++                        executor=executor, continue_from=None)
++    calls = deepcopy(executor.calls)
++    selected = execute_dsl("filter count(measurement@ztf:lasair) >= 21", graph=graph,
++                           executor=executor, continue_from=first)
++    assert len(selected.portfolios) == 1
++    unknown = execute_dsl("filter count(measurement@ztf:lasair) = 21", graph=graph,
++                          executor=executor, continue_from=first)
++    assert unknown.portfolios == ()
++    assert executor.calls == calls
++
++
++@pytest.mark.parametrize("tail", [
++    "with measurement where photometry.g.upper_limit = false",
++    "with measurement\nfilter count(measurement@ztf:lasair where photometry.g.upper_limit = false) >= 1",
++])
++def test_scoped_and_later_predicates_use_the_retrieved_measurements(graph, tail):
++    executor = Executor("lasair", "ztf", summary_only=True)
++    result = execute_dsl(executor.lookup + tail, graph=graph, executor=executor, continue_from=None)
++    assert len(result.portfolios) == 1
++    assert [step.op for step in result.workflow.steps] == ["lookup", "get_measurement", "filter"]
++    assert [call[2] for call in executor.calls] == ["object", "lightcurves"]
++
++
++def test_explicit_plural_measurement_retrieval_keeps_required_singular_fanout(graph):
++    workflow = WorkflowIR(steps=[GetMeasurementStep(
++        target=TargetSelector(ids=["A", "B"], kind="object"),
++        sources=[Source(broker="alerce", origin="ztf")],
++    )])
++    run = plan_workflow(workflow, graph)
++    assert [plan.endpoint for plan in run.steps[0].endpoint_plans] == ["query_lightcurve"]
++    bindings = bind_workflow_run(run, EndpointRegistry())
++    assert [call.params for call in bindings[0].bound_calls] == [{"oid": "A"}, {"oid": "B"}]
++
++
++def test_incidental_measurement_predicates_do_not_add_a_history_step(graph):
++    source = "object ZTF23aamxeqf from ztf via lasair\nwhere measurement.quality.real_bogus > 0.5"
++    # Pure lowering isolates scheduling from capability eligibility.
++    workflow = lower_surface(parse_surface_script(source), graph=graph).workflow
++    assert [step.op for step in workflow.steps] == ["lookup", "filter"]
++    executor = Executor("lasair", "ztf")
++    executed = execute_dsl(executor.lookup, graph=graph, executor=executor, continue_from=None)
++    assert len(measurements(executed, "lasair", "ztf")) == 21
++    assert len(executor.calls) == 1
++
++
++def test_old_qualified_scalar_where_does_not_require_a_new_measurement_recipe(graph):
++    restricted = replace(graph, recipe_capabilities=tuple(
++        recipe for recipe in graph.recipe_capabilities if recipe.op != "get_measurement"
++    ))
++    executor = Executor("lasair", "ztf")
++    source = executor.lookup + "where measurement@ztf:lasair.quality.real_bogus > 0.5"
++    validation = validate_dsl(source, graph=restricted, continue_from=None)
++    assert validation.is_valid and validation.is_runnable, validation.lowering_error
++    result = execute_dsl(source, graph=restricted, executor=executor, continue_from=None)
++    assert len(result.portfolios) == 1
++    assert len(executor.calls) == 1
++    assert [step.op for step in result.workflow.steps] == ["lookup", "filter"]
++
++
++@pytest.mark.parametrize("origin", ["ztf", "lsst"])
++def test_existing_explicit_forced_retrieval_can_supply_the_measurement_supplement(graph, origin):
++    target = TargetSelector(ids=["A"], kind="object")
++    sources = [Source(broker="alerce", origin=origin)]
++    workflow = WorkflowIR(steps=[GetForcedPhotometryStep(target=target, sources=sources),
++                                 GetMeasurementStep(target=target, sources=sources)])
++    run = plan_workflow(workflow, graph)
++    assert run.steps[1].endpoint_plans[1].execution_reuse_from == EndpointPlanRef(step_index=0, plan_index=0)
++
++
++@pytest.mark.parametrize("version", [1, 2])
++def test_old_versions_refuse_new_operation_without_implicit_upgrade(graph, version):
++    with pytest.raises(ValidationError, match="measurement retrieval requires dsl_version 3"):
++        WorkflowIR(steps=[GetMeasurementStep()], dsl_version=version)
++    legacy = WorkflowIR(steps=[LookupStep(target=TargetSelector(ids=["A"], kind="object"),
++                                          sources=[Source(broker="alerce", origin="ztf")])], dsl_version=version)
++    assert WorkflowIR.model_validate_json(legacy.model_dump_json()) == legacy
++    with pytest.raises(SurfaceLoweringError, match="older continuation is not implicitly upgraded"):
++        compile_surface_fragment(parse_surface_fragment("with measurement"), legacy, graph=graph)
++
++
++def test_unversioned_measurement_ir_is_not_misread_as_legacy():
++    with pytest.raises(ValidationError, match="measurement retrieval requires dsl_version 3"):
++        WorkflowIR.model_validate({"steps": [{"op": "get_measurement"}]})
++
++
++def test_version_three_is_refused_by_the_previous_runtime_version_guard(monkeypatch):
++    from alertissimo.orchestration.ir import models
++
++    encoded = WorkflowIR(steps=[GetMeasurementStep()]).model_dump_json()
++    monkeypatch.setattr(models, "CURRENT_DSL_VERSION", 2)
++    with pytest.raises(ValidationError, match="newer than supported version 2"):
++        WorkflowIR.model_validate_json(encoded)
+diff --git a/tests/test_orchestration_collection_admission.py b/tests/test_orchestration_collection_admission.py
+--- a/tests/test_orchestration_collection_admission.py
++++ b/tests/test_orchestration_collection_admission.py
+@@ -19,6 +19,7 @@
+ from alertissimo.orchestration.ir import (
+     ConfirmStep, FilterStep, GetLightcurveStep, LookupStep, Source, TargetSelector, WorkflowIR,
+ )
++from alertissimo.orchestration.ir.models import CURRENT_DSL_VERSION
+ from alertissimo.orchestration.normalization import summary_object_identity
+ from alertissimo.orchestration.planner import PlanningDeferredError, plan_workflow
+ from alertissimo.orchestration.runtime import WorkflowRun
+@@ -102,7 +103,7 @@
+     source = LOOKUP + GET + 'filter ' + expression
+     result = validate_dsl(source, graph=graph, continue_from=None)
+     assert result.is_valid and result.is_runnable, result.lowering_error
+-    assert result.compilation.workflow.dsl_version == 2
++    assert result.compilation.workflow.dsl_version == CURRENT_DSL_VERSION
+     plan = plan_workflow(result.compilation.workflow, graph)
+     assert plan.steps[-1].endpoint_plans == ()
+     assert plan.steps[-1].candidate_input_from.step_index == len(plan.steps) - 2
+@@ -117,7 +118,7 @@
+     fink = [params['objectId'].split(',') for broker, endpoint, params in executor.calls if broker == 'fink']
+     assert fink[0] == list(IDS)
+     assert fink[-1] == [IDS[0]]
+-    assert result.run.workflow.dsl_version == 2
++    assert result.run.workflow.dsl_version == CURRENT_DSL_VERSION
+     loaded = WorkflowRun.model_validate_json(result.run.model_dump_json())
+     assert loaded == result.run
+     assert len(result.result.steps[-2].portfolios) == 1
+@@ -155,7 +156,7 @@
+     assert first.to_dict() == before
+     assert second.run.steps[:len(first.run.steps)] == first.run.steps
+     assert second.workflow.steps[:len(first.workflow.steps)] == first.workflow.steps
+-    assert second.workflow.dsl_version == first.workflow.dsl_version == 2
++    assert second.workflow.dsl_version == first.workflow.dsl_version == CURRENT_DSL_VERSION
+ 
+ 
+ def test_later_filter_after_latest_does_not_refill_the_selected_population(graph):
+diff --git a/tests/test_orchestration_ir_models.py b/tests/test_orchestration_ir_models.py
+--- a/tests/test_orchestration_ir_models.py
++++ b/tests/test_orchestration_ir_models.py
+@@ -9,7 +9,7 @@
+     ActionStep, AggregateStep, AnalyzeStep, ClassifyStep, CompareStep,
+     ConeSearchStep, ConfirmStep, ExportStep, FilterStep, FollowupRequestStep,
+     GetClassificationStep, GetCrossmatchStep, GetCutoutStep, GetDataProductStep,
+-    GetForcedPhotometryStep, GetLightcurveStep, GetSpectrumStep, GetStep,
++    GetForcedPhotometryStep, GetLightcurveStep, GetMeasurementStep, GetSpectrumStep, GetStep,
+     LightcurveStep, LookupStep, MatchStep, MethodAnalysisStep, MonitorStep,
+     NotifyStep, SearchStep, SemanticSearchStep, Source, SqlQueryStep, TimeContext,
+     Step, TargetKind, TargetSelector, UtilityScoreStep, WorkflowIR,
+@@ -29,6 +29,7 @@
+         ConeSearchStep(semantic_type="measurement", ra=12.5, dec=-20, radius=0.1),
+         SqlQueryStep(semantic_type="classification", query="SELECT class FROM classifications"),
+         FilterStep(criteria={"magnitude": {"lt": 20}}),
++        GetMeasurementStep(target=TargetSelector(ids=["target"], kind="object")),
+         GetLightcurveStep(target=TargetSelector(ids=["target"], kind="object"), bands=["g", "r"], time_context=time),
+         GetCrossmatchStep(target=TargetSelector(ids=["target"], kind="object"), catalog="gaia", radius=1.0),
+         GetCutoutStep(target=TargetSelector(ids=["target"], kind="object"), format="fits", size=30),
+@@ -57,7 +58,7 @@
+ 
+ def test_constructs_every_concrete_step():
+     steps = concrete_steps()
+-    assert len(steps) == 24
++    assert len(steps) == 25
+     assert len({step.op for step in steps}) == len(steps)
+ 
+ 
+@@ -70,7 +71,7 @@
+     assert all(isinstance(step, SearchStep) for step in searches)
+     assert not issubclass(FilterStep, SearchStep)
+ 
+-    get_types = (GetLightcurveStep, GetCrossmatchStep, GetCutoutStep,
++    get_types = (GetMeasurementStep, GetLightcurveStep, GetCrossmatchStep, GetCutoutStep,
+                  GetForcedPhotometryStep, GetClassificationStep, GetSpectrumStep,
+                  GetDataProductStep)
+     assert all(issubclass(step_type, GetStep) for step_type in get_types)
+diff --git a/tests/test_workflow_language_version.py b/tests/test_workflow_language_version.py
+--- a/tests/test_workflow_language_version.py
++++ b/tests/test_workflow_language_version.py
+@@ -12,10 +12,10 @@
+ 
+ def test_new_ir_defaults_to_current_and_round_trips_without_version_drift():
+     workflow = WorkflowIR(steps=[])
+-    assert workflow.dsl_version == CURRENT_DSL_VERSION == 2
++    assert workflow.dsl_version == CURRENT_DSL_VERSION == 3
+     assert WorkflowIR.model_validate(workflow.model_dump()) == workflow
+     assert WorkflowIR.model_validate_json(workflow.model_dump_json()) == workflow
+-    assert WorkflowIR.model_json_schema()["properties"]["dsl_version"]["default"] == 2
++    assert WorkflowIR.model_json_schema()["properties"]["dsl_version"]["default"] == 3
+ 
+ 
+ def test_unversioned_ir_loads_as_legacy_without_mutating_the_input():
+@@ -35,7 +35,7 @@
+     assert adapter.validate_python([{"steps": []}])[0].dsl_version == 1
+     assert adapter.validate_json('[{"steps": []}]')[0].dsl_version == 1
+     workflow = WorkflowIR(steps=[])
+-    assert WorkflowRun(workflow=workflow, steps=()).workflow.dsl_version == 2
++    assert WorkflowRun(workflow=workflow, steps=()).workflow.dsl_version == 3
+ 
+ 
+ @pytest.mark.parametrize("version", [0, -1, True, False, 1.0, "1", None])
+@@ -59,7 +59,7 @@
+             load()
+ 
+ 
+-@pytest.mark.parametrize("version", [1, CURRENT_DSL_VERSION])
++@pytest.mark.parametrize("version", [1, 2, CURRENT_DSL_VERSION])
+ def test_scalar_fragment_continuation_preserves_the_existing_ir_version(version):
+     from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+     from alertissimo.dsl import compile_surface, compile_surface_fragment, parse_surface_fragment, parse_surface_script
