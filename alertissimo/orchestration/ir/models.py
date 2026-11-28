@@ -11,9 +11,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_serializer, model_validator
 
-from .predicates import Predicate
+from .predicates import Predicate, SemanticReference
 
 
 NonEmptyStr = Annotated[str, Field(min_length=1, pattern=r".*\S.*")]
@@ -209,6 +209,32 @@ class GetStep(Step):
     """
 
     target: TargetSelector | None = None
+    required_components: tuple[SemanticReference, ...] = ()
+
+    @model_validator(mode="after")
+    def valid_required_components(self):
+        if not self.required_components:
+            return self
+        from .predicates import _collection_paths
+        if len(set(self.required_components)) != len(self.required_components):
+            raise ValueError("required components must be duplicate-free")
+        noun = getattr(self, "op", "").removeprefix("get_")
+        for component in self.required_components:
+            if (component.semantic_type != noun or not component.field_path
+                or not _collection_paths().is_valid(f"{noun}@dsl.{component.field_path}")):
+                raise ValueError(f"unknown component {component!r} under {noun!r}")
+            if self.sources and component.channel is not None and all(
+                source.broker not in (None, component.channel) for source in self.sources
+            ):
+                raise ValueError("component selector is outside the retrieval sources")
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_required_components(self, handler):
+        data = handler(self)
+        if not self.required_components:
+            data.pop("required_components", None)
+        return data
 
 
 class GetMeasurementStep(GetStep):
@@ -240,24 +266,17 @@ class GetLightcurveStep(GetStep):
     lightcurve requirement, and providers that already combine the evidence need
     only one physical execution.
 
-    IMPORTANT / PROVISIONAL COMPATIBILITY POLICY:
-    standalone forced-photometry selection is currently unsupported by the public
-    DSL. We intentionally do not expose ``with forced_photometry`` (nor invent a
-    modifier such as ``with lightcurve --forced``) yet. In the current ontology,
-    forced photometry is represented inside detection/summary photometric structure
-    rather than as a first-level Portfolio record type, so presenting it as a
-    separate surface product would commit us to semantics that have not been
-    decided. ``GetForcedPhotometryStep`` remains in the canonical IR as an
-    internal/provider-facing retrieval operation for direct programmatic workflows
-    and for a future DSL decision.
+    The public DSL keeps Portfolio nouns: ``with forced_photometry`` is not a
+    standalone product. Explicit acquisition uses
+    ``with lightcurve.forced_photometry_points`` (or the corresponding measurement
+    component). GetStep.required_components makes every producing call within this
+    product's own recipe required. The call may succeed empty; predicates select
+    objects with actual supplied data separately.
 
-    The future decision should be made together with analogous product-completeness
-    cases. It needs to define whether the DSL eventually needs general concepts such
-    as ``including``, ``only`` or ``without``; how explicit forced-photometry intent
-    composes with bands and time windows; and how to treat providers whose ordinary
-    lightcurve endpoint already includes some or all forced measurements.
+    GetForcedPhotometryStep remains available for programmatic retrieval of
+    existing data. Triggering new computation remains outside these Get operations.
 
-    Declared forced photometry is therefore strictly supplementary. Its absence,
+    Without a required component, declared forced photometry stays supplementary. Its absence,
     incompatible target cardinality, or inability to prove compatibility
     must never make an otherwise satisfiable ``GetLightcurveStep`` unsupported.
     Constrained requests (currently ``bands`` or ``time_context``) require declared
@@ -292,8 +311,8 @@ class GetForcedPhotometryStep(GetStep):
 
     This provider-facing IR operation is intentionally retained even though forced
     photometry is not currently a standalone public DSL product. The ordinary DSL
-    path is ``with lightcurve``; see ``GetLightcurveStep`` for the provisional
-    automatic-inclusion and future compatibility policy. Generation belongs to
+    paths are ``with lightcurve`` and its required component form; see
+    ``GetLightcurveStep`` for the supplementation policy. Generation belongs to
     ``FollowupRequestStep`` because it causes a new product.
     """
 
@@ -579,6 +598,8 @@ class WorkflowIR(IRModel):
         for step in self.steps:
             if isinstance(step, GetMeasurementStep) and self.dsl_version < 3:
                 raise ValueError("measurement retrieval requires dsl_version 3")
+            if isinstance(step, GetStep) and step.required_components and self.dsl_version < 3:
+                raise ValueError("required components require dsl_version 3")
             if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
                 material = []
             if isinstance(step, (GetLightcurveStep, GetForcedPhotometryStep)):

@@ -37,8 +37,10 @@ from alertissimo.orchestration.ir import (
     MatchStep,
     Predicate,
     SearchSelection,
+    SearchStep,
     SemanticSearchStep,
     Source,
+    SemanticReference,
     TargetSelector,
     TimeContext,
     WorkflowIR,
@@ -584,6 +586,18 @@ def _lower_requirement(
             clause_index=clause_index,
         )
 
+    product = _normalized_product(clause.product)
+    if product.startswith(noun + "."):
+        plain = clause.model_copy(update={"product": noun})
+        step = _lower_requirement(surface, plain, clause_index=clause_index, record_types=record_types)
+        if not isinstance(step, GetStep):
+            raise SurfaceLoweringError("components require a retrieval product",
+                                       code="unsupported_product_detail", clause_index=clause_index)
+        return type(step).model_validate({**step.model_dump(), "required_components": (
+            SemanticReference(semantic_type=noun, field_path=product[len(noun) + 1:],
+                              producer=clause.source, channel=clause.via or surface.candidates.broker),
+        )})
+
     effective_broker = clause.via or surface.candidates.broker
     sources = _candidate_sources(surface, broker=effective_broker)
 
@@ -840,15 +854,38 @@ def _implicit_requirements_from_where(
     clause: WhereClause,
     *,
     record_types: frozenset[str],
+    graph: CapabilityGraph | None = None,
 ) -> tuple[RequirementClause, ...]:
     from .expression import contains_collection_expression, parse_expression
-    collection = contains_collection_expression(parse_expression(clause.condition))
+    from alertissimo.orchestration.ir.predicates import contains_container_reference
+    predicate = _semantic_predicate(clause.condition, record_types=record_types, clause_index=0)
+    collection = (contains_collection_expression(parse_expression(clause.condition))
+                  or contains_container_reference(predicate))
     requirements: list[RequirementClause] = []
+    references = tuple(iter_semantic_references(predicate))
     for ref in extract_semantic_record_references(clause.condition, record_types):
         if ref.noun == "measurement":
             # Existing predicates use incidental observation material. A new
             # explicit Get must not silently add history calls to old programs.
             continue
+        if graph is not None:
+            from alertissimo.orchestration.validation import component_output_matches
+            try:
+                probe = _lower_requirement(surface, RequirementClause(product=ref.noun, via=ref.channel),
+                                           clause_index=0, record_types=record_types)
+            except SurfaceLoweringError:
+                probe = None
+            if isinstance(probe, GetStep):
+                calls = tuple(call for source in probe.sources
+                              for recipe in graph.query_recipes(op=probe.op, broker=source.broker, origin=source.origin)
+                              for call in recipe.calls)
+                components = tuple(reference.model_copy(update={"field_path": reference.field_path.split(".")[0]})
+                                   for reference in references if reference.semantic_type == ref.noun and reference.field_path)
+                if any(any(not call.required and any(component_output_matches(probe, f, component) for f in call.outputs)
+                           for call in calls)
+                       and not any(call.required and any(component_output_matches(probe, f, component) for f in call.outputs)
+                                   for call in calls) for component in components):
+                    continue  # No new implicit retrieval for unguaranteed component material.
         producer = None if ref.noun == "classification" and ref.producer == "headline" else ref.producer
         if (collection and ref.noun == "lightcurve"
             and len(surface.candidates.origins) == 1
@@ -871,6 +908,80 @@ def _implicit_requirements_from_where(
         if isinstance(step, GetStep):
             requirements.append(requirement)
     return tuple(requirements)
+
+
+def _append_requirement_step(steps, step, *, protected_prefix=0):
+    if step in steps:
+        return
+    if isinstance(step, GetStep):
+        if any(isinstance(previous, GetStep)
+               and previous.model_dump(exclude={"required_components"}) == step.model_dump(exclude={"required_components"})
+               and set(step.required_components) <= set(previous.required_components) for previous in steps):
+            return
+        for index in range(len(steps) - 1, protected_prefix - 1, -1):
+            previous = steps[index]
+            if not isinstance(previous, GetStep):
+                break
+            if previous.model_dump(exclude={"required_components"}) == step.model_dump(exclude={"required_components"}):
+                components = tuple(dict.fromkeys(previous.required_components + step.required_components))
+                steps[index] = type(previous).model_validate({**previous.model_dump(), "required_components": components})
+                return
+    steps.append(step)
+
+
+def _require_referenced_components(workflow: WorkflowIR, graph: CapabilityGraph, *, protected_prefix: int = 0) -> WorkflowIR:
+    """Strengthen existing, unexecuted retrievals; never schedule another Get."""
+    steps = list(workflow.steps)
+    origins = {endpoint.origin for endpoint in graph.endpoint_capabilities}
+    population_start = 0
+    changed = False
+    for index, step in enumerate(steps):
+        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+            population_start = index
+        predicate = getattr(step, "predicate", None)
+        if predicate is None or isinstance(step, ConfirmStep):
+            continue
+        for reference in iter_semantic_references(predicate):
+            if not reference.field_path or headline_reference(reference):
+                continue
+            component = reference.model_copy(update={"field_path": reference.field_path.split(".")[0]})
+            for owner_index in range(index - 1, population_start - 1, -1):
+                owner = steps[owner_index]
+                if not isinstance(owner, GetStep) or owner.op != "get_" + reference.semantic_type:
+                    continue
+                if owner.sources and not any(
+                    (reference.channel in (None, s.broker) or s.broker is None) and
+                    (reference.semantic_type not in {"lightcurve", "measurement"} or reference.producer not in origins
+                     or s.origin in (None, reference.producer))
+                    for s in owner.sources
+                ):
+                    continue
+                producer = getattr(owner, "classifier", None) or getattr(owner, "catalog", None)
+                if producer is not None and reference.producer not in (None, producer):
+                    continue
+                recipes = tuple(r for r in graph.query_recipes(op=owner.op)
+                                if (not owner.sources or any(s.broker in (None, r.broker) and s.origin in (None, r.origin)
+                                                             for s in owner.sources)))
+                if not recipes:
+                    continue  # Legacy field evidence is not an owned recipe to strengthen.
+                if component not in owner.required_components:
+                    if owner_index >= protected_prefix and workflow.dsl_version >= 3:
+                        steps[owner_index] = type(owner).model_validate({
+                            **owner.model_dump(), "required_components": owner.required_components + (component,),
+                        })
+                        changed = True
+                break
+    return WorkflowIR.model_validate({**workflow.model_dump(), "steps": steps}) if changed else workflow
+
+
+def _require_components(compilation, graph, *, protected_prefix=0):
+    if not any(isinstance(step, GetStep) for step in compilation.workflow.steps):
+        return compilation
+    if not any(getattr(step, "predicate", None) is not None for step in compilation.workflow.steps[protected_prefix:]):
+        return compilation
+    from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+    workflow = _require_referenced_components(compilation.workflow, graph or build_capability_graph(), protected_prefix=protected_prefix)
+    return SurfaceCompilation(workflow=workflow, view=compilation.view)
 
 
 def lower_surface(
@@ -950,6 +1061,7 @@ def _lower_surface_intent(
                     surface,
                     clause,
                     record_types=record_types,
+                    graph=graph,
                 ):
                     signature = _requirement_signature(
                         surface, implied, record_types
@@ -987,7 +1099,7 @@ def _lower_surface_intent(
                         "requirement must resolve to one ontology record type before lowering",
                         code="unresolved_requirement", clause_index=index,
                     )
-                if signature in emitted:
+                if signature in emitted and "." not in requirement.product:
                     continue
                 if signature == stop_before:
                     return SurfaceCompilation(workflow=WorkflowIR(steps=steps, name=name), view=view)
@@ -995,8 +1107,7 @@ def _lower_surface_intent(
                     surface, requirement, clause_index=index, record_types=record_types,
                     semantic_paths=semantic_paths, graph=graph,
                 ):
-                    if step not in steps:
-                        steps.append(step)
+                    _append_requirement_step(steps, step)
                 emitted.add(signature)
 
             if clause.predicates and (lookup or index >= first_filter):
@@ -1056,10 +1167,10 @@ def _lower_surface_intent(
             "requirement has no emitted retrieval occurrence in this workflow",
             code="missing_requirement_occurrence",
         )
-    return SurfaceCompilation(
+    return _require_components(SurfaceCompilation(
         workflow=WorkflowIR(steps=steps, name=name),
         view=view,
-    )
+    ), graph)
 
 
 def _deferred_check_is_lowerable(
@@ -1212,11 +1323,13 @@ def _lower_fragment_intent(
                     semantic_paths=semantic_paths, graph=graph,
                 )
                 if base_workflow.dsl_version < 3 and any(
-                    isinstance(step, GetMeasurementStep) for step in requested
+                    isinstance(step, GetMeasurementStep) or isinstance(step, GetStep) and step.required_components for step in requested
                 ):
+                    measurement = any(isinstance(step, GetMeasurementStep) for step in requested)
                     raise SurfaceLoweringError(
-                        "measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded",
-                        code="measurement_language_version", clause_index=index,
+                        ("measurement retrieval requires dsl_version 3; an older continuation is not implicitly upgraded"
+                         if measurement else "required components require dsl_version 3; an older continuation is not implicitly upgraded"),
+                        code="measurement_language_version" if measurement else "component_language_version", clause_index=index,
                     )
                 if _requirement_signature(context, requirement, record_types) == stop_before:
                     step = requested[0]
@@ -1231,8 +1344,7 @@ def _lower_fragment_intent(
                         view=view,
                     )
                 for step in requested:
-                    if step not in steps:
-                        steps.append(step)
+                    _append_requirement_step(steps, step, protected_prefix=len(base_workflow.steps))
             if clause.predicates:
                 noun = resolve_record_type(clause.product, record_types)
                 assert noun is not None
@@ -1280,7 +1392,7 @@ def _lower_fragment_intent(
             "requirement has no emitted retrieval occurrence in this continuation",
             code="missing_requirement_occurrence",
         )
-    return SurfaceCompilation(
+    return _require_components(SurfaceCompilation(
         workflow=WorkflowIR(
             steps=steps,
             name=name if name is not None else base_workflow.name,
@@ -1288,7 +1400,7 @@ def _lower_fragment_intent(
             dsl_version=base_workflow.dsl_version,
         ),
         view=view,
-    )
+    ), graph, protected_prefix=len(base_workflow.steps))
 
 
 def _requirement_prefix(

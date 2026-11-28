@@ -109,6 +109,10 @@ def resolve_record_type(
 ) -> str | None:
     """Resolve one ontology record noun embedded in a user requirement phrase."""
 
+    if "." in product:
+        head = _normalize_noun(product.partition(".")[0].strip())
+        if head in record_types:
+            return head
     words = [_normalize_noun(token) for token in _WORD.findall(product)]
     matches: list[str] = []
     for start in range(len(words)):
@@ -436,6 +440,14 @@ def validate_surface_semantics(
                     )
                 )
             else:
+                if "." in clause.product:
+                    normalized = _normalize_noun(clause.product.split(".", 1)[0])
+                    component = clause.product.split(".", 1)[1]
+                    if normalized != noun or not model.is_valid(f"{noun}@dsl.{component}"):
+                        issues.append(SurfaceValidationIssue(
+                            severity=ValidationSeverity.ERROR, code="unknown_requirement_component",
+                            message=f"unknown ontology component {clause.product!r}", clause_index=index,
+                        ))
                 for predicate in clause.predicates:
                     issues.extend(
                         _validate_expression_paths(

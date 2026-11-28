@@ -352,12 +352,16 @@ def execute_dsl(
             if executor is not None
             else RegistryEndpointExecutor(registry=effective_registry)
         )
+        component_options = ({"graph": effective_graph} if any(
+            getattr(step, "required_components", ()) for step in getattr(compilation.workflow, "steps", ())
+        ) else {})
         if previous is None:
             staged = execute_staged_workflow_run(
                 run,
                 effective_registry,
                 effective_executor,
                 validate_semantic_model=validate_semantic_model,
+                **component_options,
                 **({"reference_time": reference_time} if reference_time is not None else {}),
             )
         else:
@@ -367,6 +371,7 @@ def execute_dsl(
                 effective_registry,
                 effective_executor,
                 validate_semantic_model=validate_semantic_model,
+                **component_options,
                 **({"reference_time": reference_time} if reference_time is not None else {}),
             )
         result = finalize_local_semantics(
