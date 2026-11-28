@@ -1,0 +1,373 @@
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -1,13 +1,12 @@
+ # Collection expression contract
+ 
+-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR #359,
+-evaluation #360 and admission #361 are accepted after maintainer-run checks and CI.**
+-The existing validator/planner prove call-scoped material availability; execution
+-uses the existing normalization evaluator. This acceptance covers the stated
+-admitted placements and guards, not fresh live-provider acceptance. No route yet
+-establishes collection completeness.
+-This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
+-It does not create another query engine or authorize deferred FP policy.
++This owns the language contract for [item 6](next_functional_work.md#6-collection-dsl)
++and the measurement/forced-photometry idioms delivered in
++[item 7](next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries).
++The existing validator/planner proves material availability; the existing
++normalization evaluator applies the predicates. Audited ZTF detection subsets can
++close count bounds under the rules below. This contract adds no query engine and
++does not authorize on-demand photometry computation.
+ 
+ ## Canonical forms
+ 
+@@ -87,6 +86,111 @@
+ - Parenthesized bodies delimit `for …:`; indentation remains cosmetic. Preserve
+   existing scalar, existence and Boolean forms.
+ 
++## Measurement and forced-photometry idioms
++
++The complete programs below use existing syntax and mappings. Counts select
++objects with established witnesses; every surviving object's supplied records and
++points remain available. The numeric cuts are explicit query examples, not default
++quality or classifier policies. Runtime results still depend on available evidence.
++
++### Detections in one band
++
++<!-- item7-example: detection-band -->
++```text
++object ZTF17aaabasp from ztf via alerce
++with lightcurve via lasair
++filter count(lightcurve@ztf:lasair.points
++             where photometry.g.upper_limit = false) >= 5
++```
++
++The flag selects detections. `= true` selects supplied limits. Missing flags do
++not satisfy either condition. A limiting depth attached to a detection does not
++create another non-detection. Measurements and ordinary/forced point arrays are
++separate collections; never add their counts as if they were distinct observations.
++
++### At least two detections passing an image-shape cut
++
++<!-- item7-example: vetted-measurements -->
++```text
++object ZTF17aaabasp from ztf via alerce
++with measurement via fink
++filter count(measurement@ztf:fink
++             where photometry.g.upper_limit = false
++               and image_metrics.elongation < 1.5) >= 2
++```
++
++This counts records carrying both the detection flag and that row's vetting field.
++Measurement completeness stays open; two known qualifying records still establish
++the lower bound. Image elongation is mapped for Fink/ZTF. Fink/LSST's
++`solar_system.elongation` is a solar elongation angle, not image shape, and cannot
++be substituted. Check each broker/survey's mapped quantity, scope and units.
++
++### Last non-detection before first detection: expression limit
++
++The exact epoch relationship is not currently expressible. Min/max have no filtered
++argument, aggregates can only be compared with numeric literals, and named or
++correlated element bindings are deferred. Object-level `first within`/`last within`
++do not identify these two lightcurve epochs. Review filtered epoch extrema or
++correlation under items 6/10 before adding syntax; do not present an aggregate-to-
++aggregate comparison as a runnable query.
++
++The existing language can instead ask for two witnesses around a chosen literal
++UTC MJD boundary. This does not establish that they are the last limit and first
++detection in the broker's history:
++
++<!-- item7-example: temporal-witnesses -->
++```text
++object ZTF17aaabasp from ztf via alerce
++with lightcurve via lasair
++filter (
++    count(lightcurve@ztf:lasair.points
++          where photometry.g.upper_limit = true and time.mjd < 60000) >= 1
++    and count(lightcurve@ztf:lasair.points
++              where photometry.g.upper_limit = false and time.mjd >= 60000) >= 1
++)
++```
++
++### Forced flux and an explicit significance condition
++
++Keep flux and uncertainty in the same band's forced epoch. On Lasair/ZTF their
++native units are DN, with `calibration.<filter>.zero_point` supplied separately;
++other providers' flux paths and units can differ. Negative flux is retained data,
++and a null magnitude from it is not a non-detection flag. The following positive
++one-sigma witness uses an existing field-to-field comparison, with positive error:
++
++<!-- item7-example: forced-one-sigma -->
++```text
++object ZTF17aaabasp from ztf via alerce
++with lightcurve.forced_photometry_points via lasair
++filter count(lightcurve@ztf:lasair.forced_photometry_points
++             where forced_photometry.r.flux.error > 0
++               and forced_photometry.r.flux >= forced_photometry.r.flux.error) >= 1
++```
++
++This is the special case of flux/error at least one. General user-chosen
++multipliers, such as a five-sigma ratio, require scalar arithmetic or an eligible
++producer-supplied forced-flux S/N field. Arithmetic is not admitted by the current
++grammar, and no current forced-point mapping supplies that S/N field. General ratio
++cuts require a separate item 6 decision; this work derives no S/N or magnitude and
++introduces no automatic significance threshold.
++
++### ALeRCE/LSST measurement composition and LSST precovery
++
++ALeRCE/LSST measurements can have a `forced_photometry.<filter>` branch without an
++ordinary `photometry.<filter>` branch. These are forced-only epochs. A detection
++can also carry its own-epoch forced values. Neither case merges measurements with
++`lightcurve.forced_photometry_points`, and neither creates two observations merely
++because two branches exist. `with measurement.forced_photometry` requests the
++eligible calls; a predicate separately requires supplied values for selection.
++
++The [audited Rubin schema snapshot](https://github.com/lsst/alert_packet/tree/eb8d19e65416c3fb378f00d350f388fe8cb2df42/python/lsst/alert/packet/schema)
++(v8.0 through v11.2) has `prvDiaSources` and `prvDiaForcedSources`, with no separate
++non-detection-limit records. For these LSST routes ordinary points are DIASource
++detections; below-threshold evidence comes through forced photometry, without a
++fabricated ordinary limit flag. Precovery history arrives in alert packets after
++discovery, so the available pre-discovery evidence depends on retrieval time.
++This is an availability limitation, not LSST collection-completeness evidence.
++
+ ## Counting, projection and evidence
+ 
+ ### Required components and references
+@@ -131,7 +235,7 @@
+ null or malformed arrays and nonempty rows omitted during normalization do not
+ prove empty. No empty observation or product record is invented. This proof does
+ not close a nonempty history, a measurement record collection, or an unavailable
+-band. No delivered-band declarations are introduced here.
++band. Band delivery is separately declared for the audited detection routes below.
+ 
+ Sibling arrays returned in separate records of the same qualified product do not
+ compete for the named array: Fink/LSST `points` and `forced_photometry_points` remain
+@@ -416,7 +520,7 @@
+ | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+ | Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
+ | Measurement acquisition, named binders, FP policy | Measurement acquisition and broker-held FP component requests are implemented under item 7. Named binders remain item 10; on-demand FP services remain item 11. |
+-| Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
++| Provider mappings and route metadata | Item 7 adds status mappings, measurement recipes, Lasair forced rows and audited delivery metadata; endpoints, transports and execution policy stay unchanged. |
+ 
+ With admitted material and open completeness, witnesses can prove
+ lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
+@@ -427,3 +531,23 @@
+ the scoped exceptions described above. A contradictory known
+ witness can still disprove a comparison. Local evaluation does not bypass the
+ public DSL or canonical planner material/placement guards.
++
++
++## Item 7 instruction accounting
++
++| Requirement | Status and owner/evidence |
++|---|---|
++| Decision 1: flags on all eight pairs, unchanged native rows and unsplit points | Done; [status regressions](../tests/test_provider_observation_status.py). Fink bad-quality/missing tags stay unknown; LSST forced-only epochs acquire no ordinary flag. Missing flux is never a status rule. |
++| Approved same-row `requires` guard and Lasair copied magnitudes | Done; options are documented once in [field coverage](provider_field_coverage.md#per-field-transform-options). [Schema tests](../tests/test_mapping_schema.py) reject unknown options and cross-payload guards; rich-limit fixtures produce no measured PSF magnitude. No other provider uses the guard in this item. |
++| Decision 2 / additions 3a–b: measurement operation, eight recipes and source choice | Done; the [item 7 source table](next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries) records each endpoint and evidence. [Facade regressions](../tests/test_dsl_measurement_retrieval.py) cover sparse lookups, named no-route errors, required failure, optional supplements and incidental material. |
++| Decision 3 / addition 3c: ontology-valid components and own-recipe call promotion | Done; [component regressions](../tests/test_dsl_required_components.py) cover every producing call, projections, unknown paths, missing routes, empty/failure outcomes and unchanged plain plans. Calls are never imported from another operation's recipe. |
++| Decision 4: reference-driven requirements and retrieval/selection separation | Done for matching unexecuted retrievals; no new Get is added. Missing material retains item 4a. Completed continuation prefixes stay immutable; explicitly request new material when a prior optional call was not guaranteed. |
++| Decision 5: detection-scoped completeness and normalization accounting | Done for ALeRCE/ZTF, Lasair/ZTF and ANTARES/ZTF; [single-source](../tests/test_collection_detection_completeness.py) and [mixed/batched](../tests/test_collection_mixed_detection_completeness.py) regressions cover required success, identities, unknown/dropped rows, equal-time duplicates, raw/point correspondence and empty histories. Limits never broaden the proof to the whole array. |
++| Addition 3d: validated immutable delivered-band metadata | Done in the existing loader/RecipeCall; g/r for ALeRCE/ANTARES, g/r/i for Lasair. The source captures and route audit are above. Delivery alone cannot prove completeness; default domains never shrink to observed bands. |
++| Decision 6: existing forced data, ALeRCE/LSST mixed branch composition | Done; measurement behavior is retained and documented above. Forced values, errors and producer units stay attributable; negative flux does not create a limit or inferred magnitude. |
++| Decision 6 / approved calibration reuse: Lasair's 688 forced epochs | Done for object/lightcurves captures; [forced-photometry regressions](../tests/test_lasair_ztf_forced_photometry.py) and [ontology unit check](../tests/test_semantic_paths.py). One calibration trait reference was reused; `ranr`/`decnr` remain defined nearest-reference-source debt. Original capture bytes and provenance are retained. |
++| Decision 7: LSST limits/precovery availability | Documented above against the pinned Rubin schemas; retrieval time affects delivered precovery. No separate LSST limit population or new completeness claim is inferred. |
++| Requested scientific idioms | Detection, image-vetting and a positive one-sigma witness are represented above with admitted syntax. Exact last-limit/first-detection ordering remains a reviewed item 6/10 extension; arbitrary flux/error significance multipliers remain a reviewed item 6 extension. No unsupported spelling is presented as runnable. |
++| Version, round trips and compatibility | Done: new workflows use 3; measurement retrieval and nonempty component metadata require 3. Existing versions retain their version/wire shape, with no implicit continuation upgrade; [version](../tests/test_workflow_language_version.py), measurement and component regressions cover refusal and round trips. Scalar predicates, taxon rules, non-refilling filters and evidence-preserving continuation remain the existing contracts. |
++| Architecture, files and offline boundary | Existing IR, recipe, mapping and normalization owners were extended. No new module, registry, transport, endpoint or execution policy was introduced; new implementation files are test modules/captures only. Completeness evidence is transient, with no new Portfolio/StepRun/result fields. Regressions use offline captures or controlled payloads; fixture acceptance is not fresh live acceptance. |
++| Explicitly deferred work | LSST lacks matching material detection proofs; measurement collections and nonempty mixed totals/extrema remain open. Local `LightcurveStep` construction stays deferred under item 7; bindings remain item 10 and on-demand computation item 11. Provider mapping debt remains in existing ledgers. |
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -138,11 +138,20 @@
+ notation or ordinary-case aliases were introduced.
+ 
+ **Remaining work:** initial collections with latest or without guaranteed material
+-remain item 4a; collection confirm is explicitly out of scope. Actual completeness
+-and scientific field coverage remain item 7. Optional pairwise aliases remain item
+-10, and on-demand FP computation remains item 11. None is silently included in completion.
++remain item 4a; collection confirm is explicitly out of scope. Exact last-limit/
++first-detection comparisons require reviewed filtered extrema/correlation (items
++6/10); general flux/error significance multipliers require reviewed scalar
++arithmetic or eligible supplied S/N (item 6). The [supported idioms and limits](dsl_collections.md#measurement-and-forced-photometry-idioms)
++keep these outside runnable claims. Optional pairwise aliases remain item 10;
++on-demand FP computation remains item 11. Item 7's acquisition/status/completeness
++scope is complete, with the explicit open populations recorded there.
+ 
+ ## 7. Measurements, non-detections and lightcurve boundaries
++
++**Status: complete for the agreed acquisition, status and scoped-completeness work.**
++The [instruction accounting](dsl_collections.md#item-7-instruction-accounting) records
++implemented requirements, evidence and explicit deferrals. This does not establish
++survey completeness or fresh live-provider acceptance.
+ 
+ **Current:** `with measurement` lowers to `GetMeasurementStep`/`get_measurement`
+ and has declared acquisition recipes for all eight pairs. New workflows use
+@@ -234,20 +243,30 @@
+ nonempty mixed-array, extrema or measurement completeness is asserted. LSST lacks
+ the matching material time proofs and remains open.
+ 
+-**Remaining implementation:** finish item 7's scientific idioms and instruction
+-accounting. Local `LightcurveStep` stays deferred. The runtime checks still withhold
+-closure for individual responses that fail the audit; route support never overrides
+-unknown evidence or execution failure.
++**LSST availability:** audited Rubin schemas v8.0–v11.2 have no separate
++non-detection-limit records. Ordinary LSST points are DIASource detections; forced
++photometry supplies below-threshold evidence. Alert-delivered precovery becomes
++available after discovery, so pre-discovery history depends on retrieval time.
++ALeRCE/LSST retains both forced-only measurements and detection rows with own-epoch
++forced values; their branches and the separate forced-point product stay distinct.
++
++**Explicit deferrals:** local `LightcurveStep` construction remains unimplemented
++because this work does not need it. LSST and measurement completeness remain open,
++as do nonempty mixed-array totals and extrema. Temporal correlation and general
++significance arithmetic remain reviewed DSL extensions under items 6/10; on-demand
++photometry services remain item 11. Point display controls remain item 8 and never
++change acquired evidence. The runtime audit can still withhold closure for an
++individual response; route support never overrides unknown evidence or failure.
+ 
+ The [route accounting](dsl_collections.md#detection-completeness-first-route) records
+ the current enabled and open populations. Any additional YAML structure beyond the
+ approved delivered-band declaration still needs review.
+ 
+-**Completion:** executable supported measurement intent and reliable field semantics,
+-preserving incidental evidence, distinct products and shared presentation. Do not
+-add an operation beyond the approved `get_measurement`, or add a local builder.
+-FP component requests use the general rule above; on-demand computation remains
+-item 11. Default visibility/composition choices remain open.
++**Delivered boundary:** explicit measurement intent, attributable ordinary/forced
++status and values, general component requirements, and audited detection-count
++completeness through existing owners. Incidental evidence, product distinctions
++and shared presentation remain intact. No additional operation or local lightcurve
++builder is authorized by closing this item.
+ 
+ ## 8. Deployable UI
+ 
+@@ -285,7 +304,10 @@
+ 
+ **Later decision:** reevaluate `as p` only for multiple element scopes, such as paired
+ points or an FP measurement near each outer point. Review scope, distinctness,
+-temporal ordering and units then. Do not complicate item 6's ordinary cases.
++temporal ordering and units then. Exact last-limit/first-detection selection also
++needs a reviewed filtered-extrema or correlation design; the current aggregate-to-
++aggregate comparison prohibition stays in force. Do not complicate ordinary
++one-element predicates or imply that a new binder alone implements that query.
+ 
+ ## 11. On-demand forced-photometry services — deferred
+ 
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -65,8 +65,12 @@
+ recipes for the broker's existing per-epoch observations, including supplied limits.
+ It shares the existing retrieval, binding and material-lineage owners. Optional
+ forced calls follow the lightcurve policy. No recipe means unsupported acquisition;
+-incidental measurement predicates retain their existing scheduling. Measurements
+-and lightcurve points remain distinct collections, with open completeness.
++incidental measurement predicates retain their existing scheduling. Measurement
++record counts remain open; the audited detection-count rules below apply only to
++eligible lightcurve populations. ALeRCE/LSST retains forced-only measurement epochs
++and own-epoch forced values on detections without merging them with the forced
++series product. LSST precovery arrives through alerts after discovery and depends
++on retrieval time; missing magnitude/flux is never an ordinary limit flag.
+ 
+ An ontology-valid `with <product>.<component>` records qualified semantic references
+ in the Get's `required_components`. The existing resolver promotes every producing
+@@ -77,8 +81,9 @@
+ Portfolio fields or fabricated records. Missing/malformed arrays and normalization
+ loss are not empty evidence. Scalar values keep their existing existence semantics;
+ container existence asks for supplied content. Sibling arrays are distinct, while
+-multiple records carrying the requested array remain ambiguous. Nonempty histories
+-retain open completeness. Empty component metadata is omitted from serialization;
++multiple records carrying the requested array remain ambiguous. Unrestricted
++nonempty histories remain open; only the audited detection subsets can close count
++bounds. Empty component metadata is omitted from serialization;
+ nonempty metadata requires version 3, preserving older workflow wire formats.
+ 
+ An abstract-family request expands deterministically into supported concrete Gets
+diff --git a/.github/ai-context.md b/.github/ai-context.md
+--- a/.github/ai-context.md
++++ b/.github/ai-context.md
+@@ -8,44 +8,49 @@
+ catalogue diversity, semantic discovery and uniform temporal/latest selection are
+ required priorities. Cutouts are the last required feature expansion.
+ 
+-- [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
+-  are accepted through #359/#360/#361 after maintainer-run checks and CI. Admission
+-  uses the existing capability validator/planner for filters with guaranteed preceding
+-  material, including version-2 continuation and non-refilling latest. Required
+-  calls/projections and candidate origins govern proof; optional/future calls do
+-  not. Static ambiguity uses occurrence-local/inherited material. Initial
+-  collection/latest and missing evidence report item 4a; confirm propositions are
+-  rejected. Version-1 continuations refuse collections without an implicit upgrade.
+-  The instruction accounting is closed for this agreed scope. Initial scheduling
+-  remains item 4a, real completeness/field coverage item 7, binders item 10 and FP
+-  policy item 11; collection confirm remains explicitly out of scope.
+-  Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
+-  and membership is branch-local. Competing products use existing StepRun warnings;
+-  material selection controls audit projection. Synthetic transient evidence tests
+-  complete collections; no production route supplies collection completeness.
+-  Frozen aggregate/element/quantifier nodes use the existing kind discriminator;
+-  version 1 rejects them. Multiline predicates preserve original coordinates.
+-  No delivered-band declarations, recipe or capability changes belong to these
+-  slices. Delivery metadata and its approved loader amendment await the first
+-  route-completeness slice under item 7; mixed detection/non-detection arrays need
+-  evidence covering the whole collection. The current ALeRCE/ZTF, ANTARES/ZTF and
+-  Lasair/ZTF candidate `points` arrays are not eligible for unchanged reuse of a
+-  detection-only proof; see the entry audit in the collection contract. A new
+-  projection/schema or broader recipe proof needs its concrete review before
+-  implementation. Measurement acquisition, binders and FP syntax remain deferred.
+-  The maintainer runs tests and all implementation Git/GitHub commands locally.
+-  Deliver generated .patch files only through the authorized `artifact-delivery`
+-  branch; leave implementation branches and PRs untouched. Include fetch/git-show,
+-  apply/test/commit/push/PR/check/squash/update commands. Do not use sandbox downloads
+-  or inline Base64 for delivery unless requested.
++- [Collection contract](../docs/dsl_collections.md): counts/extrema use ranges;
++  quantifiers use Kleene logic and exact NOT duality. Membership is branch-local.
++  Admitted filters use guaranteed preceding material and preserve non-refilling
++  latest, occurrence lineage and immutable continuation. Competing products retain
++  visible StepRun warnings. Initial collections/latest and missing material remain
++  item 4a; collection confirmation is outside the admitted scope.
++- [Item 7](../docs/next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries)
++  is complete for its agreed scope: `with measurement` has all eight acquisition
++  recipes; native status flags keep ordinary and forced populations distinct;
++  ontology-valid product.component requirements strengthen only that Get's own
++  producing calls. References strengthen matching unexecuted Gets, never add one
++  or rewrite a completed prefix. Required failure is visible; explicit empty
++  receipts do not fabricate records. Plain requests retain optional-call policy.
++- Detection-scoped completeness uses existing ZTF material proofs plus raw-row,
++  identity and normalized-point accounting. Delivery is separate: g/r for ALeRCE
++  and ANTARES, g/r/i for Lasair. Unknown/dropped rows withhold closure; proof
++  inspection does not invoke lazy getters. Mixed nonempty totals, extrema,
++  measurement collections and LSST remain open. Lasair's two original captures
++  retain 688 forced epochs, native flux/error and separate calibration zero points.
++- New WorkflowIR uses version 3. Measurement retrieval and nonempty required
++  components need 3; collection syntax needs 2. Older workflows retain their
++  version/wire shape and are never upgraded implicitly. Scalar/taxon contracts
++  and the retained classification-policy interpretation stay unchanged.
++- Use the documented scientific idioms and their limits. Exact last-limit/first-
++  detection ordering and arbitrary flux/error significance multipliers still need
++  separate DSL review (items 6/10); local `LightcurveStep` construction is deferred.
++  Optional `as p` remains item 10; new photometry computation remains item 11.
++  LSST precovery availability depends on retrieval time; do not infer survey or
++  collection completeness from the ordinary detection flag.
++- The maintainer runs tests and all implementation Git/GitHub commands locally.
++  Deliver generated `.patch` files only through `artifact-delivery`; leave
++  implementation branches and PRs untouched. Include fetch/git-show, apply,
++  appropriate local checks, commit/push/PR/check/squash/update commands. Do not use
++  sandbox downloads or inline Base64 unless requested. Markdown-only closeout
++  does not call for a repeated backend suite.
+ - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
+   audit tooling; preserve catalogue scope, units and ownership.
+ - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted
+   behaviour, not a complete beta target or fresh all-provider live report.
+ 
+-Keep Portfolio nouns as the basis of `with`. Optional `as p` and the FP surface/
+-acquisition policy are deferred; neither new FP nouns nor automatic-policy changes
+-are approved. Classification headlines follow the reviewed
++Keep Portfolio nouns as the basis of `with`. Components are requested beneath
++their product noun; `with forced_photometry` is not an admitted standalone noun.
++Classification headlines follow the reviewed
+ [ELAsTiCC policy](../docs/classification_headline_policy.md); additional thresholds
+ or precedence changes require explicit scientific review.
+ 
