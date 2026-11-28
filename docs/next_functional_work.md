@@ -138,11 +138,20 @@ Use `{filter}`/`{output}`, relative paths and `where for …: (...)`; no second 
 notation or ordinary-case aliases were introduced.
 
 **Remaining work:** initial collections with latest or without guaranteed material
-remain item 4a; collection confirm is explicitly out of scope. Actual completeness
-and scientific field coverage remain item 7. Optional pairwise aliases remain item
-10, and on-demand FP computation remains item 11. None is silently included in completion.
+remain item 4a; collection confirm is explicitly out of scope. Exact last-limit/
+first-detection comparisons require reviewed filtered extrema/correlation (items
+6/10); general flux/error significance multipliers require reviewed scalar
+arithmetic or eligible supplied S/N (item 6). The [supported idioms and limits](dsl_collections.md#measurement-and-forced-photometry-idioms)
+keep these outside runnable claims. Optional pairwise aliases remain item 10;
+on-demand FP computation remains item 11. Item 7's acquisition/status/completeness
+scope is complete, with the explicit open populations recorded there.
 
 ## 7. Measurements, non-detections and lightcurve boundaries
+
+**Status: complete for the agreed acquisition, status and scoped-completeness work.**
+The [instruction accounting](dsl_collections.md#item-7-instruction-accounting) records
+implemented requirements, evidence and explicit deferrals. This does not establish
+survey completeness or fresh live-provider acceptance.
 
 **Current:** `with measurement` lowers to `GetMeasurementStep`/`get_measurement`
 and has declared acquisition recipes for all eight pairs. New workflows use
@@ -234,20 +243,30 @@ those delivered detection bands without fabricating product records. No whole
 nonempty mixed-array, extrema or measurement completeness is asserted. LSST lacks
 the matching material time proofs and remains open.
 
-**Remaining implementation:** finish item 7's scientific idioms and instruction
-accounting. Local `LightcurveStep` stays deferred. The runtime checks still withhold
-closure for individual responses that fail the audit; route support never overrides
-unknown evidence or execution failure.
+**LSST availability:** audited Rubin schemas v8.0–v11.2 have no separate
+non-detection-limit records. Ordinary LSST points are DIASource detections; forced
+photometry supplies below-threshold evidence. Alert-delivered precovery becomes
+available after discovery, so pre-discovery history depends on retrieval time.
+ALeRCE/LSST retains both forced-only measurements and detection rows with own-epoch
+forced values; their branches and the separate forced-point product stay distinct.
+
+**Explicit deferrals:** local `LightcurveStep` construction remains unimplemented
+because this work does not need it. LSST and measurement completeness remain open,
+as do nonempty mixed-array totals and extrema. Temporal correlation and general
+significance arithmetic remain reviewed DSL extensions under items 6/10; on-demand
+photometry services remain item 11. Point display controls remain item 8 and never
+change acquired evidence. The runtime audit can still withhold closure for an
+individual response; route support never overrides unknown evidence or failure.
 
 The [route accounting](dsl_collections.md#detection-completeness-first-route) records
 the current enabled and open populations. Any additional YAML structure beyond the
 approved delivered-band declaration still needs review.
 
-**Completion:** executable supported measurement intent and reliable field semantics,
-preserving incidental evidence, distinct products and shared presentation. Do not
-add an operation beyond the approved `get_measurement`, or add a local builder.
-FP component requests use the general rule above; on-demand computation remains
-item 11. Default visibility/composition choices remain open.
+**Delivered boundary:** explicit measurement intent, attributable ordinary/forced
+status and values, general component requirements, and audited detection-count
+completeness through existing owners. Incidental evidence, product distinctions
+and shared presentation remain intact. No additional operation or local lightcurve
+builder is authorized by closing this item.
 
 ## 8. Deployable UI
 
@@ -285,7 +304,10 @@ This plan does not add a spectrum programme.
 
 **Later decision:** reevaluate `as p` only for multiple element scopes, such as paired
 points or an FP measurement near each outer point. Review scope, distinctness,
-temporal ordering and units then. Do not complicate item 6's ordinary cases.
+temporal ordering and units then. Exact last-limit/first-detection selection also
+needs a reviewed filtered-extrema or correlation design; the current aggregate-to-
+aggregate comparison prohibition stays in force. Do not complicate ordinary
+one-element predicates or imply that a new binder alone implements that query.
 
 ## 11. On-demand forced-photometry services — deferred
 

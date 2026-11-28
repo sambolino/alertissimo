@@ -8,44 +8,49 @@ IDs 1–11 and their current/target states. Coarse classification, universal bes
 catalogue diversity, semantic discovery and uniform temporal/latest selection are
 required priorities. Cutouts are the last required feature expansion.
 
-- [Collection contract](../docs/dsl_collections.md): syntax/IR nodes and validators
-  are accepted through #359/#360/#361 after maintainer-run checks and CI. Admission
-  uses the existing capability validator/planner for filters with guaranteed preceding
-  material, including version-2 continuation and non-refilling latest. Required
-  calls/projections and candidate origins govern proof; optional/future calls do
-  not. Static ambiguity uses occurrence-local/inherited material. Initial
-  collection/latest and missing evidence report item 4a; confirm propositions are
-  rejected. Version-1 continuations refuse collections without an implicit upgrade.
-  The instruction accounting is closed for this agreed scope. Initial scheduling
-  remains item 4a, real completeness/field coverage item 7, binders item 10 and FP
-  policy item 11; collection confirm remains explicitly out of scope.
-  Count/extrema use ranges, quantifiers use Kleene logic and exact NOT duality,
-  and membership is branch-local. Competing products use existing StepRun warnings;
-  material selection controls audit projection. Synthetic transient evidence tests
-  complete collections; no production route supplies collection completeness.
-  Frozen aggregate/element/quantifier nodes use the existing kind discriminator;
-  version 1 rejects them. Multiline predicates preserve original coordinates.
-  No delivered-band declarations, recipe or capability changes belong to these
-  slices. Delivery metadata and its approved loader amendment await the first
-  route-completeness slice under item 7; mixed detection/non-detection arrays need
-  evidence covering the whole collection. The current ALeRCE/ZTF, ANTARES/ZTF and
-  Lasair/ZTF candidate `points` arrays are not eligible for unchanged reuse of a
-  detection-only proof; see the entry audit in the collection contract. A new
-  projection/schema or broader recipe proof needs its concrete review before
-  implementation. Measurement acquisition, binders and FP syntax remain deferred.
-  The maintainer runs tests and all implementation Git/GitHub commands locally.
-  Deliver generated .patch files only through the authorized `artifact-delivery`
-  branch; leave implementation branches and PRs untouched. Include fetch/git-show,
-  apply/test/commit/push/PR/check/squash/update commands. Do not use sandbox downloads
-  or inline Base64 for delivery unless requested.
+- [Collection contract](../docs/dsl_collections.md): counts/extrema use ranges;
+  quantifiers use Kleene logic and exact NOT duality. Membership is branch-local.
+  Admitted filters use guaranteed preceding material and preserve non-refilling
+  latest, occurrence lineage and immutable continuation. Competing products retain
+  visible StepRun warnings. Initial collections/latest and missing material remain
+  item 4a; collection confirmation is outside the admitted scope.
+- [Item 7](../docs/next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries)
+  is complete for its agreed scope: `with measurement` has all eight acquisition
+  recipes; native status flags keep ordinary and forced populations distinct;
+  ontology-valid product.component requirements strengthen only that Get's own
+  producing calls. References strengthen matching unexecuted Gets, never add one
+  or rewrite a completed prefix. Required failure is visible; explicit empty
+  receipts do not fabricate records. Plain requests retain optional-call policy.
+- Detection-scoped completeness uses existing ZTF material proofs plus raw-row,
+  identity and normalized-point accounting. Delivery is separate: g/r for ALeRCE
+  and ANTARES, g/r/i for Lasair. Unknown/dropped rows withhold closure; proof
+  inspection does not invoke lazy getters. Mixed nonempty totals, extrema,
+  measurement collections and LSST remain open. Lasair's two original captures
+  retain 688 forced epochs, native flux/error and separate calibration zero points.
+- New WorkflowIR uses version 3. Measurement retrieval and nonempty required
+  components need 3; collection syntax needs 2. Older workflows retain their
+  version/wire shape and are never upgraded implicitly. Scalar/taxon contracts
+  and the retained classification-policy interpretation stay unchanged.
+- Use the documented scientific idioms and their limits. Exact last-limit/first-
+  detection ordering and arbitrary flux/error significance multipliers still need
+  separate DSL review (items 6/10); local `LightcurveStep` construction is deferred.
+  Optional `as p` remains item 10; new photometry computation remains item 11.
+  LSST precovery availability depends on retrieval time; do not infer survey or
+  collection completeness from the ordinary detection flag.
+- The maintainer runs tests and all implementation Git/GitHub commands locally.
+  Deliver generated `.patch` files only through `artifact-delivery`; leave
+  implementation branches and PRs untouched. Include fetch/git-show, apply,
+  appropriate local checks, commit/push/PR/check/squash/update commands. Do not use
+  sandbox downloads or inline Base64 unless requested. Markdown-only closeout
+  does not call for a repeated backend suite.
 - [Field coverage](../docs/provider_field_coverage.md): extend existing ledgers and
   audit tooling; preserve catalogue scope, units and ownership.
 - [Discovery baseline](../docs/discovery_integration.md): route-specific admitted
   behaviour, not a complete beta target or fresh all-provider live report.
 
-Keep Portfolio nouns as the basis of `with`. Optional `as p` and the FP surface/
-acquisition policy are deferred; neither new FP nouns nor automatic-policy changes
-are approved. Classification headlines follow the reviewed
+Keep Portfolio nouns as the basis of `with`. Components are requested beneath
+their product noun; `with forced_photometry` is not an admitted standalone noun.
+Classification headlines follow the reviewed
 [ELAsTiCC policy](../docs/classification_headline_policy.md); additional thresholds
 or precedence changes require explicit scientific review.
 
