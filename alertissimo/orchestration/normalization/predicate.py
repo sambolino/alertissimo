@@ -285,13 +285,13 @@ def evaluate_portfolio_predicate_truth(
             channel = execution.broker if execution is not None else None
         return noun + ("@" + producer if producer else "") + (":" + channel if producer and channel else "")
 
-    def empty_products(reference):
+    def empty_products(reference, *, detection_only=False):
         path = substitute(reference.field_path)
         result = set()
         for key, proof in evidence.items():
-            if len(key) != 2:
+            if len(key) != 2 and not (detection_only and len(key) == 3 and key[2] == "detections"):
                 continue
-            owner, qualified = key
+            owner, qualified = key[:2]
             if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
                 continue
             head, _, field = qualified.partition(".")
@@ -391,6 +391,7 @@ def evaluate_portfolio_predicate_truth(
             field = boundary.partition(".")[2]
             collection = reference.model_copy(update={"field_path": field})
             projection = reference.field_path[len(field) + 1:]
+        detection_only = node.function == "count" and detection_condition(node.condition)
         matches = matching(reference)
         if collection.field_path and len(matches) > 1 and len({product_key(r) for r in matches}) == 1:
             path = substitute(collection.field_path)
@@ -403,9 +404,9 @@ def evaluate_portfolio_predicate_truth(
             ))
             if holders and len(holders) + len(siblings) == len(matches):
                 matches = holders
-            elif not holders and len(siblings) == len(matches) and empty_products(collection):
+            elif not holders and len(siblings) == len(matches) and empty_products(collection, detection_only=detection_only):
                 matches = ()  # Empty receipt concerns this array, not sibling histories.
-        empties = empty_products(collection) if collection.field_path else set()
+        empties = empty_products(collection, detection_only=detection_only) if collection.field_path else set()
         if empties and (len({product_key(r) for r in matches} | empties) > 1 or len(matches) > 1):
             ambiguous(collection, tuple(matches) + tuple(empties))
             aggregate_cache[cache_key] = None
@@ -432,12 +433,18 @@ def evaluate_portfolio_predicate_truth(
                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
                 complete = proof[0] is True and shape_valid and items is not None
                 delivered = frozenset(proof[1])
-                if node.function == "count" and detection_condition(node.condition):
+                if detection_only:
                     scoped = evidence.get((record.internal_record_id.value, path, "detections"))
                     if scoped is not None and scoped[0] is True and shape_valid and items is not None:
                         complete, delivered = True, frozenset(scoped[1])
         if empties and not malformed_array and (items is None or not items):
             items, complete, delivered = (), True, frozenset()
+            if detection_only:
+                for product in empties:
+                    receipt = evidence.get((portfolio.internal_portfolio_id.value,
+                                            product + "." + substitute(collection.field_path), "detections"))
+                    if receipt is not None and receipt[0] is True:
+                        delivered |= frozenset(receipt[1])
         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
         groups, bands = branch_requirements(collection, relative_paths)
         complete = complete and bands <= delivered

@@ -1,5 +1,8 @@
 broker: antares
 origin: ztf
+delivered_bands:
+  get_by_ztf_object_id:
+    lightcurve@ztf:antares.points: [g, r]
 predicate_bindings:
   search:
     # Numeric coordinate fields are shown in the official search tutorial.
