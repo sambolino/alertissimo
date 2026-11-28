@@ -205,15 +205,21 @@ error; an explicit new component retrieval may reuse identical prior required
 calls, but cannot treat an optional prior call as guaranteed. Plain plans and
 version-1/2 wire formats are preserved; component metadata requires version 3.
 
-**Agreed 27 November 2026; remaining implementation:** Lasair/ZTF forced photometry
-and per-route scoped detection completeness.
-Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
-and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
-nearest-reference-source coordinate debt, without adding a branch. These changes
-are approved but not yet runnable. Local `LightcurveStep` remains deferred.
+**Lasair/ZTF forced photometry:** object and lightcurves payloads map the captured
+688 forced epochs into `lightcurve.forced_photometry_points`, separate from ordinary
+points. Flux/error retain native DN through unit-neutral paths; calibration reuses
+`<calibration>(L1)` with its zero point in mag. No magnitudes are derived. Missing
+`-99999` flux/error values stay unavailable; genuine negative fluxes remain signed.
+`ranr`/`decnr` remain nearest-reference-source coordinate debt, without a new branch.
+Required empty child arrays are proved against their declared parent object IDs;
+missing/malformed children or omitted parents do not prove zero. Two separately
+retrieved series retain the existing product-ambiguity rule. Capture provenance and
+sources are in the [fixture notes](../tests/fixtures/lasair/README.md).
 
-**Target/work:** finish Lasair forced-photometry mapping and scoped
-detection completeness. Map true/false limit flags where
+**Agreed 27 November 2026; remaining implementation:** per-route scoped detection
+completeness and item 7 closeout. Local `LightcurveStep` remains deferred.
+
+**Target/work:** finish scoped detection completeness. Map true/false limit flags where
 native evidence establishes them; retain unknown otherwise. Missing flux alone is
 not non-detection, nor is a detection's limiting depth another observation.
 

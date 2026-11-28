@@ -76,6 +76,17 @@ payloads:
     object_partition:
       mode: root_field
       field: objectId
+  forcedphot:
+    endpoint: object
+    path: forcedphot[]
+    object_partition:
+      mode: single
+  lightcurve_forcedphot:
+    endpoint: lightcurves
+    path: '[].forcedphot[]'
+    object_partition:
+      mode: root_field
+      field: objectId
 mappings:
   summary@ztf:lasair.identity.object_id:
   - object#objectId
@@ -492,6 +503,24 @@ mappings:
   - lightcurve_candidates#diffmaglim
   lightcurve@ztf:lasair.points.quality.real_bogus:
   - lightcurve_candidates#drb
+  lightcurve@ztf:lasair.forced_photometry_points.identity.object_id:
+  - forcedphot#objectid
+  - lightcurve_forcedphot#objectid
+  lightcurve@ztf:lasair.forced_photometry_points.time.mjd:
+  - forcedphot#jd
+  - lightcurve_forcedphot#jd
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}:
+  - forcedphot#fid
+  - lightcurve_forcedphot#fid
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}.flux:
+  - forcedphot#forcediffimflux
+  - lightcurve_forcedphot#forcediffimflux
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}.flux.error:
+  - forcedphot#forcediffimfluxunc
+  - lightcurve_forcedphot#forcediffimfluxunc
+  lightcurve@ztf:lasair.forced_photometry_points.calibration.{filter}.zero_point:
+  - forcedphot#magzpsci
+  - lightcurve_forcedphot#magzpsci
 transforms:
   classification@sherlock:lasair.best.score:
     object#sherlock.classificationReliability:
@@ -994,3 +1023,44 @@ transforms:
     lightcurve_candidates#drb:
       requires:
       - candid
+  # Forced flux remains in native DN, with its per-point zero point separate.
+  # The generic flux path is unit-neutral; psf.flux declares nJy and is not used.
+  lightcurve@ztf:lasair.forced_photometry_points.time.mjd:
+    forcedphot#jd:
+      type: jd_to_mjd
+    lightcurve_forcedphot#jd:
+      type: jd_to_mjd
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}:
+    forcedphot#fid:
+      type: value_map
+      map: {1: g, 2: r, 3: i}
+    lightcurve_forcedphot#fid:
+      type: value_map
+      map: {1: g, 2: r, 3: i}
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}.flux:
+    forcedphot#forcediffimflux:
+      type: value_map
+      map: {-99999: null}
+      skip_null: true
+      note: ZTF unavailable-photometry sentinel; all other signed values retain native DN.
+    lightcurve_forcedphot#forcediffimflux:
+      type: value_map
+      map: {-99999: null}
+      skip_null: true
+      note: ZTF unavailable-photometry sentinel; all other signed values retain native DN.
+  lightcurve@ztf:lasair.forced_photometry_points.forced_photometry.{filter}.flux.error:
+    forcedphot#forcediffimfluxunc:
+      type: value_map
+      map: {-99999: null}
+      skip_null: true
+      note: ZTF unavailable-photometry sentinel; all other signed values retain native DN.
+    lightcurve_forcedphot#forcediffimfluxunc:
+      type: value_map
+      map: {-99999: null}
+      skip_null: true
+      note: ZTF unavailable-photometry sentinel; all other signed values retain native DN.
+  lightcurve@ztf:lasair.forced_photometry_points.calibration.{filter}.zero_point:
+    forcedphot#magzpsci:
+      skip_null: true
+    lightcurve_forcedphot#magzpsci:
+      skip_null: true

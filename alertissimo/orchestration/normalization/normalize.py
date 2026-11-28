@@ -433,11 +433,39 @@ def _component_empty_evidence(run, results, portfolios, before_step, graph, regi
                             continue
                         paths = {field.payload_path for field in fields}
                         # Only a wholly empty returned collection, or an explicit
-                        # empty collection in a single-target object, proves this.
+                        # empty collection in its identity-bound parent, proves this.
                         empty = True
                         for path in paths:
                             if path == "[]":
                                 value = execution.payload
+                            elif path.startswith("[].") and path.endswith("[]"):
+                                # An empty child must belong to this object, not
+                                # another root in the same batched response.
+                                keys = {field.payload_key for field in fields if field.payload_path == path}
+                                definitions = tuple(p for p in graph.payload_capabilities
+                                    if (p.broker, p.origin, p.endpoint) == (plan.broker, plan.origin, plan.endpoint)
+                                    and p.payload_key in keys)
+                                if (not isinstance(execution.payload, (list, tuple))
+                                    or {p.payload_key for p in definitions} != keys
+                                    or any(p.partition_mode != "root_field" or not p.partition_field for p in definitions)):
+                                    empty = False
+                                    break
+                                try:
+                                    identified = tuple((row, tuple(extract_raw_field(row, p.partition_field)
+                                                       for p in definitions)) for row in execution.payload)
+                                    if any(not isinstance(value, (str, int)) or isinstance(value, bool)
+                                           for _, values in identified for value in values):
+                                        empty = False
+                                        break
+                                    parents = tuple(row for row, values in identified
+                                                    if all(str(value) == object_id for value in values))
+                                    if len(parents) != 1:
+                                        empty = False
+                                        break
+                                    value = extract_raw_field(parents[0], path[3:-2])
+                                except RawFieldMissing:
+                                    empty = False
+                                    break
                             elif len(targets) == 1 and path.endswith("[]") and not path.startswith("[]."):
                                 try:
                                     value = extract_raw_field(execution.payload, path[:-2])
