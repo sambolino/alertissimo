@@ -1757,6 +1757,7 @@ levels:
 <_forced_photometry_point>:
   $ref: <_time_series_point>
   $ref: <forced_photometry>(L1)
+  $ref: <calibration>(L1)
 
 <_magnitude_rate_point>:
   $ref: <_time_series_point>

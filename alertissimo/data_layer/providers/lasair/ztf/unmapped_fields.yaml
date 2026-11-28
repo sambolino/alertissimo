@@ -402,3 +402,16 @@ unmapped:
 - objects#TNS.cone_id:
     reason: authoritative_field_deferred
     candidate_meaning: Observed authoritative Lasair/ZTF field intentionally deferred; no ontology change in this close-out.
+# Coordinates belong to the nearest reference-image source, not the FP target.
+- forcedphot#ranr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Right ascension of the nearest source in the reference-image PSF catalogue, J2000 degrees (ZTF fp_hists). Forced points have no reference-image branch; do not use as target coordinates.
+- forcedphot#decnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Declination of the nearest source in the reference-image PSF catalogue, J2000 degrees (ZTF fp_hists). Forced points have no reference-image branch; do not use as target coordinates.
+- lightcurve_forcedphot#ranr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Right ascension of the nearest source in the reference-image PSF catalogue, J2000 degrees (ZTF fp_hists). Forced points have no reference-image branch; do not use as target coordinates.
+- lightcurve_forcedphot#decnr:
+    reason: unsupported_semantic_concept
+    candidate_meaning: Declination of the nearest source in the reference-image PSF catalogue, J2000 degrees (ZTF fp_hists). Forced points have no reference-image branch; do not use as target coordinates.

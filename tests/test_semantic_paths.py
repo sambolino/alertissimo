@@ -160,3 +160,15 @@ def test_obsolete_photometry_paths_are_invalid(relative_path):
 
     assert not model.is_valid(f"measurement@lsst:test.{relative_path}")
     assert not model.is_valid(f"summary@antares.{relative_path}")
+
+
+def test_forced_points_reuse_calibration_and_preserve_zero_point_unit():
+    model = SemanticPathModel.from_ontology()
+    assert model.is_valid("lightcurve@ztf:lasair.forced_photometry_points.calibration.r.zero_point")
+    assert model.is_valid_element_path("lightcurve@ztf:lasair.forced_photometry_points", "calibration.r.zero_point")
+    # Unit belongs to the reused calibration declaration, not a new FP field.
+    ontology = (Path(__file__).parents[1] / "alertissimo/data_layer/semantic_model/ontology.yaml").read_text()
+    # Ordered ontology declarations such as [zero_point]: are not plain YAML.
+    calibration = ontology.split("<calibration>:", 1)[1].split("\n<color>:", 1)[0]
+    zero_point = calibration.split("    [zero_point]:", 1)[1].split("\n    [", 1)[0]
+    assert "unit: mag" in {line.strip() for line in zero_point.splitlines()}
