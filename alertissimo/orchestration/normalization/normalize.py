@@ -493,6 +493,139 @@ def _component_empty_evidence(run, results, portfolios, before_step, graph, regi
     return evidence
 
 
+def _detection_collection_evidence(run, results, portfolios, before_step, graph, registry, normalized_cache):
+    """Audit detection rows against their existing normalized occurrence.
+
+    The provider's material detection proof belongs to an exact endpoint/payload.
+    It can cover the same required identity-bound history acquisition without a
+    temporal query. Delivery alone, summaries and response lengths cannot close it.
+    This first route accepts single-object payload partitions only; mixed/batched
+    proof populations need their own normalization accounting before activation.
+    """
+    from collections import Counter
+    from collections.abc import Mapping
+    import math
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+    from alertissimo.orchestration.ir.predicates import _collection_paths
+
+    evidence = {}
+    if graph is None:
+        return evidence
+    active = {record.internal_record_id.value for portfolio in portfolios for record in portfolio.records}
+    populations = {summary_object_identity(p) for p in portfolios} - {None}
+    declarations = tuple((recipe, recipe.time_selection) for recipe in graph.recipe_capabilities
+                         if recipe.time_selection is not None
+                         and recipe.time_selection.mode == "detection"
+                         and recipe.time_selection.method == "material"
+                         and recipe.time_selection.complete and recipe.time_selection.time_scale == "utc")
+
+    def signature(fields):
+        flags = tuple((key.split(".")[1], value) for key, value in fields.items()
+                      if key.startswith("photometry.") and key.endswith(".upper_limit") and len(key.split(".")) == 3)
+        time = fields.get("time.mjd")
+        if (len(flags) != 1 or type(flags[0][1]) is not bool
+            or type(time) not in (int, float) or not math.isfinite(time)):
+            return None
+        return time, flags[0][0], flags[0][1]
+
+    for index, result in enumerate(results[:before_step]):
+        step_run = run.steps[index]
+        if step_run.state is not StepRunState.SUCCEEDED:
+            continue
+        indexes = _execution_plan_indexes(step_run, result)
+        for owner, execution in zip(indexes, result.executions):
+            plan = step_run.endpoint_plans[owner]
+            if not plan.required:
+                continue
+            endpoint = next(e for e in graph.endpoint_capabilities
+                            if (e.broker, e.origin, e.endpoint) == (plan.broker, plan.origin, plan.endpoint))
+            if endpoint.supports_projection:
+                continue
+            targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
+            if len(targets) != 1:
+                continue
+            for recipe, proof in declarations:
+                call = recipe.calls[proof.call_index]
+                if (recipe.broker, recipe.origin, call.endpoint) != (plan.broker, plan.origin, plan.endpoint):
+                    continue
+                definition = next((p for p in graph.payload_capabilities
+                                   if (p.broker, p.origin, p.endpoint, p.payload_key)
+                                   == (plan.broker, plan.origin, plan.endpoint, proof.payload)), None)
+                if definition is None or definition.partition_mode != "single" or not definition.path.endswith("[]"):
+                    continue
+                try:
+                    raw = extract_raw_field(execution.payload, definition.path[:-2])
+                except RawFieldMissing:
+                    continue
+                if not isinstance(raw, (list, tuple)) or any(not isinstance(row, Mapping) for row in raw):
+                    continue
+                for portfolio in normalized_cache.get(execution.internal_execution_id.value, ()):
+                    identity = summary_object_identity(portfolio)
+                    if identity not in populations or identity != (plan.origin, targets[0]):
+                        continue
+                    measurements = tuple(record for record in portfolio.records
+                        if record.semantic_type == f"measurement@{plan.origin}:{plan.broker}"
+                        and record.internal_source is not None
+                        and record.internal_source.internal_execution_id == execution.internal_execution_id
+                        and record.internal_source.payload_key == proof.payload)
+                    if (len(measurements) != len(raw)
+                        or sorted(r.internal_source.payload_index for r in measurements
+                                  if r.internal_source.payload_index is not None) != list(range(len(raw)))):
+                        continue
+                    if any(record.get("identity.object_id") is not None
+                           and str(record.get("identity.object_id")) != targets[0] for record in measurements):
+                        continue
+                    expected = tuple(signature(record.fields) for record in measurements)
+                    if any(item is None or item[2] is not False for item in expected):
+                        continue
+                    for collection, bands in call.delivered_bands:
+                        product, _, path = collection.partition(".")
+                        domain = _collection_paths().parameter_domain(collection + ".photometry.{filter}", plan.origin)
+                        if domain is None or any(item[1] not in domain for item in expected):
+                            continue
+                        mapped = tuple(field for field in call.outputs if field.payload_key == proof.payload
+                                       and field.semantic_path.startswith(collection + "."))
+                        # Compare every declared point field, not just row counts
+                        # or times: equal-time duplicates must not hide a lost row.
+                        if not mapped or any(not any(
+                            other.semantic_record_type == f"measurement@{plan.origin}:{plan.broker}"
+                            and other.relative_field_path == field.relative_field_path[len(path) + 1:]
+                            and other.raw_ref == field.raw_ref for other in call.outputs) for field in mapped):
+                            continue
+                        relative = {field.relative_field_path[len(path) + 1:] for field in mapped
+                                    if not field.relative_field_path.endswith("{filter}")}
+
+                        def projected(fields, band):
+                            paths = {field.replace("{filter}", band) for field in relative}
+                            return tuple(sorted((key, value) for key, value in fields.items() if key in paths))
+
+                        records = tuple(r for r in portfolio.records if r.semantic_type == product and path in r.fields)
+                        if len(records) != 1:
+                            continue
+                        record = records[0]
+                        if record.internal_record_id.value not in active:
+                            continue
+                        points = record.fields[path]
+                        if not isinstance(points, (tuple, list)) or any(not isinstance(p, Mapping) for p in points):
+                            continue
+                        actual = tuple(signature(point) for point in points)
+                        if any(item is None or item[1] not in domain for item in actual):
+                            continue
+                        if Counter(item for item in actual if item[2] is False) != Counter(expected):
+                            continue
+                        try:
+                            expected_fields = Counter(projected(record.fields, item[1])
+                                                      for record, item in zip(measurements, expected))
+                            actual_fields = Counter(projected(point, item[1])
+                                                    for point, item in zip(points, actual) if item[2] is False)
+                        except TypeError:
+                            continue  # Opaque/nonscalar mapped values cannot prove row equivalence.
+                        if actual_fields != expected_fields:
+                            continue
+                        evidence[(record.internal_record_id.value, path, "detections")] = (True, frozenset(bands))
+    return evidence
+
+
 def _filter_candidate_view(
     step: FilterStep,
     step_run: StepRun,
@@ -841,7 +974,8 @@ def normalize_workflow_execution(
     """
 
     _validate_workflow_alignment(result)
-    if any(isinstance(step, GetStep) and step.required_components for step in result.run.workflow.steps):
+    if any((isinstance(step, GetStep) and step.required_components)
+           or contains_collection_predicate(getattr(step, "predicate", None)) for step in result.run.workflow.steps):
         registry = registry or EndpointRegistry()
         if graph is None:
             from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
@@ -871,6 +1005,10 @@ def normalize_workflow_execution(
             source = normalized_steps[step_run.candidate_input_from.step_index]
             evidence = _component_empty_evidence(result.run, result.steps, source.portfolios,
                                                   step_run.step_index, graph, registry)
+            evidence.update(_detection_collection_evidence(
+                result.run, result.steps, source.portfolios, step_run.step_index, graph, registry,
+                normalized_by_execution_id,
+            ))
             view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics,
                                           collection_evidence=evidence)
             if diagnostics:

@@ -253,15 +253,15 @@ def _element_paths(node, filter_domain=None):
 
 def evaluate_portfolio_predicate_truth(
     portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
-    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
+    collection_evidence: Mapping[tuple[str, ...], tuple[bool, frozenset[str]]] | None = None,
 ) -> bool | None:
     """Evaluate one predicate in the existing scalar witness search using Kleene logic.
 
     ``collection_evidence`` is transient explicit evidence keyed by record ID and
     exact array path, with (complete, delivered bands) values. A successful required
     component may also supply (Portfolio ID, qualified array) for an empty receipt.
-    No nonempty production history is closed here. Tests supply synthetic proofs; record collections
-    such as incidental measurement records always retain open completeness.
+    A third key member, "detections", restricts a proof to count conditions that
+    entail upper_limit = false. Record collections always retain open completeness.
     Diagnostics use the caller's existing warnings collector, including when a
     candidate is rejected. No Portfolio or runtime schema field is introduced.
     """
@@ -288,7 +288,10 @@ def evaluate_portfolio_predicate_truth(
     def empty_products(reference):
         path = substitute(reference.field_path)
         result = set()
-        for (owner, qualified), proof in evidence.items():
+        for key, proof in evidence.items():
+            if len(key) != 2:
+                continue
+            owner, qualified = key
             if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
                 continue
             head, _, field = qualified.partition(".")
@@ -355,6 +358,27 @@ def evaluate_portfolio_predicate_truth(
         groups, _ = branch_requirements(collection, (operand.field_path,))
         return not member(element, groups)
 
+    def detection_condition(node, negate=False):
+        """A sufficient Boolean proof that every selected member is a detection."""
+        if isinstance(node, NotPredicate):
+            return detection_condition(node.operand, not negate)
+        if isinstance(node, BooleanPredicate):
+            values = tuple(detection_condition(child, negate) for child in node.operands)
+            conjunction = (node.operator == "and") != negate
+            return any(values) if conjunction else all(values)
+        if not isinstance(node, ComparisonPredicate) or node.operator not in {"=", "!="}:
+            return False
+        left, right = node.left, node.right
+        if isinstance(right, ElementReference):
+            left, right = right, left
+        if not isinstance(left, ElementReference) or not isinstance(right, PredicateLiteral) or type(right.value) is not bool:
+            return False
+        path = left.field_path.split(".")
+        if len(path) != 3 or path[0] != "photometry" or path[-1] != "upper_limit":
+            return False
+        equals = (node.operator == "=") != negate
+        return (equals and right.value is False) or (not equals and right.value is True)
+
     def aggregate(node):
         cache_key = (node, tuple(sorted(parameters.items())))
         if cache_key in aggregate_cache:
@@ -408,6 +432,10 @@ def evaluate_portfolio_predicate_truth(
                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
                 complete = proof[0] is True and shape_valid and items is not None
                 delivered = frozenset(proof[1])
+                if node.function == "count" and detection_condition(node.condition):
+                    scoped = evidence.get((record.internal_record_id.value, path, "detections"))
+                    if scoped is not None and scoped[0] is True and shape_valid and items is not None:
+                        complete, delivered = True, frozenset(scoped[1])
         if empties and not malformed_array and (items is None or not items):
             items, complete, delivered = (), True, frozenset()
         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
@@ -624,7 +652,7 @@ def evaluate_portfolio_predicate_truth(
 
 def evaluate_portfolio_predicate(
     portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
-    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
+    collection_evidence: Mapping[tuple[str, ...], tuple[bool, frozenset[str]]] | None = None,
 ) -> bool:
     """Select only established True; retain the existing Boolean caller contract."""
     return evaluate_portfolio_predicate_truth(

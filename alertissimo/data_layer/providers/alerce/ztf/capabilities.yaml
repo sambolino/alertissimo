@@ -1,5 +1,8 @@
 broker: alerce
 origin: ztf
+delivered_bands:
+  query_lightcurve:
+    lightcurve@ztf:alerce.points: [g, r]
 predicate_bindings:
   query_objects:
     - path: classification.provenance.producer.name

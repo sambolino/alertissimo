@@ -19,9 +19,12 @@ from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.normalization.selection import (
     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
 )
-from alertissimo.orchestration.normalization.normalize import _component_empty_evidence, filter_execution_groups
+from alertissimo.orchestration.normalization.normalize import (
+    _component_empty_evidence, _detection_collection_evidence, filter_execution_groups,
+)
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
 from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, GetStep, MatchStep
+from alertissimo.orchestration.ir.predicates import contains_collection_predicate
 from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
@@ -311,7 +314,8 @@ def execute_staged_workflow_run(
         raise CandidateFlowError("staged execution requires a fully planned WorkflowRun")
     if reference_time is not None:
         reference_time = utc_instant(reference_time)
-    if graph is None and any(isinstance(step, GetStep) and step.required_components for step in run.workflow.steps):
+    if graph is None and any((isinstance(step, GetStep) and step.required_components)
+                             or contains_collection_predicate(getattr(step, "predicate", None)) for step in run.workflow.steps):
         from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
         graph = build_capability_graph(registry.root)
 
@@ -408,6 +412,10 @@ def execute_staged_workflow_run(
                 else:
                     evidence = _component_empty_evidence(updated_run, step_results, source_view.portfolios,
                                                           step_index, graph, registry)
+                    evidence.update(_detection_collection_evidence(
+                        updated_run, step_results, source_view.portfolios, step_index, graph, registry,
+                        normalized_execution_cache,
+                    ))
                     view = _filter_view(step, step_index, source_view, diagnostics=diagnostics,
                                         collection_evidence=evidence)
                     view = apply_deferred_search_selection(
