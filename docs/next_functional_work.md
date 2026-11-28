@@ -119,14 +119,16 @@ warnings still block continuation. Later filtering does not refill latest.
 Surface and canonical guards name item 4a for initial collection/latest and missing
 material, and reject collection propositions in confirm. This is offline regression
 acceptance, not a new live-provider acceptance claim.
-Delivered-band declarations are deferred to the first per-route collection-
-completeness slice under item 7; recipes and capability files remain untouched.
-Closed-bound logic has synthetic test proofs only.
+Item 7 now implements ALeRCE/ZTF detection-scoped completeness and its g/r delivery
+declaration. The approved loader amendment stores immutable delivery metadata on
+existing RecipeCalls; other routes retain open completeness until audited.
 
 With admitted material, witnessed lower bounds (`count >= N`), `min < x`
 and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
 and `for every` failing only on a short band remain unknown until a route establishes
-collection completeness. Known contradictory witnesses can still disprove a claim.
+collection completeness. ALeRCE/ZTF detection-scoped counts are now the audited
+exception; mixed totals and extrema stay open. Known contradictory witnesses can
+still disprove a claim.
 
 **Completed scope:** the [agreed contract](dsl_collections.md) is implemented in
 existing semantic-model, expression/IR, evaluator and planner owners. Count/min/max,
@@ -216,36 +218,26 @@ missing/malformed children or omitted parents do not prove zero. Two separately
 retrieved series retain the existing product-ambiguity rule. Capture provenance and
 sources are in the [fixture notes](../tests/fixtures/lasair/README.md).
 
-**Agreed 27 November 2026; remaining implementation:** per-route scoped detection
-completeness and item 7 closeout. Local `LightcurveStep` remains deferred.
+**ALeRCE/ZTF detection completeness:** the existing `query_lightcurve.detections`
+material proof covers the same required, identity-bound history call in lightcurve
+acquisition. Counts can close only when their condition entails `upper_limit = false`.
+The runtime checks raw-row coverage against source-indexed measurements, valid
+status/time and corresponding lightcurve detection points. Bad or omitted rows and
+conflicting object IDs withhold closure. g/r delivery is declared from the saved
+capture, separately from the completeness proof; i stays unavailable. No whole
+mixed-array, extrema or measurement completeness is asserted.
 
-**Target/work:** finish scoped detection completeness. Map true/false limit flags where
-native evidence establishes them; retain unknown otherwise. Missing flux alone is
-not non-detection, nor is a detection's limiting depth another observation.
+**Remaining implementation:** apply the same required-call, identity and
+raw-row-to-point audit to Lasair/ZTF `lightcurve_candidates` and ANTARES/ZTF
+`locus_alerts`, adding delivery only for routes that pass. These mixed arrays cannot
+inherit whole-array completeness from a detection proof. Their current lack of
+collection evidence is implementation work, not provider impossibility. LSST lacks
+the matching material time proofs; its completeness remains open. Finish item 7's
+idioms and instruction accounting afterward. Local `LightcurveStep` stays deferred.
 
-**Per-route collection completeness:** establish evidence on the existing path,
-starting with detection populations that exactly match an existing temporal proof.
-A detection-history proof does not close a whole mixed array. The approved next
-slice may close a count only when its condition entails `upper_limit = false`
-and its population is covered by the audited proof payload and normalization.
-The first proven route also introduces its delivered-band declaration and the
-approved existing-loader support. Measurement collection completeness remains
-open; acquisition alone does not close its upper bounds.
-
-**Completeness entry audit after #361:** the checked material-history routes do
-not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both
-`query_lightcurve.detections` and `query_lightcurve.non_detections` into `points`.
-ANTARES/ZTF maps `locus_alerts`, including the explicit upper-limit discriminator,
-into `points`. Lasair/ZTF maps `lightcurve_candidates`, where existing guards/tests
-allow limit-only rows, into `points`. Their detection proofs cannot be applied
-unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
-This is a current implementation boundary, not an upstream impossibility claim.
-
-Before implementing the first closure, audit required-call success, payload and
-identity coverage, and raw-row-to-element normalization, including omitted or
-invalid rows. Derive the link from the existing proof payload and status mappings;
-any additional YAML structure needs review. LSST and measurement completeness
-remain open. Delivered-band metadata alone does not resolve the evidence boundary.
+The [route accounting](dsl_collections.md#detection-completeness-first-route) records
+the current enabled and open populations. Any additional YAML structure beyond the
+approved delivered-band declaration still needs review.
 
 **Completion:** executable supported measurement intent and reliable field semantics,
 preserving incidental evidence, distinct products and shared presentation. Do not

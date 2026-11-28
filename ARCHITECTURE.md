@@ -207,8 +207,12 @@ versions through its existing declarative recipe.
   rejected candidates, serialization and immutable continuation; acquisition
   warnings still block continuation. Physical audit projection follows the
   material decision rather than re-evaluating collection fragments. Synthetic
-  transient evidence exercises nonempty completeness; required-component receipts
-  prove only explicit empty arrays. Nonempty route completeness remains deferred.
+  transient evidence exercises complete bounds. ALeRCE/ZTF's existing material
+  detection proof plus raw-row/normalized-point accounting can close detection-only
+  count conditions; g/r delivery is separate immutable RecipeCall metadata. Mixed
+  totals, extrema, measurement and LSST completeness remain open. Required-component
+  receipts independently prove explicit empty arrays. No persisted result fields
+  are added; Lasair/ANTARES detection accounting remains item 7.
   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
   `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
   and newer versions are refused. Existing version-1/2 workflows retain their

@@ -99,6 +99,8 @@ class RecipeCall:
     predicate_bindings: tuple[RequestConstraintCapability, ...] = ()
     latest_selection: LatestSelectionCapability | None = None
     sql_join: SqlJoinCapability | None = None
+    # Delivery does not establish completeness. Keep endpoint declarations frozen.
+    delivered_bands: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -834,6 +836,39 @@ def _time_selection(raw: Any, calls: list[RecipeCall], endpoint_defs: Mapping[st
     )
 
 
+def _delivered_bands(document, graph, endpoint_defs, *, broker, origin):
+    """Validate the approved endpoint/qualified-collection delivery declaration."""
+    from alertissimo.data_layer.semantic_model import SemanticPathModel
+
+    document = _mapping(document, "delivered_bands")
+    if not document:
+        return {}
+    model = SemanticPathModel.from_ontology()
+    result = {}
+    for endpoint, raw in _mapping(document, "delivered_bands").items():
+        if endpoint not in endpoint_defs:
+            raise RecipeRegistryError(f"delivered_bands: unknown endpoint {endpoint!r}")
+        collections = _mapping(raw, f"delivered_bands.{endpoint}")
+        if not collections:
+            raise RecipeRegistryError("delivered_bands: collection declarations must be non-empty")
+        entries = []
+        for path, bands in collections.items():
+            if (not path.startswith(f"lightcurve@{origin}:{broker}.")
+                or path not in model.array_boundaries(path)
+                or not any(field.semantic_path.startswith(path + ".")
+                           for field in graph.fields_for_endpoint(broker, origin, endpoint))):
+                raise RecipeRegistryError(f"delivered_bands: endpoint does not produce collection {path!r}")
+            domain = (model.parameter_domain(path + ".photometry.{filter}", origin)
+                      or model.parameter_domain(path + ".forced_photometry.{filter}", origin))
+            if (not isinstance(bands, list) or not bands
+                or any(not isinstance(band, str) for band in bands)
+                or len(set(bands)) != len(bands) or domain is None or not set(bands) <= set(domain)):
+                raise RecipeRegistryError(f"delivered_bands: bands must be non-empty, unique members of {domain!r}")
+            entries.append((path, tuple(bands)))
+        result[endpoint] = tuple(entries)
+    return result
+
+
 def load_provider_capabilities(
     path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
     *, broker: str, origin: str,
@@ -844,7 +879,7 @@ def load_provider_capabilities(
         with path.open(encoding="utf-8") as stream:
             document = _mapping(yaml.load(stream, Loader=_UniqueKeyLoader), str(path))
         _keys(
-            document, {"broker", "origin", "description", "recipes", "predicate_bindings", "selection_bindings"},
+            document, {"broker", "origin", "description", "recipes", "predicate_bindings", "selection_bindings", "delivered_bands"},
             {"broker", "origin", "recipes"}, str(path),
         )
         if document["broker"] != broker or document["origin"] != origin:
@@ -852,6 +887,8 @@ def load_provider_capabilities(
         if "description" in document and not isinstance(document["description"], str):
             raise RecipeRegistryError("description must be a string")
         recipes = _mapping(document["recipes"], "recipes")
+        delivery = _delivered_bands(document.get("delivered_bands", {}), graph, endpoint_defs,
+                                    broker=broker, origin=origin)
         predicates = _predicate_bindings(
             document.get("predicate_bindings", {}), graph, endpoint_defs,
             broker=broker, origin=origin,
@@ -1071,6 +1108,7 @@ def load_provider_capabilities(
                         call_bindings,
                         latest_selection,
                         sql_join,
+                        delivery.get(endpoint, ()),
                     ))
                 if not any(call.required for call in calls):
                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
