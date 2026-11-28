@@ -1,13 +1,12 @@
 # Collection expression contract
 
-Agreed design with D3 decisions fixed on 13 November 2026. **Syntax/IR #359,
-evaluation #360 and admission #361 are accepted after maintainer-run checks and CI.**
-The existing validator/planner prove call-scoped material availability; execution
-uses the existing normalization evaluator. This acceptance covers the stated
-admitted placements and guards, not fresh live-provider acceptance. No route yet
-establishes collection completeness.
-This owns the language contract for [implementation item 6](next_functional_work.md#6-collection-dsl).
-It does not create another query engine or authorize deferred FP policy.
+This owns the language contract for [item 6](next_functional_work.md#6-collection-dsl)
+and the measurement/forced-photometry idioms delivered in
+[item 7](next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries).
+The existing validator/planner proves material availability; the existing
+normalization evaluator applies the predicates. Audited ZTF detection subsets can
+close count bounds under the rules below. This contract adds no query engine and
+does not authorize on-demand photometry computation.
 
 ## Canonical forms
 
@@ -87,6 +86,111 @@ on the scheduling rules below.
 - Parenthesized bodies delimit `for …:`; indentation remains cosmetic. Preserve
   existing scalar, existence and Boolean forms.
 
+## Measurement and forced-photometry idioms
+
+The complete programs below use existing syntax and mappings. Counts select
+objects with established witnesses; every surviving object's supplied records and
+points remain available. The numeric cuts are explicit query examples, not default
+quality or classifier policies. Runtime results still depend on available evidence.
+
+### Detections in one band
+
+<!-- item7-example: detection-band -->
+```text
+object ZTF17aaabasp from ztf via alerce
+with lightcurve via lasair
+filter count(lightcurve@ztf:lasair.points
+             where photometry.g.upper_limit = false) >= 5
+```
+
+The flag selects detections. `= true` selects supplied limits. Missing flags do
+not satisfy either condition. A limiting depth attached to a detection does not
+create another non-detection. Measurements and ordinary/forced point arrays are
+separate collections; never add their counts as if they were distinct observations.
+
+### At least two detections passing an image-shape cut
+
+<!-- item7-example: vetted-measurements -->
+```text
+object ZTF17aaabasp from ztf via alerce
+with measurement via fink
+filter count(measurement@ztf:fink
+             where photometry.g.upper_limit = false
+               and image_metrics.elongation < 1.5) >= 2
+```
+
+This counts records carrying both the detection flag and that row's vetting field.
+Measurement completeness stays open; two known qualifying records still establish
+the lower bound. Image elongation is mapped for Fink/ZTF. Fink/LSST's
+`solar_system.elongation` is a solar elongation angle, not image shape, and cannot
+be substituted. Check each broker/survey's mapped quantity, scope and units.
+
+### Last non-detection before first detection: expression limit
+
+The exact epoch relationship is not currently expressible. Min/max have no filtered
+argument, aggregates can only be compared with numeric literals, and named or
+correlated element bindings are deferred. Object-level `first within`/`last within`
+do not identify these two lightcurve epochs. Review filtered epoch extrema or
+correlation under items 6/10 before adding syntax; do not present an aggregate-to-
+aggregate comparison as a runnable query.
+
+The existing language can instead ask for two witnesses around a chosen literal
+UTC MJD boundary. This does not establish that they are the last limit and first
+detection in the broker's history:
+
+<!-- item7-example: temporal-witnesses -->
+```text
+object ZTF17aaabasp from ztf via alerce
+with lightcurve via lasair
+filter (
+    count(lightcurve@ztf:lasair.points
+          where photometry.g.upper_limit = true and time.mjd < 60000) >= 1
+    and count(lightcurve@ztf:lasair.points
+              where photometry.g.upper_limit = false and time.mjd >= 60000) >= 1
+)
+```
+
+### Forced flux and an explicit significance condition
+
+Keep flux and uncertainty in the same band's forced epoch. On Lasair/ZTF their
+native units are DN, with `calibration.<filter>.zero_point` supplied separately;
+other providers' flux paths and units can differ. Negative flux is retained data,
+and a null magnitude from it is not a non-detection flag. The following positive
+one-sigma witness uses an existing field-to-field comparison, with positive error:
+
+<!-- item7-example: forced-one-sigma -->
+```text
+object ZTF17aaabasp from ztf via alerce
+with lightcurve.forced_photometry_points via lasair
+filter count(lightcurve@ztf:lasair.forced_photometry_points
+             where forced_photometry.r.flux.error > 0
+               and forced_photometry.r.flux >= forced_photometry.r.flux.error) >= 1
+```
+
+This is the special case of flux/error at least one. General user-chosen
+multipliers, such as a five-sigma ratio, require scalar arithmetic or an eligible
+producer-supplied forced-flux S/N field. Arithmetic is not admitted by the current
+grammar, and no current forced-point mapping supplies that S/N field. General ratio
+cuts require a separate item 6 decision; this work derives no S/N or magnitude and
+introduces no automatic significance threshold.
+
+### ALeRCE/LSST measurement composition and LSST precovery
+
+ALeRCE/LSST measurements can have a `forced_photometry.<filter>` branch without an
+ordinary `photometry.<filter>` branch. These are forced-only epochs. A detection
+can also carry its own-epoch forced values. Neither case merges measurements with
+`lightcurve.forced_photometry_points`, and neither creates two observations merely
+because two branches exist. `with measurement.forced_photometry` requests the
+eligible calls; a predicate separately requires supplied values for selection.
+
+The [audited Rubin schema snapshot](https://github.com/lsst/alert_packet/tree/eb8d19e65416c3fb378f00d350f388fe8cb2df42/python/lsst/alert/packet/schema)
+(v8.0 through v11.2) has `prvDiaSources` and `prvDiaForcedSources`, with no separate
+non-detection-limit records. For these LSST routes ordinary points are DIASource
+detections; below-threshold evidence comes through forced photometry, without a
+fabricated ordinary limit flag. Precovery history arrives in alert packets after
+discovery, so the available pre-discovery evidence depends on retrieval time.
+This is an availability limitation, not LSST collection-completeness evidence.
+
 ## Counting, projection and evidence
 
 ### Required components and references
@@ -131,7 +235,7 @@ required calls, their explicit raw arrays and bound object identities. Missing,
 null or malformed arrays and nonempty rows omitted during normalization do not
 prove empty. No empty observation or product record is invented. This proof does
 not close a nonempty history, a measurement record collection, or an unavailable
-band. No delivered-band declarations are introduced here.
+band. Band delivery is separately declared for the audited detection routes below.
 
 Sibling arrays returned in separate records of the same qualified product do not
 compete for the named array: Fink/LSST `points` and `forced_photometry_points` remain
@@ -416,7 +520,7 @@ the required-component rule above.
 | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
 | Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
 | Measurement acquisition, named binders, FP policy | Measurement acquisition and broker-held FP component requests are implemented under item 7. Named binders remain item 10; on-demand FP services remain item 11. |
-| Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
+| Provider mappings and route metadata | Item 7 adds status mappings, measurement recipes, Lasair forced rows and audited delivery metadata; endpoints, transports and execution policy stay unchanged. |
 
 With admitted material and open completeness, witnesses can prove
 lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
@@ -427,3 +531,23 @@ delivery or close a nonempty history. The audited ZTF detection subsets are
 the scoped exceptions described above. A contradictory known
 witness can still disprove a comparison. Local evaluation does not bypass the
 public DSL or canonical planner material/placement guards.
+
+
+## Item 7 instruction accounting
+
+| Requirement | Status and owner/evidence |
+|---|---|
+| Decision 1: flags on all eight pairs, unchanged native rows and unsplit points | Done; [status regressions](../tests/test_provider_observation_status.py). Fink bad-quality/missing tags stay unknown; LSST forced-only epochs acquire no ordinary flag. Missing flux is never a status rule. |
+| Approved same-row `requires` guard and Lasair copied magnitudes | Done; options are documented once in [field coverage](provider_field_coverage.md#per-field-transform-options). [Schema tests](../tests/test_mapping_schema.py) reject unknown options and cross-payload guards; rich-limit fixtures produce no measured PSF magnitude. No other provider uses the guard in this item. |
+| Decision 2 / additions 3a–b: measurement operation, eight recipes and source choice | Done; the [item 7 source table](next_functional_work.md#7-measurements-non-detections-and-lightcurve-boundaries) records each endpoint and evidence. [Facade regressions](../tests/test_dsl_measurement_retrieval.py) cover sparse lookups, named no-route errors, required failure, optional supplements and incidental material. |
+| Decision 3 / addition 3c: ontology-valid components and own-recipe call promotion | Done; [component regressions](../tests/test_dsl_required_components.py) cover every producing call, projections, unknown paths, missing routes, empty/failure outcomes and unchanged plain plans. Calls are never imported from another operation's recipe. |
+| Decision 4: reference-driven requirements and retrieval/selection separation | Done for matching unexecuted retrievals; no new Get is added. Missing material retains item 4a. Completed continuation prefixes stay immutable; explicitly request new material when a prior optional call was not guaranteed. |
+| Decision 5: detection-scoped completeness and normalization accounting | Done for ALeRCE/ZTF, Lasair/ZTF and ANTARES/ZTF; [single-source](../tests/test_collection_detection_completeness.py) and [mixed/batched](../tests/test_collection_mixed_detection_completeness.py) regressions cover required success, identities, unknown/dropped rows, equal-time duplicates, raw/point correspondence and empty histories. Limits never broaden the proof to the whole array. |
+| Addition 3d: validated immutable delivered-band metadata | Done in the existing loader/RecipeCall; g/r for ALeRCE/ANTARES, g/r/i for Lasair. The source captures and route audit are above. Delivery alone cannot prove completeness; default domains never shrink to observed bands. |
+| Decision 6: existing forced data, ALeRCE/LSST mixed branch composition | Done; measurement behavior is retained and documented above. Forced values, errors and producer units stay attributable; negative flux does not create a limit or inferred magnitude. |
+| Decision 6 / approved calibration reuse: Lasair's 688 forced epochs | Done for object/lightcurves captures; [forced-photometry regressions](../tests/test_lasair_ztf_forced_photometry.py) and [ontology unit check](../tests/test_semantic_paths.py). One calibration trait reference was reused; `ranr`/`decnr` remain defined nearest-reference-source debt. Original capture bytes and provenance are retained. |
+| Decision 7: LSST limits/precovery availability | Documented above against the pinned Rubin schemas; retrieval time affects delivered precovery. No separate LSST limit population or new completeness claim is inferred. |
+| Requested scientific idioms | Detection, image-vetting and a positive one-sigma witness are represented above with admitted syntax. Exact last-limit/first-detection ordering remains a reviewed item 6/10 extension; arbitrary flux/error significance multipliers remain a reviewed item 6 extension. No unsupported spelling is presented as runnable. |
+| Version, round trips and compatibility | Done: new workflows use 3; measurement retrieval and nonempty component metadata require 3. Existing versions retain their version/wire shape, with no implicit continuation upgrade; [version](../tests/test_workflow_language_version.py), measurement and component regressions cover refusal and round trips. Scalar predicates, taxon rules, non-refilling filters and evidence-preserving continuation remain the existing contracts. |
+| Architecture, files and offline boundary | Existing IR, recipe, mapping and normalization owners were extended. No new module, registry, transport, endpoint or execution policy was introduced; new implementation files are test modules/captures only. Completeness evidence is transient, with no new Portfolio/StepRun/result fields. Regressions use offline captures or controlled payloads; fixture acceptance is not fresh live acceptance. |
+| Explicitly deferred work | LSST lacks matching material detection proofs; measurement collections and nonempty mixed totals/extrema remain open. Local `LightcurveStep` construction stays deferred under item 7; bindings remain item 10 and on-demand computation item 11. Provider mapping debt remains in existing ledgers. |

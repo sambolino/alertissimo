@@ -65,8 +65,12 @@ retrieval is not the unimplemented local `LightcurveStep` construction.
 recipes for the broker's existing per-epoch observations, including supplied limits.
 It shares the existing retrieval, binding and material-lineage owners. Optional
 forced calls follow the lightcurve policy. No recipe means unsupported acquisition;
-incidental measurement predicates retain their existing scheduling. Measurements
-and lightcurve points remain distinct collections, with open completeness.
+incidental measurement predicates retain their existing scheduling. Measurement
+record counts remain open; the audited detection-count rules below apply only to
+eligible lightcurve populations. ALeRCE/LSST retains forced-only measurement epochs
+and own-epoch forced values on detections without merging them with the forced
+series product. LSST precovery arrives through alerts after discovery and depends
+on retrieval time; missing magnitude/flux is never an ordinary limit flag.
 
 An ontology-valid `with <product>.<component>` records qualified semantic references
 in the Get's `required_components`. The existing resolver promotes every producing
@@ -77,8 +81,9 @@ existing receipts can prove an empty requested array transiently, without adding
 Portfolio fields or fabricated records. Missing/malformed arrays and normalization
 loss are not empty evidence. Scalar values keep their existing existence semantics;
 container existence asks for supplied content. Sibling arrays are distinct, while
-multiple records carrying the requested array remain ambiguous. Nonempty histories
-retain open completeness. Empty component metadata is omitted from serialization;
+multiple records carrying the requested array remain ambiguous. Unrestricted
+nonempty histories remain open; only the audited detection subsets can close count
+bounds. Empty component metadata is omitted from serialization;
 nonempty metadata requires version 3, preserving older workflow wire formats.
 
 An abstract-family request expands deterministically into supported concrete Gets
