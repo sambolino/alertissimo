@@ -1,0 +1,779 @@
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -207,12 +207,15 @@
+   rejected candidates, serialization and immutable continuation; acquisition
+   warnings still block continuation. Physical audit projection follows the
+   material decision rather than re-evaluating collection fragments. Synthetic
+-  transient evidence exercises complete bounds. ALeRCE/ZTF's existing material
+-  detection proof plus raw-row/normalized-point accounting can close detection-only
+-  count conditions; g/r delivery is separate immutable RecipeCall metadata. Mixed
+-  totals, extrema, measurement and LSST completeness remain open. Required-component
+-  receipts independently prove explicit empty arrays. No persisted result fields
+-  are added; Lasair/ANTARES detection accounting remains item 7.
++  transient evidence exercises complete bounds. Existing ZTF material detection
++  proofs plus raw-row/normalized-point accounting can close detection-only counts
++  for ALeRCE, Lasair and ANTARES. Batch parents and global source indices stay
++  identity-bound; unknown/lost rows withhold closure. Delivery is separate immutable
++  RecipeCall metadata: g/r for ALeRCE/ANTARES, g/r/i for Lasair. Empty histories can
++  supply scoped zero-count receipts without fabricated records. Proof inspection
++  never invokes lazy getters. Mixed nonempty totals, extrema, measurement and LSST
++  completeness remain open. Required-component receipts independently prove explicit
++  empty arrays; no persisted result fields are added.
+   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+   `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
+   and newer versions are refused. Existing version-1/2 workflows retain their
+diff --git a/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml b/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/antares/ztf/capabilities.yaml
+@@ -1,5 +1,8 @@
+ broker: antares
+ origin: ztf
++delivered_bands:
++  get_by_ztf_object_id:
++    lightcurve@ztf:antares.points: [g, r]
+ predicate_bindings:
+   search:
+     # Numeric coordinate fields are shown in the official search tutorial.
+diff --git a/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml b/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml
+@@ -1,5 +1,8 @@
+ broker: lasair
+ origin: ztf
++delivered_bands:
++  lightcurves:
++    lightcurve@ztf:lasair.points: [g, r, i]
+ selection_bindings:
+   query:
+     latest:
+diff --git a/alertissimo/orchestration/normalization/normalize.py b/alertissimo/orchestration/normalization/normalize.py
+--- a/alertissimo/orchestration/normalization/normalize.py
++++ b/alertissimo/orchestration/normalization/normalize.py
+@@ -366,6 +366,29 @@
+     )
+ 
+ 
++def _materialized_raw_field(value, path):
++    """Inspect receipt data without invoking a deferred client relationship."""
++    from collections.abc import Mapping
++    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
++
++    for key in path.split("."):
++        if isinstance(value, Mapping):
++            if key not in value:
++                raise RawFieldMissing(path)
++            value = value[key]
++        elif isinstance(value, (list, tuple)) and key.isdigit() and int(key) < len(value):
++            value = value[int(key)]
++        else:
++            try:
++                attributes = vars(value)
++            except TypeError as error:
++                raise RawFieldMissing(path) from error
++            if key not in attributes:
++                raise RawFieldMissing(path)
++            value = attributes[key]
++    return value
++
++
+ def _component_empty_evidence(run, results, portfolios, before_step, graph, registry):
+     """Reconstruct empty receipts, never completeness of a nonempty history.
+ 
+@@ -373,7 +396,7 @@
+     Nothing is persisted, and no empty observation/product record is fabricated.
+     Missing/null/malformed arrays and rows omitted by normalization are not empty.
+     """
+-    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
++    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
+     from alertissimo.orchestration.ir.predicates import _collection_paths
+     from alertissimo.orchestration.validation import component_output_matches
+     if graph is None:
+@@ -451,7 +474,7 @@
+                                     empty = False
+                                     break
+                                 try:
+-                                    identified = tuple((row, tuple(extract_raw_field(row, p.partition_field)
++                                    identified = tuple((row, tuple(_materialized_raw_field(row, p.partition_field)
+                                                        for p in definitions)) for row in execution.payload)
+                                     if any(not isinstance(value, (str, int)) or isinstance(value, bool)
+                                            for _, values in identified for value in values):
+@@ -462,13 +485,13 @@
+                                     if len(parents) != 1:
+                                         empty = False
+                                         break
+-                                    value = extract_raw_field(parents[0], path[3:-2])
++                                    value = _materialized_raw_field(parents[0], path[3:-2])
+                                 except RawFieldMissing:
+                                     empty = False
+                                     break
+                             elif len(targets) == 1 and path.endswith("[]") and not path.startswith("[]."):
+                                 try:
+-                                    value = extract_raw_field(execution.payload, path[:-2])
++                                    value = _materialized_raw_field(execution.payload, path[:-2])
+                                 except RawFieldMissing:
+                                     empty = False
+                                     break
+@@ -499,13 +522,14 @@
+     The provider's material detection proof belongs to an exact endpoint/payload.
+     It can cover the same required identity-bound history acquisition without a
+     temporal query. Delivery alone, summaries and response lengths cannot close it.
+-    This first route accepts single-object payload partitions only; mixed/batched
+-    proof populations need their own normalization accounting before activation.
++    Single-object and declared root-field partitions retain raw row indices.
++    Mixed limit rows are checked but never broaden the proof beyond detections.
++    Proof inspection reads materialized fields only, without invoking lazy getters.
+     """
+     from collections import Counter
+     from collections.abc import Mapping
+     import math
+-    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
++    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
+     from alertissimo.orchestration.ir.predicates import _collection_paths
+ 
+     evidence = {}
+@@ -542,7 +566,7 @@
+             if endpoint.supports_projection:
+                 continue
+             targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
+-            if len(targets) != 1:
++            if not targets:
+                 continue
+             for recipe, proof in declarations:
+                 call = recipe.calls[proof.call_index]
+@@ -551,18 +575,54 @@
+                 definition = next((p for p in graph.payload_capabilities
+                                    if (p.broker, p.origin, p.endpoint, p.payload_key)
+                                    == (plan.broker, plan.origin, plan.endpoint, proof.payload)), None)
+-                if definition is None or definition.partition_mode != "single" or not definition.path.endswith("[]"):
++                if definition is None or not definition.path.endswith("[]"):
+                     continue
+                 try:
+-                    raw = extract_raw_field(execution.payload, definition.path[:-2])
++                    if definition.partition_mode == "single" and len(targets) == 1:
++                        parents = ((targets[0], execution.payload),)
++                        child_path = definition.path[:-2]
++                    elif (definition.partition_mode == "root_field" and definition.partition_field
++                          and definition.path.startswith("[].")
++                          and isinstance(execution.payload, (list, tuple))):
++                        identified = tuple((_materialized_raw_field(parent, definition.partition_field), parent)
++                                           for parent in execution.payload)
++                        if any(not isinstance(oid, (str, int)) or isinstance(oid, bool) or str(oid) == ""
++                               for oid, _ in identified):
++                            continue
++                        parents = tuple((str(oid), parent) for oid, parent in identified)
++                        if len({oid for oid, _ in parents}) != len(parents) or {oid for oid, _ in parents} != set(targets):
++                            continue
++                        child_path = definition.path[3:-2]
++                    else:
++                        continue
++                    raw_by_id = {}
++                    offset = 0
++                    for oid, parent in parents:
++                        raw = _materialized_raw_field(parent, child_path)
++                        if (not isinstance(raw, (list, tuple))
++                            or any(not isinstance(row, Mapping) and not hasattr(row, "__dict__") for row in raw)):
++                            raise RawFieldMissing(child_path)
++                        raw_by_id[oid] = (raw, list(range(offset, offset + len(raw))))
++                        offset += len(raw)
+                 except RawFieldMissing:
+                     continue
+-                if not isinstance(raw, (list, tuple)) or any(not isinstance(row, Mapping) for row in raw):
+-                    continue
++                # Empty histories normalize to no product record. Preserve a
++                # scoped receipt on the existing candidate, without fabricating one.
++                for object_id, (raw, _) in raw_by_id.items():
++                    if raw:
++                        continue
++                    for portfolio in portfolios:
++                        if summary_object_identity(portfolio) == (plan.origin, object_id):
++                            for collection, bands in call.delivered_bands:
++                                evidence[(portfolio.internal_portfolio_id.value, collection, "detections")] = (
++                                    True, frozenset(bands),
++                                )
+                 for portfolio in normalized_cache.get(execution.internal_execution_id.value, ()):
+                     identity = summary_object_identity(portfolio)
+-                    if identity not in populations or identity != (plan.origin, targets[0]):
++                    if identity not in populations or identity[0] != plan.origin or identity[1] not in raw_by_id:
+                         continue
++                    object_id = identity[1]
++                    raw, row_indexes = raw_by_id[object_id]
+                     measurements = tuple(record for record in portfolio.records
+                         if record.semantic_type == f"measurement@{plan.origin}:{plan.broker}"
+                         and record.internal_source is not None
+@@ -570,13 +630,13 @@
+                         and record.internal_source.payload_key == proof.payload)
+                     if (len(measurements) != len(raw)
+                         or sorted(r.internal_source.payload_index for r in measurements
+-                                  if r.internal_source.payload_index is not None) != list(range(len(raw)))):
++                                  if r.internal_source.payload_index is not None) != row_indexes):
+                         continue
+                     if any(record.get("identity.object_id") is not None
+-                           and str(record.get("identity.object_id")) != targets[0] for record in measurements):
++                           and str(record.get("identity.object_id")) != object_id for record in measurements):
+                         continue
+                     expected = tuple(signature(record.fields) for record in measurements)
+-                    if any(item is None or item[2] is not False for item in expected):
++                    if any(item is None for item in expected):
+                         continue
+                     for collection, bands in call.delivered_bands:
+                         product, _, path = collection.partition(".")
+@@ -611,11 +671,11 @@
+                         actual = tuple(signature(point) for point in points)
+                         if any(item is None or item[1] not in domain for item in actual):
+                             continue
+-                        if Counter(item for item in actual if item[2] is False) != Counter(expected):
++                        if Counter(item for item in actual if item[2] is False) != Counter(item for item in expected if item[2] is False):
+                             continue
+                         try:
+                             expected_fields = Counter(projected(record.fields, item[1])
+-                                                      for record, item in zip(measurements, expected))
++                                                      for record, item in zip(measurements, expected) if item[2] is False)
+                             actual_fields = Counter(projected(point, item[1])
+                                                     for point, item in zip(points, actual) if item[2] is False)
+                         except TypeError:
+diff --git a/alertissimo/orchestration/normalization/predicate.py b/alertissimo/orchestration/normalization/predicate.py
+--- a/alertissimo/orchestration/normalization/predicate.py
++++ b/alertissimo/orchestration/normalization/predicate.py
+@@ -285,13 +285,13 @@
+             channel = execution.broker if execution is not None else None
+         return noun + ("@" + producer if producer else "") + (":" + channel if producer and channel else "")
+ 
+-    def empty_products(reference):
++    def empty_products(reference, *, detection_only=False):
+         path = substitute(reference.field_path)
+         result = set()
+         for key, proof in evidence.items():
+-            if len(key) != 2:
++            if len(key) != 2 and not (detection_only and len(key) == 3 and key[2] == "detections"):
+                 continue
+-            owner, qualified = key
++            owner, qualified = key[:2]
+             if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
+                 continue
+             head, _, field = qualified.partition(".")
+@@ -391,6 +391,7 @@
+             field = boundary.partition(".")[2]
+             collection = reference.model_copy(update={"field_path": field})
+             projection = reference.field_path[len(field) + 1:]
++        detection_only = node.function == "count" and detection_condition(node.condition)
+         matches = matching(reference)
+         if collection.field_path and len(matches) > 1 and len({product_key(r) for r in matches}) == 1:
+             path = substitute(collection.field_path)
+@@ -403,9 +404,9 @@
+             ))
+             if holders and len(holders) + len(siblings) == len(matches):
+                 matches = holders
+-            elif not holders and len(siblings) == len(matches) and empty_products(collection):
++            elif not holders and len(siblings) == len(matches) and empty_products(collection, detection_only=detection_only):
+                 matches = ()  # Empty receipt concerns this array, not sibling histories.
+-        empties = empty_products(collection) if collection.field_path else set()
++        empties = empty_products(collection, detection_only=detection_only) if collection.field_path else set()
+         if empties and (len({product_key(r) for r in matches} | empties) > 1 or len(matches) > 1):
+             ambiguous(collection, tuple(matches) + tuple(empties))
+             aggregate_cache[cache_key] = None
+@@ -432,12 +433,18 @@
+                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
+                 complete = proof[0] is True and shape_valid and items is not None
+                 delivered = frozenset(proof[1])
+-                if node.function == "count" and detection_condition(node.condition):
++                if detection_only:
+                     scoped = evidence.get((record.internal_record_id.value, path, "detections"))
+                     if scoped is not None and scoped[0] is True and shape_valid and items is not None:
+                         complete, delivered = True, frozenset(scoped[1])
+         if empties and not malformed_array and (items is None or not items):
+             items, complete, delivered = (), True, frozenset()
++            if detection_only:
++                for product in empties:
++                    receipt = evidence.get((portfolio.internal_portfolio_id.value,
++                                            product + "." + substitute(collection.field_path), "detections"))
++                    if receipt is not None and receipt[0] is True:
++                        delivered |= frozenset(receipt[1])
+         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
+         groups, bands = branch_requirements(collection, relative_paths)
+         complete = complete and bands <= delivered
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -194,9 +194,9 @@
+    route delivering a band with no members gives [0, 0]; an undelivered band gives
+    [0, infinity). Delivery must be declared per lightcurve route in the existing
+    `capabilities.yaml`; undeclared routes make all bands unavailable. Observed
+-   bands never redefine the origin's domain or prove completeness. ALeRCE/ZTF's
+-   `query_lightcurve` route declares g/r delivery; the existing recipe
+-   loader retains it as immutable call metadata. Other routes remain undeclared.
++   bands never redefine the origin's domain or prove completeness. ALeRCE/ZTF and
++   ANTARES/ZTF declare g/r delivery; Lasair/ZTF declares g/r/i.
++   The existing recipe loader retains these as immutable call metadata.
+    Delivery alone never closes a count.
+ 7. **Bind one product.** An aggregate/quantifier collection selector binds one
+    qualified product and named array per candidate, without pooling or first-match
+@@ -258,7 +258,9 @@
+ that entail `photometry.<filter>.upper_limit = false`; it never closes a mixed-array
+ total or an extremum. Required-component receipts separately prove explicitly empty
+ requested arrays, keyed by Portfolio identity and qualified array path. These
+-proofs are transient and add no Portfolio, StepRun or WorkflowIR fields.
++proofs are transient and add no Portfolio, StepRun or WorkflowIR fields. A fully
++covered empty detection history can use a scoped Portfolio/qualified-array receipt
++when normalization emits no point record; it proves zero only in delivered bands.
+ Missing/malformed arrays, normalization losses, summary counts and observed bands
+ do not establish completeness.
+ 
+@@ -330,12 +332,12 @@
+ 
+ ## Detection completeness: first route
+ 
+-ALeRCE/ZTF `query_lightcurve` uses the existing material detection proof for
+-`query_lightcurve.detections`. That claim applies to the same required,
+-identity-bound full-history call used by lightcurve acquisition; a temporal
+-selection clause is not required. Completeness is relative to the broker's
+-holdings at retrieval time, never to the survey. The ordinary `points` array still
+-mixes detections and limits.
++ALeRCE/ZTF `query_lightcurve`, Lasair/ZTF `lightcurves` and ANTARES/ZTF
++`get_by_ztf_object_id` use their existing material detection proofs for the same
++required, identity-bound history acquisitions. A temporal selection clause is not
++required. Completeness is relative to the broker's holdings at retrieval time,
++never to the survey. The ordinary `points` arrays continue to mix detections and
++limits; only count conditions entailing `upper_limit = false` can close.
+ 
+ ```text
+ object ZTF18abbuksn from ztf via alerce
+@@ -349,22 +351,39 @@
+ vetting value leaves that member unknown. Explicit negation and equivalent Boolean
+ forms retain Kleene semantics; an OR branch that admits limits prevents closure.
+ 
+-The runtime audit requires a successful required call, one bound object matching
+-the normalized Portfolio, an explicit detection array, one source-indexed normalized
+-measurement per raw row, usable times and Boolean status, and matching multisets of
+-detection times/bands and every shared mapped point field in the lightcurve.
+-Equal-time duplicates cannot hide a lost row with different photometry or vetting. Contradictory row object IDs, missing or
+-invalid status/time, unrecognized bands and dropped rows withhold closure. An
+-observed band never supplies delivery metadata. g/r delivery is declared from the
+-saved `query_lightcurve.json` capture; i remains unavailable for closed-band claims.
+-The raw response and normalized point records remain unchanged.
+-
+-| Route | Current boundary |
++The runtime audit requires a successful required call, explicit history arrays,
++one source-indexed normalized measurement per raw row, usable times and Boolean
++status. The normalized detection points must match the measurement population's
++times, bands and every shared mapped point field. Equal-time duplicates cannot
++hide a lost row with different photometry or vetting. Mixed histories also account
++for limit rows without extending the proof to their completeness. Contradictory
++object IDs, missing/invalid status or time, unknown bands and dropped rows withhold
++closure. Raw responses and normalized point records remain unchanged.
++
++For batched Lasair responses every requested object must have exactly one declared
++parent identity, with no unexpected parents and an explicit child array. Per-object
++row indices retain their global positions in that physical response, including
++when parent order differs from request order. Missing, duplicate or malformed
++parents/children do not establish exact counts. Explicit empty children can prove
++zero detections for delivered bands without creating an empty product record.
++
++Receipt inspection reads mapping values or materialized public attributes only;
++it does not invoke lazy relationship getters or make provider calls. Opaque or
++unmaterialized history evidence leaves closure unknown. ANTARES native model
++support therefore requires the actual Alerts array to be materialized, as in its
++saved rich-Locus composite; a secondary client lightcurve is never substituted.
++
++| Route | Delivery and accounting evidence |
+ |---|---|
+-| ALeRCE/ZTF `query_lightcurve` / `points` | Detection-scoped counts can close after the audit above; mixed totals, extrema and measurement counts remain open. |
+-| Lasair/ZTF `lightcurve_candidates` | Mixed detections/limits with a temporal proof; per-row and batched-identity completeness accounting remains the next item 7 slice. No delivery declaration yet. |
+-| ANTARES/ZTF `locus_alerts` | Mixed detection/limit payload with a temporal proof; its row/normalization accounting remains the next item 7 slice. No delivery declaration yet. |
++| ALeRCE/ZTF `query_lightcurve.detections` | g/r; existing detection-only payload accounting and saved `query_lightcurve.json`. The combined point array also retains its non-detections. |
++| Lasair/ZTF `lightcurve_candidates` | g/r/i; the [saved capture](../tests/fixtures/lasair/ztf/lightcurves_ZTF17aaabasp.json) has 1,404 mixed candidates with all three bands. All 10 point-field mappings share their measurement sources/transforms; parent IDs and raw-row indices are checked per batch. |
++| ANTARES/ZTF `locus_alerts` | g/r; the [Alerts capture](../tests/fixtures/antares/ztf/alerts.json) has 70 detections and 246 limits. All 22 point-field mappings share measurement sources/transforms. Known `ant_survey` values and canonical g/R-to-g/r passband mappings delimit the detection population. |
+ | LSST routes | No matching material detection proof; completeness remains open. |
++
++Mixed nonempty totals, limit-only counts, extrema and measurement-record counts
++remain open. An observed band never supplies delivery metadata. ALeRCE and ANTARES
++i-band counts remain unavailable for closed-bound claims; the origin's default
++filter domain still includes i.
+ 
+ Do not split arrays, add result-model fields or broaden a temporal proof implicitly.
+ Delivery is validated for endpoint existence, the exact produced collection, and a
+@@ -389,9 +408,9 @@
+ | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+ | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
+ | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
+-| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Unrestricted production histories remain open; ALeRCE/ZTF supplies audited detection-scoped evidence, and explicit required-component empty-array receipts can establish zero. |
++| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Unrestricted production histories remain open; the three audited ZTF routes supply detection-scoped evidence, and explicit required-component empty-array receipts can establish zero. |
+ | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
+-| D3.6 actual route completeness and delivered bands | ALeRCE/ZTF detection-scoped route and g/r delivery implemented under item 7; Lasair/ANTARES audits remain item 7. LSST and measurement completeness remain open. |
++| D3.6 actual route completeness and delivered bands | ALeRCE/ZTF, Lasair/ZTF and ANTARES/ZTF detection-scoped routes and audited band delivery are implemented under item 7. LSST and measurement completeness remain open. |
+ | D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
+ | Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
+ | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+@@ -404,7 +423,7 @@
+ zero-count claims, `min > x`, and an `every` failure based only on a short band stay
+ unknown until applicable collection completeness exists. An explicit empty-array
+ receipt for a required component can prove its zero count; it does not prove band
+-delivery or close a nonempty history. The audited ALeRCE/ZTF detection subset is
+-the scoped exception described above. A contradictory known
++delivery or close a nonempty history. The audited ZTF detection subsets are
++the scoped exceptions described above. A contradictory known
+ witness can still disprove a comparison. Local evaluation does not bypass the
+ public DSL or canonical planner material/placement guards.
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -119,16 +119,16 @@
+ Surface and canonical guards name item 4a for initial collection/latest and missing
+ material, and reject collection propositions in confirm. This is offline regression
+ acceptance, not a new live-provider acceptance claim.
+-Item 7 now implements ALeRCE/ZTF detection-scoped completeness and its g/r delivery
+-declaration. The approved loader amendment stores immutable delivery metadata on
+-existing RecipeCalls; other routes retain open completeness until audited.
++Item 7 now implements ALeRCE/ZTF and ANTARES/ZTF detection-scoped completeness
++with g/r delivery, plus Lasair/ZTF with g/r/i delivery. The approved loader amendment
++stores immutable delivery metadata on existing RecipeCalls; other routes retain open completeness until audited.
+ 
+ With admitted material, witnessed lower bounds (`count >= N`), `min < x`
+ and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
+ and `for every` failing only on a short band remain unknown until a route establishes
+-collection completeness. ALeRCE/ZTF detection-scoped counts are now the audited
+-exception; mixed totals and extrema stay open. Known contradictory witnesses can
+-still disprove a claim.
++collection completeness. The three audited ZTF detection subsets are now the
++scoped exceptions; mixed nonempty totals and extrema stay open. Known contradictory
++witnesses can still disprove a claim.
+ 
+ **Completed scope:** the [agreed contract](dsl_collections.md) is implemented in
+ existing semantic-model, expression/IR, evaluator and planner owners. Count/min/max,
+@@ -218,22 +218,26 @@
+ retrieved series retain the existing product-ambiguity rule. Capture provenance and
+ sources are in the [fixture notes](../tests/fixtures/lasair/README.md).
+ 
+-**ALeRCE/ZTF detection completeness:** the existing `query_lightcurve.detections`
+-material proof covers the same required, identity-bound history call in lightcurve
+-acquisition. Counts can close only when their condition entails `upper_limit = false`.
+-The runtime checks raw-row coverage against source-indexed measurements, valid
+-status/time and corresponding lightcurve detection points. Bad or omitted rows and
+-conflicting object IDs withhold closure. g/r delivery is declared from the saved
+-capture, separately from the completeness proof; i stays unavailable. No whole
+-mixed-array, extrema or measurement completeness is asserted.
+-
+-**Remaining implementation:** apply the same required-call, identity and
+-raw-row-to-point audit to Lasair/ZTF `lightcurve_candidates` and ANTARES/ZTF
+-`locus_alerts`, adding delivery only for routes that pass. These mixed arrays cannot
+-inherit whole-array completeness from a detection proof. Their current lack of
+-collection evidence is implementation work, not provider impossibility. LSST lacks
+-the matching material time proofs; its completeness remains open. Finish item 7's
+-idioms and instruction accounting afterward. Local `LightcurveStep` stays deferred.
++**ZTF detection completeness:** ALeRCE `query_lightcurve.detections`, Lasair
++`lightcurve_candidates` and ANTARES `locus_alerts` use their existing material
++proofs on required identity-bound acquisitions. Counts close only when their
++condition entails `upper_limit = false`. Every raw row must be accounted for by
++source-indexed measurements; matching detection points retain the same mapped
++fields, time and known status. Lasair batches require exactly the requested parent
++IDs and preserve global row indices. Bad/omitted rows and contradictory identities
++withhold closure. Materialized ANTARES Alerts are used; proof inspection never
++invokes lazy getters or substitutes the secondary client lightcurve.
++
++Delivery is declared separately: g/r for ALeRCE and ANTARES, g/r/i for Lasair,
++backed by existing captures. Fully covered empty histories can prove zero in
++those delivered detection bands without fabricating product records. No whole
++nonempty mixed-array, extrema or measurement completeness is asserted. LSST lacks
++the matching material time proofs and remains open.
++
++**Remaining implementation:** finish item 7's scientific idioms and instruction
++accounting. Local `LightcurveStep` stays deferred. The runtime checks still withhold
++closure for individual responses that fail the audit; route support never overrides
++unknown evidence or execution failure.
+ 
+ The [route accounting](dsl_collections.md#detection-completeness-first-route) records
+ the current enabled and open populations. Any additional YAML structure beyond the
+diff --git a/tests/test_collection_mixed_detection_completeness.py b/tests/test_collection_mixed_detection_completeness.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_collection_mixed_detection_completeness.py
+@@ -0,0 +1,289 @@
++"""Mixed broker histories close detection subsets only after row/identity audit."""
++
++from copy import deepcopy
++from dataclasses import replace
++from itertools import count
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++import pytest
++
++from alertissimo.api import execute_dsl
++from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
++from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
++from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++from alertissimo.orchestration.normalization import normalize_workflow_execution, summary_object_identity
++from alertissimo.orchestration.normalization.normalize import _component_empty_evidence, _detection_collection_evidence
++from alertissimo.orchestration.runtime import WorkflowExecutionError
++
++
++IDS = ("ZTF20aaaaaaa", "ZTF20bbbbbbb")
++FIXTURES = Path(__file__).parent / "fixtures"
++
++
++@pytest.fixture(scope="module")
++def graph():
++    return build_capability_graph()
++
++
++def rows(broker, oid=IDS[0]):
++    result = []
++    for index, band, limit, quality in [(1, "g", False, 0.9), (2, "g", False, 0.1),
++                                        (3, "r", False, 0.9), (4, "g", True, None), (5, "r", True, None)]:
++        if broker == "lasair":
++            row = {"jd": 2400000.5 + 60000 + index, "fid": 1 if band == "g" else 2,
++                   "diffmaglim": 21.0, "magpsf": 21.0 if limit else 18.0 + index / 10}
++            if not limit:
++                row.update(candid=index, sigmapsf=0.1, drb=quality)
++        else:
++            properties = {"ztf_object_id": oid, "ant_passband": "g" if band == "g" else "R",
++                          "ant_survey": 2 if limit else 1, "ant_maglim": 21.0}
++            if not limit:
++                properties.update(ztf_candid=index, ant_mag=18.0 + index / 10, ant_magerr=0.1, ztf_drb=quality)
++            row = {"alert_id": f"{'ztf_upper_limit' if limit else 'ztf_candidate'}:{oid}:{index}",
++                   "mjd": 60000.0 + index, "properties": properties}
++        result.append(row)
++    return result
++
++
++class Executor:
++    def __init__(self, broker, *, ids=IDS[:1], native=False, batch=None, fail=False):
++        self.broker, self.native, self.batch, self.fail = broker, native, batch, fail
++        self.calls, self.sequence = [], count()
++        self.roots = {oid: ({"objectId": oid, "candidates": rows(broker, oid), "forcedphot": []}
++                            if broker == "lasair" else {
++                                "locus_id": "ANT-" + oid, "properties": {"ztf_object_id": oid},
++                                "alerts": rows(broker, oid), "catalog_objects": {}, "ra": 10.0, "dec": 20.0,
++                            }) for oid in ids}
++
++    def execute(self, broker, origin, endpoint, params=None, headers=None):
++        assert origin == "ztf"
++        params = deepcopy(dict(params or {}))
++        self.calls.append((broker, endpoint, params))
++        if broker == "alerce":
++            assert endpoint == "query_object"
++            payload = {"oid": params["oid"], "meanra": 10.0, "meandec": 20.0}
++        else:
++            assert broker == self.broker
++            if self.fail:
++                raise RuntimeError("controlled mixed-history failure")
++            if broker == "lasair":
++                assert endpoint == "lightcurves"
++                payload = deepcopy(self.batch if self.batch is not None else
++                                   [self.roots[oid] for oid in params["objectIds"].split(",")])
++            else:
++                assert endpoint == "get_by_ztf_object_id"
++                payload = deepcopy(self.roots[params["ztf_object_id"]])
++                if self.native:
++                    payload["alerts"] = [SimpleNamespace(**row) for row in payload["alerts"]]
++                    payload = SimpleNamespace(**payload)
++        return ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
++            InternalExecutionId(f"mixed:{next(self.sequence)}"), broker, origin, endpoint, params=params,
++        ))
++
++
++def program(broker, ids=IDS[:1]):
++    return "objects " + ", ".join(ids) + f" from ztf via alerce\nwith lightcurve via {broker}\n"
++
++
++def count_g(broker):
++    return f"count(lightcurve@ztf:{broker}.points where photometry.g.upper_limit = false)"
++
++
++def selected(graph, broker, condition, executor=None, ids=IDS[:1]):
++    return execute_dsl(program(broker, ids) + "filter " + condition, graph=graph,
++                       executor=executor or Executor(broker, ids=ids), continue_from=None)
++
++
++@pytest.mark.parametrize("broker,native", [("lasair", False), ("antares", False), ("antares", True)])
++def test_mixed_histories_close_detection_counts_and_preserve_every_point(graph, broker, native):
++    result = selected(graph, broker, count_g(broker) + " = 2", Executor(broker, native=native))
++    assert len(result.portfolios) == 1
++    points = [p for r in result.portfolios[0].records if r.semantic_type == f"lightcurve@ztf:{broker}"
++              for p in r.fields["points"]]
++    assert len(points) == 5
++    assert sum(any(key.endswith(".upper_limit") and value is True for key, value in p.items()) for p in points) == 2
++    normalized = normalize_workflow_execution(result.staged.execution, graph=graph)
++    assert len(normalized.steps[-1].portfolios) == 1
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_vetting_and_empty_detection_subsets_use_closed_bounds(graph, broker):
++    condition = f"count(lightcurve@ztf:{broker}.points where photometry.g.upper_limit = false and quality.real_bogus >= 0.8) = 1"
++    assert len(selected(graph, broker, condition).portfolios) == 1
++    executor = Executor(broker)
++    key = "candidates" if broker == "lasair" else "alerts"
++    executor.roots[IDS[0]][key] = executor.roots[IDS[0]][key][-2:]
++    assert len(selected(graph, broker, count_g(broker) + " = 0", executor).portfolios) == 1
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++@pytest.mark.parametrize("condition", ["mixed", "limits", "measurements"])
++def test_mixed_totals_limits_and_measurement_collections_remain_open(graph, broker, condition):
++    collection = f"lightcurve@ztf:{broker}.points"
++    expression = {"mixed": f"count({collection}) = 5",
++                  "limits": f"count({collection} where photometry.g.upper_limit = true) = 1",
++                  "measurements": f"count(measurement@ztf:{broker}) = 5"}[condition]
++    assert selected(graph, broker, expression).portfolios == ()
++
++
++def test_declared_i_delivery_is_distinct_from_antares_unavailable_i(graph):
++    for broker, expected in [("lasair", 1), ("antares", 0)]:
++        condition = f"count(lightcurve@ztf:{broker}.points where photometry.i.upper_limit = false) = 0"
++        assert len(selected(graph, broker, condition).portfolios) == expected
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++@pytest.mark.parametrize("bad", ["lost_row", "unknown_status", "unknown_band", "missing_time"])
++def test_row_losses_or_unknowns_withhold_closure(graph, broker, bad):
++    executor = Executor(broker)
++    key = "candidates" if broker == "lasair" else "alerts"
++    extra = deepcopy(executor.roots[IDS[0]][key][0])
++    if bad == "lost_row":
++        extra = {}
++    elif broker == "lasair":
++        if bad == "unknown_status":
++            extra.pop("candid")
++            extra.pop("diffmaglim")
++        elif bad == "unknown_band":
++            extra["fid"] = 99
++        else:
++            extra.pop("jd")
++    else:
++        if bad == "unknown_status":
++            extra["properties"]["ant_survey"] = 99
++        elif bad == "unknown_band":
++            extra["properties"]["ant_passband"] = "X"
++        else:
++            extra.pop("mjd")
++    executor.roots[IDS[0]][key].append(extra)
++    assert selected(graph, broker, count_g(broker) + " = 2", executor).portfolios == ()
++
++
++def test_reversed_batch_roots_keep_global_source_indices_bound_to_each_object(graph):
++    executor = Executor("lasair", ids=IDS)
++    executor.roots[IDS[1]]["candidates"] = executor.roots[IDS[1]]["candidates"][1:]
++    executor.batch = [executor.roots[oid] for oid in reversed(IDS)]
++    result = selected(graph, "lasair", count_g("lasair") + " = 2", executor, ids=IDS)
++    assert [summary_object_identity(p)[1] for p in result.portfolios] == [IDS[0]]
++    assert executor.calls[-1][2]["objectIds"] == ",".join(IDS)
++
++
++@pytest.mark.parametrize("bad", ["missing_parent", "unexpected_parent", "duplicate_parent", "missing_identity", "missing_child", "null_child"])
++def test_incomplete_batch_coverage_does_not_establish_exact_counts(graph, bad):
++    executor = Executor("lasair", ids=IDS)
++    parents = [deepcopy(executor.roots[oid]) for oid in IDS]
++    if bad == "missing_parent":
++        parents.pop()
++    elif bad == "unexpected_parent":
++        parents[1]["objectId"] = "ZTF-synthetic-unrequested"
++    elif bad == "duplicate_parent":
++        parents.append(deepcopy(parents[0]))
++    elif bad == "missing_identity":
++        parents[1] = {"candidates": [], "forcedphot": []}
++    elif bad == "missing_child":
++        parents[1].pop("candidates")
++    else:
++        parents[1]["candidates"] = None
++    executor.batch = parents
++    assert selected(graph, "lasair", count_g("lasair") + " = 2", executor, ids=IDS).portfolios == ()
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_wholly_empty_history_proves_zero_in_delivered_detection_bands(graph, broker):
++    executor = Executor(broker)
++    executor.roots[IDS[0]]["candidates" if broker == "lasair" else "alerts"] = []
++    assert len(selected(graph, broker, count_g(broker) + " = 0", executor).portfolios) == 1
++
++
++def test_empty_and_nonempty_batch_parents_do_not_borrow_each_others_evidence(graph):
++    executor = Executor("lasair", ids=IDS)
++    executor.roots[IDS[0]]["candidates"] = []
++    result = selected(graph, "lasair", count_g("lasair") + " = 0", executor, ids=IDS)
++    assert [summary_object_identity(p)[1] for p in result.portfolios] == [IDS[0]]
++
++
++def test_wholly_empty_alerce_history_uses_the_same_scoped_receipt_rule(graph):
++    sequence = count()
++
++    class EmptyAlerce:
++        def execute(self, broker, origin, endpoint, params=None, headers=None):
++            assert (broker, origin) == ("alerce", "ztf")
++            if endpoint == "query_object":
++                payload = {"oid": IDS[0], "meanra": 10.0, "meandec": 20.0}
++            else:
++                assert endpoint == "query_lightcurve"
++                payload = {"detections": [], "non_detections": []}
++            return ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
++                InternalExecutionId(f"empty-complete:{next(sequence)}"), broker, origin, endpoint, params=params or {},
++            ))
++
++    result = selected(graph, "alerce", count_g("alerce") + " = 0", EmptyAlerce())
++    assert len(result.portfolios) == 1
++    assert not any(r.semantic_type.startswith("lightcurve@") for r in result.portfolios[0].records)
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_delivery_does_not_replace_a_material_detection_proof(graph, broker):
++    without_proof = replace(graph, recipe_capabilities=tuple(
++        replace(recipe, time_selection=None) if recipe.broker == broker else recipe
++        for recipe in graph.recipe_capabilities))
++    assert selected(without_proof, broker, count_g(broker) + " = 2").portfolios == ()
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_continuation_is_immutable_and_does_not_make_new_provider_calls(graph, broker):
++    executor = Executor(broker)
++    parent = execute_dsl(program(broker), graph=graph, executor=executor, continue_from=None)
++    before, calls = parent.to_dict(), deepcopy(executor.calls)
++    result = execute_dsl("filter " + count_g(broker) + " = 2", graph=graph, executor=executor, continue_from=parent)
++    assert len(result.portfolios) == 1 and executor.calls == calls and parent.to_dict() == before
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_required_history_failure_remains_visible(graph, broker):
++    with pytest.raises(WorkflowExecutionError, match="controlled mixed-history failure"):
++        selected(graph, broker, count_g(broker) + " = 2", Executor(broker, fail=True))
++
++
++@pytest.mark.parametrize("broker", ["lasair", "antares"])
++def test_existing_captures_establish_detection_counts_without_losing_limit_rows(graph, broker):
++    if broker == "lasair":
++        root = json.loads((FIXTURES / "lasair/ztf/lightcurves_ZTF17aaabasp.json").read_text())[0]
++        oid, key = root["objectId"], "candidates"
++        expected = sum(row.get("candid") is not None and row["fid"] == 1 for row in root[key])
++    else:
++        folder = FIXTURES / "antares/ztf"
++        root = json.loads((folder / "get_by_ztf_object_id.json").read_text())
++        root["alerts"] = json.loads((folder / "alerts.json").read_text())
++        root["catalog_objects"] = json.loads((folder / "catalog_objects.json").read_text())
++        oid, key = root["properties"]["ztf_object_id"], "alerts"
++        expected = sum(row["properties"]["ant_survey"] == 1 and row["properties"]["ant_passband"] == "g"
++                       for row in root[key])
++    executor = Executor(broker, ids=(oid,))
++    executor.roots[oid] = root
++    result = selected(graph, broker, count_g(broker) + f" = {expected}", executor, ids=(oid,))
++    assert len(result.portfolios) == 1
++    assert sum(len(r.fields["points"]) for r in result.portfolios[0].records
++               if r.semantic_type == f"lightcurve@ztf:{broker}") == len(root[key])
++
++
++def test_proof_inspection_never_invokes_an_unmaterialized_alerts_getter(graph):
++    executor = Executor("antares", native=True)
++    parent = selected(graph, "antares", count_g("antares") + " = 2", executor)
++    physical = parent.staged.execution
++    original = physical.steps[1].executions[0]
++
++    class OpaqueHistory:
++        @property
++        def alerts(self):
++            raise AssertionError("proof inspection invoked a lazy getter")
++
++    steps = list(physical.steps)
++    steps[1] = SimpleNamespace(executions=(ExecutionResult(payload=OpaqueHistory(),
++                                                         execution_provenance=original.execution_provenance),))
++    cache = {group.execution_id: group.portfolios for step in parent.staged.normalized.steps for group in step.executions}
++    assert _component_empty_evidence(parent.run, steps, parent.portfolios, 2, graph, EndpointRegistry()) == {}
++    assert _detection_collection_evidence(parent.run, steps, parent.portfolios, 2,
++                                          graph, EndpointRegistry(), cache) == {}
