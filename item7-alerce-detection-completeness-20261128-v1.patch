@@ -1,0 +1,860 @@
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -207,8 +207,12 @@
+   rejected candidates, serialization and immutable continuation; acquisition
+   warnings still block continuation. Physical audit projection follows the
+   material decision rather than re-evaluating collection fragments. Synthetic
+-  transient evidence exercises nonempty completeness; required-component receipts
+-  prove only explicit empty arrays. Nonempty route completeness remains deferred.
++  transient evidence exercises complete bounds. ALeRCE/ZTF's existing material
++  detection proof plus raw-row/normalized-point accounting can close detection-only
++  count conditions; g/r delivery is separate immutable RecipeCall metadata. Mixed
++  totals, extrema, measurement and LSST completeness remain open. Required-component
++  receipts independently prove explicit empty arrays. No persisted result fields
++  are added; Lasair/ANTARES detection accounting remains item 7.
+   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
+   `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
+   and newer versions are refused. Existing version-1/2 workflows retain their
+diff --git a/alertissimo/api.py b/alertissimo/api.py
+--- a/alertissimo/api.py
++++ b/alertissimo/api.py
+@@ -352,8 +352,10 @@
+             if executor is not None
+             else RegistryEndpointExecutor(registry=effective_registry)
+         )
++        from alertissimo.orchestration.ir.predicates import contains_collection_predicate
+         component_options = ({"graph": effective_graph} if any(
+-            getattr(step, "required_components", ()) for step in getattr(compilation.workflow, "steps", ())
++            getattr(step, "required_components", ()) or contains_collection_predicate(getattr(step, "predicate", None))
++            for step in getattr(compilation.workflow, "steps", ())
+         ) else {})
+         if previous is None:
+             staged = execute_staged_workflow_run(
+diff --git a/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml b/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
+--- a/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
++++ b/alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml
+@@ -1,5 +1,8 @@
+ broker: alerce
+ origin: ztf
++delivered_bands:
++  query_lightcurve:
++    lightcurve@ztf:alerce.points: [g, r]
+ predicate_bindings:
+   query_objects:
+     - path: classification.provenance.producer.name
+diff --git a/alertissimo/data_layer/runtime/recipes.py b/alertissimo/data_layer/runtime/recipes.py
+--- a/alertissimo/data_layer/runtime/recipes.py
++++ b/alertissimo/data_layer/runtime/recipes.py
+@@ -99,6 +99,8 @@
+     predicate_bindings: tuple[RequestConstraintCapability, ...] = ()
+     latest_selection: LatestSelectionCapability | None = None
+     sql_join: SqlJoinCapability | None = None
++    # Delivery does not establish completeness. Keep endpoint declarations frozen.
++    delivered_bands: tuple[tuple[str, tuple[str, ...]], ...] = ()
+ 
+ 
+ @dataclass(frozen=True)
+@@ -834,6 +836,39 @@
+     )
+ 
+ 
++def _delivered_bands(document, graph, endpoint_defs, *, broker, origin):
++    """Validate the approved endpoint/qualified-collection delivery declaration."""
++    from alertissimo.data_layer.semantic_model import SemanticPathModel
++
++    document = _mapping(document, "delivered_bands")
++    if not document:
++        return {}
++    model = SemanticPathModel.from_ontology()
++    result = {}
++    for endpoint, raw in _mapping(document, "delivered_bands").items():
++        if endpoint not in endpoint_defs:
++            raise RecipeRegistryError(f"delivered_bands: unknown endpoint {endpoint!r}")
++        collections = _mapping(raw, f"delivered_bands.{endpoint}")
++        if not collections:
++            raise RecipeRegistryError("delivered_bands: collection declarations must be non-empty")
++        entries = []
++        for path, bands in collections.items():
++            if (not path.startswith(f"lightcurve@{origin}:{broker}.")
++                or path not in model.array_boundaries(path)
++                or not any(field.semantic_path.startswith(path + ".")
++                           for field in graph.fields_for_endpoint(broker, origin, endpoint))):
++                raise RecipeRegistryError(f"delivered_bands: endpoint does not produce collection {path!r}")
++            domain = (model.parameter_domain(path + ".photometry.{filter}", origin)
++                      or model.parameter_domain(path + ".forced_photometry.{filter}", origin))
++            if (not isinstance(bands, list) or not bands
++                or any(not isinstance(band, str) for band in bands)
++                or len(set(bands)) != len(bands) or domain is None or not set(bands) <= set(domain)):
++                raise RecipeRegistryError(f"delivered_bands: bands must be non-empty, unique members of {domain!r}")
++            entries.append((path, tuple(bands)))
++        result[endpoint] = tuple(entries)
++    return result
++
++
+ def load_provider_capabilities(
+     path: Path, graph: CapabilityGraph, endpoint_defs: Mapping[str, Any],
+     *, broker: str, origin: str,
+@@ -844,7 +879,7 @@
+         with path.open(encoding="utf-8") as stream:
+             document = _mapping(yaml.load(stream, Loader=_UniqueKeyLoader), str(path))
+         _keys(
+-            document, {"broker", "origin", "description", "recipes", "predicate_bindings", "selection_bindings"},
++            document, {"broker", "origin", "description", "recipes", "predicate_bindings", "selection_bindings", "delivered_bands"},
+             {"broker", "origin", "recipes"}, str(path),
+         )
+         if document["broker"] != broker or document["origin"] != origin:
+@@ -852,6 +887,8 @@
+         if "description" in document and not isinstance(document["description"], str):
+             raise RecipeRegistryError("description must be a string")
+         recipes = _mapping(document["recipes"], "recipes")
++        delivery = _delivered_bands(document.get("delivered_bands", {}), graph, endpoint_defs,
++                                    broker=broker, origin=origin)
+         predicates = _predicate_bindings(
+             document.get("predicate_bindings", {}), graph, endpoint_defs,
+             broker=broker, origin=origin,
+@@ -1071,6 +1108,7 @@
+                         call_bindings,
+                         latest_selection,
+                         sql_join,
++                        delivery.get(endpoint, ()),
+                     ))
+                 if not any(call.required for call in calls):
+                     raise RecipeRegistryError(f"{where}: recipe must contain a required call")
+diff --git a/alertissimo/orchestration/normalization/normalize.py b/alertissimo/orchestration/normalization/normalize.py
+--- a/alertissimo/orchestration/normalization/normalize.py
++++ b/alertissimo/orchestration/normalization/normalize.py
+@@ -493,6 +493,139 @@
+     return evidence
+ 
+ 
++def _detection_collection_evidence(run, results, portfolios, before_step, graph, registry, normalized_cache):
++    """Audit detection rows against their existing normalized occurrence.
++
++    The provider's material detection proof belongs to an exact endpoint/payload.
++    It can cover the same required identity-bound history acquisition without a
++    temporal query. Delivery alone, summaries and response lengths cannot close it.
++    This first route accepts single-object payload partitions only; mixed/batched
++    proof populations need their own normalization accounting before activation.
++    """
++    from collections import Counter
++    from collections.abc import Mapping
++    import math
++    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
++    from alertissimo.orchestration.ir.predicates import _collection_paths
++
++    evidence = {}
++    if graph is None:
++        return evidence
++    active = {record.internal_record_id.value for portfolio in portfolios for record in portfolio.records}
++    populations = {summary_object_identity(p) for p in portfolios} - {None}
++    declarations = tuple((recipe, recipe.time_selection) for recipe in graph.recipe_capabilities
++                         if recipe.time_selection is not None
++                         and recipe.time_selection.mode == "detection"
++                         and recipe.time_selection.method == "material"
++                         and recipe.time_selection.complete and recipe.time_selection.time_scale == "utc")
++
++    def signature(fields):
++        flags = tuple((key.split(".")[1], value) for key, value in fields.items()
++                      if key.startswith("photometry.") and key.endswith(".upper_limit") and len(key.split(".")) == 3)
++        time = fields.get("time.mjd")
++        if (len(flags) != 1 or type(flags[0][1]) is not bool
++            or type(time) not in (int, float) or not math.isfinite(time)):
++            return None
++        return time, flags[0][0], flags[0][1]
++
++    for index, result in enumerate(results[:before_step]):
++        step_run = run.steps[index]
++        if step_run.state is not StepRunState.SUCCEEDED:
++            continue
++        indexes = _execution_plan_indexes(step_run, result)
++        for owner, execution in zip(indexes, result.executions):
++            plan = step_run.endpoint_plans[owner]
++            if not plan.required:
++                continue
++            endpoint = next(e for e in graph.endpoint_capabilities
++                            if (e.broker, e.origin, e.endpoint) == (plan.broker, plan.origin, plan.endpoint))
++            if endpoint.supports_projection:
++                continue
++            targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
++            if len(targets) != 1:
++                continue
++            for recipe, proof in declarations:
++                call = recipe.calls[proof.call_index]
++                if (recipe.broker, recipe.origin, call.endpoint) != (plan.broker, plan.origin, plan.endpoint):
++                    continue
++                definition = next((p for p in graph.payload_capabilities
++                                   if (p.broker, p.origin, p.endpoint, p.payload_key)
++                                   == (plan.broker, plan.origin, plan.endpoint, proof.payload)), None)
++                if definition is None or definition.partition_mode != "single" or not definition.path.endswith("[]"):
++                    continue
++                try:
++                    raw = extract_raw_field(execution.payload, definition.path[:-2])
++                except RawFieldMissing:
++                    continue
++                if not isinstance(raw, (list, tuple)) or any(not isinstance(row, Mapping) for row in raw):
++                    continue
++                for portfolio in normalized_cache.get(execution.internal_execution_id.value, ()):
++                    identity = summary_object_identity(portfolio)
++                    if identity not in populations or identity != (plan.origin, targets[0]):
++                        continue
++                    measurements = tuple(record for record in portfolio.records
++                        if record.semantic_type == f"measurement@{plan.origin}:{plan.broker}"
++                        and record.internal_source is not None
++                        and record.internal_source.internal_execution_id == execution.internal_execution_id
++                        and record.internal_source.payload_key == proof.payload)
++                    if (len(measurements) != len(raw)
++                        or sorted(r.internal_source.payload_index for r in measurements
++                                  if r.internal_source.payload_index is not None) != list(range(len(raw)))):
++                        continue
++                    if any(record.get("identity.object_id") is not None
++                           and str(record.get("identity.object_id")) != targets[0] for record in measurements):
++                        continue
++                    expected = tuple(signature(record.fields) for record in measurements)
++                    if any(item is None or item[2] is not False for item in expected):
++                        continue
++                    for collection, bands in call.delivered_bands:
++                        product, _, path = collection.partition(".")
++                        domain = _collection_paths().parameter_domain(collection + ".photometry.{filter}", plan.origin)
++                        if domain is None or any(item[1] not in domain for item in expected):
++                            continue
++                        mapped = tuple(field for field in call.outputs if field.payload_key == proof.payload
++                                       and field.semantic_path.startswith(collection + "."))
++                        # Compare every declared point field, not just row counts
++                        # or times: equal-time duplicates must not hide a lost row.
++                        if not mapped or any(not any(
++                            other.semantic_record_type == f"measurement@{plan.origin}:{plan.broker}"
++                            and other.relative_field_path == field.relative_field_path[len(path) + 1:]
++                            and other.raw_ref == field.raw_ref for other in call.outputs) for field in mapped):
++                            continue
++                        relative = {field.relative_field_path[len(path) + 1:] for field in mapped
++                                    if not field.relative_field_path.endswith("{filter}")}
++
++                        def projected(fields, band):
++                            paths = {field.replace("{filter}", band) for field in relative}
++                            return tuple(sorted((key, value) for key, value in fields.items() if key in paths))
++
++                        records = tuple(r for r in portfolio.records if r.semantic_type == product and path in r.fields)
++                        if len(records) != 1:
++                            continue
++                        record = records[0]
++                        if record.internal_record_id.value not in active:
++                            continue
++                        points = record.fields[path]
++                        if not isinstance(points, (tuple, list)) or any(not isinstance(p, Mapping) for p in points):
++                            continue
++                        actual = tuple(signature(point) for point in points)
++                        if any(item is None or item[1] not in domain for item in actual):
++                            continue
++                        if Counter(item for item in actual if item[2] is False) != Counter(expected):
++                            continue
++                        try:
++                            expected_fields = Counter(projected(record.fields, item[1])
++                                                      for record, item in zip(measurements, expected))
++                            actual_fields = Counter(projected(point, item[1])
++                                                    for point, item in zip(points, actual) if item[2] is False)
++                        except TypeError:
++                            continue  # Opaque/nonscalar mapped values cannot prove row equivalence.
++                        if actual_fields != expected_fields:
++                            continue
++                        evidence[(record.internal_record_id.value, path, "detections")] = (True, frozenset(bands))
++    return evidence
++
++
+ def _filter_candidate_view(
+     step: FilterStep,
+     step_run: StepRun,
+@@ -841,7 +974,8 @@
+     """
+ 
+     _validate_workflow_alignment(result)
+-    if any(isinstance(step, GetStep) and step.required_components for step in result.run.workflow.steps):
++    if any((isinstance(step, GetStep) and step.required_components)
++           or contains_collection_predicate(getattr(step, "predicate", None)) for step in result.run.workflow.steps):
+         registry = registry or EndpointRegistry()
+         if graph is None:
+             from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+@@ -871,6 +1005,10 @@
+             source = normalized_steps[step_run.candidate_input_from.step_index]
+             evidence = _component_empty_evidence(result.run, result.steps, source.portfolios,
+                                                   step_run.step_index, graph, registry)
++            evidence.update(_detection_collection_evidence(
++                result.run, result.steps, source.portfolios, step_run.step_index, graph, registry,
++                normalized_by_execution_id,
++            ))
+             view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics,
+                                           collection_evidence=evidence)
+             if diagnostics:
+diff --git a/alertissimo/orchestration/normalization/predicate.py b/alertissimo/orchestration/normalization/predicate.py
+--- a/alertissimo/orchestration/normalization/predicate.py
++++ b/alertissimo/orchestration/normalization/predicate.py
+@@ -253,15 +253,15 @@
+ 
+ def evaluate_portfolio_predicate_truth(
+     portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
+-    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
++    collection_evidence: Mapping[tuple[str, ...], tuple[bool, frozenset[str]]] | None = None,
+ ) -> bool | None:
+     """Evaluate one predicate in the existing scalar witness search using Kleene logic.
+ 
+     ``collection_evidence`` is transient explicit evidence keyed by record ID and
+     exact array path, with (complete, delivered bands) values. A successful required
+     component may also supply (Portfolio ID, qualified array) for an empty receipt.
+-    No nonempty production history is closed here. Tests supply synthetic proofs; record collections
+-    such as incidental measurement records always retain open completeness.
++    A third key member, "detections", restricts a proof to count conditions that
++    entail upper_limit = false. Record collections always retain open completeness.
+     Diagnostics use the caller's existing warnings collector, including when a
+     candidate is rejected. No Portfolio or runtime schema field is introduced.
+     """
+@@ -288,7 +288,10 @@
+     def empty_products(reference):
+         path = substitute(reference.field_path)
+         result = set()
+-        for (owner, qualified), proof in evidence.items():
++        for key, proof in evidence.items():
++            if len(key) != 2:
++                continue
++            owner, qualified = key
+             if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
+                 continue
+             head, _, field = qualified.partition(".")
+@@ -354,6 +357,27 @@
+             return False
+         groups, _ = branch_requirements(collection, (operand.field_path,))
+         return not member(element, groups)
++
++    def detection_condition(node, negate=False):
++        """A sufficient Boolean proof that every selected member is a detection."""
++        if isinstance(node, NotPredicate):
++            return detection_condition(node.operand, not negate)
++        if isinstance(node, BooleanPredicate):
++            values = tuple(detection_condition(child, negate) for child in node.operands)
++            conjunction = (node.operator == "and") != negate
++            return any(values) if conjunction else all(values)
++        if not isinstance(node, ComparisonPredicate) or node.operator not in {"=", "!="}:
++            return False
++        left, right = node.left, node.right
++        if isinstance(right, ElementReference):
++            left, right = right, left
++        if not isinstance(left, ElementReference) or not isinstance(right, PredicateLiteral) or type(right.value) is not bool:
++            return False
++        path = left.field_path.split(".")
++        if len(path) != 3 or path[0] != "photometry" or path[-1] != "upper_limit":
++            return False
++        equals = (node.operator == "=") != negate
++        return (equals and right.value is False) or (not equals and right.value is True)
+ 
+     def aggregate(node):
+         cache_key = (node, tuple(sorted(parameters.items())))
+@@ -408,6 +432,10 @@
+                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
+                 complete = proof[0] is True and shape_valid and items is not None
+                 delivered = frozenset(proof[1])
++                if node.function == "count" and detection_condition(node.condition):
++                    scoped = evidence.get((record.internal_record_id.value, path, "detections"))
++                    if scoped is not None and scoped[0] is True and shape_valid and items is not None:
++                        complete, delivered = True, frozenset(scoped[1])
+         if empties and not malformed_array and (items is None or not items):
+             items, complete, delivered = (), True, frozenset()
+         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
+@@ -624,7 +652,7 @@
+ 
+ def evaluate_portfolio_predicate(
+     portfolio: Portfolio, predicate: Predicate, *, diagnostics: list[str] | None = None,
+-    collection_evidence: Mapping[tuple[str, str], tuple[bool, frozenset[str]]] | None = None,
++    collection_evidence: Mapping[tuple[str, ...], tuple[bool, frozenset[str]]] | None = None,
+ ) -> bool:
+     """Select only established True; retain the existing Boolean caller contract."""
+     return evaluate_portfolio_predicate_truth(
+diff --git a/alertissimo/orchestration/pipeline.py b/alertissimo/orchestration/pipeline.py
+--- a/alertissimo/orchestration/pipeline.py
++++ b/alertissimo/orchestration/pipeline.py
+@@ -19,9 +19,12 @@
+ from alertissimo.orchestration.normalization.selection import (
+     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
+ )
+-from alertissimo.orchestration.normalization.normalize import _component_empty_evidence, filter_execution_groups
++from alertissimo.orchestration.normalization.normalize import (
++    _component_empty_evidence, _detection_collection_evidence, filter_execution_groups,
++)
+ from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
+ from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, GetStep, MatchStep
++from alertissimo.orchestration.ir.predicates import contains_collection_predicate
+ from alertissimo.orchestration.matching import match_step_portfolios
+ from alertissimo.orchestration.normalization import (
+     ExecutionPortfolioResult,
+@@ -311,7 +314,8 @@
+         raise CandidateFlowError("staged execution requires a fully planned WorkflowRun")
+     if reference_time is not None:
+         reference_time = utc_instant(reference_time)
+-    if graph is None and any(isinstance(step, GetStep) and step.required_components for step in run.workflow.steps):
++    if graph is None and any((isinstance(step, GetStep) and step.required_components)
++                             or contains_collection_predicate(getattr(step, "predicate", None)) for step in run.workflow.steps):
+         from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+         graph = build_capability_graph(registry.root)
+ 
+@@ -408,6 +412,10 @@
+                 else:
+                     evidence = _component_empty_evidence(updated_run, step_results, source_view.portfolios,
+                                                           step_index, graph, registry)
++                    evidence.update(_detection_collection_evidence(
++                        updated_run, step_results, source_view.portfolios, step_index, graph, registry,
++                        normalized_execution_cache,
++                    ))
+                     view = _filter_view(step, step_index, source_view, diagnostics=diagnostics,
+                                         collection_evidence=evidence)
+                     view = apply_deferred_search_selection(
+diff --git a/docs/dsl_collections.md b/docs/dsl_collections.md
+--- a/docs/dsl_collections.md
++++ b/docs/dsl_collections.md
+@@ -194,10 +194,10 @@
+    route delivering a band with no members gives [0, 0]; an undelivered band gives
+    [0, infinity). Delivery must be declared per lightcurve route in the existing
+    `capabilities.yaml`; undeclared routes make all bands unavailable. Observed
+-   bands never redefine the origin's domain or prove completeness. Delivery
+-   declarations and their loader amendment are deferred to the first per-route
+-   collection-completeness slice under item 7. Recipes and capability files remain
+-   untouched in the syntax, evaluation and admission slices.
++   bands never redefine the origin's domain or prove completeness. ALeRCE/ZTF's
++   `query_lightcurve` route declares g/r delivery; the existing recipe
++   loader retains it as immutable call metadata. Other routes remain undeclared.
++   Delivery alone never closes a count.
+ 7. **Bind one product.** An aggregate/quantifier collection selector binds one
+    qualified product and named array per candidate, without pooling or first-match
+    selection. Records carrying only sibling arrays do not compete for that array.
+@@ -254,13 +254,13 @@
+ 
+ The evaluator accepts transient explicit evidence keyed by
+ `(internal_record_id, exact_array_path)`, with completeness and delivered-band
+-values. Synthetic test proofs exercise nonempty complete histories; no production
+-route supplies those proofs yet. Required-component receipts can separately prove
+-an explicitly empty requested array, keyed by Portfolio identity and the qualified
+-array path. Neither proof is stored in Portfolio, WorkflowRun or IR. Missing or
+-malformed arrays and normalization losses do not prove emptiness. No summary count,
+-temporal proof or observed band implicitly closes a collection; nonempty route
+-completeness and delivered-band declarations await the next item 7 slice.
++values. A third key member, `detections`, restricts the evidence to count conditions
++that entail `photometry.<filter>.upper_limit = false`; it never closes a mixed-array
++total or an extremum. Required-component receipts separately prove explicitly empty
++requested arrays, keyed by Portfolio identity and qualified array path. These
++proofs are transient and add no Portfolio, StepRun or WorkflowIR fields.
++Missing/malformed arrays, normalization losses, summary counts and observed bands
++do not establish completeness.
+ 
+ Competing array products or qualified classification versions yield unknown and
+ `ambiguous_product` messages in the existing StepRun `warnings`. Messages retain
+@@ -328,28 +328,48 @@
+ [`expression.lark`](../alertissimo/dsl/expression.lark); repetition/domain metadata
+ must be retained by the existing semantic-model owner.
+ 
+-## First completeness route: entry audit
+-
+-This audit checks the current mappings and existing proofs; it does not make a
+-new upstream completeness claim or close any nonempty production history.
+-Required-component empty-array receipts are the separate narrow case above.
+-
+-| Checked route/array | Existing boundary | Consequence |
+-|---|---|---|
+-| ALeRCE/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/alerce/ztf/mappings.yaml) combine `query_lightcurve.detections` and `query_lightcurve.non_detections`; the [material time proof](../alertissimo/data_layer/providers/alerce/ztf/capabilities.yaml) covers detections. | Do not apply the detection proof to the mixed array. |
+-| ANTARES/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/antares/ztf/mappings.yaml) use `locus_alerts`, including `ant_survey = 2` upper limits; [temporal history contracts](../alertissimo/data_layer/providers/antares/ztf/capabilities.yaml) establish detection selection. | Do not infer completeness of every point from detection-history coverage. |
+-| Lasair/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/lasair/ztf/mappings.yaml) use `lightcurve_candidates`; [existing regressions](../tests/test_orchestration_lasair_time.py) allow limit-only rows in that branch while excluding them as detection witnesses. | The [detection proof](../alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml) is not a proof covering the whole array. |
+-
+-The agreed next slice may establish detection-scoped completeness without splitting
+-these arrays: the count condition must entail `photometry.{filter}.upper_limit =
+-false`, and the proof must cover exactly that population. The audit must account
+-for required-call success, payload/identity coverage and raw-row-to-point
+-normalization, including omitted or invalid rows; matching time bounds alone is
+-insufficient. Counts without that status condition keep their open upper bound.
+-Do not rename paths, add schema fields or broaden a temporal proof implicitly.
+-LSST and measurement completeness remain open.
+-The already-approved delivered-band amendment remains coupled to the first actual
+-complete route; declarations alone cannot close these collections.
++## Detection completeness: first route
++
++ALeRCE/ZTF `query_lightcurve` uses the existing material detection proof for
++`query_lightcurve.detections`. That claim applies to the same required,
++identity-bound full-history call used by lightcurve acquisition; a temporal
++selection clause is not required. Completeness is relative to the broker's
++holdings at retrieval time, never to the survey. The ordinary `points` array still
++mixes detections and limits.
++
++```text
++object ZTF18abbuksn from ztf via alerce
++with lightcurve
++filter count(lightcurve@ztf:alerce.points
++             where photometry.g.upper_limit = false
++               and quality.real_bogus >= 0.8) = 2
++```
++
++The equality can be established when every relevant value is known. A missing
++vetting value leaves that member unknown. Explicit negation and equivalent Boolean
++forms retain Kleene semantics; an OR branch that admits limits prevents closure.
++
++The runtime audit requires a successful required call, one bound object matching
++the normalized Portfolio, an explicit detection array, one source-indexed normalized
++measurement per raw row, usable times and Boolean status, and matching multisets of
++detection times/bands and every shared mapped point field in the lightcurve.
++Equal-time duplicates cannot hide a lost row with different photometry or vetting. Contradictory row object IDs, missing or
++invalid status/time, unrecognized bands and dropped rows withhold closure. An
++observed band never supplies delivery metadata. g/r delivery is declared from the
++saved `query_lightcurve.json` capture; i remains unavailable for closed-band claims.
++The raw response and normalized point records remain unchanged.
++
++| Route | Current boundary |
++|---|---|
++| ALeRCE/ZTF `query_lightcurve` / `points` | Detection-scoped counts can close after the audit above; mixed totals, extrema and measurement counts remain open. |
++| Lasair/ZTF `lightcurve_candidates` | Mixed detections/limits with a temporal proof; per-row and batched-identity completeness accounting remains the next item 7 slice. No delivery declaration yet. |
++| ANTARES/ZTF `locus_alerts` | Mixed detection/limit payload with a temporal proof; its row/normalization accounting remains the next item 7 slice. No delivery declaration yet. |
++| LSST routes | No matching material detection proof; completeness remains open. |
++
++Do not split arrays, add result-model fields or broaden a temporal proof implicitly.
++Delivery is validated for endpoint existence, the exact produced collection, and a
++non-empty, duplicate-free subset of the origin's ontology filter domain. It never
++establishes completeness by itself.
+ 
+ ## Deferred extension
+ 
+@@ -369,9 +389,9 @@
+ | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
+ | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
+ | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
+-| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Nonempty production histories remain open; explicit required-component empty-array receipts can establish zero. |
++| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Unrestricted production histories remain open; ALeRCE/ZTF supplies audited detection-scoped evidence, and explicit required-component empty-array receipts can establish zero. |
+ | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
+-| D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
++| D3.6 actual route completeness and delivered bands | ALeRCE/ZTF detection-scoped route and g/r delivery implemented under item 7; Lasair/ANTARES audits remain item 7. LSST and measurement completeness remain open. |
+ | D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
+ | Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
+ | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
+@@ -384,6 +404,7 @@
+ zero-count claims, `min > x`, and an `every` failure based only on a short band stay
+ unknown until applicable collection completeness exists. An explicit empty-array
+ receipt for a required component can prove its zero count; it does not prove band
+-delivery or close a nonempty history. A contradictory known
++delivery or close a nonempty history. The audited ALeRCE/ZTF detection subset is
++the scoped exception described above. A contradictory known
+ witness can still disprove a comparison. Local evaluation does not bypass the
+ public DSL or canonical planner material/placement guards.
+diff --git a/docs/next_functional_work.md b/docs/next_functional_work.md
+--- a/docs/next_functional_work.md
++++ b/docs/next_functional_work.md
+@@ -119,14 +119,16 @@
+ Surface and canonical guards name item 4a for initial collection/latest and missing
+ material, and reject collection propositions in confirm. This is offline regression
+ acceptance, not a new live-provider acceptance claim.
+-Delivered-band declarations are deferred to the first per-route collection-
+-completeness slice under item 7; recipes and capability files remain untouched.
+-Closed-bound logic has synthetic test proofs only.
++Item 7 now implements ALeRCE/ZTF detection-scoped completeness and its g/r delivery
++declaration. The approved loader amendment stores immutable delivery metadata on
++existing RecipeCalls; other routes retain open completeness until audited.
+ 
+ With admitted material, witnessed lower bounds (`count >= N`), `min < x`
+ and `for any` work with open completeness. Exact counts, `count = 0`, `min > x`
+ and `for every` failing only on a short band remain unknown until a route establishes
+-collection completeness. Known contradictory witnesses can still disprove a claim.
++collection completeness. ALeRCE/ZTF detection-scoped counts are now the audited
++exception; mixed totals and extrema stay open. Known contradictory witnesses can
++still disprove a claim.
+ 
+ **Completed scope:** the [agreed contract](dsl_collections.md) is implemented in
+ existing semantic-model, expression/IR, evaluator and planner owners. Count/min/max,
+@@ -216,36 +218,26 @@
+ retrieved series retain the existing product-ambiguity rule. Capture provenance and
+ sources are in the [fixture notes](../tests/fixtures/lasair/README.md).
+ 
+-**Agreed 27 November 2026; remaining implementation:** per-route scoped detection
+-completeness and item 7 closeout. Local `LightcurveStep` remains deferred.
+-
+-**Target/work:** finish scoped detection completeness. Map true/false limit flags where
+-native evidence establishes them; retain unknown otherwise. Missing flux alone is
+-not non-detection, nor is a detection's limiting depth another observation.
+-
+-**Per-route collection completeness:** establish evidence on the existing path,
+-starting with detection populations that exactly match an existing temporal proof.
+-A detection-history proof does not close a whole mixed array. The approved next
+-slice may close a count only when its condition entails `upper_limit = false`
+-and its population is covered by the audited proof payload and normalization.
+-The first proven route also introduces its delivered-band declaration and the
+-approved existing-loader support. Measurement collection completeness remains
+-open; acquisition alone does not close its upper bounds.
+-
+-**Completeness entry audit after #361:** the checked material-history routes do
+-not yet supply an eligible detection-only `points` array. ALeRCE/ZTF maps both
+-`query_lightcurve.detections` and `query_lightcurve.non_detections` into `points`.
+-ANTARES/ZTF maps `locus_alerts`, including the explicit upper-limit discriminator,
+-into `points`. Lasair/ZTF maps `lightcurve_candidates`, where existing guards/tests
+-allow limit-only rows, into `points`. Their detection proofs cannot be applied
+-unchanged to these whole arrays. See [the source-backed audit](dsl_collections.md#first-completeness-route-entry-audit).
+-This is a current implementation boundary, not an upstream impossibility claim.
+-
+-Before implementing the first closure, audit required-call success, payload and
+-identity coverage, and raw-row-to-element normalization, including omitted or
+-invalid rows. Derive the link from the existing proof payload and status mappings;
+-any additional YAML structure needs review. LSST and measurement completeness
+-remain open. Delivered-band metadata alone does not resolve the evidence boundary.
++**ALeRCE/ZTF detection completeness:** the existing `query_lightcurve.detections`
++material proof covers the same required, identity-bound history call in lightcurve
++acquisition. Counts can close only when their condition entails `upper_limit = false`.
++The runtime checks raw-row coverage against source-indexed measurements, valid
++status/time and corresponding lightcurve detection points. Bad or omitted rows and
++conflicting object IDs withhold closure. g/r delivery is declared from the saved
++capture, separately from the completeness proof; i stays unavailable. No whole
++mixed-array, extrema or measurement completeness is asserted.
++
++**Remaining implementation:** apply the same required-call, identity and
++raw-row-to-point audit to Lasair/ZTF `lightcurve_candidates` and ANTARES/ZTF
++`locus_alerts`, adding delivery only for routes that pass. These mixed arrays cannot
++inherit whole-array completeness from a detection proof. Their current lack of
++collection evidence is implementation work, not provider impossibility. LSST lacks
++the matching material time proofs; its completeness remains open. Finish item 7's
++idioms and instruction accounting afterward. Local `LightcurveStep` stays deferred.
++
++The [route accounting](dsl_collections.md#detection-completeness-first-route) records
++the current enabled and open populations. Any additional YAML structure beyond the
++approved delivered-band declaration still needs review.
+ 
+ **Completion:** executable supported measurement intent and reliable field semantics,
+ preserving incidental evidence, distinct products and shared presentation. Do not
+diff --git a/tests/test_collection_detection_completeness.py b/tests/test_collection_detection_completeness.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_collection_detection_completeness.py
+@@ -0,0 +1,236 @@
++"""Scoped detection closure from audited history material, never mixed totals."""
++
++from copy import deepcopy
++from dataclasses import FrozenInstanceError, replace
++from itertools import count
++import json
++from pathlib import Path
++
++import pytest
++import yaml
++
++from alertissimo.api import execute_dsl
++from alertissimo.data_layer.execution import ExecutionResult
++from alertissimo.data_layer.representations import InternalExecutionId, InternalExecutionProvenance
++from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
++from alertissimo.data_layer.runtime.recipes import RecipeRegistryError, load_provider_capabilities
++from alertissimo.orchestration.normalization import normalize_workflow_execution
++from alertissimo.orchestration.runtime import WorkflowExecutionError
++
++
++PROVIDER = Path(__file__).parents[1] / "alertissimo/data_layer/providers/alerce/ztf"
++OBJECT_ID = "ZTF18abbuksn"
++COLLECTION = "lightcurve@ztf:alerce.points"
++G = f"count({COLLECTION} where photometry.g.upper_limit = false)"
++PROGRAM = f"object {OBJECT_ID} from ztf via alerce\nwith lightcurve\n"
++
++
++@pytest.fixture(scope="module")
++def graph():
++    return build_capability_graph()
++
++
++class Executor:
++    def __init__(self, *, extra=(), fail=False):
++        self.calls, self.sequence, self.fail = [], count(), fail
++        self.payload = {"detections": [
++            {"oid": OBJECT_ID, "measurement_id": i, "candid": str(i), "mjd": 60000.0 + i,
++             "fid": fid, "magpsf": 17.0 + i, "sigmapsf": 0.1, "drb": quality}
++            for i, fid, quality in [(1, 1, 0.9), (2, 1, 0.1), (3, 2, 0.8)]
++        ] + deepcopy(list(extra)), "non_detections": [
++            {"oid": OBJECT_ID, "mjd": 59999.0, "fid": 1, "diffmaglim": 21.0},
++        ]}
++
++    def execute(self, broker, origin, endpoint, params=None, headers=None):
++        assert (broker, origin) == ("alerce", "ztf")
++        params = dict(params or {})
++        self.calls.append((endpoint, params))
++        if endpoint == "query_object":
++            payload = {"oid": OBJECT_ID, "meanra": 10.0, "meandec": 20.0}
++        else:
++            assert endpoint == "query_lightcurve"
++            if self.fail:
++                raise RuntimeError("required history failed")
++            payload = deepcopy(self.payload)
++        return ExecutionResult(payload=payload, execution_provenance=InternalExecutionProvenance(
++            InternalExecutionId(f"complete:{next(self.sequence)}"), broker, origin, endpoint, params=params,
++        ))
++
++
++def selected(graph, condition, executor=None):
++    return execute_dsl(PROGRAM + "filter " + condition, graph=graph,
++                       executor=executor or Executor(), continue_from=None)
++
++
++@pytest.mark.parametrize("condition", [
++    G + " = 2", G + " <= 2", G + " < 3",
++    f"count({COLLECTION} where photometry.r.upper_limit = false) = 1",
++    f"count({COLLECTION} where photometry.g.upper_limit = false and quality.real_bogus >= 0.8) = 1",
++    f"count({COLLECTION} where not (photometry.g.upper_limit = true)) = 2",
++    f"count({COLLECTION} where photometry.g.upper_limit != true) = 2",
++    f"count({COLLECTION} where photometry.g.upper_limit = false and photometry.g.psf.mag < 0) = 0",
++    "for every {filter} in [g, r]: (count(" + COLLECTION
++        + " where photometry.{filter}.upper_limit = false) >= 1)",
++])
++def test_detection_conditions_close_only_their_population(graph, condition):
++    result = selected(graph, condition)
++    assert len(result.portfolios) == 1
++    # Independent final normalization must agree with staged selection.
++    finalized = normalize_workflow_execution(result.staged.execution, graph=graph)
++    assert len(finalized.steps[-1].portfolios) == 1
++
++
++@pytest.mark.parametrize("condition", [
++    f"count({COLLECTION}) = 4",
++    f"count(measurement@ztf:alerce) = 4",
++    f"min({COLLECTION}.photometry.g.psf.mag) > 0",
++    f"count({COLLECTION} where photometry.g.upper_limit = false or time.mjd > 0) = 3",
++    f"count({COLLECTION} where photometry.i.upper_limit = false) = 0",
++    "for every {filter}: (count(" + COLLECTION + " where photometry.{filter}.upper_limit = false) >= 1)",
++])
++def test_mixed_totals_measurements_extrema_and_undelivered_bands_stay_open(graph, condition):
++    assert selected(graph, condition).portfolios == ()
++
++
++def test_continuation_preserves_parent_and_replays_no_provider_calls(graph):
++    executor = Executor()
++    parent = execute_dsl(PROGRAM, graph=graph, executor=executor, continue_from=None)
++    before, calls = parent.to_dict(), deepcopy(executor.calls)
++    continuation = execute_dsl("filter " + G + " = 2", graph=graph, executor=executor, continue_from=parent)
++    assert len(continuation.portfolios) == 1
++    assert executor.calls == calls and parent.to_dict() == before
++
++
++def test_saved_history_closes_detection_count_without_removing_limit_points(graph):
++    executor = Executor()
++    executor.payload = json.loads((Path(__file__).parent / "fixtures/alerce/ztf/query_lightcurve.json").read_text())
++    expected = sum(row["fid"] == 1 for row in executor.payload["detections"])
++    result = selected(graph, G + f" = {expected}", executor)
++    assert len(result.portfolios) == 1
++    points = [point for record in result.portfolios[0].records
++              if record.semantic_type == "lightcurve@ztf:alerce" for point in record.fields.get("points", ())]
++    assert len(points) == len(executor.payload["detections"]) + len(executor.payload["non_detections"])
++
++
++@pytest.mark.parametrize("row", [
++    {}, {"mjd": 60004, "magpsf": 19.0},
++    {"fid": 1, "magpsf": 19.0},
++    {"fid": 99, "mjd": 60004, "magpsf": 19.0},
++    {"fid": 1, "mjd": 60004, "magpsf": 19.0, "oid": "wrong-object"},
++])
++def test_dropped_unknown_status_or_misidentified_rows_prevent_closure(graph, row):
++    assert selected(graph, G + " = 2", Executor(extra=(row,))).portfolios == ()
++
++
++def test_missing_vetting_value_is_unknown_inside_an_otherwise_complete_population(graph):
++    executor = Executor()
++    del executor.payload["detections"][0]["drb"]
++    condition = f"count({COLLECTION} where photometry.g.upper_limit = false and quality.real_bogus >= 0.8) = 0"
++    assert selected(graph, condition, executor).portfolios == ()
++
++
++def test_equal_time_duplicate_cannot_hide_a_lost_point_with_different_vetting(graph, monkeypatch):
++    import importlib
++    owner = importlib.import_module("alertissimo.orchestration.normalization.normalize")
++    original = owner.normalize_execution
++
++    def corrupt(execution, **kwargs):
++        portfolios = original(execution, **kwargs)
++        if execution.execution_provenance.endpoint != "query_lightcurve":
++            return portfolios
++        altered = []
++        for portfolio in portfolios:
++            records = []
++            for record in portfolio.records:
++                if record.semantic_type == "lightcurve@ztf:alerce":
++                    points = list(record.fields["points"])
++                    points[1] = points[0]
++                    record = replace(record, fields={**record.fields, "points": tuple(points)})
++                records.append(record)
++            altered.append(replace(portfolio, records=tuple(records)))
++        return tuple(altered)
++
++    monkeypatch.setattr(owner, "normalize_execution", corrupt)
++    executor = Executor()
++    executor.payload["detections"][1]["mjd"] = executor.payload["detections"][0]["mjd"]
++    condition = f"count({COLLECTION} where photometry.g.upper_limit = false and quality.real_bogus >= 0.8) = 2"
++    assert selected(graph, condition, executor).portfolios == ()
++
++
++def test_limits_without_detections_establish_zero_only_for_the_detection_subset(graph):
++    executor = Executor()
++    executor.payload["detections"] = []
++    assert len(selected(graph, G + " = 0", executor).portfolios) == 1
++    assert selected(graph, f"count({COLLECTION}) = 1", executor).portfolios == ()
++
++
++def test_lsst_detection_status_does_not_supply_a_completeness_proof(graph):
++    fixtures = Path(__file__).parent / "fixtures/fink/lsst"
++    payloads = {name: json.loads((fixtures / (name + ".json")).read_text())[:1]
++                for name in ("objects", "sources")}
++    payloads["fp"] = []
++    sequence = count()
++
++    class LsstExecutor:
++        def execute(self, broker, origin, endpoint, params=None, headers=None):
++            assert (broker, origin) == ("fink", "lsst") and endpoint in payloads
++            return ExecutionResult(payload=deepcopy(payloads[endpoint]), execution_provenance=InternalExecutionProvenance(
++                InternalExecutionId(f"lsst-open:{next(sequence)}"), broker, origin, endpoint, params=params or {},
++            ))
++
++    oid = payloads["objects"][0]["r:diaObjectId"]
++    source = (f"object {oid} from lsst via fink\nwith lightcurve\n"
++              "filter count(lightcurve@lsst:fink.points where photometry.i.upper_limit = false) = 1")
++    result = execute_dsl(source, graph=graph, executor=LsstExecutor(), continue_from=None)
++    assert result.portfolios == ()
++
++
++def test_delivery_alone_or_a_proof_without_delivery_never_closes_a_count(graph):
++    no_proof = replace(graph, recipe_capabilities=tuple(
++        replace(recipe, time_selection=None) if (recipe.broker, recipe.origin) == ("alerce", "ztf") else recipe
++        for recipe in graph.recipe_capabilities))
++    no_delivery = replace(graph, recipe_capabilities=tuple(
++        replace(recipe, calls=tuple(replace(call, delivered_bands=()) for call in recipe.calls))
++        for recipe in graph.recipe_capabilities))
++    assert selected(no_proof, G + " = 2").portfolios == ()
++    assert selected(no_delivery, G + " = 2").portfolios == ()
++
++
++def test_required_history_failure_stays_visible(graph):
++    with pytest.raises(WorkflowExecutionError, match="required history failed"):
++        selected(graph, G + " = 2", Executor(fail=True))
++
++
++def load_declaration(tmp_path, graph, delivery):
++    document = yaml.safe_load((PROVIDER / "capabilities.yaml").read_text())
++    document["delivered_bands"] = delivery
++    path = tmp_path / "capabilities.yaml"
++    path.write_text(yaml.safe_dump(document, sort_keys=False))
++    endpoints = yaml.safe_load((PROVIDER / "endpoints.yaml").read_text())
++    return load_provider_capabilities(path, graph, endpoints["endpoints"], broker="alerce", origin="ztf",
++                                      transport_defaults=endpoints.get("transport_defaults"))
++
++
++@pytest.mark.parametrize("delivery", [
++    {"unknown_endpoint": {COLLECTION: ["g"]}},
++    {"query_lightcurve": {"lightcurve@ztf:alerce.no_array": ["g"]}},
++    {"query_object": {COLLECTION: ["g"]}},
++    {"query_lightcurve": {COLLECTION: []}},
++    {"query_lightcurve": {COLLECTION: ["g", "g"]}},
++    {"query_lightcurve": {COLLECTION: ["u"]}},
++    {"query_lightcurve": {COLLECTION: [1]}},
++    {"query_lightcurve": {}},
++    [], None,
++])
++def test_delivered_band_declarations_validate_endpoint_collection_and_domain(tmp_path, graph, delivery):
++    with pytest.raises(RecipeRegistryError, match="delivered_bands"):
++        load_declaration(tmp_path, graph, delivery)
++
++
++def test_delivery_is_immutable_and_attached_only_to_its_declared_call(graph):
++    recipes = graph.query_recipes(broker="alerce", origin="ztf", op="get_lightcurve")
++    (recipe,) = recipes
++    assert recipe.calls[0].delivered_bands == ((COLLECTION, ("g", "r")),)
++    assert recipe.calls[1].delivered_bands == ()
++    with pytest.raises(FrozenInstanceError):
++        recipe.calls[0].delivered_bands = ()
