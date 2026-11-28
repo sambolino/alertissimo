@@ -194,9 +194,9 @@ placement rules below without changing these scientific decisions.
    route delivering a band with no members gives [0, 0]; an undelivered band gives
    [0, infinity). Delivery must be declared per lightcurve route in the existing
    `capabilities.yaml`; undeclared routes make all bands unavailable. Observed
-   bands never redefine the origin's domain or prove completeness. ALeRCE/ZTF's
-   `query_lightcurve` route declares g/r delivery; the existing recipe
-   loader retains it as immutable call metadata. Other routes remain undeclared.
+   bands never redefine the origin's domain or prove completeness. ALeRCE/ZTF and
+   ANTARES/ZTF declare g/r delivery; Lasair/ZTF declares g/r/i.
+   The existing recipe loader retains these as immutable call metadata.
    Delivery alone never closes a count.
 7. **Bind one product.** An aggregate/quantifier collection selector binds one
    qualified product and named array per candidate, without pooling or first-match
@@ -258,7 +258,9 @@ values. A third key member, `detections`, restricts the evidence to count condit
 that entail `photometry.<filter>.upper_limit = false`; it never closes a mixed-array
 total or an extremum. Required-component receipts separately prove explicitly empty
 requested arrays, keyed by Portfolio identity and qualified array path. These
-proofs are transient and add no Portfolio, StepRun or WorkflowIR fields.
+proofs are transient and add no Portfolio, StepRun or WorkflowIR fields. A fully
+covered empty detection history can use a scoped Portfolio/qualified-array receipt
+when normalization emits no point record; it proves zero only in delivered bands.
 Missing/malformed arrays, normalization losses, summary counts and observed bands
 do not establish completeness.
 
@@ -330,12 +332,12 @@ must be retained by the existing semantic-model owner.
 
 ## Detection completeness: first route
 
-ALeRCE/ZTF `query_lightcurve` uses the existing material detection proof for
-`query_lightcurve.detections`. That claim applies to the same required,
-identity-bound full-history call used by lightcurve acquisition; a temporal
-selection clause is not required. Completeness is relative to the broker's
-holdings at retrieval time, never to the survey. The ordinary `points` array still
-mixes detections and limits.
+ALeRCE/ZTF `query_lightcurve`, Lasair/ZTF `lightcurves` and ANTARES/ZTF
+`get_by_ztf_object_id` use their existing material detection proofs for the same
+required, identity-bound history acquisitions. A temporal selection clause is not
+required. Completeness is relative to the broker's holdings at retrieval time,
+never to the survey. The ordinary `points` arrays continue to mix detections and
+limits; only count conditions entailing `upper_limit = false` can close.
 
 ```text
 object ZTF18abbuksn from ztf via alerce
@@ -349,22 +351,39 @@ The equality can be established when every relevant value is known. A missing
 vetting value leaves that member unknown. Explicit negation and equivalent Boolean
 forms retain Kleene semantics; an OR branch that admits limits prevents closure.
 
-The runtime audit requires a successful required call, one bound object matching
-the normalized Portfolio, an explicit detection array, one source-indexed normalized
-measurement per raw row, usable times and Boolean status, and matching multisets of
-detection times/bands and every shared mapped point field in the lightcurve.
-Equal-time duplicates cannot hide a lost row with different photometry or vetting. Contradictory row object IDs, missing or
-invalid status/time, unrecognized bands and dropped rows withhold closure. An
-observed band never supplies delivery metadata. g/r delivery is declared from the
-saved `query_lightcurve.json` capture; i remains unavailable for closed-band claims.
-The raw response and normalized point records remain unchanged.
+The runtime audit requires a successful required call, explicit history arrays,
+one source-indexed normalized measurement per raw row, usable times and Boolean
+status. The normalized detection points must match the measurement population's
+times, bands and every shared mapped point field. Equal-time duplicates cannot
+hide a lost row with different photometry or vetting. Mixed histories also account
+for limit rows without extending the proof to their completeness. Contradictory
+object IDs, missing/invalid status or time, unknown bands and dropped rows withhold
+closure. Raw responses and normalized point records remain unchanged.
 
-| Route | Current boundary |
+For batched Lasair responses every requested object must have exactly one declared
+parent identity, with no unexpected parents and an explicit child array. Per-object
+row indices retain their global positions in that physical response, including
+when parent order differs from request order. Missing, duplicate or malformed
+parents/children do not establish exact counts. Explicit empty children can prove
+zero detections for delivered bands without creating an empty product record.
+
+Receipt inspection reads mapping values or materialized public attributes only;
+it does not invoke lazy relationship getters or make provider calls. Opaque or
+unmaterialized history evidence leaves closure unknown. ANTARES native model
+support therefore requires the actual Alerts array to be materialized, as in its
+saved rich-Locus composite; a secondary client lightcurve is never substituted.
+
+| Route | Delivery and accounting evidence |
 |---|---|
-| ALeRCE/ZTF `query_lightcurve` / `points` | Detection-scoped counts can close after the audit above; mixed totals, extrema and measurement counts remain open. |
-| Lasair/ZTF `lightcurve_candidates` | Mixed detections/limits with a temporal proof; per-row and batched-identity completeness accounting remains the next item 7 slice. No delivery declaration yet. |
-| ANTARES/ZTF `locus_alerts` | Mixed detection/limit payload with a temporal proof; its row/normalization accounting remains the next item 7 slice. No delivery declaration yet. |
+| ALeRCE/ZTF `query_lightcurve.detections` | g/r; existing detection-only payload accounting and saved `query_lightcurve.json`. The combined point array also retains its non-detections. |
+| Lasair/ZTF `lightcurve_candidates` | g/r/i; the [saved capture](../tests/fixtures/lasair/ztf/lightcurves_ZTF17aaabasp.json) has 1,404 mixed candidates with all three bands. All 10 point-field mappings share their measurement sources/transforms; parent IDs and raw-row indices are checked per batch. |
+| ANTARES/ZTF `locus_alerts` | g/r; the [Alerts capture](../tests/fixtures/antares/ztf/alerts.json) has 70 detections and 246 limits. All 22 point-field mappings share measurement sources/transforms. Known `ant_survey` values and canonical g/R-to-g/r passband mappings delimit the detection population. |
 | LSST routes | No matching material detection proof; completeness remains open. |
+
+Mixed nonempty totals, limit-only counts, extrema and measurement-record counts
+remain open. An observed band never supplies delivery metadata. ALeRCE and ANTARES
+i-band counts remain unavailable for closed-bound claims; the origin's default
+filter domain still includes i.
 
 Do not split arrays, add result-model fields or broaden a temporal proof implicitly.
 Delivery is validated for endpoint existence, the exact produced collection, and a
@@ -389,9 +408,9 @@ the required-component rule above.
 | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
 | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
 | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
-| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Unrestricted production histories remain open; ALeRCE/ZTF supplies audited detection-scoped evidence, and explicit required-component empty-array receipts can establish zero. |
+| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Unrestricted production histories remain open; the three audited ZTF routes supply detection-scoped evidence, and explicit required-component empty-array receipts can establish zero. |
 | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
-| D3.6 actual route completeness and delivered bands | ALeRCE/ZTF detection-scoped route and g/r delivery implemented under item 7; Lasair/ANTARES audits remain item 7. LSST and measurement completeness remain open. |
+| D3.6 actual route completeness and delivered bands | ALeRCE/ZTF, Lasair/ZTF and ANTARES/ZTF detection-scoped routes and audited band delivery are implemented under item 7. LSST and measurement completeness remain open. |
 | D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
 | Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
 | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
@@ -404,7 +423,7 @@ lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact count
 zero-count claims, `min > x`, and an `every` failure based only on a short band stay
 unknown until applicable collection completeness exists. An explicit empty-array
 receipt for a required component can prove its zero count; it does not prove band
-delivery or close a nonempty history. The audited ALeRCE/ZTF detection subset is
-the scoped exception described above. A contradictory known
+delivery or close a nonempty history. The audited ZTF detection subsets are
+the scoped exceptions described above. A contradictory known
 witness can still disprove a comparison. Local evaluation does not bypass the
 public DSL or canonical planner material/placement guards.

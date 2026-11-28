@@ -1,5 +1,8 @@
 broker: lasair
 origin: ztf
+delivered_bands:
+  lightcurves:
+    lightcurve@ztf:lasair.points: [g, r, i]
 selection_bindings:
   query:
     latest:

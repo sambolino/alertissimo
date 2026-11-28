@@ -366,6 +366,29 @@ def filter_execution_groups(source, predicate, materialized):
     )
 
 
+def _materialized_raw_field(value, path):
+    """Inspect receipt data without invoking a deferred client relationship."""
+    from collections.abc import Mapping
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
+
+    for key in path.split("."):
+        if isinstance(value, Mapping):
+            if key not in value:
+                raise RawFieldMissing(path)
+            value = value[key]
+        elif isinstance(value, (list, tuple)) and key.isdigit() and int(key) < len(value):
+            value = value[int(key)]
+        else:
+            try:
+                attributes = vars(value)
+            except TypeError as error:
+                raise RawFieldMissing(path) from error
+            if key not in attributes:
+                raise RawFieldMissing(path)
+            value = attributes[key]
+    return value
+
+
 def _component_empty_evidence(run, results, portfolios, before_step, graph, registry):
     """Reconstruct empty receipts, never completeness of a nonempty history.
 
@@ -373,7 +396,7 @@ def _component_empty_evidence(run, results, portfolios, before_step, graph, regi
     Nothing is persisted, and no empty observation/product record is fabricated.
     Missing/null/malformed arrays and rows omitted by normalization are not empty.
     """
-    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
     from alertissimo.orchestration.ir.predicates import _collection_paths
     from alertissimo.orchestration.validation import component_output_matches
     if graph is None:
@@ -451,7 +474,7 @@ def _component_empty_evidence(run, results, portfolios, before_step, graph, regi
                                     empty = False
                                     break
                                 try:
-                                    identified = tuple((row, tuple(extract_raw_field(row, p.partition_field)
+                                    identified = tuple((row, tuple(_materialized_raw_field(row, p.partition_field)
                                                        for p in definitions)) for row in execution.payload)
                                     if any(not isinstance(value, (str, int)) or isinstance(value, bool)
                                            for _, values in identified for value in values):
@@ -462,13 +485,13 @@ def _component_empty_evidence(run, results, portfolios, before_step, graph, regi
                                     if len(parents) != 1:
                                         empty = False
                                         break
-                                    value = extract_raw_field(parents[0], path[3:-2])
+                                    value = _materialized_raw_field(parents[0], path[3:-2])
                                 except RawFieldMissing:
                                     empty = False
                                     break
                             elif len(targets) == 1 and path.endswith("[]") and not path.startswith("[]."):
                                 try:
-                                    value = extract_raw_field(execution.payload, path[:-2])
+                                    value = _materialized_raw_field(execution.payload, path[:-2])
                                 except RawFieldMissing:
                                     empty = False
                                     break
@@ -499,13 +522,14 @@ def _detection_collection_evidence(run, results, portfolios, before_step, graph,
     The provider's material detection proof belongs to an exact endpoint/payload.
     It can cover the same required identity-bound history acquisition without a
     temporal query. Delivery alone, summaries and response lengths cannot close it.
-    This first route accepts single-object payload partitions only; mixed/batched
-    proof populations need their own normalization accounting before activation.
+    Single-object and declared root-field partitions retain raw row indices.
+    Mixed limit rows are checked but never broaden the proof beyond detections.
+    Proof inspection reads materialized fields only, without invoking lazy getters.
     """
     from collections import Counter
     from collections.abc import Mapping
     import math
-    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing
     from alertissimo.orchestration.ir.predicates import _collection_paths
 
     evidence = {}
@@ -542,7 +566,7 @@ def _detection_collection_evidence(run, results, portfolios, before_step, graph,
             if endpoint.supports_projection:
                 continue
             targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
-            if len(targets) != 1:
+            if not targets:
                 continue
             for recipe, proof in declarations:
                 call = recipe.calls[proof.call_index]
@@ -551,18 +575,54 @@ def _detection_collection_evidence(run, results, portfolios, before_step, graph,
                 definition = next((p for p in graph.payload_capabilities
                                    if (p.broker, p.origin, p.endpoint, p.payload_key)
                                    == (plan.broker, plan.origin, plan.endpoint, proof.payload)), None)
-                if definition is None or definition.partition_mode != "single" or not definition.path.endswith("[]"):
+                if definition is None or not definition.path.endswith("[]"):
                     continue
                 try:
-                    raw = extract_raw_field(execution.payload, definition.path[:-2])
+                    if definition.partition_mode == "single" and len(targets) == 1:
+                        parents = ((targets[0], execution.payload),)
+                        child_path = definition.path[:-2]
+                    elif (definition.partition_mode == "root_field" and definition.partition_field
+                          and definition.path.startswith("[].")
+                          and isinstance(execution.payload, (list, tuple))):
+                        identified = tuple((_materialized_raw_field(parent, definition.partition_field), parent)
+                                           for parent in execution.payload)
+                        if any(not isinstance(oid, (str, int)) or isinstance(oid, bool) or str(oid) == ""
+                               for oid, _ in identified):
+                            continue
+                        parents = tuple((str(oid), parent) for oid, parent in identified)
+                        if len({oid for oid, _ in parents}) != len(parents) or {oid for oid, _ in parents} != set(targets):
+                            continue
+                        child_path = definition.path[3:-2]
+                    else:
+                        continue
+                    raw_by_id = {}
+                    offset = 0
+                    for oid, parent in parents:
+                        raw = _materialized_raw_field(parent, child_path)
+                        if (not isinstance(raw, (list, tuple))
+                            or any(not isinstance(row, Mapping) and not hasattr(row, "__dict__") for row in raw)):
+                            raise RawFieldMissing(child_path)
+                        raw_by_id[oid] = (raw, list(range(offset, offset + len(raw))))
+                        offset += len(raw)
                 except RawFieldMissing:
                     continue
-                if not isinstance(raw, (list, tuple)) or any(not isinstance(row, Mapping) for row in raw):
-                    continue
+                # Empty histories normalize to no product record. Preserve a
+                # scoped receipt on the existing candidate, without fabricating one.
+                for object_id, (raw, _) in raw_by_id.items():
+                    if raw:
+                        continue
+                    for portfolio in portfolios:
+                        if summary_object_identity(portfolio) == (plan.origin, object_id):
+                            for collection, bands in call.delivered_bands:
+                                evidence[(portfolio.internal_portfolio_id.value, collection, "detections")] = (
+                                    True, frozenset(bands),
+                                )
                 for portfolio in normalized_cache.get(execution.internal_execution_id.value, ()):
                     identity = summary_object_identity(portfolio)
-                    if identity not in populations or identity != (plan.origin, targets[0]):
+                    if identity not in populations or identity[0] != plan.origin or identity[1] not in raw_by_id:
                         continue
+                    object_id = identity[1]
+                    raw, row_indexes = raw_by_id[object_id]
                     measurements = tuple(record for record in portfolio.records
                         if record.semantic_type == f"measurement@{plan.origin}:{plan.broker}"
                         and record.internal_source is not None
@@ -570,13 +630,13 @@ def _detection_collection_evidence(run, results, portfolios, before_step, graph,
                         and record.internal_source.payload_key == proof.payload)
                     if (len(measurements) != len(raw)
                         or sorted(r.internal_source.payload_index for r in measurements
-                                  if r.internal_source.payload_index is not None) != list(range(len(raw)))):
+                                  if r.internal_source.payload_index is not None) != row_indexes):
                         continue
                     if any(record.get("identity.object_id") is not None
-                           and str(record.get("identity.object_id")) != targets[0] for record in measurements):
+                           and str(record.get("identity.object_id")) != object_id for record in measurements):
                         continue
                     expected = tuple(signature(record.fields) for record in measurements)
-                    if any(item is None or item[2] is not False for item in expected):
+                    if any(item is None for item in expected):
                         continue
                     for collection, bands in call.delivered_bands:
                         product, _, path = collection.partition(".")
@@ -611,11 +671,11 @@ def _detection_collection_evidence(run, results, portfolios, before_step, graph,
                         actual = tuple(signature(point) for point in points)
                         if any(item is None or item[1] not in domain for item in actual):
                             continue
-                        if Counter(item for item in actual if item[2] is False) != Counter(expected):
+                        if Counter(item for item in actual if item[2] is False) != Counter(item for item in expected if item[2] is False):
                             continue
                         try:
                             expected_fields = Counter(projected(record.fields, item[1])
-                                                      for record, item in zip(measurements, expected))
+                                                      for record, item in zip(measurements, expected) if item[2] is False)
                             actual_fields = Counter(projected(point, item[1])
                                                     for point, item in zip(points, actual) if item[2] is False)
                         except TypeError:
