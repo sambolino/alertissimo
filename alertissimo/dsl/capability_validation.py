@@ -793,6 +793,34 @@ def _validate_surface_capabilities(
     checks: list[SurfaceCapabilityCheck] = list(
         _candidate_checks(surface, capability_graph, record_types=semantic_model.record_types)
     )
+    # Reference promotion is scientific IR intent, not a second vocabulary of
+    # component capabilities. Inspect the same strengthened retrievals as planning.
+    from .lowering import SurfaceLoweringError, _lower_fragment_intent, _lower_surface_intent
+    try:
+        kwargs = dict(record_types=semantic_model.record_types, graph=capability_graph, semantic_paths=semantic_model)
+        component_ir = (_lower_surface_intent(surface, **kwargs) if base_workflow is None else
+                        _lower_fragment_intent(surface, base_workflow, **kwargs)).workflow
+        # Scalar container existence uses the same occurrence-local material
+        # proof as aggregates. Check it before legacy noun/producer admission.
+        component_issues = collection_workflow_issues(component_ir, capability_graph)
+        if component_issues:
+            return SurfaceCapabilityReport(checks=tuple(SurfaceCapabilityCheck(
+                subject="selection", status=SurfaceCapabilityStatus.DEFERRED,
+                reason=f"step_index {index}: {reason}",
+            ) for index, reason in component_issues))
+        for step in component_ir.steps:
+            if isinstance(step, GetStep) and step.required_components:
+                result = validate_step_capabilities(step, capability_graph)
+                for item in result.source_results:
+                    if item.status != "supported":
+                        checks.append(SurfaceCapabilityCheck(
+                            subject="requirement", status=SurfaceCapabilityStatus(item.status), reason=item.reason,
+                            broker=item.source.broker if item.source else None,
+                            origin=item.source.origin if item.source else None,
+                            semantic_noun=step.op.removeprefix("get_"),
+                        ))
+    except SurfaceLoweringError:
+        pass  # Existing clause checks retain the original lowering diagnostic.
     checked_requirements: set[tuple[str, str | None, str | None]] = set()
     checked_measurement_references: set[tuple[str, str | None, str | None]] = set()
 
@@ -823,7 +851,7 @@ def _validate_surface_capabilities(
             noun = resolve_record_type(clause.product, semantic_model.record_types)
             for requirement in clause.broker_requirements():
                 signature = (
-                    noun or requirement.product, requirement.source,
+                    requirement.product if "." in requirement.product else noun or requirement.product, requirement.source,
                     requirement.via or surface.candidates.broker,
                 )
                 if signature in checked_requirements:
@@ -835,12 +863,18 @@ def _validate_surface_capabilities(
                     semantic_paths=semantic_model,
                 ))
         elif isinstance(clause, WhereClause):
-            if contains_collection_expression(parse_expression(clause.condition)):
+            from .lowering import _semantic_predicate
+            from alertissimo.orchestration.ir.predicates import contains_container_reference
+            if (contains_collection_expression(parse_expression(clause.condition))
+                or contains_container_reference(_semantic_predicate(
+                    clause.condition, record_types=semantic_model.record_types, clause_index=index,
+                ))):
                 # Validate the same requests lowering will emit. Collection
                 # material availability was already proved for the whole IR.
                 from .lowering import _implicit_requirements_from_where
                 requirements = _implicit_requirements_from_where(
                     surface, clause, record_types=semantic_model.record_types,
+                    graph=capability_graph,
                 )
             else:
                 requirements = tuple(RequirementClause(

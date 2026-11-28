@@ -299,6 +299,11 @@ def iter_aggregate_operands(predicate):
             yield from iter_aggregate_operands(child)
 
 
+def contains_container_reference(predicate) -> bool:
+    return any(reference.field_path and not _collection_paths().is_scalar_path(reference.ontology_path)
+               for reference in iter_semantic_references(predicate))
+
+
 def validate_collection_selectors(predicate, material):
     """Reject known product ambiguity; material entries are noun/producer/channel/origin."""
     for aggregate in iter_aggregate_operands(predicate):
@@ -419,7 +424,7 @@ def validate_collection_predicate(predicate, *, semantic_paths=None, origins=())
 
 __all__ = [
     "AggregateOperand", "ElementReference", "QuantifierPredicate",
-    "contains_collection_predicate", "validate_collection_predicate",
+    "contains_collection_predicate", "contains_container_reference", "validate_collection_predicate",
     "iter_aggregate_operands", "validate_collection_selectors",
     "BooleanPredicate",
     "ComparisonPredicate",

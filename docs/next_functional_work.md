@@ -138,7 +138,7 @@ notation or ordinary-case aliases were introduced.
 **Remaining work:** initial collections with latest or without guaranteed material
 remain item 4a; collection confirm is explicitly out of scope. Actual completeness
 and scientific field coverage remain item 7. Optional pairwise aliases remain item
-10, and FP surface/policy remains item 11. None is silently included in completion.
+10, and on-demand FP computation remains item 11. None is silently included in completion.
 
 ## 7. Measurements, non-detections and lightcurve boundaries
 
@@ -192,21 +192,33 @@ the existing collection contract still requires a reviewed identity rule for
 distinct counting. Material history is preserved rather than deduplicated by a
 guessed scientific key.
 
-**Agreed 27 November 2026; remaining implementation:** product-component requirements and
-reference-driven promotion within existing retrievals, preserving plain plans.
+**Component acquisition:** `with <product>.<component>` and reference-driven
+promotion are implemented in version 3 through the existing IR/resolver. Only
+calls in that product's own recipe are promoted, with no declaration edits.
+Qualified requirements retain origin/producer/broker scope. Empty successes retain
+objects; explicit empty collection receipts can prove zero without closing a
+nonempty history or introducing result fields. Missing/malformed payloads and
+normalization loss stay unknown. Sibling arrays stay separate and competing arrays
+remain ambiguous. See [the component rules](dsl_collections.md#required-components-and-references).
+Completed prefixes are immutable: a later unguaranteed reference keeps the material
+error; an explicit new component retrieval may reuse identical prior required
+calls, but cannot treat an optional prior call as guaranteed. Plain plans and
+version-1/2 wire formats are preserved; component metadata requires version 3.
+
+**Agreed 27 November 2026; remaining implementation:** Lasair/ZTF forced photometry
+and per-route scoped detection completeness.
 Reuse `<calibration>(L1)` on forced-photometry points for Lasair instrumental flux
 and its separate zero point; derive no magnitudes. Keep `ranr`/`decnr` as defined
 nearest-reference-source coordinate debt, without adding a branch. These changes
 are approved but not yet runnable. Local `LightcurveStep` remains deferred.
 
-**Target/work:** finish the approved component acquisition, Lasair forced-photometry
-mapping and scoped detection-completeness slices. Map true/false limit flags where
+**Target/work:** finish Lasair forced-photometry mapping and scoped
+detection completeness. Map true/false limit flags where
 native evidence establishes them; retain unknown otherwise. Missing flux alone is
-not non-detection,
-nor is a detection's limiting depth another observation.
+not non-detection, nor is a detection's limiting depth another observation.
 
 **Per-route collection completeness:** establish evidence on the existing path,
-starting with detection-only arrays that exactly match an existing temporal proof.
+starting with detection populations that exactly match an existing temporal proof.
 A detection-history proof does not close a whole mixed array. The approved next
 slice may close a count only when its condition entails `upper_limit = false`
 and its population is covered by the audited proof payload and normalization.
@@ -232,7 +244,7 @@ remain open. Delivered-band metadata alone does not resolve the evidence boundar
 **Completion:** executable supported measurement intent and reliable field semantics,
 preserving incidental evidence, distinct products and shared presentation. Do not
 add an operation beyond the approved `get_measurement`, or add a local builder.
-FP component requests are approved for a later slice; on-demand computation remains
+FP component requests use the general rule above; on-demand computation remains
 item 11. Default visibility/composition choices remain open.
 
 ## 8. Deployable UI
@@ -273,12 +285,13 @@ This plan does not add a spectrum programme.
 points or an FP measurement near each outer point. Review scope, distinctness,
 temporal ordering and units then. Do not complicate item 6's ordinary cases.
 
-## 11. FP surface and acquisition policy — deferred
+## 11. On-demand forced-photometry services — deferred
 
-**Current:** programmatic `GetForcedPhotometryStep` exists; public
-`with forced_photometry` fails the Portfolio noun gate. Lightcurve recipes can
-include optional FP calls; ALeRCE/LSST can also return bundled FP.
+**Current:** existing FP retrieval uses the component rule in item 7.
+Programmatic `GetForcedPhotometryStep` remains available; public
+`with forced_photometry` remains outside the Portfolio noun gate. Plain recipes
+can include optional FP calls; ALeRCE/LSST also returns bundled FP.
 
-**Later decision:** explicit FP intent, required versus incidental evidence,
-lightcurve composition and the existing Step together. No new FP noun/record,
-broader component admission, or automatic-supplementation change is approved.
+**Later decision:** requests that trigger new computation, such as IPAC ZTF or an
+on-demand broker run. Item 7 retrieves existing data only; no service invocation,
+new FP noun/record or automatic computation is introduced by the component rule.

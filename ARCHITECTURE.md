@@ -68,6 +68,19 @@ forced calls follow the lightcurve policy. No recipe means unsupported acquisiti
 incidental measurement predicates retain their existing scheduling. Measurements
 and lightcurve points remain distinct collections, with open completeness.
 
+An ontology-valid `with <product>.<component>` records qualified semantic references
+in the Get's `required_components`. The existing resolver promotes every producing
+call within that product's own recipe, without changing declarations or importing
+another operation's calls. References strengthen matching unexecuted Gets; completed
+continuation prefixes stay immutable. Required empty successes keep the object;
+existing receipts can prove an empty requested array transiently, without adding
+Portfolio fields or fabricated records. Missing/malformed arrays and normalization
+loss are not empty evidence. Scalar values keep their existing existence semantics;
+container existence asks for supplied content. Sibling arrays are distinct, while
+multiple records carrying the requested array remain ambiguous. Nonempty histories
+retain open completeness. Empty component metadata is omitted from serialization;
+nonempty metadata requires version 3, preserving older workflow wire formats.
+
 An abstract-family request expands deterministically into supported concrete Gets
 using the supplied capability graph and candidate origins. Identical explicit or
 continued requests are deduplicated. Deferred members are not activated, an empty
@@ -194,7 +207,8 @@ versions through its existing declarative recipe.
   rejected candidates, serialization and immutable continuation; acquisition
   warnings still block continuation. Physical audit projection follows the
   material decision rather than re-evaluating collection fragments. Synthetic
-  transient evidence exercises completeness; no production route supplies it.
+  transient evidence exercises nonempty completeness; required-component receipts
+  prove only explicit empty arrays. Nonempty route completeness remains deferred.
   No Portfolio/result schema or runtime layer is added. WorkflowIR carries
   `dsl_version`: new construction uses 3; unversioned serialized IR loads as 1,
   and newer versions are refused. Existing version-1/2 workflows retain their
@@ -205,8 +219,8 @@ versions through its existing declarative recipe.
   missing flux alone does not establish one, and limiting depth alongside a value
   is not another observation.
 - Cutouts follow the higher-priority scientific work. Optional `as p` bindings and
-  the FP surface/acquisition policy remain deferred for reevaluation. Do not
-  broaden the Portfolio noun rule or change automatic FP supplementation now.
+  on-demand FP computation remain deferred. The component rule retains Portfolio
+  nouns and preserves automatic supplementation when no component is required.
 
 The [field coverage contract](docs/provider_field_coverage.md) owns the audit
 checklist and dated targeted-catalogue snapshot. The existing

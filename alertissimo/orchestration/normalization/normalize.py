@@ -5,21 +5,21 @@ from __future__ import annotations
 from dataclasses import replace
 from uuid import uuid4
 
-from alertissimo.data_layer.execution import ExecutionResult
+from alertissimo.data_layer.execution import EndpointRegistry, ExecutionResult
 from alertissimo.data_layer.representations import (
     InternalEdgeId, InternalPortfolioId, InternalRecordId, Portfolio,
 )
 from alertissimo.data_layer.runtime.record_builder import (
-    _semantic_identifier, build_portfolios_from_execution,
+    _bound_target_ids, _semantic_identifier, build_portfolios_from_execution,
 )
 from alertissimo.data_layer.runtime.classification_headline import (
     headline_reference, is_headline_record, materialize_headlines,
 )
 from alertissimo.orchestration.ir import (
-    DeriveStep, FilterStep, GetClassificationStep, MatchStep, Step, and_predicates,
+    DeriveStep, FilterStep, GetClassificationStep, GetStep, LookupStep, MatchStep, SearchStep, Step, and_predicates,
 )
 from alertissimo.orchestration.ir.predicates import (
-    Predicate, contains_collection_predicate, iter_semantic_references,
+    Predicate, contains_collection_predicate, contains_container_reference, iter_semantic_references,
 )
 from alertissimo.orchestration.runtime import (
     EndpointPlan,
@@ -350,7 +350,7 @@ def filter_execution_groups(source, predicate, materialized):
     either on a partial physical response would make a second, different decision.
     Existing scalar predicates retain their execution-local projection.
     """
-    normalized = contains_collection_predicate(predicate) or any(
+    normalized = contains_collection_predicate(predicate) or contains_container_reference(predicate) or any(
         headline_reference(ref) for ref in iter_semantic_references(predicate))
     survivors = {summary_object_identity(p) for p in materialized} - {None}
     surviving_ids = {p.internal_portfolio_id for p in materialized}
@@ -366,11 +366,111 @@ def filter_execution_groups(source, predicate, materialized):
     )
 
 
+def _component_empty_evidence(run, results, portfolios, before_step, graph, registry):
+    """Reconstruct empty receipts, never completeness of a nonempty history.
+
+    Keys reuse transient collection evidence: (Portfolio ID, qualified array).
+    Nothing is persisted, and no empty observation/product record is fabricated.
+    Missing/null/malformed arrays and rows omitted by normalization are not empty.
+    """
+    from alertissimo.data_layer.runtime.payload_paths import RawFieldMissing, extract_raw_field
+    from alertissimo.orchestration.ir.predicates import _collection_paths
+    from alertissimo.orchestration.validation import component_output_matches
+    if graph is None:
+        return {}
+    model = _collection_paths()
+    def product_key(field):
+        product = field.semantic_record_type
+        return product + ":" + field.broker if "@" in product and ":" not in product else product
+    evidence = {}
+    start = 0
+    for index, step in enumerate(run.workflow.steps[:before_step]):
+        if isinstance(step, (SearchStep, LookupStep)) or isinstance(step, GetStep) and step.target is not None:
+            start = index
+    for index in range(start, min(before_step, len(results))):
+        step = run.workflow.steps[index]
+        if not isinstance(step, GetStep) or not step.required_components:
+            continue
+        step_run = run.steps[index]
+        if step_run.state is not StepRunState.SUCCEEDED:
+            continue
+        execution_result = results[index]
+        indexes = _execution_plan_indexes(step_run, execution_result)
+        for component in step.required_components:
+            boundaries = model.array_boundaries(component.ontology_path)
+            if not boundaries:
+                continue
+            array = component.model_copy(update={"field_path": boundaries[-1].partition(".")[2]})
+            owners = []
+            for plan_index, plan in enumerate(step_run.endpoint_plans):
+                fields = tuple(f for f in graph.fields_for_endpoint(plan.broker, plan.origin, plan.endpoint)
+                               if component_output_matches(step, f, array))
+                if fields:
+                    owners.append((plan_index, plan, fields))
+            if not owners or any(not plan.required for _, plan, _ in owners):
+                continue
+            for portfolio in portfolios:
+                identity = summary_object_identity(portfolio)
+                if identity is None:
+                    continue
+                origin, object_id = identity
+                relevant = tuple(owner for owner in owners if owner[1].origin == origin)
+                if not relevant:
+                    continue
+                for _, _, fields in relevant:
+                    for field in fields:
+                        evidence.pop((portfolio.internal_portfolio_id.value,
+                                      product_key(field) + "." + array.field_path), None)
+                products = set()
+                established = True
+                for plan_index, plan, fields in relevant:
+                    covered = False
+                    for owner, execution in zip(indexes, execution_result.executions):
+                        if owner != plan_index:
+                            continue
+                        targets = tuple(str(value) for value in _bound_target_ids(execution, providers_root=registry.root))
+                        if object_id not in targets:
+                            continue
+                        paths = {field.payload_path for field in fields}
+                        # Only a wholly empty returned collection, or an explicit
+                        # empty collection in a single-target object, proves this.
+                        empty = True
+                        for path in paths:
+                            if path == "[]":
+                                value = execution.payload
+                            elif len(targets) == 1 and path.endswith("[]") and not path.startswith("[]."):
+                                try:
+                                    value = extract_raw_field(execution.payload, path[:-2])
+                                except RawFieldMissing:
+                                    empty = False
+                                    break
+                            else:
+                                empty = False
+                                break
+                            if not isinstance(value, (tuple, list)) or value:
+                                empty = False
+                                break
+                        if not empty:
+                            established = False
+                            break
+                        covered = True
+                        products.update(product_key(f) for f in fields)
+                    if not covered:
+                        established = False
+                    if not established:
+                        break
+                if established:
+                    for product in products:
+                        evidence[(portfolio.internal_portfolio_id.value, product + "." + array.field_path)] = (True, frozenset())
+    return evidence
+
+
 def _filter_candidate_view(
     step: FilterStep,
     step_run: StepRun,
     normalized_steps: list[StepPortfolioResult],
     *, diagnostics: list[str] | None = None,
+    collection_evidence=None,
 ) -> StepPortfolioResult:
     """Apply one local FilterStep to an earlier normalized semantic view.
 
@@ -401,7 +501,8 @@ def _filter_candidate_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
+        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics,
+                                       collection_evidence=collection_evidence)
         executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_run.step_index,
@@ -687,6 +788,8 @@ def normalize_workflow_execution(
     validate_semantic_model: bool = True,
     normalized_execution_cache: dict[str, tuple[Portfolio, ...]] | None = None,
     preserved_steps: tuple[StepPortfolioResult, ...] = (),
+    graph=None,
+    registry=None,
 ) -> WorkflowPortfolioResult:
     """Normalize physical executions once, then expose Step-specific semantic views.
 
@@ -710,6 +813,11 @@ def normalize_workflow_execution(
     """
 
     _validate_workflow_alignment(result)
+    if any(isinstance(step, GetStep) and step.required_components for step in result.run.workflow.steps):
+        registry = registry or EndpointRegistry()
+        if graph is None:
+            from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+            graph = build_capability_graph(registry.root)
     normalized_by_execution_id = (
         normalized_execution_cache
         if normalized_execution_cache is not None
@@ -732,7 +840,11 @@ def normalize_workflow_execution(
             continue
         if isinstance(step, FilterStep):
             diagnostics: list[str] = []
-            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics)
+            source = normalized_steps[step_run.candidate_input_from.step_index]
+            evidence = _component_empty_evidence(result.run, result.steps, source.portfolios,
+                                                  step_run.step_index, graph, registry)
+            view = _filter_candidate_view(step, step_run, normalized_steps, diagnostics=diagnostics,
+                                          collection_evidence=evidence)
             if diagnostics:
                 updated_steps[step_run.step_index] = step_run.model_copy(update={
                     "warnings": step_run.warnings + tuple(

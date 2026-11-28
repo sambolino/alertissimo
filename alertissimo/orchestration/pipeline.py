@@ -19,9 +19,9 @@ from alertissimo.orchestration.binding.models import StepBindingResult
 from alertissimo.orchestration.normalization.selection import (
     apply_deferred_search_selection, validate_time_selection_payloads, validate_latest_selection_payloads,
 )
-from alertissimo.orchestration.normalization.normalize import filter_execution_groups
+from alertissimo.orchestration.normalization.normalize import _component_empty_evidence, filter_execution_groups
 from alertissimo.orchestration.confirmation.confirm import confirm_step_portfolios
-from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, MatchStep
+from alertissimo.orchestration.ir import ConfirmStep, DeriveStep, FilterStep, GetStep, MatchStep
 from alertissimo.orchestration.matching import match_step_portfolios
 from alertissimo.orchestration.normalization import (
     ExecutionPortfolioResult,
@@ -246,6 +246,7 @@ def _filter_view(
     step_index: int,
     source: StepPortfolioResult,
     *, diagnostics: list[str] | None = None,
+    collection_evidence=None,
 ) -> StepPortfolioResult:
     if step.predicate is None:
         if step.criteria:
@@ -255,7 +256,8 @@ def _filter_view(
         executions = source.executions
         materialized = source.portfolios
     else:
-        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics)
+        materialized = prune_portfolios(source.portfolios, step.predicate, diagnostics=diagnostics,
+                                       collection_evidence=collection_evidence)
         executions = filter_execution_groups(source, step.predicate, materialized)
     return StepPortfolioResult(
         step_index=step_index,
@@ -294,6 +296,7 @@ def execute_staged_workflow_run(
     reference_time: datetime | None = None,
     _reference_times: dict[int, datetime] | None = None,
     _prior_steps: tuple[StepPortfolioResult, ...] = (),
+    graph=None,
 ) -> StagedWorkflowResult:
     """Bind and execute a planned workflow as runtime values become available.
 
@@ -308,6 +311,9 @@ def execute_staged_workflow_run(
         raise CandidateFlowError("staged execution requires a fully planned WorkflowRun")
     if reference_time is not None:
         reference_time = utc_instant(reference_time)
+    if graph is None and any(isinstance(step, GetStep) and step.required_components for step in run.workflow.steps):
+        from alertissimo.data_layer.runtime.capability_graph import build_capability_graph
+        graph = build_capability_graph(registry.root)
 
     updated_run = run
     bindings: list[StepBindingResult] = []
@@ -400,7 +406,10 @@ def execute_staged_workflow_run(
                 if step_index < len(_prior_steps):
                     view = _prior_steps[step_index]
                 else:
-                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics)
+                    evidence = _component_empty_evidence(updated_run, step_results, source_view.portfolios,
+                                                          step_index, graph, registry)
+                    view = _filter_view(step, step_index, source_view, diagnostics=diagnostics,
+                                        collection_evidence=evidence)
                     view = apply_deferred_search_selection(
                         run.workflow, view, candidate_views_by_step, updated_run.steps,
                     )
@@ -752,6 +761,7 @@ def execute_staged_workflow_run(
         validate_semantic_model=validate_semantic_model,
         normalized_execution_cache=normalized_execution_cache,
         preserved_steps=_prior_steps,
+        **({"graph": graph, "registry": registry} if graph is not None else {}),
     )
     if normalized.run is not execution_result.run:
         execution_result = WorkflowExecutionResult(run=normalized.run, steps=execution_result.steps)

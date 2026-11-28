@@ -247,6 +247,7 @@ def execute_incremental_workflow_run(
     *,
     validate_semantic_model: bool = True,
     reference_time: datetime | None = None,
+    graph=None,
 ) -> StagedWorkflowResult:
     """Execute an extended planned workflow while replaying its prior call prefix.
 
@@ -274,6 +275,7 @@ def execute_incremental_workflow_run(
             for binding in previous.bindings if binding.reference_time is not None
         },
         _prior_steps=previous.normalized.steps,
+        **({"graph": graph} if graph is not None else {}),
     )
     replay.require_complete_replay()
     return staged

@@ -88,6 +88,19 @@ def _available(value: Any) -> bool:
     )
 
 
+def _existing_component(record, reference, portfolio, *, value=_MISSING):
+    if value is _MISSING:
+        value = _record_value(record, reference, portfolio)
+    if reference.field_path and not _collection_paths().is_scalar_path(reference.ontology_path):
+        if value is _MISSING:
+            value = _lookup(record, reference.field_path)
+        if value is _MISSING:
+            values = (v for key, v in record.fields.items() if key.startswith(reference.field_path + "."))
+            return any(_available(v) and (bool(v) if isinstance(v, (Mapping, tuple, list)) else True) for v in values)
+        return _available(value) and (bool(value) if isinstance(value, (Mapping, tuple, list)) else True)
+    return _available(value)
+
+
 def _compare(left: Any, operator_name: str, right: Any) -> bool | None:
     """None is unavailable evidence, and must remain unavailable under NOT."""
     if not _available(left) or not _available(right):
@@ -245,8 +258,9 @@ def evaluate_portfolio_predicate_truth(
     """Evaluate one predicate in the existing scalar witness search using Kleene logic.
 
     ``collection_evidence`` is transient explicit evidence keyed by record ID and
-    exact array path, with (complete, delivered bands) values. No production route
-    supplies it in this slice. Tests supply synthetic proofs; record collections
+    exact array path, with (complete, delivered bands) values. A successful required
+    component may also supply (Portfolio ID, qualified array) for an empty receipt.
+    No nonempty production history is closed here. Tests supply synthetic proofs; record collections
     such as incidental measurement records always retain open completeness.
     Diagnostics use the caller's existing warnings collector, including when a
     candidate is rejected. No Portfolio or runtime schema field is introduced.
@@ -263,6 +277,27 @@ def evaluate_portfolio_predicate_truth(
     aggregate_cache: dict[tuple, tuple[int | float, int | float] | None] = {}
     branch_cache = {}
     evidence = collection_evidence or {}
+
+    def product_key(record):
+        noun, producer, channel = _record_parts(record.semantic_type)
+        if channel is None and record.internal_source is not None:
+            execution = portfolio.execution(record.internal_source.internal_execution_id)
+            channel = execution.broker if execution is not None else None
+        return noun + ("@" + producer if producer else "") + (":" + channel if producer and channel else "")
+
+    def empty_products(reference):
+        path = substitute(reference.field_path)
+        result = set()
+        for (owner, qualified), proof in evidence.items():
+            if owner != portfolio.internal_portfolio_id.value or proof[0] is not True:
+                continue
+            head, _, field = qualified.partition(".")
+            noun, _, qualifiers = head.partition("@")
+            producer, _, channel = qualifiers.partition(":")
+            if (noun == reference.semantic_type and field == path
+                and reference.producer in (None, producer) and reference.channel in (None, channel)):
+                result.add(head)
+        return result
 
     def substitute(path):
         if any(name not in parameters for name in re.findall(r"\{([^{}]+)\}", path)):
@@ -333,7 +368,26 @@ def evaluate_portfolio_predicate_truth(
             collection = reference.model_copy(update={"field_path": field})
             projection = reference.field_path[len(field) + 1:]
         matches = matching(reference)
+        if collection.field_path and len(matches) > 1 and len({product_key(r) for r in matches}) == 1:
+            path = substitute(collection.field_path)
+            holders = tuple(r for r in matches if path is not None and _lookup(r, path) is not _MISSING)
+            # Separate physical calls can deliver sibling arrays of one product.
+            # They do not compete for the named array. Multiple holders still do.
+            siblings = tuple(r for r in matches if r not in holders and any(
+                key != path and _collection_paths().array_boundaries(r.semantic_type + "." + key)
+                for key in r.fields
+            ))
+            if holders and len(holders) + len(siblings) == len(matches):
+                matches = holders
+            elif not holders and len(siblings) == len(matches) and empty_products(collection):
+                matches = ()  # Empty receipt concerns this array, not sibling histories.
+        empties = empty_products(collection) if collection.field_path else set()
+        if empties and (len({product_key(r) for r in matches} | empties) > 1 or len(matches) > 1):
+            ambiguous(collection, tuple(matches) + tuple(empties))
+            aggregate_cache[cache_key] = None
+            return None
         complete, delivered = False, frozenset()
+        malformed_array = False
         if not collection.field_path:
             # Record counts never pool lightcurve point representations.
             items = matches if matches else None
@@ -350,9 +404,12 @@ def evaluate_portfolio_predicate_truth(
                 items = None
             else:
                 items, shape_valid = _array_members(record, path)
+                malformed_array = not shape_valid and _lookup(record, path) is not _MISSING
                 proof = evidence.get((record.internal_record_id.value, path), (False, frozenset()))
                 complete = proof[0] is True and shape_valid and items is not None
                 delivered = frozenset(proof[1])
+        if empties and not malformed_array and (items is None or not items):
+            items, complete, delivered = (), True, frozenset()
         relative_paths = (projection,) if projection is not None else tuple(_element_paths(node.condition, declared_filters()))
         groups, bands = branch_requirements(collection, relative_paths)
         complete = complete and bands <= delivered
@@ -493,8 +550,10 @@ def evaluate_portfolio_predicate_truth(
             if "{output}" in node.reference.field_path:
                 # A new output quantifier binds one assertion. Preserve the
                 # whole-view explicit-absence rule only for existing scalar forms.
-                return not _available(operand_value(node.reference, element))
-            return not any(_available(_record_value(record, reference, portfolio))
+                record = bound.get(_selector(node.reference))
+                return not (record is not None and _existing_component(
+                    record, reference, portfolio, value=operand_value(node.reference, element)))
+            return not any(_existing_component(record, reference, portfolio)
                            for record in records[_selector(node.reference)])
         if isinstance(node, ComparisonPredicate):
             left_aggregate = isinstance(node.left, AggregateOperand)
@@ -521,7 +580,14 @@ def evaluate_portfolio_predicate_truth(
         elif isinstance(node, ExistsPredicate):
             if isinstance(node.reference, SemanticReference) and _selector(node.reference) not in bound:
                 return None
-            value = _available(operand_value(node.reference, element))
+            if isinstance(node.reference, SemanticReference):
+                record = bound.get(_selector(node.reference))
+                path = substitute(node.reference.field_path)
+                value = (record is not None and path is not None and _existing_component(
+                    record, node.reference.model_copy(update={"field_path": path}), portfolio,
+                    value=operand_value(node.reference, element)))
+            else:
+                value = _available(operand_value(node.reference, element))
         elif isinstance(node, BooleanPredicate):
             conjunction = (node.operator == "and") != negate
             unknown = False
@@ -569,12 +635,14 @@ def evaluate_portfolio_predicate(
 def prune_portfolios(
     portfolios: tuple[Portfolio, ...] | list[Portfolio], predicate: Predicate,
     *, diagnostics: list[str] | None = None,
+    collection_evidence=None,
 ) -> tuple[Portfolio, ...]:
     """Refine existing candidates without changing their scientific records."""
     if any(headline_reference(ref) for ref in iter_semantic_references(predicate)):
         portfolios = tuple(materialize_headlines(p) for p in portfolios)
     return tuple(portfolio for portfolio in portfolios
-                 if evaluate_portfolio_predicate(portfolio, predicate, diagnostics=diagnostics))
+                 if evaluate_portfolio_predicate(portfolio, predicate, diagnostics=diagnostics,
+                                                  collection_evidence=collection_evidence))
 
 
 __all__ = ["evaluate_portfolio_predicate", "evaluate_portfolio_predicate_truth", "prune_portfolios"]

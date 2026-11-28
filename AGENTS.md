@@ -26,9 +26,11 @@ invariants, retired interfaces and functional priorities before changing code.
 
 - Keep one public facade, canonical WorkflowIR, ontology and normalized Portfolio.
   Preserve existing semantic IDs; prefer additive mappings over renaming.
-- Keep `with` requirements tied to Portfolio record nouns/family members. Nested
-  components and enum values do not automatically become request nouns. Explicit FP
-  surface/policy changes and optional element bindings remain deferred.
+- Keep `with` requirements tied to Portfolio record nouns/family members.
+  `with <product>.<component>` strengthens that product's own recipe; components
+  and enum values do not become standalone nouns. References may strengthen only
+  unexecuted retrievals, never add a Get or rewrite a completed continuation prefix.
+  Optional element bindings and on-demand forced-photometry computation remain deferred.
 - Provider details belong in declarations and pure adapters, not broker switches
   in the DSL, planner or UI. Do not restore retired `core` execution code.
 - Keep scientific extraction in shared presentation. Display dictionaries are

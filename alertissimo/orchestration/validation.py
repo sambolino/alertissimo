@@ -525,12 +525,13 @@ def predicate_material_gaps(
     predicate: Predicate, outputs: tuple[FieldMappingCapability, ...], *, broker: str,
 ) -> tuple[str, ...]:
     """Inspect call-scoped mapped material without selecting or executing a route."""
-    from .ir.predicates import contains_collection_predicate, iter_aggregate_operands
+    from .ir.predicates import _collection_paths, contains_collection_predicate, iter_aggregate_operands
     collection_pattern = contains_collection_predicate(predicate)
     collections = {item.reference for item in iter_aggregate_operands(predicate) if item.function == "count"}
     def mapped(reference: SemanticReference) -> bool:
         if headline_material_available(reference, outputs):
             return True
+        container = bool(reference.field_path) and not _collection_paths().is_scalar_path(reference.ontology_path)
         for field in outputs:
             record = field.semantic_record_type
             if not semantic_record_noun_matches(record, reference.semantic_type):
@@ -548,7 +549,7 @@ def predicate_material_gaps(
             if not reference.field_path:
                 return True
             declared, requested = field.relative_field_path.split("."), reference.field_path.split(".")
-            lengths_match = (len(declared) >= len(requested) if reference in collections
+            lengths_match = (len(declared) >= len(requested) if reference in collections or container
                              else len(declared) == len(requested))
             if lengths_match and all(
                 actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual)
@@ -1050,7 +1051,9 @@ def _raw_candidates_for_source(
 def _candidate_evidence_for_source(
     step: Step, graph: CapabilityGraph, source: Source | None
 ) -> _CandidateEvidence:
-    evidence = _operation_candidate_evidence_for_source(step, graph, source)
+    evidence = (_component_recipe_evidence(step, graph, source)
+                if isinstance(step, GetStep) and step.required_components else
+                _operation_candidate_evidence_for_source(step, graph, source))
     if not isinstance(step, SearchStep) or step.selection is None or not evidence.compatible:
         return evidence
     compatible, recipes = [], []
@@ -1169,6 +1172,78 @@ def _operation_candidate_evidence_for_source(
         if recipes is not None:
             return recipes
     return _legacy_candidate_evidence_for_source(step, graph, source)
+
+
+def component_output_matches(step: GetStep, field: FieldMappingCapability, component: SemanticReference) -> bool:
+    """Match an ontology component to this product's own mapped output fields."""
+    noun = step.op.removeprefix("get_")
+    if not semantic_record_noun_matches(field.semantic_record_type, noun):
+        return False
+    if component.channel is not None and component.channel != field.broker:
+        return False
+    if component.producer is not None and component.producer != _semantic_record_producer(field.semantic_record_type) and not _DYNAMIC_QUALIFIER.fullmatch(_semantic_record_producer(field.semantic_record_type) or ""):
+        return False
+    producer = getattr(step, "classifier", None) or getattr(step, "catalog", None)
+    actual_producer = _semantic_record_producer(field.semantic_record_type)
+    if producer is not None and actual_producer != producer and not _DYNAMIC_QUALIFIER.fullmatch(actual_producer or ""):
+        return False
+    declared, requested = field.relative_field_path.split("."), component.field_path.split(".")
+    return len(declared) >= len(requested) and all(
+        actual == wanted or _DYNAMIC_QUALIFIER.fullmatch(actual) or _DYNAMIC_QUALIFIER.fullmatch(wanted)
+        for actual, wanted in zip(declared, requested)
+    )
+
+
+def _component_recipe_evidence(step: GetStep, graph: CapabilityGraph, source: Source | None) -> _CandidateEvidence:
+    """Strengthen calls within this operation's recipes; never import calls."""
+    declared = graph.query_recipes(broker=source.broker if source else None,
+                                   origin=source.origin if source else None, op=step.op)
+    promoted = []
+    origins = {endpoint.origin for endpoint in graph.endpoint_capabilities}
+    for recipe in declared:
+        components = tuple(c for c in step.required_components
+                           if c.channel in (None, recipe.broker)
+                           and (c.semantic_type not in {"lightcurve", "measurement"}
+                                or c.producer not in origins or c.producer == recipe.origin))
+        def outputs(call):
+            endpoint = next(e for e in graph.endpoint_capabilities
+                            if (e.broker, e.origin, e.endpoint) == (recipe.broker, recipe.origin, call.endpoint))
+            projection = next((p.source for p in call.params
+                               if endpoint.supports_projection and p.parameter == endpoint.projection_param), None)
+            if projection is None:
+                return call.outputs
+            if not isinstance(projection, ConstantValueSource) or not isinstance(projection.value, str):
+                return ()
+            columns = {column.strip().split(".")[-1] for column in projection.value.split(",")}
+            return tuple(f for f in call.outputs if f.raw_field in columns)
+        owners = {component: tuple(index for index, call in enumerate(recipe.calls)
+                                   if any(component_output_matches(step, field, component) for field in outputs(call)))
+                  for component in components}
+        if any(not calls for calls in owners.values()):
+            continue
+        required = {index for indexes in owners.values() for index in indexes}
+        promoted.append(replace(recipe, calls=tuple(
+            replace(call, required=True) if index in required else call
+            for index, call in enumerate(recipe.calls)
+        )))
+    reason = (f"{source.broker if source else '*'}/{source.origin if source else '*'}: "
+              f"no {step.op} recipe can produce required component(s) {step.required_components!r}")
+    if not promoted:
+        return _CandidateEvidence(raw=(), compatible=(), empty_reason=reason)
+    replacements = {(r.broker, r.origin, r.op, r.alternative_index): r for r in promoted}
+    declared_keys = {(r.broker, r.origin, r.op, r.alternative_index) for r in declared}
+    adjusted = replace(graph, recipe_capabilities=tuple(
+        replacements.get((r.broker, r.origin, r.op, r.alternative_index), r)
+        for r in graph.recipe_capabilities
+        if (r.broker, r.origin, r.op, r.alternative_index) not in declared_keys
+        or (r.broker, r.origin, r.op, r.alternative_index) in replacements
+    ))
+    evidence = _operation_candidate_evidence_for_source(step, adjusted, source)
+    recipes = tuple(r for r in evidence.recipes if (r.broker, r.origin, r.op, r.alternative_index) in replacements)
+    keys = {(r.broker, r.origin, r.calls[0].endpoint) for r in recipes}
+    candidates = tuple(e for e in evidence.compatible if (e.broker, e.origin, e.endpoint) in keys)
+    return replace(evidence, compatible=candidates, recipes=recipes,
+                   empty_reason=evidence.empty_reason if evidence.empty_status == "deferred" else reason)
 
 
 def _legacy_candidate_evidence_for_source(
@@ -1441,7 +1516,7 @@ def classification_material_capabilities(
     still comes from validate_step_capabilities. Empty evidence means this proof
     cannot establish an owner for every requested source.
     """
-    if step.target is not None or step.classifier is None or not step.sources:
+    if step.target is not None or step.classifier is None or not step.sources or step.required_components:
         return ()
     owner_index = None
     for index in range(len(earlier_steps) - 1, -1, -1):
@@ -1561,9 +1636,10 @@ def collection_workflow_issues(
     This proves mapped material availability, never collection completeness,
     observed values, delivered bands, or success of an optional call.
     """
-    from .ir.predicates import contains_collection_predicate
+    from .ir.predicates import contains_container_reference, contains_collection_predicate
     targets = tuple(index for index, step in enumerate(workflow.steps)
-                    if contains_collection_predicate(getattr(step, "predicate", None)))
+                    if contains_collection_predicate(getattr(step, "predicate", None)) or
+                    (not isinstance(step, ConfirmStep) and contains_container_reference(getattr(step, "predicate", None))))
     if not targets:
         return ()
     forbidden = tuple((index, "collection predicates in confirm are not admitted (item 6)")

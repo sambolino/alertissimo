@@ -89,6 +89,55 @@ on the scheduling rules below.
 
 ## Counting, projection and evidence
 
+### Required components and references
+
+```text
+object ZTF18abbuksn from ztf via alerce
+with lightcurve.forced_photometry_points
+```
+
+This requires the producing calls in the lightcurve recipe and keeps an object
+whose calls succeed with empty arrays. It does not select objects with FP. To
+select those that actually have it, use either:
+
+```text
+object ZTF18abbuksn from ztf via alerce
+with lightcurve where forced_photometry_points exists
+```
+
+```text
+object ZTF18abbuksn from ztf via alerce
+with lightcurve
+filter count(lightcurve@ztf:alerce.forced_photometry_points where time.mjd > 60000) >= 1
+```
+
+The reference strengthens the existing retrieval; it does not create another Get.
+Without guaranteed preceding material, admission still reports item 4a. Previously
+admitted initial-where scheduling is retained for already guaranteed material;
+an optional-only component cannot introduce implicit acquisition. A completed
+continuation prefix is never strengthened retroactively. Request the component
+explicitly in a new retrieval if the prefix did not guarantee it; identical earlier
+required calls may be reused, while an earlier optional call is not a guarantee.
+
+The same rule applies to other ontology components, including
+`with measurement.forced_photometry` on ALeRCE/LSST. Every matching producer call in
+that Get's own recipe becomes required. Another product's recipe cannot supply a
+missing route. Unknown paths and no-route brokers are rejected. Plain requests
+retain their recipe policy, including optional supplements and cardinality guards.
+
+A successful required empty collection receipt can establish
+`count(lightcurve.forced_photometry_points) = 0`. This is reconstructed from the
+required calls, their explicit raw arrays and bound object identities. Missing,
+null or malformed arrays and nonempty rows omitted during normalization do not
+prove empty. No empty observation or product record is invented. This proof does
+not close a nonempty history, a measurement record collection, or an unavailable
+band. No delivered-band declarations are introduced here.
+
+Sibling arrays returned in separate records of the same qualified product do not
+compete for the named array: Fink/LSST `points` and `forced_photometry_points` remain
+separate. Multiple records carrying the requested array, multiple qualified
+products, and malformed competing arrays retain `ambiguous_product` handling.
+
 `count` counts named collection elements. Records, values and distinct observations
 are not interchangeable. One record containing ordinary and forced values is not
 automatically two observations; neither may its measurement and lightcurve
@@ -150,10 +199,11 @@ placement rules below without changing these scientific decisions.
    collection-completeness slice under item 7. Recipes and capability files remain
    untouched in the syntax, evaluation and admission slices.
 7. **Bind one product.** An aggregate/quantifier collection selector binds one
-   product record per candidate, without pooling or first-match selection.
+   qualified product and named array per candidate, without pooling or first-match
+   selection. Records carrying only sibling arrays do not compete for that array.
    Statically visible ambiguity requires an existing qualifier, for example
-   `lightcurve@ztf:fink.points`. Multiple matching runtime records produce unknown
-   and a visible `ambiguous_product` diagnostic, not an exception. Never combine
+   `lightcurve@ztf:fink.points`. Multiple runtime records carrying the requested
+   array produce unknown and a visible `ambiguous_product` diagnostic, not an exception. Never combine
    measurement records with lightcurve points into one count.
 8. **Output scope is one classification record.** `every {output}` requires
    qualification to one producer. Multiple records/versions even after that
@@ -167,8 +217,8 @@ placement rules below without changing these scientific decisions.
     defaults to integer `dsl_version: 3`; serialized IR missing the field loads
     as pre-collection version 1, including within a WorkflowRun. A runtime refuses
     a newer version. Scalar continuation preserves the existing version. Version
-    2 remains sufficient for collection syntax; `get_measurement` requires version
-    3. Neither version metadata alone asserts that a request is runnable.
+    2 remains sufficient for collection syntax; `get_measurement` and nonempty
+    `required_components` require version 3. Neither version metadata alone asserts that a request is runnable.
 
 ## Representation and validation
 
@@ -202,12 +252,15 @@ Boolean callers still select only established `True`. Scalar assertion binding,
 explicit absence and taxon comparisons retain their existing meaning. Collection
 comparisons do not create provider parameters or retrievals.
 
-For testing the closed-bound branch, the evaluator accepts transient explicit
-evidence keyed by `(internal_record_id, exact_array_path)`, with completeness and
-delivered-band values. Synthetic test proofs exercise this branch; no production
-route supplies them. The evidence is not stored in Portfolio, WorkflowRun or IR.
-No current response, summary count, temporal proof or observed band implicitly
-closes a collection. Actual route evidence and declarations await item 7.
+The evaluator accepts transient explicit evidence keyed by
+`(internal_record_id, exact_array_path)`, with completeness and delivered-band
+values. Synthetic test proofs exercise nonempty complete histories; no production
+route supplies those proofs yet. Required-component receipts can separately prove
+an explicitly empty requested array, keyed by Portfolio identity and the qualified
+array path. Neither proof is stored in Portfolio, WorkflowRun or IR. Missing or
+malformed arrays and normalization losses do not prove emptiness. No summary count,
+temporal proof or observed band implicitly closes a collection; nonempty route
+completeness and delivered-band declarations await the next item 7 slice.
 
 Competing array products or qualified classification versions yield unknown and
 `ambiguous_product` messages in the existing StepRun `warnings`. Messages retain
@@ -271,14 +324,15 @@ continuation under the existing safety rule.
 | Initial collection predicate plus latest | Explicitly deferred to item 4a; no partial evaluation before ranking. |
 | Equivalent later filter | Refine existing candidates without refill. |
 
-Flag mappings are currently uneven; see item 7. Current grammar is
+Flag mappings follow explicit broker status; missing status stays unknown (item 7). Current grammar is
 [`expression.lark`](../alertissimo/dsl/expression.lark); repetition/domain metadata
 must be retained by the existing semantic-model owner.
 
 ## First completeness route: entry audit
 
 This audit checks the current mappings and existing proofs; it does not make a
-new upstream completeness claim or enable any production closure.
+new upstream completeness claim or close any nonempty production history.
+Required-component empty-array receipts are the separate narrow case above.
 
 | Checked route/array | Existing boundary | Consequence |
 |---|---|---|
@@ -286,15 +340,14 @@ new upstream completeness claim or enable any production closure.
 | ANTARES/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/antares/ztf/mappings.yaml) use `locus_alerts`, including `ant_survey = 2` upper limits; [temporal history contracts](../alertissimo/data_layer/providers/antares/ztf/capabilities.yaml) establish detection selection. | Do not infer completeness of every point from detection-history coverage. |
 | Lasair/ZTF `lightcurve.points` | [Mappings](../alertissimo/data_layer/providers/lasair/ztf/mappings.yaml) use `lightcurve_candidates`; [existing regressions](../tests/test_orchestration_lasair_time.py) allow limit-only rows in that branch while excluding them as detection witnesses. | The [detection proof](../alertissimo/data_layer/providers/lasair/ztf/capabilities.yaml) is not a proof covering the whole array. |
 
-These candidate routes do not currently meet the instruction's detection-only-
-array entry condition. This does not prove a provider cannot supply a complete
-array. The next completeness slice needs a reviewed population/projection contract:
-either evidence covering the full existing mixed array or an explicitly reviewed
-detection-only projection matched to the existing proof. Do not split arrays,
-rename semantic paths, add schema fields or broaden a temporal proof implicitly.
-The proposal must account for required-call success, payload/identity coverage and
-raw-row-to-point normalization, including omitted or invalid rows; matching time
-bounds alone is insufficient.
+The agreed next slice may establish detection-scoped completeness without splitting
+these arrays: the count condition must entail `photometry.{filter}.upper_limit =
+false`, and the proof must cover exactly that population. The audit must account
+for required-call success, payload/identity coverage and raw-row-to-point
+normalization, including omitted or invalid rows; matching time bounds alone is
+insufficient. Counts without that status condition keep their open upper bound.
+Do not rename paths, add schema fields or broaden a temporal proof implicitly.
+LSST and measurement completeness remain open.
 The already-approved delivered-band amendment remains coupled to the first actual
 complete route; declarations alone cannot close these collections.
 
@@ -302,7 +355,8 @@ complete route; declarations alone cannot close these collections.
 
 Named binders such as `as p` are reserved for later reevaluation of self-joins and
 correlated nested collections (item 10). They must not replace the simple forms
-above. FP request syntax/policy is separately deferred in item 11.
+above. On-demand FP computation is separately deferred in item 11. Broker-held FP uses
+the required-component rule above.
 
 ## Completed instruction accounting
 
@@ -315,19 +369,21 @@ above. FP request syntax/policy is separately deferred in item 11.
 | D3.3 static empty restrictions, domain members and shadowing | Static checks done in syntax/IR; empty runtime domains remain unknown, including under NOT, in evaluation. |
 | D3.7–8 product/output qualification and runtime ambiguity | Evaluation accepted in #360. Admission scopes static products to the occurrence/prefix and retains runtime warnings through facade serialization and discovery residuals. |
 | Reference/material/headline walkers; no native pushdown | Done in syntax/IR. Material selection now controls collection audit projection without fragment re-evaluation. |
-| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Admission keeps production collections open. |
+| D3.1–2 count ranges, quantifiers, exact NOT duality | Done in #360, including synthetic complete-evidence tests. Nonempty production histories remain open; explicit required-component empty-array receipts can establish zero. |
 | D3.4–5 extrema ranges and branch-local membership | Done in #360. Facade regressions exercise witnessed bounds, unavailable flags and short bands. |
 | D3.6 actual route completeness and delivered bands | Deferred to item 7's first collection-completeness slice; no route claim here. |
 | D3.9 scalar/exists/Boolean/taxon compatibility | Done: existing semantics and taxon validator retained, with maintainer-run regression acceptance through #361. |
 | Later filter, continuation, non-refill, facade acceptance | Done in #361 with controlled native payloads, selected downstream IDs, immutable continuation, failure propagation and non-refilling latest. |
 | Initial where/latest and missing-material placements | Explicit guards done in #361; expanded scheduling remains item 4a. Initial discovery uses only its discovery call, not supplementary evidence. |
 | Collection confirm | Explicit rejection done in #361, including attached propositions; bare existence confirm after a filter remains independent. Collection voting is out of scope. |
-| Measurement acquisition, named binders, FP policy | Deferred to items 7b, 10 and 11 respectively. |
+| Measurement acquisition, named binders, FP policy | Measurement acquisition and broker-held FP component requests are implemented under item 7. Named binders remain item 10; on-demand FP services remain item 11. |
 | Provider mappings, route metadata, endpoints, policy, transports | Not applicable to this slice; no YAML or physical-contract changes. |
 
 With admitted material and open completeness, witnesses can prove
 lower bounds (`count >= N`), a bright minimum (`min < x`) and `any`. Exact counts,
 zero-count claims, `min > x`, and an `every` failure based only on a short band stay
-unknown until applicable collection completeness exists. A contradictory known
+unknown until applicable collection completeness exists. An explicit empty-array
+receipt for a required component can prove its zero count; it does not prove band
+delivery or close a nonempty history. A contradictory known
 witness can still disprove a comparison. Local evaluation does not bypass the
 public DSL or canonical planner material/placement guards.

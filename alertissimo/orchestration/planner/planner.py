@@ -715,6 +715,41 @@ def _mark_equivalent_forced_reuse(
     planned_steps: tuple[StepRun, ...],
 ) -> tuple[StepRun, ...]:
     rewritten = list(planned_steps)
+    # A new component request may add required calls without repeating an earlier
+    # required call with identical inputs. Never borrow a formerly optional call.
+    for index, step in enumerate(workflow.steps):
+        if not isinstance(step, GetStep) or not step.required_components:
+            continue
+        plans = list(rewritten[index].endpoint_plans)
+        for position, plan in enumerate(plans):
+            if plan.execution_reuse_from is not None:
+                continue
+            for owner_index in range(index - 1, -1, -1):
+                owner_step = workflow.steps[owner_index]
+                if not isinstance(owner_step, GetStep):
+                    continue
+                if (type(owner_step) is not type(step)
+                    or owner_step.model_dump(exclude={"required_components"}) != step.model_dump(exclude={"required_components"})):
+                    continue
+                for owner_position, owner in enumerate(rewritten[owner_index].endpoint_plans):
+                    same_target = (step.target is not None and step.target == owner_step.target)
+                    same_candidates = (step.target is None and owner_step.target is None
+                                       and plan.candidate_input_from is not None
+                                       and plan.candidate_input_from == owner.candidate_input_from)
+                    if (owner.required and (same_target or same_candidates)
+                        and (plan.broker, plan.origin, plan.endpoint) == (owner.broker, owner.origin, owner.endpoint)
+                        and plan.request_params == owner.request_params
+                        and plan.parameter_sources == owner.parameter_sources
+                        and plan.predicate_realization == owner.predicate_realization
+                        and plan.candidate_input_from_plan is None and owner.candidate_input_from_plan is None):
+                        plans[position] = plan.model_copy(update={
+                            "execution_reuse_from": EndpointPlanRef(step_index=owner_index, plan_index=owner_position),
+                            "candidate_input_from": None,
+                        })
+                        break
+                if plans[position].execution_reuse_from is not None:
+                    break
+        rewritten[index] = rewritten[index].model_copy(update={"endpoint_plans": tuple(plans)})
     for step_index, step in enumerate(workflow.steps):
         if not isinstance(step, (GetLightcurveStep, GetMeasurementStep)):
             continue
